@@ -297,7 +297,8 @@ bollard = "0.21.1"
 dagger-sdk = "0.21.10"
 
 # ---------------------------------------------------------------- math
-evalexpr = "13.1.0"
+# Replaces evalexpr: evalexpr >= 12 is AGPL-3.0-only (cargo-deny, P0-ENV-7); exmex is MIT OR Apache-2.0.
+exmex = "0.21.0"
 rust_decimal = "1.43.0"
 splines = "5.0.0"
 statrs = "0.19.1"

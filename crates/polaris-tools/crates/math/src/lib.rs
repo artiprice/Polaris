@@ -31,4 +31,4 @@
 //!
 //! ## Planned external dependencies
 //!
-//! `evalexpr`, `rust_decimal`, `splines`, `statrs`
+//! `exmex`, `rust_decimal`, `splines`, `statrs`
