@@ -1,0 +1,74 @@
+[workspace]
+resolver = "3"
+members = [
+    "apps/*",
+    "crates/*",
+    "tests",
+    "tests/spike/*",
+    "xtask",
+]
+exclude = [
+    "tests/fuzz",
+    "@prime/tmp",
+]
+
+[workspace.package]
+version = "0.1.0-alpha"
+edition = "2024"
+rust-version = "1.99"
+authors = ["Dmytro Shcherban <dimasahah15@gmail.com>", "Mikhail Melik-Kazarian <artiprice@gmail.com>"]
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+# Internal crates
+
+polaris-desktop          = { path = "apps/polaris-desktop" }
+polaris-web              = { path = "apps/polaris-web" }
+polaris-cli              = { path = "apps/polaris-cli" }
+
+polaris-kernel           = { path = "crates/polaris-kernel" }
+polaris-sdk              = { path = "crates/polaris-sdk" }
+polaris-platform         = { path = "crates/polaris-platform" }
+polaris-model-register   = { path = "crates/polaris-models" }
+polaris-openshell        = { path = "crates/polaris-openshell" }
+polaris-runtime          = { path = "crates/polaris-runtime" }
+polaris-nebius-cloud     = { path = "crates/polaris-nebius-cloud" }
+
+polaris-ui               = { path = "crates/polaris-ui" }
+polaris-ui-web           = { path = "crates/polaris-ui/crates/web" }
+polaris-ui-gui           = { path = "crates/polaris-ui/crates/gui" }
+polaris-ui-cli           = { path = "crates/polaris-ui/crates/cli" }
+
+# Later
+
+# polaris-audio      = { path = "crates/polaris-audio" }
+# polaris-stt        = { path = "crates/polaris-stt" }
+
+
+# External crates
+thiserror    = "..."
+secrecy      = "..."
+zeroize      = "..."
+axum         = "..."
+slint        = "~1.18.1"
+slint-build  = "~1.18.1"
+# ...
+
+[profile.dev]
+opt-level = 0
+debug = false
+strip = true
+incremental = false
+
+[profile.dev.package."*"]
+opt-level = 2
+debug = false
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+overflow-checks = true
+panic = "abort"
+strip = true
