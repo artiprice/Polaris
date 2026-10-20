@@ -1,0 +1,5 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 347
+
+{"type":"call","success":true,"error":null,"error_code":null,"reason":null,"function_calls":[{"name":"search","arguments":{"query":"TODO"}}],"suppressed_calls":[],"reasoning":"query 'TODO' from query; search tool chosen.","confidence":0.8282,"prefill_tps":122.0,"decode_tps":45.8,"peak_ram_mb":80.4,"validation":{"ungrounded":[],"negation":false}}

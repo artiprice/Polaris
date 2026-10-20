@@ -1,0 +1,17 @@
+# Spike S0-9 (PHASES.md): LanceDB 0.40 on Windows MSVC — build cost (time, RAM, protoc, CMake 4)
+# and embedded vector query latency. Standalone workspace (excluded from Polaris via "@prime").
+[package]
+name = "s0-9-lancedb"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+lancedb = "0.40.0"
+arrow-array = "58"
+arrow-schema = "58"
+futures = "0.3.34"
+tokio = { version = "1.54.0", features = ["rt-multi-thread", "macros", "time"] }

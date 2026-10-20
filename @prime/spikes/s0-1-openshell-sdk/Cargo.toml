@@ -1,0 +1,17 @@
+# Spike S0-1 (PHASES.md): does openshell-sdk (pinned rev of v0.1.4) build on
+# x86_64-pc-windows-msvc and drive the WSL2 OpenShell gateway from the Windows host?
+# Standalone workspace (excluded from the Polaris workspace via `exclude = ["@prime"]`).
+[package]
+name = "s0-1-openshell-sdk"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+openshell-sdk = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
+tokio = { version = "1.54.0", features = ["rt-multi-thread", "macros", "time"] }
+tonic = { version = "0.14.6", default-features = false, features = ["transport", "tls-aws-lc", "tls-native-roots"] }
+rustls = { version = "0.23.46", default-features = false, features = ["aws_lc_rs", "std", "tls12"] }

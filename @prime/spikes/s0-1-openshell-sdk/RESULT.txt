@@ -1,0 +1,13 @@
+mtls material: ca=619B cert=591B key=241B from \\wsl.localhost\Ubuntu-24.04\home\dev\.config\openshell\gateways\openshell\mtls
+connect https://localhost:17670: ok (365 ms)
+health: Healthy version=0.1.4 (1 ms)
+create: id=31311384-ea41-438e-a14d-be4e2c90e418 phase=Provisioning (126 ms)
+wait_ready: phase=Ready (1921 ms)
+exec: exit=0 (68 ms)
+Linux 6.6.87.2-microsoft-standard-WSL2
+ubuntu
+/sandbox
+exit-code propagation: ok (got 7)
+delete: Accepted -> gone (729 ms)
+RESULT: PASS
+# conditions: Windows 11 LTSC 2024; rustc 1.99.0; openshell-sdk rev 5a7728c3 (v0.1.4); gateway in WSL2 Ubuntu 24.04.5 (docker driver, Docker Engine 29.9.1); 2026-10-20T12:18:00

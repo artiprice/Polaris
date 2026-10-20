@@ -1,0 +1,14 @@
+  t=time.perf_counter(); r=a.complete(qs[i%7]); L.append((time.perf_counter()-t)*1000)
+init s 2.7957457000011345 first call s 0.3223835999997391 rss MB 111.960064
+SAMPLE {"type": "call", "success": true, "error": null, "error_code": null, "reason": null, "function_calls": [{"name": "read_file", "arguments": {"path": "src/main.rs"}}], "suppressed_calls": [], "reasoning": "'read the file src/main.rs' -> read_file with path 'src/main.rs'.", "confidence": 0.8676, "prefill_tps": 525.6, "decode_tps": 183.5, "peak_ram_mb": 122.4, "validation": {"ungrounded": [], "negation": false}}
+TOOL ms p50 316.8 p95 439.0
+('read the file src/main.rs', [{'name': 'read_file', 'arguments': {'path': 'src/main.rs'}}])
+('run the tests for crate polaris-core', [{'name': 'run_tests', 'arguments': {'crate': 'polaris-core'}}])
+('search for TODO in the code', [{'name': 'search', 'arguments': {'query': 'TODO'}}])
+('open Cargo.toml', [{'name': 'read_file', 'arguments': {'path': 'Cargo.toml'}}])
+('test the crate net-utils', [])
+('find where parse_args is defined', [])
+('what is the weather in Paris', [])
+EMBED dim 3072 <class 'list'>
+EMBED ms p50 50.3 p95 68.9
+peak rss MB 128.385024

@@ -1,0 +1,3 @@
+[{"name":"read_file","description":"Read the contents of a file at a path.","parameters":{"type":"object","properties":{"path":{"type":"string","description":"File path"}},"required":["path"]}},
+{"name":"run_tests","description":"Run the tests of a Rust crate.","parameters":{"type":"object","properties":{"crate":{"type":"string","description":"Crate name"}},"required":["crate"]}},
+{"name":"search","description":"Search the codebase for a query string.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Search text"}},"required":["query"]}}]
