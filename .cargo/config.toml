@@ -1,0 +1,8 @@
+# Polaris repository-wide Cargo configuration (portable across team members and OSes).
+# Machine-specific settings (target-dir, PROTOC location) belong in each member's
+# user-level config or environment — see @prime/PHASES.md "Team member setup".
+
+[env]
+# CMake 4 removed compatibility with `cmake_minimum_required(VERSION < 3.5)`; some vendored
+# C/C++ build scripts in the dependency tree still declare older minimums (pitfall W8).
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"
