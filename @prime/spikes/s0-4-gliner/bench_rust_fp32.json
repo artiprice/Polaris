@@ -1,0 +1,21 @@
+{
+  "precision": "fp32",
+  "threads": 4,
+  "load_s": 19.6303577,
+  "rss_after_load_MB": 2114,
+  "peak_rss_sampled_MB": 2408,
+  "latency_1task": {
+    "n": 40,
+    "p50_ms": 405.1476,
+    "p95_ms": 511.0374,
+    "min_ms": 315.43359999999996,
+    "max_ms": 567.2021000000001
+  },
+  "latency_3task": {
+    "n": 30,
+    "p50_ms": 770.8642,
+    "p95_ms": 810.2592,
+    "min_ms": 706.5879,
+    "max_ms": 821.9309999999999
+  }
+}
