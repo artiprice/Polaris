@@ -1086,7 +1086,7 @@ kind = "lib"
 phase = "P3"
 summary = "Deterministic math tools: exact decimal calculator, expression evaluation, interpolation (linear/bilinear/cubic/Catmull-Rom/Bezier), statistics, GPU calculus."
 deps = ["polaris-sdk"]
-ext = ["evalexpr", "rust_decimal", "splines", "statrs"]
+ext = ["exmex", "rust_decimal", "splines", "statrs"]
 responsibilities = [
   "Give agents exact arithmetic (rust_decimal) instead of model guesses.",
   "Provide interpolation and statistics with checked arithmetic.",
@@ -2115,9 +2115,10 @@ group = "agents"
 note = "Pulls reqwest 0.11; members must depend on it as an optional feature."
 
 [[ext]]
-name = "evalexpr"
-version = "13.1.0"
+name = "exmex"
+version = "0.21.0"
 group = "math"
+note = "Replaces evalexpr: evalexpr >= 12 is AGPL-3.0-only (cargo-deny, P0-ENV-7); exmex is MIT OR Apache-2.0."
 [[ext]]
 name = "rust_decimal"
 version = "1.43.0"

@@ -521,6 +521,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
         "[package]",
         'name = "polaris-dep-probe"',
         'version = "0.0.0"',
+        'license = "Apache-2.0"',
         'edition = "2024"',
         'rust-version = "1.99"',
         "publish = false",

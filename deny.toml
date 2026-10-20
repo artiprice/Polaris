@@ -29,6 +29,7 @@ allow = [
     "MPL-2.0",
     "CDLA-Permissive-2.0",
     "OpenSSL",
+    "NCSA",
 ]
 confidence-threshold = 0.9
 # Pending decisions are recorded in PLAN.md ADR-014 (e.g. Slint's licence choice) — add
@@ -38,6 +39,8 @@ exceptions = []
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Internal crates are path dependencies (publish = false); they are not wildcard risks.
+allow-wildcard-paths = true
 highlight = "all"
 
 [sources]
