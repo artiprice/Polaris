@@ -1,0 +1,21 @@
+# Spike S0-7 (PHASES.md): Windows workspace -> OpenShell sandbox sync over the gRPC exec
+# stdin channel (the gateway has no upload RPC). Measures blake3 manifests, initial and
+# incremental transfer, no-op diff, byte-exact fidelity and the .polarisignore deny-list.
+[package]
+name = "s0-7-sync"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+openshell-sdk = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
+tokio = { version = "1.54.0", features = ["rt-multi-thread", "macros", "time"] }
+tonic = { version = "0.14.6", default-features = false, features = ["transport", "tls-aws-lc", "tls-native-roots"] }
+rustls = { version = "0.23.46", default-features = false, features = ["aws_lc_rs", "std", "tls12"] }
+blake3 = "1.8.7"
+sha2 = "0.11.1"
+tar = "0.4.46"
+walkdir = "2.5.0"
