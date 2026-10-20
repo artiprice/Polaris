@@ -4,6 +4,12 @@ param([int]$Jobs = 4)
 $ErrorActionPreference = 'Continue'
 Set-Location $PSScriptRoot
 $env:CMAKE_POLICY_VERSION_MINIMUM = '3.5'
+# lance's build scripts need protoc (pitfall W7); prefer PATH, else the winget package location.
+if (-not (Get-Command protoc -ErrorAction SilentlyContinue)) {
+    $wingetProtoc = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Recurse -Filter protoc.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($wingetProtoc) { $env:PROTOC = $wingetProtoc.FullName }
+}
+"PROTOC=$env:PROTOC" | Out-Host
 $start = Get-Date
 $build = Start-Process -FilePath cargo -ArgumentList @('build', '--release', '-j', "$Jobs") -NoNewWindow -PassThru `
     -RedirectStandardOutput build.out.log -RedirectStandardError build.log
