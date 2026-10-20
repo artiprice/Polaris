@@ -32,7 +32,12 @@ fn load_items(path: &str, normalize: bool) -> Result<Vec<Item>> {
                 .collect();
             tasks.push(SchemaTask::classification(name.clone(), labels));
         }
-        let mut text = s("text")?;\n        // gliner2 (Python) 2.1.0 `_normalize_text`: text must end with . ! or ? (empty -> ".")\n        if normalize && !text.ends_with(|c| c == '.' || c == '!' || c == '?') {\n            text.push('.');\n        }\n        items.push(Item { id: s("id")?, kind: s("kind")?, text, tasks });
+        let mut text = s("text")?;
+        // gliner2 (Python) 2.1.0 `_normalize_text`: text must end with . ! or ? (empty -> ".")
+        if normalize && !text.ends_with(['.', '!', '?']) {
+            text.push('.');
+        }
+        items.push(Item { id: s("id")?, kind: s("kind")?, text, tasks });
     }
     Ok(items)
 }
@@ -81,7 +86,8 @@ fn main() -> Result<()> {
     };
     let mut sys = System::new();
 
-    let normalize = a.get(7).map(String::as_str) == Some("normalize");\n    let items = load_items(&a[4], normalize)?;
+    let normalize = a.get(7).map(String::as_str) == Some("normalize");
+    let items = load_items(&a[4], normalize)?;
     gliner2_rs::init("s0-4");
     let t0 = Instant::now();
     let cfg = SpanConfig::new(&a[1]).with_precision(precision).with_intra_threads(threads);
