@@ -3,7 +3,7 @@
 > **Document:** `@prime/PLAN.md` · **Version:** 1.0 · **Date:** 2026-10-20 · **Branch:** `mvp`
 > **Companions:** `@prime/PHASES.md` (tasks) · `@prime/PHASES_STATUS.md` (evidence-backed status)
 > **Single source of truth for packages:** `@prime/tools/workspace.toml` (regenerate with `python -I @prime/tools/workspace.py gen`)
-> **Binding rules:** `@prime/prompt.md` (engineering) · `AGENTS.md` (truth kernel + completion contract)
+> **Binding rules:** `@prime/prompt.md` (engineering) · `AGENTS.md` (truth kernel + completion contract) | IF ALL OF IT EXISTS IN WORKSPACE.
 
 ---
 
