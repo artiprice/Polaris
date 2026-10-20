@@ -15,7 +15,7 @@ struct Item {
     tasks: Vec<SchemaTask>,
 }
 
-fn load_items(path: &str) -> Result<Vec<Item>> {
+fn load_items(path: &str, normalize: bool) -> Result<Vec<Item>> {
     let raw = std::fs::read_to_string(path).with_context(|| format!("read {path}"))?;
     let mut items = Vec::new();
     for line in raw.lines().filter(|l| !l.trim().is_empty()) {
@@ -32,7 +32,7 @@ fn load_items(path: &str) -> Result<Vec<Item>> {
                 .collect();
             tasks.push(SchemaTask::classification(name.clone(), labels));
         }
-        items.push(Item { id: s("id")?, kind: s("kind")?, text: s("text")?, tasks });
+        let mut text = s("text")?;\n        // gliner2 (Python) 2.1.0 `_normalize_text`: text must end with . ! or ? (empty -> ".")\n        if normalize && !text.ends_with(|c| c == '.' || c == '!' || c == '?') {\n            text.push('.');\n        }\n        items.push(Item { id: s("id")?, kind: s("kind")?, text, tasks });
     }
     Ok(items)
 }
@@ -81,7 +81,7 @@ fn main() -> Result<()> {
     };
     let mut sys = System::new();
 
-    let items = load_items(&a[4])?;
+    let normalize = a.get(7).map(String::as_str) == Some("normalize");\n    let items = load_items(&a[4], normalize)?;
     gliner2_rs::init("s0-4");
     let t0 = Instant::now();
     let cfg = SpanConfig::new(&a[1]).with_precision(precision).with_intra_threads(threads);
@@ -137,7 +137,7 @@ fn main() -> Result<()> {
     stop.store(true, Ordering::Relaxed);
     let _ = sampler.join();
     let summary = json!({"precision": a[2], "threads": threads, "load_s": load_s, "rss_after_load_MB": rss_after_load,
-        "peak_rss_sampled_MB": peak.load(Ordering::Relaxed), "latency_1task": l1, "latency_3task": l3});
+        "normalize_trailing_period": normalize, "peak_rss_sampled_MB": peak.load(Ordering::Relaxed), "latency_1task": l1, "latency_3task": l3});
     std::fs::write(&a[6], serde_json::to_string_pretty(&summary)?)?;
     println!("{}", serde_json::to_string_pretty(&summary)?);
     Ok(())
