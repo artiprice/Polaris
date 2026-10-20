@@ -1,0 +1,17 @@
+[package]
+name = "s0-4-harness"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+gliner2-rs = { version = "=0.9.6", default-features = false }
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "ndarray", "load-dynamic"] }
+anyhow = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+sysinfo = { version = "0.37", default-features = false, features = ["system"] }
+
+[profile.release]
+debug = false
