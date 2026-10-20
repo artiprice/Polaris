@@ -1,0 +1,2256 @@
+# =============================================================================
+# Polaris workspace — single source of truth
+# =============================================================================
+# Every workspace package, its layer, parent facade, phase, internal edges and
+# planned external dependencies live here. `@prime/tools/workspace.py` generates
+# the root Cargo.toml, every member Cargo.toml / src/lib.rs, and checks
+# members/layers/versions against this file. Edit this file, then run:
+#
+#   python -I @prime/tools/workspace.py gen
+#
+# Layer model (lower may never depend on higher):
+#   L0 sdk | L1 foundations | L2 adapters | L3 domain | L4 runtime |
+#   L5 composition root + rpc | L6 ui | L7 apps | L8 tests/spikes/xtask
+# Edge rule: dep.layer < crate.layer, except facade->child and sibling->sibling
+# (same parent) where dep.layer <= crate.layer. A child never depends on its parent.
+# Verified versions: crates.io, 2026-10-20 (see PLAN.md §Versions).
+
+[meta]
+workspace_version = "0.1.0-alpha"
+edition = "2024"
+rust_version = "1.99"
+openshell_tag = "v0.1.4"
+openshell_rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1"
+
+# -----------------------------------------------------------------------------
+# Apps (L7) — lib-only skeletons; real `main` arrives in the listed phase.
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-cli"
+path = "apps/polaris-cli"
+layer = 7
+kind = "app"
+phase = "P1"
+summary = "Terminal client: ratatui TUI (default) and headless `polaris run` mode; binary name `polaris`."
+deps = ["polaris-kernel", "polaris-ui-cli", "polaris-rpc", "polaris-config", "polaris-log"]
+ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls"]
+responsibilities = [
+  "Parse CLI arguments (clap) and resolve config layers.",
+  "Embed the kernel in-process by default, or attach to `polarisd` with `--connect`.",
+  "Run the TUI event loop (composer, completion, $ / / / @ grammar, sessions, HUD).",
+  "Provide `--dump WxH` deterministic snapshot mode and `polaris run` headless mode.",
+  "Install the rustls aws-lc-rs crypto provider and the global allocator at startup.",
+]
+api = ["bin `polaris`", "`polaris run <task>`", "`polaris doctor`", "`polaris --dump WxH`"]
+
+[[crate]]
+name = "polaris-desktop"
+path = "apps/polaris-desktop"
+layer = 7
+kind = "app"
+phase = "P9"
+summary = "Native desktop GUI built with Slint (femtovg/software renderer); mobile targets in v2."
+deps = ["polaris-kernel", "polaris-ui-gui", "polaris-rpc", "polaris-config", "polaris-log"]
+ext = ["tokio", "slint", "slint-build", "rustls"]
+responsibilities = [
+  "Host the Slint UI from polaris-ui-gui and bridge it to the kernel event stream.",
+  "Run embedded kernel or connect to the daemon over a named pipe.",
+  "Prepare the Android (Rust-only) and iOS Slint targets for v2.",
+]
+api = ["bin `polaris-desktop`"]
+
+[[crate]]
+name = "polaris-web"
+path = "apps/polaris-web"
+layer = 7
+kind = "app"
+phase = "P9"
+summary = "Axum + Leptos SSR web UI with streaming, per-route lazy loading and a PWA service worker."
+deps = ["polaris-kernel", "polaris-ui-web", "polaris-rpc", "polaris-config", "polaris-log"]
+ext = ["tokio", "axum", "tower-http", "leptos", "leptos_axum", "leptos_router", "leptos_meta", "wasm-bindgen"]
+responsibilities = [
+  "Serve SSR pages with out-of-order streaming and hydration (cargo-leptos dual-feature layout: ssr + hydrate).",
+  "Ship a PWA manifest and the single hand-written JS file: the service worker.",
+  "Expose SSE token streams and WebSocket terminal channels backed by the kernel.",
+  "Stay out of `default-members` once real dependencies land (wasm32 build via cargo-leptos).",
+]
+api = ["bin `polaris-web`", "routes: /, /chat, /sessions, /research, /usage, /settings"]
+
+[[crate]]
+name = "polaris-daemon"
+path = "apps/polaris-daemon"
+layer = 7
+kind = "app"
+phase = "P9"
+summary = "Headless kernel daemon `polarisd` exposing the gRPC kernel service locally (named pipe) or remotely (TCP+mTLS)."
+deps = ["polaris-kernel", "polaris-rpc", "polaris-config", "polaris-log"]
+ext = ["tokio", "tonic", "rustls", "clap"]
+responsibilities = [
+  "Host one kernel instance shared by CLI, desktop and web clients.",
+  "Authenticate every local and remote connection with Biscuit tokens.",
+  "Support the v2 self-hosting path (remote headless daemon on Nebius AI Cloud).",
+]
+api = ["bin `polarisd`"]
+
+[[crate]]
+name = "polaris-worker"
+path = "apps/polaris-worker"
+layer = 7
+kind = "app"
+phase = "P4"
+summary = "Supervised native worker process, one OS process per mode: s1 (ort inference), ingest (parsers+OCR), nano (Needle 3 bridge)."
+deps = ["polaris-system-one-engine", "polaris-system-one-nano", "polaris-ingest", "polaris-proto", "polaris-config", "polaris-log"]
+ext = ["tokio", "tonic", "ort", "clap"]
+responsibilities = [
+  "Isolate FFI-heavy, crash-prone work (ONNX Runtime, PDF/OCR, C++ engines) from the kernel process.",
+  "Serve the worker gRPC service over a named pipe; report health and memory to the supervisor.",
+  "Lazy-load and evict models on idle TTL, memory pressure or a force-evict request before builds.",
+]
+api = ["bin `polaris-worker --mode s1|ingest|nano`"]
+
+[[crate]]
+name = "polaris-guest"
+path = "apps/polaris-guest"
+layer = 7
+kind = "app"
+phase = "P7"
+summary = "Linux in-sandbox agent baked into the Polaris sandbox image: structured exec, file sync endpoint, Xvfb+Chromium screenshots."
+deps = ["polaris-sdk", "polaris-proto", "polaris-browser", "polaris-log"]
+ext = ["tokio", "chromiumoxide", "prost", "tonic", "serde"]
+responsibilities = [
+  "Build inside WSL2/Linux only (excluded from Windows default-members).",
+  "Perform a protocol_version handshake with the host before serving.",
+  "Execute commands with structured output, capture screenshots and a11y trees, apply sync deltas.",
+]
+api = ["bin `polaris-guest`"]
+
+# -----------------------------------------------------------------------------
+# L0 — SDK
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-sdk"
+path = "crates/polaris-sdk"
+layer = 0
+kind = "lib"
+phase = "P1"
+summary = "Domain newtypes, error kinds, API-registry traits (prompt.md §6.2), the Backends bundle, PlatformOps and command/event contracts."
+deps = []
+ext = ["thiserror", "serde", "bytes", "uuid", "jiff", "secrecy"]
+responsibilities = [
+  "Define newtypes (SessionId, FrameId, AgentRole, Cid, FastFingerprint, ModelId, Effort, ...).",
+  "Define registry traits: ChatModel, EmbeddingProvider, DecisionEngine, SandboxBackend, WebSearch, DocParser, VectorStore, EventStore, KernelApi, PlatformOps, Redactor, FunctionalOperator.",
+  "Define the `Backends` associated-type bundle and enum-dispatch wrappers for runtime-selected backends.",
+  "Define Command/Event contracts for the CQRS bus and the System-One primitives (Choice, Score, Noul).",
+]
+api = ["trait ChatModel", "trait DecisionEngine", "trait SandboxBackend", "trait Backends", "enum Command", "enum Event", "struct Decision", "trait ExactCacheStore", "trait Sealer", "trait SchemaCatalog", "struct GatewayEndpoint", "trait Tool", "struct ToolSpec", "struct FrameView", "struct ScratchpadRef", "trait ContextRecall (polaris_expand / polaris_recall)"]
+
+# -----------------------------------------------------------------------------
+# L1 — Foundations
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-proto"
+path = "crates/polaris-proto"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Protobuf contracts and generated tonic/prost code for the kernel, worker and guest services."
+deps = ["polaris-sdk"]
+ext = ["prost", "prost-types", "tonic", "tonic-prost", "tonic-prost-build", "protoc-bin-vendored"]
+responsibilities = [
+  "Own `proto/polaris/v1/*.proto` (kernel.proto, worker.proto, guest.proto).",
+  "Generate code in build.rs with vendored protoc; isolate generated code from hand-written crates.",
+  "Provide sdk <-> proto conversions and the protocol_version constant used in handshakes.",
+]
+api = ["service PolarisKernelService", "service WorkerService", "service GuestService"]
+
+[[crate]]
+name = "polaris-config"
+path = "crates/polaris-config"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Layered configuration: defaults < ~/.polaris/config.toml < .polaris/config.toml < env < session directives."
+deps = ["polaris-sdk"]
+ext = ["serde", "toml", "etcetera", "dunce", "thiserror"]
+responsibilities = [
+  "Resolve global (~/.polaris) and repo (.polaris) directories on Windows/Linux/macOS.",
+  "Merge config layers deterministically and report which layer set each value (/status).",
+  "Hold secret references only (keyring entry names, env var names) — never secret values.",
+]
+api = ["struct PolarisConfig", "fn load(layers) -> Result<PolarisConfig, ConfigError>"]
+
+[[crate]]
+name = "polaris-log"
+path = "crates/polaris-log"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "tracing facade with spdlog-style async sinks (rotating file, TUI ring, telemetry ring) and a redaction layer."
+deps = ["polaris-sdk"]
+ext = ["tracing", "tracing-subscriber", "spdlog-rs", "backon"]
+responsibilities = [
+  "Install the tracing subscriber; route records to spdlog-rs-backed non-blocking sinks.",
+  "Redact secrets/PII through the sdk `Redactor` trait before any sink sees a record.",
+  "Provide an in-memory ring sink for the TUI log pane and telemetry.",
+]
+api = ["fn init(LogConfig) -> Result<LogGuard, LogError>", "struct RingSink"]
+
+[[crate]]
+name = "polaris-telemetry"
+path = "crates/polaris-telemetry"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Usage, cost, latency and cache metrics fed by bus events; backs /usage /stats /quota /context-map and the token-weather HUD."
+deps = ["polaris-sdk"]
+ext = ["hdrhistogram", "serde", "arc-swap"]
+responsibilities = [
+  "Aggregate tokens per model, S1-vs-S2 time, cache hit rates, sandbox load.",
+  "Compute cost only from a configured price table (Token Factory prices are not in the public catalog).",
+  "Expose snapshots for UIs without locking the hot path (arc-swap snapshots).",
+]
+api = ["struct TelemetrySnapshot", "fn record(&Event)"]
+
+[[crate]]
+name = "polaris-ratelimit"
+path = "crates/polaris-ratelimit"
+layer = 1
+kind = "lib"
+phase = "P3"
+summary = "GCRA rate limiting: RPM cells plus token-weighted TPM, priority shedding, Retry-After and 15-minute window tracking."
+deps = ["polaris-sdk"]
+ext = ["governor", "backon", "tokio"]
+responsibilities = [
+  "Reserve RPM+TPM budget before a request and reconcile with actual usage afterwards.",
+  "Prioritize InteractiveUser > Verifier > SubAgent > Background; shed background work near limits.",
+  "Honor 429 Retry-After with jittered backoff; track Token Factory soft-cap utilization windows.",
+]
+api = ["struct DualLimiter", "enum Priority", "async fn acquire(estimate, Priority) -> Permit"]
+
+[[crate]]
+name = "polaris-code-intel"
+path = "crates/polaris-code-intel"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "tree-sitter parsing, PageRank repo map, file skeletons, AST diff/merge and code metrics (churn, cyclomatic, tree-edit distance)."
+deps = ["polaris-sdk"]
+ext = ["tree-sitter", "tree-sitter-rust", "tree-sitter-python", "tree-sitter-cpp", "tree-sitter-cuda", "tree-sitter-typescript", "ast-grep-core", "imara-diff", "xxhash-rust"]
+responsibilities = [
+  "Parse supported languages; produce skeletons (signatures only) for context folding.",
+  "Build a symbol graph and rank it (PageRank, Aider-style) for the repo map.",
+  "Compute churn, cyclomatic-complexity delta and AST edit distance for the mutation verifier.",
+  "Fingerprint AST subtrees (xxh3) so unchanged nodes skip re-analysis.",
+]
+api = ["fn skeleton(path) -> Skeleton", "fn repo_map(budget) -> RepoMap", "fn metrics(old, new) -> MutationMetrics"]
+
+[[crate]]
+name = "polaris-storage-cas"
+path = "crates/polaris-storage/crates/cas"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Content-addressable blob store: BLAKE3 ids, zstd compression, xxh3 dirty-checks, short §ref ids."
+deps = ["polaris-sdk"]
+ext = ["blake3", "xxhash-rust", "zstd", "tempfile", "backon"]
+responsibilities = [
+  "Store immutable blobs (file versions, diffs, tool outputs, logs) under ~/.polaris/cas/<ab>/<cd>/<blake3>.",
+  "Provide xxh3 fast fingerprints and collision-checked 12-hex short refs for `§ref:` folding.",
+  "Write atomically (temp + rename with retry for Windows AV locks).",
+]
+api = ["struct Cas", "fn put(&[u8]) -> Cid", "fn get(&Cid) -> Bytes", "fn short_ref(&Cid) -> ShortRef"]
+
+[[crate]]
+name = "polaris-storage-eventlog"
+path = "crates/polaris-storage/crates/eventlog"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Append-only event journal on redb (events.redb): commands, decisions, tool calls, responses; replay and checkpoints."
+deps = ["polaris-sdk", "polaris-storage-cas"]
+ext = ["redb", "postcard", "serde"]
+responsibilities = [
+  "Implement the sdk `EventStore` trait (append, read range, replay to step).",
+  "Persist file locks, L2 exact cache entries, project invariants and research checkpoints in redb tables.",
+  "Support /session replay [step] together with CAS snapshots.",
+]
+api = ["struct EventLog", "fn append(Event) -> Seq", "fn replay(until: Seq)"]
+
+[[crate]]
+name = "polaris-storage-registry"
+path = "crates/polaris-storage/crates/registry"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Global session registry on SQLite (registry.db) with FTS5 trigram search over history."
+deps = ["polaris-sdk"]
+ext = ["rusqlite", "serde"]
+responsibilities = [
+  "Store session metadata (workspace, branch, base commit, token counters, sandbox checkpoint ids, status).",
+  "Full-text search over prompts/responses (FTS5 trigram) for /sessions and `polaris_recall`.",
+  "Run blocking SQLite work on a dedicated thread (never inside async tasks).",
+]
+api = ["struct Registry", "fn upsert_session(SessionMeta)", "fn search_history(query) -> Vec<Hit>"]
+
+[[crate]]
+name = "polaris-storage-cache"
+path = "crates/polaris-storage/crates/cache"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Tiered caches: L1 quick_cache (in-RAM), L2 exact redb cache, L3 semantic cache via the VectorStore trait."
+deps = ["polaris-sdk", "polaris-storage-cas"]
+ext = ["quick_cache", "xxhash-rust", "blake3"]
+responsibilities = [
+  "Cache S1 decisions and S2 completions keyed by stable content hashes.",
+  "Respect $storage-level(global|isolated) scoping.",
+  "Expose hit/miss counters to telemetry (/cache stats, /cache purge).",
+]
+api = ["struct TieredCache", "fn get_or_compute(key, f)"]
+
+[[crate]]
+name = "polaris-storage-vector"
+path = "crates/polaris-storage/crates/vector"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P5"
+summary = "Embedded vector store (LanceDB) for RAG, NVIDIA docs, session memory and the L3 semantic cache; usearch fallback if spike S0-9 fails."
+deps = ["polaris-sdk"]
+ext = ["lancedb", "usearch"]
+responsibilities = [
+  "Implement the sdk `VectorStore` trait over LanceDB tables under ~/.polaris/vectors and .polaris/vectors.",
+  "Never pin arrow directly; use lancedb's re-exports (lancedb 0.40 requires arrow ^58).",
+  "Keep the heavy dependency behind this leaf crate so early phases compile fast.",
+]
+api = ["struct LanceStore", "fn upsert(chunks)", "fn search(vector, k)"]
+
+[[crate]]
+name = "polaris-storage-sync"
+path = "crates/polaris-storage/crates/sync"
+parent = "polaris-storage"
+layer = 1
+kind = "lib"
+phase = "P2"
+summary = "Byte-exact, blake3-incremental workspace mirroring into sandboxes, governed by .polarisignore (secrets never mirrored)."
+deps = ["polaris-sdk", "polaris-storage-cas"]
+ext = ["ignore", "globset", "blake3", "walkdir"]
+responsibilities = [
+  "Compute a manifest (path, size, blake3) and send only changed blobs through the sdk SandboxBackend transport.",
+  "Apply the .polarisignore deny-list (.env, *.pem, *.key, .git/config by default).",
+  "Preserve bytes exactly (no EOL translation); detect case-only and reserved-name conflicts.",
+]
+api = ["struct SyncPlan", "fn plan(local, remote_manifest) -> SyncPlan"]
+
+[[crate]]
+name = "polaris-storage"
+path = "crates/polaris-storage"
+layer = 1
+kind = "facade"
+phase = "P1"
+summary = "Facade re-exporting the storage children (cas, eventlog, registry, cache, vector, sync)."
+deps = ["polaris-storage-cas", "polaris-storage-eventlog", "polaris-storage-registry", "polaris-storage-cache", "polaris-storage-vector", "polaris-storage-sync"]
+ext = []
+responsibilities = ["Re-export storage children; own the on-disk layout documentation (~/.polaris, .polaris)."]
+api = ["pub use polaris_storage_*"]
+
+[[crate]]
+name = "polaris-security-capability"
+path = "crates/polaris-security/crates/capability"
+parent = "polaris-security"
+layer = 1
+kind = "lib"
+phase = "P3"
+summary = "Biscuit capability tokens: session authority, per-frame attenuation (path, churn, TTL, no-unsafe), authorization."
+deps = ["polaris-sdk"]
+ext = ["biscuit-auth", "zeroize"]
+responsibilities = [
+  "Issue root tokens per session; attenuate for child frames with Datalog checks.",
+  "Authorize commands with facts (resource, churn, time, touches_unsafe, diff blake3).",
+  "Bound — not prevent — prompt-injection damage (documented honestly).",
+]
+api = ["struct Authority", "fn attenuate(parent, Scope) -> Token", "fn authorize(token, facts) -> Decision"]
+
+[[crate]]
+name = "polaris-security-automata"
+path = "crates/polaris-security/crates/automata"
+parent = "polaris-security"
+layer = 1
+kind = "lib"
+phase = "P2"
+summary = "Startup-compiled DFA scanners (regex-automata) for secrets, PII masks, dangerous shell patterns, plus a regex-syntax HIR guard for user regexes."
+deps = ["polaris-sdk"]
+ext = ["regex-automata", "regex-syntax", "aho-corasick", "memchr"]
+responsibilities = [
+  "Compile multi-pattern rule sets once; scan bytes in one linear pass without allocation (hot path).",
+  "Validate user-supplied regexes through HIR inspection (size/nesting limits).",
+  "Provide Shannon-entropy helpers for secret detection.",
+]
+api = ["struct DfaScanner", "fn scan(&[u8]) -> Matches", "fn validate_user_regex(&str)"]
+
+[[crate]]
+name = "polaris-security-secrets"
+path = "crates/polaris-security/crates/secrets"
+parent = "polaris-security"
+layer = 1
+kind = "lib"
+phase = "P3"
+summary = "Secret vault: keyring storage (Windows Credential Manager), secrecy/zeroize handling, ChaCha20-Poly1305 RAM sealing."
+deps = ["polaris-sdk"]
+ext = ["keyring", "secrecy", "zeroize", "chacha20poly1305", "getrandom"]
+responsibilities = [
+  "Load NEBIUS_API_KEY / TAVILY_API_KEY from keyring or env into `SecretBox` values.",
+  "Seal secrets at rest in RAM; decrypt only for the duration of a call; zeroize on drop.",
+  "Keep key and ciphertext in separate allocations (chatlog correction).",
+]
+api = ["struct SecretVault", "fn with_secret(name, |&str| ...)"]
+
+[[crate]]
+name = "polaris-kernel-bus"
+path = "crates/polaris-kernel/crates/bus"
+parent = "polaris-kernel"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "CQRS command/event bus: bounded mpsc for commands, broadcast for events, persistence through the sdk EventStore trait."
+deps = ["polaris-sdk"]
+ext = ["tokio", "tracing"]
+responsibilities = [
+  "Accept commands (each carrying a capability token) and fan out immutable events to UIs and projections.",
+  "Apply backpressure; never allocate per publish on the hot path.",
+  "Persist events via an injected EventStore (wired at the composition root).",
+]
+api = ["struct Bus", "fn send(Command)", "fn subscribe() -> EventStream"]
+
+[[crate]]
+name = "polaris-kernel-directives"
+path = "crates/polaris-kernel/crates/directives"
+parent = "polaris-kernel"
+layer = 1
+kind = "lib"
+phase = "P1"
+summary = "Recursive-descent grammar for $directives, /commands and @mentions (nested parentheses, quoted items, effort ranges)."
+deps = ["polaris-sdk"]
+ext = ["thiserror", "serde"]
+responsibilities = [
+  "Parse `$name`, `$name(args)` (bare = on), nested `model(lo-hi)` lists, `/cmd args`, `@file`, `@docx(path)`.",
+  "Keep unknown $name(...) as custom session metadata; ignore directives inside code spans/attachments.",
+  "Produce typed SessionDirective / SlashCommand / Mention values; session-scoped persistence (D11).",
+]
+api = ["fn parse(&str) -> ParsedInput", "enum SessionDirective", "enum SlashCommand", "enum Mention"]
+
+# -----------------------------------------------------------------------------
+# L2 — Adapters & infrastructure
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-platform-wsl"
+path = "crates/polaris-platform/crates/wsl"
+parent = "polaris-platform"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "WSL2 management: distro provisioning/detection, command execution in the distro, path translation, gateway keepalive."
+deps = ["polaris-sdk", "polaris-config", "polaris-log"]
+ext = ["tokio", "process-wrap", "which"]
+responsibilities = [
+  "Detect and provision Ubuntu 24.04; validate .wslconfig (memory cap, nestedVirtualization).",
+  "Run commands inside the distro; translate Windows <-> /mnt paths; keep the gateway VM alive.",
+  "Report /dev/kvm availability for the OpenShell vm driver.",
+]
+api = ["struct Wsl", "fn exec(distro, cmd)", "fn doctor() -> WslReport"]
+
+[[crate]]
+name = "polaris-platform-process"
+path = "crates/polaris-platform/crates/process"
+parent = "polaris-platform"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "Process trees (Job Objects / process groups via process-wrap), PTY (ConPTY via portable-pty), fs watching, memory pressure."
+deps = ["polaris-sdk", "polaris-log"]
+ext = ["process-wrap", "portable-pty", "notify", "notify-debouncer-full", "sysinfo", "tokio"]
+responsibilities = [
+  "Implement the sdk PlatformOps trait: spawn with kill-on-drop trees, graceful CTRL_BREAK then kill on Windows.",
+  "Provide PTY sessions for the terminal tool and AttachTerminal.",
+  "Watch the workspace (treat notify overflow as a forced rescan) and sample memory pressure for model eviction.",
+]
+api = ["struct ProcessTree", "struct Pty", "fn watch(root) -> FsEvents", "fn memory_pressure() -> Pressure"]
+
+[[crate]]
+name = "polaris-platform"
+path = "crates/polaris-platform"
+layer = 2
+kind = "facade"
+phase = "P2"
+summary = "Facade re-exporting platform children (wsl, process)."
+deps = ["polaris-platform-wsl", "polaris-platform-process"]
+ext = []
+responsibilities = ["Re-export platform children; document Windows/Linux/macOS behavioral differences."]
+api = ["pub use polaris_platform_*"]
+
+[[crate]]
+name = "polaris-vcs"
+path = "crates/polaris-vcs"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "Git integration (gix + git CLI fallback): status, diff, worktrees per frame/branch, /rollback and /undo."
+deps = ["polaris-sdk", "polaris-storage-cas"]
+ext = ["gix", "imara-diff", "similar"]
+responsibilities = [
+  "Compute diffs for /diff and the verifier; snapshot pre-edit file versions into CAS.",
+  "Create isolated worktrees for speculative branches; roll back agent actions.",
+  "Run git with autocrlf=false inside sandboxes.",
+]
+api = ["struct Repo", "fn diff()", "fn worktree_add(branch)", "fn rollback(step)"]
+
+[[crate]]
+name = "polaris-kernel-supervisor"
+path = "crates/polaris-kernel/crates/supervisor"
+parent = "polaris-kernel"
+layer = 2
+kind = "lib"
+phase = "P1"
+summary = "OTP-style supervision: one-for-one restart, restart intensity limits, circuit breakers, dead-letter queue, worker process pool."
+deps = ["polaris-sdk", "polaris-log", "polaris-telemetry", "polaris-kernel-bus"]
+ext = ["tokio", "tokio-util", "backon"]
+responsibilities = [
+  "Supervise tokio tasks (JoinError::Panic) and restart them within intensity limits.",
+  "Supervise polaris-worker child processes (one per mode) and restart on crash.",
+  "Trip circuit breakers (N failures / window) and route failed work to the DLQ with a UI notice.",
+]
+api = ["struct Supervisor", "fn spawn_child(spec)", "struct CircuitBreaker"]
+
+[[crate]]
+name = "polaris-kernel-reaper"
+path = "crates/polaris-kernel/crates/reaper"
+parent = "polaris-kernel"
+layer = 2
+kind = "lib"
+phase = "P1"
+summary = "Deterministic deallocation: cancellation tree, process kill-trees via PlatformOps, sandbox/temp teardown, shared-memory cleanup."
+deps = ["polaris-sdk", "polaris-log", "polaris-kernel-bus"]
+ext = ["tokio-util", "tempfile"]
+responsibilities = [
+  "Own the root CancellationToken; cascade cancellation to frames, tools and workers.",
+  "Tear down sandboxes, temp dirs and IPC segments on shutdown, panic and Ctrl+C.",
+  "Report leaked resources (doctor) instead of silently ignoring them.",
+]
+api = ["struct Reaper", "fn child_token()", "async fn shutdown_all()"]
+
+[[crate]]
+name = "polaris-nebius-cloud-token-factory"
+path = "crates/polaris-nebius-cloud/crates/token-factory"
+parent = "polaris-nebius-cloud"
+layer = 2
+kind = "lib"
+phase = "P3"
+summary = "OpenAI-compatible Token Factory client: SSE chat streaming, tool calls, Responses API, embeddings, model list, usage accounting."
+deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-ratelimit", "polaris-telemetry"]
+ext = ["reqwest", "eventsource-stream", "serde", "serde_json", "bytes", "tokio", "secrecy"]
+responsibilities = [
+  "Implement ChatModel and EmbeddingProvider for https://api.tokenfactory.nebius.com/v1/ (also any OpenAI-compatible base, e.g. local Ollama for the P3 walking skeleton).",
+  "Parse SSE frames without per-frame allocation (hot path); surface reasoning/tool-call deltas.",
+  "Record usage (and cached tokens if reported — spike S0-5) to telemetry; feed ratelimit reconciliation.",
+]
+api = ["struct TokenFactoryClient", "impl ChatModel", "impl EmbeddingProvider"]
+
+[[crate]]
+name = "polaris-nebius-cloud-sandboxes"
+path = "crates/polaris-nebius-cloud/crates/sandboxes"
+parent = "polaris-nebius-cloud"
+layer = 2
+kind = "lib"
+phase = "P3"
+summary = "Token Factory Sandboxes (Contree) via the contree-mcp sidecar: run, rsync, images, directory_state_id branching, SWE env resolver."
+deps = ["polaris-sdk", "polaris-config", "polaris-log"]
+ext = ["rmcp", "tokio", "serde_json"]
+responsibilities = [
+  "Supervise `contree-mcp --mode http` and talk to it with an rmcp streamable-HTTP client.",
+  "Implement SandboxBackend (run/upload/download/list_files/read_file/grep) and branching via directory_state_id.",
+  "Resolve SWE-bench / SWE-rebench environments by repo manifest; drive $nebius-branching.",
+]
+api = ["struct ContreeBackend", "impl SandboxBackend", "fn resolve_env(manifest)"]
+
+[[crate]]
+name = "polaris-nebius-cloud-data-lab"
+path = "crates/polaris-nebius-cloud/crates/data-lab"
+parent = "polaris-nebius-cloud"
+layer = 2
+kind = "lib"
+phase = "P6"
+summary = "Trajectory warehouse export (JSONL/ShareGPT) of verified solutions to Nebius Data Lab; fine-tune trigger (/datalab-sync, /datalab-finetune)."
+deps = ["polaris-sdk", "polaris-config", "polaris-storage-cas"]
+ext = ["reqwest", "serde_json"]
+responsibilities = [
+  "Collect (prompt, diff, test run, verdict) trajectories that passed Proof-of-Done.",
+  "Export only PII-masked data; require explicit $nebius-datalab opt-in.",
+  "Trigger post-training jobs once the Data Lab API is verified.",
+]
+api = ["struct TrajectoryExporter", "fn sync()"]
+
+[[crate]]
+name = "polaris-nebius-cloud-ai-cloud"
+path = "crates/polaris-nebius-cloud/crates/ai-cloud"
+parent = "polaris-nebius-cloud"
+layer = 2
+kind = "lib"
+phase = "P6"
+summary = "Nebius AI Cloud integration: remote OpenShell gateway VM lifecycle and cloud bursting for heavy builds."
+deps = ["polaris-sdk", "polaris-config"]
+ext = ["reqwest", "tonic"]
+responsibilities = [
+  "Provision/start/stop a Linux VM hosting a remote OpenShell gateway (execution tier E4).",
+  "Expose connection info (mTLS endpoint) to polaris-openshell-client.",
+]
+api = ["struct AiCloud", "fn ensure_gateway_vm()"]
+
+[[crate]]
+name = "polaris-nebius-cloud"
+path = "crates/polaris-nebius-cloud"
+layer = 2
+kind = "facade"
+phase = "P3"
+summary = "Facade re-exporting Nebius integrations (token-factory, sandboxes, data-lab, ai-cloud)."
+deps = ["polaris-nebius-cloud-token-factory", "polaris-nebius-cloud-sandboxes", "polaris-nebius-cloud-data-lab", "polaris-nebius-cloud-ai-cloud"]
+ext = []
+responsibilities = ["Re-export Nebius children; document the hackathon requirement mapping."]
+api = ["pub use polaris_nebius_cloud_*"]
+
+[[crate]]
+name = "polaris-openshell-client"
+path = "crates/polaris-openshell/crates/client"
+parent = "polaris-openshell"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "openshell-sdk adapter (pinned rev of v0.1.4): sandbox create/exec/stream/destroy, provider attach, driver selection (docker/vm/mxc)."
+deps = ["polaris-sdk", "polaris-config", "polaris-log"]
+ext = ["openshell-sdk", "tokio", "tonic"]
+responsibilities = [
+  "Implement SandboxBackend over a local (WSL2) or remote (Nebius VM) OpenShell gateway.",
+  "Attach the Polaris Token Factory provider profile so sandboxed code never sees keys.",
+  "Fall back to a proto-generated client if spike S0-1 shows openshell-sdk cannot build on windows-msvc.",
+]
+api = ["struct OpenShellBackend", "impl SandboxBackend"]
+
+[[crate]]
+name = "polaris-openshell-policy"
+path = "crates/polaris-openshell/crates/policy"
+parent = "polaris-openshell"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "Generate and lint OpenShell policy YAML (filesystem_policy, landlock, process, network_policies) and provider profiles."
+deps = ["polaris-sdk"]
+ext = ["serde", "serde-saphyr"]
+responsibilities = [
+  "Derive least-privilege policies per frame role and sandbox tier; per-frame resource quotas.",
+  "Emit the custom Token Factory provider profile (endpoint + allowed binaries).",
+  "Validate against the policy schema limits (e.g. <=256 fs paths, no bare-root rw).",
+]
+api = ["fn policy_for(role, tier) -> Policy", "fn provider_profile_token_factory() -> Profile"]
+
+[[crate]]
+name = "polaris-openshell-nemoclaw"
+path = "crates/polaris-openshell/crates/nemoclaw"
+parent = "polaris-openshell"
+layer = 2
+kind = "lib"
+phase = "P2"
+summary = "Polaris NemoClaw-style blueprint (versioned YAML: sandbox image, policies, inference profiles) plus onboarding/doctor in WSL2."
+deps = ["polaris-sdk", "polaris-openshell-policy"]
+ext = ["serde", "serde-saphyr", "blake3"]
+responsibilities = [
+  "Define and verify (digest) the Polaris blueprint; apply it via OpenShell.",
+  "Onboard: install OpenShell in WSL2, build the Polaris sandbox image (with polaris-guest), check prerequisites.",
+  "Use the NemoClaw CLI only if spike S0-3 shows custom agent blueprints are supported.",
+]
+api = ["struct Blueprint", "fn onboard()", "fn doctor() -> Report"]
+
+[[crate]]
+name = "polaris-openshell"
+path = "crates/polaris-openshell"
+layer = 2
+kind = "facade"
+phase = "P2"
+summary = "Facade re-exporting the OpenShell integration (client, policy, nemoclaw)."
+deps = ["polaris-openshell-client", "polaris-openshell-policy", "polaris-openshell-nemoclaw"]
+ext = []
+responsibilities = ["Re-export OpenShell children; document execution tiers E1/E2/E4/E1w."]
+api = ["pub use polaris_openshell_*"]
+
+[[crate]]
+name = "polaris-ingest"
+path = "crates/polaris-ingest"
+layer = 2
+kind = "lib"
+phase = "P5"
+summary = "Document ingest (docx, xlsx/csv, pdf, pptx, html, md, images) with an OCR pair (ocrs pure-Rust, oar-ocr PaddleOCR via ort); runs in the ingest worker."
+deps = ["polaris-sdk", "polaris-log"]
+ext = ["docx-rs", "calamine", "pdf-extract", "pdfium-render", "ocrs", "rten", "oar-ocr", "image", "htmd", "pulldown-cmark", "scraper", "encoding_rs", "infer"]
+responsibilities = [
+  "Implement DocParser per format; normalize to Markdown with tables and provenance (page/line).",
+  "Detect scanned PDF pages and route them to OCR (pdfium render -> ocrs / oar-ocr).",
+  "Run only inside `polaris-worker --mode ingest` so a parser crash cannot take down the kernel.",
+]
+api = ["fn ingest(path) -> Document", "enum DocumentContent"]
+
+[[crate]]
+name = "polaris-search-providers"
+path = "crates/polaris-search/crates/providers"
+parent = "polaris-search"
+layer = 2
+kind = "lib"
+phase = "P5"
+summary = "Web search providers: Tavily (API key) and SearXNG (self-hosted in WSL2, JSON API), plus fetch-and-extract."
+deps = ["polaris-sdk", "polaris-config", "polaris-ratelimit"]
+ext = ["reqwest", "serde_json", "htmd", "url"]
+responsibilities = [
+  "Implement WebSearch for Tavily and SearXNG; both fully integrated (D7).",
+  "Fetch pages under semaphores and rate limits; convert HTML to Markdown.",
+]
+api = ["struct Tavily", "struct Searxng", "impl WebSearch"]
+
+[[crate]]
+name = "polaris-ext-mcp"
+path = "crates/polaris-ext/crates/mcp"
+parent = "polaris-ext"
+layer = 2
+kind = "lib"
+phase = "P7"
+summary = "MCP client (rmcp: stdio child process and streamable HTTP) and tool-registry merge for $mcp servers."
+deps = ["polaris-sdk", "polaris-config"]
+ext = ["rmcp", "tokio", "schemars"]
+responsibilities = [
+  "Connect configured MCP servers; list and invoke tools; normalize schemas into the Polaris tool registry.",
+  "Feed tool descriptions to S1 for per-step pruning (top-k tools per S2 call).",
+]
+api = ["struct McpHub", "fn tools() -> Vec<ToolSpec>"]
+
+[[crate]]
+name = "polaris-ext-skills"
+path = "crates/polaris-ext/crates/skills"
+parent = "polaris-ext"
+layer = 2
+kind = "lib"
+phase = "P7"
+summary = "$skills loader: SKILL.md-format procedural skills mounted into frame context on demand."
+deps = ["polaris-sdk"]
+ext = ["pulldown-cmark", "serde"]
+responsibilities = [
+  "Discover skills (repo .polaris/skills, global ~/.polaris/skills); parse front matter.",
+  "Let S1 select relevant skills per task; inject only selected skill bodies.",
+]
+api = ["struct SkillRegistry", "fn select(task) -> Vec<Skill>"]
+
+[[crate]]
+name = "polaris-ext"
+path = "crates/polaris-ext"
+layer = 2
+kind = "facade"
+phase = "P7"
+summary = "Facade re-exporting extension children (mcp, skills)."
+deps = ["polaris-ext-mcp", "polaris-ext-skills"]
+ext = []
+responsibilities = ["Re-export extension children."]
+api = ["pub use polaris_ext_*"]
+
+[[crate]]
+name = "polaris-browser"
+path = "crates/polaris-browser"
+layer = 2
+kind = "lib"
+phase = "P7"
+summary = "Host-side contract to the in-sandbox browser: navigation/click/type tools, a11y-tree compression, pHash visual diff (/ui-diff)."
+deps = ["polaris-sdk", "polaris-proto"]
+ext = ["image", "image_hasher"]
+responsibilities = [
+  "Expose $browser tools that drive Chromium inside the microVM via polaris-guest.",
+  "Compress DOM to an accessibility-tree outline (hundreds of tokens instead of tens of thousands).",
+  "Compare screenshots perceptually (pHash) against baselines.",
+]
+api = ["struct BrowserSession", "fn a11y_outline()", "fn visual_diff(a, b)"]
+
+[[crate]]
+name = "polaris-devenv-nix"
+path = "crates/polaris-devenv/crates/nix"
+parent = "polaris-devenv"
+layer = 2
+kind = "lib"
+phase = "P8"
+summary = "Nix integration in WSL2/sandboxes: `nix print-dev-env --json`, hermetic env for $env(nix), /nix-flake generation via S2."
+deps = ["polaris-sdk"]
+ext = ["serde_json", "tokio"]
+responsibilities = [
+  "Evaluate flake dev shells and inject env vars into sandbox commands.",
+  "Draft flake.nix with S2 (not S1) and validate it by evaluation.",
+]
+api = ["fn dev_env(workspace) -> EnvMap"]
+
+[[crate]]
+name = "polaris-devenv-docker"
+path = "crates/polaris-devenv/crates/docker"
+parent = "polaris-devenv"
+layer = 2
+kind = "lib"
+phase = "P8"
+summary = "Docker/Podman via bollard (named pipe on Windows): image builds with BuildKit cache mounts, warm container pool, exec."
+deps = ["polaris-sdk"]
+ext = ["bollard", "tokio", "futures"]
+responsibilities = [
+  "Talk to Docker Desktop over the Windows named pipe (no CLI parsing).",
+  "Maintain a warm container pool; never claim CoW reset on unpause (chatlog correction).",
+]
+api = ["struct Docker", "fn exec(container, cmd)"]
+
+[[crate]]
+name = "polaris-devenv-cicd"
+path = "crates/polaris-devenv/crates/cicd"
+parent = "polaris-devenv"
+layer = 2
+kind = "lib"
+phase = "P8"
+summary = "Built-in CI (/ci, /ci-run, $ci(dagger)): Dagger SDK pipelines on BuildKit with persistent cache mounts; feature-gated dagger-sdk."
+deps = ["polaris-sdk"]
+ext = ["dagger-sdk", "tokio"]
+responsibilities = [
+  "Run matrix pipelines (lint, build, test) with cache mounts; feed results to Proof-of-Done.",
+  "Keep dagger-sdk (reqwest 0.11) behind an optional feature so default builds avoid it.",
+]
+api = ["struct Pipeline", "fn run(matrix) -> CiReport"]
+
+[[crate]]
+name = "polaris-devenv"
+path = "crates/polaris-devenv"
+layer = 2
+kind = "facade"
+phase = "P8"
+summary = "Facade re-exporting dev-environment children (nix, docker, cicd)."
+deps = ["polaris-devenv-nix", "polaris-devenv-docker", "polaris-devenv-cicd"]
+ext = []
+responsibilities = ["Re-export devenv children; implement $env(nix|docker|host) selection docs."]
+api = ["pub use polaris_devenv_*"]
+
+[[crate]]
+name = "polaris-system-one-engine"
+path = "crates/polaris-system-one/crates/engine"
+parent = "polaris-system-one"
+layer = 2
+kind = "lib"
+phase = "P4"
+summary = "GLiNER2 inference (GLiNER2.5-Decide + PII-NER) via gliner2-rs on ONNX Runtime (load-dynamic); linked only by polaris-worker."
+deps = ["polaris-sdk", "polaris-proto"]
+ext = ["gliner2-rs", "ort", "tokenizers", "hf-hub", "ndarray"]
+responsibilities = [
+  "Load self-exported ONNX fragments (spike S0-4) with the ORT DLL beside the exe; CPU or CUDA EP on the GTX 1650.",
+  "Run multi-task schemas (Choice / Score / Noul) in one forward pass; return probabilities.",
+  "Fallback: supervised Python gliner2 sidecar if parity (>=99% top-1) fails.",
+]
+api = ["struct GlinerEngine", "fn decide(schema, state) -> Decision"]
+
+[[crate]]
+name = "polaris-system-one-client"
+path = "crates/polaris-system-one/crates/client"
+parent = "polaris-system-one"
+layer = 2
+kind = "lib"
+phase = "P4"
+summary = "Kernel-side System-One client: batching, xxh3+quick_cache result cache, timeouts, worker IPC (tonic over named pipe)."
+deps = ["polaris-sdk", "polaris-proto", "polaris-storage-cache"]
+ext = ["tonic", "tokio", "quick_cache", "xxhash-rust"]
+responsibilities = [
+  "Implement the sdk DecisionEngine trait against the s1 worker.",
+  "Batch concurrent questions; dirty-check inputs with xxh3 to skip repeated inference.",
+  "Enforce per-consumer timeouts so fail-open/fail-closed policies are deterministic.",
+]
+api = ["struct S1Client", "impl DecisionEngine"]
+
+[[crate]]
+name = "polaris-system-one-nano"
+path = "crates/polaris-system-one/crates/nano"
+parent = "polaris-system-one"
+layer = 2
+kind = "lib"
+phase = "P8"
+summary = "Tier-0 Cactus Needle 3 bridge (sidecar engine): JSON argument filling, local embeddings, chaos-input generation; gated by spike S0-6."
+deps = ["polaris-sdk", "polaris-proto"]
+ext = ["tokio", "serde_json"]
+responsibilities = [
+  "Supervise the Needle engine (`--serve`) or Python package, on Windows or in WSL2.",
+  "Provide $needle(on) argument filling and EmbeddingProvider for /search-local.",
+]
+api = ["struct NeedleBridge", "impl EmbeddingProvider"]
+
+# -----------------------------------------------------------------------------
+# L3 — Domain
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-security-pii"
+path = "crates/polaris-security/crates/pii"
+parent = "polaris-security"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "Reversible PII vault: DFA masks + entropy + S1 PII-NER (via DecisionEngine), placeholder tokens, unmask only at the sandbox boundary."
+deps = ["polaris-sdk", "polaris-security-automata"]
+ext = ["zeroize", "secrecy"]
+responsibilities = [
+  "Mask emails, IPs, keys, names and internal identifiers before any cloud call (fail closed to DFA+entropy).",
+  "Store forward/reverse maps in memory (and sealed on disk for resume); unmask only in sandbox execution.",
+  "Report counts of sanitized items per request.",
+]
+api = ["struct PiiVault", "fn mask(&str) -> Masked", "fn unmask_for_sandbox(&str)"]
+
+[[crate]]
+name = "polaris-security-rules"
+path = "crates/polaris-security/crates/rules"
+parent = "polaris-security"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "Security rule library: ast-grep YAML packs + DFA patterns + CWE map (memory/concurrency, injection, path traversal, secrets, supply chain, CUDA)."
+deps = ["polaris-sdk", "polaris-security-automata", "polaris-code-intel"]
+ext = ["ast-grep-core", "ast-grep-config", "serde", "serde-saphyr"]
+responsibilities = [
+  "Ship versioned rule packs as data; evaluate them on AST diffs.",
+  "Tag findings with CWE ids and severities; let S1 arbitrate disputed matches.",
+]
+api = ["struct RulePack", "fn audit(diff) -> Vec<Finding>"]
+
+[[crate]]
+name = "polaris-security"
+path = "crates/polaris-security"
+layer = 3
+kind = "facade"
+phase = "P2"
+summary = "Facade re-exporting security children (capability, automata, secrets, pii, rules)."
+deps = ["polaris-security-capability", "polaris-security-automata", "polaris-security-secrets", "polaris-security-pii", "polaris-security-rules"]
+ext = []
+responsibilities = ["Re-export security children; host the threat model documentation."]
+api = ["pub use polaris_security_*"]
+
+[[crate]]
+name = "polaris-search-sift"
+path = "crates/polaris-search/crates/sift"
+parent = "polaris-search"
+layer = 3
+kind = "lib"
+phase = "P5"
+summary = "Speculative multi-source search race (NVIDIA docs, $rag, $websearch) with S1 relevance sifting and early abort."
+deps = ["polaris-sdk", "polaris-search-providers"]
+ext = ["tokio"]
+responsibilities = [
+  "Race sources under named semaphores; validate the first hit with S1; abort the rest (JoinSet).",
+  "Drop boilerplate chunks and keep facts with provenance (\"pristine context\").",
+]
+api = ["fn race(query) -> Option<Hit>", "fn sift(chunks) -> Distilled"]
+
+[[crate]]
+name = "polaris-search"
+path = "crates/polaris-search"
+layer = 3
+kind = "facade"
+phase = "P5"
+summary = "Facade re-exporting search children (providers, sift)."
+deps = ["polaris-search-providers", "polaris-search-sift"]
+ext = []
+responsibilities = ["Re-export search children."]
+api = ["pub use polaris_search_*"]
+
+[[crate]]
+name = "polaris-system-one-schemas"
+path = "crates/polaris-system-one/crates/schemas"
+parent = "polaris-system-one"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "Decision schemas as data (intent, effort 1-5, tool relevance, safety, congruence, PII) with calibrated thresholds and failure modes."
+deps = ["polaris-sdk"]
+ext = ["serde", "toml"]
+responsibilities = [
+  "Version every schema and its threshold; record calibration provenance (fixture set, precision target).",
+  "Declare fail-open vs fail-closed behavior per consumer.",
+]
+api = ["struct Schema", "fn load_builtin() -> SchemaSet"]
+
+[[crate]]
+name = "polaris-system-one-router"
+path = "crates/polaris-system-one/crates/router"
+parent = "polaris-system-one"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "S1 routing: intent classification, effort scoring (1-5 -> model tier), tool pruning (top-k), file triage, sandbox tier routing ($sandbox(auto))."
+deps = ["polaris-sdk", "polaris-system-one-schemas"]
+ext = []
+responsibilities = [
+  "Decide trivial vs S2 work; map effort to Nemotron tiers (respecting $subagent-models).",
+  "Prune MCP/builtin tools per step; rank candidate files for a query.",
+  "Route execution to E1/E2/E3/E4 under $sandbox(auto).",
+]
+api = ["fn route(input) -> Route", "fn prune_tools(step, tools) -> Vec<ToolId>"]
+
+[[crate]]
+name = "polaris-system-one-verifier"
+path = "crates/polaris-system-one/crates/verifier"
+parent = "polaris-system-one"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "S1 verification: safety gate, pre-flight (test tampering, secrets, sandbox escapes), post-flight (tautological tests), diff arbiter for concurrent edits."
+deps = ["polaris-sdk", "polaris-system-one-schemas", "polaris-security-automata", "polaris-code-intel"]
+ext = []
+responsibilities = [
+  "Block deleted/neutralized assertions, #[ignore]/skip insertions, credential leaks (fail closed).",
+  "Reject tautological tests after green runs; compress compiler diagnostics for S2.",
+  "Arbitrate concurrent patches (orthogonal -> AST merge; conflicting -> supervisor).",
+]
+api = ["fn preflight(diff) -> Report", "fn postflight(run) -> Report", "fn arbitrate(a, b) -> MergeOutcome"]
+
+[[crate]]
+name = "polaris-system-one-watchdog"
+path = "crates/polaris-system-one/crates/watchdog"
+parent = "polaris-system-one"
+layer = 3
+kind = "lib"
+phase = "P4"
+summary = "Meta-cognitive watchdog over context frames: goal drift, semantic loops (xxh3 window), role boundary, context fatigue."
+deps = ["polaris-sdk", "polaris-system-one-schemas"]
+ext = ["xxhash-rust"]
+responsibilities = [
+  "Inspect each proposed step before S2 (fail open on timeout) and inject corrective anchors.",
+  "Detect loops via a sliding window of step fingerprints; mark disproven hypotheses.",
+]
+api = ["fn inspect(frame, thought) -> HealthVerdict"]
+
+[[crate]]
+name = "polaris-system-one"
+path = "crates/polaris-system-one"
+layer = 3
+kind = "facade"
+phase = "P4"
+summary = "Facade re-exporting the kernel-side System-One children (client, schemas, router, verifier, watchdog); engine and nano are linked only by polaris-worker (ADR-008)."
+deps = ["polaris-system-one-client", "polaris-system-one-schemas", "polaris-system-one-router", "polaris-system-one-verifier", "polaris-system-one-watchdog"]
+ext = []
+responsibilities = ["Re-export kernel-side S1 children; document the System One primitives and calibration process.", "Never depend on polaris-system-one-engine or polaris-system-one-nano: ONNX Runtime and native engines live only in polaris-worker processes."]
+api = ["pub use polaris_system_one_*"]
+
+[[crate]]
+name = "polaris-models"
+path = "crates/polaris-models"
+layer = 3
+kind = "lib"
+phase = "P3"
+summary = "Model registry and lifecycle: Token Factory model ids, effort tiers, $subagent-models mapping, local model lease/idle-evict/force-evict."
+deps = ["polaris-sdk", "polaris-config"]
+ext = ["serde", "tokio"]
+responsibilities = [
+  "Hold verified model ids (Nemotron 3 Nano/Super/Ultra, 3.5 Lightning, 3.5 Super VL, Qwen3-Embedding-8B).",
+  "Map effort (low..max or 1..5) to models; apply cascade drafting for $nebius-speculative.",
+  "Manage local model slots: lazy load, RAII leases, idle TTL eviction, force-evict before heavy builds.",
+]
+api = ["struct ModelRegistry", "fn model_for(effort) -> ModelId", "struct EvictableSlot"]
+
+[[crate]]
+name = "polaris-tools-builtin"
+path = "crates/polaris-tools/crates/builtin"
+parent = "polaris-tools"
+layer = 3
+kind = "lib"
+phase = "P1"
+summary = "Built-in agent tools: read/write/edit/apply-patch, grep, glob, sandboxed shell, git, fetch, json/regex query, polaris_expand/polaris_recall."
+deps = ["polaris-sdk", "polaris-code-intel", "polaris-security-automata"]
+ext = ["ignore", "globset", "regex", "serde_json", "schemars"]
+responsibilities = [
+  "Define tool schemas (JSON Schema) and typed handlers; read-only tools first (E0), writes through leases.",
+  "Validate user regexes via the HIR guard; never execute shell outside a sandbox backend.",
+]
+api = ["struct ToolRegistry", "trait Tool"]
+
+[[crate]]
+name = "polaris-tools-math"
+path = "crates/polaris-tools/crates/math"
+parent = "polaris-tools"
+layer = 3
+kind = "lib"
+phase = "P3"
+summary = "Deterministic math tools: exact decimal calculator, expression evaluation, interpolation (linear/bilinear/cubic/Catmull-Rom/Bezier), statistics, GPU calculus."
+deps = ["polaris-sdk"]
+ext = ["evalexpr", "rust_decimal", "splines", "statrs"]
+responsibilities = [
+  "Give agents exact arithmetic (rust_decimal) instead of model guesses.",
+  "Provide interpolation and statistics with checked arithmetic.",
+  "Provide CUDA occupancy and memory-bandwidth calculators from cited NVIDIA tables (GB/s, not TB/s).",
+]
+api = ["fn calc(expr) -> Decimal", "fn interpolate(points, kind, x)", "fn occupancy(cc, block)"]
+
+[[crate]]
+name = "polaris-tools-rtk"
+path = "crates/polaris-tools/crates/rtk"
+parent = "polaris-tools"
+layer = 3
+kind = "lib"
+phase = "P1"
+summary = "RTK diagnostic engine (port of @prime/tmp/setup rtk-engine): filter compiler/linter streams and keep an atomic issue ledger (.polaris/issues.md)."
+deps = ["polaris-sdk", "polaris-storage-cas"]
+ext = ["serde_json", "blake3", "backon", "jiff"]
+responsibilities = [
+  "Auto-detect cargo JSON vs text; drop registry notes, macro spam and duplicate spans; keep first-party errors.",
+  "Reconcile the ledger: stable message-derived ids, open/closed with timestamps, tmp-then-rename writes.",
+  "Exit status 0 when no issue is open, 1 otherwise; ledger honesty note (reflects last piped stream).",
+]
+api = ["fn filter(stream) -> Diagnostics", "fn reconcile(ledger, diagnostics) -> LedgerSummary"]
+
+[[crate]]
+name = "polaris-tools"
+path = "crates/polaris-tools"
+layer = 3
+kind = "facade"
+phase = "P1"
+summary = "Facade re-exporting tool children (builtin, math, rtk)."
+deps = ["polaris-tools-builtin", "polaris-tools-math", "polaris-tools-rtk"]
+ext = []
+responsibilities = ["Re-export tool children; publish the tool catalog."]
+api = ["pub use polaris_tools_*"]
+
+[[crate]]
+name = "polaris-nvidia-docs"
+path = "crates/polaris-nvidia-docs"
+layer = 3
+kind = "lib"
+phase = "P5"
+summary = "NVIDIA knowledge engine: docs MCP / llms.txt + .md / HTML ingestion, FTS+vector index, $nvidia(auto) profiles, /nv-profile and /nv-verify advisor packs."
+deps = ["polaris-sdk", "polaris-storage-registry", "polaris-storage-vector", "polaris-code-intel", "polaris-ratelimit"]
+ext = ["reqwest", "htmd", "pulldown-cmark", "url"]
+responsibilities = [
+  "Ingest CUDA, PTX, TensorRT-LLM, Triton, NCCL, OpenShell, NemoClaw, Nemotron docs incrementally (ETag/Last-Modified).",
+  "Detect stacks and hardware ($nvidia(auto)): local GTX 1650 sm_75 vs target Nebius H100 sm_90 etc.",
+  "Ship CUDA advisor rule packs (coalescing, bank conflicts, divergence, cudaGetLastError, grid bounds).",
+  "Build the offline seed with xtask as a release artifact (not in git); respect docs licensing.",
+]
+api = ["struct NvidiaKnowledge", "fn query(topic, q)", "fn auto_profile(workspace, prompt)"]
+
+[[crate]]
+name = "polaris-hacker"
+path = "crates/polaris-hacker"
+layer = 3
+kind = "lib"
+phase = "P7"
+summary = "Zero-token adversary (/hack, /redteam): static AST/DFA rules, boundary fuzzing, dynamic stress (TSan/proptest) in microVM sandboxes."
+deps = ["polaris-sdk", "polaris-code-intel", "polaris-security-automata"]
+ext = ["proptest"]
+responsibilities = [
+  "Find blocking calls in async, O(N^2) hot loops, unsafe misuse, CUDA barrier/bank issues statically.",
+  "Generate boundary inputs (and Needle 3 inputs when available); run stress in the vm-driver sandbox.",
+  "Escalate to S2 only with a reproduced crash/race PoC; report tokens_used = 0 honestly measured.",
+]
+api = ["fn audit(diff, backend) -> AuditReport"]
+
+# -----------------------------------------------------------------------------
+# L4 — Runtime
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-runtime-frames"
+path = "crates/polaris-runtime/crates/frames"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P3"
+summary = "Agents as context frames over one S2 client and one S1 engine: roles, frame stack, attenuated capabilities, resource quotas."
+deps = ["polaris-sdk", "polaris-security-capability", "polaris-models"]
+ext = ["tokio", "serde"]
+responsibilities = [
+  "Create child frames with attenuated Biscuit tokens and sandbox quotas; track step counts and history CIDs.",
+  "Implement the agent loop step (assemble -> S2 -> tools -> verify) per frame.",
+]
+api = ["struct AgentContextFrame", "enum AgentRole", "fn spawn_child(role, scope)"]
+
+[[crate]]
+name = "polaris-runtime-context"
+path = "crates/polaris-runtime/crates/context"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P3"
+summary = "Lossless context virtualization: stable prefix, epistemic scratchpad, sliding window, §ref folding, polaris_expand/recall."
+deps = ["polaris-sdk", "polaris-storage-cas", "polaris-code-intel", "polaris-tools-rtk"]
+ext = ["blake3"]
+responsibilities = [
+  "Assemble prompts with a byte-stable prefix (system + tools + versioned repo map) for provider caching.",
+  "Fold large tool outputs into CAS with short refs; never destructively summarize facts.",
+  "Maintain the epistemic scratchpad after the stable prefix (invariants, proven facts, disproven hypotheses, blockers).",
+]
+api = ["struct ContextAssembler", "fn fold(tool, output) -> Folded", "struct EpistemicScratchpad"]
+
+[[crate]]
+name = "polaris-runtime-dag"
+path = "crates/polaris-runtime/crates/dag"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P7"
+summary = "DAG task scheduler with named semaphore pools, speculative races and structured cancellation (/parallel-dag, $concurrency)."
+deps = ["polaris-sdk"]
+ext = ["tokio", "tokio-util"]
+responsibilities = [
+  "Run ready nodes in parallel exactly once (started-set tracked — chatlog bug fixed).",
+  "Enforce named pools (inference, web, docs, disk, s1, sandbox) configurable via $concurrency.",
+]
+api = ["struct Dag", "async fn run(dag)"]
+
+[[crate]]
+name = "polaris-runtime-leases"
+path = "crates/polaris-runtime/crates/leases"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P2"
+summary = "Anti-thrashing file and AST-scope leases with FIFO queues, OCC on base blake3, invalidation notices and a cycle breaker."
+deps = ["polaris-sdk", "polaris-code-intel"]
+ext = ["tokio", "dashmap"]
+responsibilities = [
+  "Grant exclusive-file or AST-scope leases; queue waiters; notify on fresh diffs.",
+  "Reject writes whose base hash changed (optimistic concurrency).",
+  "Revoke write rights when a file churns more than N times in one subtask; escalate to S2.",
+]
+api = ["struct LeaseManager", "async fn acquire(agent, path, scope) -> LeaseGuard"]
+
+[[crate]]
+name = "polaris-runtime-guards"
+path = "crates/polaris-runtime/crates/guards"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P2"
+summary = "Native re-implementations of selected Claude Code mods: Blast Radius (shell + AST) and Proof-of-Done gate."
+deps = ["polaris-sdk", "polaris-code-intel", "polaris-tools-rtk"]
+ext = ["globset"]
+responsibilities = [
+  "Estimate files deleted/overwritten by a command and AST call sites affected by a signature change; require approval when critical.",
+  "Block task completion until build+tests pass in a sandbox and S1 confirms no assertion tampering.",
+]
+api = ["fn blast_radius(cmd) -> BlastReport", "fn proof_of_done(run) -> DoneVerdict"]
+
+[[crate]]
+name = "polaris-runtime-research"
+path = "crates/polaris-runtime/crates/research"
+parent = "polaris-runtime"
+layer = 4
+kind = "lib"
+phase = "P7"
+summary = "/research mode: Karpathy autoresearch loop (program.md goal+metric, fixed-budget experiments, keep/revert) plus Polaris evidence ledger and adversarial critique."
+deps = ["polaris-sdk", "polaris-runtime-frames", "polaris-runtime-context"]
+ext = ["serde", "jiff"]
+responsibilities = [
+  "Run hypothesis -> experiment (sandbox, fixed budget) -> metric -> keep/revert (git) -> log, indefinitely within budgets.",
+  "Maintain an evidence ledger (every claim cites URL/PDF line/AST symbol/test run); checkpoint for /research resume.",
+  "Produce /research status and /research report.",
+]
+api = ["struct ResearchLoop", "fn step()", "fn report() -> Markdown"]
+
+[[crate]]
+name = "polaris-runtime"
+path = "crates/polaris-runtime"
+layer = 4
+kind = "facade"
+phase = "P2"
+summary = "Facade re-exporting runtime children (frames, context, dag, leases, guards, research)."
+deps = ["polaris-runtime-frames", "polaris-runtime-context", "polaris-runtime-dag", "polaris-runtime-leases", "polaris-runtime-guards", "polaris-runtime-research"]
+ext = []
+responsibilities = ["Re-export runtime children; document the agent loop."]
+api = ["pub use polaris_runtime_*"]
+
+[[crate]]
+name = "polaris-kernel-operators"
+path = "crates/polaris-kernel/crates/operators"
+parent = "polaris-kernel"
+layer = 4
+kind = "lib"
+phase = "P3"
+summary = "Functional operator pipeline: pipe / fork_branch / fold / assert_guard combinators and generic ops (SanitizePii, S1Triage, RateLimit, ...)."
+deps = ["polaris-sdk", "polaris-security-pii", "polaris-system-one-router", "polaris-ratelimit", "polaris-kernel-directives"]
+ext = ["tokio"]
+responsibilities = [
+  "Compose request handling from pure, testable operators implementing the sdk FunctionalOperator trait.",
+  "Encode fail-open/closed policies per operator.",
+  "Own ReflectOp (Auto-Reflect / Rule Distiller): detect project-rule declarations via S1, persist invariants (eventlog) and RULES.md; runtime-context mounts them into the scratchpad.",
+]
+api = ["struct Pipeline<T>", "fn pipe", "fn fork_branch", "fn assert_guard"]
+
+[[crate]]
+name = "polaris-kernel-verifier"
+path = "crates/polaris-kernel/crates/verifier"
+parent = "polaris-kernel"
+layer = 4
+kind = "lib"
+phase = "P3"
+summary = "HybridMutationVerifier: Biscuit Datalog authorization + AST metric calculus + S1 semantic congruence for every proposed mutation."
+deps = ["polaris-sdk", "polaris-security-capability", "polaris-code-intel", "polaris-system-one-verifier"]
+ext = []
+responsibilities = [
+  "Verify signature chain and Datalog checks (resource, churn, TTL, no-unsafe, diff blake3).",
+  "Reject on churn/complexity limits deterministically before any model call.",
+  "Ask S1 whether the diff serves the stated task intent.",
+]
+api = ["fn verify(cmd) -> VerificationDecision"]
+
+# -----------------------------------------------------------------------------
+# L5 — Composition root & RPC
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-kernel"
+path = "crates/polaris-kernel"
+layer = 5
+kind = "facade"
+phase = "P1"
+summary = "Composition root: wires Backends, session typestate, orchestrator, projections; re-exports kernel children."
+deps = [
+  "polaris-sdk", "polaris-proto", "polaris-config", "polaris-log", "polaris-telemetry", "polaris-ratelimit",
+  "polaris-kernel-bus", "polaris-kernel-directives", "polaris-kernel-supervisor", "polaris-kernel-reaper",
+  "polaris-kernel-operators", "polaris-kernel-verifier",
+  "polaris-storage", "polaris-security", "polaris-platform", "polaris-vcs", "polaris-openshell",
+  "polaris-nebius-cloud", "polaris-system-one", "polaris-models", "polaris-tools", "polaris-search",
+  "polaris-ext", "polaris-nvidia-docs", "polaris-browser", "polaris-devenv",
+  "polaris-hacker", "polaris-runtime",
+]
+ext = ["tokio", "tracing"]
+responsibilities = [
+  "Instantiate concrete backends (enum dispatch for runtime-selected ones) and inject traits into domain crates.",
+  "Reach document ingest and S1 inference only through worker processes (sdk DocParser/DecisionEngine traits over polaris-proto); never link polaris-ingest or polaris-system-one-engine.",
+  "Model sessions as typestate (Created -> Configured -> Running -> Paused -> Archived).",
+  "Run projections (session state, UI view models, registry) from the event log.",
+]
+api = ["struct Kernel<B: Backends>", "fn start(config) -> KernelHandle"]
+
+[[crate]]
+name = "polaris-rpc"
+path = "crates/polaris-rpc"
+layer = 5
+kind = "lib"
+phase = "P9"
+summary = "tonic server/client for the kernel service over Windows named pipes (token-authenticated) and TCP+mTLS for remote daemons."
+deps = ["polaris-sdk", "polaris-proto", "polaris-security-capability"]
+ext = ["tonic", "tokio", "rustls", "tokio-rustls", "rcgen", "hyper-util", "tower"]
+responsibilities = [
+  "Implement named-pipe connector/acceptor (pre-create next instance) and mTLS transport.",
+  "Authenticate clients with Biscuit tokens on every transport (default pipe DACL is too broad).",
+  "Delegate to the sdk KernelApi trait (never depends on the kernel crate).",
+]
+api = ["fn serve(KernelApi, Transport)", "fn connect(Transport) -> KernelClient"]
+
+# -----------------------------------------------------------------------------
+# L6 — UI
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-ui-model"
+path = "crates/polaris-ui/crates/model"
+parent = "polaris-ui"
+layer = 6
+kind = "lib"
+phase = "P1"
+summary = "Shared UI view models and reducers over the event stream, plus design tokens from the demo (#76B900 accent, palette, typography)."
+deps = ["polaris-sdk"]
+ext = ["serde"]
+responsibilities = [
+  "Reduce events into view state (conversation, tools, goal line, HUD, sessions) shared by all frontends.",
+  "Own theme tokens and command/directive metadata used by completion menus.",
+]
+api = ["struct ViewState", "fn reduce(&mut ViewState, &Event)", "mod tokens"]
+
+[[crate]]
+name = "polaris-ui-cli"
+path = "crates/polaris-ui/crates/cli"
+parent = "polaris-ui"
+layer = 6
+kind = "lib"
+phase = "P1"
+summary = "ratatui widgets and screens: composer, completion, conversation, tools, bottom sheets, HUD, stats; Windows input handling."
+deps = ["polaris-sdk", "polaris-ui-model"]
+ext = ["ratatui", "crossterm", "ratatui-textarea", "syntect", "two-face", "ansi-to-tui", "arboard", "unicode-width", "unicode-segmentation"]
+responsibilities = [
+  "Rebuild the demo UX (design only): composer with paste chips/history, completion wheel, $/ /@ coloring, keymap.",
+  "Hide the cursor during repaint; support --dump WxH snapshots for insta tests.",
+  "Avoid unsafe Win32 input code (Alt+Enter / Ctrl+J fallbacks first; spike S0-10).",
+]
+api = ["fn run_tui(ViewState, EventStream)", "struct Composer"]
+
+[[crate]]
+name = "polaris-ui-gui"
+path = "crates/polaris-ui/crates/gui"
+parent = "polaris-ui"
+layer = 6
+kind = "lib"
+phase = "P9"
+summary = "Slint components and controllers (desktop now, mobile v2) bound to ui-model view state."
+deps = ["polaris-sdk", "polaris-ui-model"]
+ext = ["slint", "slint-build"]
+responsibilities = [
+  "Implement .slint views (chat, sessions, diff viewer, HUD) with femtovg/software renderers.",
+  "Keep generated Slint code isolated from hand-written crates.",
+]
+api = ["fn mount(window, ViewState)"]
+
+[[crate]]
+name = "polaris-ui-web"
+path = "crates/polaris-ui/crates/web"
+parent = "polaris-ui"
+layer = 6
+kind = "lib"
+phase = "P9"
+summary = "Leptos components (SSR + hydrate), the approved welcome page design, PWA manifest and service worker assets."
+deps = ["polaris-sdk", "polaris-ui-model"]
+ext = ["leptos", "leptos_router", "leptos_meta", "wasm-bindgen"]
+responsibilities = [
+  "Rebuild the approved welcome page (aurora/stars atmosphere, composer pill, model popover) as Leptos components.",
+  "Provide streaming chat, sessions and usage views; service worker for offline shell caching.",
+]
+api = ["fn App()", "fn WelcomePage()"]
+
+[[crate]]
+name = "polaris-ui"
+path = "crates/polaris-ui"
+layer = 6
+kind = "facade"
+phase = "P1"
+summary = "Facade re-exporting UI children (model, cli, gui, web)."
+deps = ["polaris-ui-model", "polaris-ui-cli", "polaris-ui-gui", "polaris-ui-web"]
+ext = []
+responsibilities = ["Re-export UI children; document design tokens and UX rules."]
+api = ["pub use polaris_ui_*"]
+
+# -----------------------------------------------------------------------------
+# L8 — Tests, spikes, tooling
+# -----------------------------------------------------------------------------
+
+[[crate]]
+name = "polaris-tests"
+path = "tests"
+layer = 8
+kind = "test"
+phase = "P0"
+summary = "Cross-crate test package: common helpers (lib), fixtures/ data, suites in tests/tests/ (smoke, e2e, contract, security, load, scalability, stress)."
+deps = ["polaris-sdk", "polaris-config", "polaris-storage", "polaris-kernel", "polaris-ui-model"]
+ext = ["tokio", "tempfile", "wiremock", "proptest", "insta", "rstest", "assert_cmd", "predicates", "hdrhistogram", "dhat", "portable-pty", "tonic", "serde", "jsonschema", "reqwest"]
+responsibilities = [
+  "Provide temp workspaces, fake clock, wiremock Token Factory (synthetic SSE until recorded live), tracing capture, dhat-based zero-allocation helpers (ADR-003).",
+  "Generate hostile fixtures (reserved names, case clashes, fake keys) at test time — never commit them.",
+  "Gate heavy suites (load, scalability, stress) behind nextest profiles / a `heavy` feature.",
+]
+api = ["mod common", "fn temp_workspace()", "fn assert_zero_alloc(...)"]
+
+[[crate]]
+name = "polaris-spike-ratelimit"
+path = "tests/spike/ratelimit"
+layer = 8
+kind = "spike"
+phase = "P3"
+summary = "Spike (burst) tests for the rate limiter: 50 sub-agents at once, 429 storms, Retry-After floods."
+deps = ["polaris-ratelimit"]
+ext = ["tokio", "hdrhistogram"]
+responsibilities = ["Assert priority ordering and bounded latency under sudden load spikes."]
+api = []
+
+[[crate]]
+name = "polaris-spike-bus"
+path = "tests/spike/bus"
+layer = 8
+kind = "spike"
+phase = "P1"
+summary = "Spike tests for the event bus: event floods, slow subscribers, UI client floods."
+deps = ["polaris-kernel-bus"]
+ext = ["tokio", "hdrhistogram"]
+responsibilities = ["Assert backpressure, no unbounded memory growth, no lost commands under bursts."]
+api = []
+
+[[crate]]
+name = "polaris-spike-s1"
+path = "tests/spike/s1"
+layer = 8
+kind = "spike"
+phase = "P4"
+summary = "Spike tests for System One: decision bursts, worker restart under load, cache stampedes."
+deps = ["polaris-system-one-client"]
+ext = ["tokio", "hdrhistogram"]
+responsibilities = ["Assert batching, fail-open/closed timeouts and recovery after worker crash during bursts."]
+api = []
+
+[[crate]]
+name = "polaris-spike-sandbox"
+path = "tests/spike/sandbox"
+layer = 8
+kind = "spike"
+phase = "P2"
+summary = "Spike tests for sandboxes: concurrent create/exec/destroy bursts, git-checkout file-event floods during sync."
+deps = ["polaris-openshell"]
+ext = ["tokio"]
+responsibilities = ["Assert semaphore limits, reaper cleanup and sync consistency under bursts (requires WSL2 gateway)."]
+api = []
+
+[[crate]]
+name = "polaris-spike-web"
+path = "tests/spike/web"
+layer = 8
+kind = "spike"
+phase = "P9"
+summary = "Spike tests for the web/daemon surface: client connection floods and SSE fan-out bursts."
+deps = ["polaris-ui-web"]
+ext = ["tokio", "hdrhistogram"]
+responsibilities = ["Assert bounded latency and memory for sudden client spikes."]
+api = []
+
+[[crate]]
+name = "xtask"
+path = "xtask"
+layer = 8
+kind = "xtask"
+phase = "P0"
+summary = "Repository automation (Rust, P0): check-members, check-layers, lint, fixture regeneration (Python gliner2 goldens), docs seed build, test matrix."
+deps = []
+ext = ["clap", "serde", "serde_json", "toml", "jsonschema", "reqwest"]
+responsibilities = [
+  "Port @prime/tools/workspace.py checks to Rust once implemented.",
+  "Run the prompt.md lint list on demand (never in Cargo.toml — D10).",
+  "Implement the JSON-descriptor -> test scaffold generator if the external utility is not provided.",
+]
+api = ["cargo xtask <subcommand> (alias added when main exists)"]
+
+# =============================================================================
+# External dependencies — versions VERIFIED on crates.io 2026-10-20.
+# `features` are root-level baseline features; members opt into more.
+# `probe = false` excludes an entry from the resolution probe (v2 / commented).
+# =============================================================================
+
+[[ext]]
+name = "tokio"
+version = "1.54.0"
+features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "net", "fs", "process", "signal"]
+group = "async"
+[[ext]]
+name = "tokio-util"
+version = "0.7.20"
+group = "async"
+[[ext]]
+name = "tokio-stream"
+version = "0.1.19"
+group = "async"
+[[ext]]
+name = "futures"
+version = "0.3.34"
+group = "async"
+[[ext]]
+name = "bytes"
+version = "1.12.1"
+group = "async"
+
+[[ext]]
+name = "thiserror"
+version = "2.0.21"
+group = "serde"
+[[ext]]
+name = "serde"
+version = "1.0.229"
+features = ["derive"]
+group = "serde"
+[[ext]]
+name = "serde_json"
+version = "1.0.154"
+group = "serde"
+[[ext]]
+name = "toml"
+version = "1.1.8"
+group = "serde"
+[[ext]]
+name = "serde-saphyr"
+version = "2.0.0"
+group = "serde"
+[[ext]]
+name = "postcard"
+version = "1.1.3"
+features = ["use-std"]
+group = "serde"
+[[ext]]
+name = "zerocopy"
+version = "0.8.63"
+features = ["derive"]
+group = "serde"
+[[ext]]
+name = "bytemuck"
+version = "1.25.2"
+features = ["derive"]
+group = "serde"
+
+[[ext]]
+name = "reqwest"
+version = "0.13.5"
+default_features = false
+features = ["rustls", "http2", "json", "stream", "charset"]
+group = "net"
+[[ext]]
+name = "hyper"
+version = "1.12.0"
+features = ["http1", "http2", "client", "server"]
+group = "net"
+[[ext]]
+name = "hyper-util"
+version = "0.1.21"
+features = ["tokio"]
+group = "net"
+[[ext]]
+name = "http"
+version = "1.5.0"
+group = "net"
+[[ext]]
+name = "axum"
+version = "0.8.9"
+features = ["ws", "macros"]
+group = "net"
+[[ext]]
+name = "axum-extra"
+version = "0.12.6"
+group = "net"
+[[ext]]
+name = "tower"
+version = "0.5.3"
+features = ["util", "timeout", "limit"]
+group = "net"
+[[ext]]
+name = "tower-http"
+version = "0.6.11"
+features = ["trace", "cors", "fs", "compression-br", "compression-zstd"]
+group = "net"
+[[ext]]
+name = "tokio-tungstenite"
+version = "0.26.2"
+group = "net"
+[[ext]]
+name = "rustls"
+version = "0.23.46"
+default_features = false
+features = ["aws_lc_rs", "std", "tls12", "logging"]
+group = "net"
+[[ext]]
+name = "tokio-rustls"
+version = "0.26.6"
+default_features = false
+features = ["aws_lc_rs", "tls12", "logging"]
+group = "net"
+[[ext]]
+name = "rcgen"
+version = "0.14.10"
+default_features = false
+features = ["crypto", "pem", "aws_lc_rs"]
+group = "net"
+[[ext]]
+name = "eventsource-stream"
+version = "0.2.3"
+group = "net"
+[[ext]]
+name = "url"
+version = "2.5.8"
+group = "net"
+
+[[ext]]
+name = "tonic"
+version = "0.14.6"
+default_features = false
+features = ["transport", "router", "codegen", "tls-aws-lc", "tls-native-roots"]
+group = "grpc"
+[[ext]]
+name = "tonic-prost"
+version = "0.14.6"
+group = "grpc"
+[[ext]]
+name = "tonic-prost-build"
+version = "0.14.6"
+group = "grpc"
+[[ext]]
+name = "prost"
+version = "0.14.4"
+group = "grpc"
+[[ext]]
+name = "prost-types"
+version = "0.14.4"
+group = "grpc"
+[[ext]]
+name = "protoc-bin-vendored"
+version = "3.3.0"
+group = "grpc"
+[[ext]]
+name = "openshell-sdk"
+git = "https://github.com/NVIDIA/OpenShell"
+rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1"
+group = "grpc"
+note = "Tag v0.1.4 (2026-10-13), pinned by commit rev."
+
+[[ext]]
+name = "iceoryx2"
+version = "0.10.0"
+group = "ipc"
+
+[[ext]]
+name = "tracing"
+version = "0.1.44"
+group = "log"
+[[ext]]
+name = "tracing-subscriber"
+version = "0.3.23"
+features = ["env-filter", "json", "registry", "fmt", "ansi", "std"]
+group = "log"
+[[ext]]
+name = "spdlog-rs"
+version = "0.5.3"
+group = "log"
+
+[[ext]]
+name = "regex"
+version = "1.13.1"
+group = "regex"
+[[ext]]
+name = "regex-automata"
+version = "0.4.18"
+default_features = false
+features = ["std", "syntax", "perf", "unicode", "dfa-build", "dfa-search", "hybrid", "meta"]
+group = "regex"
+note = "User-pinned version. Chatlog features `dfa-dense` / `hybrid-search` do not exist in 0.4.18."
+[[ext]]
+name = "regex-syntax"
+version = "0.8.11"
+default_features = false
+features = ["std", "unicode"]
+group = "regex"
+note = "User-pinned version."
+[[ext]]
+name = "aho-corasick"
+version = "1.1.5"
+group = "regex"
+[[ext]]
+name = "memchr"
+version = "2.8.3"
+group = "regex"
+
+[[ext]]
+name = "blake3"
+version = "1.8.7"
+features = ["std", "rayon", "mmap", "zeroize"]
+group = "hash"
+[[ext]]
+name = "xxhash-rust"
+version = "0.8.19"
+features = ["xxh3"]
+group = "hash"
+[[ext]]
+name = "foldhash"
+version = "0.2.0"
+group = "hash"
+[[ext]]
+name = "hashbrown"
+version = "0.17.1"
+group = "hash"
+[[ext]]
+name = "dashmap"
+version = "6.2.1"
+group = "hash"
+[[ext]]
+name = "quick_cache"
+version = "0.7.0"
+group = "hash"
+
+[[ext]]
+name = "secrecy"
+version = "0.10.3"
+group = "security"
+[[ext]]
+name = "zeroize"
+version = "1.9.1"
+features = ["derive"]
+group = "security"
+[[ext]]
+name = "chacha20poly1305"
+version = "0.11.0"
+group = "security"
+[[ext]]
+name = "biscuit-auth"
+version = "6.0.0"
+group = "security"
+[[ext]]
+name = "rand"
+version = "0.10.3"
+group = "security"
+[[ext]]
+name = "getrandom"
+version = "0.4.3"
+group = "security"
+[[ext]]
+name = "keyring"
+version = "4.2.0"
+group = "security"
+
+[[ext]]
+name = "redb"
+version = "4.4.0"
+group = "storage"
+[[ext]]
+name = "rusqlite"
+version = "0.40.2"
+features = ["bundled"]
+group = "storage"
+[[ext]]
+name = "lancedb"
+version = "0.40.0"
+group = "storage"
+[[ext]]
+name = "usearch"
+version = "2.26.5"
+group = "storage"
+note = "Fallback VectorStore if spike S0-9 (LanceDB on Windows) fails."
+[[ext]]
+name = "zstd"
+version = "0.14.3"
+group = "storage"
+
+[[ext]]
+name = "ort"
+version = "=2.0.0-rc.13"
+default_features = false
+features = ["std", "ndarray", "tracing", "load-dynamic", "api-23"]
+group = "ml"
+note = "Exact pin: oar-ocr-core 0.10 requires ort =2.0.0-rc.13 and ort-sys links onnxruntime (one version per graph; probe-verified). load-dynamic: ORT DLL beside the exe, never System32. api-23 = ORT >= 1.23 (gliner2-rs)."
+[[ext]]
+name = "tokenizers"
+version = "0.23.2"
+default_features = false
+group = "ml"
+note = "No onig/esaxx C builds."
+[[ext]]
+name = "gliner2-rs"
+version = "0.9.6"
+group = "ml"
+[[ext]]
+name = "hf-hub"
+version = "1.0.0"
+features = ["rustls-tls"]
+group = "ml"
+[[ext]]
+name = "ndarray"
+version = "0.17.2"
+group = "ml"
+
+[[ext]]
+name = "docx-rs"
+version = "0.4.22"
+group = "docs"
+[[ext]]
+name = "calamine"
+version = "0.37.0"
+group = "docs"
+[[ext]]
+name = "pdf-extract"
+version = "0.12.1"
+group = "docs"
+[[ext]]
+name = "pdfium-render"
+version = "0.9.4"
+group = "docs"
+[[ext]]
+name = "ocrs"
+version = "0.13.1"
+group = "docs"
+[[ext]]
+name = "rten"
+version = "0.26.0"
+group = "docs"
+note = "Aligned with ocrs 0.13.1 (which depends on rten 0.26); 0.27 would duplicate the runtime (probe-verified)."
+[[ext]]
+name = "oar-ocr"
+version = "0.10.0"
+default_features = false
+features = ["simd"]
+group = "docs"
+[[ext]]
+name = "image"
+version = "0.25.10"
+default_features = false
+features = ["png", "jpeg", "webp"]
+group = "docs"
+[[ext]]
+name = "image_hasher"
+version = "3.1.1"
+group = "docs"
+[[ext]]
+name = "pulldown-cmark"
+version = "0.13.4"
+group = "docs"
+[[ext]]
+name = "scraper"
+version = "0.27.0"
+group = "docs"
+[[ext]]
+name = "htmd"
+version = "0.5.6"
+group = "docs"
+[[ext]]
+name = "encoding_rs"
+version = "0.8.42"
+group = "docs"
+[[ext]]
+name = "infer"
+version = "0.22.0"
+group = "docs"
+
+[[ext]]
+name = "tree-sitter"
+version = "0.27.1"
+group = "code"
+[[ext]]
+name = "tree-sitter-rust"
+version = "0.24.2"
+group = "code"
+[[ext]]
+name = "tree-sitter-python"
+version = "0.25.0"
+group = "code"
+[[ext]]
+name = "tree-sitter-cpp"
+version = "0.23.4"
+group = "code"
+[[ext]]
+name = "tree-sitter-cuda"
+version = "0.21.2"
+group = "code"
+[[ext]]
+name = "tree-sitter-typescript"
+version = "0.23.2"
+group = "code"
+[[ext]]
+name = "ast-grep-core"
+version = "0.51.0"
+group = "code"
+[[ext]]
+name = "ast-grep-config"
+version = "0.51.0"
+group = "code"
+note = "YAML rule packs for polaris-security-rules (depends on ast-grep-core ^0.51, serde-saphyr ^2.0)."
+[[ext]]
+name = "gix"
+version = "0.89.0"
+default_features = false
+features = ["max-performance-safe", "status", "revision", "worktree-mutation", "sha1"]
+group = "code"
+[[ext]]
+name = "imara-diff"
+version = "0.2.0"
+group = "code"
+[[ext]]
+name = "similar"
+version = "3.2.0"
+group = "code"
+
+[[ext]]
+name = "ignore"
+version = "0.4.33"
+group = "os"
+[[ext]]
+name = "globset"
+version = "0.4.20"
+group = "os"
+[[ext]]
+name = "walkdir"
+version = "2.5.0"
+group = "os"
+[[ext]]
+name = "notify"
+version = "8.2.0"
+group = "os"
+[[ext]]
+name = "notify-debouncer-full"
+version = "0.7.0"
+group = "os"
+[[ext]]
+name = "tempfile"
+version = "3.27.0"
+group = "os"
+[[ext]]
+name = "dunce"
+version = "1.0.5"
+group = "os"
+[[ext]]
+name = "etcetera"
+version = "0.11.0"
+group = "os"
+[[ext]]
+name = "fs4"
+version = "1.1.0"
+group = "os"
+[[ext]]
+name = "sysinfo"
+version = "0.39.6"
+default_features = false
+features = ["system", "disk"]
+group = "os"
+[[ext]]
+name = "process-wrap"
+version = "10.0.1"
+features = ["tokio1"]
+group = "os"
+[[ext]]
+name = "portable-pty"
+version = "0.9.0"
+group = "os"
+[[ext]]
+name = "which"
+version = "8.0.6"
+group = "os"
+[[ext]]
+name = "shlex"
+version = "2.0.1"
+group = "os"
+
+[[ext]]
+name = "ratatui"
+version = "0.30.2"
+group = "tui"
+[[ext]]
+name = "crossterm"
+version = "0.29.0"
+features = ["event-stream"]
+group = "tui"
+[[ext]]
+name = "ratatui-textarea"
+version = "0.9.3"
+group = "tui"
+[[ext]]
+name = "syntect"
+version = "5.3.0"
+default_features = false
+features = ["default-fancy"]
+group = "tui"
+[[ext]]
+name = "two-face"
+version = "0.5.2"
+default_features = false
+features = ["syntect-fancy"]
+group = "tui"
+[[ext]]
+name = "ansi-to-tui"
+version = "8.0.1"
+group = "tui"
+[[ext]]
+name = "arboard"
+version = "3.7.0"
+group = "tui"
+[[ext]]
+name = "unicode-width"
+version = "0.2.2"
+group = "tui"
+[[ext]]
+name = "unicode-segmentation"
+version = "1.13.3"
+group = "tui"
+
+[[ext]]
+name = "slint"
+version = "1.18.1"
+default_features = false
+features = ["std", "backend-winit", "renderer-femtovg", "renderer-software", "accessibility", "compat-1-2"]
+group = "gui"
+[[ext]]
+name = "slint-build"
+version = "1.18.1"
+group = "gui"
+[[ext]]
+name = "leptos"
+version = "0.8.22"
+group = "web"
+[[ext]]
+name = "leptos_axum"
+version = "0.8.10"
+group = "web"
+[[ext]]
+name = "leptos_router"
+version = "0.8.17"
+group = "web"
+[[ext]]
+name = "leptos_meta"
+version = "0.8.7"
+group = "web"
+[[ext]]
+name = "wasm-bindgen"
+version = "0.2.129"
+group = "web"
+
+[[ext]]
+name = "chromiumoxide"
+version = "0.9.1"
+default_features = false
+features = ["bytes"]
+group = "agents"
+[[ext]]
+name = "rmcp"
+version = "3.5.1"
+default_features = false
+features = ["client", "macros", "transport-child-process", "transport-streamable-http-client-reqwest", "reqwest-tls-no-provider"]
+group = "agents"
+[[ext]]
+name = "bollard"
+version = "0.21.1"
+group = "agents"
+note = "Default features (http, pipe): Docker Desktop over the Windows named pipe; no TLS (avoids ring)."
+[[ext]]
+name = "dagger-sdk"
+version = "0.21.10"
+group = "agents"
+note = "Pulls reqwest 0.11; members must depend on it as an optional feature."
+
+[[ext]]
+name = "evalexpr"
+version = "13.1.0"
+group = "math"
+[[ext]]
+name = "rust_decimal"
+version = "1.43.0"
+group = "math"
+[[ext]]
+name = "splines"
+version = "5.0.0"
+group = "math"
+[[ext]]
+name = "statrs"
+version = "0.19.1"
+group = "math"
+
+[[ext]]
+name = "governor"
+version = "0.10.4"
+group = "resilience"
+[[ext]]
+name = "backon"
+version = "1.6.0"
+group = "resilience"
+[[ext]]
+name = "arc-swap"
+version = "1.9.3"
+group = "resilience"
+[[ext]]
+name = "rayon"
+version = "1.12.0"
+group = "resilience"
+[[ext]]
+name = "parking_lot"
+version = "0.12.5"
+group = "resilience"
+
+[[ext]]
+name = "clap"
+version = "4.6.7"
+features = ["derive"]
+group = "cli"
+[[ext]]
+name = "schemars"
+version = "1.2.3"
+group = "cli"
+[[ext]]
+name = "jsonschema"
+version = "0.59.0"
+default_features = false
+features = ["resolve-file"]
+group = "cli"
+[[ext]]
+name = "miette"
+version = "7.6.0"
+features = ["fancy"]
+group = "cli"
+
+[[ext]]
+name = "uuid"
+version = "1.28.0"
+features = ["v7", "serde"]
+group = "ids"
+[[ext]]
+name = "jiff"
+version = "0.2.38"
+group = "ids"
+
+[[ext]]
+name = "mimalloc"
+version = "0.1.52"
+group = "memory"
+[[ext]]
+name = "bumpalo"
+version = "3.20.3"
+group = "memory"
+
+[[ext]]
+name = "proptest"
+version = "1.12.0"
+group = "test"
+[[ext]]
+name = "insta"
+version = "1.49.0"
+group = "test"
+[[ext]]
+name = "criterion"
+version = "0.8.2"
+group = "test"
+[[ext]]
+name = "divan"
+version = "0.1.21"
+group = "test"
+[[ext]]
+name = "rstest"
+version = "0.28.0"
+group = "test"
+[[ext]]
+name = "wiremock"
+version = "0.6.5"
+group = "test"
+[[ext]]
+name = "assert_cmd"
+version = "2.2.2"
+group = "test"
+[[ext]]
+name = "predicates"
+version = "3.1.4"
+group = "test"
+[[ext]]
+name = "loom"
+version = "0.7.2"
+group = "test"
+[[ext]]
+name = "dhat"
+version = "0.3.3"
+group = "test"
+note = "Zero-allocation tests (ADR-003): dhat::Alloc global allocator + HeapStats in testing mode; avoids own unsafe impl GlobalAlloc."
+[[ext]]
+name = "hdrhistogram"
+version = "7.6.0"
+group = "test"
+
+# v2 roadmap — emitted commented-out in the root manifest, excluded from the probe.
+[[ext]]
+name = "whisper-rs"
+version = "0.16.0"
+group = "v2"
+probe = false
+[[ext]]
+name = "cpal"
+version = "0.18.2"
+group = "v2"
+probe = false
+[[ext]]
+name = "boringtun"
+version = "0.7.1"
+group = "v2"
+probe = false

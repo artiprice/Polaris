@@ -1,0 +1,27 @@
+# Normalize line endings: LF everywhere in the repository and in working trees.
+# Files are mirrored byte-exact into Linux sandboxes (WSL2 / OpenShell), where CRLF
+# breaks shell scripts, Nix files, Dockerfiles, protobuf and YAML.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.onnx binary
+*.safetensors binary
+*.cact binary
