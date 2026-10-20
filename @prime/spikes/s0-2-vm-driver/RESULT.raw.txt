@@ -1,0 +1,42 @@
+== switch to vm driver
+Oct 20 14:07:59 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:07:59.550180Z  INFO openshell_server: Using compute driver driver=vm
+Oct 20 14:07:59 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:07:59.747127Z  INFO driver.initialize{otel.name="driver.initialize" driver.name=vm}: openshell_server::compute: Compute driver connected configured_driver=vm advertised_driver=openshell-driver-vm
+== smoke on vm driver
+== openshell openshell 0.1.4 / gateway: active (ready after 117 ms)
+Server Status
+  Status: Connected
+  Authentication: Authenticated (mTLS transport)
+  Version: 0.1.4
+create: ok (27543 ms)
+phase: Ready
+Linux 6.12.76
+uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu)
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+landlock_abi=n/a
+pwd=/sandbox
+exec: 216 ms
+exit-code propagation: ok (7)
+upload byte-exact: ok (3287856bc0a394cc1a63ac81500d3a888909f883512f308ae90dfda56d78e7a1)
+delete: ok
+RESULT: PASS
+vm smoke exit=0 elapsed_s=29
+== gateway log (vm)
+Oct 20 14:08:04 DESKTOP-5V3TKMO openshell-gateway[813]: 2026-10-20T14:08:04.489211Z  INFO driver_rpc{otel.name="openshell.compute.v1.ComputeDriver/CreateSandbox" otel.kind="server" rpc.system.name="grpc" rpc.method="openshell.compute.v1.ComputeDriver/CreateSandbox"}: openshell_driver_vm::driver: vm driver: create_sandbox received sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 sandbox_name=polaris-smoke-873
+Oct 20 14:08:04 DESKTOP-5V3TKMO openshell-gateway[813]: 2026-10-20T14:08:04.489344Z  INFO driver_rpc{otel.name="openshell.compute.v1.ComputeDriver/CreateSandbox" otel.kind="server" rpc.system.name="grpc" rpc.method="openshell.compute.v1.ComputeDriver/CreateSandbox"}: openshell_driver_vm::driver: vm driver: resolved image ref, preparing disks sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 image_ref=nvcr.io/nvidia/base/ubuntu:24.04 state_dir=/home/dev/.local/state/openshell/vm-driver/sandboxes/3c052527-c6fe-437a-a87f-8b6818f2c147
+Oct 20 14:08:04 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:04.590152Z  WARN openshell_server::compute: Failed to apply compute driver event error=concurrent modification detected during sandbox reconciliation (current resource_version: 4)
+Oct 20 14:08:04 DESKTOP-5V3TKMO openshell-gateway[952]: 2026-10-20T14:08:04.899368Z  INFO vm.prepare_images{sandbox_id="3c052527-c6fe-437a-a87f-8b6818f2c147" image_ref="nvcr.io/nvidia/base/ubuntu:24.04" rootfs_tar_path=None otel.name="vm.prepare_images" sandbox.id=3c052527-c6fe-437a-a87f-8b6818f2c147 image.ref=nvcr.io/nvidia/base/ubuntu:24.04}:vm.resolve_bootstrap_image{sandbox_id="3c052527-c6fe-437a-a87f-8b6818f2c147" image_ref="nvcr.io/nvidia/base/ubuntu:24.04" otel.name="vm.resolve_bootstrap_image" sandbox.id=3c052527-c6fe-437a-a87f-8b6818f2c147 image.ref=nvcr.io/nvidia/base/ubuntu:24.04}: openshell_driver_vm::driver: vm driver: resolved image from local container engine image_ref=nvcr.io/nvidia/base/ubuntu:24.04 image_identity=sha256:7e0f726d635d440d28a7f18e6498d3bdb76c7038bd4c90a090c21eb7c9f40686
+Oct 20 14:08:15 DESKTOP-5V3TKMO openshell-gateway[813]: 2026-10-20T14:08:15.354421Z  INFO vm.provision{otel.name="vm.provision" sandbox.id=3c052527-c6fe-437a-a87f-8b6818f2c147 image.ref=nvcr.io/nvidia/base/ubuntu:24.04}: openshell_driver_vm::driver: vm driver: sandbox root disk plan resolved sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 image_identity=sandbox-bootstrap-rootfs-ext4-v6:openshell-0.1.4:guest-c7e9f467d6d0c27de7a4a3634bcfbb53c196d5aa201089f2ca66a7ccf0849698:1518fd5a2ed9dc31bb6e0c81db1c62f8b56e4557c1d9fb253aacbf67cee29ebd bootstrap_image_identity=sandbox-bootstrap-rootfs-ext4-v6:openshell-0.1.4:guest-c7e9f467d6d0c27de7a4a3634bcfbb53c196d5aa201089f2ca66a7ccf0849698:1518fd5a2ed9dc31bb6e0c81db1c62f8b56e4557c1d9fb253aacbf67cee29ebd image_disk=""
+Oct 20 14:08:22 DESKTOP-5V3TKMO openshell-gateway[813]: 2026-10-20T14:08:22.468727Z  INFO vm.provision{otel.name="vm.provision" sandbox.id=3c052527-c6fe-437a-a87f-8b6818f2c147 image.ref=nvcr.io/nvidia/base/ubuntu:24.04}: openshell_driver_vm::driver: vm driver: spawning VM launcher sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 launcher=/usr/libexec/openshell/openshell-driver-vm console_output=/home/dev/.local/state/openshell/vm-driver/sandboxes/3c052527-c6fe-437a-a87f-8b6818f2c147/rootfs-console.log
+Oct 20 14:08:22 DESKTOP-5V3TKMO openshell-gateway[813]: 2026-10-20T14:08:22.469276Z  INFO vm.provision{otel.name="vm.provision" sandbox.id=3c052527-c6fe-437a-a87f-8b6818f2c147 image.ref=nvcr.io/nvidia/base/ubuntu:24.04}: openshell_driver_vm::driver: vm driver: launcher spawned sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 launcher_pid=1032
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:32.337815Z  INFO request{method=POST path="/openshell.v1.OpenShell/PushSandboxLogs" request_id="9164d884-ea2d-41bb-a77f-d2f5181b5a7f" otel.name=openshell.v1.OpenShell/PushSandboxLogs otel.kind="server" rpc.system="grpc" rpc.service="openshell.v1.OpenShell" rpc.method="PushSandboxLogs" http.response.status_code=200 rpc.grpc.status_code=13 otel.status_code="ERROR"}: openshell_server::multiplex: response status=200 latency_ms=6798
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:32.338251Z  INFO openshell_server::supervisor_session: supervisor session: expected transport close during teardown sandbox_id=3c052527-c6fe-437a-a87f-8b6818f2c147 session_id=a69aa3d5-269b-40cc-ac5e-7b2a3be50805 error=code: 'Unknown error', message: "h2 protocol error: error reading a body from connection", source: hyper::Error(Body, Error { kind: Io(Custom { kind: UnexpectedEof, error: "peer closed connection without sending TLS close_notify: https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof" }) })
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[1032]: Error:   × VM killed by signal 15
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:32.654874Z  INFO request{method=POST path="/openshell.v1.OpenShell/GetSandbox" request_id="9df44384-f2de-4a01-bbd8-7de2720025f6" otel.name=openshell.v1.OpenShell/GetSandbox otel.kind="server" rpc.system="grpc" rpc.service="openshell.v1.OpenShell" rpc.method="GetSandbox" http.response.status_code=200 rpc.grpc.status_code=5 otel.status_code="ERROR"}: openshell_server::multiplex: response status=200 latency_ms=0
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:32.759883Z  INFO request{method=POST path="/openshell.v1.OpenShell/GetSandbox" request_id="672bfe56-be46-4bda-809e-2162c9339880" otel.name=openshell.v1.OpenShell/GetSandbox otel.kind="server" rpc.system="grpc" rpc.service="openshell.v1.OpenShell" rpc.method="GetSandbox" http.response.status_code=200 rpc.grpc.status_code=5 otel.status_code="ERROR"}: openshell_server::multiplex: response status=200 latency_ms=0
+== restore docker driver (pinned)
+Oct 20 14:08:32 DESKTOP-5V3TKMO openshell-gateway[768]: 2026-10-20T14:08:32.759883Z  INFO request{method=POST path="/openshell.v1.OpenShell/GetSandbox" request_id="672bfe56-be46-4bda-809e-2162c9339880" otel.name=openshell.v1.OpenShell/GetSandbox otel.kind="server" rpc.system="grpc" rpc.service="openshell.v1.OpenShell" rpc.method="GetSandbox" http.response.status_code=200 rpc.grpc.status_code=5 otel.status_code="ERROR"}: openshell_server::multiplex: response status=200 latency_ms=0
+Oct 20 14:08:33 DESKTOP-5V3TKMO openshell-gateway[1328]: 2026-10-20T14:08:33.241262Z  INFO openshell_server: Using compute driver driver=docker
+Oct 20 14:08:34 DESKTOP-5V3TKMO openshell-gateway[1328]: 2026-10-20T14:08:34.365851Z  INFO driver.initialize{otel.name="driver.initialize" driver.name=docker}: openshell_server::compute: Compute driver connected configured_driver=docker advertised_driver=docker
+delete: ok
+RESULT: PASS
+OPENSHELL_COMPUTE_DRIVER=docker
