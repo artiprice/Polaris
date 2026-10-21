@@ -153,7 +153,7 @@ allowed verifier boundary (§E25); `check-witness` is green and its implementati
 Status and evidence per crate come from `status`/`evidence` in `@prime/tools/workspace.toml`. Some
 IN PROGRESS crates have implemented behavior and passing suites; others still have only test-first
 descriptors/tests. Read each evidence cell rather than treating either state as a completed crate.
-Raw evidence for the core continuations is in §E21–§E27; prior crate evidence remains in §E14–§E17.
+Raw evidence for the core continuations is in §E21–§E29; prior crate evidence remains in §E14–§E17.
 Earlier metadata also references an §E18 entry for log/telemetry/cache/automata/RTK that is absent
 from this snapshot. Those prior claims were not re-verified in this continuation.
 
@@ -1034,3 +1034,177 @@ witness gate, golden file, or existing conflict assertion was loosened. No commi
 P1/full-core completion remains IN PROGRESS with E25's gaps; UI work stays deferred. The full PLAN
 has not been reviewed line by line in this continuation; only the relevant contract/module sections
 were reviewed. Existing missing §E18 historical evidence remains flagged above.
+
+### E28 — real signed capability boundary (not the full hybrid verifier)
+
+VERIFIED: `polaris-security-capability` now issues real Ed25519 Biscuit roots, validates bounded
+serialized chains against an expected issuer, appends signed scope checks without the root private
+key, and authorizes trusted operation facts with default-deny Datalog. Vocabulary version 1 covers
+path/symbol, actual churn, injected current time, unsafe flag, exact diff hash and requested right;
+grants and issuing-frame provenance are authority facts. Tokens are bearer credentials: the frame
+fact records provenance and does not claim non-transferable holder authentication.
+
+Generated blocks contain no ambient mutation facts/rules. Biscuit 6's `trusting authority` also
+includes the current block and authorizer; there is no authorizer-only keyword. Descendant facts
+cannot satisfy ancestor checks, and the authorizer policy ignores descendant grants/version facts.
+Real adversarial appended blocks test these restrictions. Datalog errors/limits never approve.
+Requested wider child scopes remain intersected with all ancestor checks rather than being falsely
+reported as an immediately validated subset.
+
+The descriptor and first contracts preceded implementation and failed on absent APIs. Additional
+cryptographic/fact-explosion/version/compile-fail cases were initial-green characterization. A
+device-name spelling exposed a separate normalization regression before its fix:
+
+```text
+$ cargo test -p polaris-security-capability --no-fail-fast (initial RED; excerpt)
+error[E0432]: unresolved imports `polaris_security_capability::Authority`, `polaris_security_capability::Authorization`, `polaris_security_capability::CapabilityError`, ...
+$ cargo test -p polaris-security-capability --test capability_contract resource_paths_reject_aliases_and_escapes -- --exact (RED)
+thread 'resource_paths_reject_aliases_and_escapes' (15160) panicked at crates\polaris-security\crates\capability\tests\capability_contract.rs:198:9:
+"src/CON .txt"
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+$ cargo test --workspace --no-fail-fast (final capability group)
+running 20 tests
+test token_facts_cannot_spoof_ambient_facts_or_grants ... ok
+test datalog_fact_explosion_exhausts_budget_without_granting ... ok
+test prop_attenuation_is_monotone ... ok
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+```
+
+Twenty integration contracts cover wrong issuer/proof tampering, exact/prefix/symbol scopes, all
+rights, inclusive churn/exclusive expiry, pre-issuance clock rollback, hash mismatch/missing hash,
+unsafe changes, widening attempts, three fixed attenuation levels, 256 generated multi-level chains,
+256 arbitrary-token cases, inherited revocation, full 32-block reparse/authorization and size limits.
+Private key/token fields are compile-fail doctests. Parsing is bounded to 64 KiB and 32 blocks before
+signature verification; Datalog is bounded to 4096 facts, 64 iterations and 50 ms. The valid signed
+fact-explosion fixture actually exhausts the evaluator rather than merely failing an unrelated check.
+Library/OS allocation and native scheduling are not claimed to have a hard wall-clock deadline.
+
+```text
+$ wsl -d Ubuntu-24.04 -- bash -lc 'source ~/.cargo/env && CARGO_TARGET_DIR=~/.cache/polaris-target cargo test -p polaris-security-capability --no-fail-fast'
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+$ wsl -d Ubuntu-24.04 -- bash -lc 'source ~/.cargo/env && bash @prime/tools/setup/kani-guarded.sh polaris-security-capability'
+Checking harness kani_proofs::expiry_never_wraps_or_extends_lifetime...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.34348804s
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.
+kani polaris-security-capability exit=0 wall_s=13
+$ wsl -d Ubuntu-24.04 -- bash -lc 'source ~/.cargo/env && CARGO_TARGET_DIR=~/.cache/polaris-target-miri MIRIFLAGS=-Zmiri-disable-isolation cargo +nightly miri test -p polaris-security-capability --test capability_contract resource_paths_reject_aliases_and_escapes -- --exact'
+running 1 test
+test resource_paths_reject_aliases_and_escapes ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 1.66s
+$ wsl -d Ubuntu-24.04 -- bash -lc 'source ~/.cargo/env && CARGO_TARGET_DIR=~/.cache/polaris-target-fuzz cargo +nightly fuzz run --fuzz-dir tests/fuzz --target x86_64-unknown-linux-gnu biscuit_token_bytes -- -max_total_time=60 -max_len=65568'
+#95847 DONE cov: 4974 ft: 13140 corp: 385/946Kb lim: 5734 exec/s: 1545 rss: 436Mb
+Done 95847 runs in 62 second(s)
+```
+
+The Linux test excerpt predates the last property-only expansion from one random child to generated
+chains/256 cases; the final Windows workspace group includes that expansion. Kani proves only
+checked expiry arithmetic over all i64 issue times/u128 microsecond lifetimes. Miri covers only
+the selected lexical path test; cryptography/Datalog/OS entropy are not Miri-proven. The final fuzz
+run used the macro-free vendored library before only formatting/proof-helper/property changes; a
+prior macro-enabled run completed 85,903 executions. Generated 1/4/16-block corpus seeds include
+valid real signatures, rather than testing only instant parser errors. Corpus/artifacts are ignored;
+no real credentials or private keys are committed.
+
+Current-source local latency sample (1000 calls per row, dev profile, synthetic scopes, other work
+running; not release or production throughput):
+
+```text
+$ cargo run -p polaris-security-capability --example capability_latency
+synthetic fixture; samples=1000; debug_assertions=true
+blocks=1 bytes=555 parse_signatures=false p99_ns=122800
+blocks=1 bytes=555 parse_signatures=true p99_ns=318600
+blocks=4 bytes=1533 parse_signatures=false p99_ns=241200
+blocks=4 bytes=1533 parse_signatures=true p99_ns=736400
+blocks=16 bytes=5445 parse_signatures=false p99_ns=649400
+blocks=16 bytes=5445 parse_signatures=true p99_ns=3691000
+```
+
+These results do not support the chatlog's approximate 5 µs claim. The example reports cached-token
+authorization separately from parsing/signature verification and writes only synthetic fuzz seeds.
+Logs under `@prime/tmp/p1/`: `capability-{red,device-red,current,linux-current,kani-current,miri,fuzz-current,latency-current}.txt`.
+
+Open: full mutation-fact construction (trusted filesystem containment, actual AST/churn/unsafe/hash),
+session issuer distribution, hybrid metric/S1 stages and approval witness/dispatcher wiring, dependency
+audits (§E29), broader malicious corpus, release-profile/workload calibration. Lexical path checks
+reject traversal/absolute/drive/UNC/ADS/device aliases and normalize separators/Windows ASCII case;
+they do not resolve symlinks, Windows short names or Unicode case aliases. Trusted filesystem owners
+must supply resolved in-workspace targets. No actual execution or ApprovalWitness is exposed here.
+The full phase/goal remains active; UI stays deferred.
+
+### E29 — pinned dependency feature repair and current gates
+
+VERIFIED: activating the planned Biscuit dependency exposed its default macro dependency's
+[RUSTSEC-2026-0173](https://rustsec.org/advisories/RUSTSEC-2026-0173.html) unmaintained advisory.
+Disabling unused macros initially failed to compile due to
+[upstream issue 305](https://github.com/eclipse-biscuit/biscuit-rust/issues/305): five unconditional
+`ToAnyParam` imports referenced a macro-gated trait. The published 6.0.0 crate is now vendored with
+exactly seven missing feature guards (those imports, a macro/test-only PublicKey import and a
+PEM-only helper). No cryptographic/runtime logic was changed. Existing workspace formatting stays
+enabled, including sorted imports and narrowly verified generated prost-attribute/empty-struct
+formatting. No lint suppression, advisory ignore or audit exemption was added.
+
+`vendor/biscuit-auth/POLARIS-PATCH.md` records provenance, patch scope and removal conditions.
+Published archive SHA-256 is `d5884fc86b3e21f5649ef4326e17ef729b3096e6502deaf13db7b7fb05bb992b`.
+The checksum manifest itself is pinned in `@prime/tools/check-vendored-biscuit.py`; it reverses only
+the declared guards/formatting and checks every published file's exact hash and the file set.
+An isolated temporary-copy test appended a cryptographic-source comment and was rejected. This
+mechanical provenance check is not an independent security audit of the library.
+
+```text
+$ cargo deny check (before feature repair)
+error[unmaintained]: proc-macro-error2 is unmaintained
+ID: RUSTSEC-2026-0173
+advisories FAILED, bans ok, licenses ok, sources ok
+$ cargo test -p polaris-security-capability --no-fail-fast (macros disabled, before vendor fix)
+error[E0432]: unresolved import `super::ToAnyParam`
+error: could not compile `biscuit-auth` (lib) due to 5 previous errors
+$ python -I @prime/tools/check-vendored-biscuit.py
+check-vendored-biscuit: 94 published files; 7 feature guards + prost attribute formatting -> OK
+$ python -I @prime/tools/check-vendored-biscuit.py <isolated modified vendor fixture>
+check-vendored-biscuit: FAILED: unexpected upstream change: src/crypto/ed25519.rs
+$ cargo deny check (current)
+advisories ok, bans ok, licenses ok, sources ok
+$ cargo vet --locked (current)
+Vetting Failed!
+241 unvetted dependencies:
+  biscuit-auth:6.0.0 missing ["safe-to-deploy"]
+```
+
+`audit-as-crates-io = true` deliberately retains audit enforcement for the vendored dependency,
+following [cargo-vet's policy](https://mozilla.github.io/cargo-vet/config.html#audit-as-crates-io).
+The expanded graph has 241 unaudited entries; historical §E11's green snapshot is not current proof.
+No blanket exemption/trust declaration was introduced. This audit gate is FAIL, not waived or PASS.
+
+```text
+$ cargo test --workspace --no-fail-fast
+(exit 0; actual Cargo result-line aggregate: 919 passed, 0 failed, 0 ignored; 306 result groups)
+$ RUSTFLAGS=-Dwarnings cargo check --workspace --all-targets
+    Finished `dev` profile [unoptimized] target(s) in 5.91s
+$ RUSTDOCFLAGS=-Dwarnings cargo doc -p polaris-security-capability --no-deps
+    Finished `dev` profile [unoptimized] target(s) in 13.74s
+   Generated C:\mDev\Polaris\target\doc\polaris_security_capability\index.html
+$ cargo xtask check-members
+check-members: 93 packages -> OK
+$ cargo xtask check-layers
+check-layers: 93 packages, 250 edges -> OK
+$ cargo xtask check-witness
+check-witness: 0 violation(s) -> OK
+$ cargo fmt --all --check
+(exit 0; no output)
+$ cargo generate-lockfile --offline --manifest-path @prime/tools/dep-probe/Cargo.toml
+     Locking 1698 packages to highest Rust 1.99 compatible versions
+$ python -I @prime/tools/workspace.py render-docs --check
+PHASES.md: up to date (11 generated blocks)
+PHASES_STATUS.md: up to date (10 generated blocks)
+$ python -I @prime/tools/workspace.py check-docs
+check-docs: 93 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK
+```
+
+Counts include zero-test skeletons and do not prove phase completion. Root Cargo dependency/excludes
+and the standalone dependency probe derive portably from `workspace.toml` (explicit UTF-8 comparison
+matches the generated root exactly). The fuzz workspace uses the same dependency source through
+the capability crate's inherited workspace dependency. Its manifest/lock, README and proof script
+were updated; no UI feature work was added. The normal capability dependency graph has zero ring
+packages. Raw local logs: `capability-{workspace-tests-current,workspace-check-current,doc,deny-current,vet-current,dep-probe,tree}.txt`.
