@@ -87,9 +87,10 @@ impl HasKind for CapabilityError {
     fn kind(&self) -> ErrorKind {
         match self {
             Self::BadSignature | Self::Limit => ErrorKind::Policy,
-            Self::Malformed | Self::InvalidScope => ErrorKind::Permanent,
+            Self::Malformed | Self::InvalidScope | Self::Evaluation | Self::Clock => {
+                ErrorKind::Permanent
+            }
             Self::Keygen => ErrorKind::Transient,
-            Self::Evaluation | Self::Clock => ErrorKind::Fatal,
         }
     }
 }

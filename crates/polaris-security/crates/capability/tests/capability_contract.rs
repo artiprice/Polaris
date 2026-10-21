@@ -13,11 +13,16 @@ use std::time::Duration;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 #[derive(Debug, Clone, Copy)]
-struct FakeClock(i64);
+struct FakeClock(Timestamp);
 impl Clock for FakeClock {
     fn now(&self) -> Timestamp {
-        Timestamp::from_second(self.0).unwrap()
+        self.0
     }
+}
+fn fake_clock(seconds: i64) -> Result<FakeClock, CapabilityError> {
+    Timestamp::from_second(seconds)
+        .map(FakeClock)
+        .map_err(|_| CapabilityError::Clock)
 }
 fn scope() -> Result<Scope, CapabilityError> {
     Ok(Scope {
@@ -41,7 +46,7 @@ fn facts(path: &ResourcePath) -> Facts<'_> {
 }
 fn issue(scope: &Scope) -> Result<(Authority, Token), CapabilityError> {
     let authority = Authority::new_session()?;
-    let token = authority.issue_root(FrameId::from_u128(7), scope, &FakeClock(1000))?;
+    let token = authority.issue_root(FrameId::from_u128(7), scope, &fake_clock(1000)?)?;
     Ok((authority, token))
 }
 fn allowed(value: Authorization) -> bool {
@@ -57,7 +62,7 @@ fn root_token_verifies_with_public_key() -> TestResult {
         &token,
         &facts(&path),
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     assert_eq!(token.block_count(), 1);
     Ok(())
@@ -72,7 +77,7 @@ fn root_token_wrong_key_rejected() -> TestResult {
     ));
     let path = ResourcePath::new("src/a.rs")?;
     assert!(matches!(
-        authorize(&token, &facts(&path), &wrong, &FakeClock(1000)),
+        authorize(&token, &facts(&path), &wrong, &fake_clock(1000)?),
         Err(CapabilityError::BadSignature)
     ));
     Ok(())
@@ -100,7 +105,7 @@ fn root_scope_grants_listed_rights_only() -> TestResult {
                 &token,
                 &input,
                 &authority.public_key(),
-                &FakeClock(1000)
+                &fake_clock(1000)?
             )?),
             right == Right::Read
         );
@@ -132,7 +137,7 @@ fn resource_scope_is_component_bounded() -> TestResult {
                     &token,
                     &facts(&path),
                     &authority.public_key(),
-                    &FakeClock(1000)
+                    &fake_clock(1000)?
                 )?),
                 expect
             );
@@ -165,7 +170,7 @@ fn symbol_scope_requires_exact_path_and_symbol() -> TestResult {
                     ..facts(&path)
                 },
                 &authority.public_key(),
-                &FakeClock(1000)
+                &fake_clock(1000)?
             )?),
             expected
         );
@@ -223,7 +228,7 @@ fn expiry_uses_injected_clock_and_is_exclusive() -> TestResult {
                 &token,
                 &facts(&path),
                 &authority.public_key(),
-                &FakeClock(now)
+                &fake_clock(now)?
             )?),
             expected
         );
@@ -256,7 +261,7 @@ fn scope_limits_and_diff_binding_are_enforced() -> TestResult {
             &token,
             &input,
             &authority.public_key(),
-            &FakeClock(1000)
+            &fake_clock(1000)?
         )?));
     }
     assert!(allowed(authorize(
@@ -266,7 +271,7 @@ fn scope_limits_and_diff_binding_are_enforced() -> TestResult {
             ..facts(&path)
         },
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     Ok(())
 }
@@ -281,19 +286,19 @@ fn widening_child_never_escapes_ancestor_checks() -> TestResult {
         diff_blake3: None,
         rights: Rights::new(&Right::ALL),
     };
-    let wide_path = attenuate(&root, &wide, &FakeClock(1000))?;
+    let wide_path = attenuate(&root, &wide, &fake_clock(1000)?)?;
     let outside = ResourcePath::new("other/a.rs")?;
     assert!(!allowed(authorize(
         &wide_path,
         &facts(&outside),
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     let wide = Scope {
         resource: scope()?.resource,
         ..wide
     };
-    let child = attenuate(&root, &wide, &FakeClock(1000))?;
+    let child = attenuate(&root, &wide, &fake_clock(1000)?)?;
     let path = ResourcePath::new("src/a.rs")?;
     for input in [
         Facts {
@@ -317,14 +322,14 @@ fn widening_child_never_escapes_ancestor_checks() -> TestResult {
             &child,
             &input,
             &authority.public_key(),
-            &FakeClock(1000)
+            &fake_clock(1000)?
         )?));
     }
     assert!(!allowed(authorize(
         &child,
         &facts(&path),
         &authority.public_key(),
-        &FakeClock(1060)
+        &fake_clock(1060)?
     )?));
     Ok(())
 }
@@ -340,7 +345,7 @@ fn chain_of_three_attenuations_monotone() -> TestResult {
                 max_churn_lines: limit,
                 ..scope()?
             },
-            &FakeClock(1000),
+            &fake_clock(1000)?,
         )?);
     }
     let path = ResourcePath::new("src/a.rs")?;
@@ -349,7 +354,7 @@ fn chain_of_three_attenuations_monotone() -> TestResult {
             token,
             &facts(&path),
             &authority.public_key(),
-            &FakeClock(1000)
+            &fake_clock(1000)?
         )?));
     }
     assert!(!allowed(authorize(
@@ -359,7 +364,7 @@ fn chain_of_three_attenuations_monotone() -> TestResult {
             ..facts(&path)
         },
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     Ok(())
 }
@@ -395,7 +400,7 @@ fn token_facts_cannot_spoof_ambient_facts_or_grants() -> TestResult {
         &token,
         &base,
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     for input in [
         Facts {
@@ -423,21 +428,21 @@ fn token_facts_cannot_spoof_ambient_facts_or_grants() -> TestResult {
             &token,
             &input,
             &authority.public_key(),
-            &FakeClock(1000)
+            &fake_clock(1000)?
         )?));
     }
     assert!(!allowed(authorize(
         &token,
         &base,
         &authority.public_key(),
-        &FakeClock(1060)
+        &fake_clock(1060)?
     )?));
     Ok(())
 }
 #[test]
 fn revoking_an_ancestor_denies_all_descendants() -> TestResult {
     let (authority, root) = issue(&scope()?)?;
-    let child = attenuate(&root, &scope()?, &FakeClock(1000))?;
+    let child = attenuate(&root, &scope()?, &fake_clock(1000)?)?;
     let revoked = root.revocation_identifiers();
     assert_eq!(revoked.len(), 1);
     let path = ResourcePath::new("src/a.rs")?;
@@ -445,7 +450,7 @@ fn revoking_an_ancestor_denies_all_descendants() -> TestResult {
         &child,
         &facts(&path),
         &authority.public_key(),
-        &FakeClock(1000),
+        &fake_clock(1000)?,
         &revoked
     )?));
     Ok(())
@@ -461,7 +466,7 @@ fn bounded_tokens_and_evaluation_fail_closed() -> TestResult {
         .is_err()
     );
     while token.block_count() < MAX_TOKEN_BLOCKS {
-        token = attenuate(&token, &scope()?, &FakeClock(1000))?;
+        token = attenuate(&token, &scope()?, &fake_clock(1000)?)?;
     }
     let reparsed = Token::from_bytes(token.to_bytes().as_bytes(), &authority.public_key())?;
     assert_eq!(reparsed.block_count(), MAX_TOKEN_BLOCKS);
@@ -470,10 +475,10 @@ fn bounded_tokens_and_evaluation_fail_closed() -> TestResult {
         &reparsed,
         &facts(&path),
         &authority.public_key(),
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     assert!(matches!(
-        attenuate(&token, &scope()?, &FakeClock(1000)),
+        attenuate(&token, &scope()?, &fake_clock(1000)?),
         Err(CapabilityError::Limit)
     ));
     Ok(())
@@ -501,7 +506,7 @@ fn datalog_fact_explosion_exhausts_budget_without_granting() -> TestResult {
             &token,
             &facts(&path),
             &authority.public_key(),
-            &FakeClock(1000)
+            &fake_clock(1000)?
         ),
         Err(CapabilityError::Limit)
     );
@@ -510,7 +515,7 @@ fn datalog_fact_explosion_exhausts_budget_without_granting() -> TestResult {
 #[test]
 fn tampered_delegation_proof_is_rejected() -> TestResult {
     let (authority, root) = issue(&scope()?)?;
-    let child = attenuate(&root, &scope()?, &FakeClock(1000))?;
+    let child = attenuate(&root, &scope()?, &fake_clock(1000)?)?;
     let mut raw = child.to_bytes().as_bytes().to_vec();
     let last = raw.last_mut().ok_or("empty token")?;
     *last ^= 1;
@@ -552,25 +557,49 @@ fn unknown_vocabulary_cannot_be_repaired_by_descendant_facts() -> TestResult {
             ..facts(&path)
         },
         &public,
-        &FakeClock(1000)
+        &fake_clock(1000)?
     )?));
     Ok(())
 }
 #[test]
 fn invalid_capability_inputs_are_not_component_fatal() -> TestResult {
-    use biscuit_auth::{UnverifiedBiscuit,builder::BlockBuilder};
-    use polaris_sdk::error::{ErrorKind,HasKind};
-    let (authority,root)=issue(&scope()?)?;
-    let invalid=UnverifiedBiscuit::from(root.to_bytes().as_bytes())?
-        .append(BlockBuilder::new().check("check if resource($p), $p < 2")?)?.to_vec()?;
-    let token=Token::from_bytes(&invalid,&authority.public_key())?;
-    let path=ResourcePath::new("src/a.rs")?;
-    let error=authorize(&token,&facts(&path),&authority.public_key(),&FakeClock(1000))
-        .expect_err("a type-invalid descendant must never approve");
-    assert_eq!(error.kind(),ErrorKind::Permanent,"untrusted token input must not stop the verifier component");
-    let error=authority.issue_root(FrameId::from_u128(9),&Scope{ttl:Duration::MAX,..scope()?},&FakeClock(1000))
-        .expect_err("unrepresentable requested lifetime");
-    assert_eq!(error.kind(),ErrorKind::Permanent,"invalid TTL is a rejected scope, not clock infrastructure failure");
+    use biscuit_auth::{UnverifiedBiscuit, builder::BlockBuilder};
+    use polaris_sdk::error::{ErrorKind, HasKind};
+    let (authority, root) = issue(&scope()?)?;
+    let invalid = UnverifiedBiscuit::from(root.to_bytes().as_bytes())?
+        .append(BlockBuilder::new().check("check if resource($p), $p < 2")?)?
+        .to_vec()?;
+    let token = Token::from_bytes(&invalid, &authority.public_key())?;
+    let path = ResourcePath::new("src/a.rs")?;
+    let error = authorize(
+        &token,
+        &facts(&path),
+        &authority.public_key(),
+        &fake_clock(1000)?,
+    )
+    .err()
+    .ok_or("a type-invalid descendant must never approve")?;
+    assert_eq!(
+        error.kind(),
+        ErrorKind::Permanent,
+        "untrusted token input must not stop the verifier component"
+    );
+    let error = authority
+        .issue_root(
+            FrameId::from_u128(9),
+            &Scope {
+                ttl: Duration::MAX,
+                ..scope()?
+            },
+            &fake_clock(1000)?,
+        )
+        .err()
+        .ok_or("unrepresentable requested lifetime")?;
+    assert_eq!(
+        error.kind(),
+        ErrorKind::Permanent,
+        "invalid TTL is a rejected scope, not clock infrastructure failure"
+    );
     Ok(())
 }
 #[test]
@@ -592,12 +621,12 @@ proptest! {
         for (child_limit,child_unsafe,ttl) in children {
             let child=attenuate(tokens.last().ok_or_else(||TestCaseError::fail("missing parent"))?,&Scope{
                 max_churn_lines:child_limit,allow_unsafe:child_unsafe,ttl:Duration::from_secs(ttl),..scope()?
-            },&FakeClock(1000))?;
+            },&fake_clock(1000)?)?;
             tokens.push(child);
         }
         let path=ResourcePath::new("src/a.rs")?;
         let input=Facts{churn_lines:actual,touches_unsafe:unsafe_change,..facts(&path)};
-        let decisions=tokens.iter().map(|token|authorize(token,&input,&authority.public_key(),&FakeClock(now)).map(allowed))
+        let decisions=tokens.iter().map(|token|authorize(token,&input,&authority.public_key(),&fake_clock(now)?).map(allowed))
             .collect::<Result<Vec<_>,_>>()?;
         for adjacent in decisions.windows(2) {
             let [parent_allowed,child_allowed]=adjacent else {return Err(TestCaseError::fail("missing adjacent states"));};
