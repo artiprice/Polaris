@@ -1,5 +1,8 @@
 //! Trusted request facts and default-deny bounded Datalog evaluation.
-use crate::{CapabilityError, Clock, PublicKeyBytes, ResourcePath, Right, Token, VOCABULARY_VERSION, evaluation};
+use crate::{
+    CapabilityError, Clock, PublicKeyBytes, ResourcePath, Right, Token, VOCABULARY_VERSION,
+    evaluation,
+};
 use biscuit_auth::{
     AuthorizerLimits,
     builder::{AuthorizerBuilder, boolean, bytes, fact, int, string},

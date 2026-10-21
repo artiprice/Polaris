@@ -11,6 +11,7 @@ use std::{
 
 // reexport those because the builder uses the same definitions
 use super::Block;
+#[cfg(any(feature = "datalog-macro", test))]
 use crate::crypto::PublicKey;
 use crate::datalog::SymbolTable;
 pub use crate::datalog::{

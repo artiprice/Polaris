@@ -141,13 +141,16 @@ pub struct Scope {
     /// Permitted operations.
     pub rights: Rights,
 }
-pub(crate) fn checks(scope: &Scope, clock: &impl Clock) -> Result<BlockBuilder, CapabilityError> {
-    let issued = clock.now().as_microsecond();
-    let lifetime = i64::try_from(scope.ttl.as_micros()).map_err(|_| CapabilityError::Clock)?;
+pub(crate) fn expiry(issued: i64, lifetime_micros: u128) -> Result<i64, CapabilityError> {
+    let lifetime = i64::try_from(lifetime_micros).map_err(|_| CapabilityError::Clock)?;
     if lifetime == 0 {
         return Err(CapabilityError::InvalidScope);
     }
-    let expiry = issued.checked_add(lifetime).ok_or(CapabilityError::Clock)?;
+    issued.checked_add(lifetime).ok_or(CapabilityError::Clock)
+}
+pub(crate) fn checks(scope: &Scope, clock: &impl Clock) -> Result<BlockBuilder, CapabilityError> {
+    let issued = clock.now().as_microsecond();
+    let expiry = expiry(issued, scope.ttl.as_micros())?;
     let (path, symbol, prefix) = match &scope.resource {
         ResourceScope::Exact(path) => (path, None, false),
         ResourceScope::Prefix(path) => (path, None, true),

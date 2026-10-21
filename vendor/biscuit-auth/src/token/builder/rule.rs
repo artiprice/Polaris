@@ -11,9 +11,9 @@ use crate::{
     error, PublicKey,
 };
 
-use super::{Convert, Expression, Predicate, Scope, Term};
 #[cfg(feature = "datalog-macro")]
 use super::ToAnyParam;
+use super::{Convert, Expression, Predicate, Scope, Term};
 
 /// Builder for a Datalog rule
 #[derive(Debug, Clone, PartialEq, Eq)]

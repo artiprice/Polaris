@@ -1987,31 +1987,32 @@ pub struct Scope {
     pub diff_blake3: Option<Cid>,                     // bind a token to one exact patch
     pub rights: Rights,                               // read | propose_diff | execute_tool | spawn_subagent
 }
-pub struct Facts<'a> { pub resource: &'a str, pub churn_lines: u32, pub now: jiff::Timestamp, pub touches_unsafe: bool, pub diff_blake3: Option<Cid>, pub right: Right }
+pub struct Facts<'a> { pub resource: &'a ResourcePath, pub symbol: Option<&'a str>, pub churn_lines: u32, pub touches_unsafe: bool, pub diff_blake3: Option<Cid>, pub right: Right }
 pub trait Clock { fn now(&self) -> jiff::Timestamp; }  // injected; tests use a fake clock
 impl Authority {
     pub fn new_session() -> Result<Self, CapabilityError>;
     pub fn public_key(&self) -> PublicKeyBytes;
-    pub fn issue_root(&self, agent: FrameId, root: &Scope) -> Result<Token, CapabilityError>;
+    pub fn issue_root(&self, agent: FrameId, root: &Scope, clock: &impl Clock) -> Result<Token, CapabilityError>;
 }
-pub fn attenuate(parent: &Token, child: &Scope) -> Result<Token, CapabilityError>;        // no private key needed
-pub fn authorize(token: &Token, facts: &Facts<'_>, pk: &PublicKeyBytes) -> Result<Authorization, CapabilityError>;
-pub enum Authorization { Allowed { checks_passed: u16 }, Denied { failed_check: CheckId } }   // toml names the return type `Decision`; renamed to avoid clashing with the sdk S1 `Decision`
-pub enum CapabilityError { BadSignature, Malformed, Expired, ScopeWidening, Datalog(String), Keygen }
+pub fn attenuate(parent: &Token, child: &Scope, clock: &impl Clock) -> Result<Token, CapabilityError>; // no root private key
+pub fn authorize(token: &Token, facts: &Facts<'_>, pk: &PublicKeyBytes, clock: &impl Clock) -> Result<Authorization, CapabilityError>;
+pub enum Authorization { Allowed, Denied { failed_check: Option<CheckId> } } // no invented count; None for policy/revocation denial
+pub enum CapabilityError { BadSignature, Malformed, InvalidScope, Limit, Evaluation, Keygen, Clock }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `biscuit-auth = 6.0.0` (internally uses rand 0.8; keys must come only through biscuit's own API), `zeroize = 1.9.1` (derive).
+**Dependencies.** Internal: `polaris-sdk`. External: `biscuit-auth = 6.0.0` (internally uses rand 0.8; keys only through Biscuit's API), `zeroize = 1.9.1`. The published Biscuit source is vendored with seven missing feature guards and tightly checked formatting changes (§E29); macros/default features are disabled. Audit enforcement remains enabled for the vendored crate.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: root issuance, attenuation, authorization with each check type, widening rejection, expiry.
-- [ ] Define the Datalog vocabulary once (facts: `resource`, `churn`, `time`, `touches_unsafe`, `diff_blake3`, `right`; checks as in the chatlog but with correct polarity) and freeze it in a versioned constant.
-- [ ] Implement `Authority::new_session`/`issue_root`; keep the private key inside a type with no `Debug`/`Serialize` and zeroize on drop where the library permits (API to confirm).
-- [ ] Implement `attenuate` so each child scope is provably narrower: attenuation adds only `check if` blocks; test that a widened scope still fails authorization.
-- [ ] Implement `authorize` with facts from an injected `Clock` (the chatlog hard-coded `current_time = 1729000000`; that is a bug, not a design).
-- [ ] Bind `diff_blake3` into checks so a token authorizes one exact patch (prevents payload swap in the command queue).
-- [ ] Provide token size/serialisation helpers and a test for deep attenuation chains (child of child of child).
-- [ ] Add a revocation-id hook if the library supports it (API to confirm); keep it optional.
-- [ ] Windows: nothing platform-specific; add the Linux leg and verify the crate builds with the aws-lc-rs provider (`cargo tree -i ring` stays empty for this crate's tree).
+- [x] Descriptor `specs/descriptors/capability_authorization.json`, observed RED then real signature/Datalog implementation; §E28.
+- [x] Vocabulary version 1: resource/symbol, actual churn, time in microseconds, unsafe flag, diff hash, requested right, authority grants/version and issuing-frame provenance. Generated token blocks contain no ambient facts/rules. Explicit authority trust excludes descendant facts from ancestor checks.
+- [x] Root issuance with private signing-key ownership, redacted public Debug, no private accessor/serialization, and the pinned signing key's zeroizing Drop. Compile-fail privacy checks; §E28.
+- [x] Attenuation appends only signed checks. Effective permission is the intersection with every ancestor; a wider requested child scope can be represented but cannot grant outside its ancestors. Expiry/widening attacks and generated chains checked; §E28.
+- [x] Authorization uses an injected clock, rejects before issuance and at exclusive expiry, and bounds Datalog evaluation. No unconditional allow policy.
+- [x] Exact diff-hash equality/missing-hash checks, including descendants trying to drop the binding. Trusted hash/fact construction and queue wiring remain in the hybrid verifier's separate TODOs.
+- [x] Opaque transport/reparse helpers; 64 KiB token and 32-block limits; signature and deep-chain checks.
+- [x] Optional external revocation-ID list: revoking any ancestor denies its descendants. No external revocation database is fabricated.
+- [x] Windows path separator/ASCII case handling and device/alias rejection; Linux tests; no ring in the capability's normal dependency graph. Lexical checks do not establish filesystem containment; callers must resolve symlinks/case aliases before supplying facts.
+- [ ] Close dependency audit debt (§E29); integrate real fact construction/issuer distribution and the remaining hybrid verifier stages. Standalone capability checks do not complete the command approval pipeline.
 
 **Tests.**
 
@@ -2028,16 +2029,16 @@ pub enum CapabilityError { BadSignature, Malformed, Expired, ScopeWidening, Data
 
 | logic_name | type_of | name | file_path | tests |
 |---|---|---|---|---|
-| Root Token Issuance | method | `Authority::issue_root` | `crates/polaris-security/crates/capability/src/authority.rs` | `root_token_verifies_with_public_key`, `root_token_wrong_key_rejected`, `root_scope_grants_listed_rights_only`, `authority_debug_does_not_print_key` |
-| Token Attenuation | function | `attenuate` | `crates/polaris-security/crates/capability/src/attenuate.rs` | `child_cannot_widen_path`, `child_cannot_raise_churn`, `child_ttl_cannot_exceed_parent`, `unsafe_forbidden_stays_forbidden`, `chain_of_three_attenuations_monotone` |
-| Mutation Authorization | function | `authorize` | `crates/polaris-security/crates/capability/src/authorize.rs` | `in_scope_mutation_allowed`, `out_of_scope_path_denied`, `expired_token_denied`, `diff_hash_mismatch_denied`, `uses_injected_clock` |
+| Root Token Issuance | method | `Authority::issue_root` | `crates/polaris-security/crates/capability/src/token.rs` | `root_token_verifies_with_public_key`, `root_token_wrong_key_rejected`, `root_scope_grants_listed_rights_only`, `authority_and_token_debug_are_redacted` |
+| Token Attenuation | function | `attenuate` | `crates/polaris-security/crates/capability/src/token.rs` | `widening_child_never_escapes_ancestor_checks`, `chain_of_three_attenuations_monotone`, `prop_attenuation_is_monotone`, `revoking_an_ancestor_denies_all_descendants` |
+| Mutation Authorization | function | `authorize` | `crates/polaris-security/crates/capability/src/authorize.rs` | `resource_scope_is_component_bounded`, `expiry_uses_injected_clock_and_is_exclusive`, `scope_limits_and_diff_binding_are_enforced`, `token_facts_cannot_spoof_ambient_facts_or_grants`, `datalog_fact_explosion_exhausts_budget_without_granting` |
 
 **Risks & open questions.**
-- biscuit-auth 6.0.0 is a major bump from the chatlog's 4.0 API; builder/authorizer macros and block creation may differ. **UNVERIFIED**: API to confirm at implementation.
+- VERIFIED (§E28–§E29): pinned 6.0.0 runtime builder, signature, origin and revocation APIs exercised. The upstream no-default-features import bug required a minimal vendored feature-guard patch; unused macros are not enabled to hide it.
 - The chatlog's attenuation example was semantically wrong (it asserted a `churn_limit` fact and compared `<=` against the token's own number, and used `UNIX_EPOCH` seconds with a fixed "now"); the corrected design checks authorizer-supplied facts against token-embedded limits.
 - Biscuit bounds, not prevents, injection damage (plan correction, VERIFIED): a token for `src/math/matrix.rs` still lets an injected agent corrupt that file within its limits.
 - Where the session root key lives and how child frames in other processes (worker, guest) verify tokens (public key distribution) is not settled; the rpc named-pipe token auth is separate.
-- Token-size growth with deep chains and per-block signature verification cost are **UNVERIFIED**.
+- VERIFIED (§E28): synthetic 1/4/16-block token sizes and p99 recorded separately for cached authorization and full parse/signature verification. Production throughput, release-profile latency and workload calibration remain UNVERIFIED.
 
 **Chatlog sources.** Msg 12-13 (Event-driven core, Biscuit/Datalog attenuation, `check if` rules for resource, churn, no-unsafe, TTL; hybrid verifier layer 1), msg 15 (`computed_diff_blake3`/`expected_diff_blake3` payload attestation), msg 1 (child sub-agent ceilings), plan (child frames inherit attenuated tokens). Corrected: biscuit 4.0 -> 6.0.0; fixed-time and inverted-limit bugs; `ed25519-dalek` dependency dropped (keys via biscuit); "mathematical guarantee against prompt injection" reduced to damage bounding.
 

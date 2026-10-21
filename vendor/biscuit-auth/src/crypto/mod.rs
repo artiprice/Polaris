@@ -750,6 +750,7 @@ impl TokenNext {
     }
 }
 
+#[cfg(feature = "pem")]
 fn parse_any_algorithm<I: Copy, O>(
     i: I,
     parse: fn(i: I, alg: Algorithm) -> Result<O, error::Format>,

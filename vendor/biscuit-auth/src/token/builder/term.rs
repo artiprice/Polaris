@@ -16,9 +16,9 @@ use crate::{
 
 #[cfg(feature = "datalog-macro")]
 use super::AnyParam;
-use super::{set, Convert, Fact};
 #[cfg(feature = "datalog-macro")]
 use super::ToAnyParam;
+use super::{set, Convert, Fact};
 
 /// Builder for a Datalog value
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -11,6 +11,9 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[features]
+kani = []
+
 [dependencies]
 thiserror = { workspace = true }
 biscuit-auth = { workspace = true }

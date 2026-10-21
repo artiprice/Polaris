@@ -18,9 +18,9 @@
 |---|---|
 | PASS | 27 |
 | FAIL | 3 |
-| IN PROGRESS | 22 |
+| IN PROGRESS | 23 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 97 |
+| NOT STARTED | 96 |
 | **total** | 164 |
 
 **Current phase: P0 → P1.** P0 exit gate (PHASES.md P0) is **not fully met**: S0-10 needs a manual key test
@@ -31,6 +31,11 @@ supervision and reaper teardown now have Windows/Linux evidence (§E22–§E23),
 have real-storage recovery evidence (§E25) on the schema-2 lifecycle contract (§E24). These crates are not fully PASS
 because native worker/process and larger verification tasks remain. The generated crate rows are the
 status index; implementation does not imply the entire crate/phase gate is complete.
+
+The next core dependency, signed capability authorization, now has real Biscuit/signature and
+attenuation evidence (§E28); the hybrid mutation verifier and S1 safety stages are still open.
+The minimal published-source feature patch is mechanically checked (§E29). Current advisory checks
+pass, but dependency audits fail; no new audit exemptions were added.
 
 Next actions: (1) **team** — request keys/accounts (P0-ACC-1..4); (2) **each member** — run
 `@prime/tools/setup/setup-windows.ps1` (PHASES.md §0.1) and the S0-10 probe in their terminals; (3) **team** —
@@ -62,7 +67,7 @@ allowed verifier boundary (§E25); `check-witness` is green and its implementati
 | P0-ENV-4 `.cargo/config.toml`, longpaths, PROTOC | PASS | §E12/§E13: `CMAKE_POLICY_VERSION_MINIMUM=3.5` + `xtask` alias committed; `core.longpaths=true`; protoc on PATH; heavy deps build (openshell-sdk S0-1, LanceDB S0-9, ort S0-4); short target-dir not needed |
 | P0-ENV-5 Linux check leg in WSL2 | PASS | §E10 `verify-linux-leg.sh` (check + doc `-Dwarnings`, fmt, 93 packages) + xtask tests on Linux |
 | P0-ENV-6 local OpenAI-compatible server | PASS (endpoint) | §E10: Ollama 0.40.6 + `nemotron-mini`, SSE streaming OK (TTFT 2.3 s warm, 32.8 s cold). **Tool calling flaky: tool_calls in 1 of 4 runs** (the one success was in the previous session; its transcript is not in §E — the two runs in §E10 both show `tool_calls ABSENT`) — risk R22 for P3-X-1, evaluate a stronger small model when disk allows |
-| P0-ENV-7 `deny.toml`, cargo-vet, Slint licence decision | IN PROGRESS | §E11: `cargo deny check` all ok; `cargo vet` OK with 5 audit imports and **29 exemptions (not audits)**; Slint licence choice open (team, ADR-014) |
+| P0-ENV-7 `deny.toml`, cargo-vet, Slint licence decision | IN PROGRESS | §E11 historical audit snapshot; §E29 current `cargo deny check` all ok, `cargo vet --locked` FAIL: 241 unvetted dependencies in the expanded graph. Existing exemptions are not audits; no new exemptions added. Slint licence choice remains open (team, ADR-014). |
 | P0-XT-1 Rust xtask port of checks | PASS | §E9 (test-first: red → green; real tree OK; negative test FAILs as expected; Windows + WSL2) |
 
 ## P0 — spikes
@@ -217,7 +222,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-security-capability` | `polaris-security-capability` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | §E28–§E29: real Ed25519/Biscuit root issuance, signed monotone attenuation, scoped rights/metrics/expiry/hash checks, revocation hook and bounded evaluation. 20 contracts + 2 compile-fail tests, Windows/Linux, 95,847 fuzz executions, isolated expiry Kani proof and path Miri. Published-source vendor patch verified; dependency audit debt and full mutation-pipeline integration remain open. |
 | `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |

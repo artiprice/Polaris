@@ -4,10 +4,6 @@
 [cargo-vet]
 version = "0.10"
 
-[policy.biscuit-auth]
-audit-as-crates-io = true
-notes = "Vendored 6.0.0 changes only five import feature guards for upstream issue 305. Audit requirements remain; this is not a dependency audit or exemption."
-
 [imports.bytecode-alliance]
 url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
 
@@ -22,6 +18,10 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
 [imports.zcash]
 url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
+
+[policy.biscuit-auth]
+audit-as-crates-io = true
+notes = "Vendored 6.0.0 changes only seven missing feature guards for upstream issue 305 and warning-denied builds. Audit requirements remain; this is not a dependency audit or exemption."
 
 [[exemptions.arrayvec]]
 version = "0.7.8"

@@ -12,7 +12,7 @@ FUZZ_SECONDS="${1:-60}"
 MIRI_CRATES=(polaris-sdk polaris-kernel-directives polaris-kernel-bus)
 # Kani: only harnesses CBMC can finish within WSL memory (PLAN W24). polaris-storage-cas has none yet:
 # a fold_ref harness grew CBMC past 6 GB.
-KANI_CRATES=(polaris-sdk polaris-kernel-directives)
+KANI_CRATES=(polaris-sdk polaris-kernel-directives polaris-security-capability)
 FUZZ_TARGETS=(directives_grammar cas_blob_decode eventlog_decode config_toml_layer rtk_stream ui_completion biscuit_token_bytes)
 # Tests skipped under Miri, by name, with the reason:
 #   event_record_json_snapshot — insta calls socketpair(type 5), which Miri does not support

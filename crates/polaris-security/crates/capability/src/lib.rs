@@ -23,6 +23,8 @@
 //! ```
 
 mod authorize;
+#[cfg(feature = "kani")]
+mod kani_proofs;
 mod scope;
 mod token;
 

@@ -653,7 +653,7 @@ kind = "lib"
 phase = "P3"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Biscuit capability implementation in progress; capability_authorization descriptor and observed RED contracts. Current verification evidence pending."
+evidence = "§E28–§E29: real Ed25519/Biscuit root issuance, signed monotone attenuation, scoped rights/metrics/expiry/hash checks, revocation hook and bounded evaluation. 20 contracts + 2 compile-fail tests, Windows/Linux, 95,847 fuzz executions, isolated expiry Kani proof and path Miri. Published-source vendor patch verified; dependency audit debt and full mutation-pipeline integration remain open."
 summary = "Biscuit capability tokens: session authority, per-frame attenuation (path, churn, TTL, no-unsafe), authorization."
 deps = ["polaris-sdk"]
 ext = ["biscuit-auth", "zeroize"]
@@ -2121,7 +2121,7 @@ group = "security"
 name = "biscuit-auth"
 version = "6.0.0"
 default_features = false # Runtime builders only; avoid unused macro/PEM features and RUSTSEC-2026-0173.
-path = "vendor/biscuit-auth" # Published source plus five missing import cfg guards (upstream issue 305).
+path = "vendor/biscuit-auth" # Published source plus seven missing feature guards (upstream issue 305 / warning-denied build).
 group = "security"
 [[ext]]
 name = "rand"
