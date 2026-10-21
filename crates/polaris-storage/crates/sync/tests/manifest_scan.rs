@@ -5,7 +5,7 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 
-use polaris_storage_sync::{EntryKind, HashMode, IgnoreRules, RelPath, scan};
+use polaris_storage_sync::{HashMode, IgnoreRules, RelPath, scan};
 
 type TestResult = Result<(), Box<dyn Error>>;
 
@@ -141,6 +141,7 @@ fn shebang_marks_executable() -> TestResult {
 #[cfg(windows)]
 #[test]
 fn windows_junction_not_followed() -> TestResult {
+    use polaris_storage_sync::EntryKind;
     let tmp = tempfile::tempdir()?;
     let outside = tmp.path().join("outside");
     let ws = tmp.path().join("ws");
