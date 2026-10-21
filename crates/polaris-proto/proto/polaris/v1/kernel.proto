@@ -1,0 +1,230 @@
+// Kernel contract: command submission, event subscription and terminal attachment.
+syntax = "proto3";
+
+package polaris.v1;
+
+import "google/protobuf/timestamp.proto";
+import "polaris/v1/common.proto";
+
+service PolarisKernelService {
+  // Submits an unverified command. Verification happens inside the kernel; a verified command never
+  // crosses the wire.
+  rpc SubmitCommand(SubmitCommandRequest) returns (SubmitCommandResponse);
+  // Streams the records of a session from `from_seq` on (replay, then live).
+  rpc Subscribe(SubscribeRequest) returns (stream EventRecord);
+  // Bidirectional terminal stream for one frame.
+  rpc AttachTerminal(stream TerminalClientFrame) returns (stream TerminalServerFrame);
+  // Liveness probe.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message SubmitCommandRequest {
+  Command command = 1;
+  reserved 100 to 199;
+}
+
+message SubmitCommandResponse {
+  // Echo of the accepted command id.
+  Uuid command_id = 1;
+  reserved 100 to 199;
+}
+
+message SubscribeRequest {
+  Uuid session = 1;
+  // First sequence number to deliver (0 = from the start).
+  uint64 from_seq = 2;
+  reserved 100 to 199;
+}
+
+// A command as submitted (sdk `Command<Unverified>`). The approval witness is never serialised.
+message Command {
+  Uuid id = 1;
+  Uuid frame = 2;
+  // Opaque capability token (a serialised Biscuit); never interpreted or logged here.
+  bytes token = 3;
+  CommandBody body = 4;
+  reserved 100 to 199;
+}
+
+// What a command asks the kernel to do. Text payloads are CAS references.
+message CommandBody {
+  oneof kind {
+    SubmitUserInput submit_user_input = 1;
+    ProposeDiff propose_diff = 2;
+    AcquireAstScope acquire_ast_scope = 3;
+    ReleaseAstScope release_ast_scope = 4;
+    SpawnSubagent spawn_subagent = 5;
+    ExecuteTool execute_tool = 6;
+    RollbackTo rollback_to = 7;
+    CancelFrame cancel_frame = 8;
+    ApplyDirective apply_directive = 9;
+  }
+  reserved 100 to 199;
+
+  message SubmitUserInput { Cid text = 1; }
+  message ProposeDiff { Cid diff = 1; }
+  message AcquireAstScope {
+    Cid path = 1;
+    Cid symbol = 2;
+  }
+  message ReleaseAstScope { uint64 lease = 1; }
+  message SpawnSubagent {
+    AgentRole role = 1;
+    Effort effort = 2;
+    Cid brief = 3;
+  }
+  message ExecuteTool { Cid call = 1; }
+  message RollbackTo { uint64 seq = 1; }
+  message CancelFrame { Uuid frame = 1; }
+  message ApplyDirective { Cid directive = 1; }
+}
+
+// Versioned envelope appended to the event log (sdk `EventRecord`).
+message EventRecord {
+  uint64 seq = 1;
+  google.protobuf.Timestamp at = 2;
+  // Event schema version; decoders reject versions they do not know.
+  uint32 schema = 3;
+  Uuid session = 4;
+  Event event = 5;
+  reserved 100 to 199;
+}
+
+// A domain event (sdk `Event`, schema v2). Existing field numbers remain stable.
+message Event {
+  oneof kind {
+    SessionStarted session_started = 1;
+    DirectiveApplied directive_applied = 2;
+    DecisionMade decision_made = 3;
+    ModelRequestCompleted model_request_completed = 4;
+    ToolExecutionStarted tool_execution_started = 5;
+    ToolExecutionCompleted tool_execution_completed = 6;
+    DiffApproved diff_approved = 7;
+    DiffRejected diff_rejected = 8;
+    FileLeaseGranted file_lease_granted = 9;
+    FileLeaseRevoked file_lease_revoked = 10;
+    SandboxSnapshotBranchCreated sandbox_snapshot_branch_created = 11;
+    SandboxExecutionCompleted sandbox_execution_completed = 12;
+    ProofOfDonePassed proof_of_done_passed = 13;
+    ProofOfDoneBlocked proof_of_done_blocked = 14;
+    WorkerRestarted worker_restarted = 15;
+    CircuitTripped circuit_tripped = 16;
+    DeadLettered dead_lettered = 17;
+    SessionClosed session_closed = 18;
+    SessionConfigured session_configured = 19;
+    SessionPaused session_paused = 20;
+    SessionResumed session_resumed = 21;
+  }
+  reserved 100 to 199;
+
+  message SessionStarted { Cid workspace = 1; }
+  message DirectiveApplied { Cid directive = 1; }
+  message DecisionMade {
+    Uuid frame = 1;
+    Cid decision = 2;
+    uint64 latency_us = 3;
+  }
+  message ModelRequestCompleted {
+    Uuid frame = 1;
+    Cid request = 2;
+    uint32 prompt_tokens = 3;
+    uint32 completion_tokens = 4;
+    uint32 cached_tokens = 5;
+    // Cost in micro-USD.
+    uint64 cost_micro_usd = 6;
+    uint64 latency_us = 7;
+  }
+  message ToolExecutionStarted {
+    Uuid frame = 1;
+    Cid call = 2;
+  }
+  message ToolExecutionCompleted {
+    Uuid frame = 1;
+    Cid call = 2;
+    bool ok = 3;
+    uint64 latency_us = 4;
+  }
+  message DiffApproved {
+    Uuid frame = 1;
+    Cid diff = 2;
+  }
+  message DiffRejected {
+    Uuid frame = 1;
+    Cid diff = 2;
+    Cid reason = 3;
+  }
+  message FileLeaseGranted {
+    Uuid frame = 1;
+    Cid path = 2;
+    uint64 lease = 3;
+  }
+  message FileLeaseRevoked {
+    Uuid frame = 1;
+    uint64 lease = 2;
+  }
+  message SandboxSnapshotBranchCreated {
+    Uuid frame = 1;
+    Cid parent = 2;
+    Cid branch = 3;
+  }
+  message SandboxExecutionCompleted {
+    Uuid frame = 1;
+    Cid exec = 2;
+    sint32 exit_code = 3;
+    uint64 latency_us = 4;
+  }
+  message ProofOfDonePassed {
+    Uuid frame = 1;
+    Cid report = 2;
+  }
+  message ProofOfDoneBlocked {
+    Uuid frame = 1;
+    Cid report = 2;
+  }
+  message WorkerRestarted {
+    WorkerKind worker = 1;
+    uint32 restarts = 2;
+  }
+  message CircuitTripped { Cid breaker = 1; }
+  message DeadLettered { Cid message = 1; }
+  message SessionClosed {}
+  message SessionConfigured { Cid configuration = 1; }
+  message SessionPaused {}
+  message SessionResumed {}
+}
+
+// Client-to-kernel frame of a terminal attachment.
+message TerminalClientFrame {
+  oneof kind {
+    TerminalOpen open = 1;
+    // Keystrokes / pasted input; at most 896 KiB per frame.
+    bytes input = 2;
+    TerminalResize resize = 3;
+  }
+  reserved 100 to 199;
+}
+
+message TerminalOpen {
+  Uuid frame = 1;
+  uint32 cols = 2;
+  uint32 rows = 3;
+}
+
+message TerminalResize {
+  uint32 cols = 1;
+  uint32 rows = 2;
+}
+
+// Kernel-to-client frame of a terminal attachment.
+message TerminalServerFrame {
+  oneof kind {
+    // Terminal output; at most 896 KiB per frame.
+    bytes output = 1;
+    TerminalExit exit = 2;
+  }
+  reserved 100 to 199;
+}
+
+message TerminalExit {
+  sint32 code = 1;
+}

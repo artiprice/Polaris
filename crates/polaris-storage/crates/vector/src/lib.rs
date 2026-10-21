@@ -3,7 +3,7 @@
 // Replace this file when the crate's phase starts; see @prime/PLAN.md and @prime/PHASES.md.
 //! # polaris-storage-vector
 //!
-//! Embedded vector store (LanceDB) for RAG, NVIDIA docs, session memory and the L3 semantic cache; usearch fallback if spike S0-9 fails.
+//! Embedded vector store for RAG, NVIDIA docs, session memory and the L3 semantic cache: usearch (HNSW) + SQLite metadata by default (S0-9); LanceDB behind the opt-in `lancedb` feature.
 //!
 //! | Property | Value |
 //! |---|---|
@@ -15,15 +15,16 @@
 //!
 //! ## Responsibilities
 //!
-//! - Implement the sdk `VectorStore` trait over LanceDB tables under ~/.polaris/vectors and .polaris/vectors.
-//! - Never pin arrow directly; use lancedb's re-exports (lancedb 0.40 requires arrow ^58).
-//! - Keep the heavy dependency behind this leaf crate so early phases compile fast.
+//! - Implement the sdk `VectorStore` trait over a usearch HNSW index + SQLite metadata under ~/.polaris/vectors and .polaris/vectors (S0-9: 1 min 41 s build, 4.3 MB exe, kNN p50 0.475 ms at 10k x 384).
+//! - Persist the index with save-to-temp + atomic rename; parallel insert (single-threaded insert measured at ~1 ms/vector).
+//! - Optional `lancedb` feature (off by default and in CI): lancedb 0.40.0 needs features = \["remote"\] (job.rs gating bug) and protoc; never pin arrow directly, use lancedb's re-exports.
 //!
 //! ## Planned API
 //!
-//! - `struct LanceStore`
+//! - `struct HnswStore`
 //! - `fn upsert(chunks)`
 //! - `fn search(vector, k)`
+//! - struct LanceStore (feature `lancedb`)
 //!
 //! ## Internal dependencies
 //!
@@ -31,4 +32,4 @@
 //!
 //! ## Planned external dependencies
 //!
-//! `lancedb`, `usearch`
+//! `usearch`, `rusqlite`, `lancedb`

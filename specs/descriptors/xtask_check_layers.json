@@ -1,0 +1,40 @@
+{
+  "type_of": "function",
+  "name": "check_layers",
+  "file_path": "xtask/src/layers.rs",
+  "logic_name": "Xtask Check Layers",
+  "test_list": [
+    {
+      "test_name": "downward_cross_group_edge_is_ok",
+      "description": "An edge to a strictly lower layer in another group passes."
+    },
+    {
+      "test_name": "same_layer_cross_group_edge_is_rejected",
+      "description": "An edge between different groups on the same layer yields NotDownward."
+    },
+    {
+      "test_name": "facade_to_child_same_layer_is_ok",
+      "description": "A parent facade may depend on its child on the same layer."
+    },
+    {
+      "test_name": "child_to_parent_edge_is_rejected",
+      "description": "A child depending on its own parent facade yields ChildToParent."
+    },
+    {
+      "test_name": "sibling_edge_upward_is_rejected",
+      "description": "A sibling edge pointing to a higher layer yields NotDownward."
+    },
+    {
+      "test_name": "manifest_edges_must_equal_table_edges",
+      "description": "An internal dependency present in cargo metadata but absent from the table (or vice versa) yields EdgeMismatch."
+    }
+  ],
+  "dependencies": ["xtask::table"],
+  "libraries": ["thiserror", "serde_json"],
+  "inputs": [
+    { "name": "table", "type": "&CrateTable", "description": "Parsed crate table (layers, parents, declared edges)." },
+    { "name": "actual", "type": "&BTreeMap<String, BTreeSet<String>>", "description": "Internal edges per package from cargo metadata." }
+  ],
+  "output_type": "Vec<LayerViolation>",
+  "output_description": "All layer and edge violations; empty when the graph obeys the layer rule."
+}

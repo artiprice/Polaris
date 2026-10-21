@@ -1,0 +1,57 @@
+{
+  "type_of": "struct",
+  "name": "RestartIntensity / RestartWindow",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/intensity.rs",
+  "logic_name": "Restart Intensity",
+  "test_list": [
+    {
+      "test_name": "default_is_three_per_ten_seconds",
+      "description": "RestartIntensity::default() is 3 restarts per 10 s (chatlog value)."
+    },
+    {
+      "test_name": "allows_up_to_max_then_exceeds",
+      "description": "With max_restarts = N the first N requests are Allowed (with a running count) and request N+1 inside the window is Exceeded."
+    },
+    {
+      "test_name": "window_slides",
+      "description": "Restarts older than the window stop counting, so a restart is allowed again once the oldest one aged out."
+    },
+    {
+      "test_name": "exact_window_age_is_outside",
+      "description": "A restart exactly `window` old no longer counts (half-open window [now - window, now))."
+    },
+    {
+      "test_name": "zero_max_never_restarts",
+      "description": "max_restarts = 0 reports Exceeded on the first failure."
+    },
+    {
+      "test_name": "exceeded_requests_are_not_recorded",
+      "description": "A refused restart is not added to the history, so refusals cannot extend the lockout."
+    },
+    {
+      "test_name": "prop_restarts_per_window_bounded",
+      "description": "For any non-decreasing failure times, the accepted restarts inside any window of length `window` never exceed max_restarts."
+    }
+  ],
+  "dependencies": [
+    "tokio::time::Instant"
+  ],
+  "libraries": [
+    "tokio (time::Instant)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "intensity",
+      "type": "RestartIntensity",
+      "description": "max_restarts per window."
+    },
+    {
+      "name": "now",
+      "type": "tokio::time::Instant",
+      "description": "Injected failure time."
+    }
+  ],
+  "output_type": "RestartVerdict",
+  "output_description": "Allowed { restarts_in_window } or Exceeded."
+}

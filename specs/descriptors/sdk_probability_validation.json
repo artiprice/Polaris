@@ -1,0 +1,18 @@
+{
+  "type_of": "struct",
+  "name": "Probability",
+  "file_path": "crates/polaris-sdk/src/system_one.rs",
+  "logic_name": "Probability Validation",
+  "test_list": [
+    { "test_name": "rejects_nan", "description": "Probability::new(f32::NAN) is Err." },
+    { "test_name": "rejects_above_one_and_below_zero", "description": "1.0001, -0.0001, +inf, -inf are Err." },
+    { "test_name": "accepts_bounds", "description": "0.0 and 1.0 are accepted; get() returns the value." },
+    { "test_name": "ordering_is_total_for_valid_values", "description": "Ord is implemented; sorting a set of valid values never panics and is ascending." },
+    { "test_name": "serde_rejects_out_of_range", "description": "Deserializing 1.5 into Probability fails (validation also on the wire)." }
+  ],
+  "dependencies": ["polaris_sdk::error::ParseError"],
+  "libraries": ["serde", "serde_json (dev)"],
+  "inputs": [ { "name": "value", "type": "f32", "description": "Candidate probability." } ],
+  "output_type": "Result<Probability, ParseError>",
+  "output_description": "A finite value in 0.0..=1.0 with a total order."
+}

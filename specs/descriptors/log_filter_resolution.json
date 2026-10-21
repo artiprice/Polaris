@@ -1,0 +1,50 @@
+{
+  "type_of": "function",
+  "name": "resolve_filter",
+  "file_path": "crates/polaris-log/src/init.rs",
+  "logic_name": "Filter Resolution",
+  "test_list": [
+    {
+      "test_name": "explicit_level_wins_over_env",
+      "description": "A non-empty configured level is used and RUST_LOG is ignored."
+    },
+    {
+      "test_name": "empty_level_uses_env",
+      "description": "An empty level falls back to RUST_LOG."
+    },
+    {
+      "test_name": "nothing_set_defaults_to_info",
+      "description": "With neither set the filter is `info`."
+    },
+    {
+      "test_name": "bad_level_is_error",
+      "description": "An unparsable directive is LogError::BadFilter."
+    },
+    {
+      "test_name": "bad_env_is_error_when_it_is_used",
+      "description": "A broken RUST_LOG is an error only when it is the source."
+    },
+    {
+      "test_name": "non_unicode_env_is_error",
+      "description": "Windows: an unpaired-surrogate RUST_LOG is BadFilter, not a panic."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "tracing-subscriber (env-filter)"
+  ],
+  "inputs": [
+    {
+      "name": "level",
+      "type": "&str",
+      "description": "Configured RUST_LOG-style directives."
+    },
+    {
+      "name": "env",
+      "type": "Option<&OsStr>",
+      "description": "Value of RUST_LOG read with var_os by the caller."
+    }
+  ],
+  "output_type": "Result<EnvFilter, LogError>",
+  "output_description": "Pure; the environment is read by start()."
+}

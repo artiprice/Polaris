@@ -1,0 +1,56 @@
+{
+  "type_of": "function",
+  "name": "check_message_len / encode_checked / decode_checked",
+  "file_path": "crates/polaris-proto/src/limits.rs",
+  "logic_name": "Message Size Guard",
+  "test_list": [
+    {
+      "test_name": "at_limit_is_accepted",
+      "description": "A length equal to the limit passes."
+    },
+    {
+      "test_name": "over_limit_is_rejected",
+      "description": "limit + 1 fails with Oversize carrying the length and the limit; usize::MAX does not overflow."
+    },
+    {
+      "test_name": "limit_is_configurable",
+      "description": "The same length passes under a larger limit and fails under a smaller one."
+    },
+    {
+      "test_name": "zero_length_is_accepted",
+      "description": "An empty message is accepted, even with limit 0."
+    },
+    {
+      "test_name": "gateway_constants_match_pitfall_w22",
+      "description": "MAX_MESSAGE_BYTES is 1 MiB, MAX_CHUNK_BYTES is 896 KiB and a chunk plus its framing overhead stays under the message limit."
+    },
+    {
+      "test_name": "encode_checked_rejects_before_encoding",
+      "description": "A message whose encoded length exceeds the limit is refused by encode_checked; one that fits encodes to the same bytes as prost."
+    },
+    {
+      "test_name": "decode_checked_rejects_before_decoding",
+      "description": "Input longer than the limit is refused without decoding; input at the limit decodes; garbage within the limit is a Decode error, not a panic."
+    }
+  ],
+  "dependencies": [
+    "crates/polaris-proto/src/error.rs (ProtoError)"
+  ],
+  "libraries": [
+    "prost"
+  ],
+  "inputs": [
+    {
+      "name": "len",
+      "type": "usize",
+      "description": "Length in bytes of an encoded message or stream chunk."
+    },
+    {
+      "name": "limit",
+      "type": "usize",
+      "description": "Maximum accepted length (MAX_MESSAGE_BYTES by default)."
+    }
+  ],
+  "output_type": "Result<(), ProtoError>",
+  "output_description": "Ok when len <= limit, otherwise Oversize { len, limit }."
+}

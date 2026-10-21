@@ -1,0 +1,53 @@
+{
+  "type_of": "struct",
+  "name": "DfaRedactor",
+  "file_path": "crates/polaris-security/crates/automata/src/redactor.rs",
+  "logic_name": "DFA Redactor",
+  "test_list": [
+    {
+      "test_name": "redacts_matched_spans",
+      "description": "Secrets and high-entropy runs are replaced by [REDACTED:<category>] and counted."
+    },
+    {
+      "test_name": "leaves_clean_text_identical",
+      "description": "Clean input is copied byte for byte with 0 replacements."
+    },
+    {
+      "test_name": "reuses_output_buffer",
+      "description": "redact_into appends to the caller's buffer; a reused buffer with enough capacity is not reallocated."
+    },
+    {
+      "test_name": "idempotent_on_redacted_text",
+      "description": "Redacting already-redacted text changes nothing."
+    },
+    {
+      "test_name": "prop_redaction_is_idempotent",
+      "description": "For random inputs with embedded generated secrets, redact(redact(x)) == redact(x) and no secret survives."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror",
+    "proptest (dev)",
+    "regex (dev, reference)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&[u8]",
+      "description": "Text to mask."
+    },
+    {
+      "name": "out",
+      "type": "&mut Vec<u8>",
+      "description": "Caller-owned output buffer."
+    }
+  ],
+  "output_type": "RedactStats",
+  "output_description": "Bytes read and spans replaced."
+}

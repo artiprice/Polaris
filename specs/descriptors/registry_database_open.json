@@ -1,0 +1,69 @@
+{
+  "type_of": "method",
+  "name": "Registry::open",
+  "file_path": "crates/polaris-storage/crates/registry/src/registry.rs",
+  "logic_name": "Database Open",
+  "test_list": [
+    {
+      "test_name": "bundled_sqlite_has_fts5_trigram",
+      "description": "Go/no-go gate: CREATE VIRTUAL TABLE ... USING fts5(..., tokenize='trigram') works in the bundled SQLite and finds a mid-word substring."
+    },
+    {
+      "test_name": "open_creates_wal_database",
+      "description": "open creates the directory and registry.db in WAL mode at the current schema version."
+    },
+    {
+      "test_name": "connection_pragmas_are_applied",
+      "description": "open_connection sets foreign_keys=ON, synchronous=NORMAL and the configured busy_timeout."
+    },
+    {
+      "test_name": "reopen_preserves_data",
+      "description": "Dropping the handle and opening the directory again keeps sessions and indexed history."
+    },
+    {
+      "test_name": "path_with_spaces_and_non_ascii_works",
+      "description": "A registry under `dir with space/événements` opens, writes and reads."
+    },
+    {
+      "test_name": "two_handles_share_one_database",
+      "description": "Two Registry handles on the same directory (WAL) see each other's committed writes."
+    },
+    {
+      "test_name": "concurrent_readers_while_one_writer_inserts",
+      "description": "Four reader threads query while a writer indexes messages through other handles; nothing fails."
+    },
+    {
+      "test_name": "busy_is_reported_when_writer_is_blocked",
+      "description": "While another connection holds the write lock a write returns Busy (transient) after the bounded retries, and succeeds once the lock is released."
+    },
+    {
+      "test_name": "garbage_file_is_rejected",
+      "description": "A registry.db that is not a SQLite database is refused with a Fatal-kind error and is not overwritten."
+    },
+    {
+      "test_name": "handle_is_send_and_sync",
+      "description": "Registry can be shared across threads and async tasks."
+    },
+    {
+      "test_name": "error_kinds_are_classified",
+      "description": "Busy is Transient, SchemaTooNew and Corrupt are Fatal, BadValue is Permanent."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::{ErrorKind, HasKind}"
+  ],
+  "libraries": [
+    "rusqlite",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "dir",
+      "type": "&Path",
+      "description": "Directory that holds registry.db (created if missing)."
+    }
+  ],
+  "output_type": "Result<Registry, RegistryError>",
+  "output_description": "Handle owning a dedicated database thread; WAL, busy timeout and migrations are applied before it is returned."
+}

@@ -13,6 +13,8 @@ if (-not (Get-Command protoc -ErrorAction SilentlyContinue)) {
 $start = Get-Date
 $build = Start-Process -FilePath cargo -ArgumentList @('build', '--release', '-j', "$Jobs") -NoNewWindow -PassThru `
     -RedirectStandardOutput build.out.log -RedirectStandardError build.log
+# Touch Handle now: without it Process.ExitCode stays null after exit (Start-Process -PassThru quirk).
+$null = $build.Handle
 $peakMB = 0
 $peakFreeLowGB = [double]::MaxValue
 while (-not $build.HasExited) {

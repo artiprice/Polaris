@@ -1,0 +1,54 @@
+{
+  "type_of": "function",
+  "name": "filter_repo_layer",
+  "file_path": "crates/polaris-config/src/trust.rs",
+  "logic_name": "Repo Layer Trust Filter",
+  "test_list": [
+    {
+      "test_name": "repo_cannot_set_endpoint",
+      "description": "nebius.base_url from a repo layer is UntrustedRepoKey."
+    },
+    {
+      "test_name": "repo_cannot_downgrade_sandbox_tier",
+      "description": "sandbox.tier from a repo layer is UntrustedRepoKey."
+    },
+    {
+      "test_name": "repo_may_set_allowlisted_style_keys",
+      "description": "ui.*, log.level, concurrency.* and ratelimit.* pass through."
+    },
+    {
+      "test_name": "trust_grant_unlocks_listed_key",
+      "description": "A trust grant for sandbox.tier lets exactly that key through."
+    },
+    {
+      "test_name": "repo_literal_secret_is_rejected",
+      "description": "A literal credential in a repo layer is SecretLiteral (distinct from UntrustedRepoKey)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::ModelId"
+  ],
+  "libraries": [
+    "toml",
+    "serde",
+    "etcetera",
+    "dunce",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "table",
+      "type": "&toml::Table",
+      "description": "Repo layer."
+    },
+    {
+      "name": "grant",
+      "type": "&TrustGrant",
+      "description": "Keys the user trusted for this repo."
+    }
+  ],
+  "output_type": "Result<(), ConfigError>",
+  "output_description": "Repo config is attacker-controlled input; only allow-listed keys are accepted."
+}

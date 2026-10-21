@@ -1,0 +1,49 @@
+{
+  "type_of": "function",
+  "name": "mention parsing inside parse",
+  "file_path": "crates/polaris-kernel/crates/directives/src/mention.rs",
+  "logic_name": "Mention Parser",
+  "test_list": [
+    {
+      "test_name": "path_mention",
+      "description": "`@src/lib.rs` is File(src/lib.rs)."
+    },
+    {
+      "test_name": "typed_mentions",
+      "description": "`@docx(r.docx)`, `@pdf(\"a b.pdf\")`, `@xlsx(d.xlsx)` parse; bare `@scans`, `@img`, `@xlsx` are kind markers."
+    },
+    {
+      "test_name": "mention_stops_at_closing_bracket_and_trailing_punctuation",
+      "description": "`(@src/a.rs)` and `see @lib.rs.` give `src/a.rs` and `lib.rs`."
+    },
+    {
+      "test_name": "email_is_not_a_mention",
+      "description": "`dev@company.com` is prose."
+    },
+    {
+      "test_name": "windows_path_mention",
+      "description": "`@C:\\proj\\a.rs` keeps backslashes."
+    },
+    {
+      "test_name": "mention_in_code_span_is_ignored",
+      "description": "Mentions inside `code` are prose."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::{SessionId, ShortRef}"
+  ],
+  "libraries": [
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&str",
+      "description": "User message."
+    }
+  ],
+  "output_type": "Vec<Spanned<Mention>>",
+  "output_description": "Mentions with byte spans; they also stay in prose."
+}

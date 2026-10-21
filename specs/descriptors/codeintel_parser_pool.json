@@ -1,0 +1,93 @@
+{
+  "type_of": "function",
+  "name": "ParserPool::parse",
+  "file_path": "crates/polaris-code-intel/src/parse.rs",
+  "logic_name": "Parser Pool",
+  "test_list": [
+    {
+      "test_name": "deep_tree_fingerprint_has_a_bounded_walk_cost",
+      "description": "Fingerprint a successfully parsed 20k-deep Rust tree in under three seconds; no repeated ancestor depth scans."
+    },
+    {
+      "test_name": "tracked_depth_matches_native_cursor_on_mixed_trees",
+      "description": "Shared iterative traversal matches native preorder nodes and visible depths for every supported grammar, including subtree skipping."
+    },
+    {
+      "test_name": "every_language_parses_clean",
+      "description": "Rust, Python, C++, CUDA and TypeScript samples parse without error nodes and keep their source bytes."
+    },
+    {
+      "test_name": "every_grammar_is_abi_compatible_with_the_runtime",
+      "description": "Each grammar crate loads into a tree-sitter 0.27 parser (ABI 13..=15); a mismatch would surface as GrammarVersionMismatch."
+    },
+    {
+      "test_name": "oversized_source_is_rejected_at_the_limit",
+      "description": "A source of max_source_bytes parses; one byte more returns TooLarge { limit }."
+    },
+    {
+      "test_name": "zero_timeout_cancels_and_the_pool_recovers",
+      "description": "A zero timeout returns ParseTimeout and the cancelled parser is reset, so the next parse is correct."
+    },
+    {
+      "test_name": "utf8_bom_keeps_original_offsets",
+      "description": "A leading UTF-8 BOM is ignored by the grammar but spans stay byte offsets of the original text."
+    },
+    {
+      "test_name": "incremental_reparse_matches_a_full_parse",
+      "description": "Parsing with a previous tree yields the same tree as a full parse for edits, deletions, insertions and emptying the file."
+    },
+    {
+      "test_name": "previous_tree_of_another_language_is_ignored",
+      "description": "A previous Parsed of a different language is not used for the incremental reparse."
+    },
+    {
+      "test_name": "hostile_nesting_does_not_overflow_the_stack",
+      "description": "50k-deep nesting in every language returns Ok or ParseFailed/ParseTimeout and every walk survives the deep tree."
+    },
+    {
+      "test_name": "shared_pool_parses_from_many_threads",
+      "description": "Eight threads sharing one pool produce identical trees."
+    },
+    {
+      "test_name": "arbitrary_bytes_never_panic_in_any_language",
+      "description": "Property: arbitrary bytes in any language never panic; Ok keeps the source, Err is ParseFailed or ParseTimeout."
+    },
+    {
+      "test_name": "incremental_equals_full_for_valid_edits",
+      "description": "Property: incremental reparse equals a full parse for generated valid edits."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::{ErrorKind, HasKind}",
+    "polaris_sdk::ids::FastFingerprint"
+  ],
+  "libraries": [
+    "tree-sitter",
+    "tree-sitter-rust",
+    "tree-sitter-python",
+    "tree-sitter-cpp",
+    "tree-sitter-cuda",
+    "tree-sitter-typescript",
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "lang",
+      "type": "Lang",
+      "description": "Grammar to use."
+    },
+    {
+      "name": "src",
+      "type": "&[u8]",
+      "description": "Source bytes (UTF-8 expected, never validated)."
+    },
+    {
+      "name": "prev",
+      "type": "Option<&Parsed>",
+      "description": "Previous parse of the same file for incremental reparse."
+    }
+  ],
+  "output_type": "Result<Parsed, CodeIntelError>",
+  "output_description": "Tree plus the original source bytes, or TooLarge / ParseTimeout / ParseFailed / GrammarVersionMismatch."
+}

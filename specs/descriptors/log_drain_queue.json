@@ -1,0 +1,51 @@
+{
+  "type_of": "struct",
+  "name": "DrainQueue",
+  "file_path": "crates/polaris-log/src/queue.rs",
+  "logic_name": "Drain Queue",
+  "test_list": [
+    {
+      "test_name": "records_come_out_in_fifo_order",
+      "description": "Records are received in the order they were pushed."
+    },
+    {
+      "test_name": "overflow_drops_the_newest_and_counts",
+      "description": "When all slots are in use new records are dropped and counted; queued ones are kept (explicit overflow policy)."
+    },
+    {
+      "test_name": "push_never_blocks_without_a_consumer",
+      "description": "50,000 pushes with no consumer return and accepted + dropped == 50,000."
+    },
+    {
+      "test_name": "consumed_slots_are_recycled",
+      "description": "Slots return to the free list after each receive; steady traffic never drops."
+    },
+    {
+      "test_name": "close_wakes_the_consumer_after_draining",
+      "description": "close() delivers everything queued before it and then ends the consumer loop."
+    },
+    {
+      "test_name": "push_after_close_is_dropped_and_counted",
+      "description": "A push after close is dropped and counted; a closed empty queue ends wait_for_items."
+    },
+    {
+      "test_name": "flush_waits_for_the_consumer",
+      "description": "flush(timeout) is false while nobody consumes and true once the consumer has drained and flushed."
+    },
+    {
+      "test_name": "oversize_lines_are_truncated_not_grown",
+      "description": "Lines above the line limit are truncated and flagged; slot buffers never grow."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "rec",
+      "type": "&LogRecordRef<'_>",
+      "description": "Redacted record to hand to the drain thread."
+    }
+  ],
+  "output_type": "()",
+  "output_description": "Bounded multi-producer single-consumer queue of reusable slots; producers never wait for the consumer."
+}

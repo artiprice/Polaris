@@ -1,0 +1,21 @@
+{
+  "type_of": "struct",
+  "name": "Command<S>",
+  "file_path": "crates/polaris-sdk/src/contracts.rs",
+  "logic_name": "Command Typestate",
+  "test_list": [
+    { "test_name": "verified_requires_approval_witness", "description": "Command<Unverified>::verify(witness) yields Command<Verified> that carries the witness; there is no other public path to Command<Verified>." },
+    { "test_name": "command_serde_roundtrip", "description": "Command<Unverified> survives JSON serialize/deserialize with id, frame, token and body intact." },
+    { "test_name": "token_bytes_debug_is_redacted", "description": "Debug of TokenBytes and of a Command never contains the token bytes." },
+    { "test_name": "handler_requires_verified_command", "description": "compile_fail doctest: a function taking Command<Verified> rejects Command<Unverified>." },
+    { "test_name": "verified_command_cannot_be_deserialized", "description": "compile_fail doctest: Command<Verified> does not implement Deserialize (only unverified commands come off the wire)." }
+  ],
+  "dependencies": ["polaris_sdk::ids", "polaris_sdk::contracts::ApprovalWitness"],
+  "libraries": ["serde", "bytes", "serde_json (dev)"],
+  "inputs": [
+    { "name": "cmd", "type": "Command<Unverified>", "description": "Command as submitted by a UI or agent frame." },
+    { "name": "witness", "type": "ApprovalWitness", "description": "Evidence that the verifier approved the command." }
+  ],
+  "output_type": "Command<Verified>",
+  "output_description": "A command the kernel handlers may execute."
+}

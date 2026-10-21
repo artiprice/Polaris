@@ -1,0 +1,17 @@
+{
+  "type_of": "struct",
+  "name": "EventRecord / Event",
+  "file_path": "crates/polaris-sdk/src/contracts.rs",
+  "logic_name": "Event Envelope",
+  "test_list": [
+    { "test_name": "event_record_json_roundtrip", "description": "An EventRecord with every Event variant round-trips through JSON unchanged." },
+    { "test_name": "schema_version_is_current", "description": "EventRecord::new stamps EVENT_SCHEMA_VERSION == 2; the v1 golden is retained through versioned construction." },
+    { "test_name": "event_is_fixed_size_copy", "description": "Event is Copy (no heap payload: strings and blobs are Cid references into CAS) and its size stays <= 96 bytes." },
+    { "test_name": "event_record_json_snapshot", "description": "insta snapshot of a representative EventRecord freezes the v1 JSON shape (wire-stability gate)." }
+  ],
+  "dependencies": ["polaris_sdk::ids"],
+  "libraries": ["serde", "jiff", "insta (dev)", "serde_json (dev)"],
+  "inputs": [ { "name": "event", "type": "Event", "description": "Domain event produced by a verified command or a supervisor." } ],
+  "output_type": "EventRecord",
+  "output_description": "Versioned envelope appended to the event store."
+}

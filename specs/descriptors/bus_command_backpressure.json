@@ -1,0 +1,47 @@
+{
+  "type_of": "function",
+  "name": "Bus::try_send / Bus::send",
+  "file_path": "crates/polaris-kernel/crates/bus/src/bus.rs",
+  "logic_name": "Command Backpressure",
+  "test_list": [
+    {
+      "test_name": "try_send_returns_full_at_capacity",
+      "description": "At capacity, try_send returns Full carrying the command back (never a silent drop)."
+    },
+    {
+      "test_name": "try_send_after_close_returns_closed",
+      "description": "After the receiver is dropped, try_send returns Closed with the command."
+    },
+    {
+      "test_name": "try_send_never_blocks",
+      "description": "try_send works without an async runtime and returns immediately."
+    },
+    {
+      "test_name": "send_waits_for_capacity",
+      "description": "send().await completes once the consumer frees a slot."
+    },
+    {
+      "test_name": "prop_commands_stay_fifo",
+      "description": "proptest: any interleaving of try_send/try_recv preserves FIFO order."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Command, EventRecord}",
+    "polaris_sdk::registry::EventStore"
+  ],
+  "libraries": [
+    "tokio (sync)",
+    "tracing",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "cmd",
+      "type": "Command<Unverified>",
+      "description": "Command from a UI or agent frame."
+    }
+  ],
+  "output_type": "Result<(), TrySendError>",
+  "output_description": "Queued, or rejected with the command handed back."
+}

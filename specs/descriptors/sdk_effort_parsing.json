@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "Effort::from_str / Effort::try_from(u8)",
+  "file_path": "crates/polaris-sdk/src/effort.rs",
+  "logic_name": "Effort Parsing",
+  "test_list": [
+    { "test_name": "parses_names_case_insensitively", "description": "low, Medium, HIGH, xHigh, max parse to the five levels; surrounding whitespace is trimmed." },
+    { "test_name": "parses_numeric_1_to_5", "description": "\"1\"..\"5\" map to Low..Max (the chatlog's numeric form)." },
+    { "test_name": "rejects_zero_and_six", "description": "\"0\", \"6\", \"\", \"extreme\" are ParseError::InvalidEffort." },
+    { "test_name": "display_roundtrips_name", "description": "Display prints the lowercase name and parsing it returns the same level." },
+    { "test_name": "try_from_u8_is_total", "description": "Every u8 either maps to a level (1..=5) or returns an error; no panic." },
+    { "test_name": "prop_order_matches_numeric_form", "description": "proptest: a < b as levels iff a.as_u8() < b.as_u8()." }
+  ],
+  "dependencies": ["polaris_sdk::error::ParseError"],
+  "libraries": ["thiserror", "serde", "proptest (dev)"],
+  "inputs": [ { "name": "s", "type": "&str", "description": "Effort name or 1..5." } ],
+  "output_type": "Result<Effort, ParseError>",
+  "output_description": "One of Low, Medium, High, XHigh, Max; models map levels to Nemotron tiers."
+}

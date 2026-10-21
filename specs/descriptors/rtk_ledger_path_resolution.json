@@ -1,0 +1,63 @@
+{
+  "type_of": "function",
+  "name": "LedgerFile::resolve_with",
+  "file_path": "crates/polaris-tools/crates/rtk/src/file.rs",
+  "logic_name": "Ledger path resolution",
+  "test_list": [
+    {
+      "test_name": "environment_variable_wins",
+      "description": "POLARIS_ISSUES_FILE value beats an explicit path and the default."
+    },
+    {
+      "test_name": "explicit_path_beats_default",
+      "description": "An explicit path beats the workspace default."
+    },
+    {
+      "test_name": "default_is_polaris_issues_md_at_workspace_root",
+      "description": "The default is <root>/.polaris/issues.md with root found by .git from a nested start directory."
+    },
+    {
+      "test_name": "polaris_directory_also_marks_the_root",
+      "description": "A .polaris directory also marks the workspace root."
+    },
+    {
+      "test_name": "no_marker_falls_back_to_start_directory",
+      "description": "Without markers the start directory is the root."
+    },
+    {
+      "test_name": "legacy_issues_md_is_migrated_once",
+      "description": "A root ISSUES.md is moved into place once and the move is reported."
+    },
+    {
+      "test_name": "existing_ledger_blocks_migration",
+      "description": "An existing ledger is never overwritten by migration."
+    },
+    {
+      "test_name": "missing_ledger_loads_empty",
+      "description": "Loading a ledger that does not exist gives an empty ledger."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "env",
+      "type": "Option<&OsStr>",
+      "description": "Value of POLARIS_ISSUES_FILE."
+    },
+    {
+      "name": "explicit",
+      "type": "Option<&Path>",
+      "description": "--issues-file value."
+    },
+    {
+      "name": "workspace",
+      "type": "&Path",
+      "description": "Directory to start the root search from."
+    }
+  ],
+  "output_type": "LedgerFile",
+  "output_description": "Resolved ledger path."
+}

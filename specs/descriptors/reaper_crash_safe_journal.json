@@ -1,0 +1,67 @@
+{
+  "type_of": "async_function",
+  "name": "Reaper::new / Reaper::sweep_orphans",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/journal.rs",
+  "logic_name": "Crash Safe Journal",
+  "test_list": [
+    {
+      "test_name": "register_writes_and_release_removes_the_journal_record",
+      "description": "A journaled registration appears in reaper.journal at once and is gone after release; an empty journal file is deleted."
+    },
+    {
+      "test_name": "clean_shutdown_clears_the_journal",
+      "description": "After a fully successful shutdown_all the journal file does not exist."
+    },
+    {
+      "test_name": "failed_resource_stays_journaled_after_shutdown",
+      "description": "A resource that was Failed or Abandoned remains in the journal for the next start-up."
+    },
+    {
+      "test_name": "orphaned_reaper_temp_dir_is_removed_by_the_next_start",
+      "description": "After a simulated crash the next Reaper::new + sweep_orphans removes the leftover polaris-reaper- temp dir, reports Removed and clears the journal."
+    },
+    {
+      "test_name": "truncated_last_record_is_ignored",
+      "description": "A journal cut in the middle of its last record yields the complete records and counts one ignored line."
+    },
+    {
+      "test_name": "duplicated_record_is_reported_once",
+      "description": "A record present twice in the journal produces one orphan report."
+    },
+    {
+      "test_name": "path_outside_the_reaper_prefix_is_never_removed",
+      "description": "A tampered journal pointing at a directory without the polaris-reaper- prefix is listed (NeedsOperator) but the directory is left alone."
+    },
+    {
+      "test_name": "separators_in_labels_cannot_forge_records",
+      "description": "A label containing tab and newline characters round-trips as one record and cannot inject a second record."
+    },
+    {
+      "test_name": "pid_orphans_are_listed_never_killed",
+      "description": "Pid and label records are returned as NeedsOperator (killing needs start-time verification in polaris-platform-process, P2); acknowledge_orphan removes them from the journal."
+    },
+    {
+      "test_name": "unknown_journal_version_is_refused",
+      "description": "A journal with an unknown header makes Reaper::new fail rather than overwrite it."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_reaper::{Reaper, Locator, ResourceKind, OrphanAction, JOURNAL_FILE_NAME, TEMP_DIR_PREFIX}",
+    "tempfile::NamedTempFile (atomic persist)"
+  ],
+  "libraries": [
+    "tempfile",
+    "tokio",
+    "thiserror",
+    "tracing"
+  ],
+  "inputs": [
+    {
+      "name": "journal_dir",
+      "type": "Path",
+      "description": "Directory holding reaper.journal."
+    }
+  ],
+  "output_type": "SweepReport",
+  "output_description": "One OrphanReport per leftover record plus the number of ignored lines."
+}

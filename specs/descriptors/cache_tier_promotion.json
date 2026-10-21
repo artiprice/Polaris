@@ -1,0 +1,70 @@
+{
+  "type_of": "method",
+  "name": "TieredCache::get / put",
+  "file_path": "crates/polaris-storage/crates/cache/src/tiers.rs",
+  "logic_name": "Tier Promotion",
+  "test_list": [
+    {
+      "test_name": "miss_returns_none",
+      "description": "A key in no tier is Ok(None) and counts one miss."
+    },
+    {
+      "test_name": "put_writes_through_to_l2",
+      "description": "put stores the value in L2 (with its scope) and in L1."
+    },
+    {
+      "test_name": "l2_hit_promotes_to_l1",
+      "description": "After an L1 purge, a get is served by L2 and the value is promoted: the next get is an L1 hit."
+    },
+    {
+      "test_name": "stats_count_each_tier",
+      "description": "Hits, misses and promotions are counted per tier."
+    },
+    {
+      "test_name": "l2_error_leaves_nothing_cached",
+      "description": "When L2 refuses the write, put returns the error and L1 holds nothing either."
+    },
+    {
+      "test_name": "ttl_expiry_is_a_miss",
+      "description": "With a fake clock, an entry past its TTL is a miss in L1 and in L2."
+    },
+    {
+      "test_name": "corrupt_l2_entry_is_codec_error",
+      "description": "An L2 value without a valid envelope is CacheError::Codec, not a panic and not a hit."
+    },
+    {
+      "test_name": "prop_get_after_put_returns_value",
+      "description": "get(put(k, v)) == v for arbitrary keys and values while capacity is not exceeded."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{ExactCacheStore, CacheScope, CacheStoreError}",
+    "polaris_sdk::ids::{Cid, ModelId, SessionId}"
+  ],
+  "libraries": [
+    "blake3",
+    "quick_cache",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "key",
+      "type": "&CacheKey",
+      "description": "Derived key."
+    },
+    {
+      "name": "value",
+      "type": "CachedValue",
+      "description": "Bytes to cache."
+    },
+    {
+      "name": "ttl",
+      "type": "Option<Duration>",
+      "description": "Optional expiry."
+    }
+  ],
+  "output_type": "Result<Option<CachedValue>, CacheError>",
+  "output_description": "L1 -> L2 lookup with promotion; write-through put."
+}

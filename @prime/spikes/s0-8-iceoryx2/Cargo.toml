@@ -1,7 +1,9 @@
+# Spike S0-8 (PHASES.md): iceoryx2 0.10 between two Windows processes. Standalone workspace.
 [package]
 name = "s0-8-iceoryx2"
 version = "0.0.0"
 edition = "2024"
+rust-version = "1.99"
 publish = false
 
 [workspace]

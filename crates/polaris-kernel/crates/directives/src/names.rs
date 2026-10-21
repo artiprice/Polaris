@@ -1,0 +1,77 @@
+//! Name tables of the grammar, for completion menus and help screens.
+//!
+//! Frontends (`polaris-ui-model`) read these instead of keeping their own lists; the
+//! `*_matches_parser_arms` tests in `tests/slash_command_table.rs` fail if a parser arm is added
+//! or removed without updating the table.
+
+/// Every `/command` name the parser recognises, aliases included (`exit` = `quit`).
+pub const SLASH_COMMANDS: &[&str] = &[
+    "model",
+    "usage",
+    "stats",
+    "status",
+    "quit",
+    "exit",
+    "plan",
+    "goal",
+    "diff",
+    "rollback",
+    "undo",
+    "sessions",
+    "session",
+    "settings",
+    "help",
+    "clear",
+    "providers",
+    "onboarding",
+    "nv-profile",
+    "nv-verify",
+    "nebius-status",
+    "contree-branches",
+    "datalab-sync",
+    "datalab-finetune",
+    "concurrency-stats",
+    "cache",
+    "quota",
+    "research",
+    "context-map",
+    "context-expand",
+    "parallel-dag",
+    "screenshot",
+    "browser",
+    "ui-diff",
+    "hack",
+    "redteam",
+    "search-local",
+    "ci",
+    "ci-run",
+    "nix-flake",
+    "proof-of-done",
+];
+
+/// Every `$directive` name with a typed meaning, aliases included (`nebius-sandbox` = `sandbox`).
+/// Any other `$name(…)` is kept as custom session metadata.
+pub const DIRECTIVES: &[&str] = &[
+    "websearch",
+    "subagents",
+    "subagent-models",
+    "links",
+    "skills",
+    "mcp",
+    "rag",
+    "nvidia",
+    "nvidia-docs",
+    "sandbox",
+    "nebius-sandbox",
+    "nebius-branching",
+    "nebius-datalab",
+    "nebius-speculative",
+    "concurrency",
+    "ratelimit",
+    "budget",
+    "storage-level",
+    "browser",
+    "needle",
+    "env",
+    "ci",
+];

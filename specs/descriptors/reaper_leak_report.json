@@ -1,0 +1,30 @@
+{
+  "type_of": "function",
+  "name": "Reaper::leak_report",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/reaper.rs",
+  "logic_name": "Leak Report",
+  "test_list": [
+    {
+      "test_name": "live_resources_are_listed_with_kind_and_locator",
+      "description": "Registered resources appear in registration order with their kind and journal locator."
+    },
+    {
+      "test_name": "released_resources_leave_the_report",
+      "description": "A released resource is no longer listed."
+    },
+    {
+      "test_name": "empty_reaper_reports_no_leaks",
+      "description": "A fresh reaper has an empty leak report, and so has one after a fully clean shutdown."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_reaper::{Reaper, LeakReport, Locator, ResourceKind}"
+  ],
+  "libraries": [
+    "tokio",
+    "tempfile"
+  ],
+  "inputs": [],
+  "output_type": "LeakReport",
+  "output_description": "Every resource still owned (live or unresolved after shutdown), for the doctor command."
+}

@@ -1,0 +1,36 @@
+{
+  "type_of": "function",
+  "name": "discover_from / read_layers / load",
+  "file_path": "crates/polaris-config/src/merge.rs",
+  "logic_name": "Golden Provenance",
+  "test_list": [
+    {
+      "test_name": "golden_provenance_snapshot",
+      "description": "Global + repo files (generated in a temp tree), env and session layers resolve end to end; every key's winning layer/origin and the typed config match a reviewed insta snapshot."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::ModelId"
+  ],
+  "libraries": [
+    "toml",
+    "dunce",
+    "insta (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "files",
+      "type": "~/.polaris/config.toml, <repo>/.polaris/config.toml",
+      "description": "Generated at test time."
+    },
+    {
+      "name": "env/session",
+      "type": "EnvSnapshot, SessionOverrides",
+      "description": "POLARIS_* pairs and session overrides."
+    }
+  ],
+  "output_type": "Result<Loaded, ConfigError>",
+  "output_description": "Config plus provenance, rendered deterministically (origins as labels, not temp paths)."
+}

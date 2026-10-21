@@ -1,0 +1,56 @@
+{
+  "type_of": "function",
+  "name": "subtree_fingerprints",
+  "file_path": "crates/polaris-code-intel/src/metrics.rs",
+  "logic_name": "Subtree Fingerprints",
+  "test_list": [
+    {
+      "test_name": "identical_sources_have_identical_fingerprints",
+      "description": "Fingerprinting the same source twice gives the same list."
+    },
+    {
+      "test_name": "fingerprint_is_xxh3_of_the_declaration_bytes",
+      "description": "Each fingerprint is the xxh3-64 of exactly the bytes of its span."
+    },
+    {
+      "test_name": "editing_one_function_changes_only_its_fingerprint",
+      "description": "Editing one function changes only its fingerprint."
+    },
+    {
+      "test_name": "moving_a_function_keeps_its_fingerprint",
+      "description": "Shifting text moves spans but keeps fingerprints."
+    },
+    {
+      "test_name": "equal_functions_share_a_fingerprint_but_not_a_span",
+      "description": "Duplicate functions share a fingerprint with distinct spans."
+    },
+    {
+      "test_name": "nested_declarations_get_their_own_fingerprints",
+      "description": "An impl block and each of its methods are fingerprinted."
+    },
+    {
+      "test_name": "works_for_every_language",
+      "description": "Python, C++, CUDA and TypeScript produce one entry per declaration."
+    },
+    {
+      "test_name": "unchanged_functions_keep_their_fingerprint",
+      "description": "Property: exactly the edited function's fingerprint changes."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::FastFingerprint"
+  ],
+  "libraries": [
+    "xxhash-rust",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "p",
+      "type": "&Parsed",
+      "description": "Parsed source file."
+    }
+  ],
+  "output_type": "Vec<(ByteSpan, FastFingerprint)>",
+  "output_description": "xxh3-64 per declaration node in source order (dirty-check only, never a security identity)."
+}

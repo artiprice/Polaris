@@ -20,7 +20,7 @@ const GATEWAY: &str = "https://localhost:17670";
 const MTLS_DIR: &str = r"\\wsl.localhost\Ubuntu-24.04\home\dev\.config\openshell\gateways\openshell\mtls";
 const SANDBOX: &str = "polaris-s0-7";
 const DEST: &str = "/sandbox/ws";
-const CHUNK_BYTES: usize = 3 * 1024 * 1024; // below tonic's 4 MiB default message limit
+const CHUNK_BYTES: usize = 896 * 1024; // gateway rejects requests > 1 MiB decoded (OutOfRange, measured)
 const DENY: &[&str] = &[".env", ".git/config"];
 const DENY_EXT: &[&str] = &["pem", "key"];
 

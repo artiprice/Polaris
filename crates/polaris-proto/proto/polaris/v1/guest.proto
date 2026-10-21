@@ -1,0 +1,120 @@
+// Guest contract: the agent running inside a sandbox (OpenShell) as seen by the host.
+//
+// The handshake mirrors what spike S0-12 proved: the guest reports
+// `protocol_version, guest_version, os, arch, pid` and the host refuses to drive a guest whose major
+// protocol version differs. Every stream frame stays under the OpenShell gateway limit
+// (1 MiB per message; chunks of at most 896 KiB, PLAN pitfall W22). Files the host needs (screenshots,
+// accessibility trees) are written under the sandbox workspace `/sandbox` (the only path the gateway
+// can download from) and described by path plus content `Cid`; the host fetches and verifies them.
+syntax = "proto3";
+
+package polaris.v1;
+
+import "polaris/v1/common.proto";
+
+service GuestService {
+  // Version handshake; the host refuses a guest with a differing major version.
+  rpc Handshake(GuestHandshakeRequest) returns (GuestHandshakeResponse);
+  // Runs one command; stdin/stdout/stderr are chunked streams.
+  rpc Exec(stream ExecClientFrame) returns (stream ExecServerFrame);
+  // Applies a sync delta (a CAS blob) to the sandbox workspace.
+  rpc ApplySyncDelta(ApplySyncDeltaRequest) returns (ApplySyncDeltaResponse);
+  // Takes a headless-browser screenshot.
+  rpc Screenshot(ScreenshotRequest) returns (ScreenshotResponse);
+  // Dumps the accessibility tree of the current page.
+  rpc A11yTree(A11yTreeRequest) returns (A11yTreeResponse);
+  // Liveness probe.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message GuestHandshakeRequest {
+  // The protocol version of the host.
+  ProtocolVersion protocol_version = 1;
+  reserved 100 to 199;
+}
+
+message GuestHandshakeResponse {
+  ProtocolVersion protocol_version = 1;
+  string guest_version = 2;
+  string os = 3;
+  string arch = 4;
+  uint32 pid = 5;
+  reserved 100 to 199;
+}
+
+message ExecClientFrame {
+  oneof kind {
+    // Must be the first frame.
+    ExecStart start = 1;
+    // Standard input; at most 896 KiB per frame.
+    bytes stdin = 2;
+    // Closes standard input.
+    bool close_stdin = 3;
+  }
+  reserved 100 to 199;
+}
+
+message ExecStart {
+  // Program and arguments (no shell expansion).
+  repeated string argv = 1;
+  // Working directory; empty = the sandbox workspace.
+  string cwd = 2;
+  // Extra environment, `NAME=value`.
+  repeated string env = 3;
+  // Kill the process after this many milliseconds (0 = no limit).
+  uint64 timeout_ms = 4;
+}
+
+message ExecServerFrame {
+  oneof kind {
+    // Standard output; at most 896 KiB per frame.
+    bytes stdout = 1;
+    // Standard error; at most 896 KiB per frame.
+    bytes stderr = 2;
+    ExecExit exit = 3;
+  }
+  reserved 100 to 199;
+}
+
+message ExecExit {
+  sint32 code = 1;
+  bool timed_out = 2;
+}
+
+message ApplySyncDeltaRequest {
+  // The delta (CAS reference).
+  Cid delta = 1;
+  reserved 100 to 199;
+}
+
+message ApplySyncDeltaResponse {
+  // Number of files changed.
+  uint32 files = 1;
+  reserved 100 to 199;
+}
+
+message ScreenshotRequest {
+  string url = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  reserved 100 to 199;
+}
+
+message ScreenshotResponse {
+  // Path of the PNG under the sandbox workspace.
+  string path = 1;
+  // blake3 of the file content, for verification after download.
+  Cid content = 2;
+  reserved 100 to 199;
+}
+
+message A11yTreeRequest {
+  reserved 100 to 199;
+}
+
+message A11yTreeResponse {
+  // Path of the JSON tree under the sandbox workspace.
+  string path = 1;
+  Cid content = 2;
+  reserved 100 to 199;
+}

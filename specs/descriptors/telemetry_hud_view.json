@@ -1,0 +1,54 @@
+{
+  "type_of": "method",
+  "name": "TelemetrySnapshot::hud",
+  "file_path": "crates/polaris-telemetry/src/snapshot.rs",
+  "logic_name": "Hud View",
+  "test_list": [
+    {
+      "test_name": "empty_snapshot_hud_is_zero_and_unreported",
+      "description": "An empty snapshot gives cache_hit_pct None and zeros elsewhere; no division by zero."
+    },
+    {
+      "test_name": "cache_hit_pct_none_until_provider_reports",
+      "description": "Requests with cached_tokens == 0 only keep cache_hit_pct None."
+    },
+    {
+      "test_name": "cache_hit_pct_is_cached_over_prompt",
+      "description": "cache_hit_pct is floor(100 * cached / prompt) over all requests once reported."
+    },
+    {
+      "test_name": "cache_hit_pct_is_capped_at_100",
+      "description": "A provider reporting more cached than prompt tokens is shown as 100, not above."
+    },
+    {
+      "test_name": "burn_counts_only_the_last_60_seconds",
+      "description": "burn_tokens_per_min sums prompt+completion tokens of events with timestamps inside the 60 s window ending at publication time."
+    },
+    {
+      "test_name": "burn_ignores_events_without_timestamp",
+      "description": "record(&Event) (no timestamp) contributes to totals but not to the burn rate."
+    },
+    {
+      "test_name": "out_of_order_timestamps_inside_window_are_counted",
+      "description": "An event slightly older than the newest one but inside the window still counts; one older than the window does not."
+    },
+    {
+      "test_name": "burn_saturates_into_u32",
+      "description": "A burn above u32::MAX tokens/min is shown as u32::MAX."
+    },
+    {
+      "test_name": "stage_averages_are_total_over_count",
+      "description": "s1_avg_us and s2_avg_us are floor(total_us / count), zero with no samples."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::contracts::Timestamp"
+  ],
+  "libraries": [
+    "serde"
+  ],
+  "inputs": [],
+  "output_type": "HudView",
+  "output_description": "Cache hit %, tokens burned per minute and S1/S2 average latency for the token-weather HUD."
+}

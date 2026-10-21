@@ -6,3 +6,7 @@
 # CMake 4 removed compatibility with `cmake_minimum_required(VERSION < 3.5)`; some vendored
 # C/C++ build scripts in the dependency tree still declare older minimums (pitfall W8).
 CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+
+[alias]
+# Repository automation (P0-XT-1): `cargo xtask check-members`, `cargo xtask check-layers`.
+xtask = "run --quiet -p xtask --"

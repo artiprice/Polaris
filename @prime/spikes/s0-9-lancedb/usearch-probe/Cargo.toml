@@ -1,0 +1,14 @@
+# S0-9 fallback check: usearch (HNSW) + SQLite metadata on Windows MSVC — build cost and query latency
+# on the same 10k x 384 workload as the LanceDB spike. Standalone workspace.
+[package]
+name = "s0-9-usearch-probe"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+usearch = "=2.26.5"
+rusqlite = { version = "0.40.2", features = ["bundled"] }

@@ -1,0 +1,49 @@
+{
+  "type_of": "method",
+  "name": "Ledger::parse",
+  "file_path": "crates/polaris-tools/crates/rtk/src/ledger.rs",
+  "logic_name": "Ledger parse and render",
+  "test_list": [
+    {
+      "test_name": "open_and_closed_lines_parse",
+      "description": "Open and closed issue lines parse into typed lines and render identically."
+    },
+    {
+      "test_name": "raw_lines_preserved_byte_for_byte",
+      "description": "Unknown lines are kept as Raw and rendered unchanged."
+    },
+    {
+      "test_name": "crlf_ledger_renders_with_lf",
+      "description": "A CRLF ledger renders with LF line endings."
+    },
+    {
+      "test_name": "malformed_issue_lines_stay_raw",
+      "description": "Checkbox lines missing ID or Opened fields stay Raw."
+    },
+    {
+      "test_name": "legacy_ids_without_err_prefix_stay_raw",
+      "description": "Reference-doc style ids (plain 8 hex) are not guessed at; the line stays Raw."
+    },
+    {
+      "test_name": "render_of_empty_ledger_is_empty",
+      "description": "No lines render to the empty string."
+    },
+    {
+      "test_name": "prop_render_parse_render_is_a_fixed_point",
+      "description": "proptest: render(parse(render(x))) == render(x) for arbitrary text."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Ledger file contents."
+    }
+  ],
+  "output_type": "Ledger",
+  "output_description": "Ordered Issue and Raw lines."
+}

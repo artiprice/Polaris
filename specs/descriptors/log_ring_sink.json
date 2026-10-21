@@ -1,0 +1,54 @@
+{
+  "type_of": "struct",
+  "name": "RingSink",
+  "file_path": "crates/polaris-log/src/ring.rs",
+  "logic_name": "Ring Sink",
+  "test_list": [
+    {
+      "test_name": "push_beyond_capacity_overwrites_oldest",
+      "description": "A full ring overwrites the oldest line; the snapshot holds the last `capacity` lines."
+    },
+    {
+      "test_name": "dropped_counter_increments",
+      "description": "Each overwritten line increments dropped(); nothing counts while there is room."
+    },
+    {
+      "test_name": "snapshot_preserves_order",
+      "description": "Snapshots list lines oldest to newest with strictly increasing sequence numbers, also after wrap-around."
+    },
+    {
+      "test_name": "record_fields_round_trip",
+      "description": "time, level, target and message come back unchanged; an untruncated line is not flagged."
+    },
+    {
+      "test_name": "long_lines_are_truncated_on_a_char_boundary",
+      "description": "Lines longer than the fixed line limit are cut at a UTF-8 boundary and flagged truncated; the slot never grows."
+    },
+    {
+      "test_name": "zero_capacity_is_clamped_to_one",
+      "description": "new(0) yields a one-slot ring instead of panicking."
+    },
+    {
+      "test_name": "concurrent_pushes_are_all_accounted",
+      "description": "8 producers x 500 pushes: len == capacity and dropped == pushes - capacity."
+    },
+    {
+      "test_name": "prop_ring_keeps_last_capacity_records_in_order",
+      "description": "proptest: for any record sequence the snapshot equals the last `capacity` records in order and dropped == overflow count."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "tracing (Level)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "rec",
+      "type": "&LogRecordRef<'_>",
+      "description": "Already redacted record to store."
+    }
+  ],
+  "output_type": "()",
+  "output_description": "Stored in a pre-allocated slot; overwrite-oldest, never blocks on I/O, never allocates after construction."
+}

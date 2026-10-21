@@ -1,0 +1,33 @@
+{
+  "type_of": "function",
+  "name": "render",
+  "file_path": "crates/polaris-kernel/crates/directives/src/render.rs",
+  "logic_name": "Directive Rendering",
+  "test_list": [
+    {
+      "test_name": "render_canonical_forms",
+      "description": "render gives `$websearch`, `$websearch(off)`, `$subagent-models(nano(low-medium))`, quoted names with escapes."
+    },
+    {
+      "test_name": "prop_render_roundtrip",
+      "description": "proptest: parse(render(d)) == d for generated directives of every variant."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::{SessionId, ShortRef}"
+  ],
+  "libraries": [
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "directive",
+      "type": "&SessionDirective",
+      "description": "Directive to render."
+    }
+  ],
+  "output_type": "String",
+  "output_description": "Canonical text form (also the persisted form, D11)."
+}

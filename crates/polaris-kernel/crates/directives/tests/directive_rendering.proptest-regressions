@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc fdf8afefa8fcf2f896915c8adecb6dcd7c83c4b5a593d87ac1cf4d0014f4e67d # shrinks to d = Custom { name: "a", args: [Call { name: "", quoted: true, args: [Quoted("\"")] }] }

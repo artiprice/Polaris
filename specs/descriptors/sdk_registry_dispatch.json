@@ -1,0 +1,17 @@
+{
+  "type_of": "trait",
+  "name": "OneOf2 / OneOf3 forwarding of registry traits",
+  "file_path": "crates/polaris-sdk/src/backends.rs",
+  "logic_name": "Registry Dispatch",
+  "test_list": [
+    { "test_name": "one_of2_forwards_event_store_to_active_variant", "description": "OneOf2<A, B> implements EventStore by calling only the active variant." },
+    { "test_name": "one_of3_forwards_redactor", "description": "OneOf3 implements Redactor; the third variant's output is used when it is active." },
+    { "test_name": "one_of2_forwards_async_chat_stream", "description": "OneOf2 implements ChatModel; its stream yields the active variant's chunks in order." },
+    { "test_name": "error_kinds_cover_taxonomy", "description": "Every registry error enum implements HasKind; representative variants map to Transient / Permanent / Policy / Fatal as documented." }
+  ],
+  "dependencies": ["polaris_sdk::registry", "polaris_sdk::error::HasKind"],
+  "libraries": ["tokio (dev, rt + macros)"],
+  "inputs": [ { "name": "backend", "type": "OneOf2<A, B> | OneOf3<A, B, C>", "description": "Runtime-selected backend wrapped for static dispatch (no dyn)." } ],
+  "output_type": "same as the forwarded trait method",
+  "output_description": "Identical behaviour to calling the active variant directly."
+}

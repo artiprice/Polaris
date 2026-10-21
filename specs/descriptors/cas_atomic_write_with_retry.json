@@ -1,0 +1,57 @@
+{
+  "type_of": "function",
+  "name": "write_atomic / with_retry",
+  "file_path": "crates/polaris-storage/crates/cas/src/atomic.rs",
+  "logic_name": "Atomic Write With Retry",
+  "test_list": [
+    {
+      "test_name": "rename_race_is_success",
+      "description": "8 threads writing the same destination all succeed and the file holds the bytes."
+    },
+    {
+      "test_name": "retry_on_sharing_violation",
+      "description": "An operation failing twice with OS error 32 (sharing violation) succeeds on the third attempt."
+    },
+    {
+      "test_name": "gives_up_after_budget",
+      "description": "A permanently failing retryable operation returns its error after the attempt budget."
+    },
+    {
+      "test_name": "non_retryable_error_is_immediate",
+      "description": "NotFound is returned on the first attempt."
+    },
+    {
+      "test_name": "no_partial_file_on_failure",
+      "description": "A failed write leaves no temp file and no destination."
+    },
+    {
+      "test_name": "windows_held_handle_is_retried",
+      "description": "On Windows, a destination held open with share mode 0 is retried until released."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{Cid, ShortRef, FastFingerprint}"
+  ],
+  "libraries": [
+    "blake3",
+    "xxhash-rust",
+    "zstd",
+    "tempfile",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "dest",
+      "type": "&Path",
+      "description": "Destination path."
+    },
+    {
+      "name": "bytes",
+      "type": "&[u8]",
+      "description": "Content."
+    }
+  ],
+  "output_type": "Result<(), std::io::Error>",
+  "output_description": "Destination atomically holds bytes or is untouched."
+}

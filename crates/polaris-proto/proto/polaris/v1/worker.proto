@@ -1,0 +1,166 @@
+// Worker contract: System-One decisions, embeddings, ingest and lifecycle of the supervised
+// worker processes.
+syntax = "proto3";
+
+package polaris.v1;
+
+import "polaris/v1/common.proto";
+
+service WorkerService {
+  // Version handshake; the worker refuses a differing major version.
+  rpc Handshake(WorkerHandshakeRequest) returns (WorkerHandshakeResponse);
+  // Answers a batch of decision schemas.
+  rpc Decide(DecideRequest) returns (DecideResponse);
+  // Embeds texts that live in CAS; vectors come back as CAS references (little-endian f32 blobs).
+  rpc Embed(EmbedRequest) returns (EmbedResponse);
+  // Parses one document that lives in CAS.
+  rpc Ingest(IngestRequest) returns (IngestResponse);
+  // Drops loaded models from memory.
+  rpc EvictModels(EvictModelsRequest) returns (EvictModelsResponse);
+  // Liveness probe.
+  rpc Health(HealthRequest) returns (HealthResponse);
+  // Graceful stop.
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+message WorkerHandshakeRequest {
+  ProtocolVersion protocol_version = 1;
+  reserved 100 to 199;
+}
+
+message WorkerHandshakeResponse {
+  // The version both sides will speak (the negotiated one).
+  ProtocolVersion protocol_version = 1;
+  WorkerKind kind = 2;
+  string worker_version = 3;
+  reserved 100 to 199;
+}
+
+// Text the questions are asked about (sdk `DecisionInput`).
+message DecisionInput {
+  string text = 1;
+  optional string context = 2;
+  reserved 100 to 199;
+}
+
+// One question of a decision schema (sdk `Question`).
+message Question {
+  string id = 1;
+  oneof kind {
+    Choice choice = 2;
+    Score score = 3;
+    Noul noul = 4;
+  }
+  reserved 100 to 199;
+
+  message Choice { repeated string options = 1; }
+  message Score {
+    sint32 min = 1;
+    sint32 max = 2;
+  }
+  message Noul { string statement = 1; }
+}
+
+// A label with its probability.
+message LabelScore {
+  string label = 1;
+  float probability = 2;
+}
+
+// The answer of the engine to one question (sdk `Answer`).
+message Answer {
+  oneof kind {
+    Choice choice = 1;
+    Score score = 2;
+    Noul noul = 3;
+  }
+  reserved 100 to 199;
+
+  message Choice {
+    string selected = 1;
+    repeated LabelScore probs = 2;
+  }
+  message Score {
+    sint32 value = 1;
+    float confidence = 2;
+  }
+  message Noul { float yes = 1; }
+}
+
+message QuestionAnswer {
+  string question = 1;
+  Answer answer = 2;
+}
+
+// Result of one decide call (sdk `Decision`).
+message Decision {
+  repeated QuestionAnswer answers = 1;
+  uint64 latency_us = 2;
+  reserved 100 to 199;
+}
+
+// One schema (questions) asked about one input.
+message DecisionRequest {
+  repeated Question questions = 1;
+  DecisionInput input = 2;
+  reserved 100 to 199;
+}
+
+message DecideRequest {
+  // Batched requests; the response has one `Decision` per item, in order.
+  repeated DecisionRequest items = 1;
+  reserved 100 to 199;
+}
+
+message DecideResponse {
+  repeated Decision decisions = 1;
+  reserved 100 to 199;
+}
+
+message EmbedRequest {
+  // Texts to embed (CAS references).
+  repeated Cid texts = 1;
+  reserved 100 to 199;
+}
+
+message EmbedResponse {
+  // One vector blob per input text, in order (CAS references).
+  repeated Cid vectors = 1;
+  reserved 100 to 199;
+}
+
+message IngestRequest {
+  // The raw document (CAS reference).
+  Cid source = 1;
+  // Declared media type, e.g. `application/pdf`; the worker sniffs the content as well.
+  string media_type = 2;
+  reserved 100 to 199;
+}
+
+message IngestResponse {
+  // Extracted plain text (CAS reference).
+  Cid text = 1;
+  // Structure record (pages, tables, headings) as JSON (CAS reference).
+  Cid structure = 2;
+  reserved 100 to 199;
+}
+
+message EvictModelsRequest {
+  reserved 100 to 199;
+}
+
+message EvictModelsResponse {
+  // Number of models dropped.
+  uint32 evicted = 1;
+  reserved 100 to 199;
+}
+
+message ShutdownRequest {
+  // How long in-flight work may finish, in milliseconds.
+  uint32 grace_ms = 1;
+  reserved 100 to 199;
+}
+
+message ShutdownResponse {
+  reserved 100 to 199;
+}

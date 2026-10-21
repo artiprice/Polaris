@@ -1,0 +1,47 @@
+{
+  "type_of": "method",
+  "name": "EventLog::replay / checkpoints",
+  "file_path": "crates/polaris-storage/crates/eventlog/src/log.rs",
+  "logic_name": "Replay To Step",
+  "test_list": [
+    {
+      "test_name": "replay_stops_at_until",
+      "description": "replay(until) returns events 1..=until."
+    },
+    {
+      "test_name": "replay_from_checkpoint_matches_full_replay",
+      "description": "latest checkpoint + events after it == the full replay's tail."
+    },
+    {
+      "test_name": "replay_empty_log_is_empty",
+      "description": "An empty log replays nothing and has head 0."
+    },
+    {
+      "test_name": "replay_rejects_newer_schema",
+      "description": "A stored record with schema > supported is SchemaTooNew, not misread."
+    },
+    {
+      "test_name": "checkpoint_beyond_head_is_rejected",
+      "description": "checkpoint(at > head) is an error."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::registry::{EventStore, ExactCacheStore}"
+  ],
+  "libraries": [
+    "redb",
+    "serde_json",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "until",
+      "type": "Seq",
+      "description": "Last event to include."
+    }
+  ],
+  "output_type": "Result<Vec<EventRecord>, EventLogError>",
+  "output_description": "Events for /session replay [step]."
+}

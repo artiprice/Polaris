@@ -23,6 +23,248 @@ openshell_tag = "v0.1.4"
 openshell_rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1"
 
 # -----------------------------------------------------------------------------
+# Per-member (per-PC) setup. Every team member installs these on their own machine;
+# nothing here is committed to git. Crates reference ids via `member_setup = [...]`.
+# Rendered into @prime/PHASES.md section 0.1 (`workspace.py phase-tables --kind setup`).
+# `version`: verified on the reference machine (2026-10-20) unless it says otherwise.
+# Scripts: @prime/tools/setup/setup-windows.ps1 (Windows), which runs setup-wsl.sh (WSL2).
+# -----------------------------------------------------------------------------
+
+[[member_setup]]
+id = "win-msvc"
+where = "Windows"
+component = "Visual Studio Build Tools, VC tools x64 (MSVC linker; C/C++ for aws-lc-sys, lance, ort)"
+version = "18.11 (VS 2026)"
+install = "setup-windows.ps1 (winget Microsoft.VisualStudio.BuildTools + VCTools workload)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-git"
+where = "Windows"
+component = "Git for Windows"
+version = "2.52.0"
+install = "setup-windows.ps1 (winget Git.Git)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-rust"
+where = "Windows"
+component = "rustup + Rust 1.99.0 (rustfmt, clippy); pinned by rust-toolchain.toml"
+version = "rustup 1.29.1, rustc 1.99.0"
+install = "setup-windows.ps1 (winget Rustlang.Rustup)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-python"
+where = "Windows"
+component = "Python 3.14 (workspace.py tooling; uv host)"
+version = "3.14.5"
+install = "setup-windows.ps1 (winget Python.Python.3.14)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-cmake-nasm"
+where = "Windows"
+component = "CMake + NASM + Ninja for native build scripts (CMake 4 relies on the repo's CMAKE_POLICY_VERSION_MINIMUM)"
+version = "CMake 4.3.0-rc3, NASM 3.01, Ninja 1.13.2"
+install = "setup-windows.ps1 (winget Kitware.CMake, NASM.NASM, Ninja-build.Ninja)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-protoc"
+where = "Windows"
+component = "protoc on PATH, only for the opt-in `lancedb` feature (S0-9 failed without it); polaris-proto uses protoc-bin-vendored"
+version = "libprotoc 36.0"
+install = "setup-windows.ps1 (winget Google.Protobuf)"
+from = "P0"
+required = false
+
+[[member_setup]]
+id = "win-longpaths"
+where = "Windows"
+component = "LongPathsEnabled=1 (admin, once per PC) + repo-local `git config core.longpaths true`"
+version = "-"
+install = "setup-windows.ps1 sets the git flag and prints the admin command for the registry value"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-cargo-tools"
+where = "Windows"
+component = "cargo-binstall, cargo-nextest, cargo-mutants, cargo-leptos, cargo-deny, cargo-vet, cargo-audit"
+version = "1.26.0 / 0.9.148 / 27.1.0 / 0.3.11 / 0.20.2 / 0.10.2 / 0.22.2"
+install = "setup-windows.ps1 (`cargo install --locked cargo-binstall`; `cargo binstall <tool>@<version>`)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-uv"
+where = "Windows"
+component = "uv for Python envs (spikes, ONNX export script, contree-mcp sidecar); run as `python -m uv`"
+version = "0.13.3"
+install = "setup-windows.ps1 (`python -m pip install --user uv==0.13.3`)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "win-ollama"
+where = "Windows"
+component = "Ollama + `nemotron-mini`: keyless OpenAI-compatible endpoint for the P3 walking skeleton"
+version = "Ollama 0.40.6; nemotron-mini 2.7 GB"
+install = "setup-windows.ps1 (winget Ollama.Ollama; `ollama pull nemotron-mini`); `-SkipOllama` defers it"
+from = "P0"
+required = false
+
+[[member_setup]]
+id = "win-keyring"
+where = "Windows"
+component = "API keys in Windows Credential Manager (Token Factory, Tavily, Contree): each member stores their own; never in git, env files or logs"
+version = "-"
+install = "`polaris /onboarding` (P2-X-2) once keys exist; BLOCKED-ON-ACCESS until then"
+from = "P3"
+required = false
+
+[[member_setup]]
+id = "win-models"
+where = "Windows"
+component = "Model weights under `%USERPROFILE%\\.polaris\\models` (GLiNER2.5-Decide ONNX + onnxruntime DLL; Needle 3 `.cact`); downloaded, never in git"
+version = "per spike results S0-4 / S0-6"
+install = "P4-X-1 export script (not automated yet)"
+from = "P4"
+required = false
+
+[[member_setup]]
+id = "win-cuda"
+where = "Windows"
+component = "CUDA runtime + cuDNN for the ort CUDA execution provider (optional; the CPU EP is the default)"
+version = "not installed; decided by S0-4"
+install = "manual NVIDIA installers, only if S0-4 recommends the CUDA EP"
+from = "P4"
+required = false
+
+[[member_setup]]
+id = "win-pdfium"
+where = "Windows"
+component = "pdfium DLL beside the binary (pdfium-render, scanned PDFs)"
+version = "not installed"
+install = "to be scripted in P5 (polaris-ingest)"
+from = "P5"
+required = false
+
+[[member_setup]]
+id = "win-wasm32"
+where = "Windows"
+component = "Rust target wasm32-unknown-unknown (Leptos hydrate build via cargo-leptos)"
+version = "not installed"
+install = "`rustup target add wasm32-unknown-unknown --toolchain 1.99.0`"
+from = "P9"
+required = false
+
+[[member_setup]]
+id = "wsl-distro"
+where = "WSL2"
+component = "WSL2 + Ubuntu-24.04, default user `dev` (sudo, kvm, docker), systemd on"
+version = "WSL 2.6.3; Ubuntu 24.04.5 LTS, kernel 6.6.87.2"
+install = "setup-windows.ps1 (`wsl --install -d Ubuntu-24.04 --no-launch` + user bootstrap)"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "wsl-docker"
+where = "WSL2"
+component = "Docker Engine inside Ubuntu (OpenShell docker driver); Docker Desktop not required"
+version = "29.9.1"
+install = "setup-wsl.sh step 2"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "wsl-openshell"
+where = "WSL2"
+component = "OpenShell CLI + gateway (systemd user service, linger, `OPENSHELL_COMPUTE_DRIVER=docker` pin)"
+version = "0.1.4"
+install = "setup-wsl.sh steps 3-4"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "wsl-keepalive"
+where = "Windows"
+component = "Keep the WSL2 distro (and the gateway in it) from idling out (pitfall W14)"
+version = "-"
+install = "setup-windows.ps1 `-RegisterKeepalive` (per-user logon task), or keep a WSL session open"
+from = "P0"
+required = false
+
+[[member_setup]]
+id = "wsl-rust"
+where = "WSL2"
+component = "Rust 1.99.0 + nightly (rust-src, miri), cargo-binstall, cargo-nextest, cargo-fuzz (Linux check leg, fuzzing, guest build)"
+version = "1.99.0; nightly 1.101.0; nextest 0.9.148; cargo-fuzz 0.13.2"
+install = "setup-wsl.sh steps 5-6"
+from = "P0"
+required = true
+
+[[member_setup]]
+id = "wsl-kani"
+where = "WSL2"
+component = "Kani verifier (+ CBMC)"
+version = "Kani 0.68.0, CBMC 6.11"
+install = "setup-wsl.sh `--with-kani`"
+from = "P1"
+required = false
+
+[[member_setup]]
+id = "wsl-kvm"
+where = "WSL2"
+component = "`/dev/kvm` in WSL2 for the OpenShell vm driver (microVM tier E2); CPU virtualization enabled in BIOS"
+version = "present on the reference machine (S0-2 PASS)"
+install = "hardware/BIOS; checked by `polaris doctor` (P2-X-2)"
+from = "P7"
+required = false
+
+[[member_setup]]
+id = "wsl-sandbox-image"
+where = "WSL2"
+component = "Polaris sandbox image (base `nvcr.io/nvidia/base/ubuntu:24.04` + guest + Xvfb/Chromium), built locally unless the team agrees on a registry"
+version = "not built yet (P2-X-1, S0-12)"
+install = "to be scripted in P2"
+from = "P2"
+required = false
+
+[[member_setup]]
+id = "wsl-searxng"
+where = "WSL2"
+component = "SearXNG container (local search provider)"
+version = "not installed"
+install = "to be scripted in P5 (P5-X-1)"
+from = "P5"
+required = false
+
+[[member_setup]]
+id = "wsl-nix"
+where = "WSL2"
+component = "Nix package manager (`$env(nix)`, `/nix-flake`)"
+version = "not installed"
+install = "to be scripted in P8"
+from = "P8"
+required = false
+
+[[member_setup]]
+id = "contree-mcp"
+where = "Windows"
+component = "contree-mcp sidecar (Token Factory Sandboxes MCP server)"
+version = "not installed (needs Contree access)"
+install = "`python -m uv tool install contree-mcp` once access exists (P3-X-3)"
+from = "P3"
+required = false
+
+# -----------------------------------------------------------------------------
 # Apps (L7) — lib-only skeletons; real `main` arrives in the listed phase.
 # -----------------------------------------------------------------------------
 
@@ -66,6 +308,7 @@ path = "apps/polaris-web"
 layer = 7
 kind = "app"
 phase = "P9"
+member_setup = ["win-wasm32", "win-cargo-tools"]
 summary = "Axum + Leptos SSR web UI with streaming, per-route lazy loading and a PWA service worker."
 deps = ["polaris-kernel", "polaris-ui-web", "polaris-rpc", "polaris-config", "polaris-log"]
 ext = ["tokio", "axum", "tower-http", "leptos", "leptos_axum", "leptos_router", "leptos_meta", "wasm-bindgen"]
@@ -99,6 +342,7 @@ path = "apps/polaris-worker"
 layer = 7
 kind = "app"
 phase = "P4"
+member_setup = ["win-models"]
 summary = "Supervised native worker process, one OS process per mode: s1 (ort inference), ingest (parsers+OCR), nano (Needle 3 bridge)."
 deps = ["polaris-system-one-engine", "polaris-system-one-nano", "polaris-ingest", "polaris-proto", "polaris-config", "polaris-log"]
 ext = ["tokio", "tonic", "ort", "clap"]
@@ -115,6 +359,7 @@ path = "apps/polaris-guest"
 layer = 7
 kind = "app"
 phase = "P7"
+member_setup = ["wsl-rust", "wsl-sandbox-image"]
 summary = "Linux in-sandbox agent baked into the Polaris sandbox image: structured exec, file sync endpoint, Xvfb+Chromium screenshots."
 deps = ["polaris-sdk", "polaris-proto", "polaris-browser", "polaris-log"]
 ext = ["tokio", "chromiumoxide", "prost", "tonic", "serde"]
@@ -135,6 +380,9 @@ path = "crates/polaris-sdk"
 layer = 0
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "PASS"
+evidence = "Prior SDK contracts §E14; schema-2 session lifecycle extension §E24 adds 5 tests/properties, version-preserving envelopes and rejection of mislabeled new events. Existing v1 golden retained; current SDK Miri passed (existing insta snapshot skip) and Kani 3/3 harnesses verified. Witness gate unchanged."
 summary = "Domain newtypes, error kinds, API-registry traits (prompt.md §6.2), the Backends bundle, PlatformOps and command/event contracts."
 deps = []
 ext = ["thiserror", "serde", "bytes", "uuid", "jiff", "secrecy"]
@@ -156,6 +404,9 @@ path = "crates/polaris-proto"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "delegated (subagent), test-first; evidence pending"
 summary = "Protobuf contracts and generated tonic/prost code for the kernel, worker and guest services."
 deps = ["polaris-sdk"]
 ext = ["prost", "prost-types", "tonic", "tonic-prost", "tonic-prost-build", "protoc-bin-vendored"]
@@ -172,6 +423,9 @@ path = "crates/polaris-config"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "PASS"
+evidence = "5 descriptors; 29 integration tests + 1 doctest, 27 observed red before the code (long-path and highest-layer proptest were green on first run: characterization; golden snapshot reviewed by eye) (merge, provenance, trust filter, secret refs, discovery, env, session/D11, BOM/CRLF, Windows locked-file retry, long path, insta golden provenance); 2 planted bugs caught; fuzz config_toml_layer 64,562 runs clean; empty-machine load p50 0.29 ms (§E16)"
 summary = "Layered configuration: defaults < ~/.polaris/config.toml < .polaris/config.toml < env < session directives."
 deps = ["polaris-sdk"]
 ext = ["serde", "toml", "etcetera", "dunce", "thiserror"]
@@ -188,9 +442,12 @@ path = "crates/polaris-log"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "9 descriptors (subagent; re-verified): 63 tests (ring sink, drain queue with drop counter, redaction layer, JSON/text line format with injection escaping, filter resolution, size rotation, init lifecycle in a child process, 2 dhat zero-alloc tests: ring push and log enqueue); 3 planted bugs caught (§E18). Open: daily+size rotation, panic/Ctrl+C flush with the reaper, fuzz, 1M-record load bench"
 summary = "tracing facade with spdlog-style async sinks (rotating file, TUI ring, telemetry ring) and a redaction layer."
 deps = ["polaris-sdk"]
-ext = ["tracing", "tracing-subscriber", "spdlog-rs", "backon"]
+ext = ["tracing", "tracing-subscriber", "spdlog-rs"]
 responsibilities = [
   "Install the tracing subscriber; route records to spdlog-rs-backed non-blocking sinks.",
   "Redact secrets/PII through the sdk `Redactor` trait before any sink sees a record.",
@@ -204,6 +461,9 @@ path = "crates/polaris-telemetry"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "6 descriptors (subagent; re-verified): 48 tests (usage fold, mergeable aggregates, integer micro-USD cost, budget monitor incl. exact-limit boundaries, arc-swap snapshots with 4 concurrent readers, HUD); 3 planted bugs caught after a proptest was strengthened (§E18). Open: bench for 1M events/s, TTFT/context-load once events carry them, replay idempotence"
 summary = "Usage, cost, latency and cache metrics fed by bus events; backs /usage /stats /quota /context-map and the token-weather HUD."
 deps = ["polaris-sdk"]
 ext = ["hdrhistogram", "serde", "arc-swap"]
@@ -236,6 +496,9 @@ path = "crates/polaris-code-intel"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "§E26: observed RED adversarial fingerprint cost and adjacent-declaration false conflict corrected without weakening assertions. Tracked depth matches native cursor across five grammars; 20k fingerprint digest preserved. Current Windows/Linux suites pass; full PLAN category gates remain open."
 summary = "tree-sitter parsing, PageRank repo map, file skeletons, AST diff/merge and code metrics (churn, cyclomatic, tree-edit distance)."
 deps = ["polaris-sdk"]
 ext = ["tree-sitter", "tree-sitter-rust", "tree-sitter-python", "tree-sitter-cpp", "tree-sitter-cuda", "tree-sitter-typescript", "ast-grep-core", "imara-diff", "xxhash-rust"]
@@ -254,9 +517,12 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "5 descriptors; red then green: 31 tests incl. real Windows share-mode-0 retry and dhat zero-alloc; fuzz cas_blob_decode 3.96M runs clean (§E14). Open: Kani fold_ref, shortref fuzz, load/stress"
 summary = "Content-addressable blob store: BLAKE3 ids, zstd compression, xxh3 dirty-checks, short §ref ids."
 deps = ["polaris-sdk"]
-ext = ["blake3", "xxhash-rust", "zstd", "tempfile", "backon"]
+ext = ["blake3", "xxhash-rust", "zstd", "tempfile", "bytes"]
 responsibilities = [
   "Store immutable blobs (file versions, diffs, tool outputs, logs) under ~/.polaris/cas/<ab>/<cd>/<blake3>.",
   "Provide xxh3 fast fingerprints and collision-checked 12-hex short refs for `§ref:` folding.",
@@ -271,9 +537,12 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "5 descriptors; red then green: 24 tests (append/read, replay, checkpoints, lock-table recovery, L2 exact cache, codec); JSON codec (postcard cannot decode the tagged Event, verified); fuzz eventlog_decode 309,107 runs clean (§E15). Open: load/stress, invariants + research tables (later phases), lazy replay iterator"
 summary = "Append-only event journal on redb (events.redb): commands, decisions, tool calls, responses; replay and checkpoints."
-deps = ["polaris-sdk", "polaris-storage-cas"]
-ext = ["redb", "postcard", "serde"]
+deps = ["polaris-sdk"]
+ext = ["redb", "serde", "serde_json"]
 responsibilities = [
   "Implement the sdk `EventStore` trait (append, read range, replay to step).",
   "Persist file locks, L2 exact cache entries, project invariants and research checkpoints in redb tables.",
@@ -288,6 +557,9 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "6 descriptors (subagent; re-verified): 47 tests incl. FTS5 trigram on bundled SQLite 3.53.2, masked-only indexing scan of db/-wal/-shm, migration rollback; 2 planted bugs caught (§E17). Open: fuzz (fts query, migration open), load/scalability, two-process stress"
 summary = "Global session registry on SQLite (registry.db) with FTS5 trigram search over history."
 deps = ["polaris-sdk"]
 ext = ["rusqlite", "serde"]
@@ -305,9 +577,12 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "4 descriptors; red then green: 25 tests (scope-isolated blake3 keys, L1->L2 promotion, write-through, TTL with fake clock, single-flight: 16 callers run once, leader cancel, errors not cached, Send future); 2 planted bugs caught (§E18). Open: L3 semantic tier (P5), loom model, load/stress, real-L2 integration test in polaris-tests"
 summary = "Tiered caches: L1 quick_cache (in-RAM), L2 exact redb cache, L3 semantic cache via the VectorStore trait."
-deps = ["polaris-sdk", "polaris-storage-cas"]
-ext = ["quick_cache", "xxhash-rust", "blake3"]
+deps = ["polaris-sdk"]
+ext = ["quick_cache", "blake3"]
 responsibilities = [
   "Cache S1 decisions and S2 completions keyed by stable content hashes.",
   "Respect $storage-level(global|isolated) scoping.",
@@ -322,15 +597,16 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P5"
-summary = "Embedded vector store (LanceDB) for RAG, NVIDIA docs, session memory and the L3 semantic cache; usearch fallback if spike S0-9 fails."
+member_setup = ["win-protoc", "win-cmake-nasm"]
+summary = "Embedded vector store for RAG, NVIDIA docs, session memory and the L3 semantic cache: usearch (HNSW) + SQLite metadata by default (S0-9); LanceDB behind the opt-in `lancedb` feature."
 deps = ["polaris-sdk"]
-ext = ["lancedb", "usearch"]
+ext = ["usearch", "rusqlite", "lancedb"]
 responsibilities = [
-  "Implement the sdk `VectorStore` trait over LanceDB tables under ~/.polaris/vectors and .polaris/vectors.",
-  "Never pin arrow directly; use lancedb's re-exports (lancedb 0.40 requires arrow ^58).",
-  "Keep the heavy dependency behind this leaf crate so early phases compile fast.",
+  "Implement the sdk `VectorStore` trait over a usearch HNSW index + SQLite metadata under ~/.polaris/vectors and .polaris/vectors (S0-9: 1 min 41 s build, 4.3 MB exe, kNN p50 0.475 ms at 10k x 384).",
+  "Persist the index with save-to-temp + atomic rename; parallel insert (single-threaded insert measured at ~1 ms/vector).",
+  "Optional `lancedb` feature (off by default and in CI): lancedb 0.40.0 needs features = [\"remote\"] (job.rs gating bug) and protoc; never pin arrow directly, use lancedb's re-exports.",
 ]
-api = ["struct LanceStore", "fn upsert(chunks)", "fn search(vector, k)"]
+api = ["struct HnswStore", "fn upsert(chunks)", "fn search(vector, k)", "struct LanceStore (feature `lancedb`)"]
 
 [[crate]]
 name = "polaris-storage-sync"
@@ -339,9 +615,13 @@ parent = "polaris-storage"
 layer = 1
 kind = "lib"
 phase = "P2"
+implemented = true
+status = "IN PROGRESS"
+evidence = "main session, test-first; evidence pending"
+member_setup = ["wsl-openshell"]
 summary = "Byte-exact, blake3-incremental workspace mirroring into sandboxes, governed by .polarisignore (secrets never mirrored)."
-deps = ["polaris-sdk", "polaris-storage-cas"]
-ext = ["ignore", "globset", "blake3", "walkdir"]
+deps = ["polaris-sdk"]
+ext = ["ignore", "globset", "blake3", "walkdir", "futures"]
 responsibilities = [
   "Compute a manifest (path, size, blake3) and send only changed blobs through the sdk SandboxBackend transport.",
   "Apply the .polarisignore deny-list (.env, *.pem, *.key, .git/config by default).",
@@ -355,6 +635,9 @@ path = "crates/polaris-storage"
 layer = 1
 kind = "facade"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Storage child modules re-exported for the kernel composition root (§E25); child crates still have open tasks, so the facade gate is not PASS."
 summary = "Facade re-exporting the storage children (cas, eventlog, registry, cache, vector, sync)."
 deps = ["polaris-storage-cas", "polaris-storage-eventlog", "polaris-storage-registry", "polaris-storage-cache", "polaris-storage-vector", "polaris-storage-sync"]
 ext = []
@@ -368,6 +651,9 @@ parent = "polaris-security"
 layer = 1
 kind = "lib"
 phase = "P3"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Biscuit capability implementation in progress; capability_authorization descriptor and observed RED contracts. Current verification evidence pending."
 summary = "Biscuit capability tokens: session authority, per-frame attenuation (path, churn, TTL, no-unsafe), authorization."
 deps = ["polaris-sdk"]
 ext = ["biscuit-auth", "zeroize"]
@@ -385,9 +671,12 @@ parent = "polaris-security"
 layer = 1
 kind = "lib"
 phase = "P2"
+implemented = true
+status = "IN PROGRESS"
+evidence = "5 descriptors; red then green: 27 tests (19-rule default pack with a positive+negative per rule, scan == regex-crate reference proptest, user-regex guard, integer fixed-point entropy, redactor idempotence, dhat zero-alloc scan/any_match/redact_into); 3 planted bugs caught (one after tightening a too-loose assertion) (§E18). Open: fuzz targets, Miri, load/scalability tables, bypass corpus, chunk-boundary policy"
 summary = "Startup-compiled DFA scanners (regex-automata) for secrets, PII masks, dangerous shell patterns, plus a regex-syntax HIR guard for user regexes."
 deps = ["polaris-sdk"]
-ext = ["regex-automata", "regex-syntax", "aho-corasick", "memchr"]
+ext = ["regex-automata", "regex-syntax"]
 responsibilities = [
   "Compile multi-pattern rule sets once; scan bytes in one linear pass without allocation (hot path).",
   "Validate user-supplied regexes through HIR inspection (size/nesting limits).",
@@ -402,6 +691,7 @@ parent = "polaris-security"
 layer = 1
 kind = "lib"
 phase = "P3"
+member_setup = ["win-keyring"]
 summary = "Secret vault: keyring storage (Windows Credential Manager), secrecy/zeroize handling, ChaCha20-Poly1305 RAM sealing."
 deps = ["polaris-sdk"]
 ext = ["keyring", "secrecy", "zeroize", "chacha20poly1305", "getrandom"]
@@ -419,6 +709,9 @@ parent = "polaris-kernel"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "4 descriptors; red then green: 13 tests incl. dhat zero-alloc publish/consume; fan-out-before-append mutation caught by 6 tests; Miri 13 tests clean (§E15). Open: loom (tokio not instrumentable), fuzz_bus_ops, load/stress"
 summary = "CQRS command/event bus: bounded mpsc for commands, broadcast for events, persistence through the sdk EventStore trait."
 deps = ["polaris-sdk"]
 ext = ["tokio", "tracing"]
@@ -436,6 +729,9 @@ parent = "polaris-kernel"
 layer = 1
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "6 descriptors; red then green: 39 tests incl. proptest (5,000-case roundtrip) and 2 caught mutations; Miri 39 tests clean; Kani 2/2 cursor harnesses; fuzz directives_grammar 137k runs clean (§E14). Open: load test, fixture corpus"
 summary = "Recursive-descent grammar for $directives, /commands and @mentions (nested parentheses, quoted items, effort ranges)."
 deps = ["polaris-sdk"]
 ext = ["thiserror", "serde"]
@@ -457,6 +753,7 @@ parent = "polaris-platform"
 layer = 2
 kind = "lib"
 phase = "P2"
+member_setup = ["wsl-distro", "wsl-keepalive"]
 summary = "WSL2 management: distro provisioning/detection, command execution in the distro, path translation, gateway keepalive."
 deps = ["polaris-sdk", "polaris-config", "polaris-log"]
 ext = ["tokio", "process-wrap", "which"]
@@ -519,9 +816,12 @@ parent = "polaris-kernel"
 layer = 2
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "40 tests Windows + Linux; 2,000-case properties on Windows; task panic isolation/restart/backoff, bounded DLQ, circuit probes, durable bus events, joined shutdown (§E22). Open: native workers/health probes, Kani, load/stress. Two test contracts corrected with explicit user approval."
 summary = "OTP-style supervision: one-for-one restart, restart intensity limits, circuit breakers, dead-letter queue, worker process pool."
 deps = ["polaris-sdk", "polaris-log", "polaris-telemetry", "polaris-kernel-bus"]
-ext = ["tokio", "tokio-util", "backon"]
+ext = ["tokio", "tokio-util", "backon", "tracing"]
 responsibilities = [
   "Supervise tokio tasks (JoinError::Panic) and restart them within intensity limits.",
   "Supervise polaris-worker child processes (one per mode) and restart on crash.",
@@ -536,9 +836,12 @@ parent = "polaris-kernel"
 layer = 2
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "41 tests Windows / 40 Linux; 1,000-case outcome property on Windows; cancellation, ordered bounded shutdown, escaped atomic journal, orphan review, real temp-dir cleanup incl. Windows held file (§E23). Open: real process trees/kill-on-parent-death, start-time identity, backend orphan reconciliation, large stress."
 summary = "Deterministic deallocation: cancellation tree, process kill-trees via PlatformOps, sandbox/temp teardown, shared-memory cleanup."
 deps = ["polaris-sdk", "polaris-log", "polaris-kernel-bus"]
-ext = ["tokio-util", "tempfile"]
+ext = ["tokio", "tokio-util", "tempfile", "tracing"]
 responsibilities = [
   "Own the root CancellationToken; cascade cancellation to frames, tools and workers.",
   "Tear down sandboxes, temp dirs and IPC segments on shutdown, panic and Ctrl+C.",
@@ -553,6 +856,7 @@ parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P3"
+member_setup = ["win-ollama", "win-keyring"]
 summary = "OpenAI-compatible Token Factory client: SSE chat streaming, tool calls, Responses API, embeddings, model list, usage accounting."
 deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-ratelimit", "polaris-telemetry"]
 ext = ["reqwest", "eventsource-stream", "serde", "serde_json", "bytes", "tokio", "secrecy"]
@@ -570,6 +874,7 @@ parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P3"
+member_setup = ["contree-mcp", "win-uv", "win-keyring"]
 summary = "Token Factory Sandboxes (Contree) via the contree-mcp sidecar: run, rsync, images, directory_state_id branching, SWE env resolver."
 deps = ["polaris-sdk", "polaris-config", "polaris-log"]
 ext = ["rmcp", "tokio", "serde_json"]
@@ -587,6 +892,7 @@ parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P6"
+member_setup = ["win-keyring"]
 summary = "Trajectory warehouse export (JSONL/ShareGPT) of verified solutions to Nebius Data Lab; fine-tune trigger (/datalab-sync, /datalab-finetune)."
 deps = ["polaris-sdk", "polaris-config", "polaris-storage-cas"]
 ext = ["reqwest", "serde_json"]
@@ -604,6 +910,7 @@ parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P6"
+member_setup = ["win-keyring"]
 summary = "Nebius AI Cloud integration: remote OpenShell gateway VM lifecycle and cloud bursting for heavy builds."
 deps = ["polaris-sdk", "polaris-config"]
 ext = ["reqwest", "tonic"]
@@ -632,6 +939,7 @@ parent = "polaris-openshell"
 layer = 2
 kind = "lib"
 phase = "P2"
+member_setup = ["wsl-openshell", "wsl-docker"]
 summary = "openshell-sdk adapter (pinned rev of v0.1.4): sandbox create/exec/stream/destroy, provider attach, driver selection (docker/vm/mxc)."
 deps = ["polaris-sdk", "polaris-config", "polaris-log"]
 ext = ["openshell-sdk", "tokio", "tonic"]
@@ -649,6 +957,7 @@ parent = "polaris-openshell"
 layer = 2
 kind = "lib"
 phase = "P2"
+member_setup = ["wsl-openshell"]
 summary = "Generate and lint OpenShell policy YAML (filesystem_policy, landlock, process, network_policies) and provider profiles."
 deps = ["polaris-sdk"]
 ext = ["serde", "serde-saphyr"]
@@ -666,6 +975,7 @@ parent = "polaris-openshell"
 layer = 2
 kind = "lib"
 phase = "P2"
+member_setup = ["wsl-openshell", "wsl-sandbox-image"]
 summary = "Polaris NemoClaw-style blueprint (versioned YAML: sandbox image, policies, inference profiles) plus onboarding/doctor in WSL2."
 deps = ["polaris-sdk", "polaris-openshell-policy"]
 ext = ["serde", "serde-saphyr", "blake3"]
@@ -694,6 +1004,7 @@ path = "crates/polaris-ingest"
 layer = 2
 kind = "lib"
 phase = "P5"
+member_setup = ["win-pdfium"]
 summary = "Document ingest (docx, xlsx/csv, pdf, pptx, html, md, images) with an OCR pair (ocrs pure-Rust, oar-ocr PaddleOCR via ort); runs in the ingest worker."
 deps = ["polaris-sdk", "polaris-log"]
 ext = ["docx-rs", "calamine", "pdf-extract", "pdfium-render", "ocrs", "rten", "oar-ocr", "image", "htmd", "pulldown-cmark", "scraper", "encoding_rs", "infer"]
@@ -711,6 +1022,7 @@ parent = "polaris-search"
 layer = 2
 kind = "lib"
 phase = "P5"
+member_setup = ["wsl-searxng", "win-keyring"]
 summary = "Web search providers: Tavily (API key) and SearXNG (self-hosted in WSL2, JSON API), plus fetch-and-extract."
 deps = ["polaris-sdk", "polaris-config", "polaris-ratelimit"]
 ext = ["reqwest", "serde_json", "htmd", "url"]
@@ -770,6 +1082,7 @@ path = "crates/polaris-browser"
 layer = 2
 kind = "lib"
 phase = "P7"
+member_setup = ["wsl-sandbox-image", "wsl-kvm"]
 summary = "Host-side contract to the in-sandbox browser: navigation/click/type tools, a11y-tree compression, pHash visual diff (/ui-diff)."
 deps = ["polaris-sdk", "polaris-proto"]
 ext = ["image", "image_hasher"]
@@ -787,6 +1100,7 @@ parent = "polaris-devenv"
 layer = 2
 kind = "lib"
 phase = "P8"
+member_setup = ["wsl-nix"]
 summary = "Nix integration in WSL2/sandboxes: `nix print-dev-env --json`, hermetic env for $env(nix), /nix-flake generation via S2."
 deps = ["polaris-sdk"]
 ext = ["serde_json", "tokio"]
@@ -803,6 +1117,7 @@ parent = "polaris-devenv"
 layer = 2
 kind = "lib"
 phase = "P8"
+member_setup = ["wsl-docker"]
 summary = "Docker/Podman via bollard (named pipe on Windows): image builds with BuildKit cache mounts, warm container pool, exec."
 deps = ["polaris-sdk"]
 ext = ["bollard", "tokio", "futures"]
@@ -847,6 +1162,7 @@ parent = "polaris-system-one"
 layer = 2
 kind = "lib"
 phase = "P4"
+member_setup = ["win-models", "win-cuda"]
 summary = "GLiNER2 inference (GLiNER2.5-Decide + PII-NER) via gliner2-rs on ONNX Runtime (load-dynamic); linked only by polaris-worker."
 deps = ["polaris-sdk", "polaris-proto"]
 ext = ["gliner2-rs", "ort", "tokenizers", "hf-hub", "ndarray"]
@@ -881,6 +1197,7 @@ parent = "polaris-system-one"
 layer = 2
 kind = "lib"
 phase = "P8"
+member_setup = ["win-models", "win-uv"]
 summary = "Tier-0 Cactus Needle 3 bridge (sidecar engine): JSON argument filling, local embeddings, chaos-input generation; gated by spike S0-6."
 deps = ["polaris-sdk", "polaris-proto"]
 ext = ["tokio", "serde_json"]
@@ -1101,9 +1418,12 @@ parent = "polaris-tools"
 layer = 3
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "10 descriptors (subagent; re-verified): 100 tests incl. a real cargo build round trip (JSON and text open the same issue id), real share-mode-0 lock retry; planted bugs caught (11 failures); home-ceiling bug found and fixed test-first; fuzz rtk_stream 112,824 runs clean (§E18). Open: throughput benches, rustc-version fixture corpus, cross-process stress, CLI entry"
 summary = "RTK diagnostic engine (port of @prime/tmp/setup rtk-engine): filter compiler/linter streams and keep an atomic issue ledger (.polaris/issues.md)."
 deps = ["polaris-sdk", "polaris-storage-cas"]
-ext = ["serde_json", "blake3", "backon", "jiff"]
+ext = ["serde", "serde_json", "jiff", "dunce"]
 responsibilities = [
   "Auto-detect cargo JSON vs text; drop registry notes, macro spam and duplicate spans; keep first-party errors.",
   "Reconcile the ledger: stable message-derived ids, open/closed with timestamps, tmp-then-rename writes.",
@@ -1295,7 +1615,11 @@ parent = "polaris-kernel"
 layer = 4
 kind = "lib"
 phase = "P3"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Manifest protected for the unchanged verified-command wire contract test relocated into the allowed witness boundary (§E25). Production verifier remains a documentation skeleton; authorization/AST/S1 implementation not started."
 summary = "HybridMutationVerifier: Biscuit Datalog authorization + AST metric calculus + S1 semantic congruence for every proposed mutation."
+# polaris-proto is dev-only for the wire contract; this table tracks normal edges.
 deps = ["polaris-sdk", "polaris-security-capability", "polaris-code-intel", "polaris-system-one-verifier"]
 ext = []
 responsibilities = [
@@ -1315,6 +1639,9 @@ path = "crates/polaris-kernel"
 layer = 5
 kind = "facade"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Durable session context/typestate using real CAS/redb/SQLite, ordered replay and projection failure recovery (§E25). Full verified command orchestrator, backend choices, native workers, signals and full startup/shutdown assembly remain open."
 summary = "Composition root: wires Backends, session typestate, orchestrator, projections; re-exports kernel children."
 deps = [
   "polaris-sdk", "polaris-proto", "polaris-config", "polaris-log", "polaris-telemetry", "polaris-ratelimit",
@@ -1325,7 +1652,7 @@ deps = [
   "polaris-ext", "polaris-nvidia-docs", "polaris-browser", "polaris-devenv",
   "polaris-hacker", "polaris-runtime",
 ]
-ext = ["tokio", "tracing"]
+ext = ["tokio", "tracing", "serde", "serde_json"]
 responsibilities = [
   "Instantiate concrete backends (enum dispatch for runtime-selected ones) and inject traits into domain crates.",
   "Reach document ingest and S1 inference only through worker processes (sdk DocParser/DecisionEngine traits over polaris-proto); never link polaris-ingest or polaris-system-one-engine.",
@@ -1361,9 +1688,12 @@ parent = "polaris-ui"
 layer = 6
 kind = "lib"
 phase = "P1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "111 Windows tests incl. 1,000-case properties, 5 initial snapshots reviewed, Unicode chip regression saved; Linux check; ui_completion fuzz 207,648 runs/61 s (§E21). UI deferred by user: remaining settings/provenance, full HUD, metadata arity, Quick Chips, fixtures/Miri and TUI integration."
 summary = "Shared UI view models and reducers over the event stream, plus design tokens from the demo (#76B900 accent, palette, typography)."
-deps = ["polaris-sdk"]
-ext = ["serde"]
+deps = ["polaris-sdk", "polaris-kernel-directives"]
+ext = ["serde", "unicode-segmentation"]
 responsibilities = [
   "Reduce events into view state (conversation, tools, goal line, HUD, sessions) shared by all frontends.",
   "Own theme tokens and command/directive metadata used by completion menus.",
@@ -1410,6 +1740,7 @@ parent = "polaris-ui"
 layer = 6
 kind = "lib"
 phase = "P9"
+member_setup = ["win-wasm32", "win-cargo-tools"]
 summary = "Leptos components (SSR + hydrate), the approved welcome page design, PWA manifest and service worker assets."
 deps = ["polaris-sdk", "polaris-ui-model"]
 ext = ["leptos", "leptos_router", "leptos_meta", "wasm-bindgen"]
@@ -1441,6 +1772,7 @@ path = "tests"
 layer = 8
 kind = "test"
 phase = "P0"
+member_setup = ["wsl-rust", "wsl-kani"]
 summary = "Cross-crate test package: common helpers (lib), fixtures/ data, suites in tests/tests/ (smoke, e2e, contract, security, load, scalability, stress)."
 deps = ["polaris-sdk", "polaris-config", "polaris-storage", "polaris-kernel", "polaris-ui-model"]
 ext = ["tokio", "tempfile", "wiremock", "proptest", "insta", "rstest", "assert_cmd", "predicates", "hdrhistogram", "dhat", "portable-pty", "tonic", "serde", "jsonschema", "reqwest"]
@@ -1517,9 +1849,13 @@ path = "xtask"
 layer = 8
 kind = "xtask"
 phase = "P0"
+member_setup = ["win-python"]
+implemented = true
+status = "PASS"
+evidence = "P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9)"
 summary = "Repository automation (Rust, P0): check-members, check-layers, lint, fixture regeneration (Python gliner2 goldens), docs seed build, test matrix."
 deps = []
-ext = ["clap", "serde", "serde_json", "toml", "jsonschema", "reqwest"]
+ext = ["serde", "serde_json", "toml", "thiserror", "tempfile"]
 responsibilities = [
   "Port @prime/tools/workspace.py checks to Rust once implemented.",
   "Run the prompt.md lint list on demand (never in Cargo.toml — D10).",
@@ -1784,6 +2120,8 @@ group = "security"
 [[ext]]
 name = "biscuit-auth"
 version = "6.0.0"
+default_features = false # Runtime builders only; avoid unused macro/PEM features and RUSTSEC-2026-0173.
+path = "vendor/biscuit-auth" # Published source plus five missing import cfg guards (upstream issue 305).
 group = "security"
 [[ext]]
 name = "rand"
@@ -1810,12 +2148,14 @@ group = "storage"
 [[ext]]
 name = "lancedb"
 version = "0.40.0"
+features = ["remote"]
 group = "storage"
+note = "Opt-in only (S0-9: 36 min build at -j4, 4.8 GB target, 249 MB exe). `remote` is required: 0.40.0 src/job.rs uses Error::Http without cfg(feature = \"remote\")."
 [[ext]]
 name = "usearch"
 version = "2.26.5"
 group = "storage"
-note = "Fallback VectorStore if spike S0-9 (LanceDB on Windows) fails."
+note = "Default VectorStore backend (S0-9 chose the fallback): HNSW index; metadata in SQLite (rusqlite)."
 [[ext]]
 name = "zstd"
 version = "0.14.3"

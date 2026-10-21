@@ -1,0 +1,56 @@
+{
+  "type_of": "function",
+  "name": "detect_lang",
+  "file_path": "crates/polaris-code-intel/src/lang.rs",
+  "logic_name": "Language Detection",
+  "test_list": [
+    {
+      "test_name": "extension_maps_each_language",
+      "description": "Every supported extension (rs, py/pyi, cpp/cc/cxx/hpp/hh/hxx, cu/cuh, ts/mts/cts) maps to its Lang."
+    },
+    {
+      "test_name": "c_sources_and_headers_use_the_cpp_grammar",
+      "description": ".c and .h are parsed with the C++ grammar (C is close to a subset; documented deviation)."
+    },
+    {
+      "test_name": "extension_is_case_insensitive_and_path_agnostic",
+      "description": "Upper-case extensions, spaces, non-ASCII names and Windows separators do not matter."
+    },
+    {
+      "test_name": "shebang_detects_python_without_extension",
+      "description": "An extension-less script with a python shebang is Python."
+    },
+    {
+      "test_name": "shebang_survives_a_utf8_bom",
+      "description": "A UTF-8 BOM before the shebang does not hide it."
+    },
+    {
+      "test_name": "known_extension_wins_over_shebang",
+      "description": "A known extension takes precedence over the shebang."
+    },
+    {
+      "test_name": "unknown_files_yield_none",
+      "description": "Markdown, Makefile, a /bin/sh script and an empty path are not code-intel languages."
+    },
+    {
+      "test_name": "tsx_is_not_claimed_by_the_typescript_grammar",
+      "description": ".tsx is not detected because the TypeScript grammar cannot parse JSX (limitation, deferred)."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "path",
+      "type": "&Path",
+      "description": "File path; only the extension is inspected."
+    },
+    {
+      "name": "head",
+      "type": "&[u8]",
+      "description": "First bytes of the file (shebang detection)."
+    }
+  ],
+  "output_type": "Option<Lang>",
+  "output_description": "The language, or None when the file is not a supported source file."
+}

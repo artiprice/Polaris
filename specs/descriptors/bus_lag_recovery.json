@@ -1,0 +1,39 @@
+{
+  "type_of": "struct",
+  "name": "EventStream",
+  "file_path": "crates/polaris-kernel/crates/bus/src/stream.rs",
+  "logic_name": "Lag Recovery",
+  "test_list": [
+    {
+      "test_name": "lagged_reports_missed_and_resume_seq",
+      "description": "A receiver that fell behind gets Lagged{missed, resume_from} with resume_from = first missed Seq."
+    },
+    {
+      "test_name": "resume_from_store_replays_missed_events",
+      "description": "Replaying store.read_range(resume_from..) then continuing next() yields every event exactly once, in order."
+    },
+    {
+      "test_name": "closed_stream_returns_closed",
+      "description": "When the bus is dropped, next() returns Closed."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Command, EventRecord}",
+    "polaris_sdk::registry::EventStore"
+  ],
+  "libraries": [
+    "tokio (sync)",
+    "tracing",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "stream",
+      "type": "EventStream",
+      "description": "A subscription."
+    }
+  ],
+  "output_type": "Result<EventRecord, BusError>",
+  "output_description": "Next event, or a resumable lag report."
+}

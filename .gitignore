@@ -37,6 +37,14 @@ prompt.md
 /@prime/spikes/**/.venv/
 /@prime/spikes/**/models/
 /@prime/spikes/**/artifacts/
+# Spike build outputs and upstream source clones (a nested clone would be recorded as a
+# gitlink without .gitmodules, which breaks teammates' checkouts).
+/tests/fuzz/corpus/
+/tests/fuzz/artifacts/
+/tests/fuzz/coverage/
+/@prime/spikes/**/bin/
+/@prime/spikes/**/out*/
+/@prime/spikes/**/research/*-src/
 *.onnx
 *.onnx.data
 *.safetensors

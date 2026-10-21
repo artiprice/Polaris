@@ -1,0 +1,52 @@
+pre-run: C:\Temp exists=False iceoryx2 dir exists=False
+0 [W] "User::from_uid(4294967295)" 
+| Unable to acquire user entry details since an unknown failure occurred while reading the underlying POSIX user database `/etc/passwd` (2147483647). It is possible that those information are not available on this platform or platform-configuration. 
+1 [W] "Config::global_config()" 
+| No config file was loaded, a config with default values will be used. 
+0 [W] "User::from_uid(4294967295)" 
+| Unable to acquire user entry details since an unknown failure occurred while reading the underlying POSIX user database `/etc/passwd` (2147483647). It is possible that those information are not available on this platform or platform-configuration. 
+1 [W] "Config::global_config()" 
+| No config file was loaded, a config with default values will be used. 
+phase1: first echo Some(88.1891ms) after spawn (includes process start)
+warmup: n=1000 timeouts=0 rtt_us p50=2.1 p95=2.6 p99=4.7 max=146.6
+phase1: n=20000 timeouts=0 rtt_us p50=2.0 p95=2.8 p99=4.7 max=536.3
+phase2: peer killed (exit status exit code: 1)
+phase2: publish into dead peer for 200 ms: ok=439082 err=0
+< Win32 API error > C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\iceoryx2-pal-posix-0.10.0\src\windows\mman.rs:192 FindNextFileA(handle, &mut data) 
+ [ 18 ] There are no more files. (os error 18)
+< Win32 API error > C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\iceoryx2-pal-posix-0.10.0\src\windows\mman.rs:192 FindNextFileA(handle, &mut data) 
+ [ 18 ] There are no more files. (os error 18)
+< Win32 API error > C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\iceoryx2-pal-posix-0.10.0\src\windows\mman.rs:192 FindNextFileA(handle, &mut data) 
+ [ 18 ] There are no more files. (os error 18)
+phase2: census alive=1 dead=1 cleaned=1
+0 [W] "User::from_uid(4294967295)" 
+| Unable to acquire user entry details since an unknown failure occurred while reading the underlying POSIX user database `/etc/passwd` (2147483647). It is possible that those information are not available on this platform or platform-configuration. 
+1 [W] "Config::global_config()" 
+| No config file was loaded, a config with default values will be used. 
+phase3: reconnect Some(64.4265ms) after respawn
+phase3: n=5000 timeouts=0 rtt_us p50=2.1 p95=2.5 p99=4.1 max=17.6
+phase3: peer stopped gracefully (exit status exit code: 0)
+RESULT: PASS
+driver exit=0 wall_s=1 (concurrent LanceDB build -j4 running)
+--- after all processes exited ---
+0 [W] "User::from_uid(4294967295)" 
+| Unable to acquire user entry details since an unknown failure occurred while reading the underlying POSIX user database `/etc/passwd` (2147483647). It is possible that those information are not available on this platform or platform-configuration. 
+1 [W] "Config::global_config()" 
+| No config file was loaded, a config with default values will be used. 
+nodes: alive=0 dead=0; files under C:\Temp\iceoryx2: 1
+  ceoryx2\iox2_9204dd183d1c4d8e1ff592a30766ffa6765aa8b5_node.0_10_0.global_mgmt 16
+--- ACL C:\Temp and C:\Temp\iceoryx2 ---
+C:\Temp BUILTIN\Administrators:(I)(OI)(CI)(F)
+        NT AUTHORITY\SYSTEM:(I)(OI)(CI)(F)
+        BUILTIN\Users:(I)(OI)(CI)(RX)
+        NT AUTHORITY\Authenticated Users:(I)(M)
+        NT AUTHORITY\Authenticated Users:(I)(OI)(CI)(IO)(M)
+
+Successfully processed 1 files; Failed processing 0 files
+C:\Temp\iceoryx2 BUILTIN\Administrators:(I)(OI)(CI)(F)
+                 NT AUTHORITY\SYSTEM:(I)(OI)(CI)(F)
+                 BUILTIN\Users:(I)(OI)(CI)(RX)
+                 NT AUTHORITY\Authenticated Users:(I)(M)
+                 NT AUTHORITY\Authenticated Users:(I)(OI)(CI)(IO)(M)
+
+Successfully processed 1 files; Failed processing 0 files

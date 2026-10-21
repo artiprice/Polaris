@@ -1,0 +1,9 @@
+generate: 10000 files in 45749 ms
+manifest #1 (blake3, cold-ish): 10001 files, 3 denied, 1409 ms
+manifest #2 + no-op diff: 0 changed, 1102 ms
+initial push: 10001 files, 74 chunks, 61.4 MiB, 10445 ms
+verify: local=10001 remote=10001 mismatches=0 denied-files-in-sandbox=0
+fidelity sample: 755 | 0000000   l   i   n   e       w   i   t   h       c   r   l   f  \r  \n | 
+incremental: manifest+diff 1296 ms, 3 changed files -> push 1 chunk(s) 14336 B in 74 ms
+RESULT: PASS
+exit=0 wall_s=70 (concurrent LanceDB build -j4 running)

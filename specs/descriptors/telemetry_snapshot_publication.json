@@ -1,0 +1,51 @@
+{
+  "type_of": "method",
+  "name": "Telemetry::publish",
+  "file_path": "crates/polaris-telemetry/src/telemetry.rs",
+  "logic_name": "Snapshot Publication",
+  "test_list": [
+    {
+      "test_name": "new_telemetry_has_an_empty_snapshot",
+      "description": "Before any publish, snapshot() returns an all-zero snapshot of the session (smoke: the /usage view has data to render)."
+    },
+    {
+      "test_name": "publish_replaces_snapshot_and_old_arc_stays_unchanged",
+      "description": "publish() makes a new snapshot visible; an Arc taken earlier keeps its old content."
+    },
+    {
+      "test_name": "reader_handle_sees_published_snapshots",
+      "description": "A SnapshotReader obtained before recording sees what the writer publishes later."
+    },
+    {
+      "test_name": "readers_on_four_threads_do_not_block_the_writer",
+      "description": "Four threads read snapshots continuously while the writer records and publishes; the writer finishes and every observed snapshot is internally consistent (monotonic request count)."
+    },
+    {
+      "test_name": "snapshot_serde_round_trip",
+      "description": "A snapshot serialises to JSON and deserialises to an equal value."
+    },
+    {
+      "test_name": "synthetic_stream_matches_fixture",
+      "description": "insta fixture: a hand-built synthetic event stream (labelled synthetic, not recorded live) produces the expected snapshot text."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::Event",
+    "polaris_sdk::contracts::Timestamp"
+  ],
+  "libraries": [
+    "arc-swap",
+    "serde",
+    "insta (dev)",
+    "serde_json (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "at",
+      "type": "Timestamp",
+      "description": "Publication time, supplied by the owner task (the crate has no clock)."
+    }
+  ],
+  "output_type": "Arc<TelemetrySnapshot>",
+  "output_description": "Immutable snapshot swapped in atomically; readers never lock."
+}

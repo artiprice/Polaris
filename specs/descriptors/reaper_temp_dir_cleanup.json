@@ -1,0 +1,44 @@
+{
+  "type_of": "struct",
+  "name": "Reaper::register_temp_dir / Reaper::create_temp_dir / TempDirTeardown",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/resource.rs",
+  "logic_name": "Temp Dir Cleanup",
+  "test_list": [
+    {
+      "test_name": "registered_temp_dirs_are_deleted_on_shutdown",
+      "description": "Directories (with nested files) registered with the reaper no longer exist after shutdown_all and are reported Released."
+    },
+    {
+      "test_name": "created_temp_dir_has_the_reaper_prefix",
+      "description": "create_temp_dir makes a directory named with the polaris-reaper- prefix inside the requested parent and registers it."
+    },
+    {
+      "test_name": "dropping_an_unshutdown_reaper_removes_registered_temp_dirs",
+      "description": "Drop is synchronous best effort: a reaper dropped without shutdown still deletes its temp dirs."
+    },
+    {
+      "test_name": "temp_dir_with_a_held_file_is_reported_not_panicked",
+      "description": "Windows only: a file opened with share mode 0 blocks removal; the retries end, the directory is reported Failed, the other directories are removed, and the directory stays in the leak report."
+    }
+  ],
+  "dependencies": [
+    "tempfile::TempDir",
+    "polaris_kernel_reaper::{Reaper, ShutdownConfig, Outcome, TEMP_DIR_PREFIX}"
+  ],
+  "libraries": [
+    "tempfile",
+    "tokio",
+    "thiserror",
+    "tracing",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "dir",
+      "type": "tempfile::TempDir",
+      "description": "A directory the reaper now owns."
+    }
+  ],
+  "output_type": "ReapId",
+  "output_description": "Handle used to release the directory; its removal is part of shutdown_all."
+}

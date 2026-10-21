@@ -1,0 +1,33 @@
+{
+  "type_of": "module",
+  "name": "Authority / Token / attenuate / authorize",
+  "file_path": "crates/polaris-security/crates/capability/src/lib.rs",
+  "logic_name": "Biscuit capability boundary",
+  "test_list": [
+    {"test_name":"unknown_vocabulary_cannot_be_repaired_by_descendant_facts","description":"A signed root missing the supported vocabulary cannot be repaired by an appended version/grant fact."},
+    {"test_name":"datalog_fact_explosion_exhausts_budget_without_granting","description":"A valid signed descendant with a transitive-closure fact explosion hits evaluator limits and never grants."},
+    {"test_name":"tampered_delegation_proof_is_rejected","description":"Changing a valid descendant's delegation proof fails signature verification."},
+    {"test_name":"root_token_verifies_with_public_key","description":"Issue a real Ed25519 Biscuit, serialize/reparse it and authorize its scope."},
+    {"test_name":"root_token_wrong_key_rejected","description":"A token from another authority fails signature verification."},
+    {"test_name":"authority_and_token_debug_are_redacted","description":"Debug output contains no key/token material."},
+    {"test_name":"root_scope_grants_listed_rights_only","description":"Each ungranted right is denied by the authority-origin policy."},
+    {"test_name":"resource_scope_is_component_bounded","description":"An exact path or directory scope cannot authorize a sibling prefix."},
+    {"test_name":"symbol_scope_requires_exact_path_and_symbol","description":"Symbol capabilities require both typed path and symbol facts."},
+    {"test_name":"resource_paths_reject_aliases_and_escapes","description":"Reject traversal, absolute/drive/UNC paths, ADS, reserved names, ambiguous suffixes and encoded separators."},
+    {"test_name":"expiry_uses_injected_clock_and_is_exclusive","description":"No fixed epoch; reject at expiry and before issuance."},
+    {"test_name":"scope_limits_and_diff_binding_are_enforced","description":"Check actual churn, unsafe changes and exact patch hash, including missing hashes."},
+    {"test_name":"widening_child_never_escapes_ancestor_checks","description":"Wider child path/churn/TTL/unsafe/rights/hash constraints do not erase ancestor checks."},
+    {"test_name":"chain_of_three_attenuations_monotone","description":"Each level adds signed restrictions without the root private key."},
+    {"test_name":"token_facts_cannot_spoof_ambient_facts_or_grants","description":"Adversarial appended facts cannot satisfy ancestor mutation checks or authority grants."},
+    {"test_name":"revoking_an_ancestor_denies_all_descendants","description":"Optional external revocation IDs apply to every signature in the chain."},
+    {"test_name":"bounded_tokens_and_evaluation_fail_closed","description":"Oversized tokens and overlong chains are refused."},
+    {"test_name":"invalid_ttl_and_overflow_are_rejected","description":"Reject zero/sub-microsecond lifetime and overflowing expiration."},
+    {"test_name":"prop_attenuation_is_monotone","description":"Generated child constraints never add authorization beyond their parent."},
+    {"test_name":"prop_arbitrary_token_bytes_never_authorize","description":"Arbitrary byte strings reject without granting or panicking."}
+  ],
+  "dependencies": ["polaris-sdk"],
+  "libraries": ["biscuit-auth", "zeroize", "proptest (dev)"],
+  "inputs": [{"name":"facts","type":"Facts","description":"Trusted workspace path, actual mutation metrics, requested right, and injected clock."}],
+  "output_type": "Result<Authorization, CapabilityError>",
+  "output_description": "Default-deny authorization with signed attenuation and explicit evaluation bounds."
+}

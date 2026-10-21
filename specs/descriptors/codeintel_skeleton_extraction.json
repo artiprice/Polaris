@@ -1,0 +1,84 @@
+{
+  "type_of": "function",
+  "name": "skeleton",
+  "file_path": "crates/polaris-code-intel/src/skeleton.rs",
+  "logic_name": "Skeleton Extraction",
+  "test_list": [
+    {
+      "test_name": "rust_fn_signature_kept_body_elided",
+      "description": "Rust fn/struct/trait/impl signatures are kept, bodies (and the marker inside them) are gone; methods are depth 1."
+    },
+    {
+      "test_name": "item_spans_cover_the_whole_declaration",
+      "description": "An item's span covers the full declaration including its body."
+    },
+    {
+      "test_name": "rust_misc_items_are_listed",
+      "description": "Tuple/unit structs, enums, modules, const, static, type aliases, macros, async/unsafe/generic fns and trait impls."
+    },
+    {
+      "test_name": "python_class_methods_listed",
+      "description": "Python class with decorated and async methods plus a top-level def; the span of a decorated class keeps its decorators."
+    },
+    {
+      "test_name": "cuda_kernel_qualifiers_preserved",
+      "description": "__global__, __device__ __forceinline__ and template prefixes stay in the signature; the <<<>>> launch is not part of it."
+    },
+    {
+      "test_name": "cpp_namespaces_classes_and_prototypes",
+      "description": "C++ namespaces, classes, struct, constructors, destructors, pure virtuals, inline methods, prototypes and qualified definitions."
+    },
+    {
+      "test_name": "typescript_declarations",
+      "description": "Exports, interfaces, classes with constructor/async methods, arrow-function consts, type aliases, enums and namespaces."
+    },
+    {
+      "test_name": "syntax_error_file_still_yields_partial_skeleton",
+      "description": "A file with a syntax error still yields the declarations tree-sitter recovered."
+    },
+    {
+      "test_name": "multiline_signatures_collapse_to_one_line",
+      "description": "Whitespace runs inside a signature collapse to single spaces."
+    },
+    {
+      "test_name": "oversized_signature_is_truncated_on_a_char_boundary",
+      "description": "A signature above MAX_SIGNATURE_BYTES is truncated at a char boundary and ends with an ellipsis."
+    },
+    {
+      "test_name": "deeply_nested_modules_do_not_overflow_the_stack",
+      "description": "3000 nested modules are walked iteratively with correct depths."
+    },
+    {
+      "test_name": "item_count_limit_returns_too_large",
+      "description": "More than MAX_SKELETON_ITEMS items returns TooLarge."
+    },
+    {
+      "test_name": "empty_source_has_an_empty_skeleton",
+      "description": "An empty source yields no items in every language."
+    },
+    {
+      "test_name": "skeleton_spans_are_in_bounds_and_ordered",
+      "description": "Property: item spans are ordered, in bounds and on char boundaries."
+    },
+    {
+      "test_name": "bodies_never_leak_into_signatures",
+      "description": "Property: identifiers that occur only inside a body never appear in the rendered skeleton."
+    }
+  ],
+  "dependencies": [
+    "polaris_code_intel::parse::Parsed"
+  ],
+  "libraries": [
+    "tree-sitter",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "p",
+      "type": "&Parsed",
+      "description": "Parsed source file."
+    }
+  ],
+  "output_type": "Result<Skeleton, CodeIntelError>",
+  "output_description": "Signature-only items in source order with kind, name, collapsed signature, span and nesting depth."
+}

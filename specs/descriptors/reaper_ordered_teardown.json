@@ -1,0 +1,57 @@
+{
+  "type_of": "async_function",
+  "name": "Reaper::shutdown_all",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/shutdown.rs",
+  "logic_name": "Ordered Teardown",
+  "test_list": [
+    {
+      "test_name": "teardown_follows_kind_priority_then_reverse_registration",
+      "description": "Resources are torn down Task, Process, WorkerPipe, Sandbox, TempDir, IpcSegment; inside one kind the most recently registered goes first; the report lists them in exactly that order."
+    },
+    {
+      "test_name": "report_lists_every_resource_once",
+      "description": "Each registered resource appears exactly once in the report with its id and kind."
+    },
+    {
+      "test_name": "failing_resource_is_reported_and_the_rest_complete",
+      "description": "A resource whose teardown returns an error is reported Failed with the error text; every other resource is still torn down."
+    },
+    {
+      "test_name": "second_call_is_rejected_and_touches_nothing",
+      "description": "A second shutdown_all returns AlreadyShutDown and tears nothing down again."
+    },
+    {
+      "test_name": "register_after_shutdown_is_rejected",
+      "description": "Registering a resource after shutdown started returns AlreadyShutDown."
+    },
+    {
+      "test_name": "release_removes_a_resource_from_teardown",
+      "description": "A released resource is not torn down and release of an unknown id is UnknownResource."
+    },
+    {
+      "test_name": "reason_is_passed_to_every_resource",
+      "description": "The TeardownReason chosen in the config reaches each resource."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_reaper::{Reaper, ResourceKind, Teardown, ShutdownConfig, ShutdownReport, Outcome}"
+  ],
+  "libraries": [
+    "tokio-util",
+    "tokio",
+    "tempfile",
+    "thiserror",
+    "tracing",
+    "proptest (dev)",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "config",
+      "type": "ShutdownConfig",
+      "description": "Reason and the graceful, forced and overall deadlines."
+    }
+  ],
+  "output_type": "Result<ShutdownReport, ReaperError>",
+  "output_description": "A per-resource report in teardown order, or AlreadyShutDown on a repeated call."
+}

@@ -1,0 +1,59 @@
+{
+  "type_of": "function",
+  "name": "detect_format",
+  "file_path": "crates/polaris-tools/crates/rtk/src/detect.rs",
+  "logic_name": "Format detection",
+  "test_list": [
+    {
+      "test_name": "leading_brace_is_json",
+      "description": "A stream whose first non-whitespace character starts a one-line JSON object is StreamFormat::CargoJson."
+    },
+    {
+      "test_name": "leading_whitespace_then_brace_is_json",
+      "description": "Blank lines and indentation before the first JSON line do not matter."
+    },
+    {
+      "test_name": "stderr_noise_then_json_is_mixed",
+      "description": "A stderr `Compiling ...` line followed by JSON lines is StreamFormat::Mixed, not Text."
+    },
+    {
+      "test_name": "trailing_summary_after_json_is_mixed",
+      "description": "JSON lines followed by a text summary line are Mixed."
+    },
+    {
+      "test_name": "plain_text_is_text",
+      "description": "rustc human output is Text."
+    },
+    {
+      "test_name": "empty_input_is_text",
+      "description": "Empty and whitespace-only input is Text."
+    },
+    {
+      "test_name": "brace_inside_text_line_is_not_json",
+      "description": "Text lines that merely contain or start a brace without being a one-line JSON object stay Text."
+    },
+    {
+      "test_name": "utf16_json_is_detected_after_transcoding",
+      "description": "A UTF-16LE stream with BOM carrying JSON lines is detected as CargoJson."
+    },
+    {
+      "test_name": "prop_detect_never_panics",
+      "description": "proptest: detect_format returns for arbitrary bytes."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind"
+  ],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "stream",
+      "type": "&[u8]",
+      "description": "Raw bytes piped from a compiler or linter."
+    }
+  ],
+  "output_type": "StreamFormat",
+  "output_description": "CargoJson, Text or Mixed."
+}

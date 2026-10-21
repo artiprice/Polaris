@@ -1,0 +1,115 @@
+{
+  "type_of": "function",
+  "name": "merge3",
+  "file_path": "crates/polaris-code-intel/src/merge.rs",
+  "logic_name": "Symbol Merge",
+  "test_list": [
+    {
+      "test_name": "adjacent_one_sided_changes_are_not_reported_as_conflicts",
+      "description": "A wide diff hunk spanning adjacent declarations reports only the declaration edited differently by both sides, in either side order."
+    },
+    {
+      "test_name": "orthogonal_functions_merge_cleanly",
+      "description": "Edits to different functions merge into one exact result."
+    },
+    {
+      "test_name": "same_function_edited_conflicts",
+      "description": "Different edits of the same function report that symbol as a conflict."
+    },
+    {
+      "test_name": "conflict_never_returns_merged_bytes",
+      "description": "A conflict anywhere makes the whole outcome a Conflict; no merged bytes are produced."
+    },
+    {
+      "test_name": "eol_style_preserved",
+      "description": "CRLF inputs merge without introducing a bare LF, including separators for added functions."
+    },
+    {
+      "test_name": "utf8_bom_is_preserved",
+      "description": "A leading BOM survives the merge."
+    },
+    {
+      "test_name": "both_sides_adding_different_functions_keeps_both",
+      "description": "Two different new functions at the same spot are both kept, ours first."
+    },
+    {
+      "test_name": "both_sides_adding_the_same_name_differently_conflicts",
+      "description": "Two different definitions of one new symbol conflict."
+    },
+    {
+      "test_name": "identical_edits_on_both_sides_merge",
+      "description": "The same edit on both sides is applied once."
+    },
+    {
+      "test_name": "deleting_an_untouched_function_succeeds_but_deleting_an_edited_one_conflicts",
+      "description": "Delete vs edit conflicts; delete vs unrelated edit merges."
+    },
+    {
+      "test_name": "rust_impl_methods_merge_independently",
+      "description": "Different methods of one impl merge; the same method conflicts as Type::method."
+    },
+    {
+      "test_name": "both_sides_adding_methods_to_one_impl_keeps_both",
+      "description": "New methods from both sides in one impl are both kept."
+    },
+    {
+      "test_name": "python_class_methods_merge_independently",
+      "description": "Python class methods merge independently, indentation preserved."
+    },
+    {
+      "test_name": "typescript_functions_merge_independently",
+      "description": "TypeScript exported functions merge independently."
+    },
+    {
+      "test_name": "cpp_and_cuda_functions_merge_independently",
+      "description": "C++ and CUDA functions merge independently."
+    },
+    {
+      "test_name": "import_lines_merge_by_content",
+      "description": "Non-declaration top-level lines (imports) are merged by content."
+    },
+    {
+      "test_name": "merging_different_languages_is_an_error",
+      "description": "Mixed languages return LanguageMismatch."
+    },
+    {
+      "test_name": "unchanged_inputs_merge_to_themselves",
+      "description": "merge3(x, x, x) returns x in every language."
+    },
+    {
+      "test_name": "one_sided_changes_reproduce_the_changed_side",
+      "description": "Property: when one side equals base the result is byte-identical to the other side."
+    },
+    {
+      "test_name": "disjoint_edits_commute",
+      "description": "Property: edits to different functions commute and equal the combined edit."
+    }
+  ],
+  "dependencies": [
+    "polaris_code_intel::decl::classify"
+  ],
+  "libraries": [
+    "imara-diff",
+    "tree-sitter",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "base",
+      "type": "&Parsed",
+      "description": "Common ancestor."
+    },
+    {
+      "name": "ours",
+      "type": "&Parsed",
+      "description": "Our version."
+    },
+    {
+      "name": "theirs",
+      "type": "&Parsed",
+      "description": "Their version."
+    }
+  ],
+  "output_type": "Result<MergeOutcome, CodeIntelError>",
+  "output_description": "Merged(bytes) or Conflict { symbols }; never partial bytes on conflict."
+}

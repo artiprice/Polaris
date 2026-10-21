@@ -1,0 +1,57 @@
+{
+  "type_of": "function",
+  "name": "validate_user_regex",
+  "file_path": "crates/polaris-security/crates/automata/src/guard.rs",
+  "logic_name": "User Regex Guard",
+  "test_list": [
+    {
+      "test_name": "rejects_oversize_pattern",
+      "description": "A pattern longer than max_len is TooLarge."
+    },
+    {
+      "test_name": "rejects_deep_nesting",
+      "description": "Nesting beyond nest_limit is TooNested."
+    },
+    {
+      "test_name": "accepts_simple_pattern",
+      "description": "An ordinary pattern validates and compiles."
+    },
+    {
+      "test_name": "rejects_huge_counted_repetition",
+      "description": "a{100000} (and nested counted repetitions whose product explodes) is rejected."
+    },
+    {
+      "test_name": "rejects_compile_blowup",
+      "description": "A pattern whose compiled NFA exceeds the size limit is TooLarge, not an OOM."
+    },
+    {
+      "test_name": "prop_guard_never_panics",
+      "description": "Arbitrary strings return Ok or Err, never panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror",
+    "proptest (dev)",
+    "regex (dev, reference)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "pattern",
+      "type": "&str",
+      "description": "User-supplied regex."
+    },
+    {
+      "name": "limits",
+      "type": "&UserRegexLimits",
+      "description": "Length, nesting, repetition and size bounds."
+    }
+  ],
+  "output_type": "Result<ValidatedPattern, AutomataError>",
+  "output_description": "A pattern proven to compile within the limits."
+}

@@ -1,0 +1,59 @@
+{
+  "type_of": "struct",
+  "name": "EventLog",
+  "file_path": "crates/polaris-storage/crates/eventlog/src/log.rs",
+  "logic_name": "Event Append And Read",
+  "test_list": [
+    {
+      "test_name": "append_assigns_gap_free_seq",
+      "description": "Sequence numbers start at 1 and increase by 1; the record's own seq is ignored."
+    },
+    {
+      "test_name": "read_range_is_ordered",
+      "description": "read_range(from, to) returns exactly the inclusive range, ordered."
+    },
+    {
+      "test_name": "batch_is_atomic",
+      "description": "append_batch writes all records in one transaction and returns the last seq; an empty batch changes nothing."
+    },
+    {
+      "test_name": "reopen_preserves_head",
+      "description": "Closing and reopening keeps head and every record."
+    },
+    {
+      "test_name": "second_open_is_locked",
+      "description": "Opening the same file twice reports Locked (one owner per database)."
+    },
+    {
+      "test_name": "path_with_spaces_and_non_ascii_works",
+      "description": "A database under `dir with space/événements.redb` opens, appends and reads."
+    },
+    {
+      "test_name": "event_store_trait_is_implemented",
+      "description": "EventLog works through the sdk EventStore trait (as the bus uses it)."
+    },
+    {
+      "test_name": "prop_appends_read_back_identically",
+      "description": "proptest: any sequence of events reads back identical and ordered."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::registry::{EventStore, ExactCacheStore}"
+  ],
+  "libraries": [
+    "redb",
+    "serde_json",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "record",
+      "type": "&EventRecord",
+      "description": "Event to append (the log assigns Seq)."
+    }
+  ],
+  "output_type": "Result<Seq, EventLogError>",
+  "output_description": "Durable, ordered, gap-free journal."
+}

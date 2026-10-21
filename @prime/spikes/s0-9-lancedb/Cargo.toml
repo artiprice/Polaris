@@ -10,7 +10,8 @@ publish = false
 [workspace]
 
 [dependencies]
-lancedb = "0.40.0"
+# 0.40.0 does not compile without `remote`: src/job.rs uses Error::Http, which is cfg(feature = "remote").
+lancedb = { version = "0.40.0", features = ["remote"] }
 arrow-array = "58"
 arrow-schema = "58"
 futures = "0.3.34"

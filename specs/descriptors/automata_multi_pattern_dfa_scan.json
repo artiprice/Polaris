@@ -1,0 +1,65 @@
+{
+  "type_of": "method",
+  "name": "DfaScanner::scan / any_match",
+  "file_path": "crates/polaris-security/crates/automata/src/scan.rs",
+  "logic_name": "Multi-Pattern DFA Scan",
+  "test_list": [
+    {
+      "test_name": "finds_all_rules_in_one_pass",
+      "description": "One scan over a haystack containing three different rule hits reports all three with their rule ids."
+    },
+    {
+      "test_name": "reports_start_and_end_offsets",
+      "description": "Spans are exact byte offsets of each match."
+    },
+    {
+      "test_name": "no_match_on_clean_text",
+      "description": "Ordinary prose and code produce no match and any_match is false."
+    },
+    {
+      "test_name": "buffer_full_is_error_not_panic",
+      "description": "More matches than the caller's ScanBuf capacity is AutomataError::BufferFull; the buffer never reallocates."
+    },
+    {
+      "test_name": "every_default_rule_has_positive_and_negative",
+      "description": "Each rule of the default pack matches a generated positive sample and rejects a look-alike."
+    },
+    {
+      "test_name": "non_utf8_haystack_is_scanned",
+      "description": "Invalid UTF-8 around a secret neither errors nor hides the match."
+    },
+    {
+      "test_name": "compile_limits_reject_too_many_patterns",
+      "description": "max_patterns is enforced at build time (TooManyPatterns)."
+    },
+    {
+      "test_name": "prop_scan_matches_reference_regex",
+      "description": "For random haystacks, matches equal the regex crate's leftmost-first find_iter over the alternation of the same patterns."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror",
+    "proptest (dev)",
+    "regex (dev, reference)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "haystack",
+      "type": "&[u8]",
+      "description": "Bytes to scan (any encoding, < 4 GiB)."
+    },
+    {
+      "name": "out",
+      "type": "&mut ScanBuf",
+      "description": "Caller-owned, pre-sized match storage."
+    }
+  ],
+  "output_type": "Result<usize, AutomataError>",
+  "output_description": "Number of matches written (leftmost-first, non-overlapping, ordered)."
+}

@@ -1,0 +1,57 @@
+{
+  "type_of": "struct",
+  "name": "IgnoreRules",
+  "file_path": "crates/polaris-storage/crates/sync/src/ignore.rs",
+  "logic_name": "Ignore And Deny Rules",
+  "test_list": [
+    {
+      "test_name": "polarisignore_excludes_matches",
+      "description": "Patterns in .polarisignore (gitignore syntax) exclude matching files."
+    },
+    {
+      "test_name": "deny_list_defaults_present",
+      "description": ".env, .env.local, *.pem, *.key, .git/config, .ssh/*, id_rsa, *.pfx are denied by default."
+    },
+    {
+      "test_name": "negation_cannot_reinclude_denied",
+      "description": "'!.env' in .polarisignore does not re-include a denied file."
+    },
+    {
+      "test_name": "git_config_denied",
+      "description": ".git/config is denied at any depth while other .git files are not."
+    },
+    {
+      "test_name": "ignored_directory_prunes_children",
+      "description": "An ignored directory excludes everything below it."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "root",
+      "type": "&Path",
+      "description": "Workspace root."
+    },
+    {
+      "name": "polarisignore",
+      "type": "Option<&str>",
+      "description": "Contents of .polarisignore."
+    }
+  ],
+  "output_type": "Exclusion",
+  "output_description": "Included, Ignored or Denied (deny evaluated last, non-overridable)."
+}

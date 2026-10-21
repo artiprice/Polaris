@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 0b2e103cf1cff20d13bf92d1f1ec75924d3413c9aeba5177bd42e16c68c392c6 # shrinks to first = [Diagnostic { level: Error, code: None, message: "", primary: None, details: [], first_party: true }], second = []

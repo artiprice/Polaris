@@ -1,0 +1,20 @@
+---
+source: crates/polaris-sdk/tests/event_envelope.rs
+expression: rec
+---
+{
+  "seq": 7,
+  "at": "2026-10-20T12:00:00Z",
+  "schema": 1,
+  "session": "01920000-0000-7000-8000-0000000000a1",
+  "event": {
+    "type": "model_request_completed",
+    "frame": "01920000-0000-7000-8000-0000000000f1",
+    "request": "0404040404040404040404040404040404040404040404040404040404040404",
+    "prompt_tokens": 1200,
+    "completion_tokens": 300,
+    "cached_tokens": 1024,
+    "cost": 450,
+    "latency_us": 2300000
+  }
+}

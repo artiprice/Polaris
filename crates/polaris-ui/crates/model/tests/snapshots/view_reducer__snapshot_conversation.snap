@@ -1,0 +1,70 @@
+---
+source: crates/polaris-ui/crates/model/tests/view_reducer.rs
+assertion_line: 602
+expression: script_state()?
+---
+{
+  "conversation": [
+    {
+      "kind": "User",
+      "text": "fix the failing test"
+    },
+    {
+      "kind": "Assistant",
+      "text": "Done: the test passes."
+    }
+  ],
+  "tools": [
+    {
+      "frame": "00000000-0000-0000-0000-000000000007",
+      "call": "0202020202020202020202020202020202020202020202020202020202020202",
+      "title": "Read crates/polaris-config/src/lib.rs",
+      "status": "Succeeded",
+      "latency_us": 1500,
+      "expanded": null
+    }
+  ],
+  "tools_expanded": false,
+  "goal": null,
+  "hud": {
+    "requests": 1,
+    "prompt_tokens": 2000,
+    "completion_tokens": 300,
+    "cached_tokens": 1500,
+    "cost_micro_usd": 12000,
+    "last_prompt_tokens": 2000,
+    "last_s2_latency_us": 900000,
+    "last_s1_latency_us": null,
+    "decisions": 0
+  },
+  "sessions": [
+    {
+      "session": "00000000-0000-0000-0000-000000000001",
+      "workspace": "0101010101010101010101010101010101010101010101010101010101010101",
+      "started_at_ms": 0,
+      "started_seq": 0,
+      "closed": false
+    }
+  ],
+  "mode": "Auto",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "effort": "high",
+  "status": {
+    "session_open": true,
+    "worker_restarts": {
+      "s1": 0,
+      "ingest": 0,
+      "nano": 0
+    },
+    "circuit_trips": 0,
+    "dead_letters": 0,
+    "diffs_approved": 0,
+    "diffs_rejected": 0,
+    "proof_of_done": null,
+    "directives_applied": 0
+  },
+  "last_seq": 3,
+  "effort_preferences": {
+    "nvidia/nemotron-3-super-120b-a12b": "high"
+  }
+}

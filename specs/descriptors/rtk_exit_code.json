@@ -1,0 +1,31 @@
+{
+  "type_of": "function",
+  "name": "exit_code",
+  "file_path": "crates/polaris-tools/crates/rtk/src/ledger.rs",
+  "logic_name": "Exit code",
+  "test_list": [
+    {
+      "test_name": "no_open_issue_is_zero",
+      "description": "A summary with no open issues exits 0."
+    },
+    {
+      "test_name": "one_open_issue_is_one",
+      "description": "One or more open issues exit 1."
+    },
+    {
+      "test_name": "closed_issues_do_not_count",
+      "description": "Newly closed issues do not make the exit code non-zero."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "summary",
+      "type": "&LedgerSummary",
+      "description": "Result of reconcile."
+    }
+  ],
+  "output_type": "i32",
+  "output_description": "0 when nothing is open, 1 otherwise."
+}

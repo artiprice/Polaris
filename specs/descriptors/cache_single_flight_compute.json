@@ -1,0 +1,62 @@
+{
+  "type_of": "method",
+  "name": "TieredCache::get_or_compute",
+  "file_path": "crates/polaris-storage/crates/cache/src/singleflight.rs",
+  "logic_name": "Single Flight Compute",
+  "test_list": [
+    {
+      "test_name": "concurrent_callers_run_f_once",
+      "description": "16 concurrent callers for one key on a multi-thread runtime run the computation exactly once and all get its value."
+    },
+    {
+      "test_name": "leader_cancel_wakes_waiters",
+      "description": "If the computing caller is cancelled, a waiter takes over and computes; nobody hangs."
+    },
+    {
+      "test_name": "error_not_cached",
+      "description": "A failed computation is returned to its caller and not cached; the next call computes again."
+    },
+    {
+      "test_name": "ttl_expiry_recomputes",
+      "description": "After the TTL passes (fake clock), the value is computed again."
+    },
+    {
+      "test_name": "l2_hit_skips_compute",
+      "description": "A value present only in L2 is returned without running the computation."
+    },
+    {
+      "test_name": "get_or_compute_future_is_send",
+      "description": "The returned future is Send (usable from tokio::spawn)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{ExactCacheStore, CacheScope, CacheStoreError}",
+    "polaris_sdk::ids::{Cid, ModelId, SessionId}"
+  ],
+  "libraries": [
+    "blake3",
+    "quick_cache",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "key",
+      "type": "CacheKey",
+      "description": "Derived key."
+    },
+    {
+      "name": "ttl",
+      "type": "Option<Duration>",
+      "description": "Expiry of the computed value."
+    },
+    {
+      "name": "compute",
+      "type": "FnOnce() -> impl Future<Output = Result<CachedValue, E>>",
+      "description": "Runs only on a miss in every tier."
+    }
+  ],
+  "output_type": "Result<CachedValue, E> where E: From<CacheError>",
+  "output_description": "The cached or freshly computed value."
+}

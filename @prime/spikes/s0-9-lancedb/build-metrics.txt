@@ -1,8 +1,8 @@
-﻿exit_code=
-elapsed_s=1614
+exit_code=0
+elapsed_s=2174
 jobs=4
-peak_build_procs_working_set_mb=2282
-lowest_free_physical_gb=0.01
-target_dir_gb=1.61
-protoc_on_path=False
-finished=2026-10-20T16:59:24
+peak_build_procs_working_set_mb=6363
+lowest_free_physical_gb=2.56
+target_dir_gb=4.83
+protoc_on_path=True
+finished=2026-10-20T22:08:58

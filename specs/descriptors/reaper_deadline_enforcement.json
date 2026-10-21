@@ -1,0 +1,54 @@
+{
+  "type_of": "async_function",
+  "name": "Reaper::shutdown_all (deadlines)",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/shutdown.rs",
+  "logic_name": "Deadline Enforcement",
+  "test_list": [
+    {
+      "test_name": "hanging_resource_is_abandoned_at_its_deadline_and_others_complete",
+      "description": "A resource that hangs in both the graceful and the forced step is reported Abandoned after graceful + forced virtual time; resources before and after it are Released."
+    },
+    {
+      "test_name": "graceful_hang_then_successful_force_is_forced",
+      "description": "A resource that misses the graceful deadline but succeeds when forced is reported Forced."
+    },
+    {
+      "test_name": "failing_graceful_step_is_not_forced",
+      "description": "An error (not a hang) in the graceful step is reported Failed and force is never attempted."
+    },
+    {
+      "test_name": "overall_deadline_skips_the_remaining_resources",
+      "description": "When the overall budget runs out, the current step is cut short (Abandoned) and untouched resources are Skipped; deadline_exceeded is set and elapsed equals the overall deadline."
+    },
+    {
+      "test_name": "task_ignoring_cancellation_is_aborted",
+      "description": "A real tokio task that ignores its token is aborted by the forced step and reported Forced."
+    },
+    {
+      "test_name": "unresolved_resources_stay_in_the_leak_report",
+      "description": "Abandoned and skipped resources remain listed as leaked after shutdown."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_reaper::{Reaper, Teardown, ShutdownConfig, Outcome, TaskTeardown}",
+    "tokio::time (paused)"
+  ],
+  "libraries": [
+    "tokio-util",
+    "tokio",
+    "tempfile",
+    "thiserror",
+    "tracing",
+    "proptest (dev)",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "config",
+      "type": "ShutdownConfig",
+      "description": "graceful and forced per-step deadlines and the overall deadline."
+    }
+  ],
+  "output_type": "ShutdownReport",
+  "output_description": "Outcome per resource (Released, Forced, Failed, Abandoned, Skipped), elapsed time and deadline_exceeded."
+}

@@ -1,0 +1,33 @@
+{
+  "type_of": "struct",
+  "name": "Session<S> / KernelCtx",
+  "file_path": "crates/polaris-kernel/src/session.rs",
+  "logic_name": "Durable Session Typestate",
+  "test_list": [
+    {"test_name": "storage_error_kinds_are_preserved", "description": "Composition retains underlying storage transient/permanent/fatal classifications."},
+    {"test_name": "live_publication_is_already_in_the_durable_log", "description": "A bus subscriber sees the same assigned record already committed to redb."},
+    {"test_name": "registry_can_be_rebuilt_after_its_file_is_lost", "description": "Rebuild a removed synthetic catalogue from configuration CAS and events."},
+    {"test_name": "corrupt_configuration_cas_fails_recovery", "description": "A corrupt CAS blob rejects recovery without appending an event."},
+    {"test_name": "invalid_lifecycle_order_is_not_silently_replayed", "description": "Reject a resume injected after archive without a pause/reopen transition."},
+    {"test_name": "startup_failure_releases_previously_opened_databases", "description": "A corrupt registry aborts startup and releases the redb owner lock."},
+    {"test_name": "committed_projection_failure_is_explicit_and_recoverable", "description": "An actual SQLite abort trigger produces ProjectionBehind while retaining committed state."},
+    {"test_name": "replay_crosses_page_boundary_and_filters_other_sessions", "description": "More than 256 interleaved session records replay in bounded pages without setting leakage."},
+    {"test_name": "prop_replayed_directive_fold_matches_last_override", "description": "For generated override histories, recovered state equals the last override or immutable default."},
+    {"test_name": "created_configures_to_configured", "description": "Persist immutable configuration and typed defaults before startup."},
+    {"test_name": "paused_resumes_to_running", "description": "Pause and resume commit explicit lifecycle records and update the registry."},
+    {"test_name": "reopen_replays_directives_in_order", "description": "Reopen after dropping/reopening real databases restores last-wins session directives."},
+    {"test_name": "session_defaults_do_not_leak_to_other_sessions", "description": "Each session starts from its own immutable defaults."},
+    {"test_name": "one_live_owner_per_session", "description": "Reject duplicate mutable owners and permit reopen after the owner drops."},
+    {"test_name": "running_session_is_recovered_as_paused", "description": "A crashed running session is durably paused before returning a recovery handle."},
+    {"test_name": "configured_but_never_started_is_not_resumed", "description": "An incomplete startup cannot masquerade as a running or paused session."},
+    {"test_name": "unresolved_orphans_block_startup", "description": "Do not admit sessions until prior resources are safely reconciled."},
+    {"test_name": "invalid_configuration_commits_nothing", "description": "Reject nonexistent workspaces and blank names before any event append."},
+    {"test_name": "shutdown_closes_session_mutations", "description": "Root shutdown rejects later directive writes."},
+    {"test_name": "archive_and_paused_cannot_apply_directive_compile_fail", "description": "Invalid typestate mutations fail to compile."}
+  ],
+  "dependencies": ["polaris-sdk", "polaris-storage", "polaris-kernel-bus", "polaris-kernel-directives", "polaris-kernel-reaper"],
+  "libraries": ["serde", "serde_json", "tokio", "thiserror"],
+  "inputs": [{"name": "configuration", "type": "SessionConfig", "description": "Workspace, display name, Git metadata and typed directive defaults."}],
+  "output_type": "Result<Session<State>, KernelError>",
+  "output_description": "Exclusively owned session with durable lifecycle, replay and rebuildable registry projection."
+}

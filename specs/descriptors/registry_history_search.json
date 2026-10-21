@@ -1,0 +1,76 @@
+{
+  "type_of": "method",
+  "name": "Registry::search_history",
+  "file_path": "crates/polaris-storage/crates/registry/src/search.rs",
+  "logic_name": "History Search",
+  "test_list": [
+    {
+      "test_name": "finds_substring_of_three_chars",
+      "description": "A 3-character substring in the middle of a word finds the message through the trigram index."
+    },
+    {
+      "test_name": "short_query_uses_like_fallback",
+      "description": "Queries of one or two characters (below the trigram minimum) still find matches via LIKE."
+    },
+    {
+      "test_name": "quote_in_query_is_escaped",
+      "description": "A query containing double quotes matches the literal text and does not raise an FTS5 syntax error."
+    },
+    {
+      "test_name": "fts_operators_are_literal",
+      "description": "Queries such as `foo OR *`, `NEAR(`, `a AND b` and `col:x` match only literal text, never act as FTS5 syntax."
+    },
+    {
+      "test_name": "like_wildcards_are_literal",
+      "description": "A short query of % or _ matches only messages that contain that character."
+    },
+    {
+      "test_name": "limit_is_enforced",
+      "description": "At most `limit` hits are returned; limit 0 returns nothing; an absurd limit is capped."
+    },
+    {
+      "test_name": "hits_are_newest_first",
+      "description": "Hits are ordered by message time descending."
+    },
+    {
+      "test_name": "blank_query_returns_nothing",
+      "description": "An empty query returns an empty list rather than an error or every row."
+    },
+    {
+      "test_name": "snippet_is_a_window_around_the_match",
+      "description": "The hit snippet is bounded in length and contains the matched text for long messages."
+    },
+    {
+      "test_name": "prop_indexed_text_found_by_any_substring",
+      "description": "proptest: text indexed is returned for every substring of 3 or more characters (trigram property)."
+    },
+    {
+      "test_name": "prop_search_never_errors",
+      "description": "proptest: search_history on arbitrary query strings (quotes, operators, NUL, unicode) never returns an error."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::SessionId",
+    "polaris_sdk::registry::ChatRole",
+    "polaris_sdk::contracts::Timestamp"
+  ],
+  "libraries": [
+    "rusqlite (FTS5, trigram tokenizer)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "query",
+      "type": "&str",
+      "description": "Untrusted user text, matched as a literal substring."
+    },
+    {
+      "name": "limit",
+      "type": "u32",
+      "description": "Maximum number of hits."
+    }
+  ],
+  "output_type": "Result<Vec<Hit>, RegistryError>",
+  "output_description": "Newest-first hits with a bounded snippet."
+}

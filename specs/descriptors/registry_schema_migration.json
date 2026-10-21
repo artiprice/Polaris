@@ -1,0 +1,44 @@
+{
+  "type_of": "function",
+  "name": "migrate",
+  "file_path": "crates/polaris-storage/crates/registry/src/migrate.rs",
+  "logic_name": "Schema Migration",
+  "test_list": [
+    {
+      "test_name": "fresh_db_gets_latest_version",
+      "description": "An empty database is migrated to SCHEMA_VERSION with the sessions table and the trigram FTS table."
+    },
+    {
+      "test_name": "v0_upgrades_to_v1_keeping_rows",
+      "description": "A v0 fixture (generated at test time, with rows) is upgraded in place and every row survives with defaults for the new columns."
+    },
+    {
+      "test_name": "migrate_is_idempotent",
+      "description": "Running migrate on an up-to-date database changes nothing and returns the same version."
+    },
+    {
+      "test_name": "newer_version_is_refused",
+      "description": "A database whose user_version is above SCHEMA_VERSION is refused with SchemaTooNew and left untouched."
+    },
+    {
+      "test_name": "failed_migration_rolls_back",
+      "description": "A v0 fixture that makes a step fail midway leaves user_version and the table layout exactly as before and reports Migration { from, to }."
+    }
+  ],
+  "dependencies": [
+    "rusqlite::Connection"
+  ],
+  "libraries": [
+    "rusqlite",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "conn",
+      "type": "&mut Connection",
+      "description": "An open registry database connection."
+    }
+  ],
+  "output_type": "Result<u32, RegistryError>",
+  "output_description": "The schema version after migration; forward-only; all pending steps and the version bump commit in one transaction."
+}

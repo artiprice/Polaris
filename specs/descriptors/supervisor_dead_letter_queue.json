@@ -1,0 +1,54 @@
+{
+  "type_of": "struct",
+  "name": "DeadLetterQueue / Supervisor::dead_letter",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/dlq.rs",
+  "logic_name": "Dead Letter Queue",
+  "test_list": [
+    {
+      "test_name": "fifo_order_within_capacity",
+      "description": "Letters come out oldest first while the queue is not full."
+    },
+    {
+      "test_name": "bounded_drops_oldest_and_counts",
+      "description": "Pushing past capacity evicts the oldest letter, returns it to the caller and increments the drop counter; length never exceeds capacity."
+    },
+    {
+      "test_name": "drain_empties_and_keeps_drop_counter",
+      "description": "drain() returns all letters in order, leaves the queue empty and keeps the cumulative drop counter."
+    },
+    {
+      "test_name": "prop_len_bounded_and_accounted",
+      "description": "For any capacity and push count: len <= capacity and len + dropped == pushed."
+    },
+    {
+      "test_name": "supervisor_dead_letter_publishes_event",
+      "description": "Supervisor::dead_letter stores the letter and publishes DeadLettered { message }."
+    },
+    {
+      "test_name": "supervisor_reports_drops_in_snapshot",
+      "description": "When the supervisor's bounded DLQ overflows, the snapshot reports dlq_len == capacity and dlq_dropped == overflow count."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::Event::DeadLettered",
+    "polaris_sdk::ids::Cid"
+  ],
+  "libraries": [
+    "proptest (dev)",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "capacity",
+      "type": "NonZeroUsize",
+      "description": "Maximum retained letters."
+    },
+    {
+      "name": "letter",
+      "type": "DeadLetter<T>",
+      "description": "Item, child name, exit class and attempts."
+    }
+  ],
+  "output_type": "Option<DeadLetter<T>>",
+  "output_description": "The evicted oldest letter when the queue was full, otherwise None."
+}

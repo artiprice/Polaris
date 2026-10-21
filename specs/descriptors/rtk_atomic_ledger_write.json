@@ -1,0 +1,57 @@
+{
+  "type_of": "method",
+  "name": "LedgerFile::save_atomic",
+  "file_path": "crates/polaris-tools/crates/rtk/src/file.rs",
+  "logic_name": "Atomic ledger write",
+  "test_list": [
+    {
+      "test_name": "save_creates_directories_and_writes_lf",
+      "description": "Missing parent directories are created; the file holds the rendered ledger."
+    },
+    {
+      "test_name": "interrupted_write_leaves_old_ledger",
+      "description": "A save that cannot replace a locked ledger fails and the old content is intact (Windows)."
+    },
+    {
+      "test_name": "transient_permission_denied_is_retried",
+      "description": "A short-lived sharing violation on the destination is retried until it succeeds (Windows)."
+    },
+    {
+      "test_name": "temp_file_removed_on_failure",
+      "description": "When the rename cannot happen, no temporary file remains."
+    },
+    {
+      "test_name": "concurrent_writer_detected",
+      "description": "save_if_unchanged fails with ConcurrentWrite when the file changed since it was read."
+    },
+    {
+      "test_name": "unchanged_file_passes_the_concurrency_check",
+      "description": "save_if_unchanged succeeds when the file is as read."
+    },
+    {
+      "test_name": "stale_temp_from_a_crashed_run_is_ignored",
+      "description": "A leftover temp file from an earlier crash does not affect load or save."
+    },
+    {
+      "test_name": "concurrent_updates_lose_no_history",
+      "description": "Two threads updating one ledger lose no issue and leave a parseable file."
+    }
+  ],
+  "dependencies": [
+    "polaris_storage_cas::atomic::{write_atomic, RetryPolicy}",
+    "polaris_storage_cas::content_id"
+  ],
+  "libraries": [
+    "tempfile",
+    "std::fs::File::try_lock"
+  ],
+  "inputs": [
+    {
+      "name": "ledger",
+      "type": "&Ledger",
+      "description": "Ledger to persist."
+    }
+  ],
+  "output_type": "Result<(), RtkError>",
+  "output_description": "Ledger replaced atomically or old content left in place."
+}

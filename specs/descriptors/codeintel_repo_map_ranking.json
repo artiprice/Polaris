@@ -1,0 +1,82 @@
+{
+  "type_of": "function",
+  "name": "repo_map / rank_files",
+  "file_path": "crates/polaris-code-intel/src/repomap.rs",
+  "logic_name": "Repo Map Ranking",
+  "test_list": [
+    {
+      "test_name": "output_is_byte_identical_across_runs",
+      "description": "Repeated calls and a reversed insertion order render the identical map."
+    },
+    {
+      "test_name": "most_referenced_file_ranks_first",
+      "description": "The file whose symbols are referenced by others is first and an isolated file last."
+    },
+    {
+      "test_name": "focus_file_boosts_rank",
+      "description": "A focus file gains rank and heads the map."
+    },
+    {
+      "test_name": "focus_boosts_the_files_it_depends_on",
+      "description": "Relative to an unrelated file, a dependency of the focus file gains rank."
+    },
+    {
+      "test_name": "unknown_focus_files_are_ignored",
+      "description": "Focus paths that are not in the graph leave the ranking unchanged."
+    },
+    {
+      "test_name": "budget_is_respected",
+      "description": "The rendered map never exceeds max_tokens (bytes/4 rounded up) and keeps the highest-ranked files."
+    },
+    {
+      "test_name": "empty_graph_yields_empty_map",
+      "description": "An empty graph yields no entries and zero tokens."
+    },
+    {
+      "test_name": "ties_break_by_path",
+      "description": "Equal ranks are ordered by path."
+    },
+    {
+      "test_name": "path_separators_are_normalised",
+      "description": "Backslash and slash paths are the same file."
+    },
+    {
+      "test_name": "re_adding_a_file_replaces_it",
+      "description": "Adding a path twice keeps only the latest symbols."
+    },
+    {
+      "test_name": "version_changes_with_content",
+      "description": "The map version digest is stable for equal maps and differs for different ones."
+    },
+    {
+      "test_name": "ranks_are_finite_non_negative_and_sum_to_one",
+      "description": "Property: PageRank scores are finite, non-negative, sum to 1 and are bit-identical on repetition."
+    },
+    {
+      "test_name": "rendering_is_independent_of_insertion_order",
+      "description": "Property: the rendered map does not depend on file insertion order."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{TokenCount, FastFingerprint}",
+    "polaris_code_intel::skeleton::skeleton"
+  ],
+  "libraries": [
+    "xxhash-rust",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "g",
+      "type": "&SymbolGraph",
+      "description": "Per-file definitions, references and outlines."
+    },
+    {
+      "name": "b",
+      "type": "&RepoMapBudget",
+      "description": "Token budget (bytes/4 estimate) and focus files."
+    }
+  ],
+  "output_type": "Result<RepoMap, CodeIntelError>",
+  "output_description": "Files ordered by personalised PageRank with their outlines, token estimate and version digest."
+}

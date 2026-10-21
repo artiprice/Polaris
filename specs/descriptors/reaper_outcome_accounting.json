@@ -1,0 +1,30 @@
+{
+  "type_of": "async_function",
+  "name": "Reaper::shutdown_all (accounting)",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/shutdown.rs",
+  "logic_name": "Outcome Accounting",
+  "test_list": [
+    {
+      "test_name": "prop_every_resource_is_accounted_for_exactly_once",
+      "description": "For random mixes of kinds and teardown behaviours (ok, fail, forced disposition, hang then force ok, hang forever) every registered id appears exactly once in the report, in teardown order, with the outcome its behaviour implies; unresolved ones (Failed, Abandoned) are exactly the leak report."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_reaper::{Reaper, ResourceKind, Teardown, Outcome, ShutdownConfig}"
+  ],
+  "libraries": [
+    "proptest (dev)",
+    "tokio test-util (dev)",
+    "tokio-util",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "resources",
+      "type": "Vec<(ResourceKind, behaviour)>",
+      "description": "Random registration sequence."
+    }
+  ],
+  "output_type": "ShutdownReport",
+  "output_description": "Exactly one entry per registered resource."
+}

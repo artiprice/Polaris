@@ -1,0 +1,12 @@
+# Spike S0-10 (PHASES.md): crossterm 0.29 key chords on Windows terminals. Standalone workspace.
+[package]
+name = "s0-10-crossterm"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace]
+
+[dependencies]
+crossterm = "0.29.0"

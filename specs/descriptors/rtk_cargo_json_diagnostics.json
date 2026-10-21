@@ -1,0 +1,83 @@
+{
+  "type_of": "function",
+  "name": "parse_diagnostics",
+  "file_path": "crates/polaris-tools/crates/rtk/src/json.rs",
+  "logic_name": "Cargo JSON diagnostics",
+  "test_list": [
+    {
+      "test_name": "error_with_code_and_primary_span",
+      "description": "An error message yields code, message, primary file/line/column and child details."
+    },
+    {
+      "test_name": "macro_expansion_resolves_to_call_site",
+      "description": "The primary span is followed through expansion.span to the outer call site."
+    },
+    {
+      "test_name": "expansion_chain_is_capped",
+      "description": "A longer-than-cap expansion chain stops at MAX_EXPANSION_DEPTH."
+    },
+    {
+      "test_name": "warnings_are_not_issues",
+      "description": "Warning-level messages parse as Level::Warning and are not issues."
+    },
+    {
+      "test_name": "non_json_lines_are_skipped",
+      "description": "Text and malformed lines between JSON lines are skipped, not fatal."
+    },
+    {
+      "test_name": "deeply_nested_json_is_rejected_not_overflowed",
+      "description": "A line nested far beyond serde_json's recursion limit is skipped without stack overflow."
+    },
+    {
+      "test_name": "aborting_summary_is_dropped",
+      "description": "`aborting due to N previous errors` is not a diagnostic."
+    },
+    {
+      "test_name": "third_party_span_is_flagged_but_still_an_issue",
+      "description": "An error located in .cargo/registry is first_party=false but still an issue, so a broken build never reads as clean."
+    },
+    {
+      "test_name": "duplicate_diagnostics_collapse",
+      "description": "Identical headline plus location appear once."
+    },
+    {
+      "test_name": "json_report_lists_errors_only",
+      "description": "render_json_report emits status, error_count and errors[] with location and details (snapshot)."
+    },
+    {
+      "test_name": "json_report_for_no_errors_is_success",
+      "description": "No errors gives status SUCCESS and count 0."
+    },
+    {
+      "test_name": "oversized_stream_is_refused",
+      "description": "A stream over MAX_STREAM_BYTES is RtkError::StreamTooLarge."
+    },
+    {
+      "test_name": "prop_parse_never_panics_on_arbitrary_lines",
+      "description": "proptest: arbitrary text through every StreamFormat does not panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind"
+  ],
+  "libraries": [
+    "serde_json",
+    "serde",
+    "proptest (dev)",
+    "insta (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "stream",
+      "type": "&[u8]",
+      "description": "Cargo --message-format=json output, possibly with interleaved text."
+    },
+    {
+      "name": "fmt",
+      "type": "StreamFormat",
+      "description": "Detected or forced format."
+    }
+  ],
+  "output_type": "Result<Vec<Diagnostic>, RtkError>",
+  "output_description": "Deduplicated diagnostics; errors are issues, warnings are kept as warnings."
+}

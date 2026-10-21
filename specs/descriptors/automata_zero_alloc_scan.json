@@ -1,0 +1,32 @@
+{
+  "type_of": "method",
+  "name": "DfaScanner::scan / any_match / DfaRedactor::redact_into",
+  "file_path": "crates/polaris-security/crates/automata/src/scan.rs",
+  "logic_name": "Zero Alloc Scan",
+  "test_list": [
+    {
+      "test_name": "scan_does_not_allocate_after_warmup",
+      "description": "After warm-up, scan, any_match and redact_into (into a pre-sized buffer) allocate 0 blocks (dhat testing mode; PLAN ADR-003 hot path 'DFA/PII scan')."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror",
+    "proptest (dev)",
+    "regex (dev, reference)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "haystack",
+      "type": "&[u8]",
+      "description": "Bytes to scan."
+    }
+  ],
+  "output_type": "Result<usize, AutomataError>",
+  "output_description": "Same results, no heap allocation."
+}

@@ -1,9 +1,10 @@
 # Polaris — Phases
 
 > **Document:** `@prime/PHASES.md` · **Date:** 2026-10-20 · **Companions:** `@prime/PLAN.md` (what & why),
-> `@prime/PHASES_STATUS.md` (evidence-backed status). Crate task rows are generated from
-> `@prime/tools/workspace.toml` (`python -I @prime/tools/workspace.py phase-tables --kind phases`);
-> `check-docs` verifies every package has a task here.
+> `@prime/PHASES_STATUS.md` (evidence-backed status). This file is edited by hand **except** the blocks that
+> start with `<!-- generated: … -->` (crate task tables, §0.1 member-setup table): they come from
+> `@prime/tools/workspace.toml` and are refreshed in place by `python -I @prime/tools/workspace.py render-docs`
+> (`render-docs --check` fails when they are stale; `check-docs` verifies every package and setup id appears).
 
 ## 0. Rules
 
@@ -20,6 +21,85 @@
   with their public API frozen (trait signatures); it may exit only after they PASS.
 - **Cut line**: P0–P4 + P10 are **must**; P5–P7 **should**; P8–P9 **could** for the hackathon submission.
   v2 items are declared in PLAN §16.
+- **Where** (team work): every task and setup item is marked with where it lives —
+  **per-PC** = each team member installs/does it on their own machine (`[per-PC]`, see §0.1);
+  **repo** = done once, committed, arrives with `git pull`;
+  **team account** = requested once for the team; each member then stores their own key in their keyring.
+
+## 0.1 Team member setup (per-PC)
+
+Every team member needs these on **their own PC**; nothing in this list is committed to git. The list is
+generated from `[[member_setup]]` in `@prime/tools/workspace.toml`; crate tasks below name the ids they need in
+their "Per-PC setup" column.
+
+**Quick start** (Windows 11, from the repo root, normal non-admin PowerShell; winget may raise UAC prompts):
+
+```powershell
+# clone with long paths enabled: git clone -c core.longpaths=true <repo-url>   (the script re-applies it)
+powershell -NoProfile -ExecutionPolicy Bypass -File @prime\tools\setup\setup-windows.ps1                       # installs + verifies
+powershell -NoProfile -ExecutionPolicy Bypass -File @prime\tools\setup\setup-windows.ps1 -RegisterKeepalive    # optional: WSL keepalive task
+powershell -NoProfile -ExecutionPolicy Bypass -File @prime\tools\setup\setup-windows.ps1 -Check                # verify only
+```
+
+`setup-windows.ps1` installs the Windows-side items, creates the WSL2 `Ubuntu-24.04` distro (first install may
+need a reboot — then re-run), bootstraps the `dev` user and runs `@prime/tools/setup/setup-wsl.sh` inside it
+(Docker Engine, OpenShell 0.1.4 + gateway service + driver pin, Rust + nightly + nextest + cargo-fuzz;
+`--with-kani` adds Kani). Both scripts are idempotent. Then verify:
+
+```powershell
+wsl -d Ubuntu-24.04 -- bash @prime/tools/setup/verify-openshell.sh     # sandbox create/exec/upload/delete
+wsl -d Ubuntu-24.04 -- bash @prime/tools/setup/verify-linux-leg.sh     # Linux cargo check/doc/fmt leg
+python -I @prime/tools/setup/verify-local-llm.py                       # Ollama streaming + tool call
+cargo xtask check-members; cargo xtask check-layers
+```
+
+Notes:
+- The `dev` WSL user gets **passwordless sudo and a locked password** so `setup-wsl.sh` runs unattended; set a
+  password afterwards if your policy requires one (`wsl -d Ubuntu-24.04 -u root passwd dev`).
+- Each PC's OpenShell gateway generates **its own mTLS CA and client certificate**
+  (`~/.config/openshell/gateways/openshell/mtls` in WSL2); Polaris reads them at runtime — never copy them
+  between machines or into the repo.
+- API keys are **per member**: each stores their own in the Windows Credential Manager (`win-keyring`); keys
+  never go into git, `.env` files, CLI arguments or logs.
+- Machine-specific Cargo settings (`target-dir`, a `PROTOC` path) go in the member's user-level Cargo config or
+  environment, never in the repo's `.cargo/config.toml`.
+
+<!-- generated: member setup (workspace.toml [[member_setup]]) -->
+| Id | Where | Component | Version (verified) | Install | From | Required |
+|---|---|---|---|---|---|---|
+| `win-msvc` | Windows | Visual Studio Build Tools, VC tools x64 (MSVC linker; C/C++ for aws-lc-sys, lance, ort) | 18.11 (VS 2026) | setup-windows.ps1 (winget Microsoft.VisualStudio.BuildTools + VCTools workload) | P0 | **yes** |
+| `win-git` | Windows | Git for Windows | 2.52.0 | setup-windows.ps1 (winget Git.Git) | P0 | **yes** |
+| `win-rust` | Windows | rustup + Rust 1.99.0 (rustfmt, clippy); pinned by rust-toolchain.toml | rustup 1.29.1, rustc 1.99.0 | setup-windows.ps1 (winget Rustlang.Rustup) | P0 | **yes** |
+| `win-python` | Windows | Python 3.14 (workspace.py tooling; uv host) | 3.14.5 | setup-windows.ps1 (winget Python.Python.3.14) | P0 | **yes** |
+| `win-cmake-nasm` | Windows | CMake + NASM + Ninja for native build scripts (CMake 4 relies on the repo's CMAKE_POLICY_VERSION_MINIMUM) | CMake 4.3.0-rc3, NASM 3.01, Ninja 1.13.2 | setup-windows.ps1 (winget Kitware.CMake, NASM.NASM, Ninja-build.Ninja) | P0 | **yes** |
+| `win-protoc` | Windows | protoc on PATH, only for the opt-in `lancedb` feature (S0-9 failed without it); polaris-proto uses protoc-bin-vendored | libprotoc 36.0 | setup-windows.ps1 (winget Google.Protobuf) | P0 | optional |
+| `win-longpaths` | Windows | LongPathsEnabled=1 (admin, once per PC) + repo-local `git config core.longpaths true` | - | setup-windows.ps1 sets the git flag and prints the admin command for the registry value | P0 | **yes** |
+| `win-cargo-tools` | Windows | cargo-binstall, cargo-nextest, cargo-mutants, cargo-leptos, cargo-deny, cargo-vet, cargo-audit | 1.26.0 / 0.9.148 / 27.1.0 / 0.3.11 / 0.20.2 / 0.10.2 / 0.22.2 | setup-windows.ps1 (`cargo install --locked cargo-binstall`; `cargo binstall <tool>@<version>`) | P0 | **yes** |
+| `win-uv` | Windows | uv for Python envs (spikes, ONNX export script, contree-mcp sidecar); run as `python -m uv` | 0.13.3 | setup-windows.ps1 (`python -m pip install --user uv==0.13.3`) | P0 | **yes** |
+| `win-ollama` | Windows | Ollama + `nemotron-mini`: keyless OpenAI-compatible endpoint for the P3 walking skeleton | Ollama 0.40.6; nemotron-mini 2.7 GB | setup-windows.ps1 (winget Ollama.Ollama; `ollama pull nemotron-mini`); `-SkipOllama` defers it | P0 | optional |
+| `win-keyring` | Windows | API keys in Windows Credential Manager (Token Factory, Tavily, Contree): each member stores their own; never in git, env files or logs | - | `polaris /onboarding` (P2-X-2) once keys exist; BLOCKED-ON-ACCESS until then | P3 | optional |
+| `win-models` | Windows | Model weights under `%USERPROFILE%\.polaris\models` (GLiNER2.5-Decide ONNX + onnxruntime DLL; Needle 3 `.cact`); downloaded, never in git | per spike results S0-4 / S0-6 | P4-X-1 export script (not automated yet) | P4 | optional |
+| `win-cuda` | Windows | CUDA runtime + cuDNN for the ort CUDA execution provider (optional; the CPU EP is the default) | not installed; decided by S0-4 | manual NVIDIA installers, only if S0-4 recommends the CUDA EP | P4 | optional |
+| `win-pdfium` | Windows | pdfium DLL beside the binary (pdfium-render, scanned PDFs) | not installed | to be scripted in P5 (polaris-ingest) | P5 | optional |
+| `win-wasm32` | Windows | Rust target wasm32-unknown-unknown (Leptos hydrate build via cargo-leptos) | not installed | `rustup target add wasm32-unknown-unknown --toolchain 1.99.0` | P9 | optional |
+| `wsl-distro` | WSL2 | WSL2 + Ubuntu-24.04, default user `dev` (sudo, kvm, docker), systemd on | WSL 2.6.3; Ubuntu 24.04.5 LTS, kernel 6.6.87.2 | setup-windows.ps1 (`wsl --install -d Ubuntu-24.04 --no-launch` + user bootstrap) | P0 | **yes** |
+| `wsl-docker` | WSL2 | Docker Engine inside Ubuntu (OpenShell docker driver); Docker Desktop not required | 29.9.1 | setup-wsl.sh step 2 | P0 | **yes** |
+| `wsl-openshell` | WSL2 | OpenShell CLI + gateway (systemd user service, linger, `OPENSHELL_COMPUTE_DRIVER=docker` pin) | 0.1.4 | setup-wsl.sh steps 3-4 | P0 | **yes** |
+| `wsl-keepalive` | Windows | Keep the WSL2 distro (and the gateway in it) from idling out (pitfall W14) | - | setup-windows.ps1 `-RegisterKeepalive` (per-user logon task), or keep a WSL session open | P0 | optional |
+| `wsl-rust` | WSL2 | Rust 1.99.0 + nightly (rust-src, miri), cargo-binstall, cargo-nextest, cargo-fuzz (Linux check leg, fuzzing, guest build) | 1.99.0; nightly 1.101.0; nextest 0.9.148; cargo-fuzz 0.13.2 | setup-wsl.sh steps 5-6 | P0 | **yes** |
+| `wsl-kani` | WSL2 | Kani verifier (+ CBMC) | Kani 0.68.0, CBMC 6.11 | setup-wsl.sh `--with-kani` | P1 | optional |
+| `wsl-kvm` | WSL2 | `/dev/kvm` in WSL2 for the OpenShell vm driver (microVM tier E2); CPU virtualization enabled in BIOS | present on the reference machine (S0-2 PASS) | hardware/BIOS; checked by `polaris doctor` (P2-X-2) | P7 | optional |
+| `wsl-sandbox-image` | WSL2 | Polaris sandbox image (base `nvcr.io/nvidia/base/ubuntu:24.04` + guest + Xvfb/Chromium), built locally unless the team agrees on a registry | not built yet (P2-X-1, S0-12) | to be scripted in P2 | P2 | optional |
+| `wsl-searxng` | WSL2 | SearXNG container (local search provider) | not installed | to be scripted in P5 (P5-X-1) | P5 | optional |
+| `wsl-nix` | WSL2 | Nix package manager (`$env(nix)`, `/nix-flake`) | not installed | to be scripted in P8 | P8 | optional |
+| `contree-mcp` | Windows | contree-mcp sidecar (Token Factory Sandboxes MCP server) | not installed (needs Contree access) | `python -m uv tool install contree-mcp` once access exists (P3-X-3) | P3 | optional |
+
+**Repo-level (done once, committed — nothing to install):** `Cargo.lock`, `rust-toolchain.toml` (1.99.0),
+`.cargo/config.toml` (`CMAKE_POLICY_VERSION_MINIMUM=3.5`, `cargo xtask` alias), `.gitattributes`, `deny.toml`,
+`supply-chain/` (cargo-vet config, imports, exemptions), `@prime/tools/setup/*`.
+
+**Team accounts (requested once — P0-ACC-1..4):** Nebius Token Factory API key, Token Factory Sandboxes
+(Contree) access, Nebius AI Cloud quota, Tavily API key.
 
 ## 1. Phase overview
 
@@ -69,29 +149,29 @@ spike decided (PASS or named fallback chosen); P0-ACC requests submitted.
 
 ### P0 tasks
 
-| Task | Description | Depends on | Exit criteria (evidence) | Access |
-|---|---|---|---|---|
-| P0-SKEL-1 | `.gitignore` root-anchored; Cargo.lock tracked; fixtures logs re-included | — | `git check-ignore` outputs | — |
-| P0-SKEL-2 | `.gitattributes` (LF; CRLF for .ps1/.bat/.cmd; binaries) | — | file present | — |
-| P0-SKEL-3 | `@prime/tools/workspace.toml` (93 packages, 156 external deps) | — | `workspace.py summary` | — |
-| P0-SKEL-4 | `@prime/tools/workspace.py` (gen, check-members, check-layers, audit-versions, probe, chatlog-inventory, phase-tables, check-docs) | P0-SKEL-3 | commands exit 0 | — |
-| P0-SKEL-5 | Root `Cargo.toml` + `rust-toolchain.toml` generated | P0-SKEL-4 | `cargo metadata` 93 packages | — |
-| P0-SKEL-6 | Doc-only skeleton for all 93 packages | P0-SKEL-5 | `cargo check --workspace --all-targets` (-Dwarnings), `cargo doc` (-Dwarnings), `cargo fmt --check` | — |
-| P0-SKEL-7 | Layer & member checks | P0-SKEL-6 | `check-members`, `check-layers` OK | — |
-| P0-SKEL-8 | Version audit (sparse index) + resolution probe | P0-SKEL-3 | `audit-versions` 156/156; `probe` locks graph | — |
-| P0-SKEL-9 | PLAN.md, PHASES.md, PHASES_STATUS.md; chatlog inventory 100 % covered | P0-SKEL-3 | `chatlog-inventory --check`, `check-docs` OK | — |
-| P0-ACC-1 | Request Nebius Token Factory API key | — | key stored in keyring (never in git) | **requests access** |
-| P0-ACC-2 | Request Token Factory Sandboxes (Contree) access | — | `contree-mcp` authenticates | **requests access** |
-| P0-ACC-3 | Request Nebius AI Cloud quota (Linux VM; GPU optional) | — | VM can be created | **requests access** |
-| P0-ACC-4 | Request Tavily API key | — | key stored in keyring | **requests access** |
-| P0-ENV-1 | Install Ubuntu 24.04 in WSL2; `.wslconfig` (memory ≈ 6 GB, `nestedVirtualization=true`) | — | `wsl -l -v`; `/proc/meminfo`; `ls /dev/kvm` result recorded | — |
-| P0-ENV-2 | Install OpenShell v0.1.4 in Ubuntu; start gateway (docker driver) | P0-ENV-1 | `openshell sandbox create` + exec + delete transcript | — |
-| P0-ENV-3 | Tooling: cargo-nextest, cargo-fuzz (nightly, WSL2), cargo-mutants, cargo-leptos, cargo-deny, cargo-vet, cargo-audit, uv; kani in WSL2 | — | `--version` outputs | — |
-| P0-ENV-4 | `.cargo/config.toml` `[env]`: `CMAKE_POLICY_VERSION_MINIMUM=3.5`, `PROTOC` (vendored path); short `target-dir`; `git config core.longpaths true` | — | config committed; a heavy dep builds | — |
-| P0-ENV-5 | Linux check leg: `cargo check --workspace` inside WSL2 Ubuntu | P0-ENV-1 | transcript | — |
-| P0-ENV-6 | Local OpenAI-compatible server for the P3 walking skeleton (Ollama or llama.cpp on GTX 1650) with a small coder model | — | `/v1/chat/completions` streaming transcript | — |
-| P0-ENV-7 | `deny.toml` + cargo-vet policy; Slint licence decision (ADR-014) | P0-ENV-3 | `cargo deny check` output | — |
-| P0-XT-1 | Rust `xtask` port of workspace.py checks (`check-members`, `check-layers`) | P0-SKEL-4 | `cargo xtask check-layers` OK | — |
+| Task | Description | Depends on | Exit criteria (evidence) | Access | Where |
+|---|---|---|---|---|---|
+| P0-SKEL-1 | `.gitignore` root-anchored; Cargo.lock tracked; fixtures logs re-included | — | `git check-ignore` outputs | — | repo |
+| P0-SKEL-2 | `.gitattributes` (LF; CRLF for .ps1/.bat/.cmd; binaries) | — | file present | — | repo |
+| P0-SKEL-3 | `@prime/tools/workspace.toml` (93 packages, 156 external deps, `[[member_setup]]`) | — | `workspace.py summary` | — | repo |
+| P0-SKEL-4 | `@prime/tools/workspace.py` (gen, check-members, check-layers, audit-versions, probe, chatlog-inventory, phase-tables, check-docs, render-docs) | P0-SKEL-3 | commands exit 0 | — | repo |
+| P0-SKEL-5 | Root `Cargo.toml` + `rust-toolchain.toml` generated | P0-SKEL-4 | `cargo metadata` 93 packages | — | repo |
+| P0-SKEL-6 | Doc-only skeleton for all 93 packages | P0-SKEL-5 | `cargo check --workspace --all-targets` (-Dwarnings), `cargo doc` (-Dwarnings), `cargo fmt --check` | — | repo |
+| P0-SKEL-7 | Layer & member checks | P0-SKEL-6 | `check-members`, `check-layers` OK | — | repo |
+| P0-SKEL-8 | Version audit (sparse index) + resolution probe | P0-SKEL-3 | `audit-versions` 156/156; `probe` locks graph | — | repo |
+| P0-SKEL-9 | PLAN.md, PHASES.md, PHASES_STATUS.md; chatlog inventory 100 % covered | P0-SKEL-3 | `chatlog-inventory --check`, `check-docs`, `render-docs --check` OK | — | repo |
+| P0-ACC-1 | Request Nebius Token Factory API key | — | key stored in keyring (never in git) | **requests access** | team account → per-PC keyring |
+| P0-ACC-2 | Request Token Factory Sandboxes (Contree) access | — | `contree-mcp` authenticates | **requests access** | team account → per-PC keyring |
+| P0-ACC-3 | Request Nebius AI Cloud quota (Linux VM; GPU optional) | — | VM can be created | **requests access** | team account |
+| P0-ACC-4 | Request Tavily API key | — | key stored in keyring | **requests access** | team account → per-PC keyring |
+| P0-ENV-1 | Ubuntu 24.04 in WSL2 with user `dev` (sudo, kvm, docker) and systemd; `.wslconfig` only if RAM/KVM require it (not needed on the reference PC) | — | `wsl -l -v`; `/proc/meminfo`; `ls /dev/kvm` recorded | — | **per-PC** `wsl-distro` |
+| P0-ENV-2 | Docker Engine + OpenShell v0.1.4 in Ubuntu; gateway user service, linger, `OPENSHELL_COMPUTE_DRIVER=docker` pin; WSL keepalive | P0-ENV-1 | `verify-openshell.sh` create + exec + upload + delete transcript | — | **per-PC** `wsl-docker`, `wsl-openshell`, `wsl-keepalive` |
+| P0-ENV-3 | Tooling: cargo-binstall, cargo-nextest, cargo-mutants, cargo-leptos, cargo-deny, cargo-vet, cargo-audit, uv, protoc (Windows); Rust 1.99 + nightly, nextest, cargo-fuzz, kani (WSL2); `setup-windows.ps1` + `setup-wsl.sh` | — | `--version` outputs; `setup-windows.ps1 -Check` all ok | — | **per-PC** `win-*`, `wsl-rust`, `wsl-kani` |
+| P0-ENV-4 | `.cargo/config.toml` `[env] CMAKE_POLICY_VERSION_MINIMUM=3.5` (repo); `PROTOC` on PATH and `core.longpaths` (per-PC); short `target-dir` not needed (measured) | — | config committed; a heavy dep builds | — | repo + **per-PC** `win-protoc`, `win-longpaths` |
+| P0-ENV-5 | Linux check leg: `cargo check/doc/fmt` inside WSL2 Ubuntu (`verify-linux-leg.sh`) | P0-ENV-1 | transcript | — | **per-PC** `wsl-rust` |
+| P0-ENV-6 | Local OpenAI-compatible server for the P3 walking skeleton (Ollama + `nemotron-mini` on the GTX 1650) | — | `verify-local-llm.py` streaming + tool-call transcript | — | **per-PC** `win-ollama` |
+| P0-ENV-7 | `deny.toml` + cargo-vet policy (imports + exemptions); Slint licence decision (ADR-014) | P0-ENV-3 | `cargo deny check`, `cargo vet` output | — | repo |
+| P0-XT-1 | Rust `xtask` port of workspace.py checks (`check-members`, `check-layers`), test-first | P0-SKEL-4 | `cargo test -p xtask`; `cargo xtask check-layers` OK | — | repo |
 
 ### P0 spikes (each: question → kill criterion → fallback). Results go to PHASES_STATUS.md.
 
@@ -114,10 +194,10 @@ spike decided (PASS or named fallback chosen); P0-ACC requests submitted.
 ### P0 crate tasks (generated from workspace.toml)
 
 <!-- generated: P0 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-tests` | `polaris-tests` | L8 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage`, `crate:polaris-kernel`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:xtask` | `xtask` | L8 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-tests` | `polaris-tests` | L8 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage`, `crate:polaris-kernel`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-rust`, `wsl-kani` |
+| `crate:xtask` | `xtask` | L8 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-python` |
 
 
 ---
@@ -139,32 +219,32 @@ Cross-cutting tasks:
 ### P1 crate tasks (generated from workspace.toml)
 
 <!-- generated: P1 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-sdk` | `polaris-sdk` | L0 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-proto` | `polaris-proto` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-config` | `polaris-config` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-log` | `polaris-log` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-telemetry` | `polaris-telemetry` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-code-intel` | `polaris-code-intel` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-storage-cas` | `polaris-storage-cas` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-storage-eventlog` | `polaris-storage-eventlog` | L1 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-storage-registry` | `polaris-storage-registry` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-storage-cache` | `polaris-storage-cache` | L1 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-storage` | `polaris-storage` | L1 | `crate:polaris-storage-cas`, `crate:polaris-storage-eventlog`, `crate:polaris-storage-registry`, `crate:polaris-storage-cache`, `crate:polaris-storage-vector`, `crate:polaris-storage-sync` | re-exports compile; children's tasks PASS |
-| `crate:polaris-kernel-bus` | `polaris-kernel-bus` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-kernel-directives` | `polaris-kernel-directives` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-kernel-supervisor` | `polaris-kernel-supervisor` | L2 | `crate:polaris-sdk`, `crate:polaris-log`, `crate:polaris-telemetry`, `crate:polaris-kernel-bus` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-kernel-reaper` | `polaris-kernel-reaper` | L2 | `crate:polaris-sdk`, `crate:polaris-log`, `crate:polaris-kernel-bus` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-tools-builtin` | `polaris-tools-builtin` | L3 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-tools-rtk` | `polaris-tools-rtk` | L3 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-tools` | `polaris-tools` | L3 | `crate:polaris-tools-builtin`, `crate:polaris-tools-math`, `crate:polaris-tools-rtk` | re-exports compile; children's tasks PASS |
-| `crate:polaris-kernel` | `polaris-kernel` | L5 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-telemetry`, `crate:polaris-ratelimit`, `crate:polaris-kernel-bus`, `crate:polaris-kernel-directives`, `crate:polaris-kernel-supervisor`, `crate:polaris-kernel-reaper`, `crate:polaris-kernel-operators`, `crate:polaris-kernel-verifier`, `crate:polaris-storage`, `crate:polaris-security`, `crate:polaris-platform`, `crate:polaris-vcs`, `crate:polaris-openshell`, `crate:polaris-nebius-cloud`, `crate:polaris-system-one`, `crate:polaris-models`, `crate:polaris-tools`, `crate:polaris-search`, `crate:polaris-ext`, `crate:polaris-nvidia-docs`, `crate:polaris-browser`, `crate:polaris-devenv`, `crate:polaris-hacker`, `crate:polaris-runtime` | re-exports compile; children's tasks PASS |
-| `crate:polaris-ui-model` | `polaris-ui-model` | L6 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ui-cli` | `polaris-ui-cli` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ui` | `polaris-ui` | L6 | `crate:polaris-ui-model`, `crate:polaris-ui-cli`, `crate:polaris-ui-gui`, `crate:polaris-ui-web` | re-exports compile; children's tasks PASS |
-| `crate:polaris-spike-bus` | `polaris-spike-bus` | L8 | `crate:polaris-kernel-bus` | burst scenarios run; pass criteria met with evidence |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-sdk` | `polaris-sdk` | L0 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-proto` | `polaris-proto` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-config` | `polaris-config` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-log` | `polaris-log` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-telemetry` | `polaris-telemetry` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-code-intel` | `polaris-code-intel` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-storage-cas` | `polaris-storage-cas` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-storage-eventlog` | `polaris-storage-eventlog` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-storage-registry` | `polaris-storage-registry` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-storage-cache` | `polaris-storage-cache` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-storage` | `polaris-storage` | L1 | `crate:polaris-storage-cas`, `crate:polaris-storage-eventlog`, `crate:polaris-storage-registry`, `crate:polaris-storage-cache`, `crate:polaris-storage-vector`, `crate:polaris-storage-sync` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-kernel-bus` | `polaris-kernel-bus` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-kernel-directives` | `polaris-kernel-directives` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-kernel-supervisor` | `polaris-kernel-supervisor` | L2 | `crate:polaris-sdk`, `crate:polaris-log`, `crate:polaris-telemetry`, `crate:polaris-kernel-bus` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-kernel-reaper` | `polaris-kernel-reaper` | L2 | `crate:polaris-sdk`, `crate:polaris-log`, `crate:polaris-kernel-bus` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-tools-builtin` | `polaris-tools-builtin` | L3 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-tools-rtk` | `polaris-tools-rtk` | L3 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-tools` | `polaris-tools` | L3 | `crate:polaris-tools-builtin`, `crate:polaris-tools-math`, `crate:polaris-tools-rtk` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-kernel` | `polaris-kernel` | L5 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-telemetry`, `crate:polaris-ratelimit`, `crate:polaris-kernel-bus`, `crate:polaris-kernel-directives`, `crate:polaris-kernel-supervisor`, `crate:polaris-kernel-reaper`, `crate:polaris-kernel-operators`, `crate:polaris-kernel-verifier`, `crate:polaris-storage`, `crate:polaris-security`, `crate:polaris-platform`, `crate:polaris-vcs`, `crate:polaris-openshell`, `crate:polaris-nebius-cloud`, `crate:polaris-system-one`, `crate:polaris-models`, `crate:polaris-tools`, `crate:polaris-search`, `crate:polaris-ext`, `crate:polaris-nvidia-docs`, `crate:polaris-browser`, `crate:polaris-devenv`, `crate:polaris-hacker`, `crate:polaris-runtime` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-ui-model` | `polaris-ui-model` | L6 | `crate:polaris-sdk`, `crate:polaris-kernel-directives` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ui-cli` | `polaris-ui-cli` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ui` | `polaris-ui` | L6 | `crate:polaris-ui-model`, `crate:polaris-ui-cli`, `crate:polaris-ui-gui`, `crate:polaris-ui-web` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-spike-bus` | `polaris-spike-bus` | L8 | `crate:polaris-kernel-bus` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---
@@ -176,29 +256,29 @@ blast-radius approvals and Proof-of-Done gate demonstrated; reaper leaves no san
 
 | Task | Description | Depends on | Exit criteria |
 |---|---|---|---|
-| P2-X-1 | Polaris sandbox image (base `nvcr.io/nvidia/base/ubuntu:24.04` or NemoClaw base) + blueprint | `crate:polaris-openshell-nemoclaw` | image digest recorded |
-| P2-X-2 | `/onboarding` + `polaris doctor` (WSL2, OpenShell, Docker, KVM, keys presence) | `crate:polaris-platform-wsl` | doctor report on this machine |
+| P2-X-1 | Polaris sandbox image (base `nvcr.io/nvidia/base/ubuntu:24.04` or NemoClaw base) + blueprint; binaries under `/usr` (S0-12: `/opt` is not executable under the default policy) — [per-PC] `wsl-sandbox-image` unless a registry is agreed | `crate:polaris-openshell-nemoclaw` | image digest recorded |
+| P2-X-2 | `/onboarding` + `polaris doctor` (WSL2, OpenShell, Docker, KVM, keys presence) — checks every §0.1 item on the member's PC | `crate:polaris-platform-wsl` | doctor report on this machine |
 
 ### P2 crate tasks (generated from workspace.toml)
 
 <!-- generated: P2 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-storage-sync` | `polaris-storage-sync` | L1 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-security-automata` | `polaris-security-automata` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-platform-wsl` | `polaris-platform-wsl` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-platform-process` | `polaris-platform-process` | L2 | `crate:polaris-sdk`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-platform` | `polaris-platform` | L2 | `crate:polaris-platform-wsl`, `crate:polaris-platform-process` | re-exports compile; children's tasks PASS |
-| `crate:polaris-vcs` | `polaris-vcs` | L2 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-openshell-client` | `polaris-openshell-client` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-openshell-policy` | `polaris-openshell-policy` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | L2 | `crate:polaris-sdk`, `crate:polaris-openshell-policy` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-openshell` | `polaris-openshell` | L2 | `crate:polaris-openshell-client`, `crate:polaris-openshell-policy`, `crate:polaris-openshell-nemoclaw` | re-exports compile; children's tasks PASS |
-| `crate:polaris-security` | `polaris-security` | L3 | `crate:polaris-security-capability`, `crate:polaris-security-automata`, `crate:polaris-security-secrets`, `crate:polaris-security-pii`, `crate:polaris-security-rules` | re-exports compile; children's tasks PASS |
-| `crate:polaris-runtime-leases` | `polaris-runtime-leases` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime-guards` | `polaris-runtime-guards` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-tools-rtk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime` | `polaris-runtime` | L4 | `crate:polaris-runtime-frames`, `crate:polaris-runtime-context`, `crate:polaris-runtime-dag`, `crate:polaris-runtime-leases`, `crate:polaris-runtime-guards`, `crate:polaris-runtime-research` | re-exports compile; children's tasks PASS |
-| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | L8 | `crate:polaris-openshell` | burst scenarios run; pass criteria met with evidence |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-storage-sync` | `polaris-storage-sync` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell` |
+| `crate:polaris-security-automata` | `polaris-security-automata` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-platform-wsl` | `polaris-platform-wsl` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-distro`, `wsl-keepalive` |
+| `crate:polaris-platform-process` | `polaris-platform-process` | L2 | `crate:polaris-sdk`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-platform` | `polaris-platform` | L2 | `crate:polaris-platform-wsl`, `crate:polaris-platform-process` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-vcs` | `polaris-vcs` | L2 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-openshell-client` | `polaris-openshell-client` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-docker` |
+| `crate:polaris-openshell-policy` | `polaris-openshell-policy` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell` |
+| `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | L2 | `crate:polaris-sdk`, `crate:polaris-openshell-policy` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-sandbox-image` |
+| `crate:polaris-openshell` | `polaris-openshell` | L2 | `crate:polaris-openshell-client`, `crate:polaris-openshell-policy`, `crate:polaris-openshell-nemoclaw` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-security` | `polaris-security` | L3 | `crate:polaris-security-capability`, `crate:polaris-security-automata`, `crate:polaris-security-secrets`, `crate:polaris-security-pii`, `crate:polaris-security-rules` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-runtime-leases` | `polaris-runtime-leases` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-guards` | `polaris-runtime-guards` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-tools-rtk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime` | `polaris-runtime` | L4 | `crate:polaris-runtime-frames`, `crate:polaris-runtime-context`, `crate:polaris-runtime-dag`, `crate:polaris-runtime-leases`, `crate:polaris-runtime-guards`, `crate:polaris-runtime-research` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | L8 | `crate:polaris-openshell` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---
@@ -210,29 +290,29 @@ Keyed items stay `BLOCKED-ON-ACCESS` until P0-ACC-1/2 are done.
 
 | Task | Description | Depends on | Exit criteria | Access |
 |---|---|---|---|---|
-| P3-X-1 | Walking skeleton against local OpenAI-compatible server | `crate:polaris-nebius-cloud-token-factory`, `crate:polaris-runtime-frames` | transcript: plan → edit → sandbox test → proof-of-done | — |
+| P3-X-1 | Walking skeleton against local OpenAI-compatible server — [per-PC] `win-ollama` | `crate:polaris-nebius-cloud-token-factory`, `crate:polaris-runtime-frames` | transcript: plan → edit → sandbox test → proof-of-done | — |
 | P3-X-2 | Same loop on Nemotron 3 (effort tiers) | P3-X-1 | transcript + usage | **Token Factory key** |
-| P3-X-3 | Contree sidecar + E3 run of a SWE-bench task | `crate:polaris-nebius-cloud-sandboxes` | transcript | **Contree** |
+| P3-X-3 | Contree sidecar + E3 run of a SWE-bench task — [per-PC] `contree-mcp`, `win-keyring` | `crate:polaris-nebius-cloud-sandboxes` | transcript | **Contree** |
 | P3-X-4 | Re-record synthetic SSE fixtures live; contract tests PASS against real service | P3-X-2 | contract suite output | **Token Factory key** |
 
 ### P3 crate tasks (generated from workspace.toml)
 
 <!-- generated: P3 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-ratelimit` | `polaris-ratelimit` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-security-capability` | `polaris-security-capability` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-security-secrets` | `polaris-security-secrets` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-ratelimit`, `crate:polaris-telemetry` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | L2 | `crate:polaris-nebius-cloud-token-factory`, `crate:polaris-nebius-cloud-sandboxes`, `crate:polaris-nebius-cloud-data-lab`, `crate:polaris-nebius-cloud-ai-cloud` | re-exports compile; children's tasks PASS |
-| `crate:polaris-models` | `polaris-models` | L3 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-tools-math` | `polaris-tools-math` | L3 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | L4 | `crate:polaris-sdk`, `crate:polaris-security-capability`, `crate:polaris-models` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime-context` | `polaris-runtime-context` | L4 | `crate:polaris-sdk`, `crate:polaris-storage-cas`, `crate:polaris-code-intel`, `crate:polaris-tools-rtk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-kernel-operators` | `polaris-kernel-operators` | L4 | `crate:polaris-sdk`, `crate:polaris-security-pii`, `crate:polaris-system-one-router`, `crate:polaris-ratelimit`, `crate:polaris-kernel-directives` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | L4 | `crate:polaris-sdk`, `crate:polaris-security-capability`, `crate:polaris-code-intel`, `crate:polaris-system-one-verifier` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-spike-ratelimit` | `polaris-spike-ratelimit` | L8 | `crate:polaris-ratelimit` | burst scenarios run; pass criteria met with evidence |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-ratelimit` | `polaris-ratelimit` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-security-capability` | `polaris-security-capability` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-security-secrets` | `polaris-security-secrets` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-keyring` |
+| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-ratelimit`, `crate:polaris-telemetry` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-ollama`, `win-keyring` |
+| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `contree-mcp`, `win-uv`, `win-keyring` |
+| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | L2 | `crate:polaris-nebius-cloud-token-factory`, `crate:polaris-nebius-cloud-sandboxes`, `crate:polaris-nebius-cloud-data-lab`, `crate:polaris-nebius-cloud-ai-cloud` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-models` | `polaris-models` | L3 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-tools-math` | `polaris-tools-math` | L3 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | L4 | `crate:polaris-sdk`, `crate:polaris-security-capability`, `crate:polaris-models` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-context` | `polaris-runtime-context` | L4 | `crate:polaris-sdk`, `crate:polaris-storage-cas`, `crate:polaris-code-intel`, `crate:polaris-tools-rtk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-kernel-operators` | `polaris-kernel-operators` | L4 | `crate:polaris-sdk`, `crate:polaris-security-pii`, `crate:polaris-system-one-router`, `crate:polaris-ratelimit`, `crate:polaris-kernel-directives` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | L4 | `crate:polaris-sdk`, `crate:polaris-security-capability`, `crate:polaris-code-intel`, `crate:polaris-system-one-verifier` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-spike-ratelimit` | `polaris-spike-ratelimit` | L8 | `crate:polaris-ratelimit` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---
@@ -244,26 +324,26 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 
 | Task | Description | Depends on | Exit criteria |
 |---|---|---|---|
-| P4-X-1 | ONNX export script (xtask/Python) + golden set generation | S0-4 | export hash + goldens committed (fixtures policy) |
+| P4-X-1 | ONNX export script (xtask/Python) + golden set generation; export needs ≈ 8 GB free RAM (S0-4) — [per-PC] `win-models`, `win-uv` | S0-4 | export hash + goldens committed (fixtures policy) |
 | P4-X-2 | Threshold calibration v1 for routing, tool pruning, safety | `crate:polaris-system-one-schemas` | precision/recall table recorded |
 | P4-X-3 | MVP scripted demo (PLAN §11.7) | P3-X-2, all P4 crate tasks | recorded transcript/video |
 
 ### P4 crate tasks (generated from workspace.toml)
 
 <!-- generated: P4 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-worker` | `polaris-worker` | L7 | `crate:polaris-system-one-engine`, `crate:polaris-system-one-nano`, `crate:polaris-ingest`, `crate:polaris-proto`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-system-one-engine` | `polaris-system-one-engine` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one-client` | `polaris-system-one-client` | L2 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-storage-cache` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-security-pii` | `polaris-security-pii` | L3 | `crate:polaris-sdk`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-security-rules` | `polaris-security-rules` | L3 | `crate:polaris-sdk`, `crate:polaris-security-automata`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | L3 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one-router` | `polaris-system-one-router` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas`, `crate:polaris-security-automata`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one-watchdog` | `polaris-system-one-watchdog` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-system-one` | `polaris-system-one` | L3 | `crate:polaris-system-one-client`, `crate:polaris-system-one-schemas`, `crate:polaris-system-one-router`, `crate:polaris-system-one-verifier`, `crate:polaris-system-one-watchdog` | re-exports compile; children's tasks PASS |
-| `crate:polaris-spike-s1` | `polaris-spike-s1` | L8 | `crate:polaris-system-one-client` | burst scenarios run; pass criteria met with evidence |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-worker` | `polaris-worker` | L7 | `crate:polaris-system-one-engine`, `crate:polaris-system-one-nano`, `crate:polaris-ingest`, `crate:polaris-proto`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | `win-models` |
+| `crate:polaris-system-one-engine` | `polaris-system-one-engine` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-models`, `win-cuda` |
+| `crate:polaris-system-one-client` | `polaris-system-one-client` | L2 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-storage-cache` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-security-pii` | `polaris-security-pii` | L3 | `crate:polaris-sdk`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-security-rules` | `polaris-security-rules` | L3 | `crate:polaris-sdk`, `crate:polaris-security-automata`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | L3 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-system-one-router` | `polaris-system-one-router` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas`, `crate:polaris-security-automata`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-system-one-watchdog` | `polaris-system-one-watchdog` | L3 | `crate:polaris-sdk`, `crate:polaris-system-one-schemas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-system-one` | `polaris-system-one` | L3 | `crate:polaris-system-one-client`, `crate:polaris-system-one-schemas`, `crate:polaris-system-one-router`, `crate:polaris-system-one-verifier`, `crate:polaris-system-one-watchdog` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-spike-s1` | `polaris-spike-s1` | L8 | `crate:polaris-system-one-client` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---
@@ -274,7 +354,7 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 
 | Task | Description | Depends on | Exit criteria | Access |
 |---|---|---|---|---|
-| P5-X-1 | SearXNG container in WSL2 + provider | `crate:polaris-search-providers` | query transcript | — |
+| P5-X-1 | SearXNG container in WSL2 + provider — [per-PC] `wsl-searxng` | `crate:polaris-search-providers` | query transcript | — |
 | P5-X-2 | Tavily provider live | P5-X-1 | query transcript | **Tavily key** |
 | P5-X-3 | NVIDIA docs initial sync + offline seed artifact (not in git) | `crate:polaris-nvidia-docs` | page counts + provenance | — |
 | P5-X-4 | Embeddings via Token Factory (PII-masked) | `crate:polaris-storage-vector` | embedding run evidence | **Token Factory key** |
@@ -282,14 +362,14 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 ### P5 crate tasks (generated from workspace.toml)
 
 <!-- generated: P5 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-storage-vector` | `polaris-storage-vector` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ingest` | `polaris-ingest` | L2 | `crate:polaris-sdk`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-search-providers` | `polaris-search-providers` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-ratelimit` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-search-sift` | `polaris-search-sift` | L3 | `crate:polaris-sdk`, `crate:polaris-search-providers` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-search` | `polaris-search` | L3 | `crate:polaris-search-providers`, `crate:polaris-search-sift` | re-exports compile; children's tasks PASS |
-| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | L3 | `crate:polaris-sdk`, `crate:polaris-storage-registry`, `crate:polaris-storage-vector`, `crate:polaris-code-intel`, `crate:polaris-ratelimit` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-storage-vector` | `polaris-storage-vector` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-protoc`, `win-cmake-nasm` |
+| `crate:polaris-ingest` | `polaris-ingest` | L2 | `crate:polaris-sdk`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-pdfium` |
+| `crate:polaris-search-providers` | `polaris-search-providers` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-ratelimit` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-searxng`, `win-keyring` |
+| `crate:polaris-search-sift` | `polaris-search-sift` | L3 | `crate:polaris-sdk`, `crate:polaris-search-providers` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-search` | `polaris-search` | L3 | `crate:polaris-search-providers`, `crate:polaris-search-sift` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | L3 | `crate:polaris-sdk`, `crate:polaris-storage-registry`, `crate:polaris-storage-vector`, `crate:polaris-code-intel`, `crate:polaris-ratelimit` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 
 
 ---
@@ -305,10 +385,10 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 ### P6 crate tasks (generated from workspace.toml)
 
 <!-- generated: P6 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-nebius-cloud-data-lab` | `polaris-nebius-cloud-data-lab` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | L2 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-nebius-cloud-data-lab` | `polaris-nebius-cloud-data-lab` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-keyring` |
+| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | L2 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-keyring` |
 
 
 ---
@@ -319,21 +399,21 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 |---|---|---|---|
 | P7-X-1 | `/research` long run with checkpoint/resume | `crate:polaris-runtime-research` | ≥ 20 iterations, resume after kill |
 | P7-X-2 | `/hack` on seeded-bug repos (race, blocking-in-async, CUDA barrier misuse) | `crate:polaris-hacker` | findings vs seeded list |
-| P7-X-3 | microVM browser loop: screenshot + a11y + pHash `/ui-diff` | S0-2/S0-12, `crate:polaris-browser` | screenshots + diff report |
+| P7-X-3 | microVM browser loop: screenshot + a11y + pHash `/ui-diff` — [per-PC] `wsl-kvm`, `wsl-sandbox-image` | S0-2/S0-12, `crate:polaris-browser` | screenshots + diff report |
 
 ### P7 crate tasks (generated from workspace.toml)
 
 <!-- generated: P7 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-guest` | `polaris-guest` | L7 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-browser`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-ext-mcp` | `polaris-ext-mcp` | L2 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ext-skills` | `polaris-ext-skills` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ext` | `polaris-ext` | L2 | `crate:polaris-ext-mcp`, `crate:polaris-ext-skills` | re-exports compile; children's tasks PASS |
-| `crate:polaris-browser` | `polaris-browser` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-hacker` | `polaris-hacker` | L3 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime-dag` | `polaris-runtime-dag` | L4 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-runtime-research` | `polaris-runtime-research` | L4 | `crate:polaris-sdk`, `crate:polaris-runtime-frames`, `crate:polaris-runtime-context` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-guest` | `polaris-guest` | L7 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-browser`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | `wsl-rust`, `wsl-sandbox-image` |
+| `crate:polaris-ext-mcp` | `polaris-ext-mcp` | L2 | `crate:polaris-sdk`, `crate:polaris-config` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ext-skills` | `polaris-ext-skills` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ext` | `polaris-ext` | L2 | `crate:polaris-ext-mcp`, `crate:polaris-ext-skills` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-browser` | `polaris-browser` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-sandbox-image`, `wsl-kvm` |
+| `crate:polaris-hacker` | `polaris-hacker` | L3 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-dag` | `polaris-runtime-dag` | L4 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-research` | `polaris-runtime-research` | L4 | `crate:polaris-sdk`, `crate:polaris-runtime-frames`, `crate:polaris-runtime-context` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 
 
 ---
@@ -343,13 +423,13 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 ### P8 crate tasks (generated from workspace.toml)
 
 <!-- generated: P8 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-devenv-nix` | `polaris-devenv-nix` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-devenv` | `polaris-devenv` | L2 | `crate:polaris-devenv-nix`, `crate:polaris-devenv-docker`, `crate:polaris-devenv-cicd` | re-exports compile; children's tasks PASS |
-| `crate:polaris-system-one-nano` | `polaris-system-one-nano` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-devenv-nix` | `polaris-devenv-nix` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-nix` |
+| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-docker` |
+| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-devenv` | `polaris-devenv` | L2 | `crate:polaris-devenv-nix`, `crate:polaris-devenv-docker`, `crate:polaris-devenv-cicd` | re-exports compile; children's tasks PASS | — |
+| `crate:polaris-system-one-nano` | `polaris-system-one-nano` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-models`, `win-uv` |
 
 
 ---
@@ -358,21 +438,21 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 
 | Task | Description | Depends on | Exit criteria |
 |---|---|---|---|
-| P9-X-1 | Static welcome page (approved demo design) — may be pulled forward for the Design criterion | `crate:polaris-ui-web` | visual comparison to demo |
+| P9-X-1 | Static welcome page (approved demo design) — may be pulled forward for the Design criterion — [per-PC] `win-wasm32` | `crate:polaris-ui-web` | visual comparison to demo |
 | P9-X-2 | Named-pipe transport with token auth; mTLS remote | `crate:polaris-rpc` | security tests |
 
 ### P9 crate tasks (generated from workspace.toml)
 
 <!-- generated: P9 crate tasks -->
-| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria |
-|---|---|---|---|---|
-| `crate:polaris-desktop` | `polaris-desktop` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-gui`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-web` | `polaris-web` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-web`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-daemon` | `polaris-daemon` | L7 | `crate:polaris-kernel`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done |
-| `crate:polaris-rpc` | `polaris-rpc` | L5 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-security-capability` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ui-gui` | `polaris-ui-gui` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-ui-web` | `polaris-ui-web` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths |
-| `crate:polaris-spike-web` | `polaris-spike-web` | L8 | `crate:polaris-ui-web` | burst scenarios run; pass criteria met with evidence |
+| Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
+|---|---|---|---|---|---|
+| `crate:polaris-desktop` | `polaris-desktop` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-gui`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-web` | `polaris-web` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-web`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | `win-wasm32`, `win-cargo-tools` |
+| `crate:polaris-daemon` | `polaris-daemon` | L7 | `crate:polaris-kernel`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-rpc` | `polaris-rpc` | L5 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-security-capability` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ui-gui` | `polaris-ui-gui` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-ui-web` | `polaris-ui-web` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-wasm32`, `win-cargo-tools` |
+| `crate:polaris-spike-web` | `polaris-spike-web` | L8 | `crate:polaris-ui-web` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---

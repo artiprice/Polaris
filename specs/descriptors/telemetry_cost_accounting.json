@@ -1,0 +1,53 @@
+{
+  "type_of": "function",
+  "name": "CostReport::from_totals",
+  "file_path": "crates/polaris-telemetry/src/cost.rs",
+  "logic_name": "Cost Accounting",
+  "test_list": [
+    {
+      "test_name": "total_equals_sum_of_event_costs",
+      "description": "The total is the exact integer sum of the cost field of every ModelRequestCompleted; telemetry holds no price table."
+    },
+    {
+      "test_name": "per_request_average_rounds_down",
+      "description": "The per-request average is total / requests with integer division (floor), never a float."
+    },
+    {
+      "test_name": "no_requests_average_is_zero",
+      "description": "With zero requests the average is zero and from_totals does not divide by zero."
+    },
+    {
+      "test_name": "per_model_cost_sums_to_total_when_all_attributed",
+      "description": "When every request is attributed to a model, the per-model costs add up to the total."
+    },
+    {
+      "test_name": "cost_overflow_saturates_and_flags",
+      "description": "A cost sum above u64::MAX micro-USD pins at u64::MAX and sets the snapshot's saturated flag (documented decision: saturate, not error)."
+    },
+    {
+      "test_name": "prop_cost_equals_sum_of_per_model_costs",
+      "description": "proptest: for random attributed streams total cost equals the sum of ModelUsage.cost over models and the sum of the input costs."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::MicroUsd"
+  ],
+  "libraries": [
+    "serde",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "total",
+      "type": "MicroUsd",
+      "description": "Sum of event costs."
+    },
+    {
+      "name": "requests",
+      "type": "u64",
+      "description": "Number of completed model requests."
+    }
+  ],
+  "output_type": "CostReport",
+  "output_description": "Total and floor-rounded per-request average in integer micro-USD."
+}

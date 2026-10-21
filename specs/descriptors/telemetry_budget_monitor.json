@@ -1,0 +1,64 @@
+{
+  "type_of": "method",
+  "name": "Telemetry::budget",
+  "file_path": "crates/polaris-telemetry/src/budget.rs",
+  "logic_name": "Budget Monitor",
+  "test_list": [
+    {
+      "test_name": "unlimited_budget_is_ok",
+      "description": "A budget without usd and tokens limits is always Ok."
+    },
+    {
+      "test_name": "below_threshold_is_ok",
+      "description": "Usage below the warn percentage is Ok."
+    },
+    {
+      "test_name": "at_80_percent_warns",
+      "description": "Exactly 80% of the limit (default threshold) is Warn with used_pct 80; just below is Ok."
+    },
+    {
+      "test_name": "at_100_percent_exceeded",
+      "description": "Usage equal to or above the limit is Exceeded."
+    },
+    {
+      "test_name": "token_and_usd_limits_checked_independently",
+      "description": "The report carries a status per limit; budget() is the worse of the two."
+    },
+    {
+      "test_name": "tokens_are_prompt_plus_completion_without_double_counting_cache",
+      "description": "Token usage is prompt + completion; cached tokens are a subset of prompt and are not added."
+    },
+    {
+      "test_name": "custom_warn_percent_is_honoured",
+      "description": "with_warn_pct(50) warns at 50%; 0 and values above 100 are InvalidWarnPercent."
+    },
+    {
+      "test_name": "zero_limit_is_exceeded",
+      "description": "A limit of zero is exceeded by any usage including none (nothing may be spent)."
+    },
+    {
+      "test_name": "snapshot_budget_matches_live_budget",
+      "description": "Evaluating the budget on a published snapshot gives the same report as on the live telemetry."
+    },
+    {
+      "test_name": "prop_status_is_monotonic_in_usage",
+      "description": "proptest: for a fixed limit and threshold, more usage never gives a milder status (Ok < Warn < Exceeded) and used_pct stays below 100 while not exceeded."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::MicroUsd"
+  ],
+  "libraries": [
+    "serde",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "limit",
+      "type": "&Budget",
+      "description": "Optional usd and token limits plus the warn percentage."
+    }
+  ],
+  "output_type": "BudgetStatus",
+  "output_description": "Ok, Warn { used_pct } or Exceeded; warn-only, enforcement is the kernel's job."
+}

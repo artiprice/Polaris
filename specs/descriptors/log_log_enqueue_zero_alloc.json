@@ -1,0 +1,23 @@
+{
+  "type_of": "function",
+  "name": "RedactionLayer::on_event",
+  "file_path": "crates/polaris-log/src/redact.rs",
+  "logic_name": "Log Enqueue Zero Alloc",
+  "test_list": [
+    {
+      "test_name": "layer_reuses_buffer",
+      "description": "dhat testing mode: after warm-up, 2,000 events (fields, Debug field, secret redaction, queue overflow) through the layer into two rings and the file queue allocate 0 blocks (ADR-003, log enqueue)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "tracing",
+    "tracing-subscriber",
+    "dhat (dev)"
+  ],
+  "inputs": [],
+  "output_type": "()",
+  "output_description": "Zero heap allocations from tracing event to enqueue."
+}

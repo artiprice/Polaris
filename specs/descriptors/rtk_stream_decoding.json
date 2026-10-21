@@ -1,0 +1,57 @@
+{
+  "type_of": "function",
+  "name": "decode_stream",
+  "file_path": "crates/polaris-tools/crates/rtk/src/input.rs",
+  "logic_name": "Stream decoding",
+  "test_list": [
+    {
+      "test_name": "utf8_bom_is_stripped",
+      "description": "A leading UTF-8 BOM is removed."
+    },
+    {
+      "test_name": "utf16_little_endian_bom_is_transcoded",
+      "description": "UTF-16LE with BOM (PowerShell redirection) becomes UTF-8 text."
+    },
+    {
+      "test_name": "utf16_big_endian_bom_is_transcoded",
+      "description": "UTF-16BE with BOM becomes UTF-8 text."
+    },
+    {
+      "test_name": "crlf_and_lone_cr_become_lf",
+      "description": "CRLF and CR-only line ends are normalised to LF."
+    },
+    {
+      "test_name": "ansi_escape_sequences_are_stripped",
+      "description": "CSI colour codes and OSC titles (BEL or ST terminated) are removed."
+    },
+    {
+      "test_name": "unterminated_escape_does_not_swallow_following_lines",
+      "description": "An escape sequence never consumes a newline, so a hostile stream cannot hide later lines."
+    },
+    {
+      "test_name": "control_characters_are_dropped_and_tabs_kept",
+      "description": "Control characters other than LF and TAB are dropped."
+    },
+    {
+      "test_name": "invalid_utf8_is_replaced_not_fatal",
+      "description": "Invalid UTF-8 becomes U+FFFD instead of an error."
+    },
+    {
+      "test_name": "prop_decoded_text_has_no_escape_or_carriage_return",
+      "description": "proptest: decoded text of arbitrary bytes contains no ESC and no CR."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "bytes",
+      "type": "&[u8]",
+      "description": "Raw stream bytes in UTF-8 or BOM-marked UTF-16."
+    }
+  ],
+  "output_type": "String",
+  "output_description": "Clean UTF-8 text with LF line ends and no terminal escapes."
+}

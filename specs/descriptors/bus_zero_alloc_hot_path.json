@@ -1,0 +1,25 @@
+{
+  "type_of": "function",
+  "name": "try_send / try_recv / fanout",
+  "file_path": "crates/polaris-kernel/crates/bus/src/bus.rs",
+  "logic_name": "Bus Zero Alloc Hot Path",
+  "test_list": [
+    {
+      "test_name": "hot_path_does_not_allocate_after_warmup",
+      "description": "dhat testing mode: after warm-up, 1,000 rounds of try_send + try_recv + fanout + subscriber try_recv allocate 0 blocks (ADR-003)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Command, EventRecord}",
+    "polaris_sdk::registry::EventStore"
+  ],
+  "libraries": [
+    "tokio (sync)",
+    "tracing",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [],
+  "output_type": "()",
+  "output_description": "Zero heap allocations on the bus hot path."
+}

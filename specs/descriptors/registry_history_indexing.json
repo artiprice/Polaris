@@ -1,0 +1,50 @@
+{
+  "type_of": "method",
+  "name": "Registry::index_message",
+  "file_path": "crates/polaris-storage/crates/registry/src/history.rs",
+  "logic_name": "History Indexing",
+  "test_list": [
+    {
+      "test_name": "indexed_message_is_searchable",
+      "description": "A message passed to index_message is returned by search_history with its session, role and timestamp."
+    },
+    {
+      "test_name": "roles_roundtrip",
+      "description": "System, User, Assistant and Tool roles are stored and returned as the same role."
+    },
+    {
+      "test_name": "index_does_not_require_a_session_row",
+      "description": "Indexing is allowed before the session is upserted (events may arrive first)."
+    },
+    {
+      "test_name": "redacted_index_never_persists_secret",
+      "description": "index_message_redacted applies the Redactor before storing: a seeded secret appears in no registry file (db, -wal, -shm) and the masked text is searchable."
+    },
+    {
+      "test_name": "unmasked_index_does_persist_text_control",
+      "description": "Negative control for the secret scan: index_message stores text verbatim, so the same scan does find an unmasked secret."
+    },
+    {
+      "test_name": "unicode_text_roundtrips",
+      "description": "Non-ASCII text (accents, CJK, emoji) is stored and found."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::SessionId",
+    "polaris_sdk::registry::{ChatRole, Redactor}",
+    "polaris_sdk::contracts::Timestamp"
+  ],
+  "libraries": [
+    "rusqlite (FTS5, trigram tokenizer)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Message text; index_message expects it already masked, index_message_redacted masks it first."
+    }
+  ],
+  "output_type": "Result<(), RegistryError>",
+  "output_description": "Message text added to the FTS5 trigram index; only masked text is ever persisted."
+}

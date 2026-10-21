@@ -1,0 +1,75 @@
+// Shared building blocks of the Polaris wire contracts (package polaris.v1).
+//
+// Rules for every file in this package:
+//  * Blobs (text, diffs, screenshots, ...) never travel inline. They are content-addressed in CAS and
+//    referenced by `Cid`; the only inline `bytes` are small, bounded values (capability token, terminal
+//    and exec chunks of at most 896 KiB, see PLAN pitfall W22).
+//  * Every enum starts with an `*_UNSPECIFIED = 0` value that decoders reject.
+//  * A removed field keeps its number and name in a `reserved` statement; numbers are never reused.
+//  * Each message that can grow carries `reserved 100 to 199;`: an unallocated range that out-of-band
+//    experiments can claim without colliding with schema fields.
+syntax = "proto3";
+
+package polaris.v1;
+
+// A 128-bit identifier (UUID) as two fixed-width halves, so every value is structurally valid.
+message Uuid {
+  fixed64 hi = 1;
+  fixed64 lo = 2;
+}
+
+// A content id: the 32-byte blake3 digest of a CAS blob. Decoders reject any other length.
+message Cid {
+  bytes digest = 1;
+}
+
+// Wire-protocol version. A differing major version is incompatible; the minor is negotiated down.
+message ProtocolVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+}
+
+// Role of an agent context frame.
+enum AgentRole {
+  AGENT_ROLE_UNSPECIFIED = 0;
+  AGENT_ROLE_ORCHESTRATOR = 1;
+  AGENT_ROLE_SUB_AGENT = 2;
+  AGENT_ROLE_VERIFIER = 3;
+  AGENT_ROLE_RESEARCHER = 4;
+  AGENT_ROLE_HACKER = 5;
+  AGENT_ROLE_WATCHDOG = 6;
+}
+
+// Reasoning effort, cheapest to most capable.
+enum Effort {
+  EFFORT_UNSPECIFIED = 0;
+  EFFORT_LOW = 1;
+  EFFORT_MEDIUM = 2;
+  EFFORT_HIGH = 3;
+  EFFORT_XHIGH = 4;
+  EFFORT_MAX = 5;
+}
+
+// Supervised worker processes.
+enum WorkerKind {
+  WORKER_KIND_UNSPECIFIED = 0;
+  WORKER_KIND_S1 = 1;
+  WORKER_KIND_INGEST = 2;
+  WORKER_KIND_NANO = 3;
+}
+
+// Liveness probe request, shared by all three services.
+message HealthRequest {
+  reserved 100 to 199;
+}
+
+// Liveness probe answer, shared by all three services.
+message HealthResponse {
+  // The protocol version the peer speaks.
+  ProtocolVersion protocol_version = 1;
+  // The build version of the peer (free text, for diagnostics only).
+  string build_version = 2;
+  // `true` once the peer accepts work.
+  bool ready = 3;
+  reserved 100 to 199;
+}

@@ -1,0 +1,68 @@
+{
+  "type_of": "struct",
+  "name": "Cas",
+  "file_path": "crates/polaris-storage/crates/cas/src/store.rs",
+  "logic_name": "Blob Store Round Trip",
+  "test_list": [
+    {
+      "test_name": "put_get_roundtrip_byte_exact",
+      "description": "Empty, 1 B, 1 MiB compressible and 64 KiB incompressible blobs come back byte-exact."
+    },
+    {
+      "test_name": "put_is_idempotent",
+      "description": "A second put of the same bytes returns the same Cid and does not rewrite the file."
+    },
+    {
+      "test_name": "get_missing_is_not_found",
+      "description": "get of an unknown Cid is CasError::NotFound."
+    },
+    {
+      "test_name": "incompressible_stored_raw",
+      "description": "Incompressible data is stored with the raw codec byte; tiny blobs too."
+    },
+    {
+      "test_name": "corrupt_blob_detected_on_verify",
+      "description": "A flipped payload byte is CasError::Corrupt when verify_on_get is on."
+    },
+    {
+      "test_name": "content_id_is_blake3_and_layout_is_ab_cd_hex",
+      "description": "content_id equals blake3::hash; the blob lives at <root>/<ab>/<cd>/<64hex>."
+    },
+    {
+      "test_name": "put_file_streams_and_matches_put",
+      "description": "put_file of a file gives the same Cid as put of its bytes."
+    },
+    {
+      "test_name": "too_large_is_rejected",
+      "description": "A blob over max_blob_bytes is CasError::TooLarge."
+    },
+    {
+      "test_name": "gc_removes_dead_blobs_after_grace",
+      "description": "gc keeps live blobs and young blobs, removes the rest; dry_run removes nothing."
+    },
+    {
+      "test_name": "prop_put_get_roundtrip",
+      "description": "proptest: get(put(b)) == b for arbitrary bytes."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{Cid, ShortRef, FastFingerprint}"
+  ],
+  "libraries": [
+    "blake3",
+    "xxhash-rust",
+    "zstd",
+    "tempfile",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "bytes",
+      "type": "&[u8]",
+      "description": "Blob content."
+    }
+  ],
+  "output_type": "Result<Cid, CasError> / Result<Bytes, CasError>",
+  "output_description": "Content-addressed, compressed, atomically written blobs."
+}

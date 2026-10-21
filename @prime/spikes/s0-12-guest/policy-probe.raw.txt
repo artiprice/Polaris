@@ -1,0 +1,19 @@
+phase=Ready
+--- effective policy
+Version:      1
+Hash:         a45a8ff3564f00ae26cbd66f1131f37eedd8b54a66fbfec103d65a204c19c6e8
+Status:       Effective
+Source:       sandbox
+Config rev:   16709790733110020355
+--- probes
+-rwxr-xr-x 1 root root 298806600 Oct 15 00:07 /opt/chrome-linux64/chrome
+exec /opt/...chrome rc=126
+exec /usr/bin/Xvfb rc=0
+write /tmp ok
+write /sandbox ok
+mkdir /tmp/.X11-unix ok
+drwxrwxrwt 2 root   root     40 Oct 20 19:03 /dev/shm
+drwxr-xr-x 2 ubuntu ubuntu 4096 Oct 20 19:03 /tmp/.X11-unix
+NoNewPrivs:	1
+Seccomp:	2
+probe sandbox deleted

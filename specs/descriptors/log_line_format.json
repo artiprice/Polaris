@@ -1,0 +1,43 @@
+{
+  "type_of": "function",
+  "name": "format_timestamp / LogLine rendering",
+  "file_path": "crates/polaris-log/src/entry.rs",
+  "logic_name": "Line Format",
+  "test_list": [
+    {
+      "test_name": "timestamp_known_values",
+      "description": "RFC 3339 UTC with milliseconds for epoch, a leap day, 2000-02-29 and 2100-01-01."
+    },
+    {
+      "test_name": "timestamp_before_epoch_clamps_to_epoch",
+      "description": "Times before 1970 render as the epoch instead of failing."
+    },
+    {
+      "test_name": "text_line_layout",
+      "description": "Text line is `<ts> <LEVEL padded> <target>: <message>`."
+    },
+    {
+      "test_name": "text_line_marks_truncation",
+      "description": "A truncated record ends with ` [truncated]`."
+    },
+    {
+      "test_name": "json_line_wraps_the_fields_object",
+      "description": "JSON line is `{ts,level,target,fields:<object>}` with the fields object embedded verbatim."
+    },
+    {
+      "test_name": "json_line_escapes_the_target",
+      "description": "Quotes, backslashes and control characters in the target are escaped."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "time",
+      "type": "SystemTime",
+      "description": "Instant to render."
+    }
+  ],
+  "output_type": "String",
+  "output_description": "Pure formatting, no I/O."
+}

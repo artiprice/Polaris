@@ -1,0 +1,39 @@
+== 1 guest build in WSL2
+guest: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /; 342008 B; 135 ms
+== 2 sandbox image
+chrome-for-testing stable: 155.0.8059.84
+image: polaris/s0-12:dev size=1242765632 B id=sha256:10ef59a9f333 build=57712 ms
+== 3 sandbox from the image
+create -> Ready in 14152 ms
+== 4 protocol handshake
+{"protocol_version":1,"guest_version":"0.0.1","os":"linux","arch":"x86_64","pid":77}
+handshake(host=1) exit=0
+{"protocol_version":1,"guest_version":"0.0.1","os":"linux","arch":"x86_64","pid":80}
+protocol mismatch: host 2, guest 1
+handshake(host=2) exit=3 (3 = mismatch refused)
+user=ubuntu home=/sandbox pwd=/sandbox
+== 5 headless Chrome screenshot
+headless exit=134 (35850 ms)
+== 6 headed Chrome under Xvfb + root-window dump
+xvfb exit=1 (13182 ms)
+== 7 artifacts
+download headless.png failed
+-rwxrwxrwx 1 dev dev    72 Oct 20 19:14 build.log
+-rwxrwxrwx 1 dev dev   200 Oct 20 19:14 create.log
+-rwxrwxrwx 1 dev dev   591 Oct 20  2026 download.log
+-rwxrwxrwx 1 dev dev   752 Oct 20 19:14 headed.log
+-rwxrwxrwx 1 dev dev 52568 Oct 20 19:14 headless.log
+-rwxrwxrwx 1 dev dev   295 Oct 20 19:14 xvfb.err
+-rwxrwxrwx 1 dev dev    35 Oct 20 19:15 xvfb.log
+-rwxrwxrwx 1 dev dev     0 Oct 20 19:15 xvfb.xwd
+headless.png: missing or not a PNG
+Traceback (most recent call last):
+  File "/mnt/c/mDev/Polaris/@prime/spikes/s0-12-guest/check_images.py", line 109, in <module>
+    main()
+  File "/mnt/c/mDev/Polaris/@prime/spikes/s0-12-guest/check_images.py", line 88, in main
+    hdr = struct.unpack(">25I", d[:100])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+struct.error: unpack requires a buffer of 100 bytes
+== 8 delete
+delete: ok
+run exit=0 wall_s=126

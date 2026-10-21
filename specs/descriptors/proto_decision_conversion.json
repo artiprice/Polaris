@@ -1,0 +1,61 @@
+{
+  "type_of": "impl_block",
+  "name": "TryFrom<pb::Decision> for Decision (plus Question, DecisionInput)",
+  "file_path": "crates/polaris-proto/src/convert.rs",
+  "logic_name": "Decision Conversion",
+  "test_list": [
+    {
+      "test_name": "decision_with_all_answer_kinds_roundtrips",
+      "description": "A Decision holding a Choice, a Score and a Noul answer survives sdk -> pb -> bytes -> pb -> sdk unchanged."
+    },
+    {
+      "test_name": "questions_and_input_roundtrip",
+      "description": "Question (all three kinds) and DecisionInput (with and without context) roundtrip."
+    },
+    {
+      "test_name": "invalid_probability_is_error",
+      "description": "NaN, infinity, negative and above-one probabilities on the wire convert to Invalid(InvalidProbability)."
+    },
+    {
+      "test_name": "invalid_names_are_errors",
+      "description": "An empty or control-character question id / label on the wire gives Invalid(InvalidValue)."
+    },
+    {
+      "test_name": "missing_answer_is_error",
+      "description": "A QuestionAnswer without answer, or an Answer without kind, gives MissingField."
+    },
+    {
+      "test_name": "conversion_never_panics_on_default_message",
+      "description": "Default pb::Decision converts to an empty Decision; default pb::Answer and pb::Question return Err."
+    },
+    {
+      "test_name": "prop_decision_roundtrip",
+      "description": "For arbitrary valid Decisions: sdk -> pb -> bytes -> pb -> sdk is the identity."
+    },
+    {
+      "test_name": "prop_question_roundtrip",
+      "description": "For arbitrary valid Questions (Choice, Score, Noul): sdk -> pb -> bytes -> pb -> sdk is the identity."
+    },
+    {
+      "test_name": "prop_garbage_bytes_never_panic",
+      "description": "Arbitrary bytes decoded as pb::Decision / pb::Question and converted give Ok or Err, never a panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::system_one::{Decision, Answer, QuestionAnswer, LabelScore, Question, QuestionKind, QuestionId, Label, Probability, DecisionInput}",
+    "crates/polaris-proto/src/error.rs (ProtoError)"
+  ],
+  "libraries": [
+    "prost",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "decision",
+      "type": "pb::Decision (or &Decision)",
+      "description": "A decoded protobuf decision from a worker, possibly hostile."
+    }
+  ],
+  "output_type": "Result<Decision, ProtoError> (pb -> sdk) or pb::Decision (sdk -> pb, infallible)",
+  "output_description": "A Decision whose labels, ids and probabilities passed the sdk validators."
+}

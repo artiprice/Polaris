@@ -1,0 +1,36 @@
+{
+  "type_of": "function",
+  "name": "check_members",
+  "file_path": "xtask/src/members.rs",
+  "logic_name": "Xtask Check Members",
+  "test_list": [
+    {
+      "test_name": "all_table_packages_present_is_ok",
+      "description": "Every package path in the crate table exists with a Cargo.toml and matches a member glob: no violations."
+    },
+    {
+      "test_name": "glob_dir_without_manifest_is_reported",
+      "description": "A directory matched by a member glob that has no Cargo.toml yields MissingManifest."
+    },
+    {
+      "test_name": "stray_file_at_glob_level_is_reported",
+      "description": "A regular file directly under apps/, crates/, crates/*/crates/ or tests/spike/ yields StrayFile."
+    },
+    {
+      "test_name": "table_package_missing_on_disk_is_reported",
+      "description": "A package listed in the table whose directory is absent yields NotOnDisk."
+    },
+    {
+      "test_name": "member_not_in_table_is_reported",
+      "description": "A matched member directory with a Cargo.toml that is not in the table yields NotInTable."
+    }
+  ],
+  "dependencies": ["xtask::table"],
+  "libraries": ["thiserror", "toml", "serde"],
+  "inputs": [
+    { "name": "root", "type": "&Path", "description": "Repository root containing the member globs." },
+    { "name": "table", "type": "&CrateTable", "description": "Parsed @prime/tools/workspace.toml crate table." }
+  ],
+  "output_type": "Result<Vec<MemberViolation>, XtaskError>",
+  "output_description": "All member violations (empty when consistent), or an I/O error while scanning."
+}

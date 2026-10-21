@@ -1,0 +1,74 @@
+# cargo-fuzz project (excluded from the root workspace; literal versions, see README.md).
+# Run inside WSL2 on nightly:
+#   cargo +nightly fuzz run --fuzz-dir tests/fuzz directives_grammar -- -max_total_time=60
+[package]
+name = "polaris-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+polaris-config = { path = "../../crates/polaris-config" }
+polaris-kernel-directives = { path = "../../crates/polaris-kernel/crates/directives" }
+polaris-storage-cas = { path = "../../crates/polaris-storage/crates/cas" }
+polaris-tools-rtk = { path = "../../crates/polaris-tools/crates/rtk" }
+polaris-ui-model = { path = "../../crates/polaris-ui/crates/model" }
+polaris-security-capability = { path = "../../crates/polaris-security/crates/capability" }
+jiff = "0.2.38"
+serde_json = "1.0.154"
+polaris-storage-eventlog = { path = "../../crates/polaris-storage/crates/eventlog" }
+
+[[bin]]
+name = "directives_grammar"
+path = "fuzz_targets/directives_grammar.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cas_blob_decode"
+path = "fuzz_targets/cas_blob_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "eventlog_decode"
+path = "fuzz_targets/eventlog_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "config_toml_layer"
+path = "fuzz_targets/config_toml_layer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "rtk_stream"
+path = "fuzz_targets/rtk_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ui_completion"
+path = "fuzz_targets/ui_completion.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "biscuit_token_bytes"
+path = "fuzz_targets/biscuit_token_bytes.rs"
+test = false
+doc = false
+bench = false

@@ -1,0 +1,23 @@
+{
+  "type_of": "struct",
+  "name": "Cid / ShortRef",
+  "file_path": "crates/polaris-sdk/src/ids.rs",
+  "logic_name": "Content Identifiers",
+  "test_list": [
+    { "test_name": "cid_hex_roundtrip", "description": "Cid::to_hex then Cid::from_hex returns the same 32 bytes; hex is 64 lowercase chars." },
+    { "test_name": "short_ref_is_first_48_bits", "description": "ShortRef::of(&cid) holds exactly the first 6 bytes of the Cid." },
+    { "test_name": "short_ref_renders_12_lowercase_hex", "description": "ShortRef renders as 12 lowercase hex chars and `§ref:<12hex>` via to_marker()." },
+    { "test_name": "cid_rejects_wrong_length_hex", "description": "from_hex rejects 63/65 chars and non-hex characters with ParseError, never panics." },
+    { "test_name": "short_ref_parse_accepts_marker_and_bare_hex", "description": "ShortRef::from_str accepts `§ref:<12hex>` and bare 12 hex; rejects other lengths." },
+    { "test_name": "prop_cid_shortref_hex_roundtrip", "description": "proptest: for any 32 bytes, Cid -> ShortRef -> hex -> parse is stable." },
+    { "test_name": "fast_fingerprint_has_no_cid_conversion", "description": "compile_fail doctest on FastFingerprint: there is no From/Into between FastFingerprint (xxh3, not collision resistant) and Cid." }
+  ],
+  "dependencies": ["polaris_sdk::error::ParseError"],
+  "libraries": ["thiserror", "serde", "proptest (dev)"],
+  "inputs": [
+    { "name": "bytes", "type": "[u8; 32]", "description": "BLAKE3 digest (computed by polaris-storage-cas, not by sdk)." },
+    { "name": "hex", "type": "&str", "description": "64 lowercase/uppercase hex characters." }
+  ],
+  "output_type": "Result<Cid, ParseError> / ShortRef",
+  "output_description": "Validated content id and its 48-bit short reference used by §ref folding."
+}

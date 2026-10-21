@@ -1,0 +1,57 @@
+{
+  "type_of": "function",
+  "name": "encode_blob / decode_blob",
+  "file_path": "crates/polaris-storage/crates/cas/src/codec.rs",
+  "logic_name": "Decompression Bound",
+  "test_list": [
+    {
+      "test_name": "declared_size_over_limit_rejected",
+      "description": "A zstd frame declaring more than the limit is TooLarge before allocating."
+    },
+    {
+      "test_name": "unknown_content_size_rejected",
+      "description": "A zstd frame without a declared content size is rejected."
+    },
+    {
+      "test_name": "truncated_frame_is_error",
+      "description": "A truncated zstd payload is an error, never a panic."
+    },
+    {
+      "test_name": "unknown_codec_or_version_is_error",
+      "description": "Unknown version or codec bytes are format errors."
+    },
+    {
+      "test_name": "empty_payload_ok",
+      "description": "A raw blob with an empty payload decodes to empty bytes."
+    },
+    {
+      "test_name": "prop_decode_never_panics",
+      "description": "proptest: arbitrary blob bytes decode to Ok or Err, never panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{Cid, ShortRef, FastFingerprint}"
+  ],
+  "libraries": [
+    "blake3",
+    "xxhash-rust",
+    "zstd",
+    "tempfile",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "blob",
+      "type": "&[u8]",
+      "description": "On-disk blob bytes."
+    },
+    {
+      "name": "max_bytes",
+      "type": "u64",
+      "description": "Decompressed size cap."
+    }
+  ],
+  "output_type": "Result<Vec<u8>, CasError>",
+  "output_description": "Decoded bytes, bounded before allocation."
+}

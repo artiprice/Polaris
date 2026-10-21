@@ -1,0 +1,72 @@
+{
+  "type_of": "method",
+  "name": "Telemetry::record",
+  "file_path": "crates/polaris-telemetry/src/aggregate.rs",
+  "logic_name": "Usage Aggregation",
+  "test_list": [
+    {
+      "test_name": "model_request_completed_adds_tokens",
+      "description": "ModelRequestCompleted adds prompt, completion and cached tokens, cost and one request to the session totals."
+    },
+    {
+      "test_name": "cached_tokens_tracked_only_when_reported",
+      "description": "Cache statistics stay 'not reported' (None hit rate) until a request carries cached_tokens > 0; per-model cached is None until then."
+    },
+    {
+      "test_name": "s1_and_s2_time_split",
+      "description": "DecisionMade feeds the S1 stage and ModelRequestCompleted feeds the S2 stage; count, total, max and percentiles are kept separately."
+    },
+    {
+      "test_name": "counters_saturate_not_wrap",
+      "description": "Counters pinned at u64::MAX stay there, the snapshot reports saturated=true, and nothing panics."
+    },
+    {
+      "test_name": "per_model_usage_attributed_only_when_model_given",
+      "description": "record() counts only in the totals; record_for_model() also fills the per-model table, sorted by model id."
+    },
+    {
+      "test_name": "tool_and_sandbox_failures_counted",
+      "description": "ToolExecutionCompleted ok=false and a non-zero sandbox exit code count as failures; snapshot branches are counted."
+    },
+    {
+      "test_name": "outcome_events_counted",
+      "description": "Diff approvals/rejections, Proof-of-Done passes/blocks, worker restarts, circuit trips and dead letters each have a counter; every event bumps events_seen."
+    },
+    {
+      "test_name": "latency_beyond_range_is_clamped",
+      "description": "A latency above the histogram range is clamped in the percentile but kept exact in max_us; total_us saturates; u64::MAX does not panic."
+    },
+    {
+      "test_name": "record_record_rejects_other_session",
+      "description": "An EventRecord of another session is SessionMismatch and changes nothing."
+    },
+    {
+      "test_name": "prop_totals_equal_sum_of_inputs",
+      "description": "proptest: for random model-request streams the token, cost and request totals equal the sums of the inputs and the S2 stage count equals the number of requests."
+    },
+    {
+      "test_name": "prop_counters_never_decrease_and_never_panic",
+      "description": "proptest: over arbitrary events with extreme field values no counter decreases between consecutive snapshots and nothing panics."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::Event",
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::ids::ModelId",
+    "polaris_sdk::ids::SessionId"
+  ],
+  "libraries": [
+    "hdrhistogram",
+    "serde",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "&Event",
+      "description": "One bus event; an exhaustive match decides its effect on the aggregates."
+    }
+  ],
+  "output_type": "()",
+  "output_description": "Folds the event into the per-session aggregates; counters saturate instead of wrapping."
+}

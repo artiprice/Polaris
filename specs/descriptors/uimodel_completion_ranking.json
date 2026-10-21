@@ -1,0 +1,93 @@
+{
+  "type_of": "function",
+  "name": "complete",
+  "file_path": "crates/polaris-ui/crates/model/src/completion.rs",
+  "logic_name": "Completion Ranking",
+  "test_list": [
+    {
+      "test_name": "slash_inside_path_is_not_a_token",
+      "description": "a/b, http://x and /usr/bin never start a completion token; a slash only counts at byte 0."
+    },
+    {
+      "test_name": "dollar_and_at_need_token_boundary",
+      "description": "$ and @ start a token at the beginning, after whitespace, ( or [ and nowhere else (a$b, dev@x.com)."
+    },
+    {
+      "test_name": "code_span_is_not_a_token",
+      "description": "Text inside backtick spans is never a token."
+    },
+    {
+      "test_name": "cursor_off_char_boundary_returns_nothing",
+      "description": "A cursor inside a multi-byte char or past the end yields no token and no panic."
+    },
+    {
+      "test_name": "commands_come_from_directives_names",
+      "description": "Slash candidates are exactly polaris_kernel_directives::names::SLASH_COMMANDS."
+    },
+    {
+      "test_name": "directives_come_from_directives_names",
+      "description": "Dollar candidates are exactly polaris_kernel_directives::names::DIRECTIVES."
+    },
+    {
+      "test_name": "help_tables_cover_exactly_the_names",
+      "description": "The description tables cover exactly the names of the two directive tables: no missing, no extra, no duplicates."
+    },
+    {
+      "test_name": "prefix_beats_substring_beats_fuzzy",
+      "description": "Basename prefix ranks above path prefix, above substring, above fuzzy subsequence."
+    },
+    {
+      "test_name": "quoted_mention_for_spaces",
+      "description": "A path with whitespace is inserted as @\"path with spaces\"; others stay bare."
+    },
+    {
+      "test_name": "file_results_capped_at_100",
+      "description": "Even with 1000 matching paths at most 100 suggestions are returned."
+    },
+    {
+      "test_name": "ties_sorted_lexicographically",
+      "description": "Equal-ranked candidates are ordered by byte-wise lexicographic order, independent of index order."
+    },
+    {
+      "test_name": "suggestion_range_replaces_the_token",
+      "description": "A suggestion's range covers the whole token including text after the cursor."
+    },
+    {
+      "test_name": "static_index_ranks_and_limits",
+      "description": "StaticPathIndex honours the limit and only returns matching paths."
+    },
+    {
+      "test_name": "prop_never_more_than_100",
+      "description": "For arbitrary query text and index size the result length is at most 100."
+    },
+    {
+      "test_name": "prop_detect_never_panics_and_ranges_are_boundaries",
+      "description": "For arbitrary UTF-8 and cursor, detect_token never panics and returned offsets are char boundaries."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_directives::names::{SLASH_COMMANDS, DIRECTIVES}"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&str",
+      "description": "Composer text."
+    },
+    {
+      "name": "cursor",
+      "type": "usize",
+      "description": "Byte offset of the cursor."
+    },
+    {
+      "name": "paths",
+      "type": "&impl PathIndex",
+      "description": "Injected file index."
+    }
+  ],
+  "output_type": "Vec<Suggestion>",
+  "output_description": "Ranked suggestions, at most 100."
+}

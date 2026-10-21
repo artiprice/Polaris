@@ -9,7 +9,9 @@
 #   1. base build packages (build-essential, pkg-config, libssl-dev, git, jq, unzip, bc)
 #   2. Docker Engine (Docker's apt repo) + user in `docker` group      (OpenShell docker driver)
 #   3. OpenShell CLI + gateway (pinned v0.1.4, checksum-verified .deb) (P0-ENV-2)
-#   4. loginctl linger for the user (gateway user service outlives shells)
+#   4. loginctl linger for the user (gateway user service outlives shells) and the
+#      compute-driver pin in ~/.config/openshell/gateway.env (avoids the boot race where
+#      driver auto-detection runs before dockerd is up)
 #   5. rustup + Rust 1.99.0 (rustfmt, clippy) + nightly (rust-src, miri)
 #   6. cargo-binstall, cargo-nextest, cargo-fuzz (nightly use)
 #   7. optional: Kani verifier (--with-kani; large download)
@@ -59,8 +61,16 @@ if ! have openshell || ! openshell --version 2>/dev/null | grep -q "${OPENSHELL_
 fi
 echo "openshell: $(openshell --version)"
 
-log "4/7 linger (gateway survives logout)"
+log "4/7 linger (gateway survives logout) + compute-driver pin"
 sudo loginctl enable-linger "$USER"
+genv="${XDG_CONFIG_HOME:-$HOME/.config}/openshell/gateway.env"
+if ! grep -qx 'OPENSHELL_COMPUTE_DRIVER=docker' "$genv" 2>/dev/null; then
+  mkdir -p "$(dirname "$genv")"
+  sed -i '/^OPENSHELL_COMPUTE_DRIVER=/d' "$genv" 2>/dev/null || true
+  echo 'OPENSHELL_COMPUTE_DRIVER=docker' >> "$genv"
+  systemctl --user restart openshell-gateway 2>/dev/null || true
+fi
+echo "gateway: $(systemctl --user is-active openshell-gateway 2>&1); driver pin: $(grep -c '^OPENSHELL_COMPUTE_DRIVER=docker$' "$genv")"
 
 log "5/7 Rust ${RUST_VERSION} + nightly"
 if ! have rustup && [ ! -x "$HOME/.cargo/bin/rustup" ]; then
@@ -77,6 +87,8 @@ log "6/7 cargo tools"
 if ! have cargo-binstall; then
   curl -fsSL "https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz" | tar -xz -C "$HOME/.cargo/bin" cargo-binstall
 fi
+# Note: the binstall cargo-fuzz is the musl build and defaults --target to musl; always run
+# `cargo fuzz run --target x86_64-unknown-linux-gnu …` (verify-proofs.sh does; PLAN W20).
 cargo binstall --no-confirm cargo-nextest cargo-fuzz >/dev/null
 echo "nextest: $(cargo nextest --version | head -1); fuzz: $(cargo fuzz --version)"
 

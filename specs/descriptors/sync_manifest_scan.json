@@ -1,0 +1,75 @@
+{
+  "type_of": "function",
+  "name": "scan",
+  "file_path": "crates/polaris-storage/crates/sync/src/scan.rs",
+  "logic_name": "Manifest Scan",
+  "test_list": [
+    {
+      "test_name": "scan_is_deterministic",
+      "description": "Two scans of the same tree give identical manifests (sorted, byte-exact hashes)."
+    },
+    {
+      "test_name": "unchanged_file_not_rehashed_with_warm_cache",
+      "description": "With the previous ScanCache, unchanged files (same size+mtime) are reused, not rehashed."
+    },
+    {
+      "test_name": "changed_content_same_mtime_detected_in_paranoid_mode",
+      "description": "Same-size edit with a restored mtime is missed by Fast mode and caught by Paranoid mode."
+    },
+    {
+      "test_name": "denied_files_absent_from_manifest",
+      "description": "Denied files never enter the manifest and are listed in the outcome's denied set."
+    },
+    {
+      "test_name": "crlf_and_binary_bytes_hashed_exactly",
+      "description": "Entry hashes equal blake3 of the raw bytes (no EOL translation)."
+    },
+    {
+      "test_name": "shebang_marks_executable",
+      "description": "A file starting with '#!' is marked executable; others are not."
+    },
+    {
+      "test_name": "windows_junction_not_followed",
+      "description": "A junction pointing outside the workspace is recorded as a link and never followed."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "root",
+      "type": "&Path",
+      "description": "Workspace root."
+    },
+    {
+      "name": "rules",
+      "type": "&IgnoreRules",
+      "description": "Ignore + deny rules."
+    },
+    {
+      "name": "cache",
+      "type": "Option<&ScanCache>",
+      "description": "Previous scan cache."
+    },
+    {
+      "name": "mode",
+      "type": "HashMode",
+      "description": "Fast (mtime+size) or Paranoid (always rehash)."
+    }
+  ],
+  "output_type": "Result<ScanOutcome, SyncError>",
+  "output_description": "Manifest, new cache, denied paths and hashing statistics."
+}

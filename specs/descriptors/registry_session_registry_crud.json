@@ -1,0 +1,64 @@
+{
+  "type_of": "struct",
+  "name": "Registry",
+  "file_path": "crates/polaris-storage/crates/registry/src/sessions.rs",
+  "logic_name": "Session Registry CRUD",
+  "test_list": [
+    {
+      "test_name": "upsert_then_get_roundtrip",
+      "description": "A session written with upsert_session is returned unchanged by get_session (all fields, including the optional sandbox checkpoint)."
+    },
+    {
+      "test_name": "get_unknown_returns_none",
+      "description": "get_session of an id that was never written is Ok(None), not an error."
+    },
+    {
+      "test_name": "upsert_is_idempotent_and_keeps_created_at",
+      "description": "Upserting the same metadata twice leaves one row; a later upsert never rewrites the stored created_at."
+    },
+    {
+      "test_name": "upsert_updates_token_counters",
+      "description": "A second upsert replaces name, branch, token counters, checkpoint and status of the existing row."
+    },
+    {
+      "test_name": "list_orders_by_updated_desc",
+      "description": "list_sessions returns the newest updated_at first (/sessions ordering)."
+    },
+    {
+      "test_name": "list_filters_by_status_workspace_and_limit",
+      "description": "SessionFilter narrows by status, by workspace and caps the row count."
+    },
+    {
+      "test_name": "archive_changes_status",
+      "description": "archive sets Archived and unarchive sets Active, both bump updated_at; an unknown id reports false."
+    },
+    {
+      "test_name": "oversized_token_counter_is_rejected",
+      "description": "A counter above i64::MAX cannot be stored in SQLite and is refused with BadValue instead of wrapping."
+    },
+    {
+      "test_name": "prop_upsert_get_roundtrip",
+      "description": "proptest: any metadata (arbitrary text and counters) reads back identical."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::SessionId",
+    "polaris_sdk::contracts::Timestamp",
+    "polaris_sdk::error::{ErrorKind, HasKind}"
+  ],
+  "libraries": [
+    "rusqlite",
+    "serde",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "meta",
+      "type": "&SessionMeta",
+      "description": "Session catalogue row to insert or update (keyed by SessionId)."
+    }
+  ],
+  "output_type": "Result<(), RegistryError>",
+  "output_description": "Durable, idempotent session catalogue rows in registry.db."
+}

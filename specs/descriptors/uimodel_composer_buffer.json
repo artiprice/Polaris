@@ -1,0 +1,114 @@
+{
+  "type_of": "struct",
+  "name": "Composer",
+  "file_path": "crates/polaris-ui/crates/model/src/composer.rs",
+  "logic_name": "Composer Buffer",
+  "test_list": [
+    {
+      "test_name": "long_paste_becomes_chip",
+      "description": "More than 5 logical lines or more than 500 chars becomes a [Pasted Content N chars] chip; exactly at the limits stays literal."
+    },
+    {
+      "test_name": "short_insert_stays_literal",
+      "description": "Ordinary typing is inserted as text with the cursor after it."
+    },
+    {
+      "test_name": "submit_trims_trailing_blank_rows",
+      "description": "Trailing blank rows are removed on submit."
+    },
+    {
+      "test_name": "submit_keeps_interior_blank_paragraphs",
+      "description": "Blank rows between paragraphs survive submit."
+    },
+    {
+      "test_name": "submit_expands_chips",
+      "description": "Text chips are replaced by their payload; image chips stay as [Image N] markers and are listed."
+    },
+    {
+      "test_name": "empty_submit_rejected_and_state_kept",
+      "description": "Submitting blank text is an error and leaves the draft untouched."
+    },
+    {
+      "test_name": "text_over_1mib_rejected",
+      "description": "An insert that would exceed MAX_TEXT_BYTES fails and leaves state unchanged."
+    },
+    {
+      "test_name": "chip_payload_counts_toward_text_cap",
+      "description": "Chip payloads count toward the 1 MiB cap."
+    },
+    {
+      "test_name": "session_attachment_cap_enforced",
+      "description": "Image chips beyond 128 MiB in total are rejected; removing a chip frees budget."
+    },
+    {
+      "test_name": "image_over_64mib_rejected",
+      "description": "A single image over 64 MiB (or of size 0) is rejected."
+    },
+    {
+      "test_name": "image_chip_label_and_numbering",
+      "description": "Images get [Image 1], [Image 2]... and numbering restarts after submit."
+    },
+    {
+      "test_name": "crlf_normalized_to_lf",
+      "description": "CRLF and lone CR become LF on insert."
+    },
+    {
+      "test_name": "control_characters_are_stripped",
+      "description": "ESC and other control characters except newline and tab are dropped on insert."
+    },
+    {
+      "test_name": "cursor_moves_by_grapheme",
+      "description": "Left/right move over whole grapheme clusters (combining marks, ZWJ emoji) and over a chip as one unit."
+    },
+    {
+      "test_name": "backspace_deletes_whole_grapheme",
+      "description": "Backspace and delete remove a whole grapheme cluster."
+    },
+    {
+      "test_name": "backspace_after_chip_removes_chip_and_frees_budget",
+      "description": "Deleting a chip removes it atomically."
+    },
+    {
+      "test_name": "undo_redo_restores_text_cursor_and_chips",
+      "description": "Undo and redo restore text, cursor and chips."
+    },
+    {
+      "test_name": "expand_chip_inserts_payload_literally",
+      "description": "Expanding a text chip replaces it with its payload as ordinary text."
+    },
+    {
+      "test_name": "apply_completion_replaces_range",
+      "description": "A completion range is replaced and the cursor lands after the insertion; invalid ranges are errors."
+    },
+    {
+      "test_name": "prop_cursor_always_on_char_boundary",
+      "description": "Under arbitrary sequences of insert/newline/delete/move/undo/redo the cursor is always a char boundary within bounds."
+    },
+    {
+      "test_name": "prop_submit_preserves_chip_payloads",
+      "description": "submit(expand(chips)) preserves every pasted payload exactly."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind"
+  ],
+  "libraries": [
+    "unicode-segmentation",
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Typed or pasted text."
+    },
+    {
+      "name": "cursor",
+      "type": "usize",
+      "description": "Byte offset, always on a char boundary."
+    }
+  ],
+  "output_type": "Result<_, ComposerError> / Submission",
+  "output_description": "Editable draft with chips, undo and a submission with chips expanded."
+}

@@ -1,0 +1,52 @@
+{
+  "type_of": "function",
+  "name": "short_ref / resolve / fold_ref",
+  "file_path": "crates/polaris-storage/crates/cas/src/shortref.rs",
+  "logic_name": "Short Reference Folding",
+  "test_list": [
+    {
+      "test_name": "short_ref_is_12_hex_prefix",
+      "description": "The short ref of a stored blob is the 12-hex prefix of its Cid."
+    },
+    {
+      "test_name": "resolve_unique_ok",
+      "description": "resolve(short_ref(cid)) == cid."
+    },
+    {
+      "test_name": "resolve_ambiguous_errors",
+      "description": "Two blobs sharing a 12-hex prefix make resolve return Ambiguous."
+    },
+    {
+      "test_name": "unknown_short_ref_errors",
+      "description": "resolve of an unused prefix is UnknownShortRef."
+    },
+    {
+      "test_name": "collision_returns_error",
+      "description": "short_ref_checked reports ShortRefCollision when another blob shares the prefix."
+    },
+    {
+      "test_name": "fold_ref_writes_marker",
+      "description": "fold_ref writes exactly the 18 bytes of `§ref:<12hex>`."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{Cid, ShortRef, FastFingerprint}"
+  ],
+  "libraries": [
+    "blake3",
+    "xxhash-rust",
+    "zstd",
+    "tempfile",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "cid",
+      "type": "&Cid",
+      "description": "Stored content id."
+    }
+  ],
+  "output_type": "Result<ShortRef, CasError> / usize",
+  "output_description": "Short references for §ref folding with collision detection."
+}

@@ -1,0 +1,27 @@
+phase=Ready
+== A headless, --no-zygote
+rc=0
+== B headless, --no-zygote --single-process
+rc=133
+== C xkbcomp / xkb data
+/usr/bin/xkbcomp
+xkbcomp 1.4.6
+xkbcomp rc=0
+compat
+geometry
+keycodes
+TMPDIR=unset
+== D Xvfb with explicit TMPDIR + keymap compile to /tmp
+total 0
+xwd:  unable to open display ':99'
+xwd rc=1 bytes=0
+XKB: Failed to compile keymap
+Keyboard initialization failed. This could be a missing or incorrect setup of xkeyboard-config.
+(EE) 
+Fatal server error:
+(EE) Failed to activate virtual core keyboard: 2(EE) 
+-rwxrwxrwx 1 dev dev 5901 Oct 20 19:15 a.log
+-rwxrwxrwx 1 dev dev 6400 Oct 20 19:15 b.log
+-rwxrwxrwx 1 dev dev  270 Oct 20 19:15 d.err
+-rwxrwxrwx 1 dev dev    0 Oct 20 19:15 d.xwd
+deleted

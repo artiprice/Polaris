@@ -1,0 +1,60 @@
+{
+  "type_of": "function",
+  "name": "detect_conflicts",
+  "file_path": "crates/polaris-storage/crates/sync/src/conflicts.rs",
+  "logic_name": "Path Conflict Detection",
+  "test_list": [
+    {
+      "test_name": "case_only_pair_flagged",
+      "description": "Readme.md and README.md are a case-only conflict."
+    },
+    {
+      "test_name": "reserved_name_flagged",
+      "description": "CON, nul.txt and COM1 (any case, any extension) are reserved on Windows."
+    },
+    {
+      "test_name": "trailing_dot_flagged",
+      "description": "Names ending in '.' or ' ' are flagged."
+    },
+    {
+      "test_name": "alternate_stream_flagged",
+      "description": "A ':' in a name (NTFS alternate data stream) is flagged."
+    },
+    {
+      "test_name": "windows_invalid_char_flagged",
+      "description": "<>\"|?* and control characters are flagged."
+    },
+    {
+      "test_name": "too_long_component_flagged",
+      "description": "A component longer than 255 bytes is flagged."
+    },
+    {
+      "test_name": "clean_paths_no_conflicts",
+      "description": "Ordinary paths produce no conflicts."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "manifest",
+      "type": "&Manifest",
+      "description": "Paths to check (either direction of a sync)."
+    }
+  ],
+  "output_type": "Vec<PathConflict>",
+  "output_description": "Every conflict, deterministic order."
+}

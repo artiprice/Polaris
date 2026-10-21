@@ -1,0 +1,44 @@
+{
+  "type_of": "trait",
+  "name": "ExactCacheStore for EventLog",
+  "file_path": "crates/polaris-storage/crates/eventlog/src/cache.rs",
+  "logic_name": "Exact Cache Store",
+  "test_list": [
+    {
+      "test_name": "put_get_roundtrip",
+      "description": "put then get returns the bytes; unknown keys are None."
+    },
+    {
+      "test_name": "clear_scope_removes_only_that_scope",
+      "description": "clear_scope removes the scope's entries and reports how many."
+    },
+    {
+      "test_name": "oversized_value_is_rejected",
+      "description": "A value over the per-entry limit is TooLarge."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::registry::{EventStore, ExactCacheStore}"
+  ],
+  "libraries": [
+    "redb",
+    "serde_json",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "key",
+      "type": "[u8; 32]",
+      "description": "Cache key (blake3)."
+    },
+    {
+      "name": "value",
+      "type": "&[u8]",
+      "description": "Cached bytes."
+    }
+  ],
+  "output_type": "Result<(), CacheStoreError>",
+  "output_description": "L2 exact cache backing for polaris-storage-cache."
+}

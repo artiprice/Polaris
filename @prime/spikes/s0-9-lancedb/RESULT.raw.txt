@@ -1,0 +1,21 @@
+### build (lancedb 0.40.0 + features=[remote]; protoc 36.0 on PATH; -j 4; concurrent spike/docker load)
+exit_code=0
+elapsed_s=2174
+jobs=4
+peak_build_procs_working_set_mb=6363
+lowest_free_physical_gb=2.56
+target_dir_gb=4.83
+protoc_on_path=True
+finished=2026-10-20T22:08:58
+exe_MB=249.3
+### run: s0-9-lancedb.exe 10000 384
+connect: 2 ms (C:\Users\Admin\AppData\Local\Temp\polaris-s0-9-14976)
+create_table (5000 rows x 384): 32 ms
+add (5000 rows): 32 ms
+count_rows: 10000
+knn flat (k=10, 50 queries): p50=8653 us p95=9388 us max=40215 us, rows returned=500
+RESULT: PASS
+exit=0 wall_ms=1140 peak_ws_MB=76 (sampled every 200 ms)
+### earlier attempts
+attempt 1: failed after 1614 s - Could not find protoc (pitfall W7)
+attempt 2: failed after 1102 s - lancedb 0.40.0 src/job.rs uses Error::Http, which is cfg(feature = remote) (E0599)

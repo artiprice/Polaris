@@ -1,0 +1,63 @@
+{
+  "type_of": "function",
+  "name": "negotiate",
+  "file_path": "crates/polaris-proto/src/version.rs",
+  "logic_name": "Protocol Version Negotiation",
+  "test_list": [
+    {
+      "test_name": "same_major_negotiates_to_min_minor",
+      "description": "Equal majors negotiate to that major and the lower of the two minors."
+    },
+    {
+      "test_name": "different_major_is_rejected",
+      "description": "A differing major version fails with VersionMismatch carrying both versions."
+    },
+    {
+      "test_name": "zero_major_is_rejected",
+      "description": "Major 0 (unset / default message) is never compatible, even with itself."
+    },
+    {
+      "test_name": "negotiation_is_symmetric_on_success",
+      "description": "negotiate(a, b) equals negotiate(b, a) whenever it succeeds."
+    },
+    {
+      "test_name": "guest_spike_handshake_still_holds",
+      "description": "The S0-12 guest handshake (single integer 1 accepted, host 2 refused) maps to major equality against PROTOCOL_VERSION."
+    },
+    {
+      "test_name": "wire_version_out_of_range_is_error",
+      "description": "A protobuf ProtocolVersion with a major or minor above u16::MAX converts to OutOfRange, never truncates."
+    },
+    {
+      "test_name": "display_is_major_dot_minor",
+      "description": "ProtocolVersion displays as major.minor (1.0, 12.34), the form used in VersionMismatch messages."
+    },
+    {
+      "test_name": "prop_negotiation_matches_the_rule",
+      "description": "For arbitrary versions: Ok exactly when majors are equal and non-zero, and the result is (major, min(minor))."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind",
+    "crates/polaris-proto/src/error.rs (ProtoError)"
+  ],
+  "libraries": [
+    "thiserror",
+    "prost",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "local",
+      "type": "ProtocolVersion",
+      "description": "The version this process speaks (PROTOCOL_VERSION)."
+    },
+    {
+      "name": "remote",
+      "type": "ProtocolVersion",
+      "description": "The version announced by the peer in the handshake."
+    }
+  ],
+  "output_type": "Result<ProtocolVersion, ProtoError>",
+  "output_description": "The version both sides will speak, or VersionMismatch when the major versions differ or are zero."
+}

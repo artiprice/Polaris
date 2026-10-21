@@ -1,0 +1,18 @@
+{
+  "type_of": "enum",
+  "name": "Event session lifecycle / versioned EventRecord",
+  "file_path": "crates/polaris-sdk/src/contracts.rs",
+  "logic_name": "Durable Session Lifecycle Events",
+  "test_list": [
+    {"test_name": "prop_schema_acceptance_matches_lifecycle_minimum", "description": "Generated u16 schema versions accept legacy payloads only in versions 1/2 and new lifecycle payloads only in version 2."},
+    {"test_name": "lifecycle_records_use_schema_two", "description": "Configuration, pause and resume events roundtrip in schema 2 while Event stays fixed-size Copy."},
+    {"test_name": "schema_one_records_remain_readable", "description": "Existing schema-1 session events retain their original schema on decode."},
+    {"test_name": "new_lifecycle_events_cannot_claim_schema_one", "description": "A new lifecycle event in a schema-1 envelope is rejected."},
+    {"test_name": "versioned_constructor_validates_schema", "description": "Versioned construction rejects zero/future schemas and preserves valid old schemas."}
+  ],
+  "dependencies": ["polaris-sdk::ids"],
+  "libraries": ["serde", "serde_json (dev)"],
+  "inputs": [{"name": "event", "type": "Event", "description": "A fixed-size session lifecycle event with configuration text held in CAS."}],
+  "output_type": "Result<EventRecord, ParseError>",
+  "output_description": "Version-checked, durable event envelopes."
+}

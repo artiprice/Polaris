@@ -1,0 +1,91 @@
+{
+  "type_of": "function",
+  "name": "filter_text",
+  "file_path": "crates/polaris-tools/crates/rtk/src/text.rs",
+  "logic_name": "Text filter",
+  "test_list": [
+    {
+      "test_name": "registry_paths_dropped_on_windows_separators",
+      "description": "Lines naming .cargo\\registry or .cargo\\git are dropped as well as the forward-slash form."
+    },
+    {
+      "test_name": "custom_cargo_home_is_honoured",
+      "description": "A custom CARGO_HOME registry path is treated as third party."
+    },
+    {
+      "test_name": "first_party_path_mentioning_registry_is_kept",
+      "description": "A project path like my-registry/src is not mistaken for the cargo registry."
+    },
+    {
+      "test_name": "warning_blocks_dropped_when_errors_exist",
+      "description": "Warning-only blocks vanish when any error block exists."
+    },
+    {
+      "test_name": "warning_blocks_kept_when_no_errors",
+      "description": "With no error block, warnings are kept."
+    },
+    {
+      "test_name": "could_not_compile_line_not_a_block",
+      "description": "`error: could not compile` and `aborting due to` are not diagnostic blocks."
+    },
+    {
+      "test_name": "consecutive_duplicates_collapsed",
+      "description": "Identical consecutive note/help lines and identical consecutive blocks collapse."
+    },
+    {
+      "test_name": "code_frames_dropped",
+      "description": "Source frame lines containing | or ^ are removed."
+    },
+    {
+      "test_name": "download_and_compile_noise_dropped",
+      "description": "Compiling/Downloaded/Updating lines are removed."
+    },
+    {
+      "test_name": "note_continuation_lines_are_kept",
+      "description": "Indented continuation lines of a multi-line note are kept."
+    },
+    {
+      "test_name": "escape_sequences_are_stripped_from_the_view",
+      "description": "Terminal escapes in the input never reach the filtered view."
+    },
+    {
+      "test_name": "json_stream_is_rendered_as_text",
+      "description": "filter_text of a JSON stream renders its diagnostics as text blocks."
+    },
+    {
+      "test_name": "text_parse_extracts_code_message_and_location",
+      "description": "parse_diagnostics on text finds code, message, Windows-path location and details."
+    },
+    {
+      "test_name": "json_and_text_streams_agree_on_headline",
+      "description": "The same error from JSON and text yields the same headline, hence the same ledger id."
+    },
+    {
+      "test_name": "mixed_stream_merges_json_and_text_once",
+      "description": "An error present as JSON and as rendered text appears once."
+    },
+    {
+      "test_name": "prop_filter_never_invents_text",
+      "description": "proptest: every non-empty output line is a substring of an input line."
+    },
+    {
+      "test_name": "prop_filter_never_panics",
+      "description": "proptest: arbitrary bytes filter without panic and without ESC in the output."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind"
+  ],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "stream",
+      "type": "&[u8]",
+      "description": "Compiler or linter output."
+    }
+  ],
+  "output_type": "Result<String, RtkError>",
+  "output_description": "Clean diagnostic view."
+}

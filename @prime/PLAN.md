@@ -34,6 +34,30 @@ A crate that exists only as a documentation skeleton is **never** called impleme
    Hugging Face model files, crates.io (feature maps, dependency requirements, sparse index), local toolchain.
 6. A red-team review of the draft plan; valid findings folded in (§5, §7, §12).
 
+## 0.1 P0 outcomes (2026-10-20) — these supersede earlier statements in this plan
+
+Evidence: `@prime/PHASES_STATUS.md` (§E9–§E13) and `@prime/spikes/<spike>/RESULT.md` (+ raw files). Where an
+older paragraph below disagrees, this section wins; the load-bearing places (§2 ADR table, F21, §5, §6.9, §7,
+§10, §13 `polaris-storage-vector` and `polaris-tools-math`, §15.5) were edited in place as well.
+
+| Topic | Outcome (VERIFIED unless marked) | Consequence |
+|---|---|---|
+| Team setup | Per-PC installs are data (`[[member_setup]]` in `workspace.toml`, 26 items) rendered into PHASES.md §0.1; `setup-windows.ps1` (Windows PowerShell 5.1-compatible, idempotent, `-Check`) runs `setup-wsl.sh` inside WSL2 | every member runs one script; `polaris doctor` (P2-X-2) re-checks the same list |
+| Licences | **evalexpr ≥ 12 is AGPL-3.0-only** (11.3.1 was MIT) → replaced by **exmex 0.21.0** (MIT OR Apache-2.0). `cargo deny check` clean; `cargo vet` passes with 5 audit imports + 29 exemptions (audit backlog, not audits). Only Slint's triple licence remains open (ADR-014) | team decision on Slint before P9 |
+| S0-1 OpenShell SDK | builds on windows-msvc without protoc; SDK `ClientConfig` has **no mTLS identity** → Polaris builds the tonic channel (CA + client `Identity`, `domain_name("localhost")`) and calls `OpenShellClient::from_parts(channel, EdgeAuthInterceptor::noop())`; dial **`https://localhost:17670`** (127.0.0.1 fails from Windows); gateway rejects requests **> 1 MiB decoded**; after a WSL2 boot the gateway listens only after ~3 s; the gateway needs `OPENSHELL_COMPUTE_DRIVER=docker` pinned (boot race) | `polaris-openshell-client`: own channel, retry/backoff, ≤ 896 KiB chunks; `polaris-platform-wsl`: cert discovery + keepalive |
+| S0-2 vm driver | `/dev/kvm` in WSL2; vm driver boots Ubuntu (guest 6.12.76) in 27.5 s, exec 216 ms; one driver per gateway | E2 microVM tier is local; P7 needs a second gateway instance or a driver switch |
+| S0-3 NemoClaw | custom agents unsupported (in-tree only); blueprint pins OpenShell 0.0.116 | native blueprint applier in `polaris-openshell-nemoclaw` (reuse blueprint shape, base images, policy presets) |
+| S0-4 GLiNER2.5-Decide | fp32 ONNX via gliner2-rs' own exporter: 260/260 = 100 % top-1 vs Python **only when the text gets a trailing `.`** like Python `gliner2` 2.1.0 does (93.85 % without); Rust fp32 p50 363 ms / p95 481 ms per 1-task call (4 threads), 2.9× faster than Python; RSS peak 2.35 GiB (borderline vs 2.5 GB); fp16 is worse on CPU; export needs ≈ 8 GB free RAM; CUDA EP not measured | ADR-008 updated; S1 client replicates the period rule with a regression test; memory budget is tight for a second model (PII-NER) |
+| S0-6 Needle 3 | runs on Windows (Python/C engine): tool call p50 317 ms, embeddings 3,072-d p50 50 ms; `--serve` has no embed endpoint | Tier 0 stays a supervised sidecar (P8) |
+| S0-7 sync | 10k files: no-op manifest+diff 1.1 s, 61 MiB initial push 10.4 s, sha256-exact, CRLF/exec bit kept, deny-list holds; error paths leaked a sandbox | P2 sync = blake3 manifest + tar-over-exec-stdin; reaper/RAII delete on every exit path; case-fidelity tests still TODO |
+| S0-8 iceoryx2 | RTT p50 2.0 µs; survives peer kill; dead-node cleanup works; **default root `C:\Temp\iceoryx2` inherits `Authenticated Users:(M)`** | ADR-013 condition: per-user `set_root_path` with an owner-only ACL before any use |
+| S0-9 LanceDB | 0.40.0 **does not compile without `features = ["remote"]`** (job.rs gating bug) and needs protoc; 36 min build at -j4, 4.8 GB target, 249 MB exe → kill criterion met; fallback verified: usearch 2.26.5 + SQLite builds in 1 min 41 s, 4.3 MB, kNN p50 0.475 ms | ADR-007/§6.9: **usearch + SQLite is the default vector store**; LanceDB = opt-in `lancedb` feature |
+| S0-10 crossterm | probe built; needs a manual key test per terminal (IN PROGRESS) | newline chord decided after the test |
+| S0-11 mxc | no Windows gateway asset in v0.1.4; MXC "coming soon" | WSL2 tiers only (E1w dropped for now) |
+| S0-12 guest + browser | guest built in WSL2 and baked into an image; `protocol_version` handshake + mismatch refusal work; default sandbox policy: `/opt` neither readable nor executable, `/usr` fine, downloads only from `/sandbox`, Chromium zygote denied → `--no-zygote`; headless Chromium screenshot works; Xvfb fails | images install under `/usr`; P7 browser loop = headless Chromium over CDP |
+| Local LLM (P3) | Ollama 0.40.6 + `nemotron-mini`: SSE streaming OK; **tool calls in 1 of 4 runs** | evaluate a stronger ≤ 4 GB model before P3-X-1 (new risk R22) |
+| xtask (P0-XT-1) | Rust `check-members` / `check-layers`, test-first; `workspace.py gen` never touches crates marked `implemented = true` | `cargo xtask check-members` / `check-layers` alongside the Python checks |
+
 ---
 
 ## 1. Executive summary
@@ -104,7 +128,7 @@ for the **Nebius × NVIDIA Global AI Hackathon — Coding & Agentic Engineering 
 | ADR-004 | Unsafe policy: own `unsafe` = 0 except declared exceptions; vetted unsafe-containing deps |
 | ADR-005 | TLS: aws-lc-rs everywhere; explicit process-level provider install |
 | ADR-006 | Fault tolerance: in-process supervision + per-mode worker processes (D3) |
-| ADR-007 | Storage: redb + SQLite FTS5 + LanceDB + file CAS; CockroachDB/sled/LMDB/DuckDB rejected for v1 |
+| ADR-007 | Storage: redb + SQLite FTS5 + usearch/SQLite vectors (LanceDB opt-in, S0-9) + file CAS; CockroachDB/sled/LMDB/DuckDB rejected for v1 |
 | ADR-008 | System One inference: gliner2-rs on ONNX Runtime (load-dynamic) in a worker; Python sidecar fallback |
 | ADR-009 | Execution plane: OpenShell (WSL2/remote) + Contree via MCP; sync is byte-exact and secret-free |
 | ADR-010 | Logging: `tracing` facade + spdlog-rs-backed async sinks |
@@ -142,7 +166,7 @@ All facts below were checked on **2026-10-20** unless marked otherwise.
 | F18 | Cactus Needle 3 | 121M params (engram memory), 8–29 MB `.cact` (2.125-bit quants), Apache-2.0; tool calling **and embeddings**; C++ engine (`--serve`), Python `cactus-needle`, community npm (WASM); no Rust bindings; Windows build unconfirmed. | VERIFIED (README) / Windows UNVERIFIED | github.com/cactus-compute/needle | Tier-0 gated by S0-6. |
 | F19 | Karpathy autoresearch | Human-written `program.md`; agent edits code, runs a fixed time budget, measures one metric, keeps or reverts, repeats. | VERIFIED (secondary sources) | datacamp guide, write-ups | `/research` follows this loop; "epistemic graph / devil's advocate" are Polaris additions. |
 | F20 | NVIDIA docs | `llms.txt` at docs.nvidia.com, /cuda, developer.nvidia.com, /openshell, /nemoclaw; append `.md` to a page for Markdown; section `/llms.txt`; docs MCP at `docs.nvidia.com/nemoclaw/_mcp/server`; no global sitemap (404). | VERIFIED | HTTP 200 probes + llms.txt contents | `polaris-nvidia-docs` ingestion order: MCP → `.md` via llms.txt → HTML→MD. |
-| F21 | Local machine | Windows 11 LTSC 2024; GTX 1650 4 GB (sm_75, driver 617.42); 16 GB RAM; Ryzen 7 2700 (8C/16T); WSL2 only `docker-desktop` (no Ubuntu, no `.wslconfig`); Docker 29.6.1; rustc/cargo 1.99.0 + nightly (Miri); cmake 4.3.0-rc3; NASM 3.01; VS Build Tools 2026; ninja 1.13.2; Python 3.14.5; Node 24.12. **Missing:** protoc, clang, uv, nix, cargo-nextest/fuzz/mutants/leptos/deny/vet/audit, kani. | VERIFIED | command output | P0 setup tasks. |
+| F21 | Local machine | Windows 11 LTSC 2024; GTX 1650 4 GB (sm_75, driver 617.42); 16 GB RAM; Ryzen 7 2700 (8C/16T); WSL2 only `docker-desktop` (no Ubuntu, no `.wslconfig`); Docker 29.6.1; rustc/cargo 1.99.0 + nightly (Miri); cmake 4.3.0-rc3; NASM 3.01; VS Build Tools 2026; ninja 1.13.2; Python 3.14.5; Node 24.12; cargo-deny 0.20.2, cargo-vet 0.10.2, cargo-audit 0.22.2 **already present** (correction: an earlier draft listed them as missing). **Missing at plan time:** protoc, clang, uv, nix, cargo-nextest/fuzz/mutants/leptos, kani — all except clang and nix installed in P0 (§0.1, PHASES.md §0.1). | VERIFIED | command output | P0 setup tasks. |
 | F22 | Dependency resolution | All 153 active external deps resolve together (1,699 packages) after pinning `ort =2.0.0-rc.13` and aligning `rten 0.26.0`. | VERIFIED | `workspace.py probe` (`cargo generate-lockfile`) | §10. |
 | F23 | Hackathon brief | Must run on Token Factory or AI Cloud and use ≥ 1 NVIDIA open model; track = coding agents that write, run and test code in Token Factory. | VERIFIED | `@prime/hackaton_content.md` | §1.1. |
 
@@ -167,7 +191,7 @@ The chatlog is an AI-drafted design. Its *ideas* are preserved (see §14); its *
 | C11 | CockroachDB "serverless version" embeddable (10) | No embedded mode; needs a server process | LIKELY (vendor model) | Rejected (ADR-007) |
 | C12 | `sled` for docs/catalog index (5, 11) | sled is unmaintained for production use; redb chosen elsewhere in chatlog | LIKELY | redb (ADR-007) |
 | C13 | spdlog-rs is "the official port of C++ spdlog" (27) | Community crate | VERIFIED | ADR-010 |
-| C14 | evalexpr gives "rational fractions / arbitrary precision" (27) | It does not; note `rust_decimal` is exact decimal with ~28 significant digits, also not arbitrary precision | LIKELY | `rust_decimal` for exact decimal arithmetic; arbitrary precision deferred (e.g. `dashu`) if a tool needs it |
+| C14 | evalexpr gives "rational fractions / arbitrary precision" (27) | It does not; note `rust_decimal` is exact decimal with ~28 significant digits, also not arbitrary precision. Also: **evalexpr ≥ 12 is AGPL-3.0-only** (VERIFIED, P0-ENV-7) | LIKELY | `rust_decimal` for exact decimal arithmetic; float path via **exmex 0.21.0** (MIT OR Apache-2.0) instead of evalexpr; arbitrary precision deferred (e.g. `dashu`) if a tool needs it |
 | C15 | `$nebius-speculative` enables speculative decoding on Token Factory (9) | Not client-controllable on a serverless API (3.5 Lightning has server-side MTP) | LIKELY | Redefined as cascade drafting (cheap draft → strong verify) |
 | C16 | S1 (GLiNER) synthesizes `flake.nix` in 15 ms (41) | An encoder cannot generate files | VERIFIED (architecture) | S2 drafts, Nix evaluates |
 | C17 | Biscuit gives a "mathematical guarantee" against prompt injection (13) | Biscuit **bounds the damage** (scope, churn, TTL); injection can still steer allowed actions | VERIFIED (semantics) | §6.11 |
@@ -220,6 +244,9 @@ The chatlog is an AI-drafted design. Its *ideas* are preserved (see §14); its *
 | R19 | CMake 4 rejects old `cmake_minimum_required` in vendored C deps | Medium | Medium | — | `CMAKE_POLICY_VERSION_MINIMUM=3.5` in `.cargo/config.toml [env]` | S0-9 |
 | R20 | Hostile fixtures quarantined by Defender / secret scanners | Medium | Low | — | Generate at test time, never commit (tests/fixtures/README.md) | P1 |
 | R21 | Demo machine without WSL2/keys at judging | Medium | High | Fallback path | E3 Contree or E4 remote gateway; recorded transcript | P10 |
+| R22 | Small local models fail at tool calling → the keyless P3 walking skeleton cannot exercise the tool loop | High (nemotron-mini: 1 of 4 runs) | Medium | A ≤ 4 GB VRAM model with reliable OpenAI-format tool calls | Evaluate other small models (S0-style probe `verify-local-llm.py --require-tools`); allow retries in the walking skeleton; Token Factory once keyed | P3-X-1 |
+| R23 | Per-member disk budget: WSL2 disk image, Docker images (sandbox image 1.24 GB), model weights (GLiNER fp32 1.8 GiB + HF cache), cargo targets (a LanceDB build alone used 4.8 GB) | High | Medium | ≥ 40 GB free per PC | LanceDB opt-in; one shared spike target; prune targets after spikes; models outside the repo | P0 §0.1 |
+| R24 | Shared-memory IPC exposed to other local users (iceoryx2 default root `C:\Temp\iceoryx2`, `Authenticated Users:(M)`) | Certain if defaults used | High | Per-user root with owner-only ACL | `set_root_path` + ACL test before any iceoryx2 use (ADR-013) | S0-8 |
 
 ---
 
@@ -389,7 +416,7 @@ routine work; stable prompt prefix; folding; coalescing of compatible requests; 
 ├── registry.db                   SQLite: sessions, FTS5 trigram history search
 ├── events.redb                   event journal, L2 exact cache, locks, invariants, research checkpoints
 ├── cas/ab/cd/<blake3>            content-addressed blobs (zstd)
-├── vectors/                      LanceDB tables (docs, RAG, session memory, L3 semantic cache)
+├── vectors/                      usearch HNSW indexes + SQLite metadata (docs, RAG, session memory, L3 semantic cache)
 ├── models/                       ONNX fragments, tokenizers, ORT DLL, Needle .cact (downloaded)
 ├── docs/nvidia/                  NVIDIA docs seed + incremental sync state (local artifact, not in git)
 └── logs/                         rotating spdlog-style sinks
@@ -407,7 +434,7 @@ routine work; stable prompt prefix; folding; coalescing of compatible requests; 
 | Registry | SQLite (`rusqlite` bundled) | sessions, FTS5 history | relational + full-text |
 | Event log | redb | events, locks, L2 cache, invariants | pure-Rust ACID KV, append-only |
 | CAS | files + blake3 + zstd | blobs, snapshots, folded outputs | dedup, byte-exact recall |
-| Vectors | LanceDB (fallback usearch) | embeddings | embedded, no server |
+| Vectors | usearch + SQLite (S0-9; LanceDB opt-in feature) | embeddings | embedded, no server |
 | L1 cache | quick_cache | hot decisions/completions | bounded RAM |
 
 Rejected for v1 (ADR-007): CockroachDB (no embedded mode), sled (maintenance), LMDB/heed (redb covers),
@@ -541,10 +568,10 @@ circuit breakers + DLQ; release `panic = "unwind"`.
 **ADR-008 — S1 inference.** `gliner2-rs` on ONNX Runtime (`load-dynamic`, DLL beside the exe, never
 System32; `api-23` ⇒ ORT ≥ 1.23) inside `polaris-worker --mode s1`; ONNX fragments exported by a Python
 script in xtask; parity ≥ 99 % top-1 against Python `gliner2` on a golden set (S0-4). Fallback: supervised
-Python sidecar. `ort` pinned `=2.0.0-rc.13` (oar-ocr-core requirement; ort-sys `links`).
+Python sidecar. `ort` pinned `=2.0.0-rc.13` (oar-ocr-core requirement; ort-sys `links`). **P0 result (S0-4, VERIFIED):** parity 100 % only when the text gets a trailing `.` the way Python `gliner2` 2.1.0 does (`_normalize_text`); the client must replicate it, with a regression test. fp32 ONNX fragments 1.81 GiB; Rust p50 363 ms per 1-task call on 4 CPU threads; RSS peak 2.35 GiB; fp16 is slower and larger on CPU; the export needs ≈ 8 GB free RAM. The Python sidecar is not needed.
 
 **ADR-009 — Execution plane.** OpenShell gateway (WSL2 or remote) via openshell-sdk (or proto client);
-Contree via MCP sidecar; sync byte-exact and secret-free; provider profiles for credentials.
+Contree via MCP sidecar; sync byte-exact and secret-free; provider profiles for credentials. **P0 results (S0-1/S0-7/S0-12, VERIFIED):** Polaris builds the mTLS tonic channel itself (`OpenShellClient::from_parts`), dials `localhost`, retries connect after WSL2 cold starts, chunks payloads below the gateway's 1 MiB request limit; sandbox images install under `/usr` (the default policy denies `/opt`), artifacts live under `/sandbox`.
 
 **ADR-010 — Logging.** `tracing` is the only logging facade (prompt.md §4); spdlog-rs provides async,
 rotating sinks behind a tracing layer (user asked for "something like spdlog"); `Redactor` runs first.
@@ -555,7 +582,7 @@ rotating sinks behind a tracing layer (user asked for "something like spdlog"); 
 desktop and later mobile (Android Rust support; iOS initial support since Slint 1.12 — LIKELY for 1.18).
 
 **ADR-013 — IPC.** tonic over Windows named pipes (custom connector; pre-created next instance;
-token auth) and TCP+mTLS; iceoryx2 for bulk zero-copy only if S0-8 passes.
+token auth) and TCP+mTLS; iceoryx2 for bulk zero-copy only if S0-8 passes. **P0 result (S0-8, VERIFIED):** iceoryx2 works (RTT p50 2.0 µs, survives peer kill) but its default Windows root `C:\Temp\iceoryx2` is writable by all authenticated users — adoption requires a per-user `set_root_path` with an owner-only ACL (R24).
 
 **ADR-014 — Licensing.** Workspace Apache-2.0. Slint: choose royalty-free (attribution) or GPLv3/commercial
 before P9; NVIDIA docs content stays local (not in git, not embedded); model licences recorded
@@ -741,7 +768,7 @@ All versions VERIFIED on crates.io on 2026-10-20 (sparse index audit: 156/156 OK
 | Regex | regex 1.13.1 · regex-automata 0.4.18 · regex-syntax 0.8.11 · aho-corasick 1.1.5 · memchr 2.8.3 |
 | Hash/cache | blake3 1.8.7 · xxhash-rust 0.8.19 · foldhash 0.2.0 · hashbrown 0.17.1 · dashmap 6.2.1 · quick_cache 0.7.0 |
 | Security | secrecy 0.10.3 · zeroize 1.9.1 · chacha20poly1305 0.11.0 · biscuit-auth 6.0.0 · rand 0.10.3 · getrandom 0.4.3 · keyring 4.2.0 |
-| Storage | redb 4.4.0 · rusqlite 0.40.2 (bundled) · lancedb 0.40.0 · usearch 2.26.5 (S0-9 fallback) · zstd 0.14.3 |
+| Storage | redb 4.4.0 · rusqlite 0.40.2 (bundled) · usearch 2.26.5 (default vector store, S0-9) · lancedb 0.40.0 (opt-in, `features = ["remote"]`) · zstd 0.14.3 |
 | ML | ort =2.0.0-rc.13 · tokenizers 0.23.2 · gliner2-rs 0.9.6 · hf-hub 1.0.0 · ndarray 0.17.2 |
 | Documents | docx-rs 0.4.22 · calamine 0.37.0 · pdf-extract 0.12.1 · pdfium-render 0.9.4 · ocrs 0.13.1 · rten 0.26.0 · oar-ocr 0.10.0 · image 0.25.10 · image_hasher 3.1.1 · pulldown-cmark 0.13.4 · scraper 0.27.0 · htmd 0.5.6 · encoding_rs 0.8.42 · infer 0.22.0 |
 | Code | tree-sitter 0.27.1 · tree-sitter-{rust 0.24.2, python 0.25.0, cpp 0.23.4, cuda 0.21.2, typescript 0.23.2} · ast-grep-core 0.51.0 · ast-grep-config 0.51.0 · gix 0.89.0 · imara-diff 0.2.0 · similar 3.2.0 |
@@ -749,7 +776,7 @@ All versions VERIFIED on crates.io on 2026-10-20 (sparse index audit: 156/156 OK
 | TUI | ratatui 0.30.2 · crossterm 0.29.0 · ratatui-textarea 0.9.3 · syntect 5.3.0 (fancy-regex) · two-face 0.5.2 · ansi-to-tui 8.0.1 · arboard 3.7.0 · unicode-width 0.2.2 · unicode-segmentation 1.13.3 |
 | GUI/Web | slint / slint-build 1.18.1 · leptos 0.8.22 · leptos_axum 0.8.10 · leptos_router 0.8.17 · leptos_meta 0.8.7 · wasm-bindgen 0.2.129 |
 | Agents | chromiumoxide 0.9.1 · rmcp 3.5.1 · bollard 0.21.1 · dagger-sdk 0.21.10 (feature-gated) |
-| Math | evalexpr 13.1.0 · rust_decimal 1.43.0 · splines 5.0.0 · statrs 0.19.1 |
+| Math | exmex 0.21.0 (replaces evalexpr: ≥ 12 is AGPL-3.0-only) · rust_decimal 1.43.0 · splines 5.0.0 · statrs 0.19.1 |
 | Resilience | governor 0.10.4 · backon 1.6.0 · arc-swap 1.9.3 · rayon 1.12.0 · parking_lot 0.12.5 |
 | CLI/schema | clap 4.6.7 · schemars 1.2.3 · jsonschema 0.59.0 · miette 7.6.0 |
 | IDs/time/mem | uuid 1.28.0 · jiff 0.2.38 · mimalloc 0.1.52 · bumpalo 3.20.3 |
@@ -870,13 +897,13 @@ transcript saved. Fallback path for judges without WSL2: E3/E4.
 
 | # | Pitfall | Handling | Phase |
 |---|---|---|---|
-| W1 | MAX_PATH in deep `target\…\build\aws-lc-sys-*` paths | short `target-dir` (e.g. `C:\t\polaris`) in `.cargo/config.toml`; `git config core.longpaths true`; LongPathsEnabled | P0 |
+| W1 | MAX_PATH in deep `target\…\build\aws-lc-sys-*` paths | LongPathsEnabled=1 + `git config core.longpaths true` (per PC, §0.1); a short `target-dir` was **not needed** on the reference PC (P0-ENV-4) — set one in the user-level Cargo config only if a build fails | P0 (done) |
 | W2 | CRLF breaking scripts/YAML/Nix in WSL | `.gitattributes` (done); byte-exact sync; git `autocrlf=false` in sandboxes | P0 (done) / P2 |
 | W3 | Case-insensitive NTFS vs case-sensitive sandbox; reserved names (`con`, `nul`, `aux`, `prn`) | sync detects and reports; fixtures generated at runtime | P2 |
 | W4 | Defender slowing `target/` and quarantining fixtures | exclusions documented; hostile fixtures generated | P0 |
 | W5 | Stale `onnxruntime.dll` in System32 | ort `load-dynamic` with absolute path; DLL beside exe; doctor check | P4 |
 | W6 | CUDA EP needs CUDA 12.x + cuDNN 9 + VC++ redist on PATH | doctor check; CPU fallback | P4 |
-| W7 | protoc absent; lance build scripts need `PROTOC` | `protoc-bin-vendored` for own crates; `[env] PROTOC` for lance | P0/P5 |
+| W7 | protoc absent; lance build scripts need `PROTOC` (VERIFIED, S0-9) | `protoc-bin-vendored` for own crates; protoc on PATH per PC (`win-protoc`), only for the opt-in `lancedb` feature | P0 (done) |
 | W8 | CMake 4 rejects old minimum versions | `CMAKE_POLICY_VERSION_MINIMUM=3.5` in `[env]` | P0 |
 | W9 | tonic over named pipes needs custom connector; default DACL allows other local users | connector + pre-created instance + Biscuit auth | P4/P9 |
 | W10 | No SIGTERM | CTRL_BREAK to process groups where possible, then Job Object kill | P2 |
@@ -885,10 +912,15 @@ transcript saved. Fallback path for judges without WSL2: E3/E4.
 | W13 | `keyring` blob limit (~2.5 KB) | store keys only; sealed vault on disk for larger data | P3 |
 | W14 | WSL2 idle shutdown; Docker Desktop VM ≠ Ubuntu VM; Hyper-V firewall blocks WSL→host | keepalive/systemd; `host.docker.internal`; host-initiated traffic only | P2 |
 | W15 | Mirrored vs NAT networking; VPN subnet clashes | doctor detects mode; documented | P2 |
-| W16 | Atomic rename fails while AV/indexer holds the file | temp + rename with `backon` retry | P1 |
+| W16 | Atomic rename fails while AV/indexer holds the file | temp + fsync + rename with a bounded retry on OS errors 5/32/33 (`polaris-storage-cas::atomic`, VERIFIED with a real share-mode-0 handle) | P1 (done) |
 | W17 | 16 GB RAM shared by Docker VM, WSL VM, S1, compilers | `.wslconfig` memory cap ≈ 6 GB; model eviction | P0/P4 |
 | W18 | Kani/fuzz unsupported or weak on Windows | run in WSL2 | P0+ |
 | W19 | TLS provider ambiguity | install aws-lc-rs provider at start (ADR-005) | P1 |
+| W20 | cargo-fuzz defaults `--target` to its own build triple; the cargo-binstall build is musl, so fuzz builds fail with `can't find crate for core` (VERIFIED) | always pass `--target x86_64-unknown-linux-gnu` (`verify-proofs.sh`) | P1 (done) |
+| W21 | Restoring a source file with its old mtime (backup copy/move) leaves cargo linking the stale build — a mutation check then "fails" on correct code (VERIFIED) | touch restored files; prefer cargo-mutants, which handles this | P1 |
+| W22 | OpenShell gateway: 1 MiB request limit, ~3 s listen delay after a WSL boot, `/opt` not readable/executable in sandboxes, downloads only from `/sandbox` (VERIFIED, S0-1/S0-7/S0-12) | chunk ≤ 896 KiB; connect retry; images under `/usr`; artifacts under `/sandbox` | P2 |
+| W23 | iceoryx2 creates `C:\Temp\iceoryx2` writable by all authenticated users (VERIFIED, S0-8) | per-user `set_root_path` + owner-only ACL before any use | P4+ |
+| W24 | A whole-parser Kani harness exhausts WSL memory (CBMC > 3.9 GB after 11 min on a 4-byte input) | keep harnesses small (3 bytes, 6-char alphabet) and prove components separately | P1 |
 
 ---
 
@@ -969,24 +1001,26 @@ pub struct Command<S> { /* id, frame, token: TokenBytes, body: CommandBody, _s: 
 pub enum CommandBody { SubmitUserInput, ProposeDiff, AcquireAstScope, ReleaseAstScope, SpawnSubagent, ExecuteTool, RollbackTo, CancelFrame, ApplyDirective }
 pub enum Event { SessionStarted, DirectiveApplied, DecisionMade, ModelRequestCompleted, ToolExecutionStarted, ToolExecutionCompleted,
                  DiffApproved, DiffRejected, FileLeaseGranted, FileLeaseRevoked, SandboxSnapshotBranchCreated, SandboxExecutionCompleted,
-                 ProofOfDonePassed, ProofOfDoneBlocked, WorkerRestarted, CircuitTripped, DeadLettered, SessionClosed }
+                 ProofOfDonePassed, ProofOfDoneBlocked, WorkerRestarted, CircuitTripped, DeadLettered, SessionClosed,
+                 SessionConfigured, SessionPaused, SessionResumed } // schema 2; schema-1 envelopes remain readable
 pub struct EventRecord { pub seq: Seq, pub at: jiff::Timestamp, pub schema: u16, pub session: SessionId, pub event: Event }
 ```
 
 **Dependencies.** Internal: none (L0). External: `thiserror = 2.0.21`, `serde = 1.0.229` (derive), `bytes = 1.12.1`, `uuid = 1.28.0` (v7, serde), `jiff = 0.2.38`, `secrecy = 0.10.3`. Dev: `proptest = 1.12.0`, `insta = 1.49.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: `Cid`/`ShortRef` parse+render, `Effort` parsing, `Probability` validation, `Command` typestate, `Event` envelope versioning.
-- [ ] Implement newtypes with validated constructors (`TryFrom`, `FromStr`), `Debug` impls that never print secrets, and `HasKind` for the error taxonomy.
-- [ ] Implement `Effort` (names low/medium/high/xhigh/max and numeric 1-5, as the chatlog's 1-5 form must still parse) and `Probability` (NaN/out-of-range rejected).
-- [ ] Define the System-One types with `#[serde(tag = "type")]` (internally tagged); reject the chatlog's `untagged` `DecisionValue` (ambiguous decoding).
-- [ ] Define the 12 registry traits with RPITIT async methods; one error enum per concern, all `thiserror`.
-- [ ] Define `Backends` and `OneOf3`/`OneOf2` enum-dispatch wrappers with forwarding impls for every registry trait; no `dyn` anywhere (cold-path exceptions need written justification).
-- [ ] Define `Command<Unverified|Verified>` typestate; decide the cross-crate sealing mechanism in an ADR (see risks).
-- [ ] Define `Event` v1 envelope (`schema: u16`) and the snapshot test that freezes its JSON/postcard shape.
-- [ ] Define `PlatformOps` with Windows semantics in the doc comments: graceful stop is CTRL_BREAK where available, then kill-tree via Job Object; no SIGTERM.
-- [ ] Add `compile_fail` doctests proving secret-bearing types implement neither `Debug` nor `Display` content.
-- [ ] Run Miri over the whole crate (pure, no FFI) and add Kani harnesses for `Effort::try_from(u8)` and `Probability::new`.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/sdk_{content_identifiers,effort_parsing,probability_validation,command_typestate,event_envelope,registry_dispatch}.json` (tests written first; red = unresolved API, then green).
+- [x] Implement newtypes with validated constructors (`TryFrom`, `FromStr`), `Debug` impls that never print secrets, and `HasKind` for the error taxonomy.
+- [x] Implement `Effort` (names low/medium/high/xhigh/max and numeric 1-5, as the chatlog's 1-5 form must still parse; names in JSON, `u8` in postcard) and `Probability` (NaN/out-of-range rejected; `-0.0` normalized; total order).
+- [x] Define the System-One types with `#[serde(tag = "type")]` (internally tagged); reject the chatlog's `untagged` `DecisionValue` (ambiguous decoding).
+- [x] Define the 12 registry traits with RPITIT async methods; one error enum per concern, all `thiserror` — plus `ExactCacheStore` and `Tool`/`ToolSpec` (cross-crate flags). Streams are pull traits (`ChatChunkSource`, `EventSource`), so sdk needs no futures/tokio dependency.
+- [x] Define `Backends` and `OneOf3`/`OneOf2` enum-dispatch wrappers with forwarding impls for every registry trait; no `dyn` anywhere (cold-path exceptions need written justification).
+- [x] Define `Command<Unverified|Verified>` typestate: sealed `VerificationState` with an associated proof (`()` / `ApprovalWitness`); `verify(witness)` is the only path to `Command<Verified>`; only `Command<Unverified>` implements `Deserialize`.
+- [x] Workspace check restricting `ApprovalWitness::new` call sites to `polaris-sdk` and `polaris-kernel-verifier`: `cargo xtask check-witness` (test-first, descriptor `xtask_check_witness.json`).
+- [x] Define `Event` v1 envelope (`schema: u16`, unknown/zero schema rejected on decode) and the insta snapshot that freezes its JSON shape. Postcard snapshot: added with the eventlog codec (postcard is not an sdk dependency).
+- [x] Define `PlatformOps` with Windows semantics in the doc comments: graceful stop is CTRL_BREAK where available, then kill-tree via Job Object; no SIGTERM. (`pty`/`watch` join when `polaris-platform-process` starts in P2.)
+- [x] Add `compile_fail` doctests: `Command<Unverified>` is not accepted as `Command<Verified>`; `Command<Verified>` is not `Deserialize`; `FastFingerprint` does not convert to `Cid` (each with a compiling positive twin). Token redaction is a runtime test (`token_bytes_debug_is_redacted`).
+- [x] Run Miri over the crate (27 integration tests; `event_record_json_snapshot` skipped under Miri because insta calls `socketpair`, unsupported by Miri) and Kani harnesses for `Effort::try_from(u8)` and `Probability::new` (`src/kani_proofs.rs`, feature `kani`): both VERIFIED. Runner: `@prime/tools/setup/verify-proofs.sh`.
 
 **Tests.**
 
@@ -1006,10 +1040,12 @@ pub struct EventRecord { pub seq: Seq, pub at: jiff::Timestamp, pub schema: u16,
 | Content Identifiers | struct | `Cid` / `ShortRef` | `crates/polaris-sdk/src/ids.rs` | `cid_hex_roundtrip`, `short_ref_is_first_48_bits`, `short_ref_renders_12_lowercase_hex`, `cid_rejects_wrong_length_hex`, `fast_fingerprint_has_no_cid_conversion` |
 | Effort Parsing | function | `Effort::from_str` | `crates/polaris-sdk/src/effort.rs` | `parses_names_case_insensitively`, `parses_numeric_1_to_5`, `rejects_zero_and_six`, `display_roundtrips_name` |
 | Probability Validation | struct | `Probability` | `crates/polaris-sdk/src/system_one.rs` | `rejects_nan`, `rejects_above_one`, `accepts_bounds`, `ordering_is_total_for_valid_values` |
-| Command Typestate | struct | `Command<S>` | `crates/polaris-sdk/src/contracts.rs` | `unverified_command_not_accepted_by_event_store`, `verified_requires_approval_witness`, `command_serde_roundtrip`, `token_bytes_debug_is_redacted` |
+| Command Typestate | struct | `Command<S>` | `crates/polaris-sdk/src/contracts.rs` | `verified_requires_approval_witness`, `command_serde_roundtrip`, `token_bytes_debug_is_redacted`, `handler_requires_verified_command` (compile_fail), `verified_command_cannot_be_deserialized` (compile_fail) |
+| Event Envelope | struct | `EventRecord` / `Event` | `crates/polaris-sdk/src/contracts.rs` | `event_record_json_roundtrip`, `schema_version_is_one`, `event_is_fixed_size_copy`, `event_record_json_snapshot` |
+| Registry Dispatch | trait | `OneOf2` / `OneOf3` | `crates/polaris-sdk/src/backends.rs` | `one_of2_forwards_event_store_to_active_variant`, `one_of3_forwards_redactor`, `one_of2_forwards_async_chat_stream`, `error_kinds_cover_taxonomy` |
 
 **Risks & open questions.**
-- Cross-crate typestate: `pub(crate)` constructors cannot protect `Command<Verified>` from other crates; a witness/sealed-trait scheme is needed. **UNVERIFIED** design; resolve by ADR before P1 ends.
+- Cross-crate typestate: `pub(crate)` constructors cannot protect `Command<Verified>` from other crates. **Decided (P1):** sealed state trait + `ApprovalWitness` + `verify()` as the only promotion path + no `Deserialize` for verified commands (VERIFIED by compile_fail doctests); `ApprovalWitness::new` is public, so `cargo xtask check-witness` restricts its call sites.
 - `secrecy` 0.10 API: `prompt.md` still says `Secret<T>`; 0.10 renamed to `SecretBox<T>`/`SecretString`. **LIKELY**; API to confirm at implementation.
 - `AgentRole` set and the `Command`/`Event` variant list are provisional (derived from chatlog msgs 12-13 and 31); the owning semantics live in kernel/runtime crates. Changing a variant after P1 breaks stored event logs (postcard is not self-describing).
 - RPITIT in public traits cannot be used as `dyn`; that is intended (VERIFIED against the plan's composition-root ADR), but it forces generics through the whole kernel and may inflate compile times. **LIKELY** acceptable.
@@ -1101,27 +1137,29 @@ pub enum Layer { Defaults, Global, Repo, Env, Session }       // ascending prece
 pub struct PolarisConfig { /* typed sections: nebius, ratelimit, concurrency, storage, sandbox, search, log, budget */ }
 pub struct Provenance { /* key path -> Layer (and source file path) */ }
 pub struct LayerInput { pub layer: Layer, pub table: toml::Table, pub origin: Option<PathBuf> }
-pub fn load(layers: &[LayerInput]) -> Result<Loaded, ConfigError>;     // pure merge + validation, no I/O
+pub fn load(layers: &[LayerInput], grant: &TrustGrant) -> Result<Loaded, ConfigError>; // pure merge + validation, no I/O (P1: takes the trust grant)
 pub fn discover(cwd: &Path) -> Result<Dirs, ConfigError>;              // ~/.polaris and nearest .polaris/
 pub fn read_layers(dirs: &Dirs, env: &EnvSnapshot, session: &SessionOverrides) -> Result<Vec<LayerInput>, ConfigError>;
 pub struct Loaded { pub config: PolarisConfig, pub provenance: Provenance }
 pub enum SecretRef { Keyring { service: String, user: String }, Env(String) }  // parsed from "keyring:..." / "env:..." only
 pub struct SessionOverrides(BTreeMap<ConfigKey, toml::Value>);         // typed by kernel-directives; D11: persisted per session
 pub enum ConfigError { Io(..), Parse { file: PathBuf, line: u32 }, UnknownKey(String), SecretLiteral(String), UntrustedRepoKey(String), Invalid { key: String, reason: String } }
+// P1 additions: ConfigError::NoHome, ConfigError::Encode(String); Parse also carries `reason`.
 ```
 
 **Dependencies.** Internal: `polaris-sdk`. External: `serde = 1.0.229` (derive), `toml = 1.1.8`, `etcetera = 0.11.0`, `dunce = 1.0.5`, `thiserror = 2.0.21`. (`figment` is in the root table but **not** in this crate's planned list; merge is implemented on `toml::Table` to keep provenance exact.)
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: layer merge, provenance reporting, repo-layer trust filter, secret-reference parsing, directory discovery.
-- [ ] Define the typed config schema with `deny_unknown_fields`-style validation and documented defaults (ratelimit rpm/tpm, semaphore permits, storage-level, effort map).
-- [ ] Implement deterministic deep merge on `toml::Table` (tables merge, scalars/arrays replace) with per-key `Provenance`.
-- [ ] Implement the **repo-layer trust filter**: `.polaris/config.toml` from a cloned repo may only set an allow-listed key set; endpoints, secret refs, sandbox-tier downgrades and deny-list overrides require the global layer or an explicit trust grant.
-- [ ] Implement `SecretRef` parsing; reject any key that looks like a literal credential (`ConfigError::SecretLiteral`).
-- [ ] Implement `discover`: `etcetera` for the home dir, `dunce::canonicalize` to avoid `\\?\` prefixes, walk up from `cwd` to find `.polaris/`.
-- [ ] Implement env layer: `POLARIS_` prefix, `__` as nesting, read with `std::env::var_os` only (`set_var` is banned).
-- [ ] Implement `SessionOverrides` application and its serialisation for `/session resume` (D11), so a resumed session restores its directives while a new session starts from defaults.
-- [ ] Windows: handle UTF-8 BOM and CRLF in TOML files; tolerate a file locked by an editor/AV (bounded retry in the reader); long-path and non-ASCII user-name tests.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/config_{layer_merge,repo_layer_trust_filter,secret_reference_parsing,directory_discovery,golden_provenance}.json` (tests written first; red = unresolved API).
+- [x] Define the typed config schema: an explicit `KNOWN_KEYS` list (unknown key -> `UnknownKey`, never ignored), typed readers (`Invalid { key, reason }` for wrong type/range) and documented defaults in `DEFAULTS_TOML` (model ids VERIFIED from the Token Factory catalog; rpm/tpm and permit counts are **unverified starting points**, see Risks).
+- [x] Implement deterministic deep merge on `toml::Table` (tables merge, scalars replace; precedence from `Layer`, not input order; stable for equal layers) with per-key `Provenance` (`layer_of`, `origin_of`, `iter`).
+- [x] Implement the **repo-layer trust filter** (`src/trust.rs`): a repo layer may set only `REPO_ALLOWED` = `ui.*`, `log.level`, `concurrency.*`, `ratelimit.*` without a `TrustGrant`; endpoints, secret refs, storage level and sandbox tier need the global layer or an explicit grant. Check order per layer: unknown key -> literal secret -> trust, so a leaked literal is always reported as `SecretLiteral`.
+- [x] Implement `SecretRef` parsing (`keyring:service/user`, `env:[A-Z0-9_]+`); any credential-like key (`*api_key*`, `*token*`, `*secret*`, `*password*`) holding a literal -> `SecretLiteral(key)`; errors name the key, never the value.
+- [x] Implement `discover`/`discover_from(cwd, home)`: `etcetera::home_dir`, `dunce::canonicalize`, walk up to the nearest `.polaris/`. **P1 decision:** the walk stops at home (exclusive) — `~/.polaris` is the global layer and directories above home are never projects (found when the developer's real `~/.polaris` was picked up as a "repo" dir from a temp dir under home).
+- [x] Implement env layer: `POLARIS_` prefix, `__` nesting, lower-cased keys, integers/booleans typed, read with `std::env::vars_os` only; conflicting paths (`POLARIS_A` + `POLARIS_A__B`) -> `Invalid`; `EnvSnapshot`'s `Debug` prints names only.
+- [x] Implement `SessionOverrides` (`set/get/remove`, `to_toml`/`from_toml`, `to_layer`) for `/session resume` (D11). Keys are dotted strings; typing happens at `load` (no separate `ConfigKey` type).
+- [x] Windows: UTF-8 BOM and CRLF accepted; a file held without sharing (editor/AV) is retried (OS errors 32/33, 10 ms doubling to 200 ms, 8 attempts) — VERIFIED with a real share-mode-0 handle; non-ASCII + space paths and a >300-char path tested.
+- [x] `budget.usd` keeps exact decimal text (string or integer; TOML floats rejected because they are already binary-rounded).
 
 **Tests.**
 
@@ -1129,7 +1167,7 @@ pub enum ConfigError { Io(..), Parse { file: PathBuf, line: u32 }, UnknownKey(St
 |---|---|
 | unit | precedence order across all five layers; missing files are not errors; unknown key -> `UnknownKey`; provenance names the winning layer |
 | proptest | merge is associative for disjoint tables; merging a layer with itself is idempotent; provenance always points at an existing layer |
-| fuzz | `fuzz_config_toml_layer` (arbitrary bytes as a config file must yield `Err`, never panic) |
+| fuzz | `config_toml_layer` (arbitrary bytes as a repo config: no panic; a layer that loads without a grant changed only allow-listed keys) — exists, 64,562 runs / 61 s clean (§E16) |
 | security | hostile repo config tries `nebius.base_url = "https://evil"`, `sandbox.tier = "host"`, a literal `api_key` -> all rejected with distinct errors |
 | fixtures | golden config files (global/repo/env) with provenance snapshots (`insta`); Windows path cases generated at test time |
 | smoke | `load` on an empty machine (no `~/.polaris`) returns defaults in under 5 ms (target) |
@@ -1141,6 +1179,8 @@ pub enum ConfigError { Io(..), Parse { file: PathBuf, line: u32 }, UnknownKey(St
 | Config Layer Merge | function | `load` | `crates/polaris-config/src/merge.rs` | `later_layer_overrides_earlier`, `tables_merge_scalars_replace`, `provenance_reports_winning_layer`, `unknown_key_is_rejected` |
 | Repo Layer Trust Filter | function | `filter_repo_layer` | `crates/polaris-config/src/trust.rs` | `repo_cannot_set_endpoint`, `repo_cannot_downgrade_sandbox_tier`, `repo_may_set_allowlisted_style_keys`, `trust_grant_unlocks_listed_key` |
 | Secret Reference Parsing | enum | `SecretRef` | `crates/polaris-config/src/secret_ref.rs` | `parses_keyring_scheme`, `parses_env_scheme`, `rejects_bare_literal`, `rejects_empty_name` |
+| Directory Discovery | function | `discover` / `read_layers` | `crates/polaris-config/src/sources.rs` (P1: discovery, file, env and session sources in one module) | 10 tests incl. `home_global_dir_is_not_a_repo_dir`, `windows_locked_file_is_retried`, `long_path_repo_dir_is_found` |
+| Golden Provenance | function | `discover_from` / `read_layers` / `load` | `crates/polaris-config/src/merge.rs` | `golden_provenance_snapshot` (insta, reviewed) |
 
 **Risks & open questions.**
 - Repo-supplied config is attacker-controlled input (an untrusted clone could redirect the Bearer key to another host). The trust filter is a **design requirement of this plan**, not something the chatlog covered. LIKELY necessary; UNVERIFIED which key allow-list is right.
@@ -1489,19 +1529,21 @@ pub fn fold_ref(cid: &Cid, out: &mut [u8; 18]) -> usize;                        
 pub enum CasError { Io(..), NotFound(Cid), Corrupt { cid: Cid }, Ambiguous(ShortRef), ShortRefCollision(ShortRef), TooLarge { limit: u64 }, Decompress(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `blake3 = 1.8.7` (std, rayon, mmap, zeroize), `xxhash-rust = 0.8.19` (xxh3), `zstd = 0.14.3`, `tempfile = 3.27.0`. Gap: the responsibilities call for a retry loop on AV locks, but `backon` is not in this crate's `ext` list (see risks).
+**Dependencies.** Internal: `polaris-sdk`. External: `blake3 = 1.8.7`, `xxhash-rust = 0.8.19` (xxh3), `zstd = 0.14.3`, `tempfile = 3.27.0`, `bytes = 1.12.1`; dev: `proptest`, `dhat = 0.3.3`. **P1 decision:** the AV-lock retry is a small bounded loop in `atomic.rs` (`RetryPolicy`, tested), not `backon`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: put/get round-trip, atomic write with retry, short-ref and resolve, GC, decompression bound.
-- [ ] Define the on-disk blob format: 1 format-version byte + 1 codec byte + payload (`raw` or `zstd`); skip compression below `min_compress_bytes` or when it does not shrink.
-- [ ] Implement `put`: hash first, return early if the path exists, otherwise write to a temp file in the same volume and rename; `AlreadyExists` after a race counts as success (same bytes by construction).
-- [ ] Implement bounded retry on Windows sharing violations / AV scans (exponential, max ~2 s) and surface `CasError::Io` after the budget.
-- [ ] Implement `get` with a hard cap on decompressed size (read the zstd frame's declared content size, reject over-limit before allocating) and optional re-hash verification.
-- [ ] Implement `short_ref`/`resolve`/`fold_ref`; detect 12-hex prefix collisions at `put` time and return `ShortRefCollision` so the fold layer falls back to the full 64-hex ref.
-- [ ] Implement `put_file` with streaming BLAKE3 and a size threshold before using mmap (see mmap risk).
-- [ ] Implement `gc` driven by a live-Cid iterator from the event log, with a grace period and a dry-run mode; used by `/cache purge`.
-- [ ] Windows: short root path (long-path risk with `ab/cd/64hex`), `dunce` canonicalisation, lower-case hex only (case-insensitive FS safe), disk-full handling that leaves no partial blob.
-- [ ] Counting-allocator tests for `short_ref`, `fold_ref`, `fast_fingerprint`, `content_id`.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/cas_{blob_store_round_trip,atomic_write_with_retry,short_reference_folding,decompression_bound,zero_alloc_hot_path}.json`.
+- [x] Define the on-disk blob format: 1 format-version byte + 1 codec byte + payload (`raw` or `zstd`); skip compression below `min_compress_bytes` or when it does not shrink.
+- [x] Implement `put`: hash first, return early if the path exists, otherwise write to a temp file in the same directory, fsync and rename (replace); concurrent writers of the same blob all succeed (tested with 8 threads).
+- [x] Implement bounded retry on Windows sharing violations / AV scans (OS errors 5/32/33; exponential 10 ms → 500 ms, 8 attempts ≈ 1.8 s) and surface `CasError::Io` after the budget — VERIFIED with a real share-mode-0 handle (a single attempt fails, the retry policy succeeds).
+- [x] Implement `get` with a hard cap on decompressed size (read the zstd frame's declared content size, reject over-limit or undeclared size before allocating) and re-hash verification (`verify_on_get`, default on).
+- [x] Implement `resolve`/`fold_ref` and `short_ref_checked` (returns `ShortRefCollision` when another blob shares the 12-hex prefix, so the fold layer falls back to the full 64-hex ref). P1 change: the check is a separate call, not a `put` error — a `put` that stored the bytes must not report failure.
+- [x] Implement `put_file` with streaming BLAKE3 (`update_reader`) and no mmap (mmap risk avoided entirely); an existing blob is never re-read.
+- [x] Implement `gc` driven by a live-Cid iterator, with a grace period and a dry-run mode; used by `/cache purge`.
+- [x] Windows: lower-case hex only, no partial blob on failure (temp file removed; tested). Root-path length and `dunce` canonicalisation are the caller's (config) concern — open item for `polaris-config`. Disk-full: not simulated (needs a full volume).
+- [x] Counting-allocator tests (dhat testing mode, ADR-003) for `ShortRef::of`, `fold_ref`, `fast_fingerprint`, `content_id`: 0 blocks.
+- [x] Fuzz target `cas_blob_decode` (decode bound + encode→decode roundtrip; 3,962,414 runs / 61 s, no crash).
+- [ ] Kani harness for `fold_ref` (first attempt grew CBMC past 6 GB and was removed; needs a smaller formulation), `cas_shortref_parse` fuzz target, load/stress tests (10k blobs, disk full). Miri: not applicable to the zstd FFI paths.
 
 **Tests.**
 
@@ -1569,19 +1611,20 @@ pub struct ResearchCkpt; // /research resume state
 pub enum EventLogError { Open(String), Locked, Codec(String), SchemaTooNew { found: u16, supported: u16 }, Gap { expected: Seq, found: Seq }, Io(..) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `redb = 4.4.0`, `postcard = 1.1.3` (use-std), `serde = 1.0.229`.
+**Dependencies.** Internal: `polaris-sdk` (P1: the `polaris-storage-cas` edge was dropped — checkpoints store the sdk `Cid` only). External: `redb = 4.4.0`, `serde = 1.0.229`, `serde_json = 1.0.154`. **P1 decision:** postcard was replaced by JSON because postcard cannot decode sdk's internally tagged `Event` (VERIFIED: `Err(WontImplement)`, probe in `@prime/tmp/p1/postcard-probe`); a binary codec needs an externally tagged mirror type — revisit if log size matters.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: append/read ordering, replay-until, checkpoints, schema-version gate, lock-table recovery.
-- [ ] Define table layout: `EVENTS: u64 -> postcard bytes`, `META` (schema version, head), `LOCKS`, `L2_CACHE`, `INVARIANTS`, `RULES_MIRROR`, `RESEARCH_CKPT`.
-- [ ] Define the event envelope (`schema: u16`, `at`, `session`, `event`) and make postcard encoding append-only for variants (never reorder or remove).
-- [ ] Implement `append`/`append_batch` with gap-free `Seq` assignment inside one write transaction; implement group commit for throughput.
-- [ ] Implement `read_range`/`replay` as read transactions that do not block the writer; reject decode of `schema > supported`.
-- [ ] Implement checkpoints referencing CAS `Cid` snapshots and `replay_from_checkpoint`.
-- [ ] Implement lock-table recovery on open (stale leases from a crashed process are listed for the Reaper, not silently dropped).
-- [ ] Wrap the blocking API for async callers (dedicated owner thread plus channel); no redb work on tokio workers.
-- [ ] Implement `EventStore` for `EventLog` and expose the `ExactCache` through the cache crate's L2 trait (see risks).
-- [ ] Windows: handle "database already open" by another process (daemon vs embedded CLI) with a clear error; test with a path containing spaces, non-ASCII and OneDrive-synced folders; flush semantics on power loss are documented, not claimed.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/eventlog_{event_append_and_read,replay_to_step,lock_table_recovery,exact_cache_store,event_codec}.json` (schema-version gate is covered in `event_codec` and `replay_to_step`).
+- [x] Table layout (P1 subset): `events` (u64 -> `[schema u16 LE][JSON]`), `meta` (layout version, next lease), `checkpoints`, `locks` (JSON `LockRecord`), `l2_cache` (`[scope tag][id][payload]`). `INVARIANTS`, `RULES_MIRROR`, `RESEARCH_CKPT` arrive with their owning features (P4/P7).
+- [x] Event envelope: sdk `EventRecord` (`schema: u16` v2, backwards-readable v1, `at`, `session`, `event`); the codec rejects `schema > SUPPORTED_SCHEMA` **before** parsing the body and rejects a prefix/envelope mismatch. Schema 2 adds immutable session configuration, pause and resume; old envelopes retain their version on encode/decode (§E24).
+- [x] `append`/`append_batch` assign gap-free `Seq` inside one write transaction (`batch_is_atomic`). Group commit across callers — open (needs the async owner thread below).
+- [x] `read_range`/`replay` are redb read transactions (MVCC, do not block the writer); newer schema rejected. `replay` returns a `Vec` — a lazy iterator is open.
+- [x] Checkpoints store `(Seq, Cid)` (`checkpoint_beyond_head_is_rejected`); `replay_from_checkpoint_matches_full_replay`.
+- [x] Lock-table recovery: on open, leases held by a different (dead) owner pid are listed by `stale_locks()` for the Reaper, never silently dropped; locks survive reopen.
+- [ ] Async owner thread plus channel for tokio callers — open (callers use `spawn_blocking` meanwhile; the registry crate shows the owner-thread pattern).
+- [x] `EventStore` and `ExactCacheStore` (sdk traits) implemented by `EventLog`; oversized cache values rejected (`max_cache_value_bytes`).
+- [x] Windows: a second open maps redb's `DatabaseAlreadyOpen` to `EventLogError::Locked` (tested); path with spaces + non-ASCII tested. OneDrive-synced folders: not tested. Power-loss flush semantics: documented (`Durability`), not claimed.
+- [x] Fuzz target `eventlog_decode` (arbitrary stored bytes: no panic; decode→encode→decode stable): 309,107 runs / 62 s clean (§E15). Miri: not applicable (redb file I/O). Load/stress: open.
 
 **Tests.**
 
@@ -1641,20 +1684,24 @@ impl Registry {
     pub fn search_history(&self, query: &str, limit: u32) -> Result<Vec<Hit>, RegistryError>;
 }
 pub enum RegistryError { Open(String), Busy, Migration { from: u32, to: u32 }, BadQuery, Sql(String), Closed }
+// P1 as built: no BadQuery (any query string is valid; blank/NUL-only or limit 0 -> empty Vec); added SchemaTooNew,
+// Corrupt, BadValue; Migration carries a reason. Role = sdk ChatRole, timestamps = sdk Timestamp (no direct jiff dep).
+// Also: index_message_redacted<R: Redactor>, archive/unarchive/set_status(.., at) -> bool, RegistryConfig + open_with.
 ```
 
 **Dependencies.** Internal: `polaris-sdk`. External: `rusqlite = 0.40.2` (bundled), `serde = 1.0.229`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: session upsert/get/list, schema migration, history indexing, FTS query sanitising.
-- [ ] Define schema v1 (`sessions`, `session_history_fts` with `tokenize='trigram'`, `PRAGMA user_version`) and forward-only migrations.
-- [ ] Spike test first: `CREATE VIRTUAL TABLE ... USING fts5(..., tokenize='trigram')` works in the bundled build on Windows (gate for the whole crate).
-- [ ] Implement the DB-thread actor (no `Mutex<Connection>` with `unwrap`, as in the chatlog) and the async-friendly handle.
-- [ ] Set WAL, `busy_timeout`, `foreign_keys`, `synchronous=NORMAL`; handle `SQLITE_BUSY` with bounded retry.
-- [ ] Implement `search_history`: quote the user query as an FTS5 phrase (double embedded quotes), enforce the 3-character trigram minimum (fallback `LIKE` for shorter), cap results.
-- [ ] Decide and implement what text is indexed: store the **PII-masked** text only (so secrets are never persisted in the registry); verify with a seeded-secret test.
-- [ ] Windows: DB path with spaces/non-ASCII, `-wal`/`-shm` side files, antivirus lock tolerance, unsupported network drives documented.
-- [ ] Add `/sessions` list ordering (updated_at desc) and archive/unarchive operations.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/registry_{session_registry_crud,history_indexing,history_search,fts_query_sanitising,schema_migration,database_open}.json` (implemented by a delegated subagent, test-first; independently re-run: 47 tests green, §E17).
+- [x] Schema v1 (`sessions`, `session_history_fts` with `tokenize='trigram'`, `PRAGMA user_version`); forward-only migrations, all pending steps in one `IMMEDIATE` transaction (a failing step rolls back layout, version and rows; a newer schema is refused).
+- [x] Gate test: FTS5 trigram works in the bundled build on Windows (`bundled_sqlite_has_fts5_trigram`; bundled SQLite **3.53.2**, VERIFIED from the libsqlite3-sys 0.38.2 header).
+- [x] DB-thread actor: `Registry` is a sync `Send + Sync` handle over a channel of enum requests to one owner thread (no `Mutex<Connection>`, no `dyn`); async callers use `spawn_blocking`.
+- [x] WAL (checked; a non-WAL result is refused), `busy_timeout` 5 s, `foreign_keys=ON`, `synchronous=NORMAL`; a blocked writer returns `Busy` after the bounded wait.
+- [x] `search_history`: the query is one FTS5 phrase with doubled quotes, bound as a parameter (`MATCH ?1`); queries under 3 characters use an escaped `LIKE ?1 ESCAPE ''`; results capped (`MAX_SEARCH_LIMIT` 1000), newest first, 160-char snippet window.
+- [x] Masked-only indexing: `index_message_redacted<R: Redactor>` (sdk trait, no dependency on `polaris-security`); a seeded secret is absent from `registry.db`, `-wal` and `-shm` while open and after close, with a negative control proving the scan can fail. Sign-off with `polaris-security-pii` on the masked-only decision: open (P4).
+- [x] Windows: path with spaces + non-ASCII, two handles share WAL data, 4 readers + 1 writer. Network drives: refused when WAL cannot be enabled (untested). Antivirus lock tolerance beyond `busy_timeout`: open.
+- [x] `/sessions` ordering (updated_at desc, id desc), status/workspace/limit filters, archive/unarchive.
+- [ ] Fuzz `fuzz_registry_fts_query`, `fuzz_registry_migration_open`; load/scalability (100k/1M messages); two-process writers and kill-during-write — open. Known imprecision: the snippet window is located on the lower-cased text, so characters whose lower case is longer (e.g. `İ`) can shift the window by a few characters (no panic; char-based slicing).
 
 **Tests.**
 
@@ -1761,13 +1808,13 @@ pub enum CacheError { L2(String), L3(String), Codec(String), Poisoned }
 
 ---
 
-### `polaris-storage-vector` — Embedded vector store (LanceDB) for RAG, NVIDIA docs, session memory and the L3 semantic cache
+### `polaris-storage-vector` — Embedded vector store (usearch + SQLite; LanceDB opt-in) for RAG, NVIDIA docs, session memory and the L3 semantic cache
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-storage/crates/vector` | L1 | lib | `polaris-storage` | P5 |
 
-**Purpose.** Implements the sdk `VectorStore` trait over LanceDB tables under `~/.polaris/vectors` and `.polaris/vectors`. It is a leaf crate so the heavy Arrow/DataFusion dependency tree stays out of early phases. Embeddings come from Token Factory `Qwen/Qwen3-Embedding-8B` now (D8) and Needle 3 later; the store itself is embedding-agnostic and records the embedding model id and dimension per table.
+**Purpose.** Implements the sdk `VectorStore` trait over a usearch HNSW index with SQLite metadata under `~/.polaris/vectors` and `.polaris/vectors` (S0-9 decision, §0.1); LanceDB is an opt-in `lancedb` feature. It is a leaf crate so any heavy dependency tree stays out of early phases. Embeddings come from Token Factory `Qwen/Qwen3-Embedding-8B` now (D8) and Needle 3 later; the store itself is embedding-agnostic and records the embedding model id and dimension per table.
 
 **API sketch.**
 ```rust
@@ -1787,11 +1834,12 @@ impl LanceStore {
 pub enum VectorError { Open(String), DimMismatch { expected: u32, found: u32 }, EmbedderMismatch { table: ModelId, given: ModelId }, NoSuchTable(String), Engine(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `lancedb = 0.40.0` (requires arrow ^58 and datafusion ^54 -- use lancedb's re-exports, never pin arrow directly). Fallback if spike S0-9 fails: `usearch` + SQLite (usearch is **not** in the `[[ext]]` table; add it only if the fallback triggers).
+**Dependencies.** Internal: `polaris-sdk`. External: `usearch = 2.26.5` + `rusqlite = 0.40.2` (default); optional `lancedb = 0.40.0` with `features = ["remote"]` (job.rs gating bug) behind the `lancedb` feature (requires arrow ^58 and datafusion ^54 -- use lancedb's re-exports, never pin arrow directly; needs protoc).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: table creation with dimension/embedder metadata, upsert, filtered search, source deletion, fallback trigger.
-- [ ] Spike S0-9 first: LanceDB build time, RAM during link, binary size and a 10k-vector search on this machine (Windows, 16 GB, short `target-dir`, `PROTOC` set); record numbers and the go/no-go decision.
+- [x] Spike S0-9: LanceDB 36 min / 4.8 GB target / 249 MB exe → no-go as default; usearch + SQLite 1 min 41 s / 4.3 MB / kNN p50 0.475 ms → default (`@prime/spikes/s0-9-lancedb/RESULT.md`).
+- [ ] HNSW persistence (save to temp + atomic rename), parallel insert, recall@10 vs exact search on a labelled fixture.
 - [ ] Implement `ensure_table` storing `(dim, embedder, metric)` in table metadata; refuse mixing embedders in one table.
 - [ ] Implement `upsert` by `ChunkId` (idempotent) with batch limits and dimension validation.
 - [ ] Implement `search` with a metadata filter and score normalisation; define behaviour on empty table (empty result).
@@ -1822,8 +1870,8 @@ pub enum VectorError { Open(String), DimMismatch { expected: u32, found: u32 }, 
 | Source Deletion | method | `LanceStore::delete_source` | `crates/polaris-storage/crates/vector/src/delete.rs` | `deletes_only_matching_source`, `returns_deleted_count`, `delete_missing_source_is_zero`, `search_after_delete_excludes_rows` |
 
 **Risks & open questions.**
-- lancedb 0.40 pulls Arrow 58 and DataFusion 54 (VERIFIED, plan); build time, RAM and binary size on a 16 GB machine are **UNVERIFIED** (S0-9). Fat LTO over lancedb/slint may exceed 16 GB (plan recommendation: thin LTO daily).
-- LanceDB needs `protoc` for its own builds; protoc is VERIFIED missing locally, so `.cargo/config.toml` `[env] PROTOC` (vendored binary) is required.
+- lancedb 0.40 pulls Arrow 58 and DataFusion 54 (VERIFIED); measured in S0-9: 36 min at -j4, 6.4 GB peak compiler RAM, 4.8 GB target, 249 MB exe (VERIFIED) — the reason it is opt-in. Fat LTO over slint may still exceed 16 GB (thin LTO daily).
+- LanceDB needs `protoc` for its own builds (VERIFIED, S0-9 attempt 1); protoc 36.0 is now a per-PC install (`win-protoc`, optional) — never a path in the repo's `.cargo/config.toml`.
 - `Qwen3-Embedding-8B` output dimension is **UNVERIFIED** here; the dimension is data in `TableSpec`, never a constant. Embedding calls need a key (BLOCKED-ON-ACCESS); local Needle 3 is gated by S0-6.
 - lancedb 0.40.0 API surface (connection, table, merge-insert, index builders) and its exact Arrow re-exports: API to confirm at implementation.
 - Chatlog references `lancedb 0.14` and "sled/RocksDB" for docs; both are stale.
@@ -2345,11 +2393,11 @@ pub struct Created; pub struct Configured; pub struct Running; pub struct Paused
 pub struct Session<S> { /* SessionId, DirectiveState, frame root, _s: PhantomData<S> */ }
 impl Session<Created>    { pub fn configure(self, cfg: SessionConfig) -> Result<Session<Configured>, KernelError>; }
 impl Session<Configured> { pub async fn start(self) -> Result<Session<Running>, KernelError>; }
-impl Session<Running>    { pub fn apply(&mut self, d: SessionDirective) -> Result<(), KernelError>;
+impl Session<Running>    { pub fn apply(&mut self, d: SessionDirective) -> Result<Seq, KernelError>;
                            pub async fn pause(self) -> Result<Session<Paused>, KernelError>;
                            pub async fn archive(self) -> Result<Session<Archived>, KernelError>; }
 impl Session<Paused>     { pub async fn resume(self) -> Result<Session<Running>, KernelError>; }
-impl Session<Archived>   { pub async fn reopen(id: SessionId, ctx: &KernelCtx) -> Result<Session<Paused>, KernelError>; } // /session resume: replay log
+impl Session<Archived>   { pub async fn reopen(id: SessionId, ctx: Arc<KernelCtx>) -> Result<Session<Paused>, KernelError>; } // /session resume: replay log
 
 pub struct Kernel<B: Backends> { /* bus, supervisor, reaper, pipeline, verifier, runtime parts */ }
 impl<B: Backends> Kernel<B> {
@@ -2376,7 +2424,7 @@ pub trait Projection { fn apply(&mut self, e: &EventEnvelope); }   // generic, n
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Session` typestate transitions, `Kernel::start` startup/rollback order, `SandboxChoice` enum dispatch, `Kernel` shutdown report.
 - [ ] Re-export all six children; add compile-only doctests naming one public item per child.
 - [ ] Define `Backends`, the `*Choice` enums and `ProdBackends`; one `match` per trait method; contract test that every enum arm forwards (no logic in arms).
-- [ ] Implement `Session<S>` typestate and the `Archived -> Paused` reopen path by replaying `DirectivesChanged` events (D11).
+- [x] Implement `Session<S>` typestate and the `Archived -> Paused` reopen path by replaying `SessionConfigured`/`DirectiveApplied` and explicit lifecycle events (D11). Real CAS/redb/SQLite, exclusive live ownership, paged replay, rebuildable catalogue and committed-projection failure reporting; PHASES_STATUS §E25. The full verified command dispatcher remains a separate open task.
 - [ ] Implement the orchestrator loop: command receive, verify (kernel-verifier), event-log append, projections, dispatch; `log-then-publish` ordering.
 - [ ] Implement startup with reverse-order rollback and the reaper-journal orphan sweep; Windows: Ctrl+C, CTRL_BREAK, console close and logoff events via `tokio::signal::windows`.
 - [ ] Wire fail-open / fail-closed policy per S1 consumer (plan matrix) at the pipeline assembly, not inside S1.
@@ -2399,8 +2447,8 @@ pub trait Projection { fn apply(&mut self, e: &EventEnvelope); }   // generic, n
 
 **Risks & open questions.**
 - VERIFIED (source of plan): a `Backends` bundle plus enum dispatch is the approved ADR; the extra enum arms are boilerplate that must stay logic-free. Compile-time cost of a large associated-type bundle is UNVERIFIED (measure `cargo check` time at P3).
-- LIKELY: `Session<Archived> -> Paused` (reopen) is not in `workspace.toml` (`Created -> Configured -> Running -> Paused -> Archived`); it is the minimal edge `/session resume` needs. Coordinator to confirm.
-- UNVERIFIED: whether "UI view models" projections belong here (toml) or in `polaris-ui-model` (L6, cannot be depended on from L5); proposal: the kernel runs only the session and registry projections and the UIs build view models from the same events.
+- VERIFIED (§E25): `Session<Archived> -> Paused` reopens through ordered durable replay; archived objects release the live lease immediately. Running recovery also commits a pause before returning a mutable owner.
+- VERIFIED (current layer boundary): the kernel implements session/registry projections; `polaris-ui-model` builds view models above L5 from the same events. The kernel does not depend on the L6 consumer.
 - VERIFIED: layer rule forbids `polaris-sdk` (L0) from naming adapter types, so the enum wrappers live here (flag 2).
 
 **Chatlog sources.** msg 1 (kernel as orchestrator, state machine, event bus, `Cargo.toml` members), msg 13 (EDA/CQRS, commands vs events), msg 39 (operator pipeline order). Corrected: chatlog sketches `todo!()` bodies and `Box<dyn Error>`; replaced by typed errors; "actor-like state machine" became typestate sessions.
@@ -2442,15 +2490,16 @@ pub enum BusError { Full, Closed, Lagged { missed: u64, resume_from: Seq }, Stor
 **Dependencies.** Internal: `polaris-sdk`. External: `tokio = 1.54.0` (features `sync`, `rt`), `tracing = 0.1.44`; dev: `proptest = 1.12.0`, `loom = 0.7.2`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: `Bus::try_send` backpressure, `Bus::publish` log-then-publish, `EventStream` lag recovery, `Bus::fanout` zero-alloc.
-- [ ] Constrain sdk `Event` / `EventEnvelope` to a fixed-size, payload-offloaded layout (ids, scalars, `Cid`, `ShortRef`; large text goes to CAS) so fan-out never allocates (flag 3).
-- [ ] Implement `Bus::new` validating capacities (non-zero, `event_capacity >= command_capacity` is a recommendation, not an invariant).
-- [ ] Implement `publish`: append to `EventStore`, assign `Seq`, then fan out; on store error nothing is fanned out and the error is returned.
-- [ ] Implement lag handling: `RecvError::Lagged(n)` becomes `BusError::Lagged` with the last good `Seq` so a slow TUI/Web client can resync from the event log instead of freezing.
-- [ ] Add a counting-allocator test proving `try_send`, `try_recv` and `fanout` perform zero allocations after warm-up (see risk on tokio mpsc block allocation).
-- [ ] If the counting test fails, implement the fallback: preallocated fixed ring of atomic slots for `Copy` envelopes (safe, no `unsafe`), keep tokio for non-hot control commands.
-- [ ] Loom model of publish/subscribe/close ordering (no event delivered before persisted; no lost wake-up on close).
-- [ ] Add `tracing` spans with structured fields only (no payloads); counters for `rejected_full` and `lagged` feed telemetry.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/bus_{command_backpressure,log_then_publish,lag_recovery,zero_alloc_hot_path}.json` (red = unresolved API, then green).
+- [x] sdk `Event` is fixed-shape (ids, scalars, `Cid`; large text goes to CAS), so fan-out clones never allocate payloads (flag 3) — VERIFIED by the dhat test below.
+- [x] `BusConfig` uses `NonZeroUsize` capacities (zero is unrepresentable); `Bus::new` rejects capacities above tokio's panic limits with `BusError::Config`.
+- [x] Implement `publish` (sync): an ordering `Mutex` around append-to-`EventStore` -> `Seq` -> broadcast; on store error nothing is broadcast (`store_error_suppresses_fanout`). A planted fan-out-before-append mutation was caught by 6 tests.
+- [x] Lag handling: `RecvError::Lagged(n)` becomes `BusError::Lagged { missed, resume_from }`; the first retained event is stashed so nothing after the gap is lost; `resume_from_store_replays_missed_events` replays the gap from the store.
+- [x] Counting-allocator test (dhat): `try_send`, `try_recv`, `publish` and `try_next` perform **zero allocations after warm-up** — VERIFIED for tokio mpsc + broadcast (block reuse), so the ring fallback below is not needed.
+- [x] ~~Fallback ring of atomic slots~~ — not needed (previous item).
+- [ ] Loom model of publish/subscribe/close ordering — open: tokio's channels are not loom-instrumented; needs a loom-friendly model of the ordering lock (or `tokio`'s own loom cfg).
+- [x] `tracing` with structured fields only (`event subscriber lagged`: missed, resume_from); counters `rejected_full` and `lagged` exposed via `Bus::stats()` for telemetry.
+- [ ] Fuzz `fuzz_bus_ops` (random op sequences vs a model), load/stress (hdrhistogram) — open. Miri: 13 tests clean (§E15).
 
 **Tests.**
 | Category | Cases / budgets (targets, not measured) |
@@ -2489,7 +2538,7 @@ pub enum BusError { Full, Closed, Lagged { missed: u64, resume_from: Seq }, Stor
 |---|---|---|---|---|
 | `crates/polaris-kernel/crates/directives` | L1 | lib | `polaris-kernel` | P1 |
 
-**Purpose.** Turns one line (or multi-line message) of user input into typed values: session-scoped `SessionDirective`s, one optional `SlashCommand`, and `Mention`s with byte spans, plus the residual prose. The parser is a hand-written recursive-descent parser that is total (never panics, linear time, bounded nesting), works on `&str` with checked `get(..)` slicing only, and keeps unknown `$name(...)` as `Custom` metadata. Per D11, directives apply from the point they are seen, are persisted with the session as `DirectivesChanged` events, and are restored by `/session resume`; new sessions start from config defaults.
+**Purpose.** Turns one line (or multi-line message) of user input into typed values: session-scoped `SessionDirective`s, one optional `SlashCommand`, and `Mention`s with byte spans, plus the residual prose. The parser is a hand-written recursive-descent parser that is total (never panics, linear time, bounded nesting), works on `&str` with checked `get(..)` slicing only, and keeps unknown `$name(...)` as `Custom` metadata. Per D11, directives apply from the point they are seen, are persisted with the session as `DirectiveApplied` events referencing canonical text in CAS, and are restored by `/session resume`; new sessions start from configuration defaults committed in `SessionConfigured` (§E25).
 
 **Grammar (EBNF, ISO-14977 style; keywords are case-insensitive, paths and quoted strings are case-preserving; `ws` = space or tab).**
 ```ebnf
@@ -2581,19 +2630,21 @@ impl DirectiveState { pub fn apply(&mut self, d: SessionDirective); pub fn from_
 pub fn render(d: &SessionDirective) -> String;   // canonical text form for /status, /settings and round-trip tests
 ```
 
-**Dependencies.** Internal: `polaris-sdk` (newtypes `Effort`, `SessionId`, `ShortRef`). External: `thiserror = 2.0.21`; `+proposed serde = 1.0.229` (features `derive`) so `SessionDirective` can be stored in `DirectivesChanged` events (flag 5); dev: `proptest = 1.12.0`, `insta = 1.49.0`.
+**Dependencies.** Internal: `polaris-sdk` (newtypes `Effort`, `SessionId`, `ShortRef`). External: `thiserror = 2.0.21`; dev: `proptest = 1.12.0`. **No serde (flag 5 resolved, P1):** the persisted form of a directive is its canonical text (`render`), stored in CAS behind sdk's fixed-size `Event::DirectiveApplied { directive: Cid }`; resume re-parses it, and `parse(render(d)) == d` is property-tested and fuzzed.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: `parse`, the effort-range / `$subagent-models` parser, the slash command table, the `DirectiveState` fold (D11 persistence), the mention parser.
-- [ ] Implement the byte cursor (`peek`, `bump`, `get(a..b)` with char-boundary checks, no indexing) and enforce the limits (input size, depth, arg count) before recursing.
-- [ ] Implement `quoted` with the 3-escape rule and a Windows-path test (`"C:\Users\me\a b.txt"` round-trips).
-- [ ] Implement `arglist` / `kv` / `model_entry` / `nested`; nested `model(lo-hi)` lists with names `low..max` or numbers `1..5`, mixed forms such as `nano(1-medium)`.
-- [ ] Implement all typed directives from the catalog; unknown `$name(...)` becomes `Custom`; alias `$nebius-sandbox` is normalised to `Sandbox`.
-- [ ] Implement code span / fence / attachment skipping and the "mention must follow start, whitespace, `(` or `[`" rule (emails and `foo@bar` stay prose).
-- [ ] Implement the slash table (including `/quit` = `/exit`, `/session resume|replay`, `/cache stats|purge`, `/research ...`, `/browser goto|tree`).
-- [ ] Implement `DirectiveState::apply` / `from_defaults` and emit one `DirectivesChanged` delta per applied directive so resume replays in order.
-- [ ] Implement `render` and an `insta` snapshot per directive; prove `parse(render(d)) == d` with proptest.
-- [ ] Windows specifics: accept `\` in atoms and paths, make sure drive letters (`C:`) are never mistaken for `kv`/`range`, handle CRLF in multi-line input, keep `$` followed by digits (`$5`, `$100`) as prose.
+- [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/directives_{input_parser,subagent_model_ranges,slash_command_table,mention_parser,directive_persistence,directive_rendering}.json` (tests first; red = unresolved API).
+- [x] Implement the byte cursor (`peek`, `bump`, `get(a..b)` with char-boundary checks, no indexing) and enforce the limits (input size, depth, arg count) before recursing.
+- [x] Implement `quoted` with the 3-escape rule and a Windows-path test (`"C:\Users\me\a b.txt"` round-trips).
+- [x] Implement `arglist` / `kv` / `model_entry` / `nested` (unified as `Arg::Call`; whitespace-separated words join into one atom, so `nano(1 - 3)` works); mixed forms such as `nano(1-medium)`.
+- [x] Implement all typed directives from the catalog; unknown `$name(...)` becomes `Custom`; alias `$nebius-sandbox` is normalised to `Sandbox`.
+- [x] Implement code span / fence / attachment skipping and the "mention must follow start, whitespace, `(` or `[`" rule (emails and `foo@bar` stay prose). The same boundary rule applies to `$` (P1 decision: `a$b` stays prose).
+- [x] Implement the slash table (including `/quit` = `/exit`, `/session resume|replay`, `/cache stats|purge`, `/research ...`, `/browser goto|tree`); `/name` followed by a non-space (`/usr/bin`) is prose.
+- [x] Implement `DirectiveState::apply` (returns the replaced value) and `with_defaults` (takes the defaults as values: `polaris-config` is a same-layer crate, so `PolarisConfig` cannot be a parameter). Emitting `DirectiveApplied` per applied directive is the kernel's job (P1-X-1).
+- [x] Implement `render`; canonical forms asserted explicitly (no insta needed) and `parse(render(d)) == d` proven by proptest (5,000 cases) and the fuzz target.
+- [x] Windows specifics: accept `\` in atoms and paths, make sure drive letters (`C:`) are never mistaken for `kv`/`range`, handle CRLF in multi-line input, keep `$` followed by digits (`$5`, `$100`) as prose.
+- [x] Miri over all 39 tests (no UB); fuzz target `directives_grammar` (parse + render→parse roundtrip; 137,091 runs / 61 s, no crash); Kani: cursor harnesses VERIFIED (`cursor_bump_stays_on_char_boundaries`, `cursor_take_while_stays_on_char_boundaries`). A whole-`parse` Kani harness is infeasible here (CBMC > 3.4 GB on 3-byte inputs, PLAN W24).
+- [ ] Load test (1 MiB of mixed prose at >= 100 MB/s, linear scaling) and `tests/fixtures/directives/*.txt` corpus — not done yet (P10 matrix).
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -2616,7 +2667,7 @@ pub fn render(d: &SessionDirective) -> String;   // canonical text form for /sta
 | Directive persistence | struct | `DirectiveState` | `crates/polaris-kernel/crates/directives/src/state.rs` | `last_occurrence_wins`, `fold_is_deterministic_for_same_event_order`, `new_session_starts_from_config_defaults`, `custom_directive_survives_resume` |
 
 **Risks & open questions.**
-- VERIFIED (PLAN core, D11): directives are session-scoped and persisted. UNVERIFIED which crate owns the `DirectivesChanged` event type (sdk `Event`); see flag 5.
+- VERIFIED (SDK source and §E25): `polaris-sdk::contracts::Event::DirectiveApplied` references canonical directive text in CAS; `SessionConfigured` binds immutable per-session defaults. The kernel owns ordered replay and the last-wins fold.
 - UNVERIFIED: exact argument shapes of `$ratelimit(rpm,tpm)` and `$budget(usd/tokens)` (the plan gives only the names). The grammar accepts `key=value` and positional numbers; the typed layer can narrow later without changing the grammar.
 - LIKELY: `@scans` and bare `@xlsx` / `@img` semantics are underspecified (chatlog msg 21 shows `@docx(path)` and `@pdf(path)` only); the grammar allows a bare kind marker and the ingest crate decides the meaning.
 - VERIFIED (read in chatlog msg 1): the chatlog parser used `&input[1..]`, fixed offsets (`content[16..]`), `starts_with("subagent-models(")` and `todo!()`; all are replaced by the cursor above.
@@ -2671,13 +2722,13 @@ pub enum SupervisorError { UnknownChild, SpawnFailed(String), IntensityExceeded 
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: restart-intensity accounting, `CircuitBreaker` state machine, task supervision loop, worker process supervision, DLQ routing.
-- [ ] Implement `CircuitBreaker` as a pure state machine over an injected `Instant` (fake clock friendly); no wall-clock calls inside.
-- [ ] Implement `spawn_task`: run the factory under a `JoinHandle`, classify `JoinError` (panic vs cancel), apply `RestartPolicy`, backoff with jitter via `backon` (not the chatlog's fixed 50 ms sleep), cancel via a child token.
+- [x] Implement `CircuitBreaker` as a pure state machine over an injected `Instant` (fake clock friendly); no wall-clock calls inside. Evidence: PHASES_STATUS §E22.
+- [x] Implement `spawn_task`: run the factory under a `JoinHandle`, classify `JoinError` (panic vs cancel), apply `RestartPolicy`, backoff with jitter via `backon` (not the chatlog's fixed 50 ms sleep), cancel via a child token. Evidence: PHASES_STATUS §E22.
 - [ ] Implement restart intensity: more than `max_restarts` inside `window` trips the breaker, stops restarting, sends the item to the DLQ, publishes a `ChildFailed` event for the UI notice.
 - [ ] Implement `spawn_worker` over the sdk `PlatformOps` trait (Job Object tree on Windows, kill-on-drop); classify exit codes (`0xC0000005`-style access violations as `Crash`).
 - [ ] Implement the health loop (`HealthProbe`) with timeouts: a hung worker is killed and restarted; the in-flight request fails with a typed error so the S1 client can apply fail-open or fail-closed.
 - [ ] Implement graceful stop: cancel token, wait `grace`, then `PlatformOps` terminate (CTRL_BREAK where available, else kill-tree).
-- [ ] Implement `SupervisorSnapshot` for `/stats` and `doctor` (restart counts, breaker state, DLQ length).
+- [x] Implement `SupervisorSnapshot` for `/stats` and `doctor` (restart counts, breaker state, DLQ length). Includes dropped letters and lost event publications; PHASES_STATUS §E22.
 - [ ] Windows specifics: worker control channel is a named pipe created by the composition root, not here; verify child cleanup when the parent is killed by Task Manager (Job Object `KILL_ON_JOB_CLOSE`).
 - [ ] Add the crash-loop stress harness (worker that exits immediately, worker that crashes after N ms, worker that hangs).
 
@@ -2745,9 +2796,9 @@ Teardown order inside `shutdown_all`: (1) cancel the root token (cascades to fra
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: cancellation cascade, ordered teardown with deadline, journal write/replay, orphan sweep, leak report.
-- [ ] Implement `child_token` / root cancel; test cascade through three levels and that cancelling a child does not cancel siblings.
-- [ ] Implement the registry with deterministic ordering (by `ResourceKind` priority then reverse registration order).
-- [ ] Implement the crash-safe journal (`.polaris/run/reaper.journal`, one record per live resource: kind, id, pid or sandbox id, path), written atomically on register and release.
+- [x] Implement `child_token` / root cancel; test cascade through three levels and that cancelling a child does not cancel siblings. PHASES_STATUS §E23.
+- [x] Implement the registry with deterministic ordering (by `ResourceKind` priority then reverse registration order). PHASES_STATUS §E23.
+- [x] Implement the crash-safe journal (`.polaris/run/reaper.journal`, one record per live resource: kind, id, pid or sandbox id, path), written atomically on register and release. v1 escapes record separators, fsyncs the temporary file, and retains unresolved locators; PHASES_STATUS §E23. Power-loss testing remains unverified.
 - [ ] Implement `sweep_orphans`: on startup read the journal, check liveness (pid exists and start time matches, sandbox id still known to the gateway), reap leftovers, report each one.
 - [ ] Implement `shutdown_all` with a per-step and an overall deadline; `Forced` outcomes recorded; the function always returns a report and never panics or blocks forever.
 - [ ] Wire signals at the composition root (documented here): `tokio::signal::ctrl_c`, and on Windows `ctrl_break`, `ctrl_close`, `ctrl_shutdown`, `ctrl_logoff`.
@@ -2832,7 +2883,7 @@ pub struct ReflectOp<D: DecisionEngine> { /* P7: auto-learn project invariants *
 - [ ] Implement `SanitizePiiOp` so that the type of its output (`Masked<String>`) is the only type the S2 stage accepts (the unmasked `String` cannot reach the network by construction).
 - [ ] Implement `S1TriageOp` against the router API (route plus effort 1..5), consulting `DirectiveState` for `$subagent-models` overrides.
 - [ ] Implement `RateLimitOp` with RAII permit release on cancellation (cancel-safety test).
-- [ ] Implement `DirectivesOp` (directive application emits `DirectivesChanged` events; D11).
+- [ ] Implement `DirectivesOp` (verified directive application emits sdk `DirectiveApplied` events through the durable session API; D11).
 - [ ] Document cancel-safety for every operator (what is dropped when the future is dropped mid-stage) and test it with `tokio::time::pause` plus drop-at-await-points.
 - [ ] P7: implement `ReflectOp` (S1 classifies "project rule declared"; writes to the invariants table and mirrors `.polaris/RULES.md`; flag 7).
 
@@ -3647,7 +3698,7 @@ pub enum ToolError { InvalidArgs(String), Path(PathError), Denied(&'static str),
 ```rust
 pub struct CalcLimits { pub max_len: usize /*1024*/, pub max_depth: u8 /*64*/, pub max_pow_exponent: u32 /*1000*/ }
 pub fn calc(expr: &str, limits: &CalcLimits) -> Result<rust_decimal::Decimal, MathError>;   // + - * / % ^ ( ), unary minus, whitelisted functions (abs, min, max, round, floor, ceil); no variables, no side effects
-pub fn calc_f64(expr: &str, limits: &CalcLimits) -> Result<f64, MathError>;                  // evalexpr-backed float path for transcendental functions; result must be finite
+pub fn calc_f64(expr: &str, limits: &CalcLimits) -> Result<f64, MathError>;                  // exmex-backed float path (evalexpr ≥ 12 is AGPL) for transcendental functions; result must be finite
 
 pub struct Finite(f64);                                  // validated: not NaN, not infinite
 pub enum Interp { Linear, Step, CatmullRom, Bezier }     // backed by `splines`; variant set to be confirmed at implementation
@@ -3675,11 +3726,11 @@ pub enum MathTool { Calc, Interpolate, Summarize, Occupancy, Bandwidth }        
 pub enum MathError { Parse { at: usize }, DivideByZero, Overflow, NonFinite, TooLong, TooDeep, EmptyInput, BadKnots(&'static str), MissingSource(String), UnknownCapability }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `evalexpr = 13.1.0`, `rust_decimal = 1.43.0`, `splines = 5.0.0`, `statrs = 0.19.1`; `+proposed serde = 1.0.229`, `toml = 1.1.8` (spec tables); dev: `proptest = 1.12.0`, `insta = 1.49.0`.
+**Dependencies.** Internal: `polaris-sdk`. External: `exmex = 0.21.0` (replaces `evalexpr = 13.1.0`, AGPL-3.0-only since 12), `rust_decimal = 1.43.0`, `splines = 5.0.0`, `statrs = 0.19.1`; `+proposed serde = 1.0.229`, `toml = 1.1.8` (spec tables); dev: `proptest = 1.12.0`, `insta = 1.49.0`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `calc` grammar and limits, `interpolate`, `bilinear`, `summarize`, `occupancy`, `effective_bandwidth`, `GpuSpecTable::from_toml` provenance rule.
-- [ ] Decide the decimal evaluator by a short in-crate spike: evalexpr custom numeric types (if its trait supports `Decimal`) versus a small Pratt parser over `Decimal`; choose the one that passes the fuzz and exactness tests with less code (API to confirm at implementation).
+- [ ] Decide the decimal evaluator by a short in-crate spike: exmex custom operator factories over `Decimal` (if supported) versus a small Pratt parser over `Decimal`; choose the one that passes the fuzz and exactness tests with less code (API to confirm at implementation).
 - [ ] Implement `calc` with `checked_*` operations only; overflow, divide-by-zero and exponent limits are errors; reject non-whitelisted identifiers; document the 28-digit limit in the tool description so the model does not assume arbitrary precision.
 - [ ] Decide on exact fractions: `rust_decimal` cannot represent 1/3 exactly, so either add a small in-crate `Ratio` with `i128` checked arithmetic or declare rationals out of scope in the tool description (chatlog promised "rational fractions").
 - [ ] Implement `Finite` and the interpolation functions; no `as` casts (use `f64::from` and `TryFrom`), no float equality (use `total_cmp` and explicit tolerances), sorted-knot validation.
@@ -3713,7 +3764,7 @@ pub enum MathError { Parse { at: usize }, DivideByZero, Overflow, NonFinite, Too
 - VERIFIED (PLAN core): evalexpr has no arbitrary precision, hence `rust_decimal`. Stated precisely here: `rust_decimal` is a 96-bit-mantissa fixed-scale decimal (about 28 digits), also not arbitrary precision; overflow must be an explicit error.
 - VERIFIED (read in chatlog msg 27): the chatlog `calculate_h100_bandwidth` divided by `1e9` (GB/s) while documenting "TB/s", used `as f64`, and `lerp` had no input checks; fixed by typed units, checked ops and `Finite`.
 - UNVERIFIED: GPU per-SM limits for sm_75 (local GTX 1650) and sm_90 (H100) are not asserted here; they must be captured from the CUDA programming guide tables with URL and date before use (the `nvidia-docs` ingestion in P5 can supply them).
-- UNVERIFIED: `splines 5.0.0` and `evalexpr 13.1.0` exact APIs (interpolation enum, custom numeric types); confirm at implementation.
+- UNVERIFIED: `splines 5.0.0` and `exmex 0.21.0` exact APIs (interpolation enum, custom value types); confirm at implementation. (evalexpr was dropped for its AGPL-3.0-only licence from 12.0.)
 - OPEN: `MathTool` needs the `Tool` trait in sdk (flag 1).
 
 **Chatlog sources.** msg 27 (section 2: deterministic math tooling, exact evaluator, interpolation engine (spline, linear/bilinear, Bezier), NVIDIA hardware calculus incl. grid alignment, `MathEngine`, Rust `regex` guarantees). Corrected: arbitrary precision claim; units; casts; `Value` returned from evalexpr replaced by typed results; rational fractions flagged.
@@ -8064,7 +8115,7 @@ the safety gate's sandbox-escape patterns — owned by `polaris-security-rules`)
 ### 15.5 Cargo dependencies named in the chatlog (51)
 
 Kept and re-pinned (§10): axum, biscuit-auth, blake3, bollard, chacha20poly1305, chromiumoxide, crossterm,
-dashmap, evalexpr, futures, iceoryx2, image, lancedb, ort, prost, prost-types, pulldown-cmark, rand,
+dashmap, evalexpr (→ replaced by exmex: evalexpr ≥ 12 is AGPL-3.0-only), futures, iceoryx2, image, lancedb (opt-in, S0-9), ort, prost, prost-types, pulldown-cmark, rand,
 ratatui, redb, regex, regex-automata, regex-syntax, reqwest, rusqlite, scraper, secrecy, serde,
 serde_json, slint, spdlog-rs, tokenizers, tokio, tokio-stream, tonic, tower, tracing, tracing-subscriber,
 tree-sitter, uuid, xxhash-rust, zeroize. Deferred to v2: boringtun, cpal, whisper-rs. Dropped: sled (C12),

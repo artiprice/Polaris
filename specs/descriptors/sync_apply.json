@@ -1,0 +1,77 @@
+{
+  "type_of": "function",
+  "name": "apply",
+  "file_path": "crates/polaris-storage/crates/sync/src/apply.rs",
+  "logic_name": "Sync Apply",
+  "test_list": [
+    {
+      "test_name": "apply_uploads_and_deletes_byte_exact",
+      "description": "After apply, the fake sandbox holds exactly the local files byte for byte and deleted files are gone."
+    },
+    {
+      "test_name": "apply_sets_exec_bit_via_chmod",
+      "description": "Executable entries get chmod +x through exec argv (no shell)."
+    },
+    {
+      "test_name": "partial_failure_is_reported_and_resumable",
+      "description": "A failing upload is reported while the others succeed; re-planning uploads only the failed path."
+    },
+    {
+      "test_name": "file_changed_after_scan_is_skipped",
+      "description": "A file modified between scan and apply is reported as changed, not uploaded with the wrong hash."
+    },
+    {
+      "test_name": "upload_concurrency_is_bounded",
+      "description": "In-flight uploads never exceed ApplyOpts::concurrency."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "backend",
+      "type": "&B: SandboxBackend",
+      "description": "Transport."
+    },
+    {
+      "name": "sandbox",
+      "type": "&SandboxHandle",
+      "description": "Target sandbox."
+    },
+    {
+      "name": "root",
+      "type": "&Path",
+      "description": "Workspace root."
+    },
+    {
+      "name": "local",
+      "type": "&Manifest",
+      "description": "Manifest the plan came from."
+    },
+    {
+      "name": "plan",
+      "type": "&SyncPlan",
+      "description": "What to do."
+    },
+    {
+      "name": "opts",
+      "type": "&ApplyOpts",
+      "description": "Remote root and concurrency."
+    }
+  ],
+  "output_type": "Result<SyncReport, SyncError>",
+  "output_description": "Uploaded, deleted, changed-since-scan and failed paths."
+}

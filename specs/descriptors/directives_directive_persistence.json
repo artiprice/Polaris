@@ -1,0 +1,41 @@
+{
+  "type_of": "struct",
+  "name": "DirectiveState",
+  "file_path": "crates/polaris-kernel/crates/directives/src/state.rs",
+  "logic_name": "Directive Persistence",
+  "test_list": [
+    {
+      "test_name": "last_occurrence_wins",
+      "description": "Applying WebSearch(On) then WebSearch(Off) leaves Off; apply returns the previous value."
+    },
+    {
+      "test_name": "fold_is_deterministic_for_same_event_order",
+      "description": "Same sequence gives equal states; a different order can differ."
+    },
+    {
+      "test_name": "new_session_starts_from_config_defaults",
+      "description": "with_defaults seeds the state with config-provided directives."
+    },
+    {
+      "test_name": "custom_directive_survives_resume",
+      "description": "Rendering every applied directive and re-parsing it rebuilds an equal state (D11 resume)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::{SessionId, ShortRef}"
+  ],
+  "libraries": [
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "directive",
+      "type": "SessionDirective",
+      "description": "A parsed directive."
+    }
+  ],
+  "output_type": "Option<SessionDirective>",
+  "output_description": "The value it replaced."
+}

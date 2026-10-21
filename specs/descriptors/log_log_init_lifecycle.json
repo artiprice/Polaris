@@ -1,0 +1,76 @@
+{
+  "type_of": "function",
+  "name": "init",
+  "file_path": "crates/polaris-log/src/init.rs",
+  "logic_name": "Log Init Lifecycle",
+  "test_list": [
+    {
+      "test_name": "second_init_is_error",
+      "description": "Child process: second init is AlreadyInitialised, creates nothing, the first logger keeps working, and a re-init after guard drop is still refused."
+    },
+    {
+      "test_name": "tui_mode_never_writes_stdout",
+      "description": "Child process: with tui_mode neither stdout nor stderr receives the probe lines, while the file does."
+    },
+    {
+      "test_name": "console_mode_writes_stderr_only",
+      "description": "Control: with the console enabled the probe appears on stderr and never on stdout."
+    },
+    {
+      "test_name": "bad_filter_is_error",
+      "description": "A bad filter is BadFilter and the disk is untouched."
+    },
+    {
+      "test_name": "bad_config_is_error",
+      "description": "Zero capacities, zero rotation, tiny line limit or empty dir are BadConfig."
+    },
+    {
+      "test_name": "guard_drop_flushes",
+      "description": "Dropping the guard writes every pending record to the file."
+    },
+    {
+      "test_name": "guard_flush_makes_lines_visible_before_drop",
+      "description": "flush(timeout) returns true only after the lines are in the file."
+    },
+    {
+      "test_name": "rings_see_records_without_any_flush",
+      "description": "The TUI and telemetry rings are filled synchronously."
+    },
+    {
+      "test_name": "start_does_not_touch_global_state",
+      "description": "start() twice leaves the global dispatcher unset."
+    },
+    {
+      "test_name": "level_filter_applies",
+      "description": "Configured level filters events before any sink."
+    },
+    {
+      "test_name": "errors_classify_through_has_kind",
+      "description": "LogError implements HasKind."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::error::HasKind",
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "tracing",
+    "tracing-subscriber",
+    "spdlog-rs",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "cfg",
+      "type": "LogConfig",
+      "description": "Log configuration."
+    },
+    {
+      "name": "redactor",
+      "type": "R: Redactor + 'static",
+      "description": "Redactor applied before any sink."
+    }
+  ],
+  "output_type": "Result<LogGuard, LogError>",
+  "output_description": "Installs the global subscriber once; the guard flushes and joins the drain thread on drop."
+}

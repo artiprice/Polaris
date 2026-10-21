@@ -1,0 +1,47 @@
+{
+  "type_of": "function",
+  "name": "classify",
+  "file_path": "crates/polaris-ui/crates/model/src/classify.rs",
+  "logic_name": "Token Classification",
+  "test_list": [
+    {
+      "test_name": "known_complete_command_is_command",
+      "description": "/model followed by space or end is a recognised command."
+    },
+    {
+      "test_name": "incomplete_or_unknown_command_is_neutral",
+      "description": "/mod and /nonsense are classified as unknown/incomplete."
+    },
+    {
+      "test_name": "known_directive_is_directive",
+      "description": "$websearch is a known directive; $custom is neutral."
+    },
+    {
+      "test_name": "mention_spans_including_quoted",
+      "description": "@src/main.rs and @\"my file.txt\" are mention spans; trailing sentence punctuation is excluded."
+    },
+    {
+      "test_name": "inert_text_has_no_spans",
+      "description": "URLs, a$b, dev@x.com, $5 and code spans produce no spans."
+    },
+    {
+      "test_name": "prop_spans_are_in_bounds_ordered_non_overlapping",
+      "description": "For arbitrary UTF-8, spans are ordered, disjoint, in bounds and on char boundaries."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel_directives::names::{SLASH_COMMANDS, DIRECTIVES}"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&str",
+      "description": "Composer text."
+    }
+  ],
+  "output_type": "Vec<ClassifiedSpan>",
+  "output_description": "Coloured spans: command, unknown command, directive, unknown directive, mention."
+}

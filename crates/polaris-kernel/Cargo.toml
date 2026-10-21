@@ -14,6 +14,9 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-proto = { workspace = true }
@@ -43,3 +46,8 @@ polaris-browser = { workspace = true }
 polaris-devenv = { workspace = true }
 polaris-hacker = { workspace = true }
 polaris-runtime = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+proptest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }

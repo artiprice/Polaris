@@ -1,0 +1,81 @@
+{
+  "type_of": "function",
+  "name": "run",
+  "file_path": "crates/polaris-tools/crates/rtk/src/run.rs",
+  "logic_name": "Run pipeline",
+  "test_list": [
+    {
+      "test_name": "auto_reconciles_and_filters",
+      "description": "Auto mode returns the filtered view, reconciles the ledger and exits by the ledger."
+    },
+    {
+      "test_name": "filter_mode_leaves_the_ledger_untouched",
+      "description": "Filter mode never creates or edits the ledger."
+    },
+    {
+      "test_name": "json_mode_reports_and_leaves_the_ledger_untouched",
+      "description": "Json mode returns the structured report and does not touch the ledger."
+    },
+    {
+      "test_name": "issues_mode_prints_summary_only",
+      "description": "Issues mode reconciles and returns an empty filtered view plus the summary."
+    },
+    {
+      "test_name": "raw_stream_is_stored_in_cas_first",
+      "description": "The raw bytes are in the CAS under the returned Cid."
+    },
+    {
+      "test_name": "exit_code_reflects_ledger_not_build",
+      "description": "A stream with only warnings, or an empty stream, closes issues and exits 0."
+    },
+    {
+      "test_name": "agent_view_carries_the_honesty_note_and_locations",
+      "description": "The summary text has the open count, file:line of current errors and the honesty note."
+    },
+    {
+      "test_name": "oversized_stream_is_refused_before_storing",
+      "description": "A stream over MAX_STREAM_BYTES is RtkError::StreamTooLarge before anything is stored."
+    },
+    {
+      "test_name": "real_cargo_failure_round_trip",
+      "description": "A real failing cargo build in a fixture crate opens an issue (exit 1); after the fix a rerun closes it (exit 0)."
+    }
+  ],
+  "dependencies": [
+    "polaris_storage_cas::Cas",
+    "polaris_sdk::ids::Cid"
+  ],
+  "libraries": [
+    "tempfile",
+    "jiff"
+  ],
+  "inputs": [
+    {
+      "name": "mode",
+      "type": "RtkMode",
+      "description": "Auto, Json, Filter or Issues."
+    },
+    {
+      "name": "stream",
+      "type": "&[u8]",
+      "description": "Piped compiler output."
+    },
+    {
+      "name": "file",
+      "type": "&LedgerFile",
+      "description": "Ledger location."
+    },
+    {
+      "name": "now",
+      "type": "jiff::Timestamp",
+      "description": "Injected clock."
+    },
+    {
+      "name": "store",
+      "type": "&Cas",
+      "description": "Raw stream store."
+    }
+  ],
+  "output_type": "Result<RtkOutput, RtkError>",
+  "output_description": "Filtered view, ledger summary, raw Cid and exit code."
+}

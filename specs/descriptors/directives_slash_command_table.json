@@ -1,0 +1,69 @@
+{
+  "type_of": "enum",
+  "name": "SlashCommand",
+  "file_path": "crates/polaris-kernel/crates/directives/src/slash.rs",
+  "logic_name": "Slash Command Table",
+  "test_list": [
+    {
+      "test_name": "exit_aliases_quit",
+      "description": "`/exit` and `/quit` are both Quit."
+    },
+    {
+      "test_name": "research_subwords_are_reserved",
+      "description": "`/research status|report|resume` are sub-commands; other text starts research."
+    },
+    {
+      "test_name": "quoted_goal_equal_to_status_starts_research",
+      "description": "`/research \"status\"` is Start(\"status\")."
+    },
+    {
+      "test_name": "session_resume_requires_id",
+      "description": "`/session resume` without a valid id is BadArg; with a UUID it parses."
+    },
+    {
+      "test_name": "unknown_command_is_an_error",
+      "description": "`/frobnicate` is UnknownCommand."
+    },
+    {
+      "test_name": "path_is_not_a_command",
+      "description": "`/usr/bin is broken` is prose, not a command."
+    },
+    {
+      "test_name": "catalog_commands_parse",
+      "description": "Every catalog command parses to its variant, including arguments."
+    },
+    {
+      "test_name": "command_name_table_matches_parser_arms",
+      "description": "names::SLASH_COMMANDS equals the set of top-level arms of the parser match (source scan): completion menus cannot drift from the grammar."
+    },
+    {
+      "test_name": "every_listed_command_is_recognised",
+      "description": "Every listed /name parses to a command or an argument error, never UnknownCommand."
+    },
+    {
+      "test_name": "directive_name_table_matches_parser_arms",
+      "description": "names::DIRECTIVES equals the set of typed directive arms (source scan)."
+    },
+    {
+      "test_name": "every_listed_directive_is_typed",
+      "description": "Every listed $name types or fails with an argument error; never falls back to Custom."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::{SessionId, ShortRef}"
+  ],
+  "libraries": [
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&str",
+      "description": "A line starting with `/`."
+    }
+  ],
+  "output_type": "Result<ParsedInput, DirectiveError>",
+  "output_description": "ParsedInput.command set; no directives or mentions."
+}

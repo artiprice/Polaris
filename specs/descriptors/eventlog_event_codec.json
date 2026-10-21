@@ -1,0 +1,45 @@
+{
+  "type_of": "function",
+  "name": "encode_record / decode_record",
+  "file_path": "crates/polaris-storage/crates/eventlog/src/codec.rs",
+  "logic_name": "Event Codec",
+  "test_list": [
+    { "test_name": "version_one_prefix_is_preserved_on_encode", "description": "A valid old envelope retains schema 1 in its storage prefix and on decode." },
+    { "test_name": "mismatched_prefix_and_envelope_are_rejected", "description": "Refuse an envelope whose validated schema disagrees with its storage prefix." },
+    {
+      "test_name": "roundtrip_every_event_variant",
+      "description": "Every sdk Event variant encodes and decodes unchanged."
+    },
+    {
+      "test_name": "decode_rejects_short_and_garbage_input",
+      "description": "Empty, 1-byte and non-JSON payloads are Codec errors."
+    },
+    {
+      "test_name": "decode_rejects_newer_schema_before_parsing",
+      "description": "A schema prefix above the supported version is SchemaTooNew."
+    },
+    {
+      "test_name": "prop_decode_never_panics",
+      "description": "proptest: arbitrary bytes decode to Ok or Err, never panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::registry::{EventStore, ExactCacheStore}"
+  ],
+  "libraries": [
+    "redb",
+    "serde_json",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "bytes",
+      "type": "&[u8]",
+      "description": "Stored value: [schema u16 LE][JSON]."
+    }
+  ],
+  "output_type": "Result<EventRecord, EventLogError>",
+  "output_description": "Self-describing encoding (postcard cannot decode the sdk's internally tagged events: VERIFIED)."
+}

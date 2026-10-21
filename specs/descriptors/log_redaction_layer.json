@@ -1,0 +1,77 @@
+{
+  "type_of": "struct",
+  "name": "RedactionLayer",
+  "file_path": "crates/polaris-log/src/redact.rs",
+  "logic_name": "Redaction Layer",
+  "test_list": [
+    {
+      "test_name": "secret_never_reaches_sink",
+      "description": "Seeded fake secrets in message, Display, Debug and str fields never appear in the TUI ring, telemetry ring or file queue; masks are counted."
+    },
+    {
+      "test_name": "secret_never_reaches_json_sink",
+      "description": "Same guarantee in JSON mode (per-field redaction)."
+    },
+    {
+      "test_name": "non_secret_text_unchanged",
+      "description": "Text without secrets is rendered as `message field=value ...` unchanged, message first."
+    },
+    {
+      "test_name": "level_and_target_are_preserved",
+      "description": "Level and target of the tracing event reach the sinks."
+    },
+    {
+      "test_name": "redactor_error_drops_record",
+      "description": "A panicking redactor or one that reports an incomplete scan fails closed: the record reaches no sink and redact_failures is counted; the caller never panics."
+    },
+    {
+      "test_name": "control_characters_are_escaped_in_text",
+      "description": "Newlines, carriage returns and ESC in event text are escaped (no log or terminal injection)."
+    },
+    {
+      "test_name": "json_fields_are_structured",
+      "description": "JSON mode renders an object with one key per tracing field; numbers and booleans stay bare."
+    },
+    {
+      "test_name": "json_values_that_were_redacted_become_strings",
+      "description": "A numeric field whose text was masked is emitted as a quoted string."
+    },
+    {
+      "test_name": "json_over_limit_keeps_valid_object_with_marker",
+      "description": "An object too large for the line limit is shaped to fit with a _truncated marker instead of being cut mid-token."
+    },
+    {
+      "test_name": "oversize_event_is_replaced_by_a_stub",
+      "description": "An event above the raw formatting bound is replaced by a fixed stub (never partially scanned) and counted."
+    },
+    {
+      "test_name": "queue_overflow_never_blocks_the_caller",
+      "description": "With a full file queue the emitting call returns and the drops are counted; the rings still receive every record."
+    },
+    {
+      "test_name": "redactor_that_logs_does_not_deadlock_or_panic",
+      "description": "A redactor that logs from inside redact_into neither deadlocks nor panics and later events still work (tracing-core discards the nested event)."
+    },
+    {
+      "test_name": "prop_secret_never_survives_and_never_lengthens",
+      "description": "proptest: for random surrounding text the secret never survives in any sink and the visible text is strictly shorter than the secret-bearing original."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "tracing",
+    "tracing-subscriber",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "&tracing::Event<'_>",
+      "description": "Event to format, redact and enqueue."
+    }
+  ],
+  "output_type": "()",
+  "output_description": "Redacted record pushed to the configured sinks; formatting reuses thread-local buffers."
+}

@@ -1,0 +1,20 @@
+rm: cannot remove '/mnt/c/mDev/Polaris/@prime/spikes/s0-12-guest/out-debug': Permission denied
+phase=Ready
+read /opt DENIED
+read /usr ok
+read /usr/share ok
+== E headless, page from /sandbox
+rc=0
+13383 bytes written to file /sandbox/out/e.png
+== F headless, data: URL
+rc=0
+3085 bytes written to file /sandbox/out/f.png
+== G Xvfb verbose
+-core                  generate core dump on fatal error
+Fatal server error:
+-rwxrwxrwx 1 dev dev  5824 Oct 20 19:16 e.log
+-rwxrwxrwx 1 dev dev 13383 Oct 20 19:16 e.png
+-rwxrwxrwx 1 dev dev  5871 Oct 20 19:16 f.log
+-rwxrwxrwx 1 dev dev  3085 Oct 20 19:16 f.png
+-rwxrwxrwx 1 dev dev  4973 Oct 20 19:16 g.err
+deleted

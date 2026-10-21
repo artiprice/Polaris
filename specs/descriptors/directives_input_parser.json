@@ -1,0 +1,73 @@
+{
+  "type_of": "function",
+  "name": "parse / parse_segments",
+  "file_path": "crates/polaris-kernel/crates/directives/src/parser.rs",
+  "logic_name": "Input Parser",
+  "test_list": [
+    {
+      "test_name": "bare_directive_means_on",
+      "description": "`$websearch find docs` yields WebSearch(On) with span 0..10 and prose `find docs`."
+    },
+    {
+      "test_name": "directive_with_off_argument",
+      "description": "`$websearch(off)` yields WebSearch(Off)."
+    },
+    {
+      "test_name": "directive_inside_code_span_is_ignored",
+      "description": "Directives inside `code` spans and ``` fences are prose; the input is unchanged."
+    },
+    {
+      "test_name": "unknown_directive_kept_as_custom",
+      "description": "`$my-flag(a, k=v, f(x))` is Custom with Atom, Kv and Call args."
+    },
+    {
+      "test_name": "dollar_needs_a_boundary_and_a_lowercase_name",
+      "description": "`$5`, `$100`, `a$websearch` and `$HOME` stay prose."
+    },
+    {
+      "test_name": "windows_paths_are_atoms_not_kv",
+      "description": "`C:\\dir` and quoted `C:\\Users\\me\\a b.txt` parse as Atom/Quoted, never as kv or ranges."
+    },
+    {
+      "test_name": "unbalanced_paren_reports_offset",
+      "description": "`$sandbox(openshell` fails with UnbalancedParen at the `(` offset."
+    },
+    {
+      "test_name": "limits_are_enforced",
+      "description": "Oversized input is TooLong, `$a(` nesting beyond max_depth is TooDeep, too many args is TooManyArgs."
+    },
+    {
+      "test_name": "catalog_rows_parse_to_typed_directives",
+      "description": "Every directive catalog row parses to its typed value; `$nebius-sandbox` normalises to Sandbox."
+    },
+    {
+      "test_name": "crlf_multiline_input",
+      "description": "Directives on CRLF-separated lines are found; other lines stay in prose."
+    },
+    {
+      "test_name": "attachments_are_never_parsed",
+      "description": "parse_segments copies Attachment segments into prose without parsing them."
+    },
+    {
+      "test_name": "prop_parse_never_panics_and_spans_are_valid",
+      "description": "proptest: arbitrary Unicode never panics; every span is in bounds and on char boundaries."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::{SessionId, ShortRef}"
+  ],
+  "libraries": [
+    "thiserror",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&str",
+      "description": "One user message."
+    }
+  ],
+  "output_type": "Result<ParsedInput, DirectiveError>",
+  "output_description": "Command, directives and mentions with byte spans, plus residual prose."
+}

@@ -1,0 +1,61 @@
+{
+  "type_of": "function",
+  "name": "shannon_entropy_milli / high_entropy_spans",
+  "file_path": "crates/polaris-security/crates/automata/src/entropy.rs",
+  "logic_name": "Entropy Candidate Detection",
+  "test_list": [
+    {
+      "test_name": "random_base64_flagged",
+      "description": "A 40-char pseudo-random base64 run is reported as a candidate."
+    },
+    {
+      "test_name": "english_prose_not_flagged",
+      "description": "Prose with long words is not flagged."
+    },
+    {
+      "test_name": "short_runs_ignored",
+      "description": "Runs shorter than min_len are never reported."
+    },
+    {
+      "test_name": "hex_hashes_and_uuids_not_flagged",
+      "description": "64-hex digests and UUIDs (<= 4 bits/char) stay below the default threshold."
+    },
+    {
+      "test_name": "entropy_of_constant_is_zero",
+      "description": "A constant run has entropy 0."
+    },
+    {
+      "test_name": "entropy_of_all_bytes_is_eight_bits",
+      "description": "Each byte value once gives 8000 millibits (±1, fixed point)."
+    },
+    {
+      "test_name": "prop_entropy_bounded_by_log2_len",
+      "description": "Entropy never exceeds min(8000, 1000*log2(len)) + 1 and never panics."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{Redactor, RedactStats}"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror",
+    "proptest (dev)",
+    "regex (dev, reference)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "haystack",
+      "type": "&[u8]",
+      "description": "Bytes."
+    },
+    {
+      "name": "cfg",
+      "type": "&EntropyCfg",
+      "description": "min_len and threshold in millibits/byte."
+    }
+  ],
+  "output_type": "Result<usize, AutomataError>",
+  "output_description": "Candidate spans written into the ScanBuf."
+}

@@ -1,0 +1,101 @@
+{
+  "type_of": "async_function",
+  "name": "Supervisor::spawn_task",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/task.rs",
+  "logic_name": "Task Supervision",
+  "test_list": [
+    {
+      "test_name": "panicking_task_is_restarted",
+      "description": "A task that panics once is run again; the panic never reaches the caller."
+    },
+    {
+      "test_name": "restart_is_published_as_worker_restarted",
+      "description": "Each restart of a child fronting a WorkerKind publishes WorkerRestarted { worker, restarts } before the restarted task runs."
+    },
+    {
+      "test_name": "backoff_grows_between_restarts",
+      "description": "With jitter off the gaps between runs are min, 2*min, 4*min ... capped at max (paused time), never early and at most one 1 ms Tokio timer tick late. User-approved timer-contract correction."
+    },
+    {
+      "test_name": "intensity_exceeded_routes_to_dlq",
+      "description": "A task that always fails is run 1 + max_restarts times, then given up: CircuitTripped and DeadLettered are published, the DLQ holds one letter, wait() returns IntensityExceeded."
+    },
+    {
+      "test_name": "no_restart_storm_after_give_up",
+      "description": "After give-up, an hour of paused time produces no further runs."
+    },
+    {
+      "test_name": "temporary_child_not_restarted",
+      "description": "A Temporary child that panics is not restarted."
+    },
+    {
+      "test_name": "transient_child_stays_down_after_clean_exit",
+      "description": "A Transient child that returns Ok(()) is not restarted; a Permanent one is."
+    },
+    {
+      "test_name": "fatal_error_gives_up_immediately",
+      "description": "A TaskError of ErrorKind::Fatal is never retried: no restart, DLQ letter, CircuitTripped."
+    },
+    {
+      "test_name": "exhausted_escalation_cancels_root",
+      "description": "With OnExhausted::ShutdownSupervisor, giving up cancels the root token and stops the siblings."
+    },
+    {
+      "test_name": "cancel_token_stops_child",
+      "description": "stop() cancels the child's token; a cooperative child exits within grace (StopOutcome::Graceful) and is not restarted."
+    },
+    {
+      "test_name": "stop_aborts_child_that_ignores_cancel",
+      "description": "A child that ignores its token is aborted after grace (StopOutcome::Aborted)."
+    },
+    {
+      "test_name": "unknown_child_is_error",
+      "description": "stop() and wait() on an id the supervisor does not know return UnknownChild."
+    },
+    {
+      "test_name": "panic_does_not_poison_supervisor",
+      "description": "A panicking child does not affect a sibling; spawning, snapshot and stop keep working afterwards."
+    },
+    {
+      "test_name": "shutdown_stops_all_children_without_leaks",
+      "description": "shutdown() stops every child (including one that ignores cancellation); the runtime reports zero alive tasks and every actor future was dropped; later spawns fail with ShuttingDown."
+    },
+    {
+      "test_name": "publish_failure_does_not_stop_supervision",
+      "description": "If the event store refuses appends, the child is still restarted and the loss is counted in the snapshot (events_lost)."
+    },
+    {
+      "test_name": "telemetry_folds_supervisor_events",
+      "description": "Events published by the supervisor, folded into polaris_telemetry::Telemetry, produce worker_restarts, circuits_tripped and dead_letters counters."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Event, EventRecord, WorkerKind}",
+    "polaris_sdk::error::{ErrorKind, HasKind}",
+    "polaris_sdk::registry::EventStore",
+    "polaris_kernel_bus::Bus",
+    "polaris_telemetry::Telemetry"
+  ],
+  "libraries": [
+    "tokio",
+    "tokio-util (CancellationToken, TaskTracker)",
+    "backon (ExponentialBuilder)",
+    "tracing",
+    "thiserror",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "spec",
+      "type": "TaskSpec",
+      "description": "Name, restart policy, intensity, backoff, optional WorkerKind, exhaustion policy."
+    },
+    {
+      "name": "make",
+      "type": "Fn(CancellationToken) -> Future<Output = Result<(), TaskError>>",
+      "description": "Factory called once per incarnation, inside the spawned task."
+    }
+  ],
+  "output_type": "Result<ChildId, SupervisorError>",
+  "output_description": "Handle to wait on / stop the supervised child."
+}

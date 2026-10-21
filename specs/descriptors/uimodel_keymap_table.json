@@ -1,0 +1,81 @@
+{
+  "type_of": "module",
+  "name": "keymap",
+  "file_path": "crates/polaris-ui/crates/model/src/keymap.rs",
+  "logic_name": "Keymap Table",
+  "test_list": [
+    {
+      "test_name": "every_action_has_a_binding_or_is_marked_unbound",
+      "description": "Every Action is bound at least once or listed in UNBOUND with a reason; nothing is both."
+    },
+    {
+      "test_name": "unbound_actions_are_not_bound",
+      "description": "No action in UNBOUND appears in the binding table."
+    },
+    {
+      "test_name": "no_duplicate_chords_in_one_context",
+      "description": "No (context, trigger, guard) triple occurs twice in the table."
+    },
+    {
+      "test_name": "footer_text_generated_from_table",
+      "description": "footer_text builds the footer from the table: each hint is the first chord of the action plus its label."
+    },
+    {
+      "test_name": "footer_changes_when_the_table_changes",
+      "description": "Feeding a modified table to footer_text changes the footer, proving the string is generated not stored."
+    },
+    {
+      "test_name": "help_lines_list_every_chord",
+      "description": "help_lines mentions every bound chord of every binding."
+    },
+    {
+      "test_name": "plan_keymap_rows_present",
+      "description": "Every row of the polaris-cli keymap table resolves to the stated action through lookup."
+    },
+    {
+      "test_name": "lookup_respects_guards_and_context_chain",
+      "description": "History keys need the first/last-row guard, ? needs an empty draft, popup contexts fall back to Popup and Global."
+    },
+    {
+      "test_name": "chord_display_format",
+      "description": "Chords render as Ctrl+O, Shift+Enter, Esc, F2, ?, P."
+    },
+    {
+      "test_name": "chord_normalization",
+      "description": "Shift is dropped for character keys and letters compare case-insensitively."
+    },
+    {
+      "test_name": "mouse_gestures_bound",
+      "description": "Wheel, drag, double-click, tool-title click and To-latest click have bindings."
+    },
+    {
+      "test_name": "prop_lookup_never_panics",
+      "description": "Any chord in any context and guard state resolves to Some or None without panicking."
+    }
+  ],
+  "dependencies": [
+    "none"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "context",
+      "type": "Context",
+      "description": "Where the key arrived."
+    },
+    {
+      "name": "chord",
+      "type": "KeyChord",
+      "description": "Frontend-neutral key."
+    },
+    {
+      "name": "state",
+      "type": "GuardState",
+      "description": "Draft empty / first row / last row."
+    }
+  ],
+  "output_type": "Option<&KeyBinding> / String / Vec<String>",
+  "output_description": "The keymap as data plus generated footer and help text."
+}

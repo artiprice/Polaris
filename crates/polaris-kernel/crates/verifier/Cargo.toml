@@ -19,3 +19,7 @@ polaris-sdk = { workspace = true }
 polaris-security-capability = { workspace = true }
 polaris-code-intel = { workspace = true }
 polaris-system-one-verifier = { workspace = true }
+
+[dev-dependencies]
+polaris-proto = { workspace = true }
+prost = { workspace = true }

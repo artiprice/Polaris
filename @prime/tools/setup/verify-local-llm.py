@@ -2,7 +2,7 @@
 
 Checks: /v1/models, streaming SSE chat completion, and a tool-call round in the
 OpenAI format. Standard library only. Usage:
-    python -I @prime/tools/setup/verify-local-llm.py [BASE_URL] [MODEL]
+    python -I @prime/tools/setup/verify-local-llm.py [BASE_URL] [MODEL] [--require-tools]
 Defaults: http://localhost:11434/v1  nemotron-mini
 """
 
@@ -11,8 +11,10 @@ import sys
 import time
 import urllib.request
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:11434/v1"
-MODEL = sys.argv[2] if len(sys.argv) > 2 else "nemotron-mini"
+REQUIRE_TOOLS = "--require-tools" in sys.argv
+_POS = [a for a in sys.argv[1:] if a != "--require-tools"]
+BASE = _POS[0] if len(_POS) > 0 else "http://localhost:11434/v1"
+MODEL = _POS[1] if len(_POS) > 1 else "nemotron-mini"
 
 TOOLS = [
     {
@@ -86,7 +88,11 @@ def main() -> int:
     else:
         print("tool_call: model returned no tool_calls (model capability, not a client failure)")
 
-    print("RESULT: PASS" if ok else "RESULT: FAIL")
+    # Two separate verdicts: the endpoint (what P0-ENV-6 needs) and the model's tool calling (flaky for
+    # small local models). `--require-tools` makes a missing tool call fail the run.
+    print(f"RESULT: endpoint {'PASS' if ok else 'FAIL'}; tool_calls {'PRESENT' if calls else 'ABSENT'}")
+    if REQUIRE_TOOLS and not calls:
+        return 1
     return 0 if ok else 1
 
 

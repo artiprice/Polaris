@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "RingSink::push",
+  "file_path": "crates/polaris-log/src/ring.rs",
+  "logic_name": "Ring Push Zero Alloc",
+  "test_list": [
+    {
+      "test_name": "push_does_not_allocate",
+      "description": "dhat testing mode: after a wrap-around warm-up, 2,000 pushes (short, over-long and overwriting) allocate 0 blocks (ADR-003, log enqueue)."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "dhat (dev)"
+  ],
+  "inputs": [],
+  "output_type": "()",
+  "output_description": "Zero heap allocations in RingSink::push."
+}

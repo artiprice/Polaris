@@ -1,0 +1,63 @@
+{
+  "type_of": "impl_block",
+  "name": "TryFrom<pb::Event> for Event / From<&Event> for pb::Event / EventRecord conversions",
+  "file_path": "crates/polaris-proto/src/convert.rs",
+  "logic_name": "Event Conversion",
+  "test_list": [
+    {
+      "test_name": "every_event_variant_roundtrips",
+      "description": "One sample of each of the 21 sdk Event variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
+    },
+    {
+      "test_name": "event_record_roundtrips_with_timestamp_edges",
+      "description": "EventRecord keeps seq, session, event and the timestamp exactly, including pre-epoch values and Timestamp::MIN / MAX."
+    },
+    {
+      "test_name": "missing_oneof_body_is_error",
+      "description": "An Event without a kind, and an EventRecord without event / session / at, give MissingField naming the field."
+    },
+    {
+      "test_name": "unknown_enum_value_is_error",
+      "description": "WorkerRestarted with worker = 0 (unspecified) or an unknown number gives UnknownVariant."
+    },
+    {
+      "test_name": "malformed_cid_and_schema_are_errors",
+      "description": "A Cid of the wrong length gives InvalidLength; schema 0, 3 and above u16::MAX are rejected; nanos outside 0..1e9 are rejected."
+    },
+    {
+      "test_name": "conversion_never_panics_on_default_message",
+      "description": "Default (all-empty) pb::Event and pb::EventRecord return Err."
+    },
+    {
+      "test_name": "prop_event_roundtrip",
+      "description": "For arbitrary sdk Events (all variants): sdk -> pb -> bytes -> pb -> sdk equals the original."
+    },
+    {
+      "test_name": "prop_event_record_roundtrip",
+      "description": "For arbitrary EventRecords: the same roundtrip is the identity."
+    },
+    {
+      "test_name": "prop_garbage_bytes_never_panic",
+      "description": "Arbitrary bytes decoded as pb::Event / pb::EventRecord and converted give Ok or Err, never a panic; an Ok result re-encodes to an equal sdk value."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Event, EventRecord, WorkerKind, EVENT_SCHEMA_VERSION, Timestamp}",
+    "polaris_sdk::ids::{Cid, FrameId, SessionId, Seq, MicroUsd, TokenCount}",
+    "crates/polaris-proto/src/error.rs (ProtoError)"
+  ],
+  "libraries": [
+    "prost",
+    "prost-types",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "pb::Event / pb::EventRecord (or &sdk Event / EventRecord)",
+      "description": "A decoded protobuf message, possibly hostile or incomplete."
+    }
+  ],
+  "output_type": "Result<Event, ProtoError> (pb -> sdk) or pb::Event (sdk -> pb, infallible)",
+  "output_description": "The validated sdk value, or a typed ProtoError naming the offending field."
+}

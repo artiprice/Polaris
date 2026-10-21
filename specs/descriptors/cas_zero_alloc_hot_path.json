@@ -1,0 +1,32 @@
+{
+  "type_of": "function",
+  "name": "content_id / fast_fingerprint / fold_ref / ShortRef::of",
+  "file_path": "crates/polaris-storage/crates/cas/src/lib.rs",
+  "logic_name": "Zero Alloc Hot Path",
+  "test_list": [
+    {
+      "test_name": "hot_path_functions_do_not_allocate",
+      "description": "dhat testing mode: content_id, fast_fingerprint, fold_ref and ShortRef::of allocate 0 blocks (ADR-003)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{Cid, ShortRef, FastFingerprint}"
+  ],
+  "libraries": [
+    "blake3",
+    "xxhash-rust",
+    "zstd",
+    "tempfile",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "bytes",
+      "type": "&[u8]",
+      "description": "Input bytes."
+    }
+  ],
+  "output_type": "Cid / FastFingerprint / usize / ShortRef",
+  "output_description": "Hot-path results with zero heap allocations."
+}

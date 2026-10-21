@@ -1,0 +1,65 @@
+{
+  "type_of": "function",
+  "name": "plan",
+  "file_path": "crates/polaris-storage/crates/sync/src/plan.rs",
+  "logic_name": "Sync Plan",
+  "test_list": [
+    {
+      "test_name": "equal_manifests_empty_plan",
+      "description": "Equal manifests give an empty plan."
+    },
+    {
+      "test_name": "new_file_uploaded",
+      "description": "A local-only path is uploaded."
+    },
+    {
+      "test_name": "removed_file_deleted",
+      "description": "A remote-only path is deleted."
+    },
+    {
+      "test_name": "changed_hash_uploaded",
+      "description": "A different hash is re-uploaded."
+    },
+    {
+      "test_name": "exec_bit_change_uploaded",
+      "description": "An executable-bit change alone is re-uploaded."
+    },
+    {
+      "test_name": "rename_detected_by_hash",
+      "description": "A deleted remote path whose hash equals a new local path is reported as a rename hint."
+    },
+    {
+      "test_name": "prop_plan_applied_to_remote_yields_local",
+      "description": "For random manifests, remote minus deletes plus uploads equals local (model check)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "local",
+      "type": "&Manifest",
+      "description": "Authoritative workspace manifest."
+    },
+    {
+      "name": "remote",
+      "type": "&Manifest",
+      "description": "Last known sandbox manifest."
+    }
+  ],
+  "output_type": "SyncPlan",
+  "output_description": "Uploads, deletes and rename hints, in path order."
+}

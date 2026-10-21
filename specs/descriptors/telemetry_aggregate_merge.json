@@ -1,0 +1,48 @@
+{
+  "type_of": "method",
+  "name": "Aggregates::merge",
+  "file_path": "crates/polaris-telemetry/src/aggregate.rs",
+  "logic_name": "Aggregate Merge",
+  "test_list": [
+    {
+      "test_name": "merge_equals_aggregating_the_concatenation",
+      "description": "Merging the aggregates of two event slices gives the same snapshot as aggregating the concatenated slice."
+    },
+    {
+      "test_name": "merge_with_empty_is_identity",
+      "description": "Merging an empty aggregate (either side) changes nothing."
+    },
+    {
+      "test_name": "merge_saturates_and_flags",
+      "description": "Merging two aggregates whose counters sum above u64::MAX pins the counter and sets saturated."
+    },
+    {
+      "test_name": "merge_combines_per_model_tables",
+      "description": "Models present on one side are kept, models on both sides are summed."
+    },
+    {
+      "test_name": "prop_merge_equals_aggregate_of_concatenation",
+      "description": "proptest: for random event streams split at a random point, merge(a, b) equals aggregating the whole stream."
+    },
+    {
+      "test_name": "prop_merge_is_commutative",
+      "description": "proptest: merge(a, b) and merge(b, a) give identical snapshots."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::Event"
+  ],
+  "libraries": [
+    "hdrhistogram",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "other",
+      "type": "&Aggregates",
+      "description": "The aggregate to add into self."
+    }
+  ],
+  "output_type": "Result<(), TelemetryError>",
+  "output_description": "Adds every counter (saturating), the per-model table and the latency histograms of other into self."
+}

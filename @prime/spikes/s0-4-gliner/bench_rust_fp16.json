@@ -1,0 +1,22 @@
+{
+  "precision": "fp16",
+  "threads": 4,
+  "load_s": 11.6295795,
+  "rss_after_load_MB": 3001,
+  "normalize_trailing_period": true,
+  "peak_rss_sampled_MB": 3035,
+  "latency_1task": {
+    "n": 40,
+    "p50_ms": 891.7311,
+    "p95_ms": 1031.9089,
+    "min_ms": 647.6663,
+    "max_ms": 1065.4242000000002
+  },
+  "latency_3task": {
+    "n": 30,
+    "p50_ms": 1333.2035,
+    "p95_ms": 1479.8678,
+    "min_ms": 1075.4660000000001,
+    "max_ms": 1507.9001999999998
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "type_of": "module",
+  "name": "tokens",
+  "file_path": "crates/polaris-ui/crates/model/src/tokens.rs",
+  "logic_name": "Design Tokens",
+  "test_list": [
+    {
+      "test_name": "every_plan_role_present_with_exact_hex",
+      "description": "Every colour role of the PLAN token table is present with exactly the table's hex value."
+    },
+    {
+      "test_name": "role_names_are_unique_and_hex_well_formed",
+      "description": "Role names are unique kebab-case and every hex is #RRGGBB or #RRGGBBAA."
+    },
+    {
+      "test_name": "error_role_has_ansi_red_fallback",
+      "description": "The error role carries the ANSI fallback Red; roles without a stated fallback carry none."
+    },
+    {
+      "test_name": "css_variables_contain_every_role",
+      "description": "css_variables() emits one --p-<role>: <hex>; declaration per role, plus radius, speed and font variables."
+    },
+    {
+      "test_name": "css_variables_block_shape",
+      "description": "The output is a single :root { ... } block ending in a newline."
+    },
+    {
+      "test_name": "selection_tints_match_blend_formula",
+      "description": "Blending the source colour at 30% over the background reproduces every selection tint listed in the PLAN table (#464646, #4B4435, #233800, #29364B, #6C6C6C)."
+    },
+    {
+      "test_name": "rgb_parsing_rejects_malformed_hex",
+      "description": "Rgb::from_hex rejects missing '#', wrong length and non-hex digits."
+    },
+    {
+      "test_name": "placeholder_text_exact",
+      "description": "The empty-editor placeholder text is exactly \"What's on your mind for Polaris?\"."
+    },
+    {
+      "test_name": "prop_hex_round_trip",
+      "description": "Any Rgb survives to_hex then from_hex unchanged."
+    }
+  ],
+  "dependencies": [
+    "none"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "role",
+      "type": "&str",
+      "description": "Role name to look up."
+    },
+    {
+      "name": "source/background",
+      "type": "Rgb",
+      "description": "Selection tint inputs."
+    }
+  ],
+  "output_type": "ColorRole / String / Rgb",
+  "output_description": "Colour roles as data, a :root CSS variable block and the 30% selection blend."
+}

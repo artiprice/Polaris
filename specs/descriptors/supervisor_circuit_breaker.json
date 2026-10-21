@@ -1,0 +1,88 @@
+{
+  "type_of": "struct",
+  "name": "CircuitBreaker / BreakerHandle",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/breaker.rs",
+  "logic_name": "Circuit Breaker",
+  "test_list": [
+    {
+      "test_name": "opens_after_n_failures_in_window",
+      "description": "N failures inside the window move Closed to Open { until: now + cooldown }; N-1 failures leave it Closed."
+    },
+    {
+      "test_name": "old_failures_age_out_of_window",
+      "description": "Failures older than the window no longer count: spaced-out failures never open the breaker."
+    },
+    {
+      "test_name": "open_rejects_until_cooldown",
+      "description": "While Open and before the cooldown elapsed, allow() is false."
+    },
+    {
+      "test_name": "half_open_after_cooldown",
+      "description": "The first allow() at or after the cooldown moves Open to HalfOpen and admits exactly that one probe; a second caller is refused while the probe is in flight."
+    },
+    {
+      "test_name": "half_open_success_closes",
+      "description": "A successful probe closes the breaker and clears the failure history."
+    },
+    {
+      "test_name": "half_open_failure_reopens",
+      "description": "A failed probe reopens the breaker for a fresh cooldown."
+    },
+    {
+      "test_name": "late_results_while_open_are_ignored",
+      "description": "on_success / on_failure reported while Open (results of calls admitted before the trip) do not change the state or extend the cooldown."
+    },
+    {
+      "test_name": "handle_publishes_circuit_tripped_once",
+      "description": "BreakerHandle publishes exactly one CircuitTripped event when the breaker opens (not for later failures while Open) and shows up in the supervisor snapshot."
+    },
+    {
+      "test_name": "handle_half_open_probe_under_paused_time",
+      "description": "With tokio paused time: open, advance past the cooldown, exactly one probe is admitted, and its success closes the breaker."
+    },
+    {
+      "test_name": "prop_never_closed_to_half_open",
+      "description": "For any operation sequence the observed state never goes Closed -> HalfOpen directly."
+    },
+    {
+      "test_name": "prop_matches_reference_model",
+      "description": "The breaker agrees with an independent reference model on every allow() answer and every state, for any sequence of allow / success / failure at non-decreasing times."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Event, EventRecord}",
+    "polaris_sdk::ids::Cid",
+    "polaris_kernel_bus::Bus"
+  ],
+  "libraries": [
+    "tokio (time::Instant)",
+    "tracing",
+    "thiserror",
+    "proptest (dev)",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "max_failures",
+      "type": "NonZeroU32",
+      "description": "Failures inside the window that open the breaker."
+    },
+    {
+      "name": "window",
+      "type": "Duration",
+      "description": "Sliding window in which failures count."
+    },
+    {
+      "name": "cooldown",
+      "type": "Duration",
+      "description": "How long the breaker stays Open before one probe is admitted."
+    },
+    {
+      "name": "now",
+      "type": "tokio::time::Instant",
+      "description": "Injected time; the state machine never reads a clock."
+    }
+  ],
+  "output_type": "BreakerState",
+  "output_description": "Closed, Open { until } or HalfOpen; allow() answers whether the caller may proceed."
+}

@@ -1,0 +1,48 @@
+{
+  "type_of": "struct",
+  "name": "LockTable",
+  "file_path": "crates/polaris-storage/crates/eventlog/src/locks.rs",
+  "logic_name": "Lock Table Recovery",
+  "test_list": [
+    {
+      "test_name": "stale_locks_listed_on_open",
+      "description": "Locks held by another owner process are listed as stale after reopen (for the Reaper), not dropped."
+    },
+    {
+      "test_name": "acquire_conflict_is_error",
+      "description": "Acquiring a resource held by another holder is LockConflict."
+    },
+    {
+      "test_name": "release_removes_row",
+      "description": "Releasing the lease removes it; releasing a wrong lease is an error."
+    },
+    {
+      "test_name": "lock_survives_reopen",
+      "description": "A held lock is still present after reopen."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::EventRecord",
+    "polaris_sdk::registry::{EventStore, ExactCacheStore}"
+  ],
+  "libraries": [
+    "redb",
+    "serde_json",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "resource",
+      "type": "&str",
+      "description": "Lease key (path or AST scope)."
+    },
+    {
+      "name": "holder",
+      "type": "FrameId",
+      "description": "Holding frame."
+    }
+  ],
+  "output_type": "Result<LockRecord, EventLogError>",
+  "output_description": "Crash-safe lease records."
+}

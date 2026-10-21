@@ -1,0 +1,91 @@
+{
+  "type_of": "function",
+  "name": "metrics / metrics_with / cyclomatic_complexity",
+  "file_path": "crates/polaris-code-intel/src/metrics.rs",
+  "logic_name": "Mutation Metrics",
+  "test_list": [
+    {
+      "test_name": "identical_trees_zero_metrics",
+      "description": "Identical inputs give churn 0, cyclomatic delta 0, tree-edit distance 0 and no changed symbols."
+    },
+    {
+      "test_name": "added_branch_raises_cyclomatic",
+      "description": "Adding one if raises cyclomatic by 1 (and removing it lowers by 1) in all five languages."
+    },
+    {
+      "test_name": "cyclomatic_counts_each_decision_point",
+      "description": "Exact per-language decision-point tables (if/else-if/&&/||/loops/arms/cases/catch/ternary/comprehension)."
+    },
+    {
+      "test_name": "churn_counts_added_plus_deleted",
+      "description": "Churn is lines added plus lines deleted, in both directions."
+    },
+    {
+      "test_name": "churn_sees_line_ending_changes",
+      "description": "A CRLF/LF change counts as changed lines (byte-faithful, EOLs are never normalised)."
+    },
+    {
+      "test_name": "ted_rename_costs_one_and_insert_costs_the_subtree_size",
+      "description": "Renaming an identifier costs 1; inserting a statement costs its node count."
+    },
+    {
+      "test_name": "ted_ignores_comments_and_layout",
+      "description": "Comments and layout do not move the tree-edit distance but do count as churn."
+    },
+    {
+      "test_name": "ted_fallback_above_node_cap",
+      "description": "Above the node cap the distance is a flagged lower bound; the other metrics are unaffected."
+    },
+    {
+      "test_name": "changed_symbols_lists_edited_added_and_removed_declarations",
+      "description": "Edited, added and removed declarations (including methods) are listed in a stable order; unchanged ones are not."
+    },
+    {
+      "test_name": "changed_symbols_ignores_whitespace_outside_declarations",
+      "description": "Spacing and comments between declarations change nothing."
+    },
+    {
+      "test_name": "comparing_different_languages_is_an_error",
+      "description": "Mixed languages return LanguageMismatch."
+    },
+    {
+      "test_name": "hostile_nesting_is_measured_without_overflow",
+      "description": "20k-deep nesting is measured via the capped, iterative path."
+    },
+    {
+      "test_name": "metrics_of_identical_inputs_are_zero",
+      "description": "Property: metrics(x, x) is all zeros."
+    },
+    {
+      "test_name": "churn_and_tree_edit_distance_are_symmetric",
+      "description": "Property: churn and tree-edit distance are symmetric, cyclomatic delta is antisymmetric."
+    },
+    {
+      "test_name": "capped_distance_is_a_lower_bound_of_the_exact_one",
+      "description": "Property: the capped fallback never exceeds the exact distance."
+    }
+  ],
+  "dependencies": [
+    "polaris_code_intel::decl::declarations"
+  ],
+  "libraries": [
+    "imara-diff",
+    "xxhash-rust",
+    "tree-sitter",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "old",
+      "type": "&Parsed",
+      "description": "Tree before the mutation."
+    },
+    {
+      "name": "new",
+      "type": "&Parsed",
+      "description": "Tree after the mutation."
+    }
+  ],
+  "output_type": "Result<MutationMetrics, CodeIntelError>",
+  "output_description": "churn_lines, cyclomatic_delta, tree_edit_distance (+exact flag) and changed symbols."
+}

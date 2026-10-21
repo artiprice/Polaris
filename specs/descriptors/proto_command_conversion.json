@@ -1,0 +1,55 @@
+{
+  "type_of": "impl_block",
+  "name": "TryFrom<pb::Command> for Command<Unverified> / From<&Command<S>> for pb::Command",
+  "file_path": "crates/polaris-proto/src/convert.rs",
+  "logic_name": "Command Conversion",
+  "test_list": [
+    {
+      "test_name": "every_command_body_roundtrips",
+      "description": "One sample of each of the 9 sdk CommandBody variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
+    },
+    {
+      "test_name": "verified_command_serialises_without_witness",
+      "description": "A Command<Verified> encodes to the same bytes as the matching unverified command and decodes back as Command<Unverified>: approval never crosses the wire. This unchanged test lives in polaris-kernel-verifier/tests/verified_command_wire.rs so witness construction stays in the allowed boundary."
+    },
+    {
+      "test_name": "missing_fields_are_errors",
+      "description": "A command without id, frame, body or body kind gives MissingField naming the field."
+    },
+    {
+      "test_name": "unknown_role_and_effort_are_errors",
+      "description": "SpawnSubagent with role/effort 0 (unspecified) or an unknown number gives UnknownVariant."
+    },
+    {
+      "test_name": "conversion_never_panics_on_default_message",
+      "description": "A default pb::Command and a default pb::CommandBody return Err."
+    },
+    {
+      "test_name": "prop_command_roundtrip",
+      "description": "For arbitrary commands (ids, token bytes, every body variant): sdk -> pb -> bytes -> pb -> sdk is the identity."
+    },
+    {
+      "test_name": "prop_garbage_bytes_never_panic",
+      "description": "Arbitrary bytes decoded as pb::Command and converted give Ok or Err, never a panic."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Command, CommandBody, Unverified, Verified, ApprovalWitness, TokenBytes}",
+    "polaris_sdk::ids::{Cid, FrameId, CommandId, Seq, AgentRole}",
+    "polaris_sdk::effort::Effort",
+    "crates/polaris-proto/src/error.rs (ProtoError)"
+  ],
+  "libraries": [
+    "prost",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "command",
+      "type": "pb::Command (or &Command<S>)",
+      "description": "A decoded protobuf command, possibly hostile or incomplete."
+    }
+  ],
+  "output_type": "Result<Command<Unverified>, ProtoError> (pb -> sdk) or pb::Command (sdk -> pb, infallible)",
+  "output_description": "An unverified sdk command; verification is a job of the kernel and cannot be forged by the wire."
+}

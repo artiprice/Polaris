@@ -1,0 +1,74 @@
+{
+  "type_of": "function",
+  "name": "discover / read_layers",
+  "file_path": "crates/polaris-config/src/sources.rs",
+  "logic_name": "Directory Discovery",
+  "test_list": [
+    {
+      "test_name": "finds_nearest_repo_dir_walking_up",
+      "description": "From a nested cwd, the nearest ancestor .polaris/ is the repo dir."
+    },
+    {
+      "test_name": "no_repo_dir_is_none",
+      "description": "Without a .polaris/ ancestor the repo dir is None; the global dir is <home>/.polaris."
+    },
+    {
+      "test_name": "reads_bom_and_crlf_files",
+      "description": "A UTF-8 BOM + CRLF config file parses; a missing file is not an error."
+    },
+    {
+      "test_name": "env_layer_uses_prefix_and_double_underscore",
+      "description": "POLARIS_RATELIMIT__RPM=600 becomes ratelimit.rpm = 600; other variables are ignored."
+    },
+    {
+      "test_name": "session_overrides_roundtrip",
+      "description": "SessionOverrides serialise to TOML and back unchanged (D11 resume)."
+    },
+    {
+      "test_name": "parse_error_reports_file_and_line",
+      "description": "A syntax error names the file and line."
+    },
+    {
+      "test_name": "home_global_dir_is_not_a_repo_dir",
+      "description": "The upward walk stops at home (exclusive): ~/.polaris is never the (untrusted) repo dir and directories above home are never projects."
+    },
+    {
+      "test_name": "env_conflicting_paths_are_invalid",
+      "description": "POLARIS_A=1 together with POLARIS_A__B=2 is an Invalid error, never a silent drop."
+    },
+    {
+      "test_name": "windows_locked_file_is_retried",
+      "description": "Windows: a config file held open without sharing (editor/AV) is read after a bounded retry instead of failing."
+    },
+    {
+      "test_name": "long_path_repo_dir_is_found",
+      "description": "A .polaris/ above a working directory whose path exceeds 260 characters is found (no MAX_PATH failure)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::ModelId"
+  ],
+  "libraries": [
+    "toml",
+    "serde",
+    "etcetera",
+    "dunce",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "cwd",
+      "type": "&Path",
+      "description": "Working directory."
+    },
+    {
+      "name": "home",
+      "type": "&Path",
+      "description": "User home."
+    }
+  ],
+  "output_type": "Result<Dirs, ConfigError>",
+  "output_description": "~/.polaris and the nearest .polaris/, and the layers read from them."
+}

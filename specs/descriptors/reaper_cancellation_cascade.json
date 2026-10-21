@@ -1,0 +1,54 @@
+{
+  "type_of": "struct",
+  "name": "Reaper::child_token / Reaper::cancel / TaskTeardown",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/reaper.rs",
+  "logic_name": "Cancellation Cascade",
+  "test_list": [
+    {
+      "test_name": "cancelling_root_cancels_grandchildren",
+      "description": "Cancelling the reaper's root token cancels children, grandchildren and great-grandchildren (three levels below the root)."
+    },
+    {
+      "test_name": "cancelling_child_leaves_sibling_running",
+      "description": "Cancelling one child token cancels its own subtree only: the sibling subtree and the root stay live."
+    },
+    {
+      "test_name": "token_created_after_cancel_is_already_cancelled",
+      "description": "A child token requested after the root was cancelled is cancelled from the start."
+    },
+    {
+      "test_name": "shutdown_cancels_root_before_any_teardown",
+      "description": "By the time the first resource is torn down the root token (and its children) are already cancelled."
+    },
+    {
+      "test_name": "cancellation_wakes_a_cooperative_task",
+      "description": "A registered task parked on its child token exits cooperatively during shutdown and is reported Released, not Forced."
+    },
+    {
+      "test_name": "dropping_the_reaper_cancels_the_tree",
+      "description": "Drop is synchronous best effort: a reaper dropped without shutdown still cancels every child token."
+    }
+  ],
+  "dependencies": [
+    "tokio_util::sync::CancellationToken",
+    "polaris_kernel_reaper::{Reaper, ShutdownConfig, TaskTeardown}"
+  ],
+  "libraries": [
+    "tokio-util",
+    "tokio",
+    "tempfile",
+    "thiserror",
+    "tracing",
+    "proptest (dev)",
+    "tokio test-util (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "root",
+      "type": "CancellationToken",
+      "description": "The reaper's root token; every child_token() is a child of it."
+    }
+  ],
+  "output_type": "CancellationToken",
+  "output_description": "A child token that is cancelled when the root or any ancestor is cancelled, never when a sibling is."
+}

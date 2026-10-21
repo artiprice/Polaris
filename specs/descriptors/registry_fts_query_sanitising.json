@@ -1,0 +1,41 @@
+{
+  "type_of": "function",
+  "name": "fts_phrase",
+  "file_path": "crates/polaris-storage/crates/registry/src/search.rs",
+  "logic_name": "Fts Query Sanitising",
+  "test_list": [
+    {
+      "test_name": "phrase_is_wrapped_in_double_quotes",
+      "description": "fts_phrase(\"hello world\") is the single FTS5 phrase \"hello world\"."
+    },
+    {
+      "test_name": "embedded_quotes_are_doubled",
+      "description": "Every embedded double quote becomes two, so the phrase can never be closed early."
+    },
+    {
+      "test_name": "nul_characters_are_removed",
+      "description": "NUL characters are dropped from both the FTS phrase and the LIKE pattern (SQLite would truncate at NUL)."
+    },
+    {
+      "test_name": "like_pattern_escapes_wildcards",
+      "description": "like_pattern escapes %, _ and the escape character itself and wraps the text in %...%."
+    },
+    {
+      "test_name": "prop_phrase_quotes_are_balanced",
+      "description": "proptest: for any input the phrase starts and ends with a quote and every inner quote is part of a doubled pair."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "query",
+      "type": "&str",
+      "description": "Untrusted search text."
+    }
+  ],
+  "output_type": "String",
+  "output_description": "A single FTS5 phrase (or LIKE pattern) with no operator semantics."
+}

@@ -1,0 +1,44 @@
+{
+  "type_of": "method",
+  "name": "TieredCache::purge / purge_memory / stats",
+  "file_path": "crates/polaris-storage/crates/cache/src/tiers.rs",
+  "logic_name": "Cache Purge",
+  "test_list": [
+    {
+      "test_name": "purge_scope_removes_only_that_scope",
+      "description": "purge(scope) removes that scope from L1 and L2 and reports both counts; other scopes stay."
+    },
+    {
+      "test_name": "purge_memory_keeps_l2",
+      "description": "purge_memory empties L1 only; L2 still serves the value."
+    },
+    {
+      "test_name": "eviction_is_counted",
+      "description": "With a tiny L1, inserting beyond capacity evicts and stats().evictions grows."
+    },
+    {
+      "test_name": "prop_purge_removes_exactly_scope",
+      "description": "For random entries across scopes, purge(s) leaves exactly the entries of other scopes."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{ExactCacheStore, CacheScope, CacheStoreError}",
+    "polaris_sdk::ids::{Cid, ModelId, SessionId}"
+  ],
+  "libraries": [
+    "blake3",
+    "quick_cache",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "scope",
+      "type": "&CacheScope",
+      "description": "Scope to purge (/cache purge)."
+    }
+  ],
+  "output_type": "Result<PurgeReport, CacheError>",
+  "output_description": "Entries removed per tier."
+}

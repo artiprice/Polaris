@@ -1,0 +1,65 @@
+{
+  "type_of": "function",
+  "name": "load",
+  "file_path": "crates/polaris-config/src/merge.rs",
+  "logic_name": "Config Layer Merge",
+  "test_list": [
+    {
+      "test_name": "later_layer_overrides_earlier",
+      "description": "Defaults < Global < Repo < Env < Session; the highest layer setting a key wins, regardless of input order."
+    },
+    {
+      "test_name": "tables_merge_scalars_replace",
+      "description": "Nested tables merge key by key; scalars and arrays are replaced whole."
+    },
+    {
+      "test_name": "provenance_reports_winning_layer",
+      "description": "Provenance names the layer (and file) that set each key; untouched keys report Defaults."
+    },
+    {
+      "test_name": "unknown_key_is_rejected",
+      "description": "A key outside the schema is UnknownKey with its dotted path."
+    },
+    {
+      "test_name": "invalid_value_is_rejected",
+      "description": "A known key with the wrong type or range is Invalid with the key."
+    },
+    {
+      "test_name": "defaults_only_is_valid",
+      "description": "With no layers but defaults, load succeeds with the documented defaults."
+    },
+    {
+      "test_name": "prop_merge_with_itself_is_idempotent",
+      "description": "proptest: merging a layer with an identical layer changes nothing."
+    },
+    {
+      "test_name": "budget_usd_accepts_integer_and_decimal_text",
+      "description": "budget.usd keeps its exact decimal text; an integer (e.g. from POLARIS_BUDGET__USD=5) is accepted; a TOML float is rejected (no binary rounding)."
+    },
+    {
+      "test_name": "prop_highest_layer_wins_per_key",
+      "description": "For random per-layer assignments, each key takes the value of the highest layer that set it (else the default) and provenance names exactly that layer."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::ids::ModelId"
+  ],
+  "libraries": [
+    "toml",
+    "serde",
+    "etcetera",
+    "dunce",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "layers",
+      "type": "&[LayerInput]",
+      "description": "Parsed layers with their origin."
+    }
+  ],
+  "output_type": "Result<Loaded, ConfigError>",
+  "output_description": "Typed config plus per-key provenance; pure (no I/O)."
+}

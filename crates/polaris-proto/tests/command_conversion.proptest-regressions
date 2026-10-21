@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 99968611da1fbd12bd148d56f3f58428e71e9323e0cf46c33008907e922eaab8 # shrinks to body = SpawnSubagent { role: Orchestrator, effort: XHigh, brief: Cid(0000000000000000000000000000000000000000000000000000000000000000) }, id = 0, frame = 0, token = []

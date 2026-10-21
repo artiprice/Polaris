@@ -1,0 +1,44 @@
+{
+  "type_of": "struct",
+  "name": "RelPath",
+  "file_path": "crates/polaris-storage/crates/sync/src/path.rs",
+  "logic_name": "Rel Path Validation",
+  "test_list": [
+    {
+      "test_name": "accepts_normal_relative_paths",
+      "description": "a/b.rs, .github/workflows/ci.yml and unicode names are accepted unchanged."
+    },
+    {
+      "test_name": "rejects_parent_absolute_and_empty",
+      "description": "'..', '/x', 'C:/x', '', 'a//b', './a' and NUL are rejected (RootEscape / invalid)."
+    },
+    {
+      "test_name": "rejects_backslash",
+      "description": "Backslashes are rejected: they are separators on Windows but name bytes on Linux."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+  ],
+  "libraries": [
+    "blake3",
+    "walkdir",
+    "ignore (gitignore matcher)",
+    "globset",
+    "futures",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Workspace-relative path with '/' separators."
+    }
+  ],
+  "output_type": "Result<RelPath, SyncError>",
+  "output_description": "A validated, normalised relative path."
+}

@@ -1,0 +1,131 @@
+{
+  "type_of": "function",
+  "name": "reduce",
+  "file_path": "crates/polaris-ui/crates/model/src/reduce.rs",
+  "logic_name": "View Reducer",
+  "test_list": [
+    {
+      "test_name": "message_events_append_conversation",
+      "description": "push_user/assistant/system/error append entries in order and survive interleaved events."
+    },
+    {
+      "test_name": "seq_gap_returns_error",
+      "description": "A skipped sequence number returns ReduceError::SeqGap and leaves the state unchanged."
+    },
+    {
+      "test_name": "out_of_order_returns_error",
+      "description": "A repeated or older sequence number returns ReduceError::OutOfOrder and leaves the state unchanged."
+    },
+    {
+      "test_name": "first_record_may_start_anywhere",
+      "description": "The first folded record may carry any sequence number (resuming from a snapshot)."
+    },
+    {
+      "test_name": "tool_title_collapsed_until_toggle",
+      "description": "A started tool is shown collapsed; toggling one entry expands only it; the global flag applies to entries without an override."
+    },
+    {
+      "test_name": "global_toggle_clears_overrides",
+      "description": "The global expand/collapse flag resets per-entry overrides."
+    },
+    {
+      "test_name": "tool_completion_marks_status_and_latency",
+      "description": "ToolExecutionCompleted marks the matching entry succeeded/failed with its latency."
+    },
+    {
+      "test_name": "tool_completion_without_start_creates_entry",
+      "description": "A completion with no recorded start creates a finished entry instead of failing."
+    },
+    {
+      "test_name": "model_request_updates_token_weather",
+      "description": "ModelRequestCompleted accumulates prompt/completion/cached tokens, cost in micro-USD and latency."
+    },
+    {
+      "test_name": "decision_updates_s1_latency",
+      "description": "DecisionMade records the S1 latency."
+    },
+    {
+      "test_name": "status_from_worker_circuit_dead_letter",
+      "description": "WorkerRestarted, CircuitTripped and DeadLettered update the status snapshot."
+    },
+    {
+      "test_name": "session_started_and_closed",
+      "description": "SessionStarted adds a row, SessionClosed marks it closed."
+    },
+    {
+      "test_name": "goal_time_excludes_pauses",
+      "description": "Goal active time counts only the periods between start/resume and pause."
+    },
+    {
+      "test_name": "unknown_event_ignored_not_panicking",
+      "description": "Events without a view effect only advance the sequence and never panic."
+    },
+    {
+      "test_name": "effort_clamps_at_endpoints",
+      "description": "Raising effort at Max and lowering it at Low change nothing."
+    },
+    {
+      "test_name": "per_model_effort_preference",
+      "description": "Switching models restores each model's last effort in memory."
+    },
+    {
+      "test_name": "mode_toggles",
+      "description": "Auto and Plan toggle."
+    },
+    {
+      "test_name": "snapshot_welcome",
+      "description": "insta: serialized ViewState of a fresh session (characterization)."
+    },
+    {
+      "test_name": "snapshot_conversation",
+      "description": "insta: ViewState after a canonical conversation event script (characterization)."
+    },
+    {
+      "test_name": "snapshot_error_and_status",
+      "description": "insta: ViewState after error entry and worker/circuit events (characterization)."
+    },
+    {
+      "test_name": "snapshot_goal_active_and_paused",
+      "description": "insta: goal line active and paused (characterization)."
+    },
+    {
+      "test_name": "view_state_serde_round_trip",
+      "description": "ViewState serializes to JSON and back unchanged."
+    },
+    {
+      "test_name": "prop_reducer_is_deterministic",
+      "description": "Folding the same sequence-respecting record list into two fresh states gives equal states."
+    },
+    {
+      "test_name": "prop_error_leaves_state_unchanged",
+      "description": "Any rejected record leaves the state unchanged."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Event, EventRecord, WorkerKind}",
+    "polaris_sdk::ids::{Seq, Cid, FrameId, SessionId, ModelId, MicroUsd, TokenCount}",
+    "polaris_sdk::effort::Effort",
+    "polaris_sdk::error::HasKind"
+  ],
+  "libraries": [
+    "serde",
+    "thiserror",
+    "proptest (dev)",
+    "insta (dev)",
+    "serde_json (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "state",
+      "type": "&mut ViewState",
+      "description": "View state to fold into."
+    },
+    {
+      "name": "record",
+      "type": "&EventRecord",
+      "description": "Next record; its seq must be last+1."
+    }
+  ],
+  "output_type": "Result<(), ReduceError>",
+  "output_description": "Updated view state, or a typed error with the state unchanged."
+}

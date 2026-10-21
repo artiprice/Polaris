@@ -1,0 +1,54 @@
+{
+  "type_of": "function",
+  "name": "start (rotating file sink)",
+  "file_path": "crates/polaris-log/src/file.rs",
+  "logic_name": "File Rotation",
+  "test_list": [
+    {
+      "test_name": "rotates_when_size_exceeded",
+      "description": "Files never exceed rotate_bytes and several files appear."
+    },
+    {
+      "test_name": "keeps_exactly_keep_files",
+      "description": "After many rotations exactly keep_files files remain (2 and 3)."
+    },
+    {
+      "test_name": "lines_survive_in_order_across_files",
+      "description": "With generous retention every line appears once, in order, across the rotated files."
+    },
+    {
+      "test_name": "file_lines_are_redacted",
+      "description": "Seeded fake secrets never reach the file."
+    },
+    {
+      "test_name": "json_mode_writes_one_object_per_line",
+      "description": "JSON mode writes one {ts,level,target,fields} object per line."
+    },
+    {
+      "test_name": "unusable_log_dir_is_a_sink_init_error",
+      "description": "A log directory that cannot be created is LogError::SinkInit, not a panic."
+    },
+    {
+      "test_name": "rotation_failure_is_counted_and_producers_continue",
+      "description": "Stress: every rotation fails; producers keep running, sink errors are counted and the last error is readable."
+    },
+    {
+      "test_name": "overflow_policy_accounts_every_record",
+      "description": "8 producers against a 16-slot queue: accepted + dropped == emitted and every accepted record reaches the file; worst call latency is printed."
+    }
+  ],
+  "dependencies": [],
+  "libraries": [
+    "spdlog-rs",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "cfg",
+      "type": "LogConfig",
+      "description": "Directory, rotation size and file count."
+    }
+  ],
+  "output_type": "Result<(LogGuard, Dispatch), LogError>",
+  "output_description": "Drain thread writes through spdlog-rs RotatingFileSink with bounded retry."
+}

@@ -1,0 +1,61 @@
+{
+  "type_of": "module",
+  "name": "generated::polaris::v1 and FILE_DESCRIPTOR_SET",
+  "file_path": "crates/polaris-proto/proto/polaris/v1/{common,kernel,worker,guest}.proto",
+  "logic_name": "Wire Schema Contract",
+  "test_list": [
+    {
+      "test_name": "descriptor_set_lists_the_three_services",
+      "description": "The embedded FileDescriptorSet defines PolarisKernelService, WorkerService and GuestService with exactly the RPCs of the plan, with the streaming flags the plan lists."
+    },
+    {
+      "test_name": "guest_handshake_keeps_the_spike_fields",
+      "description": "GuestHandshakeResponse still has protocol_version, guest_version, os, arch and pid (the fields spike S0-12 printed) at stable numbers."
+    },
+    {
+      "test_name": "field_numbers_are_frozen",
+      "description": "A table of (message, field, number) for the envelope messages (Event kinds, CommandBody kinds, EventRecord, Command, handshakes) matches the descriptor: renumbering fails the test."
+    },
+    {
+      "test_name": "growing_messages_reserve_a_range",
+      "description": "Every message with a oneof or evolving payload reserves 100..=199, and no field uses a reserved number."
+    },
+    {
+      "test_name": "enums_start_with_unspecified",
+      "description": "Every enum has value 0 named *_UNSPECIFIED, so a default message can never decode to a real variant."
+    },
+    {
+      "test_name": "blobs_are_cid_references",
+      "description": "No Event or CommandBody payload field is of type bytes; they are Cid messages (only token and stream chunk frames carry inline bytes)."
+    },
+    {
+      "test_name": "golden_bytes_are_stable",
+      "description": "Synthetic golden encodings of a Cid, a Uuid and a SessionClosed event record match literal hex (wire compatibility)."
+    },
+    {
+      "test_name": "generated_stubs_exist_for_every_service",
+      "description": "The tonic client and server modules of the three services are usable types (compile-time reference)."
+    }
+  ],
+  "dependencies": [
+    "prost_types::FileDescriptorSet",
+    "tonic (generated client/server stubs)"
+  ],
+  "libraries": [
+    "prost",
+    "prost-types",
+    "tonic",
+    "tonic-prost",
+    "tonic-prost-build (build)",
+    "protoc-bin-vendored (build)"
+  ],
+  "inputs": [
+    {
+      "name": "proto files",
+      "type": ".proto sources",
+      "description": "common.proto, kernel.proto, worker.proto, guest.proto compiled by build.rs with the vendored protoc."
+    }
+  ],
+  "output_type": "generated Rust module + FILE_DESCRIPTOR_SET bytes",
+  "output_description": "Message types, tonic clients/servers and the descriptor set, isolated under generated::polaris::v1."
+}

@@ -15,6 +15,7 @@ exclude = [
     "tests/fuzz",
     "@prime",
     "dist",
+    "vendor",
 ]
 
 [workspace.package]
@@ -197,7 +198,7 @@ quick_cache = "0.7.0"
 secrecy = "0.10.3"
 zeroize = { version = "1.9.1", features = ["derive"] }
 chacha20poly1305 = "0.11.0"
-biscuit-auth = "6.0.0"
+biscuit-auth = { version = "6.0.0", path = "vendor/biscuit-auth", default-features = false }
 rand = "0.10.3"
 getrandom = "0.4.3"
 keyring = "4.2.0"
@@ -205,8 +206,9 @@ keyring = "4.2.0"
 # ---------------------------------------------------------------- storage
 redb = "4.4.0"
 rusqlite = { version = "0.40.2", features = ["bundled"] }
-lancedb = "0.40.0"
-# Fallback VectorStore if spike S0-9 (LanceDB on Windows) fails.
+# Opt-in only (S0-9: 36 min build at -j4, 4.8 GB target, 249 MB exe). `remote` is required: 0.40.0 src/job.rs uses Error::Http without cfg(feature = "remote").
+lancedb = { version = "0.40.0", features = ["remote"] }
+# Default VectorStore backend (S0-9 chose the fallback): HNSW index; metadata in SQLite (rusqlite).
 usearch = "2.26.5"
 zstd = "0.14.3"
 

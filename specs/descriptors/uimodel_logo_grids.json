@@ -1,0 +1,71 @@
+{
+  "type_of": "module",
+  "name": "logo",
+  "file_path": "crates/polaris-ui/crates/model/src/logo.rs",
+  "logic_name": "Logo Grids",
+  "test_list": [
+    {
+      "test_name": "welcome_is_15_by_7",
+      "description": "WELCOME has 7 rows of 15 cells."
+    },
+    {
+      "test_name": "compact_is_11_by_5",
+      "description": "COMPACT has 5 rows of 11 cells."
+    },
+    {
+      "test_name": "emblem_is_11_by_1",
+      "description": "EMBLEM has 1 row of 11 cells."
+    },
+    {
+      "test_name": "welcome_rows_exact",
+      "description": "WELCOME rows equal the PLAN cell art with the middle dot read as an ordinary space."
+    },
+    {
+      "test_name": "compact_rows_exact",
+      "description": "COMPACT rows equal the PLAN cell art."
+    },
+    {
+      "test_name": "emblem_is_star_flanked_by_four_spaces",
+      "description": "EMBLEM is four spaces, a horizontal bar, the star, a horizontal bar, and four spaces."
+    },
+    {
+      "test_name": "mint_highlight_coordinates",
+      "description": "The mint highlight is at (7,2) for WELCOME, (5,0) for COMPACT and absent for EMBLEM, and sits on a trace glyph."
+    },
+    {
+      "test_name": "package_rectangles",
+      "description": "The package occupies x=2..12,y=1..5 (WELCOME) and x=1..9,y=1..3 (COMPACT), and the frame corners sit on its corners."
+    },
+    {
+      "test_name": "ascii_fallback_maps_frame_and_star",
+      "description": "Frame glyphs map to + - | and the star maps to *; exact ASCII rows are asserted."
+    },
+    {
+      "test_name": "ascii_fallback_is_pure_ascii_and_same_size",
+      "description": "ASCII rows are all ASCII and keep the grid dimensions."
+    },
+    {
+      "test_name": "roles_cover_star_mint_and_frame",
+      "description": "role_at classifies star, mint, upper/left frame, lower/right frame and pins, package surface and canvas."
+    },
+    {
+      "test_name": "glyph_lookup_is_bounds_checked",
+      "description": "glyph(x, y) returns None outside the grid instead of panicking."
+    }
+  ],
+  "dependencies": [
+    "none"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "x,y",
+      "type": "usize",
+      "description": "Cell coordinates."
+    }
+  ],
+  "output_type": "LogoGrid / char / LogoRole",
+  "output_description": "Exact logo cell art, highlight coordinates, ASCII fallback and per-cell colour role."
+}

@@ -1,0 +1,61 @@
+{
+  "type_of": "function",
+  "name": "key_for_completion / key_for_s1 / key_for_embedding",
+  "file_path": "crates/polaris-storage/crates/cache/src/keys.rs",
+  "logic_name": "Cache Key Derivation",
+  "test_list": [
+    {
+      "test_name": "same_inputs_same_key",
+      "description": "Identical inputs derive the identical 32-byte key."
+    },
+    {
+      "test_name": "param_change_changes_key",
+      "description": "A different sampling-params digest gives a different key."
+    },
+    {
+      "test_name": "scope_isolates_keys",
+      "description": "The same inputs in Global, two Workspace scopes and a Session scope give four different keys (isolated storage level)."
+    },
+    {
+      "test_name": "prefix_cid_changes_key",
+      "description": "A different stable-prefix Cid gives a different key."
+    },
+    {
+      "test_name": "kind_separates_keys",
+      "description": "S1, S2 and embedding keys over the same bytes never coincide (domain separation)."
+    },
+    {
+      "test_name": "length_prefix_prevents_ambiguity",
+      "description": "model \"ab\" + tail \"c\" and model \"a\" + tail \"bc\" give different keys."
+    },
+    {
+      "test_name": "prop_distinct_inputs_distinct_keys",
+      "description": "Distinct S1 inputs never share a key (blake3, never xxh3 — safety decisions cannot be poisoned by crafted collisions)."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{ExactCacheStore, CacheScope, CacheStoreError}",
+    "polaris_sdk::ids::{Cid, ModelId, SessionId}"
+  ],
+  "libraries": [
+    "blake3",
+    "quick_cache",
+    "thiserror",
+    "tokio (dev)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "scope",
+      "type": "CacheScope",
+      "description": "Global, workspace or session."
+    },
+    {
+      "name": "inputs",
+      "type": "model, params digest, prefix Cid, tail / schema digest, input",
+      "description": "Everything that determines the cached value."
+    }
+  ],
+  "output_type": "CacheKey",
+  "output_description": "Scope, kind and a domain-separated, length-prefixed blake3 digest."
+}

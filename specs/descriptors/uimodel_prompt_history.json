@@ -1,0 +1,43 @@
+{
+  "type_of": "struct",
+  "name": "Composer (history)",
+  "file_path": "crates/polaris-ui/crates/model/src/composer.rs",
+  "logic_name": "Prompt History",
+  "test_list": [
+    {
+      "test_name": "history_restores_unsent_draft",
+      "description": "Up through the history and Down past the newest restores the unsent draft with its cursor."
+    },
+    {
+      "test_name": "history_only_moves_at_first_and_last_row",
+      "description": "history_prev needs first_row=true and history_next needs last_row=true; otherwise nothing changes."
+    },
+    {
+      "test_name": "history_walks_oldest_to_newest",
+      "description": "Repeated prev walks newest to oldest and stops at the oldest; next walks back."
+    },
+    {
+      "test_name": "history_dedupes_consecutive_and_strips_image_markers",
+      "description": "Consecutive identical submissions are stored once and [Image N] markers are not stored."
+    },
+    {
+      "test_name": "prop_history_never_loses_the_draft",
+      "description": "After any number of prev then the same number of next, the draft equals the original."
+    }
+  ],
+  "dependencies": [
+    "none"
+  ],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "first_row/last_row",
+      "type": "bool",
+      "description": "Whether the cursor is on the first/last visual row (caller computes)."
+    }
+  ],
+  "output_type": "bool",
+  "output_description": "True when the buffer was replaced by a history entry or the draft."
+}

@@ -1,0 +1,47 @@
+{
+  "type_of": "struct",
+  "name": "Reaper::register_process / ProcessTeardown<P: PlatformOps>",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/resource.rs",
+  "logic_name": "Process Seam",
+  "test_list": [
+    {
+      "test_name": "process_is_stopped_through_platform_ops",
+      "description": "Shutdown calls PlatformOps::graceful_stop once with the registered process tree and half of the graceful budget as the platform's own grace period."
+    },
+    {
+      "test_name": "killed_after_grace_is_reported_forced",
+      "description": "StopOutcome::Killed maps to Outcome::Forced, StopOutcome::Exited to Released."
+    },
+    {
+      "test_name": "platform_error_is_reported_failed",
+      "description": "A PlatformError becomes Outcome::Failed carrying the error text."
+    },
+    {
+      "test_name": "process_registration_is_journaled_by_pid",
+      "description": "The root pid is journaled so a later start-up can list the orphan."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{PlatformOps, ProcessTree, StopOutcome, PlatformError, SpawnSpec, MemoryPressure}",
+    "polaris_kernel_reaper::{Reaper, ProcessTeardown}"
+  ],
+  "libraries": [
+    "tokio",
+    "thiserror",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "platform",
+      "type": "Arc<P: PlatformOps>",
+      "description": "The OS seam; the real Job Object / process-group implementation is polaris-platform-process (P2). Tests use a fake."
+    },
+    {
+      "name": "tree",
+      "type": "ProcessTree",
+      "description": "The process tree to stop."
+    }
+  ],
+  "output_type": "ReapId",
+  "output_description": "Handle for the registered process tree."
+}

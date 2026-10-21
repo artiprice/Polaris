@@ -1,0 +1,43 @@
+{
+  "type_of": "function",
+  "name": "Bus::publish / Bus::fanout",
+  "file_path": "crates/polaris-kernel/crates/bus/src/bus.rs",
+  "logic_name": "Log Then Publish",
+  "test_list": [
+    {
+      "test_name": "publish_appends_before_fanout",
+      "description": "A subscriber that receives an event finds it already in the store."
+    },
+    {
+      "test_name": "store_error_suppresses_fanout",
+      "description": "If the store rejects the append, nothing is fanned out and Store(..) is returned."
+    },
+    {
+      "test_name": "seq_is_strictly_increasing",
+      "description": "8 threads publishing concurrently: subscribers see strictly increasing, gap-free Seq."
+    },
+    {
+      "test_name": "no_receivers_is_not_an_error",
+      "description": "publish with no subscribers succeeds; fanout reports NoReceivers."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::contracts::{Command, EventRecord}",
+    "polaris_sdk::registry::EventStore"
+  ],
+  "libraries": [
+    "tokio (sync)",
+    "tracing",
+    "proptest (dev)",
+    "dhat (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "record",
+      "type": "EventRecord",
+      "description": "Event to persist and broadcast (the store assigns Seq)."
+    }
+  ],
+  "output_type": "Result<Seq, BusError>",
+  "output_description": "Durable before visible; ordered."
+}
