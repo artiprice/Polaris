@@ -4,6 +4,7 @@
   "file_path": "crates/polaris-security/crates/capability/src/lib.rs",
   "logic_name": "Biscuit capability boundary",
   "test_list": [
+    {"test_name":"invalid_capability_inputs_are_not_component_fatal","description":"A real signed descendant with a type-invalid expression and an unrepresentable TTL reject as input failures, not component-fatal errors."},
     {"test_name":"expiry_never_wraps_or_extends_lifetime","description":"Kani: every i64 issue time and u128 lifetime rejects zero/overflow and otherwise preserves the exact sum."},
     {"test_name":"unknown_vocabulary_cannot_be_repaired_by_descendant_facts","description":"A signed root missing the supported vocabulary cannot be repaired by an appended version/grant fact."},
     {"test_name":"datalog_fact_explosion_exhausts_budget_without_granting","description":"A valid signed descendant with a transitive-closure fact explosion hits evaluator limits and never grants."},

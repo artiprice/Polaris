@@ -557,6 +557,23 @@ fn unknown_vocabulary_cannot_be_repaired_by_descendant_facts() -> TestResult {
     Ok(())
 }
 #[test]
+fn invalid_capability_inputs_are_not_component_fatal() -> TestResult {
+    use biscuit_auth::{UnverifiedBiscuit,builder::BlockBuilder};
+    use polaris_sdk::error::{ErrorKind,HasKind};
+    let (authority,root)=issue(&scope()?)?;
+    let invalid=UnverifiedBiscuit::from(root.to_bytes().as_bytes())?
+        .append(BlockBuilder::new().check("check if resource($p), $p < 2")?)?.to_vec()?;
+    let token=Token::from_bytes(&invalid,&authority.public_key())?;
+    let path=ResourcePath::new("src/a.rs")?;
+    let error=authorize(&token,&facts(&path),&authority.public_key(),&FakeClock(1000))
+        .expect_err("a type-invalid descendant must never approve");
+    assert_eq!(error.kind(),ErrorKind::Permanent,"untrusted token input must not stop the verifier component");
+    let error=authority.issue_root(FrameId::from_u128(9),&Scope{ttl:Duration::MAX,..scope()?},&FakeClock(1000))
+        .expect_err("unrepresentable requested lifetime");
+    assert_eq!(error.kind(),ErrorKind::Permanent,"invalid TTL is a rejected scope, not clock infrastructure failure");
+    Ok(())
+}
+#[test]
 fn invalid_ttl_and_overflow_are_rejected() -> TestResult {
     for ttl in [Duration::ZERO, Duration::from_nanos(1), Duration::MAX] {
         assert!(issue(&Scope { ttl, ..scope()? }).is_err());
