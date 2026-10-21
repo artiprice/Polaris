@@ -8,6 +8,7 @@ REPO="${1:-/mnt/c/mDev/Polaris}"
 . "$HOME/.cargo/env"
 export CARGO_TARGET_DIR="$HOME/.cache/polaris-target"
 cd "$REPO"
+python3 -I @prime/tools/check-vendored-biscuit.py
 echo "toolchain: $(rustc --version) | nightly: $(rustc +nightly --version) | nextest: $(cargo nextest --version | head -1) | fuzz: $(cargo fuzz --version) | kani: $(cargo kani --version 2>/dev/null | head -1)"
 RUSTFLAGS="-Dwarnings" cargo check --workspace --all-targets 2>&1 | tail -2
 RUSTDOCFLAGS="-Dwarnings" cargo doc --workspace --no-deps 2>&1 | tail -1

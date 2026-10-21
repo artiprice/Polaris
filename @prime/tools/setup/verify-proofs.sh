@@ -6,6 +6,7 @@ set -uo pipefail
 cd "$(dirname "$0")/../../.." || exit 1
 # shellcheck disable=SC1091
 . "$HOME/.cargo/env"
+python3 -I @prime/tools/check-vendored-biscuit.py || exit 1
 FUZZ_SECONDS="${1:-60}"
 # Miri: pure crates only. Excluded: polaris-storage-cas (zstd C code through FFI) and polaris-storage-eventlog (redb file I/O),
 # which Miri cannot execute.
