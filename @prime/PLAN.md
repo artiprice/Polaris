@@ -2925,6 +2925,16 @@ pub struct ReflectOp<D: DecisionEngine> { /* P7: auto-learn project invariants *
 
 **Purpose.** Every proposed mutation (`ProposeDiff` command) passes three layers in strict order before it can become a `DiffApproved` event: (1) Biscuit signature chain and Datalog checks (resource, churn, TTL, no-unsafe, diff blake3), (2) deterministic AST metrics (churn, cyclomatic delta, tree-edit distance) against limits in the token facts and config, (3) S1 checks (pre-flight for test tampering and secrets, then intent congruence). Layers 1 and 2 are deterministic and run before any model call; a rejection there costs no tokens. Biscuit bounds the damage of a prompt-injected subagent to the rights in its token; it does not prevent injection and does not judge whether an in-scope edit is malicious.
 
+**Production implementation checkpoint (UNVERIFIED, validation deferred by user).** The current
+`mutation_digest` API binds command id, frame id, normalized target, diff CID and both source CIDs
+with a domain-separated digest. Capability issuers must pin that digest for this verifier; a hash
+of unified-diff text alone does not bind the resulting source bytes. The command's original diff
+CID is checked separately. Approval evidence is stored/read back through `EvidenceStore`; the
+composition root now provides a real local-CAS adapter. Incomplete AST unsafe coverage, lower-bound
+tree distance or missing calibrated semantic evidence requires approval; automatic approval is
+currently unavailable with the incomplete safety analyzer. This checkpoint does not close the TODOs
+or phase gates below.
+
 **API sketch.**
 ```rust
 pub struct Score(u16);                                        // fixed-point 0..=1000; avoids float comparisons (prompt.md: float_cmp)

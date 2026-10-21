@@ -149,13 +149,56 @@ pub enum ChatRole {
     Tool,
 }
 
-/// One chat message.
+/// One actual model-issued function call, replayed in assistant history before its tool result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChatToolCall {
+    /// Provider call id used by exactly one corresponding tool-result message.
+    pub id: String,
+    /// Registered tool name.
+    pub name: String,
+    /// Complete JSON argument text; the provider adapter validates it before transmission.
+    pub arguments_json: String,
+}
+
+/// One chat message. Structured tool metadata prevents tool results from being replayed as
+/// unaffiliated text. Older serialized text-only messages deserialize with empty metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChatMessage {
     /// Author.
     pub role: ChatRole,
     /// Text content.
     pub content: String,
+    /// Assistant function calls; empty for other roles.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tool_calls: Vec<ChatToolCall>,
+    /// Identity of the preceding assistant function call for a tool-role result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    /// Provider reasoning history, isolated from user-visible content. Adapters send it only
+    /// when that provider's explicit replay policy supports the reasoning field.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning: Option<String>,
+}
+
+impl ChatMessage {
+    /// Construct a text-only message with no tool or reasoning metadata.
+    #[must_use]
+    pub fn text(role: ChatRole, content: String) -> Self {
+        Self { role, content, tool_calls: Vec::new(), tool_call_id: None, reasoning: None }
+    }
+
+    /// Construct one explicit tool-result message. The adapter validates history linkage.
+    #[must_use]
+    pub fn tool_result(call_id: String, content: String) -> Self {
+        Self { role: ChatRole::Tool, content, tool_calls: Vec::new(), tool_call_id: Some(call_id), reasoning: None }
+    }
+
+    /// Construct an assistant tool-call turn with the exact complete calls and optional isolated
+    /// reasoning channel. This stores data and does not authorize or execute any call.
+    #[must_use]
+    pub fn assistant_calls(content: String, calls: Vec<ChatToolCall>, reasoning: Option<String>) -> Self {
+        Self { role: ChatRole::Assistant, content, tool_calls: calls, tool_call_id: None, reasoning }
+    }
 }
 
 /// A chat completion request (OpenAI-compatible semantics).
@@ -207,6 +250,9 @@ pub enum FinishReason {
 pub enum ChatChunk {
     /// Assistant text delta.
     Text(String),
+    /// Provider-emitted reasoning text, kept separate from user-visible assistant output.
+    /// This is provider data, never an instruction or evidence that an action is authorized.
+    Reasoning(String),
     /// Tool-call delta; fragments with the same `index` concatenate.
     ToolCallDelta {
         /// Position of the call in this response.

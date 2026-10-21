@@ -37,6 +37,15 @@ attenuation evidence (§E28); the hybrid mutation verifier and S1 safety stages 
 The minimal published-source feature patch is mechanically checked (§E29). Current advisory checks
 pass, but dependency audits fail; no new audit exemptions were added.
 
+**Current source checkpoint — UNVERIFIED:** following the user's direction to prioritize production
+logic and defer UI, tests and validation, implementation now extends through P2–P9: runtime blast/proof
+guards; hybrid verification/operator composition; S1 schemas/router/safety/watchdog; provenance-preserving
+knowledge sifting; local consent-gated Data Lab export; DAG scheduling; sandbox CI; and authenticated
+RPC service logic. New source is not built or tested. Missing AST coverage blocks automatic mutation
+approval. Full dispatcher/backend assembly, remote APIs/credentials, RPC transports, UI and P10
+verification remain open. `workspace.toml` records ownership and IN PROGRESS status; generated status
+tables and broad document regeneration are deferred with the validation pass. No new phase PASS is claimed.
+
 Next actions: (1) **team** — request keys/accounts (P0-ACC-1..4); (2) **each member** — run
 `@prime/tools/setup/setup-windows.ps1` (PHASES.md §0.1) and the S0-10 probe in their terminals; (3) **team** —
 Slint licence decision; (4) core runtime: verified command dispatch/operator pipeline, native worker/platform

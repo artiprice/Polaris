@@ -16,3 +16,5 @@ workspace = true
 thiserror = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }

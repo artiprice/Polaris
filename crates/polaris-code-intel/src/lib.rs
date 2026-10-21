@@ -34,6 +34,7 @@ mod merge;
 mod metrics;
 mod parse;
 mod repomap;
+mod safety;
 mod skeleton;
 mod walk;
 
@@ -48,4 +49,9 @@ pub use metrics::{
 };
 pub use parse::{ByteSpan, ParseLimits, Parsed, ParserPool};
 pub use repomap::{RankedFile, RepoMap, RepoMapBudget, RepoMapVersion, rank_files, repo_map};
+pub use safety::{
+    AnalysisCoverage, AstObservation, AssertionObservation, MAX_SAFETY_NODES, MarkerKind, SafetyAnalysis,
+    SafetyCounts, TautologyKind, TautologyObservation, TestMarker, TestObservation,
+    analyze_safety,
+};
 pub use skeleton::{MAX_SIGNATURE_BYTES, MAX_SKELETON_ITEMS, Skeleton, SkeletonItem, skeleton};

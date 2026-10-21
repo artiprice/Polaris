@@ -14,5 +14,6 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }

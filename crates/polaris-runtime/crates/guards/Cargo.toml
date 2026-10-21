@@ -18,3 +18,5 @@ thiserror = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-code-intel = { workspace = true }
 polaris-tools-rtk = { workspace = true }
+globset = { workspace = true }
+blake3 = { workspace = true }

@@ -49,8 +49,10 @@ pub use polaris_storage as storage;
 
 mod context;
 mod error;
+mod evidence;
 pub mod session;
 
 pub use context::KernelCtx;
 pub use error::KernelError;
+pub use evidence::KernelEvidence;
 pub use session::{Archived, Configured, Created, Paused, Running, Session, SessionConfig};
