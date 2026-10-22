@@ -20,6 +20,8 @@ polaris-config = { workspace = true }
 polaris-log = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
+process-wrap = { workspace = true }
+uuid = { workspace = true }
 which = { workspace = true }
 
 [dev-dependencies]

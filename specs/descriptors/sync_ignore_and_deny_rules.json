@@ -17,8 +17,16 @@
       "description": "'!.env' in .polarisignore does not re-include a denied file."
     },
     {
-      "test_name": "git_config_denied",
-      "description": ".git/config is denied at any depth while other .git files are not."
+      "test_name": "git_metadata_denied",
+      "description": ".git metadata is denied at any depth, including a linked-worktree .git file."
+    },
+    {
+      "test_name": "git_and_polaris_metadata_are_denied_even_with_negation",
+      "description": ".git and .polaris trees remain denied regardless of negation rules and path case."
+    },
+    {
+      "test_name": "workspace_ignore_file_is_bounded_before_pattern_parsing",
+      "description": "An oversized workspace ignore file is rejected before parsing patterns."
     },
     {
       "test_name": "ignored_directory_prunes_children",

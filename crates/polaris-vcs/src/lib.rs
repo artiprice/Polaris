@@ -8,7 +8,9 @@ mod git;
 mod journal;
 mod paths;
 
-pub use git::{Clean, DiffSet, Dirty, Removed, Repo, RepoStatus, StatusEntry, StatusKind, Worktree};
+pub use git::{
+    Clean, DiffSet, Dirty, Removed, Repo, RepoStatus, StatusEntry, StatusKind, Worktree,
+};
 pub use journal::{CheckpointSeq, FileSnapshot, RollbackPlan, UndoPlan, UndoReport};
 pub use paths::{BranchName, RepoPath, RevSpec};
 

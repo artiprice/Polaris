@@ -34,6 +34,9 @@
 //! `tokio`, `clap`, `crossterm`, `ratatui`, `miette`, `mimalloc`, `rustls`
 
 mod app;
+mod doctor;
 mod rtk;
+mod sandbox;
 pub use app::{Action, Args, CliError, install_crypto_provider, run};
 pub use rtk::{RtkArgs, RtkCliError, RtkModeArg};
+pub use sandbox::{SandboxAction, SandboxArgs};

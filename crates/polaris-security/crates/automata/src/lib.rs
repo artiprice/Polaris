@@ -30,4 +30,6 @@ pub use error::AutomataError;
 pub use guard::{UserRegexLimits, ValidatedPattern, validate_user_regex};
 pub use redactor::DfaRedactor;
 pub use rules::DEFAULT_RULES;
-pub use scan::{Category, CompileLimits, DfaScanner, Match, RuleId, RuleSetBuilder, ScanBuf};
+pub use scan::{
+    Category, CompileLimits, DfaScanner, Match, RuleId, RuleSetBuilder, ScanBuf, StreamScanner,
+};

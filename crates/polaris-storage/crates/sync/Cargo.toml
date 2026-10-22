@@ -19,6 +19,8 @@ ignore = { workspace = true }
 globset = { workspace = true }
 futures = { workspace = true }
 bytes = { workspace = true }
+uuid = { workspace = true }
+tar = { workspace = true }
 # Internal edges (layer-checked by `cargo xtask check-layers`).
 polaris-sdk = { workspace = true }
 

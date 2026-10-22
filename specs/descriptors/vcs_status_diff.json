@@ -1,0 +1,18 @@
+{
+  "type_of": "async_function",
+  "name": "Repo::status_and_diff",
+  "file_path": "crates/polaris-vcs/src/git.rs",
+  "logic_name": "Repository Status and Bounded Diff",
+  "test_list": [
+    { "test_name": "status_reports_staged_worktree_and_untracked_changes", "description": "gix status returns deterministic changed paths and omits Polaris metadata." },
+    { "test_name": "diff_includes_untracked_binary_and_mode_changes", "description": "Diff output includes changed and untracked paths, preserving binary and mode data." },
+    { "test_name": "diff_rejects_filters_and_includes", "description": "Repository-local filter and include configuration cannot execute external programs." },
+    { "test_name": "git_output_and_runtime_are_bounded", "description": "Git fallback is shell-free and enforces time and output caps." },
+    { "test_name": "crlf_diff_and_status_keep_workspace_bytes", "description": "Git reads preserve CRLF workspace bytes with autocrlf disabled." }
+  ],
+  "dependencies": ["gix::Repository", "tokio::process::Command", "crate::RepoPath"],
+  "libraries": ["gix", "tokio", "blake3"],
+  "inputs": [ { "name": "repo", "type": "&Repo", "description": "An open worktree." }, { "name": "paths", "type": "&[RepoPath]", "description": "Optional validated relative path filter." } ],
+  "output_type": "Result<RepoStatus|DiffSet,VcsError>",
+  "output_description": "Actual status and a bounded byte-preserving diff."
+}

@@ -143,6 +143,14 @@ pub fn ast_blast_radius<V: SymbolReferenceView>(
         let call_sites = references
             .call_sites(&symbol)
             .map_err(GuardError::Workspace)?;
+        if call_sites.is_some_and(|facts| {
+            facts.test_call_sites > facts.call_sites
+                || facts.files > facts.call_sites
+                || facts.crates > facts.files
+                || facts.call_sites == 0 && (facts.files != 0 || facts.crates != 0)
+        }) {
+            return Err(GuardError::Workspace(ViewError::InvalidFacts));
+        }
         if call_sites.is_none()
             || call_sites.is_some_and(|facts| facts.confidence == ReferenceConfidence::Unknown)
         {

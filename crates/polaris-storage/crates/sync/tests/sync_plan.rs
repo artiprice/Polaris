@@ -3,7 +3,7 @@
 use std::error::Error;
 
 use polaris_sdk::ids::Cid;
-use polaris_storage_sync::{EntryKind, FileEntry, Manifest, RelPath, plan};
+use polaris_storage_sync::{EntryKind, FileEntry, Manifest, RelPath, plan, plan_two_way};
 use proptest::prelude::*;
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -55,6 +55,59 @@ fn removed_file_deleted() -> TestResult {
     );
     assert_eq!(strs(&p.delete), ["gone"]);
     assert!(p.upload.is_empty());
+    Ok(())
+}
+
+#[test]
+fn two_way_plan_moves_only_local_changes_and_keeps_remote_only_changes() -> TestResult {
+    let base = manifest(&[("local", 1, false), ("remote", 2, false)])?;
+    let local = manifest(&[("local", 3, false), ("remote", 2, false)])?;
+    let remote = manifest(&[("local", 1, false), ("remote", 4, false)])?;
+    let p = plan_two_way(&base, &local, &remote);
+    assert_eq!(strs(&p.upload), ["local"]);
+    assert!(p.delete.is_empty());
+    assert!(p.conflicts.is_empty());
+    assert_eq!(
+        p.expected_remote.get(&RelPath::new("local")?),
+        Some(&Some(entry(1, false)))
+    );
+    Ok(())
+}
+
+#[test]
+fn two_way_plan_coalesces_identical_changes_and_reports_edit_races() -> TestResult {
+    let base = manifest(&[("same", 1, false), ("edit", 2, false)])?;
+    let local = manifest(&[("same", 3, false), ("edit", 4, false)])?;
+    let remote = manifest(&[("same", 3, false), ("edit", 5, false)])?;
+    let p = plan_two_way(&base, &local, &remote);
+    assert_eq!(p.conflicts.len(), 1);
+    assert_eq!(p.conflicts[0].path, RelPath::new("edit")?);
+    assert_eq!(p.conflicts[0].base.as_ref(), Some(&entry(2, false)));
+    assert_eq!(p.conflicts[0].local.as_ref(), Some(&entry(4, false)));
+    assert_eq!(p.conflicts[0].remote.as_ref(), Some(&entry(5, false)));
+    assert_eq!(strs(&p.upload), ["same"]);
+    assert_eq!(
+        p.expected_remote.get(&RelPath::new("same")?),
+        Some(&Some(entry(3, false)))
+    );
+    Ok(())
+}
+
+#[test]
+fn two_way_plan_reports_edit_delete_and_delete_edit_conflicts() -> TestResult {
+    let base = manifest(&[("edit-delete", 1, false), ("delete-edit", 2, false)])?;
+    let local = manifest(&[("edit-delete", 3, false)])?;
+    let remote = manifest(&[("delete-edit", 4, false)])?;
+    let p = plan_two_way(&base, &local, &remote);
+    assert_eq!(p.conflicts.len(), 2);
+    assert!(p.upload.is_empty());
+    assert!(p.delete.is_empty());
+    assert_eq!(p.conflicts[0].path, RelPath::new("delete-edit")?);
+    assert_eq!(p.conflicts[0].local, None);
+    assert_eq!(p.conflicts[0].remote, Some(entry(4, false)));
+    assert_eq!(p.conflicts[1].path, RelPath::new("edit-delete")?);
+    assert_eq!(p.conflicts[1].local, Some(entry(3, false)));
+    assert_eq!(p.conflicts[1].remote, None);
     Ok(())
 }
 

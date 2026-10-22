@@ -35,6 +35,9 @@ pub enum KernelError {
     /// Invalid configuration, refused before event append.
     #[error("invalid session configuration: {0}")]
     Configuration(&'static str),
+    /// Actual typed sandbox backend failure.
+    #[error(transparent)]
+    Sandbox(#[from] polaris_sdk::registry::SandboxError),
     /// Invalid event sequence, payload or internal ownership invariant.
     #[error("session replay integrity error: {0}")]
     Integrity(&'static str),
@@ -95,6 +98,7 @@ impl HasKind for KernelError {
             Self::Directive(error) => error.kind(),
             Self::Registry(error) => error.kind(),
             Self::EventLog(error) => error.kind(),
+            Self::Sandbox(error) => error.kind(),
             Self::Shutdown(error) => error.kind(),
             Self::Integrity(_)
             | Self::ProjectionBehind { .. }

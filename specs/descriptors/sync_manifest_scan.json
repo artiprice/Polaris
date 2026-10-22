@@ -31,6 +31,18 @@
     {
       "test_name": "windows_junction_not_followed",
       "description": "A junction pointing outside the workspace is recorded as a link and never followed."
+    },
+    {
+      "test_name": "scan_limits_bound_walk_manifest_path_file_and_aggregate_bytes",
+      "description": "Explicit limits reject excessive walk entries, manifest entries, path bytes, file bytes, and aggregate bytes."
+    },
+    {
+      "test_name": "manifest_content_id_binds_path_size_hash_mode_and_link_target",
+      "description": "The canonical manifest digest changes when any entry identity or metadata changes."
+    },
+    {
+      "test_name": "ten_thousand_file_cold_warm_and_noop_plan_workload",
+      "description": "A generated 10k-file tree completes cold scan, cache reuse, and a no-op plan with measured durations."
     }
   ],
   "dependencies": [

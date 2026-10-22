@@ -29,6 +29,10 @@
       "description": "A component longer than 255 bytes is flagged."
     },
     {
+      "test_name": "too_long_total_path_is_flagged_once",
+      "description": "A path over the Windows total path bound is flagged without duplicate overlong reports."
+    },
+    {
       "test_name": "clean_paths_no_conflicts",
       "description": "Ordinary paths produce no conflicts."
     }

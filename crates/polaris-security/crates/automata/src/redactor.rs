@@ -71,7 +71,7 @@ impl Redactor for DfaRedactor {
                 let category = self
                     .scanner
                     .rule_category(rule_of(m.pattern()))
-                    .unwrap_or(Category::Secret);
+                    .map_or(Category::Secret, |value| value);
                 (m.start(), m.end(), category)
             })
             .peekable();
@@ -90,12 +90,16 @@ impl Redactor for DfaRedactor {
                 pos = pos.max(end);
                 continue;
             }
-            out.extend_from_slice(input.get(pos..start).unwrap_or_default());
+            if let Some(prefix) = input.get(pos..start) {
+                out.extend_from_slice(prefix);
+            }
             out.extend_from_slice(marker(category));
             replacements = replacements.saturating_add(1);
             pos = end;
         }
-        out.extend_from_slice(input.get(pos..).unwrap_or_default());
+        if let Some(suffix) = input.get(pos..) {
+            out.extend_from_slice(suffix);
+        }
         RedactStats {
             bytes_in: input.len(),
             replacements,

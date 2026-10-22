@@ -2,7 +2,7 @@
 
 use crate::error::{GuardError, ViewError};
 use globset::{GlobBuilder, GlobMatcher};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 /// Shell dialect used to interpret the bounded command subset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,41 +45,98 @@ impl WorkspacePath {
 #[derive(Debug, Clone)]
 pub struct GlobPattern {
     pattern: String,
-    matcher: GlobMatcher,
+    matchers: Vec<PathMatcher>,
+}
+
+#[derive(Debug, Clone)]
+enum PathMatcher {
+    Exact(String),
+    Descendants(String),
+    Glob(GlobMatcher),
 }
 
 impl GlobPattern {
     /// Validates and compiles a slash-separated glob pattern.
     pub fn new(pattern: &str) -> Result<Self, GuardError> {
-        if pattern.starts_with('/') || pattern.starts_with("//") || has_drive_prefix(pattern) {
-            return Err(GuardError::InvalidPath);
-        }
-        if pattern.split('/').any(|part| part == "..") {
-            return Err(GuardError::InvalidPath);
-        }
-        let matcher = GlobBuilder::new(pattern)
-            .literal_separator(true)
-            .case_insensitive(cfg!(windows))
-            .build()
-            .map_err(|_| GuardError::InvalidGlob)?
-            .compile_matcher();
-        Ok(Self {
-            pattern: pattern.to_owned(),
-            matcher,
-        })
+        Self::with_patterns(vec![pattern.to_owned()])
     }
 
-    /// Original validated pattern.
+    /// Original validated pattern or a display form for a union pattern.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.pattern
     }
 
+    fn with_patterns(patterns: Vec<String>) -> Result<Self, GuardError> {
+        let mut matchers = Vec::with_capacity(patterns.len());
+        for pattern in &patterns {
+            if pattern.starts_with('/') || pattern.starts_with("//") || has_drive_prefix(pattern) {
+                return Err(GuardError::InvalidPath);
+            }
+            if pattern.split('/').any(|part| part == "..") {
+                return Err(GuardError::InvalidPath);
+            }
+            if pattern == "**" {
+                matchers.push(PathMatcher::Descendants(String::new()));
+            } else if let Some(prefix) = pattern.strip_suffix("/**")
+                && !contains_glob_syntax(prefix)
+            {
+                matchers.push(PathMatcher::Exact(prefix.to_owned()));
+                matchers.push(PathMatcher::Descendants(prefix.to_owned()));
+            } else if !contains_glob_syntax(pattern) {
+                matchers.push(PathMatcher::Exact(pattern.to_owned()));
+            } else {
+                matchers.push(PathMatcher::Glob(
+                    GlobBuilder::new(pattern)
+                        .literal_separator(true)
+                        .case_insensitive(cfg!(windows))
+                        .build()
+                        .map_err(|_| GuardError::InvalidGlob)?
+                        .compile_matcher(),
+                ));
+            }
+        }
+        Ok(Self {
+            pattern: patterns.join(" | "),
+            matchers,
+        })
+    }
+
     /// Whether the pattern matches a normalized workspace path.
     #[must_use]
     pub fn matches(&self, path: &WorkspacePath) -> bool {
-        self.matcher.is_match(path.as_str())
+        self.matchers.iter().any(|matcher| match matcher {
+            PathMatcher::Exact(expected) => {
+                if cfg!(windows) {
+                    path.as_str().eq_ignore_ascii_case(expected)
+                } else {
+                    path.as_str() == expected
+                }
+            }
+            PathMatcher::Descendants(prefix) if prefix.is_empty() => true,
+            PathMatcher::Descendants(prefix) => {
+                let path_value = path.as_str();
+                let starts_with_prefix = if cfg!(windows) {
+                    path_value
+                        .get(..prefix.len())
+                        .is_some_and(|value| value.eq_ignore_ascii_case(prefix))
+                } else {
+                    path_value.starts_with(prefix)
+                };
+                starts_with_prefix
+                    && path_value
+                        .get(prefix.len()..)
+                        .is_some_and(|suffix| suffix.starts_with('/'))
+            }
+            PathMatcher::Glob(glob) => glob.is_match(path.as_str()),
+        })
     }
+}
+
+fn contains_glob_syntax(value: &str) -> bool {
+    value
+        .chars()
+        .any(|character| matches!(character, '*' | '?' | '[' | '{'))
 }
 
 /// A file fact supplied by the workspace adapter.
@@ -275,10 +332,10 @@ pub fn blast_radius<V: WorkspaceView>(
         input.cargo_target_dir,
     );
     let dirty = view.dirty_paths().map_err(GuardError::Workspace)?;
-    let mut deleted = BTreeSet::new();
-    let mut overwritten = BTreeSet::new();
-    let mut dirty_hit = BTreeSet::new();
-    let mut byte_sizes: BTreeMap<WorkspacePath, u64> = BTreeMap::new();
+    let mut deleted = HashSet::new();
+    let mut overwritten = HashSet::new();
+    let mut dirty_hit = HashSet::new();
+    let mut byte_sizes: HashMap<WorkspacePath, u64> = HashMap::new();
     for effect in &classification.effects {
         for fact in view
             .list_matching(&effect.pattern)
@@ -307,14 +364,12 @@ pub fn blast_radius<V: WorkspaceView>(
         for path in &dirty {
             if effect.pattern.matches(path) {
                 dirty_hit.insert(path.clone());
-                if effect.only_uncommitted {
-                    match effect.kind {
-                        EffectKind::Deleted => {
-                            deleted.insert(path.clone());
-                        }
-                        EffectKind::Overwritten => {
-                            overwritten.insert(path.clone());
-                        }
+                match effect.kind {
+                    EffectKind::Deleted => {
+                        deleted.insert(path.clone());
+                    }
+                    EffectKind::Overwritten => {
+                        overwritten.insert(path.clone());
                     }
                 }
             }
@@ -339,11 +394,17 @@ pub fn blast_radius<V: WorkspaceView>(
     if dirty_count > 0 {
         reasons.push(format!("{dirty_count} uncommitted path(s) are affected"));
     }
+    let mut deleted: Vec<_> = deleted.into_iter().collect();
+    let mut overwritten: Vec<_> = overwritten.into_iter().collect();
+    let mut uncommitted_hit: Vec<_> = dirty_hit.into_iter().collect();
+    deleted.sort_unstable();
+    overwritten.sort_unstable();
+    uncommitted_hit.sort_unstable();
     Ok(BlastReport {
-        deleted: deleted.into_iter().collect(),
-        overwritten: overwritten.into_iter().collect(),
+        deleted,
+        overwritten,
         total_bytes,
-        uncommitted_hit: dirty_hit.into_iter().collect(),
+        uncommitted_hit,
         confidence,
         severity,
         reasons,
@@ -399,21 +460,23 @@ fn classify(
     }
     let mut effects = Vec::new();
     let (confidence, reason) = match tokens.first().map(String::as_str) {
-        Some("rm") => classify_remove(&tokens, cwd, &mut effects, shell, false),
-        Some("del") if shell != ShellKind::Posix => {
+        Some("rm") if shell == ShellKind::Posix => {
+            classify_remove(&tokens, cwd, &mut effects, shell, false)
+        }
+        Some("del") if shell == ShellKind::Cmd => {
             classify_remove(&tokens, cwd, &mut effects, shell, true)
         }
-        Some("rmdir") => classify_rmdir(&tokens, cwd, &mut effects, shell),
-        Some("rd") if shell != ShellKind::Posix => {
+        Some("rmdir") if matches!(shell, ShellKind::Posix | ShellKind::Cmd) => {
             classify_rmdir(&tokens, cwd, &mut effects, shell)
         }
+        Some("rd") if shell == ShellKind::Cmd => classify_rmdir(&tokens, cwd, &mut effects, shell),
         Some("Remove-Item") if shell == ShellKind::PowerShell => {
             classify_remove_item(&tokens, cwd, &mut effects)
         }
         Some("cargo") => classify_cargo(&tokens, cwd, cargo_target_dir, &mut effects),
         Some("git") => classify_git(&tokens, &mut effects),
         Some("mv") => classify_move(&tokens, cwd, &mut effects),
-        Some("move") if shell != ShellKind::Posix => classify_move(&tokens, cwd, &mut effects),
+        Some("move") if shell == ShellKind::Cmd => classify_move(&tokens, cwd, &mut effects),
         Some("find") => classify_find(&tokens, cwd, &mut effects),
         _ => return classify_redirection(&tokens, cwd, effects),
     };
@@ -855,13 +918,11 @@ fn add_pattern_effect(
             format!("{path}/**")
         });
     }
-    for pattern in patterns {
-        effects.push(Effect {
-            kind,
-            pattern: GlobPattern::new(&pattern)?,
-            only_uncommitted,
-        });
-    }
+    effects.push(Effect {
+        kind,
+        pattern: GlobPattern::with_patterns(patterns)?,
+        only_uncommitted,
+    });
     Ok(())
 }
 
@@ -958,4 +1019,48 @@ fn tokenize(command: &str, shell: ShellKind) -> Option<Vec<String>> {
         tokens.push(current);
     }
     Some(tokens)
+}
+
+#[cfg(test)]
+mod workload_tests {
+    use super::{Confidence, ShellKind, WorkspacePath, classify};
+    use std::time::Instant;
+
+    #[test]
+    fn shell_classifier_100k_command_workload() {
+        let cwd = WorkspacePath::root();
+        let target = WorkspacePath::new("target").expect("test path");
+        let commands = [
+            "rm -rf target",
+            "Remove-Item -Path build -Recurse",
+            "git reset --hard",
+            "echo output > generated.txt",
+            "rm -rf $TARGET",
+            "del /s /q build",
+        ];
+        let start = Instant::now();
+        let mut unknown = 0_u64;
+        for index in 0..100_000_usize {
+            let shell = match index % 3 {
+                0 => ShellKind::Posix,
+                1 => ShellKind::PowerShell,
+                _ => ShellKind::Cmd,
+            };
+            let result = std::hint::black_box(classify(
+                commands[index % commands.len()],
+                &cwd,
+                shell,
+                Some(&target),
+            ));
+            if result.confidence == Confidence::Unknown {
+                unknown = unknown.saturating_add(1);
+            }
+        }
+        let elapsed = start.elapsed();
+        println!(
+            "shell_classifier_commands=100000;unknown={unknown};elapsed_ms={};commands_per_second={}",
+            elapsed.as_millis(),
+            100_000_u128.saturating_mul(1_000) / elapsed.as_millis().max(1)
+        );
+    }
 }

@@ -38,18 +38,28 @@ pub enum AutomataError {
         /// Buffer capacity.
         capacity: usize,
     },
+    /// Streaming requires a finite maximum match width for every compiled rule.
+    #[error("streaming scan requires finite maximum match width for every rule")]
+    UnboundedMatch,
+    /// Streaming cannot preserve look/anchor semantics for arbitrary chunk boundaries.
+    #[error("streaming scan does not accept word-boundary or anchor assertions")]
+    UnsupportedStreamPattern,
+    /// A bounded streaming workspace could not be reserved before scanning.
+    #[error("bounded scanner workspace allocation failed")]
+    Allocation,
 }
 
 impl HasKind for AutomataError {
     fn kind(&self) -> ErrorKind {
         match self {
-            Self::BufferFull { .. } => ErrorKind::Transient,
+            Self::BufferFull { .. } | Self::Allocation => ErrorKind::Transient,
             Self::Syntax(_)
             | Self::TooLarge { .. }
             | Self::TooNested
             | Self::RepetitionTooLarge { .. }
             | Self::TooManyPatterns { .. }
             | Self::DuplicateRule(_) => ErrorKind::Permanent,
+            Self::UnboundedMatch | Self::UnsupportedStreamPattern => ErrorKind::Permanent,
         }
     }
 }

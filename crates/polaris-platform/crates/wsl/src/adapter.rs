@@ -2,15 +2,32 @@
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::time::Duration;
 
+#[cfg(windows)]
+use process_wrap::tokio::JobObject;
+#[cfg(unix)]
+use process_wrap::tokio::ProcessGroup;
+use process_wrap::tokio::{ChildWrapper, CommandWrap, KillOnDrop};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tokio::io::AsyncReadExt;
-use tokio::process::{Child, Command};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
+use uuid::Uuid;
 
 const OUTPUT_LIMIT: usize = 4 * 1024 * 1024;
 const DEFAULT_DISTRO: &str = "Ubuntu-24.04";
+const RUNNER_SCRIPT: &str = "token=$1; shift; printf 'POLARIS_PGID=%s\\n' \"$$\"; RUSTUP_AUTO_INSTALL=0 CARGO_NET_OFFLINE=true \"$@\"; status=$?; printf '\\nPOLARIS_EXIT_%s=%s\\n' \"$token\" \"$status\" >&2; while :; do sleep 3600 & wait $!; done";
+const SAFE_HOST_ENV: &[&str] = &[
+    "PATH",
+    "PATHEXT",
+    "SystemRoot",
+    "WINDIR",
+    "TEMP",
+    "TMP",
+    "LOCALAPPDATA",
+    "USERPROFILE",
+];
 
 /// Validated WSL distribution name.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -207,16 +224,81 @@ pub struct ProvisionPlan {
     pub requires_explicit_confirmation: bool,
 }
 
-/// A running keepalive process, killed automatically when dropped.
+/// A running keepalive process group, killed automatically when dropped.
 #[derive(Debug)]
 pub struct KeepAlive {
-    child: Child,
+    child: Option<Box<dyn ChildWrapper>>,
+    executable: PathBuf,
+    distro: DistroName,
+    process_group_id: u32,
+    cleanup_completed: bool,
+}
+
+/// Cancellation guard for an acknowledged Linux process group. The shell supervisor remains
+/// alive in this group until the host sends the cleanup signal, preventing PGID reuse.
+struct LinuxGroupOwner {
+    executable: PathBuf,
+    distro: DistroName,
+    process_group_id: u32,
+    active: bool,
+}
+
+impl LinuxGroupOwner {
+    fn new(executable: &Path, distro: &DistroName, process_group_id: u32) -> Self {
+        Self {
+            executable: executable.to_path_buf(),
+            distro: distro.clone(),
+            process_group_id,
+            active: true,
+        }
+    }
+
+    async fn terminate(&mut self) -> Result<(), WslError> {
+        terminate_linux_group(&self.executable, &self.distro, self.process_group_id).await?;
+        self.active = false;
+        Ok(())
+    }
+}
+
+impl Drop for LinuxGroupOwner {
+    fn drop(&mut self) {
+        if self.active {
+            terminate_linux_group_sync(&self.executable, &self.distro, self.process_group_id);
+        }
+    }
 }
 
 impl KeepAlive {
     /// Returns whether the keepalive process is still running.
     pub async fn is_running(&mut self) -> Result<bool, WslError> {
-        Ok(self.child.try_wait()?.is_none())
+        match self.child.as_mut() {
+            Some(child) => Ok(child.try_wait()?.is_none()),
+            None => Ok(false),
+        }
+    }
+
+    /// Returns the Linux process-group identifier retained for cleanup.
+    #[must_use]
+    pub fn process_group_id(&self) -> u32 {
+        self.process_group_id
+    }
+
+    /// Stops the Linux process group and its host-side WSL client explicitly.
+    pub async fn shutdown(mut self) -> Result<(), WslError> {
+        terminate_linux_group(&self.executable, &self.distro, self.process_group_id).await?;
+        drop(self.child.take());
+        self.cleanup_completed = true;
+        Ok(())
+    }
+}
+
+impl Drop for KeepAlive {
+    fn drop(&mut self) {
+        if self.cleanup_completed {
+            return;
+        }
+        terminate_linux_group_sync(&self.executable, &self.distro, self.process_group_id);
+        self.child.take();
     }
 }
 
@@ -323,28 +405,16 @@ impl Wsl {
         if argv.is_empty() || argv.iter().any(|item| item.contains('\0')) {
             return Err(WslError::InvalidLinuxPath);
         }
-        let mut args = vec!["--distribution".to_owned(), distro.0.clone()];
-        if let Some(directory) = cwd {
-            args.push("--cd".to_owned());
-            args.push(directory.0.clone());
-        }
-        args.push("--exec".to_owned());
-        args.extend(argv.iter().map(|item| (*item).to_owned()));
-        self.run(&args, timeout).await
+        self.run_distro(distro, argv, cwd, timeout).await
     }
 
     /// Checks `/dev/kvm` readability with a real argv command in the selected distribution.
     pub async fn kvm(&self, distro: &DistroName) -> Result<KvmStatus, WslError> {
         let output = self
-            .run(
-                &[
-                    "--distribution",
-                    distro.as_str(),
-                    "--exec",
-                    "/usr/bin/test",
-                    "-r",
-                    "/dev/kvm",
-                ],
+            .run_distro(
+                distro,
+                &["/usr/bin/test", "-r", "/dev/kvm"],
+                None,
                 self.command_timeout,
             )
             .await?;
@@ -355,23 +425,51 @@ impl Wsl {
         })
     }
 
-    /// Starts a retained `sleep infinity` process to keep WSL alive; dropping the handle kills it.
+    /// Starts a retained Linux process group to keep WSL alive; dropping the handle kills the
+    /// group and its host-side WSL client.
     pub async fn keepalive(&self, distro: &DistroName) -> Result<KeepAlive, WslError> {
-        let mut command = Command::new(&self.executable);
-        command
-            .args([
-                "--distribution",
-                distro.as_str(),
-                "--exec",
-                "/bin/sleep",
-                "infinity",
-            ])
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .kill_on_drop(true);
-        let child = command.spawn()?;
-        Ok(KeepAlive { child })
+        let args = runner_args(distro, None, "keepalive", &["/bin/sleep", "infinity"]);
+        let mut command = host_command(&self.executable, &args);
+        let raw = command.command_mut();
+        raw.stdin(Stdio::null());
+        raw.stdout(Stdio::piped());
+        raw.stderr(Stdio::null());
+        wrap_host_tree(&mut command);
+        let mut child = command.spawn().map_err(WslError::Io)?;
+        let stdout = child
+            .stdout()
+            .take()
+            .ok_or_else(|| std::io::Error::other("keepalive stdout pipe unavailable"))?;
+        let mut stdout = BufReader::new(stdout);
+        let mut line = String::new();
+        let read_result =
+            tokio::time::timeout(self.command_timeout, stdout.read_line(&mut line)).await;
+        let process_group_id = match read_result {
+            Ok(Ok(_)) => parse_group_handshake(&line),
+            Ok(Err(error)) => {
+                let _kill_result = child.start_kill();
+                let _wait_result = child.wait().await;
+                return Err(WslError::Io(error));
+            }
+            Err(_) => {
+                let _kill_result = child.start_kill();
+                let _wait_result = child.wait().await;
+                return Err(WslError::Timeout);
+            }
+        };
+        let Some(process_group_id) = process_group_id else {
+            let _kill_result = child.start_kill();
+            let _wait_result = child.wait().await;
+            return Err(WslError::Decode);
+        };
+        drop(stdout);
+        Ok(KeepAlive {
+            child: Some(child),
+            executable: self.executable.clone(),
+            distro: distro.clone(),
+            process_group_id,
+            cleanup_completed: false,
+        })
     }
 
     /// Returns a no-side-effect plan for installing Ubuntu 24.04.
@@ -415,33 +513,35 @@ impl Wsl {
         args: &[impl AsRef<std::ffi::OsStr>],
         timeout: Duration,
     ) -> Result<ExecOutput, WslError> {
-        let mut command = Command::new(&self.executable);
-        command.args(args).kill_on_drop(true);
+        let args = args
+            .iter()
+            .map(|item| item.as_ref().to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        let mut command = host_command(&self.executable, &args);
         command
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
-        let mut child = command.spawn()?;
+            .command_mut()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        wrap_host_tree(&mut command);
+        let mut child = command.spawn().map_err(WslError::Io)?;
         let stdout = child
-            .stdout
+            .stdout()
             .take()
             .ok_or_else(|| std::io::Error::other("stdout pipe unavailable"))?;
         let stderr = child
-            .stderr
+            .stderr()
             .take()
             .ok_or_else(|| std::io::Error::other("stderr pipe unavailable"))?;
-        let stdout_read = read_bounded(stdout);
-        let stderr_read = read_bounded(stderr);
+        let stdout_read = read_bounded(stdout, OUTPUT_LIMIT);
+        let stderr_read = read_bounded(stderr, OUTPUT_LIMIT);
         let command_run = async {
             let (stdout_result, stderr_result, status_result) =
-                tokio::join!(stdout_read, stderr_read, child.wait());
+                tokio::join!(stdout_read, stderr_read, Box::pin(child.wait()));
             let stdout = stdout_result?;
             let stderr = stderr_result?;
             let status = status_result?;
             Ok::<ExecOutput, WslError>(ExecOutput {
-                exit_code: match status.code() {
-                    Some(code) => code,
-                    None => -1,
-                },
+                exit_code: status_code(status),
                 stdout,
                 stderr,
             })
@@ -449,14 +549,96 @@ impl Wsl {
         match tokio::time::timeout(timeout, command_run).await {
             Ok(result) => result,
             Err(_) => {
-                let _kill_result = child.kill().await;
+                let _kill_result = child.start_kill();
+                let _wait_result = child.wait().await;
                 Err(WslError::Timeout)
             }
         }
     }
+
+    async fn run_distro(
+        &self,
+        distro: &DistroName,
+        argv: &[&str],
+        cwd: Option<&LinuxPath>,
+        timeout: Duration,
+    ) -> Result<ExecOutput, WslError> {
+        let marker = Uuid::now_v7().simple().to_string();
+        let args = runner_args(distro, cwd, &marker, argv);
+        let mut command = host_command(&self.executable, &args);
+        command
+            .command_mut()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        wrap_host_tree(&mut command);
+        let mut child = command.spawn().map_err(WslError::Io)?;
+        let stdout = child
+            .stdout()
+            .take()
+            .ok_or_else(|| std::io::Error::other("stdout unavailable"))?;
+        let stderr = child
+            .stderr()
+            .take()
+            .ok_or_else(|| std::io::Error::other("stderr unavailable"))?;
+        let mut stdout = BufReader::new(stdout);
+        let mut handshake = String::new();
+        tokio::time::timeout(timeout, stdout.read_line(&mut handshake))
+            .await
+            .map_err(|_| WslError::Timeout)??;
+        let process_group_id = parse_group_handshake(&handshake).ok_or(WslError::Decode)?;
+        let mut group_owner = LinuxGroupOwner::new(&self.executable, distro, process_group_id);
+        let mut stdout_read = Box::pin(read_bounded(stdout, OUTPUT_LIMIT));
+        let mut stderr_read = Box::pin(read_exit_marker(stderr, OUTPUT_LIMIT, marker));
+        let marker_result = tokio::time::timeout(timeout, async {
+            tokio::select! {
+                marker = &mut stderr_read => marker,
+                stdout_result = &mut stdout_read => {
+                    stdout_result?;
+                    Err(WslError::Decode)
+                }
+            }
+        })
+        .await;
+        let (stderr, exit_code) = match marker_result {
+            Ok(Ok(result)) => result,
+            Ok(Err(error)) => {
+                let group_result = group_owner.terminate().await;
+                let _host_kill = child.start_kill();
+                let _host_wait = child.wait().await;
+                group_result?;
+                return Err(error);
+            }
+            Err(_) => {
+                let group_result = group_owner.terminate().await;
+                let _host_kill = child.start_kill();
+                let _host_wait = child.wait().await;
+                group_result?;
+                return Err(WslError::Timeout);
+            }
+        };
+        group_owner.terminate().await?;
+        let status = child.wait().await?;
+        let stdout = stdout_read.await?;
+        if status.code().is_none() {
+            return Err(WslError::Decode);
+        }
+        Ok(ExecOutput {
+            exit_code,
+            stdout,
+            stderr,
+        })
+    }
 }
 
-async fn read_bounded<R: tokio::io::AsyncRead + Unpin>(reader: R) -> Result<Vec<u8>, WslError> {
+fn status_code(status: std::process::ExitStatus) -> i32 {
+    let mut code = status.code();
+    *code.get_or_insert(-1)
+}
+
+async fn read_bounded<R: tokio::io::AsyncRead + Unpin>(
+    reader: R,
+    cap: usize,
+) -> Result<Vec<u8>, WslError> {
     let mut reader = reader;
     let mut bytes = Vec::new();
     let mut buffer = [0_u8; 8192];
@@ -467,14 +649,181 @@ async fn read_bounded<R: tokio::io::AsyncRead + Unpin>(reader: R) -> Result<Vec<
             break;
         }
         total = total.checked_add(read).ok_or(WslError::OutputTooLarge)?;
-        if total <= OUTPUT_LIMIT {
+        if total <= cap {
             bytes.extend_from_slice(buffer.get(..read).ok_or(WslError::OutputTooLarge)?);
         }
     }
-    if total > OUTPUT_LIMIT {
+    if total > cap {
         return Err(WslError::OutputTooLarge);
     }
     Ok(bytes)
+}
+
+async fn read_exit_marker<R: tokio::io::AsyncRead + Unpin>(
+    reader: R,
+    cap: usize,
+    token: String,
+) -> Result<(Vec<u8>, i32), WslError> {
+    let mut reader = reader;
+    let mut output = Vec::new();
+    let mut buffer = [0_u8; 8192];
+    let marker = format!("\nPOLARIS_EXIT_{token}=");
+    let marker = marker.as_bytes();
+    loop {
+        let count = reader.read(&mut buffer).await?;
+        if count == 0 {
+            return Err(WslError::Decode);
+        }
+        output.extend_from_slice(&buffer[..count]);
+        if let Some(index) = output.windows(marker.len()).position(|part| part == marker) {
+            let suffix_start = index + marker.len();
+            if let Some(relative_end) = output
+                .get(suffix_start..)
+                .and_then(|tail| tail.iter().position(|byte| *byte == b'\n'))
+            {
+                let end = suffix_start + relative_end;
+                let code = std::str::from_utf8(&output[suffix_start..end])
+                    .map_err(|_| WslError::Decode)?;
+                let code = code.parse::<i32>().map_err(|_| WslError::Decode)?;
+                if index > cap {
+                    return Err(WslError::OutputTooLarge);
+                }
+                output.truncate(index);
+                return Ok((output, code));
+            }
+        }
+        if output.len() > cap.saturating_add(64) {
+            return Err(WslError::OutputTooLarge);
+        }
+    }
+}
+
+fn runner_args(
+    distro: &DistroName,
+    cwd: Option<&LinuxPath>,
+    token: &str,
+    argv: &[&str],
+) -> Vec<String> {
+    let mut args = vec!["--distribution".to_owned(), distro.as_str().to_owned()];
+    if let Some(cwd) = cwd {
+        args.extend(["--cd".to_owned(), cwd.as_str().to_owned()]);
+    }
+    args.extend([
+        "--exec".to_owned(),
+        "/usr/bin/setsid".to_owned(),
+        "--wait".to_owned(),
+        "/bin/sh".to_owned(),
+        "-c".to_owned(),
+        RUNNER_SCRIPT.to_owned(),
+        "polaris-runner".to_owned(),
+    ]);
+    args.push(token.to_owned());
+    args.extend(argv.iter().map(|argument| (*argument).to_owned()));
+    args
+}
+
+fn parse_group_handshake(line: &str) -> Option<u32> {
+    let value = line
+        .trim()
+        .strip_prefix("POLARIS_PGID=")?
+        .parse::<u32>()
+        .ok()?;
+    (value > 1).then_some(value)
+}
+
+fn host_command(executable: &Path, args: &[String]) -> CommandWrap {
+    let mut command = CommandWrap::with_new(executable.as_os_str(), |_| {});
+    let raw = command.command_mut();
+    raw.args(args);
+    raw.env_clear();
+    for key in SAFE_HOST_ENV {
+        if let Some(value) = std::env::var_os(key) {
+            raw.env(key, value);
+        }
+    }
+    raw.stdin(Stdio::null());
+    command
+}
+
+fn wrap_host_tree(command: &mut CommandWrap) {
+    #[cfg(unix)]
+    command.wrap(ProcessGroup::leader());
+    #[cfg(windows)]
+    command.wrap(JobObject);
+    command.wrap(KillOnDrop);
+}
+
+async fn terminate_linux_group(
+    executable: &Path,
+    distro: &DistroName,
+    process_group_id: u32,
+) -> Result<(), WslError> {
+    if process_group_id <= 1 {
+        return Err(WslError::Decode);
+    }
+    let args = vec![
+        "--distribution".to_owned(),
+        distro.as_str().to_owned(),
+        "--exec".to_owned(),
+        "/bin/kill".to_owned(),
+        "-KILL".to_owned(),
+        "--".to_owned(),
+        format!("-{process_group_id}"),
+    ];
+    let mut command = host_command(executable, &args);
+    wrap_host_tree(&mut command);
+    let mut child = command.spawn().map_err(WslError::Io)?;
+    let status = tokio::time::timeout(Duration::from_secs(5), child.wait()).await;
+    match status {
+        Ok(Ok(status)) if status.success() => Ok(()),
+        Ok(Ok(_)) => Err(WslError::Decode),
+        Ok(Err(error)) => Err(WslError::Io(error)),
+        Err(_) => {
+            let _kill = child.start_kill();
+            let _wait = child.wait().await;
+            Err(WslError::Timeout)
+        }
+    }
+}
+
+fn terminate_linux_group_sync(executable: &Path, distro: &DistroName, process_group_id: u32) {
+    if process_group_id <= 1 {
+        return;
+    }
+    let mut command = std::process::Command::new(executable);
+    command.args([
+        "--distribution",
+        distro.as_str(),
+        "--exec",
+        "/bin/kill",
+        "-KILL",
+        "--",
+    ]);
+    command.arg(format!("-{process_group_id}"));
+    command.env_clear();
+    for key in SAFE_HOST_ENV {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    if let Ok(mut child) = command.spawn() {
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        loop {
+            if child.try_wait().ok().flatten().is_some() {
+                break;
+            }
+            if std::time::Instant::now() >= deadline {
+                let _kill = child.kill();
+                let _wait = child.wait();
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    }
 }
 
 /// Decodes `wsl.exe` output, handling UTF-16LE BOM output and UTF-8 explicitly.
@@ -486,7 +835,7 @@ pub fn decode_wsl_output(bytes: &[u8]) -> Result<String, WslError> {
     if bytes.starts_with(&[0xfe, 0xff]) {
         return Err(WslError::Decode);
     }
-    if bytes.len() % 2 == 0 && bytes.iter().skip(1).step_by(2).any(|byte| *byte == 0) {
+    if bytes.len().is_multiple_of(2) && bytes.iter().skip(1).step_by(2).any(|byte| *byte == 0) {
         return decode_utf16le(bytes);
     }
     let text = std::str::from_utf8(bytes).map_err(|_| WslError::Decode)?;
@@ -497,11 +846,13 @@ pub fn decode_wsl_output(bytes: &[u8]) -> Result<String, WslError> {
 }
 
 fn decode_utf16le(bytes: &[u8]) -> Result<String, WslError> {
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return Err(WslError::Decode);
     }
     let units = bytes
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|pair| {
             let low = pair.first().copied().ok_or(WslError::Decode)?;
             let high = pair.get(1).copied().ok_or(WslError::Decode)?;

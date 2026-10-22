@@ -5,13 +5,17 @@
 //!
 //! Facade re-exporting security children (capability, automata, secrets, pii, rules).
 //!
+//! Security controls bound specific damage; they do not establish that hostile input is safe.
+//! The asset, adversary, control, residual-risk, and S1 failure-policy model is maintained in
+//! [`security threat model`](../../docs/security-threat-model.md).
+//!
 //! | Property | Value |
 //! |---|---|
 //! | Layer | L3 — domain |
 //! | Kind | facade |
 //! | Phase | P2 |
 //! | Parent facade | — |
-//! | Status | documentation-only skeleton |
+//! | Status | re-export facade with threat model |
 //!
 //! ## Children
 //!

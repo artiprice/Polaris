@@ -67,12 +67,26 @@ impl TestSummary {
     /// Malformed, ambiguous, excessive or unrecognized output is marked `Unparseable`.
     #[must_use]
     pub fn from_output(command: &str, output: &ExecOutput) -> Self {
-        Self::parse(command, &output.stdout, &output.stderr, cid_for(&output.stdout), cid_for(&output.stderr))
+        Self::parse(
+            command,
+            &output.stdout,
+            &output.stderr,
+            cid_for(&output.stdout),
+            cid_for(&output.stderr),
+        )
     }
 
-    fn parse(command: &str, stdout: &[u8], stderr: &[u8], stdout_cid: Cid, stderr_cid: Cid) -> Self {
+    fn parse(
+        command: &str,
+        stdout: &[u8],
+        stderr: &[u8],
+        stdout_cid: Cid,
+        stderr_cid: Cid,
+    ) -> Self {
         let runner = TestRunner::from_command(command);
-        let counts = stdout.len().checked_add(stderr.len())
+        let counts = stdout
+            .len()
+            .checked_add(stderr.len())
             .filter(|length| *length <= 16 * 1024 * 1024)
             .and_then(|_| Some((str::from_utf8(stdout).ok()?, str::from_utf8(stderr).ok()?)))
             .and_then(|(out, err)| runner.and_then(|runner| parse_summary(runner, out, err)));
@@ -361,7 +375,13 @@ impl RunEvidence {
         }
         let open_issues =
             u32::try_from(issues.open.len()).map_err(|_| ProofFailure::CountOverflow { stderr })?;
-        let tests = TestSummary::parse(&command, output.stdout.as_ref(), output.stderr.as_ref(), stdout, stderr);
+        let tests = TestSummary::parse(
+            &command,
+            output.stdout.as_ref(),
+            output.stderr.as_ref(),
+            stdout,
+            stderr,
+        );
         Ok(Self {
             command,
             exit_code: output.exit_code,
@@ -651,7 +671,9 @@ fn parse_summary(runner: TestRunner, stdout: &str, stderr: &str) -> Option<(u32,
             TestRunner::Nextest => line.starts_with("Summary ") && line.contains("tests run:"),
             TestRunner::Pytest => line.starts_with("===") && line.contains(" in "),
         };
-        if !candidate { continue; }
+        if !candidate {
+            continue;
+        }
         let counts = match runner {
             TestRunner::Cargo => parse_cargo_line(line),
             TestRunner::Nextest => parse_nextest_line(line),
@@ -661,8 +683,14 @@ fn parse_summary(runner: TestRunner, stdout: &str, stderr: &str) -> Option<(u32,
             Some((passed, failed, ignored)) => {
                 // Cargo emits a separate summary for every binary and doctest group.
                 // Nextest and pytest must emit exactly one terminal summary.
-                if runner != TestRunner::Cargo { return None; }
-                (passed.checked_add(counts.0)?, failed.checked_add(counts.1)?, ignored.checked_add(counts.2)?)
+                if runner != TestRunner::Cargo {
+                    return None;
+                }
+                (
+                    passed.checked_add(counts.0)?,
+                    failed.checked_add(counts.1)?,
+                    ignored.checked_add(counts.2)?,
+                )
             }
             None => counts,
         });
@@ -676,7 +704,9 @@ fn parse_cargo_line(line: &str) -> Option<(u32, u32, u32)> {
     let passed = named_count(summary, "passed")?;
     let failed = named_count(summary, "failed")?;
     let ignored = named_count(summary, "ignored")?;
-    if !matches!((status, failed), ("ok", 0) | ("FAILED", 1..)) { return None; }
+    if !matches!((status, failed), ("ok", 0) | ("FAILED", 1..)) {
+        return None;
+    }
     Some((passed, failed, ignored))
 }
 
@@ -685,14 +715,16 @@ fn parse_nextest_line(line: &str) -> Option<(u32, u32, u32)> {
     let (prefix, summary) = line.split_once("tests run:")?;
     let run = prefix.split_whitespace().last()?.parse::<u32>().ok()?;
     let passed = named_count(summary, "passed")?;
-    let failed = match named_count(summary, "failed") {
-        Some(value) => value,
-        None => 0,
-    };
+    let failed = optional_count(summary, "failed")?;
     let ignored = named_count(summary, "skipped")?;
     // Unrecognized timeout, exec-failure and leak classifications cannot prove success.
-    if summary.contains("timed out") || summary.contains("exec failed") || summary.contains("leaky")
-        || passed.checked_add(failed)? != run { return None; }
+    if summary.contains("timed out")
+        || summary.contains("exec failed")
+        || summary.contains("leaky")
+        || passed.checked_add(failed)? != run
+    {
+        return None;
+    }
     Some((passed, failed, ignored))
 }
 
@@ -700,23 +732,21 @@ fn parse_pytest_line(line: &str) -> Option<(u32, u32, u32)> {
     if !line.contains(" in ") || !(line.contains("passed") || line.contains("failed")) {
         return None;
     }
-    let passed = match named_count(line, "passed") {
-        Some(value) => value,
-        None => 0,
-    };
-    let failed = match named_count(line, "failed") {
-        Some(value) => value,
-        None => 0,
-    };
-    if line.contains("error") || line.contains("xpassed") { return None; }
-    let skipped = match named_count(line, "skipped") { Some(count) => count, None => 0 };
-    let deselected = match named_count(line, "deselected") { Some(count) => count, None => 0 };
-    let ignored = skipped.checked_add(deselected)?;
+    let passed = optional_count(line, "passed")?;
+    let failed = optional_count(line, "failed")?;
+    if line.contains("error") || line.contains("xpassed") {
+        return None;
+    }
+    let skipped = optional_count(line, "skipped")?;
+    let deselected = optional_count(line, "deselected")?;
+    let xfailed = optional_count(line, "xfailed")?;
+    let ignored = skipped.checked_add(deselected)?.checked_add(xfailed)?;
     Some((passed, failed, ignored))
 }
 
 fn named_count(text: &str, name: &str) -> Option<u32> {
     let mut previous: Option<&str> = None;
+    let mut found = None;
     for word in text.split_whitespace() {
         let normalized = word.trim_matches(|character: char| {
             matches!(character, ':' | ';' | ',' | '.' | '[' | ']' | '(' | ')')
@@ -725,9 +755,23 @@ fn named_count(text: &str, name: &str) -> Option<u32> {
             let count = previous?.trim_matches(|character: char| {
                 matches!(character, ':' | ';' | ',' | '.' | '[' | ']' | '(' | ')')
             });
-            return count.parse::<u32>().ok();
+            if found.is_some() {
+                return None;
+            }
+            found = Some(count.parse::<u32>().ok()?);
         }
         previous = Some(word);
     }
-    None
+    found
+}
+
+fn optional_count(text: &str, name: &str) -> Option<u32> {
+    if text.split_whitespace().any(|word| {
+        word.trim_matches(|c: char| matches!(c, ':' | ';' | ',' | '.' | '[' | ']' | '(' | ')'))
+            == name
+    }) {
+        named_count(text, name)
+    } else {
+        Some(0)
+    }
 }

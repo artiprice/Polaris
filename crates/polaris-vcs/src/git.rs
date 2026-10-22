@@ -9,9 +9,9 @@ use polaris_storage_cas::{Cas, CasConfig};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 
-use crate::journal::{Journal, CheckpointSeq};
-use crate::paths::{BranchName, RepoPath, RevSpec};
 use crate::VcsError;
+use crate::journal::{CheckpointSeq, Journal};
+use crate::paths::{BranchName, RepoPath, RevSpec};
 
 const MAX_GIT_OUTPUT: u64 = 8 * 1024 * 1024;
 const GIT_TIMEOUT: Duration = Duration::from_secs(30);
@@ -82,6 +82,12 @@ pub struct Worktree<State> {
 }
 
 impl Worktree<Clean> {
+    /// The canonical path of this linked worktree.
+    #[must_use]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
     /// Marks the handle dirty after the caller applies a change.
     #[must_use]
     pub fn mark_dirty(self) -> Worktree<Dirty> {
@@ -114,9 +120,21 @@ impl Worktree<Dirty> {
     pub async fn remove(self, force: bool) -> Result<Worktree<Removed>, VcsError> {
         verify_git_config(&self.root)?;
         if !force {
-            let status = run_git(&self.root, vec![OsString::from("-C"), self.path.as_os_str().to_owned(), OsString::from("status"), OsString::from("--porcelain"), OsString::from("--untracked-files=all")]).await?;
+            let status = run_git(
+                &self.root,
+                vec![
+                    OsString::from("-C"),
+                    self.path.as_os_str().to_owned(),
+                    OsString::from("status"),
+                    OsString::from("--porcelain"),
+                    OsString::from("--untracked-files=all"),
+                ],
+            )
+            .await?;
             if !status.stdout.is_empty() {
-                return Err(VcsError::Git("dirty worktree removal requires force".into()));
+                return Err(VcsError::Git(
+                    "dirty worktree removal requires force".into(),
+                ));
             }
         }
         let mut args = vec![OsString::from("worktree"), OsString::from("remove")];
@@ -158,7 +176,8 @@ impl Repo {
     /// # Errors
     /// Returns [`VcsError::NotARepo`] for paths outside a worktree and propagates storage errors.
     pub fn open(root: &Path) -> Result<Self, VcsError> {
-        let repository = gix::discover(root.to_path_buf()).map_err(|error| VcsError::NotARepo(error.to_string()))?;
+        let repository = gix::discover(root.to_path_buf())
+            .map_err(|error| VcsError::NotARepo(error.to_string()))?;
         let root = repository
             .workdir()
             .ok_or_else(|| VcsError::NotARepo(root.display().to_string()))?
@@ -167,7 +186,12 @@ impl Repo {
         std::fs::create_dir_all(&polaris_dir)?;
         let cas = Cas::open(CasConfig::new(polaris_dir.join("cas")))?;
         let journal = Journal::open(polaris_dir.join("vcs-undo.json"))?;
-        Ok(Self { root, cas, journal, repository })
+        Ok(Self {
+            root,
+            cas,
+            journal,
+            repository,
+        })
     }
 
     /// Computes a deterministic status from gix without changing the user's index.
@@ -176,7 +200,8 @@ impl Repo {
     /// Returns [`VcsError::Gix`] when gix cannot complete the status walk.
     pub fn status(&self) -> Result<RepoStatus, VcsError> {
         verify_git_config(&self.root)?;
-        let platform = self.repository
+        let platform = self
+            .repository
             .status(gix::progress::Discard)
             .map_err(|error| VcsError::Gix(error.to_string()))?
             .untracked_files(gix::status::UntrackedFiles::Files);
@@ -194,9 +219,15 @@ impl Repo {
             let path = RepoPath::parse(path)?;
             let kind = match item {
                 gix::status::Item::TreeIndex(_) => StatusKind::Staged,
-                gix::status::Item::IndexWorktree(gix::status::index_worktree::Item::DirectoryContents { .. }) => StatusKind::Untracked,
-                gix::status::Item::IndexWorktree(gix::status::index_worktree::Item::Rewrite { .. }) => StatusKind::Untracked,
-                gix::status::Item::IndexWorktree(gix::status::index_worktree::Item::Modification { .. }) => StatusKind::Worktree,
+                gix::status::Item::IndexWorktree(
+                    gix::status::index_worktree::Item::DirectoryContents { .. },
+                ) => StatusKind::Untracked,
+                gix::status::Item::IndexWorktree(gix::status::index_worktree::Item::Rewrite {
+                    ..
+                }) => StatusKind::Untracked,
+                gix::status::Item::IndexWorktree(
+                    gix::status::index_worktree::Item::Modification { .. },
+                ) => StatusKind::Worktree,
             };
             entries.push(StatusEntry { path, kind });
         }
@@ -222,15 +253,48 @@ impl Repo {
             OsString::from("--"),
         ];
         args.extend(paths.iter().map(|path| OsString::from(path.as_str())));
-        let output = run_git(&self.root, args).await?;
-        Ok(DiffSet { bytes: output.stdout })
+        let mut bytes = run_git(&self.root, args).await?.stdout;
+        let status = self.status()?;
+        let selected_untracked = status.entries.iter().filter(|entry| {
+            entry.kind == StatusKind::Untracked
+                && (paths.is_empty() || paths.iter().any(|path| path == &entry.path))
+        });
+        for entry in selected_untracked {
+            let absolute = self.root.join(entry.path.as_str());
+            let metadata = std::fs::symlink_metadata(&absolute)?;
+            if !metadata.is_file() || metadata.file_type().is_symlink() {
+                continue;
+            }
+            let empty = tempfile::NamedTempFile::new()?;
+            let args = vec![
+                OsString::from("diff"),
+                OsString::from("--no-index"),
+                OsString::from("--binary"),
+                OsString::from("--no-color"),
+                OsString::from("--no-ext-diff"),
+                OsString::from("--no-textconv"),
+                OsString::from("--"),
+                empty.path().as_os_str().to_owned(),
+                absolute.as_os_str().to_owned(),
+            ];
+            let mut untracked = run_git_allow_diff_exit(&self.root, args).await?.stdout;
+            bytes.append(&mut untracked);
+            if u64::try_from(bytes.len()).map_or(true, |size| size > MAX_GIT_OUTPUT) {
+                return Err(VcsError::Git("git stdout exceeded 8 MiB output cap".into()));
+            }
+        }
+        Ok(DiffSet { bytes })
     }
 
     /// Creates an isolated linked worktree under `.polaris/worktrees`.
     ///
     /// # Errors
     /// Returns [`VcsError::Git`] for duplicate branches or git worktree failures.
-    pub async fn worktree_add(&self, name: &BranchName, base: &RevSpec) -> Result<Worktree<Clean>, VcsError> {
+    pub async fn worktree_add(
+        &self,
+        name: &BranchName,
+        base: &RevSpec,
+    ) -> Result<Worktree<Clean>, VcsError> {
         verify_git_config(&self.root)?;
         let worktrees = self.root.join(".polaris").join("worktrees");
         std::fs::create_dir_all(&worktrees)?;
@@ -238,14 +302,28 @@ impl Repo {
             .duration_since(std::time::UNIX_EPOCH)
             .map_err(|error| VcsError::Git(error.to_string()))?
             .as_nanos();
-        let key = blake3::hash(format!("{}:{stamp}", name.as_str()).as_bytes()).to_hex().to_string();
-        let path = worktrees.join(key.get(..16).ok_or_else(|| VcsError::Git("generated worktree id is malformed".into()))?);
+        let key = blake3::hash(format!("{}:{stamp}", name.as_str()).as_bytes())
+            .to_hex()
+            .to_string();
+        let path = worktrees.join(
+            key.get(..16)
+                .ok_or_else(|| VcsError::Git("generated worktree id is malformed".into()))?,
+        );
         let args = vec![
-            OsString::from("worktree"), OsString::from("add"), OsString::from("-b"),
-            OsString::from(name.as_str()), path.as_os_str().to_owned(), OsString::from(base.as_str()),
+            OsString::from("worktree"),
+            OsString::from("add"),
+            OsString::from("-b"),
+            OsString::from(name.as_str()),
+            path.as_os_str().to_owned(),
+            OsString::from(base.as_str()),
         ];
         run_git(&self.root, args).await?;
-        Ok(Worktree { root: self.root.clone(), path, branch: name.clone(), marker: std::marker::PhantomData })
+        Ok(Worktree {
+            root: self.root.clone(),
+            path,
+            branch: name.clone(),
+            marker: std::marker::PhantomData,
+        })
     }
 
     /// Returns the last agent action's guarded undo preview.
@@ -254,8 +332,13 @@ impl Repo {
     }
 
     /// Persists the byte-exact pre-edit state for one kernel-assigned action sequence.
-    pub fn snapshot_before_edit(&self, sequence: CheckpointSeq, paths: &[RepoPath]) -> Result<(), VcsError> {
-        self.journal.snapshot_before_edit(&self.root, &self.cas, sequence, paths)
+    pub fn snapshot_before_edit(
+        &self,
+        sequence: CheckpointSeq,
+        paths: &[RepoPath],
+    ) -> Result<(), VcsError> {
+        self.journal
+            .snapshot_before_edit(&self.root, &self.cas, sequence, paths)
     }
 
     /// Seals the resulting post-edit state used by later compare-and-swap undo.
@@ -286,14 +369,34 @@ struct GitOutput {
 }
 
 async fn run_git(root: &Path, args: Vec<OsString>) -> Result<GitOutput, VcsError> {
+    run_git_with_exit(root, args, false).await
+}
+
+async fn run_git_allow_diff_exit(root: &Path, args: Vec<OsString>) -> Result<GitOutput, VcsError> {
+    run_git_with_exit(root, args, true).await
+}
+
+async fn run_git_with_exit(
+    root: &Path,
+    args: Vec<OsString>,
+    allow_diff_exit: bool,
+) -> Result<GitOutput, VcsError> {
     let mut command = Command::new("git");
-    command.current_dir(root).kill_on_drop(true).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    command
+        .current_dir(root)
+        .kill_on_drop(true)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     command.env_clear();
     if let Some(path) = std::env::var_os("PATH") {
         command.env("PATH", path);
     }
     command.env("GIT_CONFIG_NOSYSTEM", "1");
-    command.env("GIT_CONFIG_GLOBAL", if cfg!(windows) { "NUL" } else { "/dev/null" });
+    command.env(
+        "GIT_CONFIG_GLOBAL",
+        if cfg!(windows) { "NUL" } else { "/dev/null" },
+    );
     command.env("GIT_OPTIONAL_LOCKS", "0");
     command.env("GIT_TERMINAL_PROMPT", "0");
     command.env("GIT_PAGER", "cat");
@@ -305,38 +408,75 @@ async fn run_git(root: &Path, args: Vec<OsString>) -> Result<GitOutput, VcsError
     command.env("GIT_CONFIG_KEY_2", "core.protectNTFS");
     command.env("GIT_CONFIG_VALUE_2", "true");
     command.env("GIT_CONFIG_KEY_3", "core.hooksPath");
-    command.env("GIT_CONFIG_VALUE_3", if cfg!(windows) { "NUL" } else { "/dev/null" });
+    command.env(
+        "GIT_CONFIG_VALUE_3",
+        if cfg!(windows) { "NUL" } else { "/dev/null" },
+    );
     command.env("GIT_CONFIG_KEY_4", "core.pager");
     command.env("GIT_CONFIG_VALUE_4", "cat");
     command.env("GIT_CONFIG_KEY_5", "diff.external");
     command.env("GIT_CONFIG_VALUE_5", "");
     command.env("GIT_CONFIG_KEY_6", "protocol.file.allow");
     command.env("GIT_CONFIG_VALUE_6", "never");
-    command.args(["-c", "color.ui=false", "-c", "diff.external=", "-c", "core.quotepath=false"]);
+    command.args([
+        "-c",
+        "color.ui=false",
+        "-c",
+        "diff.external=",
+        "-c",
+        "core.quotepath=false",
+    ]);
     command.args(args);
-    let mut child = command.spawn().map_err(|error| VcsError::Git(error.to_string()))?;
-    let stdout = child.stdout.take().ok_or_else(|| VcsError::Git("stdout pipe unavailable".into()))?;
-    let stderr = child.stderr.take().ok_or_else(|| VcsError::Git("stderr pipe unavailable".into()))?;
+    let mut child = command
+        .spawn()
+        .map_err(|error| VcsError::Git(error.to_string()))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| VcsError::Git("stdout pipe unavailable".into()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| VcsError::Git("stderr pipe unavailable".into()))?;
     let stdout_task = tokio::spawn(async move {
         let mut bytes = Vec::new();
-        stdout.take(MAX_GIT_OUTPUT.saturating_add(1)).read_to_end(&mut bytes).await.map(|_| bytes)
+        stdout
+            .take(MAX_GIT_OUTPUT.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .await
+            .map(|_| bytes)
     });
     let stderr_task = tokio::spawn(async move {
         let mut bytes = Vec::new();
-        stderr.take(64 * 1024).read_to_end(&mut bytes).await.map(|_| bytes)
+        stderr
+            .take(64 * 1024)
+            .read_to_end(&mut bytes)
+            .await
+            .map(|_| bytes)
     });
-    let status = tokio::time::timeout(GIT_TIMEOUT, child.wait()).await
+    let status = tokio::time::timeout(GIT_TIMEOUT, child.wait())
+        .await
         .map_err(|_| VcsError::Git("git command exceeded 30 second timeout".into()))?
         .map_err(|error| VcsError::Git(error.to_string()))?;
-    let stdout = stdout_task.await.map_err(|error| VcsError::Git(error.to_string()))?
+    let stdout = stdout_task
+        .await
+        .map_err(|error| VcsError::Git(error.to_string()))?
         .map_err(|error| VcsError::Git(error.to_string()))?;
-    let stderr = stderr_task.await.map_err(|error| VcsError::Git(error.to_string()))?
+    let stderr = stderr_task
+        .await
+        .map_err(|error| VcsError::Git(error.to_string()))?
         .map_err(|error| VcsError::Git(error.to_string()))?;
-    if match u64::try_from(stdout.len()) { Ok(size) => size > MAX_GIT_OUTPUT, Err(_) => true } {
+    if match u64::try_from(stdout.len()) {
+        Ok(size) => size > MAX_GIT_OUTPUT,
+        Err(_) => true,
+    } {
         return Err(VcsError::Git("git stdout exceeded 8 MiB output cap".into()));
     }
-    if !status.success() {
-        let message = String::from_utf8_lossy(&stderr).chars().take(2048).collect::<String>();
+    if !status.success() && !(allow_diff_exit && status.code() == Some(1)) {
+        let message = String::from_utf8_lossy(&stderr)
+            .chars()
+            .take(2048)
+            .collect::<String>();
         return Err(VcsError::Git(message));
     }
     Ok(GitOutput { stdout })
@@ -345,20 +485,46 @@ async fn run_git(root: &Path, args: Vec<OsString>) -> Result<GitOutput, VcsError
 fn verify_git_config(root: &Path) -> Result<(), VcsError> {
     let git_dir = gix::discover(root.to_path_buf())
         .map_err(|error| VcsError::Gix(error.to_string()))?
-        .git_dir().to_path_buf();
-    let config = git_dir.join("config");
-    let contents = match std::fs::read_to_string(config) {
-        Ok(contents) => contents.to_ascii_lowercase(),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(VcsError::Io(error)),
-    };
-    if contents.contains("[filter")
-        || contents.contains("smudge =")
-        || contents.contains("clean =")
-        || contents.contains("process =")
-        || contents.contains("[include")
+        .git_dir()
+        .to_path_buf();
+    let mut config_paths = vec![git_dir.join("config"), git_dir.join("config.worktree")];
+    let common_dir = git_dir.join("commondir");
+    if let Ok(value) = std::fs::read_to_string(&common_dir) {
+        let common = PathBuf::from(value.trim());
+        let common = if common.is_absolute() {
+            common
+        } else {
+            git_dir.join(common)
+        };
+        config_paths.push(common.join("config"));
+    } else if std::fs::symlink_metadata(&common_dir)
+        .is_ok_and(|metadata| metadata.file_type().is_symlink())
     {
-        return Err(VcsError::Git("repository config enables filters or includes; refusing external execution".into()));
+        return Err(VcsError::Git(
+            "linked worktree common-dir pointer is a symlink".into(),
+        ));
+    }
+    for config in config_paths {
+        let contents = match std::fs::read_to_string(config) {
+            Ok(contents) => contents.to_ascii_lowercase(),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(VcsError::Io(error)),
+        };
+        if contents.lines().any(|line| {
+            let line = line.trim();
+            !line.starts_with('#')
+                && !line.starts_with(';')
+                && (line.starts_with("[filter")
+                    || line.starts_with("[include")
+                    || line.starts_with("[includeif")
+                    || line.contains("smudge")
+                    || line.contains("clean")
+                    || line.contains("process"))
+        }) {
+            return Err(VcsError::Git(
+                "repository config enables filters or includes; refusing external execution".into(),
+            ));
+        }
     }
     Ok(())
 }

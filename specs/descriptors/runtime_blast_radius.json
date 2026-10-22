@@ -1,0 +1,25 @@
+{
+  "type_of": "function",
+  "name": "blast_radius",
+  "file_path": "crates/polaris-runtime/crates/guards/src/blast.rs",
+  "logic_name": "Shell Command Blast Radius",
+  "test_list": [
+    { "test_name": "posix_recursive_delete_counts_bytes_and_uncommitted_paths_once", "description": "Expand a recursive delete against an injected workspace view and account unique bytes and dirty paths." },
+    { "test_name": "supported_shell_aliases_are_not_interpreted_as_another_shell", "description": "Recognize only command forms whose semantics match the selected shell dialect." },
+    { "test_name": "shell_composition_expansion_and_escape_fail_closed", "description": "Treat shell composition, variable expansion, path escape and unsupported redirects as Critical unknowns." },
+    { "test_name": "dirty_deleted_path_missing_from_tree_is_still_reported", "description": "Report dirty paths matched by an operation even when the current tree no longer contains them." },
+    { "test_name": "provider_duplicate_paths_do_not_inflate_bytes", "description": "Deduplicate provider entries for affected paths and byte accounting." },
+    { "test_name": "arbitrary_command_bytes_never_panic_and_unknown_stays_critical", "description": "Exercise arbitrary command bytes and preserve the unknown-is-critical invariant." },
+    { "test_name": "blast_accounting_scales_to_a_hundred_thousand_file_view", "description": "Account all affected files and bytes in a 100,000-file injected view." },
+    { "test_name": "blast_classifier_handles_a_hundred_thousand_commands", "description": "Run 100,000 mixed shell commands through the public estimator while preserving fail-closed behavior." },
+    { "test_name": "shell_classifier_100k_command_workload", "description": "Measure the classifier itself over 100,000 mixed shell commands, without workspace accounting." }
+  ],
+  "dependencies": ["WorkspaceView", "WorkspacePath", "GlobPattern", "BlastLimits"],
+  "libraries": ["globset"],
+  "inputs": [
+    { "name": "view", "type": "WorkspaceView", "description": "Injected file facts and uncommitted path set." },
+    { "name": "input", "type": "BlastInput", "description": "Shell dialect, command text, workspace directory and policy limits." }
+  ],
+  "output_type": "Result<BlastReport, GuardError>",
+  "output_description": "A conservative file-effect estimate. Unknown command shape is Critical."
+}

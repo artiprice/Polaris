@@ -119,6 +119,8 @@ pub struct ScanLimits {
     pub max_walk_entries: u64,
     /// Maximum files and links in the manifest.
     pub max_manifest_entries: u64,
+    /// Maximum UTF-8 bytes in one workspace-relative path.
+    pub max_path_bytes: u64,
     /// Maximum bytes in one regular file.
     pub max_file_bytes: u64,
     /// Maximum aggregate bytes hashed or reused from the cache.
@@ -130,6 +132,7 @@ impl Default for ScanLimits {
         Self {
             max_walk_entries: 1_000_000,
             max_manifest_entries: 100_000,
+            max_path_bytes: 4096,
             max_file_bytes: 256 * 1024 * 1024,
             max_total_bytes: 4 * 1024 * 1024 * 1024,
         }
@@ -171,8 +174,31 @@ fn io_err(rel: &RelPath, e: &std::io::Error) -> SyncError {
     }
 }
 
+fn modified_ns(metadata: &std::fs::Metadata) -> Option<u128> {
+    metadata
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map(|duration| duration.as_nanos())
+}
+
+#[cfg(unix)]
+fn metadata_executable(metadata: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    metadata.permissions().mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn metadata_executable(_metadata: &std::fs::Metadata) -> bool {
+    false
+}
+
 /// Streams a file through blake3; also reports whether it starts with `#!`.
-pub(crate) fn hash_file(path: &Path, rel: &RelPath, max_bytes: u64) -> Result<(Cid, u64, bool), SyncError> {
+pub(crate) fn hash_file(
+    path: &Path,
+    rel: &RelPath,
+    max_bytes: u64,
+) -> Result<(Cid, u64, bool), SyncError> {
     let mut file = File::open(path).map_err(|e| io_err(rel, &e))?;
     let mut buffer = [0u8; 64 * 1024];
     let mut head = Vec::with_capacity(2);
@@ -182,15 +208,29 @@ pub(crate) fn hash_file(path: &Path, rel: &RelPath, max_bytes: u64) -> Result<(C
         match file.read(&mut buffer) {
             Ok(0) => break,
             Ok(count) => {
-                let count = u64::try_from(count).map_err(|_| SyncError::Limit { what: "file bytes", limit: max_bytes })?;
-                size = size.checked_add(count).ok_or(SyncError::Limit { what: "file bytes", limit: max_bytes })?;
+                let count = u64::try_from(count).map_err(|_| SyncError::Limit {
+                    what: "file bytes",
+                    limit: max_bytes,
+                })?;
+                size = size.checked_add(count).ok_or(SyncError::Limit {
+                    what: "file bytes",
+                    limit: max_bytes,
+                })?;
                 if size > max_bytes {
-                    return Err(SyncError::Limit { what: "file bytes", limit: max_bytes });
+                    return Err(SyncError::Limit {
+                        what: "file bytes",
+                        limit: max_bytes,
+                    });
                 }
                 if head.len() < 2 {
                     let read_count = match usize::try_from(count) {
                         Ok(count) => count,
-                        Err(_) => return Err(SyncError::Limit { what: "file bytes", limit: max_bytes }),
+                        Err(_) => {
+                            return Err(SyncError::Limit {
+                                what: "file bytes",
+                                limit: max_bytes,
+                            });
+                        }
                     };
                     let needed = 2_usize.saturating_sub(head.len()).min(read_count);
                     if let Some(prefix) = buffer.get(..needed) {
@@ -199,9 +239,17 @@ pub(crate) fn hash_file(path: &Path, rel: &RelPath, max_bytes: u64) -> Result<(C
                 }
                 let read = match usize::try_from(count) {
                     Ok(count) => count,
-                    Err(_) => return Err(SyncError::Limit { what: "file bytes", limit: max_bytes }),
+                    Err(_) => {
+                        return Err(SyncError::Limit {
+                            what: "file bytes",
+                            limit: max_bytes,
+                        });
+                    }
                 };
-                let bytes = buffer.get(..read).ok_or(SyncError::Limit { what: "file bytes", limit: max_bytes })?;
+                let bytes = buffer.get(..read).ok_or(SyncError::Limit {
+                    what: "file bytes",
+                    limit: max_bytes,
+                })?;
                 hasher.update(bytes);
             }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
@@ -254,6 +302,19 @@ fn link_target(rel: &RelPath, target: &Path) -> Option<String> {
             Component::RootDir | Component::Prefix(_) => return None,
         }
     }
+    if parts.iter().any(|part| part.contains('\\')) {
+        return None;
+    }
+    if let Some(first) = parts.first() {
+        let mut chars = first.chars();
+        if chars
+            .next()
+            .is_some_and(|character| character.is_ascii_alphabetic())
+            && chars.next() == Some(':')
+        {
+            return None;
+        }
+    }
     Some(parts.join("/"))
 }
 
@@ -285,14 +346,19 @@ pub fn scan_with_limits(
     let mut total_bytes = 0_u64;
     let mut walker = WalkDir::new(root)
         .follow_links(false)
-        .sort_by_file_name()
         .min_depth(1)
         .into_iter();
     while let Some(entry) = walker.next() {
         let entry = entry.map_err(|e| SyncError::Walk(e.to_string()))?;
-        walked = walked.checked_add(1).ok_or(SyncError::Limit { what: "walk entries", limit: limits.max_walk_entries })?;
+        walked = walked.checked_add(1).ok_or(SyncError::Limit {
+            what: "walk entries",
+            limit: limits.max_walk_entries,
+        })?;
         if walked > limits.max_walk_entries {
-            return Err(SyncError::Limit { what: "walk entries", limit: limits.max_walk_entries });
+            return Err(SyncError::Limit {
+                what: "walk entries",
+                limit: limits.max_walk_entries,
+            });
         }
         let Some(rel) = rel_of(root, entry.path()) else {
             out.unrepresentable.push(entry.path().to_path_buf());
@@ -320,17 +386,33 @@ pub fn scan_with_limits(
             Exclusion::Included if is_dir => continue,
             Exclusion::Included => {}
         }
+        if u64::try_from(rel.as_str().len()).map_or(true, |length| length > limits.max_path_bytes) {
+            return Err(SyncError::Limit {
+                what: "path bytes",
+                limit: limits.max_path_bytes,
+            });
+        }
         if file_type.is_symlink() {
             let target = std::fs::read_link(entry.path()).map_err(|e| io_err(&rel, &e))?;
             match link_target(&rel, &target) {
                 Some(target) => {
-                    let size = u64::try_from(target.len()).map_err(|_| SyncError::Limit { what: "link bytes", limit: limits.max_file_bytes })?;
-                    total_bytes = total_bytes.checked_add(size).ok_or(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes })?;
+                    let size = u64::try_from(target.len()).map_err(|_| SyncError::Limit {
+                        what: "link bytes",
+                        limit: limits.max_file_bytes,
+                    })?;
+                    total_bytes = total_bytes.checked_add(size).ok_or(SyncError::Limit {
+                        what: "total bytes",
+                        limit: limits.max_total_bytes,
+                    })?;
                     if size > limits.max_file_bytes || total_bytes > limits.max_total_bytes {
-                        return Err(SyncError::Limit { what: "link or total bytes", limit: limits.max_total_bytes.min(limits.max_file_bytes) });
+                        return Err(SyncError::Limit {
+                            what: "link or total bytes",
+                            limit: limits.max_total_bytes.min(limits.max_file_bytes),
+                        });
                     }
                     check_entry_limit(&out, limits)?;
                     let entry = FileEntry {
+                        size,
                         hash: Cid::from_bytes(*blake3::hash(target.as_bytes()).as_bytes()),
                         executable: false,
                         kind: EntryKind::Link { target },
@@ -348,19 +430,33 @@ pub fn scan_with_limits(
             .metadata()
             .map_err(|e| SyncError::Walk(e.to_string()))?;
         if meta.len() > limits.max_file_bytes {
-            return Err(SyncError::Limit { what: "file bytes", limit: limits.max_file_bytes });
+            return Err(SyncError::Limit {
+                what: "file bytes",
+                limit: limits.max_file_bytes,
+            });
         }
-        total_bytes = total_bytes.checked_add(meta.len()).ok_or(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes })?;
+        total_bytes = total_bytes
+            .checked_add(meta.len())
+            .ok_or(SyncError::Limit {
+                what: "total bytes",
+                limit: limits.max_total_bytes,
+            })?;
         if total_bytes > limits.max_total_bytes {
-            return Err(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes });
+            return Err(SyncError::Limit {
+                what: "total bytes",
+                limit: limits.max_total_bytes,
+            });
         }
         let mtime_ns = meta
             .modified()
             .ok()
-            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-            .map(|d| d.as_nanos());
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|duration| duration.as_nanos());
         let cached = cache.and_then(|c| c.files.get(&rel)).filter(|c| {
-            mode == HashMode::Fast && c.size == meta.len() && Some(c.mtime_ns) == mtime_ns
+            mode == HashMode::Fast
+                && c.size == meta.len()
+                && Some(c.mtime_ns) == mtime_ns
+                && (cfg!(not(unix)) || c.executable == metadata_executable(&meta))
         });
         let (hash, size, executable) = match cached {
             Some(c) => {
@@ -372,6 +468,28 @@ pub fn scan_with_limits(
                 hash_file(entry.path(), &rel, limits.max_file_bytes)?
             }
         };
+        let after = std::fs::metadata(entry.path()).map_err(|error| io_err(&rel, &error))?;
+        if after.len() != size
+            || modified_ns(&after) != modified_ns(&meta)
+            || (cfg!(unix) && metadata_executable(&after) != executable)
+        {
+            return Err(SyncError::Walk(format!(
+                "file changed while scanning: {rel}"
+            )));
+        }
+        total_bytes = total_bytes
+            .checked_sub(meta.len())
+            .and_then(|bytes| bytes.checked_add(size))
+            .ok_or(SyncError::Limit {
+                what: "total bytes",
+                limit: limits.max_total_bytes,
+            })?;
+        if total_bytes > limits.max_total_bytes {
+            return Err(SyncError::Limit {
+                what: "total bytes",
+                limit: limits.max_total_bytes,
+            });
+        }
         if let Some(mtime_ns) = mtime_ns {
             out.cache.files.insert(
                 rel.clone(),
@@ -394,6 +512,9 @@ pub fn scan_with_limits(
             },
         );
     }
+    out.denied.sort();
+    out.escaped.sort();
+    out.unrepresentable.sort();
     Ok(out)
 }
 
@@ -403,7 +524,10 @@ fn check_entry_limit(out: &ScanOutcome, limits: ScanLimits) -> Result<(), SyncEr
         limit: limits.max_manifest_entries,
     })?;
     if count >= limits.max_manifest_entries {
-        return Err(SyncError::Limit { what: "manifest entries", limit: limits.max_manifest_entries });
+        return Err(SyncError::Limit {
+            what: "manifest entries",
+            limit: limits.max_manifest_entries,
+        });
     }
     Ok(())
 }

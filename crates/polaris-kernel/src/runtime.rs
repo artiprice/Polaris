@@ -74,6 +74,30 @@ impl Kernel {
     /// # Errors
     /// Store, journal, replay, configuration or authority failure. No handle escapes failed startup.
     pub async fn start(config: LocalKernelConfig) -> Result<KernelHandle, KernelError> {
+        Self::start_inner(config, None).await
+    }
+    /// Start the P2 execution profile with an explicit live OpenShell backend and image policy.
+    /// # Errors
+    /// Invalid image/policy, authority, store, recovery or session startup failure.
+    pub async fn start_sandbox(
+        config: LocalKernelConfig,
+        backend: Arc<polaris_openshell::client::OpenShellBackend>,
+        spec: polaris_sdk::registry::SandboxSpec,
+    ) -> Result<KernelHandle, KernelError> {
+        let execution = Arc::new(crate::SandboxExecution::new(
+            backend,
+            spec,
+            config.session,
+            config.frame,
+        )?);
+        Self::start_inner(config, Some(execution)).await
+    }
+    async fn start_inner(
+        config: LocalKernelConfig,
+        execution: Option<
+            Arc<crate::SandboxExecution<polaris_openshell::client::OpenShellBackend>>,
+        >,
+    ) -> Result<KernelHandle, KernelError> {
         let control = Arc::new(
             LocalDirectiveVerifier::new(config.session, config.frame)
                 .map_err(|_| KernelError::Configuration("local authority unavailable"))?,
@@ -135,6 +159,7 @@ impl Kernel {
         let shared = Arc::new(Shared {
             ctx,
             backends,
+            execution,
             frame: config.frame,
             session: config.session,
             workspace,
@@ -180,6 +205,7 @@ impl Kernel {
 struct Shared {
     ctx: Arc<KernelCtx>,
     backends: LocalBackends,
+    execution: Option<Arc<crate::SandboxExecution<polaris_openshell::client::OpenShellBackend>>>,
     frame: FrameId,
     session: SessionId,
     workspace: PathBuf,
@@ -215,6 +241,55 @@ impl Drop for KernelHandle {
     }
 }
 impl KernelHandle {
+    /// Prepare an immutable P2 review from actual workspace, policy and image facts.
+    /// # Errors
+    /// Execution is unconfigured, kernel closed, or review preparation failed.
+    pub async fn prepare_execution(
+        &self,
+        request: crate::ExecutionRequest,
+    ) -> Result<crate::ExecutionReview, KernelError> {
+        let _permit = self.shared.inspections.read().await;
+        if self.shared.closed.load(Ordering::Acquire) {
+            return Err(KernelError::Closed);
+        }
+        let execution = self
+            .shared
+            .execution
+            .as_ref()
+            .ok_or(KernelError::Configuration(
+                "sandbox execution profile is not configured",
+            ))?;
+        execution
+            .prepare(
+                Arc::clone(&self.shared.ctx),
+                self.shared.workspace.clone(),
+                request,
+            )
+            .await
+    }
+    /// Submit an exact operator-approved review through the bounded signed command bus.
+    /// This is a trusted approval-interface method; agent tool adapters must not expose it.
+    /// # Errors
+    /// Approval mismatch, closed/busy queue, stale or consumed review, execution/proof failure.
+    pub async fn approve_execution(
+        &self,
+        review: Cid,
+        accepted_digest: Cid,
+    ) -> Result<CommandReceipt, ApiError> {
+        let execution = self.shared.execution.as_ref().ok_or_else(|| {
+            ApiError::Rejected("sandbox execution profile is not configured".into())
+        })?;
+        let token = execution
+            .credential(review, accepted_digest)
+            .map_err(api_error)?;
+        self.submit(Command::new(
+            CommandId::new_v7(),
+            self.shared.frame,
+            token,
+            CommandBody::ExecuteTool { call: review },
+        ))
+        .await
+    }
     /// Durable local storage owner, for trusted embedding code only.
     #[must_use]
     pub fn context(&self) -> &Arc<KernelCtx> {
@@ -450,6 +525,28 @@ async fn run(
             break;
         };
         let id = command.id();
+        if matches!(command.body(), CommandBody::ExecuteTool { .. }) {
+            let result = match shared.execution.as_ref() {
+                Some(execution) => execution
+                    .execute(
+                        Arc::clone(&shared.ctx),
+                        shared.workspace.clone(),
+                        command,
+                        shared.stop.clone(),
+                    )
+                    .await
+                    .map_err(api_error),
+                None => Err(ApiError::Rejected(
+                    "sandbox execution profile is not configured".into(),
+                )),
+            };
+            if let Ok(mut pending) = shared.pending.lock() {
+                if let Some(reply) = pending.remove(&id) {
+                    let _delivered = reply.send(result);
+                }
+            }
+            continue;
+        }
         let owner = Arc::clone(&shared);
         let outcome = tokio::task::spawn_blocking(move || {
             let result = execute(&owner, &mut session, command);

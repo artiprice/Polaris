@@ -71,6 +71,31 @@ fn rejects_compile_blowup() {
     ));
 }
 
+#[test]
+fn caller_limits_cannot_raise_hard_pattern_and_nesting_ceilings() {
+    let limits = UserRegexLimits {
+        max_len: usize::MAX,
+        nest_limit: u32::MAX,
+        max_repetition: u32::MAX,
+        max_class_ranges: usize::MAX,
+        nfa_size_bytes: usize::MAX,
+    };
+    let oversized = "a".repeat(16 * 1024 + 1);
+    assert!(matches!(
+        validate_user_regex(&oversized, &limits),
+        Err(AutomataError::TooLarge { limit: 16_384 })
+    ));
+    let nested = format!("{}a{}", "(".repeat(129), ")".repeat(129));
+    assert!(matches!(
+        validate_user_regex(&nested, &limits),
+        Err(AutomataError::TooNested)
+    ));
+    assert!(matches!(
+        validate_user_regex("a{1000001}", &limits),
+        Err(AutomataError::RepetitionTooLarge { limit: 1_000_000 })
+    ));
+}
+
 proptest! {
     #[test]
     fn prop_guard_never_panics(pattern in ".{0,80}") {

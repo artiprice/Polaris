@@ -221,6 +221,23 @@ fn compile_limits_reject_too_many_patterns() {
     ));
 }
 
+#[test]
+fn default_limits_reject_a_five_thousand_pattern_pack() -> Result<(), AutomataError> {
+    let mut builder = DfaScanner::builder();
+    for index in 0..5000 {
+        builder.add(
+            &format!("rule_{index}"),
+            "AKIA[0-9A-Z]{16}",
+            Category::Secret,
+        )?;
+    }
+    assert!(matches!(
+        builder.build(&CompileLimits::default()),
+        Err(AutomataError::TooManyPatterns { limit: 1000 })
+    ));
+    Ok(())
+}
+
 proptest! {
     #[test]
     fn prop_scan_matches_reference_regex(hay in "[abcxyz0-9 .@-]{0,200}") {

@@ -1,0 +1,19 @@
+{
+  "type_of": "async_function",
+  "name": "Repo::snapshot_before_edit_and_undo",
+  "file_path": "crates/polaris-vcs/src/journal.rs",
+  "logic_name": "CAS Snapshot and Compare-and-Swap Undo",
+  "test_list": [
+    { "test_name": "undo_restores_bytes_exactly_and_preserves_crlf", "description": "Snapshots restore exact bytes and executable state." },
+    { "test_name": "undo_preserves_unrelated_and_intervening_edits", "description": "Undo conflicts before mutation when a target diverged and leaves user edits intact." },
+    { "test_name": "second_undo_walks_the_stack", "description": "Undo consumes one sealed action and the next undo reaches the previous action." },
+    { "test_name": "journal_reopens_after_restart", "description": "Durable journal and CAS state remain available to a reopened Repo." },
+    { "test_name": "interrupted_restore_recovers_from_quarantine", "description": "A crash after target quarantine is recovered without overwriting intervening changes." },
+    { "test_name": "missing_or_corrupt_cas_blob_is_typed_error", "description": "Missing snapshots fail without partially replacing user files." }
+  ],
+  "dependencies": ["polaris_storage_cas::Cas", "RepoPath", "CheckpointSeq"],
+  "libraries": ["blake3", "serde", "serde_json", "tempfile"],
+  "inputs": [ { "name": "sequence", "type": "CheckpointSeq", "description": "Kernel-assigned action sequence." }, { "name": "paths", "type": "&[RepoPath]", "description": "Paths changed by the action." } ],
+  "output_type": "Result<UndoReport,VcsError>",
+  "output_description": "Dry-run and guarded restoration driven by durable CAS-backed action records."
+}

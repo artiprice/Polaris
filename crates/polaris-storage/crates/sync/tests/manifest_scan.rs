@@ -5,7 +5,11 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 
-use polaris_storage_sync::{HashMode, IgnoreRules, RelPath, scan};
+use polaris_sdk::ids::Cid;
+use polaris_storage_sync::{
+    EntryKind, FileEntry, HashMode, IgnoreRules, Manifest, RelPath, ScanLimits, SyncError, plan,
+    scan, scan_with_limits,
+};
 
 type TestResult = Result<(), Box<dyn Error>>;
 
@@ -135,6 +139,151 @@ fn shebang_marks_executable() -> TestResult {
     };
     assert!(exec("run.sh")?);
     assert!(!exec("src/main.rs")?);
+    Ok(())
+}
+
+#[test]
+fn scan_limits_bound_walk_manifest_path_file_and_aggregate_bytes() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    fs::create_dir(tmp.path().join("sub"))?;
+    fs::write(tmp.path().join("sub/a"), b"123")?;
+    fs::write(tmp.path().join("sub/b"), b"456")?;
+    let rules = IgnoreRules::new(tmp.path(), None)?;
+    let mut limits = ScanLimits {
+        max_walk_entries: 2,
+        ..ScanLimits::default()
+    };
+    assert!(matches!(
+        scan_with_limits(tmp.path(), &rules, None, HashMode::Paranoid, limits),
+        Err(SyncError::Limit {
+            what: "walk entries",
+            ..
+        })
+    ));
+    limits = ScanLimits {
+        max_manifest_entries: 1,
+        ..ScanLimits::default()
+    };
+    assert!(matches!(
+        scan_with_limits(tmp.path(), &rules, None, HashMode::Paranoid, limits),
+        Err(SyncError::Limit {
+            what: "manifest entries",
+            ..
+        })
+    ));
+    limits = ScanLimits {
+        max_file_bytes: 2,
+        ..ScanLimits::default()
+    };
+    assert!(matches!(
+        scan_with_limits(tmp.path(), &rules, None, HashMode::Paranoid, limits),
+        Err(SyncError::Limit {
+            what: "file bytes",
+            ..
+        })
+    ));
+    limits = ScanLimits {
+        max_total_bytes: 5,
+        ..ScanLimits::default()
+    };
+    assert!(matches!(
+        scan_with_limits(tmp.path(), &rules, None, HashMode::Paranoid, limits),
+        Err(SyncError::Limit {
+            what: "total bytes",
+            ..
+        })
+    ));
+    limits = ScanLimits {
+        max_path_bytes: 4,
+        ..ScanLimits::default()
+    };
+    assert!(matches!(
+        scan_with_limits(tmp.path(), &rules, None, HashMode::Paranoid, limits),
+        Err(SyncError::Limit {
+            what: "path bytes",
+            ..
+        })
+    ));
+    Ok(())
+}
+
+#[test]
+fn manifest_content_id_binds_path_size_hash_mode_and_link_target() -> TestResult {
+    let hash = Cid::from_bytes(*blake3::hash(b"payload").as_bytes());
+    let mut first = Manifest::default();
+    first.entries.insert(
+        RelPath::new("a.txt")?,
+        FileEntry {
+            size: 7,
+            hash,
+            executable: false,
+            kind: EntryKind::File,
+        },
+    );
+    let same = first.clone();
+    assert_eq!(first.content_id(), same.content_id());
+    let mut changed_mode = first.clone();
+    if let Some(entry) = changed_mode.entries.get_mut(&RelPath::new("a.txt")?) {
+        entry.executable = true;
+    }
+    assert_ne!(first.content_id(), changed_mode.content_id());
+    let mut changed_path = first.clone();
+    let value = changed_path
+        .entries
+        .remove(&RelPath::new("a.txt")?)
+        .ok_or("missing entry")?;
+    changed_path.entries.insert(RelPath::new("b.txt")?, value);
+    assert_ne!(first.content_id(), changed_path.content_id());
+    let mut link = first.clone();
+    if let Some(entry) = link.entries.get_mut(&RelPath::new("a.txt")?) {
+        entry.kind = EntryKind::Link {
+            target: "target-a".into(),
+        };
+    }
+    let mut other_link = link.clone();
+    if let Some(entry) = other_link.entries.get_mut(&RelPath::new("a.txt")?) {
+        entry.kind = EntryKind::Link {
+            target: "target-b".into(),
+        };
+    }
+    assert_ne!(link.content_id(), other_link.content_id());
+    Ok(())
+}
+
+#[test]
+fn ten_thousand_file_cold_warm_and_noop_plan_workload() -> TestResult {
+    use std::time::Instant;
+
+    let tmp = tempfile::tempdir()?;
+    for index in 0..10_000_u32 {
+        fs::write(
+            tmp.path().join(format!("file-{index:05}.txt")),
+            b"same small content\n",
+        )?;
+    }
+    let rules = IgnoreRules::new(tmp.path(), None)?;
+    let started = Instant::now();
+    let cold = scan(tmp.path(), &rules, None, HashMode::Fast)?;
+    let cold_elapsed = started.elapsed();
+    let started = Instant::now();
+    let warm = scan(tmp.path(), &rules, Some(&cold.cache), HashMode::Fast)?;
+    let warm_elapsed = started.elapsed();
+    let started = Instant::now();
+    let diff = plan(&warm.manifest, &cold.manifest);
+    let plan_elapsed = started.elapsed();
+    assert_eq!(cold.manifest.entries.len(), 10_000);
+    assert_eq!((cold.stats.hashed, cold.stats.reused), (10_000, 0));
+    assert_eq!((warm.stats.hashed, warm.stats.reused), (0, 10_000));
+    assert!(diff.is_empty());
+    eprintln!(
+        "sync-10k files=10000 cold_ms={} warm_ms={} plan_ms={} warm_hashes={} warm_reused={} plan_empty={}",
+        cold_elapsed.as_millis(),
+        warm_elapsed.as_millis(),
+        plan_elapsed.as_millis(),
+        warm.stats.hashed,
+        warm.stats.reused,
+        diff.is_empty()
+    );
     Ok(())
 }
 

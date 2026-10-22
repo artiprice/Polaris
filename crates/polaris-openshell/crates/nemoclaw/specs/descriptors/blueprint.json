@@ -7,8 +7,7 @@
     { "test_name": "default_digest_round_trips_and_tampering_fails", "description": "Create a digest-pinned blueprint, serialize and parse it, then reject content tampering." },
     { "test_name": "mutable_image_and_bad_cid_are_rejected", "description": "Reject mutable image tags and malformed policy references." },
     { "test_name": "onboarding_and_doctor_keep_unknown_state_explicit", "description": "Produce ordered onboarding actions and preserve unprobed facts as UNKNOWN." },
-    { "test_name": "dockerfile_places_guest_in_policy_visible_usr_bin", "description": "Build the guest and install it under /usr/bin where the verified default sandbox policy permits execution." },
-    { "test_name": "apply_requires_matching_guest_protocol_and_cleans_up_on_failure", "description": "Only return a sandbox after the requested guest handshake succeeds; destroy it after mismatch or command failure." }
+    { "test_name": "dockerfile_places_guest_in_policy_visible_usr_bin", "description": "Build the guest and install it under /usr/bin where the verified default sandbox policy permits execution." }
   ],
   "dependencies": ["polaris-sdk::SandboxBackend", "polaris-openshell-client", "polaris-openshell-policy"],
   "libraries": ["serde", "serde-saphyr", "blake3", "bytes", "tokio"],

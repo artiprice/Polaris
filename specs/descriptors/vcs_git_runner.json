@@ -1,0 +1,17 @@
+{
+  "type_of": "async_function",
+  "name": "ProcessGitRunner::run",
+  "file_path": "crates/polaris-vcs/src/git.rs",
+  "logic_name": "Bounded Fixed-Argument Git Runner",
+  "test_list": [
+    { "test_name": "arguments_are_passed_without_shell", "description": "Validated argv reaches Git directly without shell interpolation." },
+    { "test_name": "fixed_config_disables_hooks_filters_and_autocrlf", "description": "Process environment disables implicit execution and EOL conversion." },
+    { "test_name": "timeout_and_stdout_caps_kill_child", "description": "A slow or noisy child is bounded and terminated." },
+    { "test_name": "stderr_is_capped_and_redacted_from_paths", "description": "Error reporting does not return unbounded output or secret content." }
+  ],
+  "dependencies": ["tokio::process::Command"],
+  "libraries": ["tokio"],
+  "inputs": [ { "name": "root", "type": "&Path", "description": "Git working directory." }, { "name": "argv", "type": "&[OsString]", "description": "Fixed Git argv with validated ref and path values." } ],
+  "output_type": "Result<GitOutput,VcsError>",
+  "output_description": "Bounded stdout, exit status, and bounded stderr for internal callers."
+}

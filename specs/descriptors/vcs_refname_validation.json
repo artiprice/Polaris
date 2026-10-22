@@ -1,0 +1,18 @@
+{
+  "type_of": "function",
+  "name": "BranchName::parse",
+  "file_path": "crates/polaris-vcs/src/paths.rs",
+  "logic_name": "VCS Ref and Path Validation",
+  "test_list": [
+    { "test_name": "accepts_plain_feature_branch", "description": "Accepts valid slash-separated Git branches." },
+    { "test_name": "rejects_git_ref_syntax_and_option_names", "description": "Rejects forbidden Git ref components, ranges, controls, and leading options." },
+    { "test_name": "rejects_windows_reserved_names", "description": "Rejects refs and paths that cannot be represented on Windows." },
+    { "test_name": "repo_paths_cannot_reach_metadata_or_escape", "description": "Rejects traversal, absolute paths, and .git/.polaris metadata paths." },
+    { "test_name": "arbitrary_strings_do_not_panic", "description": "Parser returns a result for arbitrary Unicode and control input." }
+  ],
+  "dependencies": ["crate::VcsError"],
+  "libraries": [],
+  "inputs": [ { "name": "value", "type": "&str", "description": "Untrusted Git ref or repository-relative path." } ],
+  "output_type": "Result<BranchName|RevSpec|RepoPath,VcsError>",
+  "output_description": "Validated names safe to use at fixed-argv Git and filesystem boundaries."
+}

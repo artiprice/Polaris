@@ -50,6 +50,8 @@ polaris-hacker = { workspace = true }
 polaris-runtime = { workspace = true }
 
 [dev-dependencies]
+blake3 = { workspace = true }
+bytes = { workspace = true }
 sysinfo = { workspace = true }
 tempfile = { workspace = true }
 proptest = { workspace = true }

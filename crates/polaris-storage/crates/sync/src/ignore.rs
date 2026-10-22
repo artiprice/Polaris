@@ -1,5 +1,6 @@
 //! `.polarisignore` (gitignore syntax) plus a non-overridable secret deny-list.
 
+use std::io::Read;
 use std::path::Path;
 
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
@@ -9,6 +10,9 @@ use crate::path::{RelPath, SyncError};
 
 /// Name of the per-workspace ignore file.
 pub const POLARISIGNORE: &str = ".polarisignore";
+
+/// Maximum bytes accepted from one workspace ignore file.
+pub const MAX_POLARISIGNORE_BYTES: u64 = 1024 * 1024;
 
 /// Paths that never leave the machine, whatever `.polarisignore` says.
 pub const DEFAULT_DENY: &[&str] = &[
@@ -76,6 +80,7 @@ impl IgnoreRules {
         for pattern in DEFAULT_DENY {
             let glob = GlobBuilder::new(pattern)
                 .literal_separator(true)
+                .case_insensitive(true)
                 .build()
                 .map_err(|e| SyncError::Rule(e.to_string()))?;
             deny.add(glob);
@@ -89,19 +94,53 @@ impl IgnoreRules {
     /// # Errors
     /// [`SyncError::Io`] when the file exists but cannot be read; [`SyncError::Rule`].
     pub fn from_workspace(root: &Path) -> Result<Self, SyncError> {
-        match std::fs::read_to_string(root.join(POLARISIGNORE)) {
-            Ok(text) => Self::new(root, Some(&text)),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Self::new(root, None),
-            Err(e) => Err(SyncError::Io {
-                path: POLARISIGNORE.into(),
-                reason: e.to_string(),
-            }),
+        let path = root.join(POLARISIGNORE);
+        let file = match std::fs::File::open(&path) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Self::new(root, None),
+            Err(e) => {
+                return Err(SyncError::Io {
+                    path: POLARISIGNORE.into(),
+                    reason: e.to_string(),
+                });
+            }
+        };
+        let metadata = file.metadata().map_err(|error| SyncError::Io {
+            path: POLARISIGNORE.into(),
+            reason: error.to_string(),
+        })?;
+        if metadata.len() > MAX_POLARISIGNORE_BYTES {
+            return Err(SyncError::Limit {
+                what: "polarisignore bytes",
+                limit: MAX_POLARISIGNORE_BYTES,
+            });
         }
+        let cap = MAX_POLARISIGNORE_BYTES.saturating_add(1);
+        let mut bytes = Vec::new();
+        file.take(cap)
+            .read_to_end(&mut bytes)
+            .map_err(|error| SyncError::Io {
+                path: POLARISIGNORE.into(),
+                reason: error.to_string(),
+            })?;
+        if u64::try_from(bytes.len()).map_or(true, |size| size > MAX_POLARISIGNORE_BYTES) {
+            return Err(SyncError::Limit {
+                what: "polarisignore bytes",
+                limit: MAX_POLARISIGNORE_BYTES,
+            });
+        }
+        let text = String::from_utf8(bytes).map_err(|error| SyncError::Rule(error.to_string()))?;
+        Self::new(root, Some(&text))
     }
 
     /// Classifies a path; the deny-list wins over any `.polarisignore` negation.
     #[must_use]
     pub fn classify(&self, path: &RelPath, is_dir: bool) -> Exclusion {
+        if path.components().any(|component| {
+            component.eq_ignore_ascii_case(".git") || component.eq_ignore_ascii_case(".polaris")
+        }) {
+            return Exclusion::Denied;
+        }
         if self.deny.is_match(path.as_str()) {
             return Exclusion::Denied;
         }

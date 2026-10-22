@@ -23,6 +23,7 @@ openshell-policy-schema = { workspace = true }
 blake3 = { workspace = true }
 uuid = { workspace = true }
 tracing = { workspace = true }
+serde_json = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-config = { workspace = true }

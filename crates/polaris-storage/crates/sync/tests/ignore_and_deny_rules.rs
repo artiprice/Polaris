@@ -1,8 +1,9 @@
 //! Ignore And Deny Rules (descriptor: specs/descriptors/sync_ignore_and_deny_rules.json).
 
 use std::error::Error;
+use std::io::Write;
 
-use polaris_storage_sync::{Exclusion, IgnoreRules, RelPath};
+use polaris_storage_sync::{Exclusion, IgnoreRules, MAX_POLARISIGNORE_BYTES, RelPath, SyncError};
 
 type TestResult = Result<(), Box<dyn Error>>;
 
@@ -49,7 +50,7 @@ fn negation_cannot_reinclude_denied() -> TestResult {
 }
 
 #[test]
-fn git_config_denied() -> TestResult {
+fn git_metadata_denied() -> TestResult {
     let tmp = tempfile::tempdir()?;
     let rules = IgnoreRules::new(tmp.path(), None)?;
     assert_eq!(class(&rules, ".git/config", false)?, Exclusion::Denied);
@@ -57,7 +58,7 @@ fn git_config_denied() -> TestResult {
         class(&rules, "vendor/lib/.git/config", false)?,
         Exclusion::Denied
     );
-    assert_eq!(class(&rules, ".git/HEAD", false)?, Exclusion::Included);
+    assert_eq!(class(&rules, ".git/HEAD", false)?, Exclusion::Denied);
     Ok(())
 }
 
@@ -71,13 +72,36 @@ fn git_and_polaris_metadata_are_denied_even_with_negation() -> TestResult {
     for (path, is_dir) in [
         (".git", true),
         (".git/config", false),
+        (".GIT/config", false),
         ("work/.git", false),
         (".polaris", true),
+        (".POLARIS/vcs-undo.json", false),
         (".polaris/vcs-undo.json", false),
         ("work/.polaris/cas/file", false),
     ] {
-        assert_eq!(rules.classify(&RelPath::new(path)?, is_dir), Exclusion::Denied, "{path}");
+        assert_eq!(
+            rules.classify(&RelPath::new(path)?, is_dir),
+            Exclusion::Denied,
+            "{path}"
+        );
     }
+    Ok(())
+}
+
+#[test]
+fn workspace_ignore_file_is_bounded_before_pattern_parsing() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    let path = tmp.path().join(".polarisignore");
+    let mut file = std::fs::File::create(path)?;
+    file.write_all(&vec![b'a'; usize::try_from(MAX_POLARISIGNORE_BYTES + 1)?])?;
+    let result = IgnoreRules::from_workspace(tmp.path());
+    assert!(matches!(
+        result,
+        Err(SyncError::Limit {
+            what: "polarisignore bytes",
+            ..
+        })
+    ));
     Ok(())
 }
 

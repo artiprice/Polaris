@@ -227,7 +227,7 @@ Cross-cutting tasks:
 <!-- generated: P1 crate tasks -->
 | Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
 |---|---|---|---|---|---|
-| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas`, `crate:polaris-openshell`, `crate:polaris-platform` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
 | `crate:polaris-sdk` | `polaris-sdk` | L0 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-proto` | `polaris-proto` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-config` | `polaris-config` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
@@ -276,9 +276,9 @@ blast-radius approvals and Proof-of-Done gate demonstrated; reaper leaves no san
 | `crate:polaris-platform-process` | `polaris-platform-process` | L2 | `crate:polaris-sdk`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-platform` | `polaris-platform` | L2 | `crate:polaris-platform-wsl`, `crate:polaris-platform-process` | re-exports compile; children's tasks PASS | — |
 | `crate:polaris-vcs` | `polaris-vcs` | L2 | `crate:polaris-sdk`, `crate:polaris-storage-cas` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
-| `crate:polaris-openshell-client` | `polaris-openshell-client` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-docker` |
+| `crate:polaris-openshell-client` | `polaris-openshell-client` | L2 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-openshell-policy` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-docker` |
 | `crate:polaris-openshell-policy` | `polaris-openshell-policy` | L2 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell` |
-| `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | L2 | `crate:polaris-sdk`, `crate:polaris-openshell-policy` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-sandbox-image` |
+| `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | L2 | `crate:polaris-sdk`, `crate:polaris-openshell-policy`, `crate:polaris-openshell-client` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-openshell`, `wsl-sandbox-image` |
 | `crate:polaris-openshell` | `polaris-openshell` | L2 | `crate:polaris-openshell-client`, `crate:polaris-openshell-policy`, `crate:polaris-openshell-nemoclaw` | re-exports compile; children's tasks PASS | — |
 | `crate:polaris-security` | `polaris-security` | L3 | `crate:polaris-security-capability`, `crate:polaris-security-automata`, `crate:polaris-security-secrets`, `crate:polaris-security-pii`, `crate:polaris-security-rules` | re-exports compile; children's tasks PASS | — |
 | `crate:polaris-runtime-leases` | `polaris-runtime-leases` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |

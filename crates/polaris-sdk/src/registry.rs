@@ -510,6 +510,9 @@ pub struct ExecOutput {
 }
 
 /// An isolated execution environment (OpenShell, Contree, remote gateway).
+///
+/// Adapters must bound download bytes and list entries while receiving the transport response,
+/// before allocating an unbounded result. Transport-specific limits must be documented.
 pub trait SandboxBackend: Send + Sync {
     /// Creates a sandbox and waits until it is ready.
     fn create(
@@ -541,11 +544,208 @@ pub trait SandboxBackend: Send + Sync {
         sandbox: &SandboxHandle,
         dir: &str,
     ) -> impl Future<Output = Result<Vec<String>, SandboxError>> + Send;
+    /// Reads one page from a bounded immutable remote manifest snapshot. When `generation` is
+    /// `None`, the backend creates a snapshot and requires `offset == 0`; later pages must pass
+    /// the returned generation token. Implementations fail closed when the generation expires.
+    fn snapshot_page(
+        &self,
+        _sandbox: &SandboxHandle,
+        _root: &str,
+        _generation: Option<&str>,
+        _offset: u64,
+        _limit: u32,
+    ) -> impl Future<Output = Result<SandboxSnapshotPage, SandboxError>> + Send {
+        async {
+            Err(SandboxError::PolicyDenied(
+                "backend does not support immutable sync snapshots".into(),
+            ))
+        }
+    }
     /// Deletes the sandbox; idempotent.
     fn destroy(
         &self,
         sandbox: &SandboxHandle,
     ) -> impl Future<Output = Result<(), SandboxError>> + Send;
+    /// Conditionally commit a staged mutation in the same process that revalidates its expected
+    /// state. Implementations serialize cooperating writers using a workspace lock, reject
+    /// symlink parents and atomically install on the destination filesystem. No general-purpose
+    /// filesystem API can exclude an uncooperative writer between compare and rename; callers
+    /// also retain their workspace lease. Unsupported backends fail closed.
+    fn conditional_commit(
+        &self,
+        _sandbox: &SandboxHandle,
+        _request: &SandboxCommitRequest,
+    ) -> impl Future<Output = Result<CommitOutcome, SandboxError>> + Send {
+        async {
+            Err(SandboxError::PolicyDenied(
+                "backend does not support conditional sync commits".into(),
+            ))
+        }
+    }
+    /// Prepare and validate a private sync namespace under the canonical remote workspace.
+    /// Existing symlinked, shared or incorrectly owned private directories must be rejected,
+    /// never silently chmod-ed. This precedes upload so staged bytes are private from creation.
+    fn prepare_sync(
+        &self,
+        _sandbox: &SandboxHandle,
+        _root: &str,
+    ) -> impl Future<Output = Result<(), SandboxError>> + Send {
+        async {
+            Err(SandboxError::PolicyDenied(
+                "backend does not support private sync preparation".into(),
+            ))
+        }
+    }
+}
+
+/// One exact remote file or internal symbolic link in a captured sync snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxSnapshotEntry {
+    /// Root-relative slash-separated path.
+    pub relative_path: String,
+    /// File byte count or link-target byte count.
+    pub size: u64,
+    /// BLAKE3 hash of exact file bytes or link-target UTF-8 bytes.
+    pub hash: Cid,
+    /// Executable mode for regular files; false for links.
+    pub executable: bool,
+    /// Exact internal relative link target, absent for regular files.
+    pub link_target: Option<String>,
+}
+
+/// One page from an immutable, expiring remote manifest snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxSnapshotPage {
+    /// Opaque token binding every page to one cached snapshot and root.
+    pub generation: String,
+    /// Canonical content id of the complete manifest.
+    pub manifest_id: Cid,
+    /// Total number of entries in the complete manifest.
+    pub total_entries: u64,
+    /// First entry offset in this page.
+    pub offset: u64,
+    /// Entries, in lexical path order.
+    pub entries: Vec<SandboxSnapshotEntry>,
+    /// Next offset, or `None` after the final page.
+    pub next_offset: Option<u64>,
+}
+
+/// One path mutation carried in a bounded tar sync batch.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxBatchMutation {
+    /// Root-relative path.
+    pub relative_path: String,
+    /// Exact remote state observed by the planner; `None` means absent.
+    pub expected: Option<SandboxFileState>,
+    /// Requested file/link write or delete.
+    pub action: SandboxBatchAction,
+}
+
+/// Action encoded in a sync batch manifest.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SandboxBatchAction {
+    /// Conditionally delete the observed file or link.
+    Delete,
+    /// Install exact regular-file bytes from the named synthetic tar payload.
+    File {
+        /// Synthetic archive name, never used as a filesystem path.
+        payload: String,
+        /// BLAKE3 of the exact file bytes.
+        hash: Cid,
+        /// Whether to install executable mode.
+        executable: bool,
+    },
+    /// Install a non-escaping relative symlink.
+    Link {
+        /// Exact link target.
+        target: String,
+        /// BLAKE3 of the target UTF-8 bytes.
+        hash: Cid,
+    },
+}
+
+/// Manifest stored as the first entry in one bounded tar sync batch.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxSyncBatch {
+    /// Batch format version.
+    pub version: u32,
+    /// Canonical sandbox workspace root.
+    pub root: String,
+    /// Non-empty, unique path operations.
+    pub mutations: Vec<SandboxBatchMutation>,
+}
+
+/// Outcome returned by the guest batch commit helper.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxBatchResult {
+    /// Paths atomically installed or deleted.
+    pub applied: Vec<String>,
+    /// Paths that failed expected-state comparison; the whole batch was rejected before changes.
+    pub conflicts: Vec<String>,
+    /// Paths not applied because a previous operation in the batch failed.
+    pub failed: Vec<String>,
+}
+
+/// Exact remote entry identity expected by a conditional sync commit.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxFileState {
+    /// BLAKE3 of file bytes, or of the exact UTF-8 link target.
+    pub hash: Cid,
+    /// Executable mode for a regular file; false for a link.
+    pub executable: bool,
+    /// Exact relative target for a link; absent for a regular file.
+    pub link_target: Option<String>,
+}
+/// New state requested by the trusted sync planner.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SandboxCommitAction {
+    /// Delete only the observed destination.
+    Delete,
+    /// Verify and install a staged regular file.
+    File {
+        /// File under `<root>/.polaris/sync/staging/` on the same filesystem.
+        staged_path: String,
+        /// Expected BLAKE3 of all staged bytes.
+        hash: Cid,
+        /// Executable mode to install.
+        executable: bool,
+    },
+    /// Install a non-escaping relative symbolic link.
+    Link {
+        /// Exact link target, never expanded through a shell.
+        target: String,
+        /// BLAKE3 of the target's UTF-8 bytes.
+        hash: Cid,
+    },
+}
+/// Bounded fixed-protocol request for the in-sandbox commit helper.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SandboxCommitRequest {
+    /// Absolute canonical workspace root inside the sandbox.
+    pub root: String,
+    /// Validated workspace-relative destination; `.git` and `.polaris` are forbidden.
+    pub relative_path: String,
+    /// Observed destination, or absence.
+    pub expected: Option<SandboxFileState>,
+    /// Requested atomic change.
+    pub action: SandboxCommitAction,
+}
+/// Conditional commit result. A conflict preserves the destination.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitOutcome {
+    /// Expected state matched and the change was committed.
+    Applied,
+    /// Current state diverged; no destination change was performed.
+    Conflict,
 }
 
 /// Sandbox failures.
@@ -563,6 +763,9 @@ pub enum SandboxError {
     /// Unknown sandbox or path.
     #[error("not found: {0}")]
     NotFound(String),
+    /// A sandbox with the requested name already exists; callers must not delete it as cleanup.
+    #[error("sandbox already exists: {0}")]
+    AlreadyExists(String),
     /// Quota or size limit exceeded.
     #[error("limit exceeded: {0}")]
     LimitExceeded(String),
@@ -576,7 +779,10 @@ impl HasKind for SandboxError {
         match self {
             Self::Unavailable(_) | Self::Timeout => ErrorKind::Transient,
             Self::PolicyDenied(_) => ErrorKind::Policy,
-            Self::NotFound(_) | Self::LimitExceeded(_) | Self::Protocol(_) => ErrorKind::Permanent,
+            Self::NotFound(_)
+            | Self::AlreadyExists(_)
+            | Self::LimitExceeded(_)
+            | Self::Protocol(_) => ErrorKind::Permanent,
         }
     }
 }

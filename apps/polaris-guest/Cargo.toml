@@ -18,6 +18,11 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+blake3 = { workspace = true }
+fs4 = { workspace = true }
+tar = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-proto = { workspace = true }

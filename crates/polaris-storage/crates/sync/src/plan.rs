@@ -214,10 +214,9 @@ pub fn detect_conflicts(manifest: &Manifest) -> Vec<PathConflict> {
     let mut out = Vec::new();
     let mut prefixes: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for path in manifest.entries.keys() {
-        if path.as_str().len() > 260 {
+        if path.as_str().len() > 260 || path.components().any(|name| name.len() > 255) {
             out.push(PathConflict::TooLong(path.clone()));
-        }
-        if let Some(conflict) = path
+        } else if let Some(conflict) = path
             .components()
             .find_map(|name| component_conflict(path, name))
         {

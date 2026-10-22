@@ -1,0 +1,20 @@
+{
+  "type_of": "module",
+  "name": "platform_process_stress",
+  "file_path": "crates/polaris-platform/crates/process/tests/stress_workloads.rs",
+  "logic_name": "Opt-in Process and Watch Stress Workloads",
+  "test_list": [
+    { "test_name": "stress_spawn_stop_one_thousand_trees", "description": "Spawn and stop 1,000 owned process trees on the local native backend." },
+    { "test_name": "stress_kills_a_depth_five_process_tree", "description": "Build a real five-descendant tree and verify all descendants exit after stop." },
+    { "test_name": "stress_watcher_reports_rescan_after_hundred_thousand_file_flood", "description": "Flood a bounded watcher with 100,000 creates and require an explicit rescan signal." }
+  ],
+  "dependencies": ["ProcessPlatform", "FsWatcher", "WatchConfig"],
+  "libraries": ["process-wrap", "notify", "sysinfo"],
+  "inputs": [
+    { "name": "process_count", "type": "u32", "description": "1,000 process spawn-stop cycles." },
+    { "name": "tree_depth", "type": "u32", "description": "Five descendant processes." },
+    { "name": "event_count", "type": "u32", "description": "100,000 filesystem creates." }
+  ],
+  "output_type": "TestResult",
+  "output_description": "Opt-in stress tests assert real process cleanup and explicit watcher rescan after overflow."
+}

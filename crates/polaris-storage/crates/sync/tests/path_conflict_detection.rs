@@ -104,6 +104,15 @@ fn too_long_component_flagged() -> TestResult {
 }
 
 #[test]
+fn too_long_total_path_is_flagged_once() -> TestResult {
+    let path = vec!["segment"; 38].join("/");
+    assert!(path.len() > 260);
+    let conflicts = detect_conflicts(&manifest(&[&path])?);
+    assert_eq!(conflicts, vec![PathConflict::TooLong(rel(&path)?)]);
+    Ok(())
+}
+
+#[test]
 fn clean_paths_no_conflicts() -> TestResult {
     assert!(
         detect_conflicts(&manifest(&[

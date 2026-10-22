@@ -1,7 +1,7 @@
 //! OpenShell v0.1.4 policy adapter and Polaris policy derivation.
 
 use openshell_policy_schema::{
-    parse_policy_with_limits, serialize_policy, ParseLimits, PolicyDocument,
+    ParseLimits, PolicyDocument, parse_policy_with_limits, serialize_policy,
 };
 use polaris_sdk::registry::SandboxError;
 use serde::{Deserialize, Serialize};
@@ -190,10 +190,7 @@ pub fn provider_profile_token_factory(
     model_binary: &str,
 ) -> Result<ProviderProfile, PolicyError> {
     let host = host.trim();
-    if host.is_empty()
-        || host.contains(['*', '/', ':'])
-        || host.chars().any(char::is_whitespace)
-    {
+    if host.is_empty() || host.contains(['*', '/', ':']) || host.chars().any(char::is_whitespace) {
         return Err(PolicyError::InvalidHost(host.to_owned()));
     }
     if !model_binary.starts_with('/') || model_binary.split('/').any(|part| part == "..") {
@@ -232,7 +229,10 @@ pub fn provider_profile_yaml(profile: &ProviderProfile) -> Result<String, Policy
 /// Validate a policy update as a network-only hot-reload delta.
 pub fn network_only_delta(source: &str) -> Result<String, PolicyError> {
     let policy = Policy::parse_yaml(source)?;
-    if policy.0.filesystem_policy.is_some() || policy.0.landlock.is_some() || policy.0.process.is_some() {
+    if policy.0.filesystem_policy.is_some()
+        || policy.0.landlock.is_some()
+        || policy.0.process.is_some()
+    {
         return Err(PolicyError::NonNetworkDelta);
     }
     policy.canonical_yaml()
@@ -279,12 +279,27 @@ mod tests {
 
     #[test]
     fn every_role_and_tier_produces_valid_upstream_policy() {
-        for role in [AgentRole::Reader, AgentRole::Builder, AgentRole::Tester, AgentRole::Browser, AgentRole::Adversary] {
-            for tier in [ExecTier::Docker, ExecTier::Vm, ExecTier::Remote, ExecTier::Mxc] {
+        for role in [
+            AgentRole::Reader,
+            AgentRole::Builder,
+            AgentRole::Tester,
+            AgentRole::Browser,
+            AgentRole::Adversary,
+        ] {
+            for tier in [
+                ExecTier::Docker,
+                ExecTier::Vm,
+                ExecTier::Remote,
+                ExecTier::Mxc,
+            ] {
                 let policy = policy_for(role, tier);
                 assert!(policy.is_ok(), "role {role:?}, tier {tier:?}: {policy:?}");
                 if role == AgentRole::Adversary {
-                    assert!(policy.map(|p| p.document().network_policies.is_empty()).unwrap_or(false));
+                    assert!(
+                        policy
+                            .map(|p| p.document().network_policies.is_empty())
+                            .unwrap_or(false)
+                    );
                 }
             }
         }
@@ -293,28 +308,47 @@ mod tests {
     #[test]
     fn rejects_unknown_fields_root_write_and_relative_paths() {
         assert!(Policy::parse_yaml("version: 1\nfuture: true\n").is_err());
-        assert!(matches!(Policy::parse_yaml("version: 1\nfilesystem_policy: {read_write: [/]}\n"), Err(PolicyError::BareRootWrite)));
-        assert!(matches!(Policy::parse_yaml("version: 1\nfilesystem_policy: {read_only: [relative]}\n"), Err(PolicyError::InvalidPath(_))));
+        assert!(matches!(
+            Policy::parse_yaml("version: 1\nfilesystem_policy: {read_write: [/]}\n"),
+            Err(PolicyError::BareRootWrite)
+        ));
+        assert!(matches!(
+            Policy::parse_yaml("version: 1\nfilesystem_policy: {read_only: [relative]}\n"),
+            Err(PolicyError::InvalidPath(_))
+        ));
     }
 
     #[test]
     fn canonical_yaml_round_trips_and_network_delta_rejects_other_sections() {
-        let Some(policy) = policy_for(AgentRole::Builder, ExecTier::Docker).ok() else { panic!("valid policy expected") };
-        let Some(yaml) = policy.canonical_yaml().ok() else { panic!("canonical serialization expected") };
-        let Some(round_trip) = Policy::parse_yaml(&yaml).ok() else { panic!("canonical policy must parse") };
+        let Some(policy) = policy_for(AgentRole::Builder, ExecTier::Docker).ok() else {
+            panic!("valid policy expected")
+        };
+        let Some(yaml) = policy.canonical_yaml().ok() else {
+            panic!("canonical serialization expected")
+        };
+        let Some(round_trip) = Policy::parse_yaml(&yaml).ok() else {
+            panic!("canonical policy must parse")
+        };
         assert_eq!(round_trip, policy);
         assert!(network_only_delta("version: 1\nnetwork_policies: {}\n").is_ok());
-        assert_eq!(network_only_delta("version: 1\nprocess: {}\n").err(), Some(PolicyError::NonNetworkDelta));
+        assert_eq!(
+            network_only_delta("version: 1\nprocess: {}\n").err(),
+            Some(PolicyError::NonNetworkDelta)
+        );
     }
 
     #[test]
     fn provider_profile_is_exact_host_and_secret_free() {
-        let profile = provider_profile_token_factory("api.tokenfactory.nebius.com", "/usr/bin/polaris-guest");
+        let profile =
+            provider_profile_token_factory("api.tokenfactory.nebius.com", "/usr/bin/polaris-guest");
         assert!(profile.is_ok());
         let Some(profile) = profile.ok() else { return };
         let yaml = provider_profile_yaml(&profile);
         assert!(yaml.is_ok());
-        assert!(yaml.map(|value| value.contains("api.tokenfactory.nebius.com")).unwrap_or(false));
+        assert!(
+            yaml.map(|value| value.contains("api.tokenfactory.nebius.com"))
+                .unwrap_or(false)
+        );
         assert!(provider_profile_token_factory("*.nebius.com", "/usr/bin/polaris-guest").is_err());
     }
 }

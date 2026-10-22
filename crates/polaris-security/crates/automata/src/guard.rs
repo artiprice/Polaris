@@ -10,6 +10,12 @@ use regex_syntax::hir::{Class, Hir, HirKind};
 use crate::error::AutomataError;
 use crate::scan::build_error;
 
+const HARD_MAX_USER_PATTERN_BYTES: usize = 16 * 1024;
+const HARD_MAX_USER_NESTING: u32 = 128;
+const HARD_MAX_USER_REPETITION: u32 = 1_000_000;
+const HARD_MAX_CLASS_RANGES: usize = 4096;
+const HARD_MAX_NFA_BYTES: usize = 16 * 1024 * 1024;
+
 /// Bounds for user regexes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UserRegexLimits {
@@ -58,13 +64,20 @@ pub fn validate_user_regex(
     pattern: &str,
     limits: &UserRegexLimits,
 ) -> Result<ValidatedPattern, AutomataError> {
-    if pattern.len() > limits.max_len {
+    let effective = UserRegexLimits {
+        max_len: limits.max_len.min(HARD_MAX_USER_PATTERN_BYTES),
+        nest_limit: limits.nest_limit.min(HARD_MAX_USER_NESTING),
+        max_repetition: limits.max_repetition.min(HARD_MAX_USER_REPETITION),
+        max_class_ranges: limits.max_class_ranges.min(HARD_MAX_CLASS_RANGES),
+        nfa_size_bytes: limits.nfa_size_bytes.min(HARD_MAX_NFA_BYTES),
+    };
+    if pattern.len() > effective.max_len {
         return Err(AutomataError::TooLarge {
-            limit: limits.max_len,
+            limit: effective.max_len,
         });
     }
     let hir = regex_syntax::ParserBuilder::new()
-        .nest_limit(limits.nest_limit)
+        .nest_limit(effective.nest_limit)
         .build()
         .parse(pattern)
         .map_err(|e| match &e {
@@ -78,12 +91,12 @@ pub fn validate_user_regex(
             }
             _ => AutomataError::Syntax(e.to_string()),
         })?;
-    check_structure(&hir, limits)?;
+    check_structure(&hir, &effective)?;
     Regex::builder()
-        .syntax(syntax::Config::new().nest_limit(limits.nest_limit))
-        .configure(meta::Config::new().nfa_size_limit(Some(limits.nfa_size_bytes)))
+        .syntax(syntax::Config::new().nest_limit(effective.nest_limit))
+        .configure(meta::Config::new().nfa_size_limit(Some(effective.nfa_size_bytes)))
         .build(pattern)
-        .map_err(|e| build_error(&e, limits.nfa_size_bytes))?;
+        .map_err(|e| build_error(&e, effective.nfa_size_bytes))?;
     Ok(ValidatedPattern(pattern.to_owned()))
 }
 
@@ -105,7 +118,11 @@ fn check_structure(hir: &Hir, limits: &UserRegexLimits) -> Result<(), AutomataEr
                 }
             }
             HirKind::Repetition(rep) => {
-                let count = u64::from(rep.max.unwrap_or(rep.min).max(1));
+                let maximum = match rep.max {
+                    Some(maximum) => maximum,
+                    None => rep.min,
+                };
+                let count = u64::from(maximum.max(1));
                 let next = product.saturating_mul(count);
                 if next > u64::from(limits.max_repetition) {
                     return Err(AutomataError::RepetitionTooLarge {

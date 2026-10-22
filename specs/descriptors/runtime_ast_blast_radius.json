@@ -1,0 +1,22 @@
+{
+  "type_of": "function",
+  "name": "ast_blast_radius",
+  "file_path": "crates/polaris-runtime/crates/guards/src/ast_blast.rs",
+  "logic_name": "AST Signature Blast Radius",
+  "test_list": [
+    { "test_name": "ast_signature_changes_report_syntactic_calls_and_test_sites", "description": "Report an estimated syntactic call-site count and its test-site subset for a changed signature." },
+    { "test_name": "ast_body_only_changes_have_no_impact", "description": "Ignore implementation body changes whose declarations and signatures are unchanged." },
+    { "test_name": "ast_missing_or_unknown_reference_facts_are_never_zero_callers", "description": "Keep missing or unknown index results incomplete instead of presenting them as zero callers." },
+    { "test_name": "ast_rejects_impossible_reference_counts_and_provider_failures", "description": "Reject internally inconsistent counts and propagate reference-index failures." },
+    { "test_name": "ast_symbol_limit_bounds_adversarial_diffs", "description": "Bound changed-symbol enumeration for large or hostile skeleton diffs." }
+  ],
+  "dependencies": ["Skeleton", "SymbolReferenceView", "AstImpactLimits"],
+  "libraries": ["polaris-code-intel"],
+  "inputs": [
+    { "name": "old", "type": "Skeleton", "description": "Previous declaration signature skeleton." },
+    { "name": "new", "type": "Skeleton", "description": "Candidate declaration signature skeleton." },
+    { "name": "references", "type": "SymbolReferenceView", "description": "Injected syntactic reference counts." }
+  ],
+  "output_type": "Result<AstBlastReport, GuardError>",
+  "output_description": "Changed declaration signatures and conservative syntactic caller estimates."
+}

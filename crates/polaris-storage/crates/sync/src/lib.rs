@@ -22,9 +22,12 @@ mod plan;
 mod remote;
 mod scan;
 
-pub use apply::{ApplyOpts, SyncReport, apply};
-pub use ignore::{DEFAULT_DENY, Exclusion, IgnoreRules, POLARISIGNORE};
+pub use apply::{ApplyOpts, SecretPrecheck, SyncReport, apply, apply_with_precheck};
+pub use ignore::{DEFAULT_DENY, Exclusion, IgnoreRules, MAX_POLARISIGNORE_BYTES, POLARISIGNORE};
 pub use path::{RelPath, SyncError};
 pub use plan::{PathConflict, SyncConflict, SyncPlan, detect_conflicts, plan, plan_two_way};
 pub use remote::SandboxSyncBackend;
-pub use scan::{EntryKind, FileEntry, HashMode, Manifest, ScanCache, ScanOutcome, ScanStats, scan};
+pub use scan::{
+    EntryKind, FileEntry, HashMode, Manifest, ScanCache, ScanLimits, ScanOutcome, ScanStats, scan,
+    scan_with_limits,
+};

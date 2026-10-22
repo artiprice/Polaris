@@ -141,3 +141,107 @@ fn invalid_pty_dimensions_are_rejected_before_native_allocation() {
     );
     assert!(result.is_err());
 }
+
+#[cfg(windows)]
+#[test]
+#[ignore = "streams 100 MiB through ConPTY while counting without retaining output"]
+fn stress_conpty_streams_one_hundred_mibibytes_with_bounded_records()
+-> Result<(), Box<dyn std::error::Error>> {
+    const PAYLOAD_MARKER: &[u8] = b"ZQ7V3K9M";
+    let executable = std::env::current_exe()?;
+    let environment = EnvPolicy::new(
+        ["SystemRoot", "WINDIR", "ComSpec"]
+            .into_iter()
+            .filter_map(|name| std::env::var_os(name).map(|value| (OsString::from(name), value)))
+            .chain(std::iter::once((
+                OsString::from("POLARIS_PTY_STRESS"),
+                OsString::from("1"),
+            )))
+            .collect(),
+    )?;
+    let session = spawn_pty(
+        &executable,
+        &[
+            OsString::from("--exact"),
+            OsString::from("pty_stress_writer_fixture"),
+            OsString::from("--nocapture"),
+        ],
+        None,
+        &environment,
+        PtySize {
+            rows: 24,
+            columns: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        },
+    )?;
+    let expected_bytes = 100_u64 * 1024 * 1024;
+    let expected_markers = expected_bytes / PAYLOAD_MARKER.len() as u64;
+    let deadline = std::time::Instant::now() + Duration::from_secs(180);
+    let started = std::time::Instant::now();
+    let mut marker_count = 0_u64;
+    let mut carry = Vec::new();
+    while marker_count < expected_markers {
+        if std::time::Instant::now() >= deadline {
+            return Err(
+                format!("ConPTY stream timed out after {marker_count} payload markers").into(),
+            );
+        }
+        match session.recv_timeout(Duration::from_secs(1)) {
+            Ok(PtyOutput::Data(chunk)) => {
+                assert!(
+                    chunk.len() <= 8 * 1024,
+                    "PTY record exceeded configured chunk size"
+                );
+                let text = String::from_utf8_lossy(&chunk);
+                if text.contains("\u{1b}[6n") {
+                    session.write(b"\x1b[1;1R")?;
+                }
+                carry.extend_from_slice(&chunk);
+                let found = carry
+                    .windows(PAYLOAD_MARKER.len())
+                    .filter(|window| *window == PAYLOAD_MARKER)
+                    .count();
+                marker_count = marker_count
+                    .checked_add(u64::try_from(found)?)
+                    .ok_or("PTY byte count overflow")?;
+                let retain_from = carry.len().saturating_sub(PAYLOAD_MARKER.len() - 1);
+                carry = carry
+                    .get(retain_from..)
+                    .ok_or("PTY marker carry range is invalid")?
+                    .to_vec();
+            }
+            Ok(PtyOutput::Closed) => {
+                return Err(format!("ConPTY closed after {marker_count} payload markers").into());
+            }
+            Ok(PtyOutput::Failed(error)) => return Err(error.into()),
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    assert_eq!(marker_count, expected_markers);
+    println!(
+        "pty_stream_bytes={expected_bytes};payload_markers={marker_count};elapsed_ms={}",
+        started.elapsed().as_millis()
+    );
+    Ok(())
+}
+
+#[test]
+fn pty_stress_writer_fixture() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::var_os("POLARIS_PTY_STRESS").as_deref() != Some(std::ffi::OsStr::new("1")) {
+        return Ok(());
+    }
+    use std::io::Write;
+    const PAYLOAD_MARKER: &[u8] = b"ZQ7V3K9M";
+    let chunk: Vec<u8> = (0..1024 * 1024)
+        .map(|index| PAYLOAD_MARKER[index % PAYLOAD_MARKER.len()])
+        .collect();
+    let stdout = std::io::stdout();
+    let mut output = stdout.lock();
+    for _ in 0..100 {
+        output.write_all(&chunk)?;
+    }
+    output.flush()?;
+    Ok(())
+}

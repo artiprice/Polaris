@@ -32,6 +32,15 @@ pub struct Args {
 /// Non-UI operations available in the local profile.
 #[derive(Debug, Subcommand)]
 pub enum Action {
+    /// Inspect every setup item and show concrete onboarding actions; installs nothing.
+    #[command(alias = "/onboarding")]
+    Onboarding {
+        /// Emit machine-readable JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Review and explicitly approve actual sandbox test execution.
+    Sandbox(crate::SandboxArgs),
     /// Filter piped compiler diagnostics and reconcile the real issue ledger.
     Rtk(crate::RtkArgs),
     /// Commit one $directive and emit real session events as JSONL.
@@ -120,6 +129,9 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         }
     }));
     let result = match args.command {
+        Action::Sandbox(sandbox) => {
+            crate::sandbox::run(sandbox, &args.state_dir, &args.workspace, args.session).await
+        }
         Action::Rtk(mut rtk) => {
             rtk.state_dir = args.state_dir;
             rtk.workspace = args.workspace;
@@ -128,7 +140,9 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 .map_err(|_| CliError::Unavailable("RTK owner failed"))?
                 .map_err(CliError::from)
         }
-        Action::Doctor { json } => doctor(&args.state_dir, &loaded.config, json).await,
+        Action::Doctor { json } | Action::Onboarding { json } => {
+            doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
+        }
         Action::Run { task } => {
             headless(&args.state_dir, &args.workspace, args.session, &task).await
         }
@@ -147,6 +161,7 @@ pub async fn run(args: Args) -> Result<(), CliError> {
 }
 async fn doctor(
     root: &Path,
+    workspace: &Path,
     config: &polaris_config::PolarisConfig,
     json: bool,
 ) -> Result<(), CliError> {
@@ -158,14 +173,12 @@ async fn doctor(
     .map_err(|_| CliError::Unavailable("journal inspection owner failed"))?
     .map_err(|_| CliError::Unavailable("recovery journal cannot be inspected"))?;
     let unresolved: Vec<_> = leaks.entries.iter().map(|entry| serde_json::json!({"kind":format!("{:?}",entry.kind),"locator":format!("{:?}",entry.locator)})).collect();
-    let key_status = |configured| {
-        if configured {
-            "CONFIGURED: NOT VERIFIED"
-        } else {
-            "SKIPPED: no key"
-        }
-    };
-    let report = serde_json::json!({"crypto_provider":"aws-lc-rs","configuration":"PASS","state_root":root,"recovery_orphans":unresolved,"token_factory":key_status(config.nebius.api_key.is_some()),"tavily":key_status(config.search.tavily_api_key.is_some()),"model_execution":"P3 execution profile required"});
+    let setup = crate::doctor::collect(workspace, config).await?;
+    let credential_presence = setup["items"]
+        .as_array()
+        .and_then(|items| items.iter().find(|item| item["id"] == "win-keyring"))
+        .map(|item| item["observation"].clone());
+    let report = serde_json::json!({"crypto_provider":"aws-lc-rs","configuration":"PASS","state_root":root,"recovery_orphans":unresolved,"credential_presence":credential_presence,"model_execution":"P3 execution profile required","setup":setup});
     let mut out = std::io::stdout().lock();
     if json {
         serde_json::to_writer(&mut out, &report)?;

@@ -4,13 +4,21 @@
   "file_path": "src/implementation.rs",
   "logic_name": "OpenShell Sandbox Backend",
   "test_list": [
-    { "test_name": "catalog_resolves_exact_content_and_missing_cids_fail", "description": "Register canonical policy bytes under their BLAKE3 CID and reject unknown CIDs." },
-    { "test_name": "request_and_output_bounds_fail_closed", "description": "Reject oversized output and invalid sandbox paths instead of truncating or widening access." },
-    { "test_name": "matching_gateway_version_connects_and_mismatch_fails_closed", "description": "Require mTLS health and exact v0.1.4 gateway version before exposing the backend." },
-    { "test_name": "create_resolves_and_applies_the_requested_policy_cid", "description": "Reject missing, missing-from-store, or hash-mismatched policy CIDs before sandbox creation." }
+    { "test_name": "catalog_resolves_exact_content_and_missing_cids_fail", "description": "Register canonical policy content under its BLAKE3 CID, resolve exact bytes, and reject unknown CIDs." },
+    { "test_name": "request_and_output_bounds_fail_closed", "description": "Reject oversized execution inputs and output limits before unbounded transport handling." },
+    { "test_name": "file_listing_checks_each_path_before_allocation", "description": "Reject oversized path entries before adding them to a bounded list." },
+    { "test_name": "sync_snapshot_response_is_bounded_and_validated", "description": "Accept valid immutable page metadata and reject oversized, mismatched, or out-of-order continuation responses." },
+    { "test_name": "sync_snapshot_rejects_unsafe_paths_and_link_hashes", "description": "Reject traversal paths, escaping symbolic links, and link target hashes that do not match." },
+    { "test_name": "sync_commit_request_is_bounded_before_exec", "description": "Reject oversized conditional-commit payloads before guest execution." },
+    { "test_name": "connection_retry_is_bounded_and_skips_permanent_errors", "description": "Retry only transient connection errors until the overall deadline and return permanent failures immediately." },
+    { "test_name": "dropping_connection_retry_cancels_the_inflight_attempt", "description": "Verify dropping the retry future drops an in-flight connection attempt without detached work." },
+    { "test_name": "only_refused_or_disconnected_sockets_are_retryable", "description": "Retry refused/not-connected sockets while rejecting certificate-like I/O errors." },
+    { "test_name": "duplicate_sandbox_error_is_typed_for_cleanup_ownership", "description": "Map gRPC AlreadyExists to a typed result so cleanup cannot delete an unrelated existing sandbox." },
+    { "test_name": "gateway_names_fail_before_remote_create_when_invalid", "description": "Reject names exceeding the upstream OpenShell limit before making an RPC." },
+    { "test_name": "image_references_require_immutable_sha256_digests", "description": "Reject mutable image tags and accept only immutable SHA-256 image references." }
   ],
   "dependencies": ["polaris_sdk::SandboxBackend", "PolicySource", "Policy"],
-  "libraries": ["openshell-sdk", "tokio", "tonic", "bytes", "blake3"],
+  "libraries": ["openshell-sdk", "tokio", "tonic", "bytes", "blake3", "serde_json"],
   "inputs": [
     { "name": "config", "type": "OpenShellConfig", "description": "Gateway endpoint, mTLS material, version gate and operation bounds." },
     { "name": "policies", "type": "impl PolicySource", "description": "Content-addressed policy resolver." },

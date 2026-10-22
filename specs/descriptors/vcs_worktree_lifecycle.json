@@ -1,0 +1,18 @@
+{
+  "type_of": "async_function",
+  "name": "Repo::worktree_add_and_remove",
+  "file_path": "crates/polaris-vcs/src/git.rs",
+  "logic_name": "Linked Worktree Lifecycle",
+  "test_list": [
+    { "test_name": "add_creates_isolated_checkout", "description": "A validated branch and revision produce an isolated linked worktree." },
+    { "test_name": "existing_branch_or_invalid_base_errors", "description": "Git rejects duplicate branch and nonexistent revision requests without escape." },
+    { "test_name": "dirty_remove_requires_force", "description": "A dirty checkout is preserved unless the caller explicitly forces removal." },
+    { "test_name": "removed_worktree_path_is_gone", "description": "Successful removal updates the lifecycle handle and removes the checkout." },
+    { "test_name": "linked_worktree_config_is_checked", "description": "Common repository filters and includes are checked for linked worktrees." }
+  ],
+  "dependencies": ["Repo", "BranchName", "RevSpec", "ProcessGitRunner"],
+  "libraries": ["gix", "tokio"],
+  "inputs": [ { "name": "branch", "type": "BranchName", "description": "Validated branch to create." }, { "name": "base", "type": "RevSpec", "description": "Validated starting revision." } ],
+  "output_type": "Result<Worktree<Clean>,VcsError>",
+  "output_description": "A linked checkout confined under the repository's Polaris worktree directory."
+}

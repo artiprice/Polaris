@@ -257,6 +257,7 @@ similar = "3.2.0"
 ignore = "0.4.33"
 globset = "0.4.20"
 walkdir = "2.5.0"
+tar = { version = "0.4.46", default-features = false }
 notify = "8.2.0"
 notify-debouncer-full = "0.7.0"
 tempfile = "3.27.0"

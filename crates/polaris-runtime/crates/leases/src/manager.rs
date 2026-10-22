@@ -321,7 +321,9 @@ impl LeaseManager {
                             }
                         }
                     }
-                    None => { notified.await.map_err(|_| LeaseError::InvalidGuard)?; }
+                    None => {
+                        notified.await.map_err(|_| LeaseError::InvalidGuard)?;
+                    }
                 }
             }
         };
@@ -367,7 +369,10 @@ impl LeaseManager {
         let snapshot = self.inner.holders.load();
         snapshot
             .iter()
-            .find(|holder| holder.expires > Instant::now() && scopes_conflict(key, scope, &holder.key, &holder.scope))
+            .find(|holder| {
+                holder.expires > Instant::now()
+                    && scopes_conflict(key, scope, &holder.key, &holder.scope)
+            })
             .map(|holder| (holder.agent, holder.id))
     }
 

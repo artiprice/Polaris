@@ -1,0 +1,17 @@
+{
+  "type_of": "function",
+  "name": "Repo::rollback_plan_and_rollback",
+  "file_path": "crates/polaris-vcs/src/journal.rs",
+  "logic_name": "Checkpoint Rollback",
+  "test_list": [
+    { "test_name": "dry_run_lists_net_paths_without_writing", "description": "Rollback preview computes the net per-path diff without mutation." },
+    { "test_name": "rollback_detects_post_checkpoint_user_edit", "description": "A file changed after the latest action state is reported as a conflict and preserved." },
+    { "test_name": "rollback_to_unknown_or_unsealed_sequence_errors", "description": "Only known sealed checkpoints or the zero baseline can be selected." },
+    { "test_name": "rollback_is_idempotent_after_interruption", "description": "A partial crash can be safely resumed." }
+  ],
+  "dependencies": ["Journal", "Cas", "CheckpointSeq"],
+  "libraries": ["serde", "serde_json", "tempfile"],
+  "inputs": [ { "name": "to", "type": "CheckpointSeq", "description": "Checkpoint retained after rollback." } ],
+  "output_type": "Result<RollbackPlan|UndoReport,VcsError>",
+  "output_description": "A no-write preview or compare-before-restore rollback result."
+}

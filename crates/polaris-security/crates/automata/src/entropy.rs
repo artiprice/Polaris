@@ -34,16 +34,23 @@ fn log2_q32(x: u64) -> u128 {
 /// Inputs of 4 GiB or more are measured over their first `u32::MAX` bytes.
 #[must_use]
 pub fn shannon_entropy_milli(bytes: &[u8]) -> u32 {
-    let bytes = bytes
-        .get(..usize::try_from(u32::MAX).unwrap_or(usize::MAX))
-        .unwrap_or(bytes);
+    let bytes = match usize::try_from(u32::MAX) {
+        Ok(limit) => match bytes.get(..limit) {
+            Some(prefix) => prefix,
+            None => bytes,
+        },
+        Err(_) => bytes,
+    };
     let mut counts = [0u64; 256];
     for b in bytes {
         if let Some(c) = counts.get_mut(usize::from(*b)) {
             *c += 1;
         }
     }
-    let n = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
+    let n = match u64::try_from(bytes.len()) {
+        Ok(length) => length,
+        Err(_) => u64::MAX,
+    };
     if n == 0 {
         return 0;
     }
@@ -55,7 +62,10 @@ pub fn shannon_entropy_milli(bytes: &[u8]) -> u32 {
         .sum();
     let h_q32 = log2_q32(n).saturating_sub(sum / u128::from(n));
     let milli = (h_q32 * 1000 + (1 << (FRAC_BITS - 1))) >> FRAC_BITS;
-    u32::try_from(milli).unwrap_or(u32::MAX).min(8000)
+    match u32::try_from(milli) {
+        Ok(value) => value.min(8000),
+        Err(_) => u32::MAX.min(8000),
+    }
 }
 
 /// Parameters for [`high_entropy_spans`].
@@ -107,11 +117,11 @@ impl Iterator for EntropySpans<'_> {
             let rest = self.haystack.get(self.pos..)?;
             let start = self.pos + rest.iter().position(|b| is_run_byte(*b))?;
             let run = self.haystack.get(start..)?;
-            let mut end = start
-                + run
-                    .iter()
-                    .position(|b| !is_run_byte(*b))
-                    .unwrap_or(run.len());
+            let run_end = match run.iter().position(|b| !is_run_byte(*b)) {
+                Some(offset) => offset,
+                None => run.len(),
+            };
+            let mut end = start + run_end;
             // Base64 padding belongs to the run only at its end (at most two `=`).
             for _ in 0..2 {
                 if self.haystack.get(end) == Some(&b'=') {

@@ -11,19 +11,22 @@ use std::time::Duration;
 
 use bytes::Bytes;
 use polaris_sdk::registry::{
-    ExecOutput, ExecRequest, SandboxBackend, SandboxError, SandboxHandle, SandboxSpec,
+    CommitOutcome, ExecOutput, ExecRequest, SandboxBackend, SandboxCommitAction,
+    SandboxCommitRequest, SandboxError, SandboxFileState, SandboxHandle, SandboxSpec,
 };
 use polaris_storage_sync::{
-    ApplyOpts, HashMode, IgnoreRules, Manifest, RelPath, apply, plan, scan,
+    ApplyOpts, HashMode, IgnoreRules, Manifest, RelPath, apply, apply_with_precheck, plan, scan,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
 
 #[derive(Default)]
 struct FakeSandbox {
+    prepared: Mutex<BTreeSet<String>>,
     files: Mutex<BTreeMap<String, Vec<u8>>>,
     executable: Mutex<BTreeSet<String>>,
-    fail_uploads: Mutex<BTreeSet<String>>,
+    fail_commits: Mutex<BTreeSet<String>>,
+    intervene: Mutex<Option<(String, Vec<u8>)>>,
     in_flight: AtomicUsize,
     max_in_flight: AtomicUsize,
 }
@@ -34,6 +37,72 @@ fn lock<T>(m: &Mutex<T>) -> Result<std::sync::MutexGuard<'_, T>, SandboxError> {
 }
 
 impl SandboxBackend for FakeSandbox {
+    async fn prepare_sync(&self, _sandbox: &SandboxHandle, root: &str) -> Result<(), SandboxError> {
+        if root != "/sandbox/ws" {
+            return Err(SandboxError::PolicyDenied(
+                "unexpected fake namespace".into(),
+            ));
+        }
+        lock(&self.prepared)?.insert(root.to_owned());
+        Ok(())
+    }
+    async fn conditional_commit(
+        &self,
+        _sandbox: &SandboxHandle,
+        request: &SandboxCommitRequest,
+    ) -> Result<CommitOutcome, SandboxError> {
+        let path = format!("{}/{}", request.root, request.relative_path);
+        if lock(&self.fail_commits)?.contains(&path) {
+            return Err(SandboxError::Unavailable(
+                "injected commit transport failure".into(),
+            ));
+        }
+        let mut files = lock(&self.files)?;
+        let mut executable = lock(&self.executable)?;
+        if let Some((path, bytes)) = lock(&self.intervene)?.take() {
+            files.insert(path, bytes);
+        }
+        let current = files.get(&path).map(|bytes| SandboxFileState {
+            hash: polaris_sdk::ids::Cid::from_bytes(*blake3::hash(bytes).as_bytes()),
+            executable: executable.contains(&path),
+            link_target: None,
+        });
+        if current != request.expected {
+            return Ok(CommitOutcome::Conflict);
+        }
+        match &request.action {
+            SandboxCommitAction::Delete => {
+                files.remove(&path);
+                executable.remove(&path);
+            }
+            SandboxCommitAction::File {
+                staged_path,
+                hash,
+                executable: mode,
+            } => {
+                let bytes = files
+                    .get(staged_path)
+                    .ok_or_else(|| SandboxError::NotFound(staged_path.clone()))?;
+                if polaris_sdk::ids::Cid::from_bytes(*blake3::hash(bytes).as_bytes()) != *hash {
+                    return Err(SandboxError::Protocol("stage digest mismatch".into()));
+                }
+                let bytes = bytes.clone();
+                files.remove(staged_path);
+                files.insert(path.clone(), bytes);
+                if *mode {
+                    executable.insert(path);
+                } else {
+                    executable.remove(&path);
+                }
+            }
+            SandboxCommitAction::Link { .. } => {
+                return Err(SandboxError::PolicyDenied(
+                    "this file-only fake does not model links".into(),
+                ));
+            }
+        }
+        Ok(CommitOutcome::Applied)
+    }
     async fn create(&self, _spec: &SandboxSpec) -> Result<SandboxHandle, SandboxError> {
         Err(SandboxError::Protocol("not used".into()))
     }
@@ -90,13 +159,18 @@ impl SandboxBackend for FakeSandbox {
         path: &str,
         bytes: Bytes,
     ) -> Result<(), SandboxError> {
+        if !lock(&self.prepared)?
+            .iter()
+            .any(|root| path.starts_with(&format!("{root}/.polaris/sync/staging/")))
+        {
+            return Err(SandboxError::PolicyDenied(
+                "fake stage namespace was not prepared".into(),
+            ));
+        }
         let now = self.in_flight.fetch_add(1, Ordering::SeqCst) + 1;
         self.max_in_flight.fetch_max(now, Ordering::SeqCst);
         tokio::time::sleep(Duration::from_millis(5)).await;
         self.in_flight.fetch_sub(1, Ordering::SeqCst);
-        if lock(&self.fail_uploads)?.contains(path) {
-            return Err(SandboxError::Unavailable("injected failure".into()));
-        }
         lock(&self.files)?.insert(path.to_owned(), bytes.to_vec());
         Ok(())
     }
@@ -189,7 +263,7 @@ async fn apply_uploads_and_deletes_byte_exact() -> TestResult {
 }
 
 #[tokio::test]
-async fn apply_sets_exec_bit_via_chmod() -> TestResult {
+async fn apply_installs_executable_mode_in_commit() -> TestResult {
     let tmp = tempfile::tempdir()?;
     workspace(tmp.path())?;
     let fake = FakeSandbox::default();
@@ -221,7 +295,7 @@ async fn partial_failure_is_reported_and_resumable() -> TestResult {
     let tmp = tempfile::tempdir()?;
     workspace(tmp.path())?;
     let fake = FakeSandbox::default();
-    lock(&fake.fail_uploads)?.insert("/sandbox/ws/src/lib.rs".into());
+    lock(&fake.fail_commits)?.insert("/sandbox/ws/src/lib.rs".into());
     let local = scan(
         tmp.path(),
         &IgnoreRules::new(tmp.path(), None)?,
@@ -255,7 +329,7 @@ async fn partial_failure_is_reported_and_resumable() -> TestResult {
         vec![RelPath::new("src/lib.rs")?],
         "only the failed path is retried"
     );
-    lock(&fake.fail_uploads)?.clear();
+    lock(&fake.fail_commits)?.clear();
     let report = apply(&fake, &handle()?, tmp.path(), &local, &again, &opts(4)).await?;
     assert!(report.failed.is_empty());
     assert!(plan(&local, &report.applied_to(&remote, &local)).is_empty());
@@ -292,6 +366,35 @@ async fn file_changed_after_scan_is_skipped() -> TestResult {
     Ok(())
 }
 
+#[tokio::test]
+async fn secret_precheck_blocks_exact_bytes_before_remote_staging() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    workspace(tmp.path())?;
+    fs::write(tmp.path().join("src/lib.rs"), b"const TOKEN: &str = \"secret\";\n")?;
+    let fake = FakeSandbox::default();
+    let local = scan(
+        tmp.path(),
+        &IgnoreRules::new(tmp.path(), None)?,
+        None,
+        HashMode::Paranoid,
+    )?
+    .manifest;
+    let checker = |_path: &RelPath, bytes: &[u8]| Ok(bytes.windows(6).any(|window| window == b"secret"));
+    let report = apply_with_precheck(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &local,
+        &plan(&local, &Manifest::default()),
+        &opts(2),
+        Some(&checker),
+    )
+    .await?;
+    assert_eq!(report.secret_blocked, vec![RelPath::new("src/lib.rs")?]);
+    assert!(!lock(&fake.files)?.contains_key("/sandbox/ws/src/lib.rs"));
+    Ok(())
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn upload_concurrency_is_bounded() -> TestResult {
     let tmp = tempfile::tempdir()?;
@@ -318,5 +421,72 @@ async fn upload_concurrency_is_bounded() -> TestResult {
     assert_eq!(report.uploaded.len(), 24);
     let max = fake.max_in_flight.load(Ordering::SeqCst);
     assert!((2..=3).contains(&max), "max in flight {max}");
+    Ok(())
+}
+
+#[tokio::test]
+async fn remote_change_during_transfer_is_preserved_for_replace_and_delete() -> TestResult {
+    for deleting in [false, true] {
+        let tmp = tempfile::tempdir()?;
+        fs::write(tmp.path().join("file.txt"), b"base")?;
+        let rules = IgnoreRules::new(tmp.path(), None)?;
+        let base = scan(tmp.path(), &rules, None, HashMode::Paranoid)?.manifest;
+        if deleting {
+            fs::remove_file(tmp.path().join("file.txt"))?;
+        } else {
+            fs::write(tmp.path().join("file.txt"), b"local edit")?;
+        }
+        let local = scan(tmp.path(), &rules, None, HashMode::Paranoid)?.manifest;
+        let fake = FakeSandbox::default();
+        lock(&fake.files)?.insert("/sandbox/ws/file.txt".into(), b"base".to_vec());
+        *lock(&fake.intervene)? = Some((
+            "/sandbox/ws/file.txt".into(),
+            b"independent remote edit".to_vec(),
+        ));
+        let report = apply(
+            &fake,
+            &handle()?,
+            tmp.path(),
+            &local,
+            &plan(&local, &base),
+            &opts(2),
+        )
+        .await?;
+        assert_eq!(report.conflicts, vec![RelPath::new("file.txt")?]);
+        assert!(report.uploaded.is_empty() && report.deleted.is_empty());
+        assert_eq!(
+            lock(&fake.files)?
+                .get("/sandbox/ws/file.txt")
+                .map(Vec::as_slice),
+            Some(b"independent remote edit".as_slice())
+        );
+        assert_eq!(lock(&fake.files)?.len(), 1, "conflicting stages cleaned up");
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn cancellation_never_reports_unperformed_deletion() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    fs::write(tmp.path().join("file.txt"), b"base")?;
+    let rules = IgnoreRules::new(tmp.path(), None)?;
+    let base = scan(tmp.path(), &rules, None, HashMode::Paranoid)?.manifest;
+    fs::remove_file(tmp.path().join("file.txt"))?;
+    let fake = FakeSandbox::default();
+    lock(&fake.files)?.insert("/sandbox/ws/file.txt".into(), b"base".to_vec());
+    let mut options = opts(1);
+    options.cancellation = Some(Arc::new(std::sync::atomic::AtomicBool::new(true)));
+    let report = apply(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &Manifest::default(),
+        &plan(&Manifest::default(), &base),
+        &options,
+    )
+    .await?;
+    assert!(report.deleted.is_empty());
+    assert_eq!(report.cancelled, vec![RelPath::new("file.txt")?]);
+    assert!(lock(&fake.files)?.contains_key("/sandbox/ws/file.txt"));
     Ok(())
 }

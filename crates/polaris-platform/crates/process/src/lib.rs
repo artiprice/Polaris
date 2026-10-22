@@ -6,10 +6,12 @@
 //! `SpawnSpec::env` is the complete child environment allowlist, and secret-like names are
 //! rejected. Memory pressure uses available RAM ratios of 5% and 15% for Critical and Elevated.
 
+mod probe;
 mod pty;
 mod resolve;
 mod watch;
 
+pub use probe::{ExecOutput, run_probe, run_probe_with_env};
 pub use pty::{PtyOutput, PtySession, PtySize, spawn_pty};
 pub use resolve::{ProgramResolution, ResolveError, resolve_program};
 pub use watch::{FsEvent, FsWatcher, RescanReason, WatchConfig, watch};

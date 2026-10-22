@@ -278,8 +278,8 @@ layer = 7
 kind = "app"
 phase = "P1"
 summary = "Terminal client: ratatui TUI (default) and headless `polaris run` mode; binary name `polaris`."
-deps = ["polaris-kernel", "polaris-ui-cli", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas"]
-ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde_json", "tracing", "jiff"]
+deps = ["polaris-kernel", "polaris-ui-cli", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform"]
+ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde_json", "tracing", "jiff", "toml", "keyring"]
 responsibilities = [
   "Parse CLI arguments (clap) and resolve config layers.",
   "Embed the kernel in-process by default, or attach to `polarisd` with `--connect`.",
@@ -359,13 +359,16 @@ api = ["bin `polaris-worker --mode s1|ingest|nano`"]
 [[crate]]
 name = "polaris-guest"
 path = "apps/polaris-guest"
+implemented = true
+status = "IN PROGRESS"
+evidence = "P2 protocol-version and locked conditional sync-cas helper implemented; Linux filesystem tests 6 passed plus host/Linux checks. Final image/live sync gate pending. Full structured exec/browser remains P7."
 layer = 7
 kind = "app"
 phase = "P7"
 member_setup = ["wsl-rust", "wsl-sandbox-image"]
 summary = "Linux in-sandbox agent baked into the Polaris sandbox image: structured exec, file sync endpoint, Xvfb+Chromium screenshots."
 deps = ["polaris-sdk", "polaris-proto", "polaris-browser", "polaris-log"]
-ext = ["tokio", "chromiumoxide", "prost", "tonic", "serde"]
+ext = ["tokio", "chromiumoxide", "prost", "tonic", "serde", "blake3", "fs4", "serde_json", "tar"]
 responsibilities = [
   "Build inside WSL2/Linux only (excluded from Windows default-members).",
   "Perform a protocol_version handshake with the host before serving.",
@@ -627,7 +630,7 @@ evidence = "main session, test-first; evidence pending"
 member_setup = ["wsl-openshell"]
 summary = "Byte-exact, blake3-incremental workspace mirroring into sandboxes, governed by .polarisignore (secrets never mirrored)."
 deps = ["polaris-sdk"]
-ext = ["ignore", "globset", "blake3", "walkdir", "futures"]
+ext = ["ignore", "globset", "blake3", "walkdir", "futures", "bytes", "uuid", "tar"]
 responsibilities = [
   "Compute a manifest (path, size, blake3) and send only changed blobs through the sdk SandboxBackend transport.",
   "Apply the .polarisignore deny-list (.env, *.pem, *.key, .git/config by default).",
@@ -755,6 +758,9 @@ api = ["fn parse(&str) -> ParsedInput", "enum SessionDirective", "enum SlashComm
 [[crate]]
 name = "polaris-platform-wsl"
 path = "crates/polaris-platform/crates/wsl"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Real WSL discovery, bounded argv execution, doctor, path/config contracts implemented. Targeted Windows tests pass; full P2 gate remains open."
 parent = "polaris-platform"
 layer = 2
 kind = "lib"
@@ -808,12 +814,15 @@ api = ["pub use polaris_platform_*"]
 [[crate]]
 name = "polaris-vcs"
 path = "crates/polaris-vcs"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Real gix status, bounded git fallback, persistent CAS undo and worktree lifecycle implemented; complete recovery and test audit pending."
 layer = 2
 kind = "lib"
 phase = "P2"
 summary = "Git integration (gix + git CLI fallback): status, diff, worktrees per frame/branch, /rollback and /undo."
 deps = ["polaris-sdk", "polaris-storage-cas"]
-ext = ["gix", "imara-diff", "similar"]
+ext = ["gix", "imara-diff", "similar", "tokio", "serde", "serde_json", "tempfile", "blake3"]
 responsibilities = [
   "Compute diffs for /diff and the verifier; snapshot pre-edit file versions into CAS.",
   "Create isolated worktrees for speculative branches; roll back agent actions.",
@@ -953,14 +962,17 @@ api = ["pub use polaris_nebius_cloud_*"]
 [[crate]]
 name = "polaris-openshell-client"
 path = "crates/polaris-openshell/crates/client"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Pinned real SDK adapter, explicit policy CID binding, mTLS, bounded transfer/exec and cancellation guards implemented; live acceptance pending."
 parent = "polaris-openshell"
 layer = 2
 kind = "lib"
 phase = "P2"
 member_setup = ["wsl-openshell", "wsl-docker"]
 summary = "openshell-sdk adapter (pinned rev of v0.1.4): sandbox create/exec/stream/destroy, provider attach, driver selection (docker/vm/mxc)."
-deps = ["polaris-sdk", "polaris-config", "polaris-log"]
-ext = ["openshell-sdk", "tokio", "tonic"]
+deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-openshell-policy"]
+ext = ["openshell-sdk", "openshell-policy-schema", "tokio", "tonic", "bytes", "futures", "blake3", "uuid", "tracing", "serde_json"]
 responsibilities = [
   "Implement SandboxBackend over a local (WSL2) or remote (Nebius VM) OpenShell gateway.",
   "Attach the Polaris Token Factory provider profile so sandboxed code never sees keys.",
@@ -971,6 +983,9 @@ api = ["struct OpenShellBackend", "impl SandboxBackend"]
 [[crate]]
 name = "polaris-openshell-policy"
 path = "crates/polaris-openshell/crates/policy"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Actual upstream pinned schema, policy validation, role/tier documents and provider YAML implemented; targeted contracts pass, live policy matrix pending."
 parent = "polaris-openshell"
 layer = 2
 kind = "lib"
@@ -978,7 +993,7 @@ phase = "P2"
 member_setup = ["wsl-openshell"]
 summary = "Generate and lint OpenShell policy YAML (filesystem_policy, landlock, process, network_policies) and provider profiles."
 deps = ["polaris-sdk"]
-ext = ["serde", "serde-saphyr"]
+ext = ["serde", "serde-saphyr", "openshell-policy-schema"]
 responsibilities = [
   "Derive least-privilege policies per frame role and sandbox tier; per-frame resource quotas.",
   "Emit the custom Token Factory provider profile (endpoint + allowed binaries).",
@@ -989,13 +1004,16 @@ api = ["fn policy_for(role, tier) -> Policy", "fn provider_profile_token_factory
 [[crate]]
 name = "polaris-openshell-nemoclaw"
 path = "crates/polaris-openshell/crates/nemoclaw"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Native versioned blueprint validation, canonical digest, actual backend apply and protocol handshake implemented; image/live evidence pending."
 parent = "polaris-openshell"
 layer = 2
 kind = "lib"
 phase = "P2"
 member_setup = ["wsl-openshell", "wsl-sandbox-image"]
 summary = "Polaris NemoClaw-style blueprint (versioned YAML: sandbox image, policies, inference profiles) plus onboarding/doctor in WSL2."
-deps = ["polaris-sdk", "polaris-openshell-policy"]
+deps = ["polaris-sdk", "polaris-openshell-policy", "polaris-openshell-client"]
 ext = ["serde", "serde-saphyr", "blake3"]
 responsibilities = [
   "Define and verify (digest) the Polaris blueprint; apply it via OpenShell.",
@@ -1007,6 +1025,9 @@ api = ["struct Blueprint", "fn onboard()", "fn doctor() -> Report"]
 [[crate]]
 name = "polaris-openshell"
 path = "crates/polaris-openshell"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Actual client/policy/blueprint facades compile; child live gates remain open."
 layer = 2
 kind = "facade"
 phase = "P2"
@@ -1604,7 +1625,7 @@ name = "polaris-runtime-leases"
 path = "crates/polaris-runtime/crates/leases"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production FIFO scoped leases, OCC tickets and churn control in progress; UNVERIFIED, validation deferred by user."
+evidence = "P2 authority tests: 6 passed, including immediate overlap, AST conflict, FIFO cancellation, TTL wake-up, OCC/churn and 64-frame/20-file contention. Full phase proof/allocation audit pending; see @prime/P2_LOGIC_STATUS.md."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
@@ -1624,7 +1645,7 @@ name = "polaris-runtime-guards"
 path = "crates/polaris-runtime/crates/guards"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production blast-radius analysis and completion evidence barrier in progress; UNVERIFIED, validation deferred by user."
+evidence = "P2 proof regressions: 7 passed, including all Cargo groups, stderr binding, hidden earlier failures and malformed/overflow counts. Blast/AST and live/performance gates remain open; see @prime/P2_LOGIC_STATUS.md."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
@@ -1911,11 +1932,13 @@ api = []
 [[crate]]
 name = "polaris-spike-sandbox"
 path = "tests/spike/sandbox"
+implemented = true
+status = "IN PROGRESS"
 layer = 8
 kind = "spike"
 phase = "P2"
 summary = "Spike tests for sandboxes: concurrent create/exec/destroy bursts, git-checkout file-event floods during sync."
-deps = ["polaris-openshell"]
+deps = ["polaris-openshell", "polaris-sdk", "polaris-kernel-reaper"]
 ext = ["tokio"]
 responsibilities = ["Assert semaphore limits, reaper cleanup and sync consistency under bursts (requires WSL2 gateway)."]
 api = []
@@ -2429,6 +2452,11 @@ group = "os"
 [[ext]]
 name = "fs4"
 version = "1.1.0"
+group = "os"
+[[ext]]
+name = "tar"
+version = "0.4.46"
+default_features = false
 group = "os"
 [[ext]]
 name = "sysinfo"
