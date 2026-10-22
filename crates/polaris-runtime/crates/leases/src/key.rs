@@ -1,6 +1,9 @@
 //! Lexical validation for resolver-supplied workspace-relative paths.
 
-use std::fmt;
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 
 use super::manager::LeaseError;
 
@@ -11,10 +14,69 @@ const MAX_PATH_COMPONENTS: usize = 512;
 ///
 /// Construction rejects ambiguous Windows path aliases but does not perform filesystem lookup.
 /// The caller remains responsible for proving containment in the intended workspace.
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct LeaseKey(Box<str>);
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct LeaseKey {
+    path: Box<str>,
+    hash: u64,
+}
+
+impl Hash for LeaseKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Canonicalization computes this once. The enclosing map still applies its
+        // independently seeded hasher; path equality resolves any fingerprint collision.
+        state.write_u64(self.hash);
+    }
+}
 
 impl LeaseKey {
+    /// Resolve a filesystem path under an existing workspace root before creating a key.
+    /// A missing final filename is allowed only when its canonical parent already exists.
+    /// Ambiguous 8.3 aliases are rejected rather than creating a second ownership identity.
+    /// # Errors
+    /// [`LeaseError::InvalidPath`] for traversal, escape, unsupported encoding or resolution
+    /// failure. Resolution does not authorize a later filesystem mutation: callers must retain
+    /// their containment checks at write time against concurrent symlink changes.
+    pub fn from_path(root: &std::path::Path, path: &std::path::Path) -> Result<Self, LeaseError> {
+        use std::path::Component;
+        let text = path.to_str().ok_or(LeaseError::InvalidPath)?;
+        if text.starts_with(r"\\")
+            || text.contains('~')
+            || path
+                .components()
+                .any(|component| matches!(component, Component::ParentDir))
+        {
+            return Err(LeaseError::InvalidPath);
+        }
+        let root = std::fs::canonicalize(root).map_err(|_| LeaseError::InvalidPath)?;
+        if !root.is_dir() {
+            return Err(LeaseError::InvalidPath);
+        }
+        let target = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            root.join(path)
+        };
+        let canonical = match std::fs::canonicalize(&target) {
+            Ok(canonical) => canonical,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                // A dangling symlink is an existing alias, not an absent new filename.
+                if std::fs::symlink_metadata(&target).is_ok() {
+                    return Err(LeaseError::InvalidPath);
+                }
+                let parent = target.parent().ok_or(LeaseError::InvalidPath)?;
+                let name = target.file_name().ok_or(LeaseError::InvalidPath)?;
+                std::fs::canonicalize(parent)
+                    .map_err(|_| LeaseError::InvalidPath)?
+                    .join(name)
+            }
+            Err(_) => return Err(LeaseError::InvalidPath),
+        };
+        let relative = canonical
+            .strip_prefix(&root)
+            .map_err(|_| LeaseError::InvalidPath)?;
+        Self::from_resolved_relative(relative.to_str().ok_or(LeaseError::InvalidPath)?)
+    }
+
     /// Canonicalizes a resolver-supplied relative path using conservative Windows rules.
     ///
     /// Separators become `/`, Unicode lowercase is used for conservative case aliasing, and `.` components are removed. Absolute,
@@ -61,25 +123,31 @@ impl LeaseKey {
         if parts.is_empty() {
             return Err(LeaseError::InvalidPath);
         }
-        Ok(Self(parts.join("/").into_boxed_str()))
+        let path = parts.join("/").into_boxed_str();
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        path.hash(&mut hasher);
+        Ok(Self {
+            path,
+            hash: hasher.finish(),
+        })
     }
 
     /// Returns the canonical workspace-relative key.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        &self.path
     }
 }
 
 impl fmt::Debug for LeaseKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("LeaseKey").field(&self.0).finish()
+        f.debug_tuple("LeaseKey").field(&self.path).finish()
     }
 }
 
 impl fmt::Display for LeaseKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
+        f.write_str(&self.path)
     }
 }
 

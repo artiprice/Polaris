@@ -35,7 +35,7 @@ tar \
   --exclude=tests/spike/*/tests \
   --exclude=tests/tests \
   --create --file - \
-  Cargo.toml Cargo.lock rust-toolchain.toml .cargo apps crates tests xtask \
+  Cargo.toml Cargo.lock rust-toolchain.toml .cargo apps crates tests xtask vendor/biscuit-auth \
   | tar --directory "$CONTEXT_DIR" --extract --file -
 
 if find "$CONTEXT_DIR" -type f \

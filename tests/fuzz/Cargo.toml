@@ -30,6 +30,7 @@ polaris-tools-builtin = { path = "../../crates/polaris-tools/crates/builtin" }
 polaris-code-intel = { path = "../../crates/polaris-code-intel" }
 polaris-storage-registry = { path = "../../crates/polaris-storage/crates/registry" }
 polaris-kernel-bus = { path = "../../crates/polaris-kernel/crates/bus" }
+polaris-security-automata = { path = "../../crates/polaris-security/crates/automata" }
 
 [[bin]]
 name = "bus_ops"
@@ -139,6 +140,20 @@ bench = false
 [[bin]]
 name = "biscuit_token_bytes"
 path = "fuzz_targets/biscuit_token_bytes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_automata_scan"
+path = "fuzz_targets/fuzz_automata_scan.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_automata_user_regex"
+path = "fuzz_targets/fuzz_automata_user_regex.rs"
 test = false
 doc = false
 bench = false

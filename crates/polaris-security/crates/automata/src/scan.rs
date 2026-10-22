@@ -182,10 +182,7 @@ impl RuleSetBuilder {
     /// [`AutomataError::TooManyPatterns`], [`AutomataError::TooNested`],
     /// [`AutomataError::TooLarge`] or [`AutomataError::Syntax`].
     pub fn build(&self, limits: &CompileLimits) -> Result<DfaScanner, AutomataError> {
-        let count = match u32::try_from(self.rules.len()) {
-            Ok(count) => count,
-            Err(_) => u32::MAX,
-        };
+        let count = u32::try_from(self.rules.len()).unwrap_or(u32::MAX);
         let pattern_limit = limits.max_patterns.min(HARD_MAX_PATTERNS);
         if count > pattern_limit {
             return Err(AutomataError::TooManyPatterns {
@@ -247,13 +244,13 @@ pub(crate) fn build_error(e: &meta::BuildError, size_limit: usize) -> AutomataEr
     if e.size_limit().is_some() {
         return AutomataError::TooLarge { limit: size_limit };
     }
-    if let Some(regex_syntax::Error::Parse(ast)) = e.syntax_error() {
-        if matches!(
+    if let Some(regex_syntax::Error::Parse(ast)) = e.syntax_error()
+        && matches!(
             ast.kind(),
             regex_syntax::ast::ErrorKind::NestLimitExceeded(_)
-        ) {
-            return AutomataError::TooNested;
-        }
+        )
+    {
+        return AutomataError::TooNested;
     }
     AutomataError::Syntax(e.to_string())
 }
@@ -479,6 +476,15 @@ impl DfaScanner {
     pub fn any_match(&self, haystack: &[u8]) -> Result<bool, AutomataError> {
         check_len(haystack)?;
         Ok(self.regex.is_match(Input::new(haystack)))
+    }
+
+    /// Estimated heap memory used by the compiled regex engine.
+    ///
+    /// This reports the underlying `regex-automata` meta engine's accounting; it does not
+    /// include rule-name/category metadata or caller-owned scan buffers.
+    #[must_use]
+    pub fn engine_memory_bytes(&self) -> usize {
+        self.regex.memory_usage()
     }
 
     /// Number of rules.

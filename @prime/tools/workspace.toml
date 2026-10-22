@@ -972,7 +972,7 @@ phase = "P2"
 member_setup = ["wsl-openshell", "wsl-docker"]
 summary = "openshell-sdk adapter (pinned rev of v0.1.4): sandbox create/exec/stream/destroy, provider attach, driver selection (docker/vm/mxc)."
 deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-openshell-policy"]
-ext = ["openshell-sdk", "openshell-policy-schema", "tokio", "tonic", "bytes", "futures", "blake3", "uuid", "tracing", "serde_json"]
+ext = ["openshell-sdk", "openshell-policy-schema", "tokio", "tonic", "bytes", "futures", "blake3", "uuid", "tracing", "serde_json", "prost-types"]
 responsibilities = [
   "Implement SandboxBackend over a local (WSL2) or remote (Nebius VM) OpenShell gateway.",
   "Attach the Polaris Token Factory provider profile so sandboxed code never sees keys.",

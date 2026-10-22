@@ -1,0 +1,27 @@
+{
+  "type_of": "test",
+  "name": "documents_known_secret_representation_bypasses",
+  "file_path": "crates/polaris-security/crates/automata/tests/bypass_corpus.rs",
+  "logic_name": "Secret Representation Bypass Corpus",
+  "test_list": [
+    {
+      "test_name": "documents_known_secret_representation_bypasses",
+      "description": "Detects a synthetic contiguous key and records homoglyph, zero-width, base64-wrapped, and line-folded representations as explicit out-of-scope cases."
+    }
+  ],
+  "dependencies": [
+    "DfaScanner::default_pack"
+  ],
+  "libraries": [
+    "regex-automata (meta)"
+  ],
+  "inputs": [
+    {
+      "name": "fake_key",
+      "type": "&str",
+      "description": "A synthetic AWS-shaped key fixture generated for the test."
+    }
+  ],
+  "output_type": "test assertions and out-of-scope classifications",
+  "output_description": "Demonstrates one detected fixture and verifies the explicitly documented bypass classes."
+}

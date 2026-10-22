@@ -50,6 +50,7 @@ polaris-hacker = { workspace = true }
 polaris-runtime = { workspace = true }
 
 [dev-dependencies]
+tar = { workspace = true }
 blake3 = { workspace = true }
 bytes = { workspace = true }
 sysinfo = { workspace = true }

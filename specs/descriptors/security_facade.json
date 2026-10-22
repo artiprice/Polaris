@@ -1,0 +1,23 @@
+{
+  "type_of": "facade",
+  "name": "polaris-security",
+  "file_path": "crates/polaris-security/src/lib.rs",
+  "logic_name": "Security Facade",
+  "test_list": [
+    {
+      "test_name": "every_security_child_is_reexported",
+      "description": "Compiles the facade boundary with automata, capability, PII, rules, and secrets child crates available through stable aliases."
+    }
+  ],
+  "dependencies": [
+    "polaris-security-automata",
+    "polaris-security-capability",
+    "polaris-security-pii",
+    "polaris-security-rules",
+    "polaris-security-secrets"
+  ],
+  "libraries": [],
+  "inputs": [],
+  "output_type": "public re-exports",
+  "output_description": "Security child crates are exposed through facade module aliases; the threat model is documented in docs/security-threat-model.md."
+}

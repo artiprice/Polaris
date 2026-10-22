@@ -1322,6 +1322,7 @@ dependencies = [
  "polaris-kernel-directives",
  "polaris-proto",
  "polaris-sdk",
+ "polaris-security-automata",
  "polaris-security-capability",
  "polaris-storage-cas",
  "polaris-storage-eventlog",

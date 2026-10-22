@@ -61,9 +61,11 @@ async fn stress_kills_a_depth_five_process_tree() -> Result<(), Box<dyn std::err
 fn stress_watcher_reports_rescan_after_hundred_thousand_file_flood()
 -> Result<(), Box<dyn std::error::Error>> {
     let directory = tempfile::tempdir()?;
-    let mut config = WatchConfig::default();
-    config.capacity = 8;
-    config.debounce = Duration::from_millis(10);
+    let config = WatchConfig {
+        capacity: 8,
+        debounce: Duration::from_millis(10),
+        ..WatchConfig::default()
+    };
     let watcher = watch(directory.path(), config)?;
     for index in 0..100_000_u32 {
         std::fs::write(directory.path().join(format!("event-{index:06}.tmp")), [])?;

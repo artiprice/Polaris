@@ -216,6 +216,7 @@ fn field_numbers_are_frozen() -> TestResult {
                 ("session_configured", 19),
                 ("session_paused", 20),
                 ("session_resumed", 21),
+                ("blast_radius_alert", 22),
             ],
         ),
         (

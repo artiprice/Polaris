@@ -46,10 +46,11 @@ const fn variant_index(event: &Event) -> usize {
         Event::SessionConfigured { .. } => 18,
         Event::SessionPaused => 19,
         Event::SessionResumed => 20,
+        Event::BlastRadiusAlert { .. } => 21,
     }
 }
 
-const VARIANT_COUNT: usize = 21;
+const VARIANT_COUNT: usize = 22;
 
 #[test]
 fn old_envelope_version_is_preserved_and_new_variants_require_v2() -> TestResult {
@@ -71,6 +72,10 @@ fn old_envelope_version_is_preserved_and_new_variants_require_v2() -> TestResult
         },
         Event::SessionPaused,
         Event::SessionResumed,
+        Event::BlastRadiusAlert {
+            frame: frame(14),
+            report: cid(19),
+        },
     ] {
         let record = EventRecord::new(
             Seq::new(5),
@@ -185,6 +190,10 @@ fn samples() -> Vec<Event> {
         },
         Event::SessionPaused,
         Event::SessionResumed,
+        Event::BlastRadiusAlert {
+            frame: frame(14),
+            report: cid(19),
+        },
     ]
 }
 
@@ -334,10 +343,10 @@ fn malformed_cid_and_schema_are_errors() -> TestResult {
         Err(ProtoError::Invalid(ParseError::UnsupportedSchema(0)))
     );
     let mut future = pb::EventRecord::from(&record);
-    future.schema = 3;
+    future.schema = 4;
     assert_eq!(
         EventRecord::try_from(future),
-        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(3)))
+        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(4)))
     );
     let mut huge = pb::EventRecord::from(&record);
     huge.schema = u32::from(u16::MAX) + 1;
@@ -497,6 +506,9 @@ fn arb_event() -> impl Strategy<Value = Event> {
             .boxed(),
         Just(Event::SessionPaused).boxed(),
         Just(Event::SessionResumed).boxed(),
+        (arb_frame(), arb_cid())
+            .prop_map(|(frame, report)| Event::BlastRadiusAlert { frame, report })
+            .boxed(),
     ];
     assert_eq!(arms.len(), VARIANT_COUNT);
     Union::new(arms)

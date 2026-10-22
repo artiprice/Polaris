@@ -5,10 +5,10 @@ use proptest::prelude::*;
 use std::error::Error;
 
 #[test]
-fn lifecycle_records_use_schema_two() -> Result<(), Box<dyn Error>> {
+fn lifecycle_records_use_current_schema() -> Result<(), Box<dyn Error>> {
     assert_eq!(
-        EVENT_SCHEMA_VERSION, 2,
-        "lifecycle extension requires a schema revision"
+        EVENT_SCHEMA_VERSION, 3,
+        "blast alert extension requires a schema revision"
     );
     for event in [
         Event::SessionConfigured {
@@ -23,7 +23,7 @@ fn lifecycle_records_use_schema_two() -> Result<(), Box<dyn Error>> {
             SessionId::from_u128(1),
             event,
         );
-        assert_eq!(record.schema(), 2, "new records use the current schema");
+        assert_eq!(record.schema(), 3, "new records use the current schema");
         assert_eq!(
             serde_json::from_str::<EventRecord>(&serde_json::to_string(&record)?)?,
             record,
@@ -96,7 +96,7 @@ fn versioned_constructor_validates_schema() -> Result<(), Box<dyn Error>> {
         "zero schema refused"
     );
     assert!(
-        make(3, Event::SessionClosed).is_err(),
+        make(4, Event::SessionClosed).is_err(),
         "future schema refused"
     );
     assert!(
@@ -111,9 +111,9 @@ proptest! {
     fn prop_schema_acceptance_matches_lifecycle_minimum(schema in any::<u16>(), configuration in any::<[u8; 32]>()) {
         for event in [Event::SessionConfigured { configuration: Cid::from_bytes(configuration) }, Event::SessionPaused, Event::SessionResumed] {
             let result = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), event);
-            prop_assert_eq!(result.is_ok(), schema == 2);
+            prop_assert_eq!(result.is_ok(), schema == 2 || schema == 3);
         }
         let legacy = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), Event::SessionClosed);
-        prop_assert_eq!(legacy.is_ok(), schema == 1 || schema == 2);
+        prop_assert_eq!(legacy.is_ok(), schema == 1 || schema == 2 || schema == 3);
     }
 }

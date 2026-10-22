@@ -36,6 +36,7 @@ const EXECUTION_ENV: &[(&str, &str)] = &[
     ("CARGO_TARGET_DIR", "/sandbox/build"),
     ("CARGO_NET_OFFLINE", "true"),
     ("RUSTUP_AUTO_INSTALL", "0"),
+    ("RUSTUP_HOME", "/usr/local/rustup"),
     ("RUSTUP_TOOLCHAIN", "1.99.0"),
     ("PYTHONDONTWRITEBYTECODE", "1"),
 ];
@@ -201,6 +202,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             let bytes = serde_json::to_vec(&stored)?;
             if bytes.len() > MAX_REVIEW_BYTES { return Err(KernelError::Configuration("review exceeds size bound")); }
             let digest = ctx.cas.put(&bytes)?;
+            ctx.publish(session, Event::BlastRadiusAlert {frame, report:digest})?;
             Ok(ExecutionReview {digest,tree,details:serde_json::to_value(stored)?})
         }).await
     }
@@ -378,10 +380,19 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         }
         let context = Arc::clone(&ctx);
         let ok = operation.is_ok() && cleanup.is_ok();
+        let proof_report = operation.as_ref().ok().copied();
+        let cleanup_error = cleanup.as_ref().err().map(ToString::to_string);
         let frame = self.frame;
         let latency_us = u64::try_from(started.elapsed().as_micros())
             .map_err(|_| KernelError::Integrity("execution duration overflow"))?;
         blocking(move || {
+            if ok {
+                let report = proof_report.ok_or(KernelError::Integrity("proof report missing"))?;
+                context.publish(session, Event::ProofOfDonePassed {frame, report})?;
+            } else if let Some(reason) = cleanup_error {
+                let report = context.cas.put(&serde_json::to_vec(&serde_json::json!({"stage":"sandbox_cleanup","review":call,"command":command_id,"reason":reason,"pending_proof_report":proof_report}))?)?;
+                context.publish(session, Event::ProofOfDoneBlocked {frame, report})?;
+            }
             context.publish(
                 session,
                 Event::ToolExecutionCompleted {
@@ -396,7 +407,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         .await?;
         cleanup?;
         failure_report?;
-        operation?;
+        let _proof_report = operation?;
         Ok(CommandReceipt {
             command: command_id,
             accepted_at,
@@ -411,7 +422,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         manifest: &Manifest,
         command: CommandId,
         stop: &CancellationToken,
-    ) -> Result<(), KernelError> {
+    ) -> Result<Cid, KernelError> {
         let init = ExecRequest {
             argv: vec![
                 "mkdir".into(),
@@ -449,7 +460,27 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             return Err(KernelError::Configuration("guest protocol mismatch"));
         }
         let plan = sync::plan(manifest, &Manifest::default());
-        let report = sync::apply(
+        let scanner = blocking(move || {
+            use polaris_security::automata::{Category, CompileLimits, DEFAULT_RULES, DfaScanner};
+            let mut builder = DfaScanner::builder();
+            for (name, pattern, category) in DEFAULT_RULES {
+                if *category == Category::Secret {
+                    builder.add(name, pattern, *category).map_err(|_| {
+                        KernelError::Configuration("secret precheck compilation rejected")
+                    })?;
+                }
+            }
+            builder
+                .build(&CompileLimits::default())
+                .map_err(|_| KernelError::Configuration("secret precheck unavailable"))
+        })
+        .await?;
+        let precheck = move |_path: &sync::RelPath, bytes: &[u8]| {
+            scanner
+                .any_match(bytes)
+                .map_err(|_| "secret precheck failed".to_owned())
+        };
+        let report = sync::apply_with_precheck(
             self.backend.as_ref(),
             sandbox,
             &review.workspace,
@@ -460,6 +491,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
                 concurrency: 8,
                 cancellation: None,
             },
+            Some(&precheck),
         )
         .await
         .map_err(|_| KernelError::Runtime("workspace sync failed".into()))?;
@@ -468,6 +500,8 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             || !report.conflicts.is_empty()
             || !report.path_conflicts.is_empty()
             || !report.cancelled.is_empty()
+            || !report.secret_blocked.is_empty()
+            || report.rescan_required
         {
             return Err(KernelError::Configuration(
                 "workspace sync did not preserve reviewed snapshot",
@@ -589,12 +623,12 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let reason = verdict.as_ref().err().map(ToString::to_string);
         let session = self.session;
         let frame = self.frame;
-        blocking(move || {
+        let report = blocking(move || {
             let report=context.cas.put(&serde_json::to_vec(&serde_json::json!({"command":command,"tree":current_tree,"stdout":stdout,"stderr":stderr,"independent_report":independent_report,"passed":passed,"reason":reason}))?)?;
-            context.publish(session,if passed {Event::ProofOfDonePassed{frame,report}}else{Event::ProofOfDoneBlocked{frame,report}})?;
-            Ok(())
+            if !passed { context.publish(session,Event::ProofOfDoneBlocked{frame,report})?; }
+            Ok(report)
         }).await?;
-        verdict.map(|_| ()).map_err(|_| {
+        verdict.map(|_| report).map_err(|_| {
             KernelError::Configuration("Proof-of-Done blocked; inspect durable report and stderr")
         })
     }

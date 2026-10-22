@@ -1,0 +1,52 @@
+{
+  "type_of": "function",
+  "name": "sync_batch::run",
+  "file_path": "apps/polaris-guest/src/sync_batch.rs",
+  "logic_name": "Guest Atomic Sync Batch",
+  "test_list": [
+    {
+      "test_name": "bounded_tar_decodes_exact_crlf_bytes_and_rejects_denied_paths",
+      "description": "The bounded parser preserves exact payload bytes and rejects protected workspace paths."
+    },
+    {
+      "test_name": "rejects_mismatched_payload_digest_and_noncanonical_payload_member",
+      "description": "Digest mismatch and non-synthetic tar members are rejected before mutation."
+    },
+    {
+      "test_name": "root_must_be_a_canonical_descendant_of_injected_test_base",
+      "description": "Production root confinement logic rejects the trusted base itself and linked escapes."
+    },
+    {
+      "test_name": "partial_batch_failure_reports_exact_applied_and_unstarted_paths",
+      "description": "Partial application returns exact applied and unstarted paths without claiming rollback."
+    },
+    {
+      "test_name": "batch_conflict_applies_nothing_and_preserves_intervening_edit",
+      "description": "Expected-state mismatch rejects the batch before changes and preserves the intervening file."
+    },
+    {
+      "test_name": "batch_preserves_crlf_mode_link_target_and_delete",
+      "description": "Batch install preserves CRLF, executable bit, relative link target and conditional deletion."
+    }
+  ],
+  "dependencies": [
+    "SandboxSyncBatch",
+    "SandboxBatchResult",
+    "sync_cas::commit_batch"
+  ],
+  "libraries": ["tar", "serde_json", "blake3", "fs4"],
+  "inputs": [
+    {
+      "name": "root",
+      "type": "&str",
+      "description": "Canonical workspace root confined beneath /sandbox."
+    },
+    {
+      "name": "archive_path",
+      "type": "&str",
+      "description": "One bounded archive staged directly under the private sync staging directory."
+    }
+  ],
+  "output_type": "ExitCode",
+  "output_description": "Exit 0 emits JSON covering every requested path exactly once; nonzero means the host must rescan because outcome may be uncertain."
+}

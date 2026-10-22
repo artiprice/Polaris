@@ -51,7 +51,7 @@ fn lifecycle_schema_admission_is_exact() {
     );
     assert_eq!(
         result.is_ok(),
-        schema == 2 || (schema == 1 && !left && !right),
+        schema == 2 || schema == 3 || (schema == 1 && !left && !right),
         "exact lifecycle schema admission"
     );
 }

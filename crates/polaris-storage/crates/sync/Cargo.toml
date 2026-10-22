@@ -21,6 +21,7 @@ futures = { workspace = true }
 bytes = { workspace = true }
 uuid = { workspace = true }
 tar = { workspace = true }
+serde_json = { workspace = true }
 # Internal edges (layer-checked by `cargo xtask check-layers`).
 polaris-sdk = { workspace = true }
 

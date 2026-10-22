@@ -90,7 +90,7 @@ message EventRecord {
   reserved 100 to 199;
 }
 
-// A domain event (sdk `Event`, schema v2). Existing field numbers remain stable.
+// A domain event (sdk `Event`, schema v3). Existing field numbers remain stable.
 message Event {
   oneof kind {
     SessionStarted session_started = 1;
@@ -114,6 +114,7 @@ message Event {
     SessionConfigured session_configured = 19;
     SessionPaused session_paused = 20;
     SessionResumed session_resumed = 21;
+    BlastRadiusAlert blast_radius_alert = 22;
   }
   reserved 100 to 199;
 
@@ -191,6 +192,7 @@ message Event {
   message SessionConfigured { Cid configuration = 1; }
   message SessionPaused {}
   message SessionResumed {}
+  message BlastRadiusAlert { Uuid frame = 1; Cid report = 2; }
 }
 
 // Client-to-kernel frame of a terminal attachment.

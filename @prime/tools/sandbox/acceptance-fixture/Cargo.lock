@@ -1,0 +1,6 @@
+# This fixture has no third-party dependencies and is tested offline.
+version = 4
+
+[[package]]
+name = "polaris-p2-acceptance"
+version = "0.1.0"

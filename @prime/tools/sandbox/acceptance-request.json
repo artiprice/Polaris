@@ -1,0 +1,1 @@
+{"argv":["cargo","test","--offline","--locked","--lib"],"independent_argv":["cargo","test","--offline","--locked","--test","falsifier"],"timeout_secs":120,"min_tests":3}

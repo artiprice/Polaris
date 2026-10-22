@@ -27,6 +27,14 @@
     {
       "test_name": "prop_guard_never_panics",
       "description": "Arbitrary strings return Ok or Err, never panic."
+    },
+    {
+      "test_name": "caller_limits_cannot_raise_hard_pattern_and_nesting_ceilings",
+      "description": "Caller-provided usize::MAX/u32::MAX values cannot raise hard pattern, nesting, and counted-repetition ceilings."
+    },
+    {
+      "test_name": "caller_cannot_raise_hard_unicode_class_range_ceiling",
+      "description": "A 4,097-range Unicode class stays rejected even when caller-provided class and NFA limits are usize::MAX."
     }
   ],
   "dependencies": [

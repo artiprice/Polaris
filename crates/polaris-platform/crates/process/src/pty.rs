@@ -126,10 +126,10 @@ impl std::fmt::Debug for PtySession {
 
 impl Drop for PtySession {
     fn drop(&mut self) {
-        if let Ok(child) = self.child.get_mut() {
-            if let Err(error) = child.kill() {
-                tracing::debug!(error = %error, "PTY child was already stopped or could not be killed during drop");
-            }
+        if let Ok(child) = self.child.get_mut()
+            && let Err(error) = child.kill()
+        {
+            tracing::debug!(error = %error, "PTY child was already stopped or could not be killed during drop");
         }
     }
 }

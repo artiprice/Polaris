@@ -3,7 +3,7 @@
 use std::io::{self, Write};
 use std::process::ExitCode;
 
-use polaris_sdk::registry::{SandboxSnapshotEntry, SandboxSnapshotPage};
+use polaris_sdk::registry::SandboxSnapshotPage;
 
 const MAX_REQUEST_LIMIT: u32 = 4096;
 
@@ -58,6 +58,9 @@ enum SnapshotError {
     #[error("invalid cached snapshot")]
     Cache,
 }
+
+#[cfg(target_os = "linux")]
+use polaris_sdk::registry::SandboxSnapshotEntry;
 
 #[cfg(target_os = "linux")]
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -129,11 +132,35 @@ mod linux {
         offset: u64,
         limit: u32,
     ) -> Result<SandboxSnapshotPage, SnapshotError> {
-        let root = checked_root(root)?;
+        snapshot_page_under(
+            root,
+            generation,
+            offset,
+            limit,
+            Path::new("/sandbox"),
+            false,
+        )
+    }
+
+    fn snapshot_page_under(
+        root: &str,
+        generation: Option<&str>,
+        offset: u64,
+        limit: u32,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<SandboxSnapshotPage, SnapshotError> {
+        let root = checked_root_under(root, trusted_base, allow_base)?;
         let owner = fs::symlink_metadata(&root)?.uid();
         let staging = root.join(".polaris/sync/staging");
-        super::super::sync_cas::prepare_workspace(root.to_str().ok_or(SnapshotError::Invalid)?)
-            .map_err(|_| SnapshotError::Invalid)?;
+        if allow_base {
+            ensure_private_dir(&root.join(".polaris"), owner)?;
+            ensure_private_dir(&root.join(".polaris/sync"), owner)?;
+            ensure_private_dir(&staging, owner)?;
+        } else {
+            super::super::sync_cas::prepare_workspace(root.to_str().ok_or(SnapshotError::Invalid)?)
+                .map_err(|_| SnapshotError::Invalid)?;
+        }
         ensure_private_dir(&staging, owner)?;
         let snapshots = staging.join("snapshots");
         ensure_private_dir(&snapshots, owner)?;
@@ -150,7 +177,11 @@ mod linux {
         build_page(cache, offset, limit)
     }
 
-    fn checked_root(root: &str) -> Result<PathBuf, SnapshotError> {
+    fn checked_root_under(
+        root: &str,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<PathBuf, SnapshotError> {
         if root.is_empty()
             || root.len() > MAX_PATH_BYTES
             || !root.starts_with('/')
@@ -166,7 +197,12 @@ mod linux {
             return Err(SnapshotError::Invalid);
         }
         let canonical = fs::canonicalize(&path)?;
-        if canonical != path || !fs::symlink_metadata(&canonical)?.is_dir() {
+        let base = fs::canonicalize(trusted_base)?;
+        if canonical != path
+            || (!allow_base && canonical == base)
+            || !canonical.starts_with(&base)
+            || !fs::symlink_metadata(&canonical)?.is_dir()
+        {
             return Err(SnapshotError::Invalid);
         }
         Ok(canonical)
@@ -602,6 +638,15 @@ mod linux {
     mod tests {
         use super::*;
         use std::time::{SystemTime, UNIX_EPOCH};
+
+        fn snapshot_page(
+            root: &str,
+            generation: Option<&str>,
+            offset: u64,
+            limit: u32,
+        ) -> Result<SandboxSnapshotPage, SnapshotError> {
+            super::snapshot_page_under(root, generation, offset, limit, Path::new(root), true)
+        }
 
         struct Workspace(PathBuf);
 

@@ -90,6 +90,11 @@ pub fn scopes_conflict(
     if left_key != right_key {
         return false;
     }
+    scopes_overlap(left, right)
+}
+
+/// Conflict check after the immutable holder index proved both scopes have the same key.
+pub(crate) fn scopes_overlap(left: &LeaseScope, right: &LeaseScope) -> bool {
     match (left, right) {
         (LeaseScope::EntireFile, _) | (_, LeaseScope::EntireFile) => true,
         (LeaseScope::AstNode(a), LeaseScope::AstNode(b)) => is_prefix(a, b) || is_prefix(b, a),

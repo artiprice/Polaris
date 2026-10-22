@@ -9,7 +9,7 @@
     { "test_name": "watcher_emits_real_create_event_and_ignores_default_noise", "description": "Observe a real filesystem create and suppress ignored directory changes." },
     { "test_name": "conpty_starts_cmd_and_streams_output_with_bounded_records", "description": "Start a native Windows PTY child and receive its output over the bounded byte channel." },
     { "test_name": "stress_conpty_streams_one_hundred_mibibytes_with_bounded_records", "description": "Opt-in ConPTY throughput workload counts a 100 MiB stream without retaining its bytes." },
-    { "test_name": "run_probe_captures_version_without_a_shell", "description": "Run a native executable with static argv and collect bounded output without shell interpretation." },
+    { "test_name": "run_probe_captures_version_without_a_shell", "description": "Run a native executable with static argv, collect bounded output, and force RUSTUP_AUTO_INSTALL=0 plus CARGO_NET_OFFLINE=true without shell interpretation." },
     { "test_name": "probe_output_is_capped_while_pipes_continue_draining", "description": "Cap retained stdout and stderr while draining excess output to prevent child deadlock." },
     { "test_name": "probe_deadline_kills_the_owned_child", "description": "Enforce a deadline and terminate the complete owned process tree." }
   ],

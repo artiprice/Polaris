@@ -96,6 +96,30 @@ fn caller_limits_cannot_raise_hard_pattern_and_nesting_ceilings() {
     ));
 }
 
+#[test]
+fn caller_cannot_raise_hard_unicode_class_range_ceiling() -> TestResult {
+    let mut pattern = String::from("[");
+    pattern.try_reserve_exact(12_500)?;
+    for index in 0..4_097_u32 {
+        let codepoint = 0x0400_u32 + index * 2;
+        let character = char::from_u32(codepoint).ok_or("generated code point is invalid")?;
+        pattern.push(character);
+    }
+    pattern.push(']');
+    assert!(pattern.len() <= 16 * 1024);
+    let limits = UserRegexLimits {
+        max_len: usize::MAX,
+        max_class_ranges: usize::MAX,
+        nfa_size_bytes: usize::MAX,
+        ..UserRegexLimits::default()
+    };
+    assert!(matches!(
+        validate_user_regex(&pattern, &limits),
+        Err(AutomataError::TooLarge { limit: 4096 })
+    ));
+    Ok(())
+}
+
 proptest! {
     #[test]
     fn prop_guard_never_panics(pattern in ".{0,80}") {

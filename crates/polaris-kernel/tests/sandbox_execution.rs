@@ -4,9 +4,10 @@ use polaris_sdk::{
     contracts::{Command, CommandBody, Event},
     ids::{Cid, CommandId, FrameId, Seq, SessionId},
     registry::{
-        CommitOutcome, ExecOutput, ExecRequest, SandboxBackend, SandboxCommitAction,
-        SandboxCommitRequest, SandboxError, SandboxFileState, SandboxHandle, SandboxSnapshotEntry,
-        SandboxSnapshotPage, SandboxSpec,
+        CommitOutcome, ExecOutput, ExecRequest, SandboxBackend, SandboxBatchAction,
+        SandboxBatchResult, SandboxCommitAction, SandboxCommitRequest, SandboxError,
+        SandboxFileState, SandboxHandle, SandboxSnapshotEntry, SandboxSnapshotPage, SandboxSpec,
+        SandboxSyncBatch,
     },
 };
 use std::{
@@ -27,6 +28,9 @@ struct FakeBackend {
     destroys: AtomicUsize,
     fail: AtomicBool,
     collision: AtomicBool,
+    no_tests: AtomicBool,
+    tamper: AtomicBool,
+    destroy_failure: AtomicBool,
     wait: AtomicBool,
     started: tokio::sync::Notify,
 }
@@ -155,6 +159,92 @@ impl SandboxBackend for FakeBackend {
         let program = request.argv.first().map(String::as_str).expect("argv");
         let mut output = ExecOutput::default();
         match program {
+            "/usr/bin/polaris-guest"
+                if request.argv.get(1).map(String::as_str) == Some("sync-batch") =>
+            {
+                use std::io::Read;
+                let root = request.argv.get(2).expect("root");
+                let stage = request.argv.get(3).expect("stage");
+                let archive = self
+                    .files
+                    .lock()
+                    .expect("files")
+                    .remove(stage)
+                    .expect("archive");
+                let mut decoded = BTreeMap::new();
+                for entry in tar::Archive::new(std::io::Cursor::new(archive))
+                    .entries()
+                    .expect("entries")
+                {
+                    let mut entry = entry.expect("entry");
+                    let name = entry.path().expect("name").to_string_lossy().into_owned();
+                    let mut bytes = Vec::new();
+                    entry.read_to_end(&mut bytes).expect("bytes");
+                    assert!(
+                        decoded.insert(name, bytes).is_none(),
+                        "duplicate archive member"
+                    );
+                }
+                let batch: SandboxSyncBatch =
+                    serde_json::from_slice(decoded.get("manifest.json").expect("manifest"))
+                        .expect("batch");
+                assert_eq!(&batch.root, root, "fixed root");
+                let mut files = self.files.lock().expect("files");
+                let mut result = SandboxBatchResult {
+                    applied: Vec::new(),
+                    conflicts: Vec::new(),
+                    failed: Vec::new(),
+                };
+                for mutation in &batch.mutations {
+                    let path = format!("{root}/{}", mutation.relative_path);
+                    let actual = files.get(&path).map(|bytes| SandboxFileState {
+                        hash: Cid::from_bytes(*blake3::hash(bytes).as_bytes()),
+                        executable: false,
+                        link_target: None,
+                    });
+                    if actual != mutation.expected {
+                        result.conflicts.push(mutation.relative_path.clone());
+                    }
+                }
+                if !result.conflicts.is_empty() {
+                    result.failed.extend(
+                        batch
+                            .mutations
+                            .iter()
+                            .filter(|mutation| !result.conflicts.contains(&mutation.relative_path))
+                            .map(|mutation| mutation.relative_path.clone()),
+                    );
+                } else {
+                    for mutation in batch.mutations {
+                        let path = format!("{root}/{}", mutation.relative_path);
+                        match mutation.action {
+                            SandboxBatchAction::File {
+                                payload,
+                                hash,
+                                executable: false,
+                            } => {
+                                let bytes = decoded.remove(&payload).expect("payload");
+                                assert_eq!(
+                                    Cid::from_bytes(*blake3::hash(&bytes).as_bytes()),
+                                    hash,
+                                    "payload hash"
+                                );
+                                files.insert(path, bytes);
+                            }
+                            SandboxBatchAction::Delete => {
+                                files.remove(&path);
+                            }
+                            _ => {
+                                return Err(SandboxError::PolicyDenied(
+                                    "file-only kernel fake".into(),
+                                ));
+                            }
+                        }
+                        result.applied.push(mutation.relative_path);
+                    }
+                }
+                output.stdout = serde_json::to_vec(&result).expect("result").into();
+            }
             "/usr/bin/polaris-guest" => output.stdout = b"1\n".to_vec().into(),
             "test" => {
                 let path = request.argv.last().expect("path");
@@ -183,6 +273,17 @@ impl SandboxBackend for FakeBackend {
                         .to_vec()
                         .into()
                 };
+                if self.no_tests.load(Ordering::SeqCst) {
+                    output.stdout = b"test result: ok. 0 passed; 0 failed; 0 ignored;\n"
+                        .to_vec()
+                        .into();
+                }
+                if self.tamper.load(Ordering::SeqCst) {
+                    self.files.lock().expect("files").insert(
+                        "/sandbox/ws/source.rs".into(),
+                        b"fn tampered() {}\n".to_vec(),
+                    );
+                }
             }
             "mkdir" | "chmod" => {}
             _ => {
@@ -239,6 +340,9 @@ impl SandboxBackend for FakeBackend {
     }
     async fn destroy(&self, _sandbox: &SandboxHandle) -> Result<(), SandboxError> {
         self.destroys.fetch_add(1, Ordering::SeqCst);
+        if self.destroy_failure.load(Ordering::SeqCst) {
+            return Err(SandboxError::Unavailable("injected destroy failure".into()));
+        }
         self.files.lock().expect("files").clear();
         Ok(())
     }
@@ -475,6 +579,96 @@ async fn failed_run_does_not_publish_proof() {
     );
     assert_eq!(backend.destroys.load(Ordering::SeqCst), 1);
     shutdown_without_leaks(&kernel).await;
+}
+
+#[tokio::test]
+async fn zero_tests_tampered_source_and_name_collision_never_complete() {
+    for scenario in [
+        "zero_tests",
+        "tamper",
+        "collision",
+        "secret",
+        "destroy_failure",
+    ] {
+        let dir = tempfile::tempdir().expect("temp");
+        let workspace = dir.path().join("workspace");
+        std::fs::create_dir(&workspace).expect("workspace");
+        let source = if scenario == "secret" {
+            "AKIA0123456789ABCDEF\n"
+        } else {
+            "fn source() {}\n"
+        };
+        std::fs::write(workspace.join("source.rs"), source).expect("source");
+        let session = SessionId::new_v7();
+        let frame = FrameId::new_v7();
+        let kernel = Kernel::start(LocalKernelConfig::new(
+            dir.path().join("state"),
+            &workspace,
+            session,
+            frame,
+        ))
+        .await
+        .expect("kernel");
+        let backend = Arc::new(FakeBackend::default());
+        backend
+            .no_tests
+            .store(scenario == "zero_tests", Ordering::SeqCst);
+        backend.tamper.store(scenario == "tamper", Ordering::SeqCst);
+        backend
+            .collision
+            .store(scenario == "collision", Ordering::SeqCst);
+        backend
+            .destroy_failure
+            .store(scenario == "destroy_failure", Ordering::SeqCst);
+        let engine =
+            SandboxExecution::new(Arc::clone(&backend), spec(), session, frame).expect("engine");
+        let review = engine
+            .prepare(Arc::clone(kernel.context()), workspace.clone(), request())
+            .await
+            .expect("review");
+        let token = engine
+            .credential(review.digest, review.digest)
+            .expect("approval");
+        let result = engine
+            .execute(
+                Arc::clone(kernel.context()),
+                workspace,
+                Command::new(
+                    CommandId::new_v7(),
+                    frame,
+                    token,
+                    CommandBody::ExecuteTool {
+                        call: review.digest,
+                    },
+                ),
+                CancellationToken::new(),
+            )
+            .await;
+        assert!(result.is_err(), "{scenario} must be blocked");
+        let records = kernel
+            .context()
+            .records(Seq::ZERO, Seq::new(u64::MAX))
+            .expect("records");
+        assert!(
+            !records
+                .iter()
+                .any(|record| matches!(record.event(), Event::ProofOfDonePassed { .. })),
+            "{scenario} must never publish a pass"
+        );
+        assert!(
+            records
+                .iter()
+                .any(|record| matches!(record.event(), Event::ProofOfDoneBlocked { .. })),
+            "{scenario} must publish a durable blocker"
+        );
+        assert_eq!(
+            backend.destroys.load(Ordering::SeqCst),
+            if scenario == "collision" { 0 } else { 1 },
+            "{scenario} cleanup ownership"
+        );
+        backend.destroy_failure.store(false, Ordering::SeqCst);
+        shutdown_without_leaks(&kernel).await;
+    }
 }
 
 #[tokio::test]

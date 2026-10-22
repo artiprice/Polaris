@@ -579,7 +579,8 @@ fn fold(
         | Event::ProofOfDoneBlocked { .. }
         | Event::WorkerRestarted { .. }
         | Event::CircuitTripped { .. }
-        | Event::DeadLettered { .. } => {}
+        | Event::DeadLettered { .. }
+        | Event::BlastRadiusAlert { .. } => {}
     }
     Ok(())
 }

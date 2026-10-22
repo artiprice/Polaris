@@ -1,0 +1,33 @@
+{
+  "type_of": "test",
+  "name": "reports_automata_compile_scan_and_4k_tail_latency",
+  "file_path": "crates/polaris-security/crates/automata/tests/performance_gates.rs",
+  "logic_name": "Automata Performance Gates",
+  "test_list": [
+    {
+      "test_name": "reports_automata_compile_scan_and_4k_tail_latency",
+      "description": "Measures compile time, meta-engine memory usage, scanner throughput at 10/100/1,000 patterns, 4 KiB any_match p99, and a 512 MiB scan."
+    }
+  ],
+  "dependencies": [
+    "RuleSetBuilder",
+    "DfaScanner"
+  ],
+  "libraries": [
+    "regex-automata (meta)"
+  ],
+  "inputs": [
+    {
+      "name": "rule_counts",
+      "type": "[u32; 3]",
+      "description": "10, 100, and 1,000 simple literal rules."
+    },
+    {
+      "name": "haystack",
+      "type": "&[u8]",
+      "description": "No-match 4 KiB sample and 1 MiB stream chunk."
+    }
+  ],
+  "output_type": "test measurements",
+  "output_description": "Release-mode timings and engine memory usage are emitted as raw key/value lines under @prime/tmp/p2."
+}

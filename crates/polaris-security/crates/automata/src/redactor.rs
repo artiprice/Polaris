@@ -71,7 +71,7 @@ impl Redactor for DfaRedactor {
                 let category = self
                     .scanner
                     .rule_category(rule_of(m.pattern()))
-                    .map_or(Category::Secret, |value| value);
+                    .unwrap_or(Category::Secret);
                 (m.start(), m.end(), category)
             })
             .peekable();

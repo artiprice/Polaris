@@ -537,8 +537,11 @@ impl Wsl {
         let command_run = async {
             let (stdout_result, stderr_result, status_result) =
                 tokio::join!(stdout_read, stderr_read, Box::pin(child.wait()));
-            let stdout = stdout_result?;
-            let stderr = stderr_result?;
+            let (stdout, stdout_too_large) = stdout_result?;
+            let (stderr, stderr_too_large) = stderr_result?;
+            if stdout_too_large || stderr_too_large {
+                return Err(WslError::OutputTooLarge);
+            }
             let status = status_result?;
             Ok::<ExecOutput, WslError>(ExecOutput {
                 exit_code: status_code(status),
@@ -602,23 +605,33 @@ impl Wsl {
         let (stderr, exit_code) = match marker_result {
             Ok(Ok(result)) => result,
             Ok(Err(error)) => {
-                let group_result = group_owner.terminate().await;
-                let _host_kill = child.start_kill();
-                let _host_wait = child.wait().await;
-                group_result?;
+                let (cleanup, output) = tokio::join!(group_owner.terminate(), &mut stdout_read);
+                cleanup?;
+                if output.is_err() {
+                    let _host_kill = child.start_kill();
+                }
+                let _host_wait = tokio::time::timeout(Duration::from_secs(5), child.wait()).await;
                 return Err(error);
             }
             Err(_) => {
-                let group_result = group_owner.terminate().await;
-                let _host_kill = child.start_kill();
-                let _host_wait = child.wait().await;
-                group_result?;
+                let (cleanup, output) = tokio::join!(group_owner.terminate(), &mut stdout_read);
+                cleanup?;
+                if output.is_err() {
+                    let _host_kill = child.start_kill();
+                }
+                let _host_wait = tokio::time::timeout(Duration::from_secs(5), child.wait()).await;
                 return Err(WslError::Timeout);
             }
         };
-        group_owner.terminate().await?;
-        let status = child.wait().await?;
-        let stdout = stdout_read.await?;
+        let (cleanup, output) = tokio::join!(group_owner.terminate(), &mut stdout_read);
+        cleanup?;
+        let status = tokio::time::timeout(Duration::from_secs(5), child.wait())
+            .await
+            .map_err(|_| WslError::Timeout)??;
+        let (stdout, output_too_large) = output?;
+        if output_too_large {
+            return Err(WslError::OutputTooLarge);
+        }
         if status.code().is_none() {
             return Err(WslError::Decode);
         }
@@ -638,25 +651,25 @@ fn status_code(status: std::process::ExitStatus) -> i32 {
 async fn read_bounded<R: tokio::io::AsyncRead + Unpin>(
     reader: R,
     cap: usize,
-) -> Result<Vec<u8>, WslError> {
+) -> Result<(Vec<u8>, bool), WslError> {
     let mut reader = reader;
     let mut bytes = Vec::new();
     let mut buffer = [0_u8; 8192];
     let mut total = 0_usize;
+    let mut exceeded = false;
     loop {
         let read = reader.read(&mut buffer).await?;
         if read == 0 {
             break;
         }
         total = total.checked_add(read).ok_or(WslError::OutputTooLarge)?;
-        if total <= cap {
-            bytes.extend_from_slice(buffer.get(..read).ok_or(WslError::OutputTooLarge)?);
+        if total > cap {
+            exceeded = true;
+            continue;
         }
+        bytes.extend_from_slice(buffer.get(..read).ok_or(WslError::OutputTooLarge)?);
     }
-    if total > cap {
-        return Err(WslError::OutputTooLarge);
-    }
-    Ok(bytes)
+    Ok((bytes, exceeded))
 }
 
 async fn read_exit_marker<R: tokio::io::AsyncRead + Unpin>(

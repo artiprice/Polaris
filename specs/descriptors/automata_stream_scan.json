@@ -1,0 +1,43 @@
+{
+  "type_of": "method",
+  "name": "StreamScanner::push",
+  "file_path": "crates/polaris-security/crates/automata/src/scan.rs",
+  "logic_name": "Bounded Stream Scan",
+  "test_list": [
+    {
+      "test_name": "emits_one_match_crossing_two_chunk_boundaries_with_global_offsets",
+      "description": "Retains only the finite-width overlap and reports global byte offsets for a match split across chunks."
+    },
+    {
+      "test_name": "rejects_unbounded_patterns_and_overlarge_chunks",
+      "description": "Rejects unbounded patterns and assertions whose result depends on bytes outside the current stream context."
+    },
+    {
+      "test_name": "streams_one_gibibyte_with_boundary_matches",
+      "description": "Scans 1 GiB in 1 MiB chunks, checking exact offsets for 1,023 boundary-spanning matches."
+    }
+  ],
+  "dependencies": [
+    "DfaScanner",
+    "ScanBuf"
+  ],
+  "libraries": [
+    "regex-automata (meta)",
+    "regex-syntax",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "chunk",
+      "type": "&[u8]",
+      "description": "A bounded byte chunk; the scanner rejects chunks above its configured maximum."
+    },
+    {
+      "name": "out",
+      "type": "&mut ScanBuf",
+      "description": "Caller-owned fixed-capacity storage for spans emitted from this chunk."
+    }
+  ],
+  "output_type": "Result<usize, AutomataError>",
+  "output_description": "Number of spans emitted, with global offsets and bounded retained overlap."
+}

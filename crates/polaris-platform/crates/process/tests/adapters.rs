@@ -44,8 +44,10 @@ fn environment_policy_rejects_secrets_and_duplicate_names() {
 fn watcher_emits_real_create_event_and_ignores_default_noise()
 -> Result<(), Box<dyn std::error::Error>> {
     let directory = tempfile::tempdir()?;
-    let mut config = WatchConfig::default();
-    config.debounce = Duration::from_millis(20);
+    let config = WatchConfig {
+        debounce: Duration::from_millis(20),
+        ..WatchConfig::default()
+    };
     let watcher = watch(directory.path(), config)?;
     std::fs::write(directory.path().join("visible.txt"), b"created")?;
     let event = watcher.recv_timeout(Duration::from_secs(3))?;

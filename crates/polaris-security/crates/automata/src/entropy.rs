@@ -4,6 +4,10 @@
 use crate::error::AutomataError;
 use crate::scan::{Match, RuleId, ScanBuf, check_len};
 
+#[cfg(feature = "kani")]
+#[path = "kani_proofs.rs"]
+mod kani_proofs;
+
 /// Fractional bits of the fixed-point log2.
 const FRAC_BITS: u32 = 32;
 
@@ -47,10 +51,7 @@ pub fn shannon_entropy_milli(bytes: &[u8]) -> u32 {
             *c += 1;
         }
     }
-    let n = match u64::try_from(bytes.len()) {
-        Ok(length) => length,
-        Err(_) => u64::MAX,
-    };
+    let n = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     if n == 0 {
         return 0;
     }
@@ -64,7 +65,7 @@ pub fn shannon_entropy_milli(bytes: &[u8]) -> u32 {
     let milli = (h_q32 * 1000 + (1 << (FRAC_BITS - 1))) >> FRAC_BITS;
     match u32::try_from(milli) {
         Ok(value) => value.min(8000),
-        Err(_) => u32::MAX.min(8000),
+        Err(_) => 8000,
     }
 }
 

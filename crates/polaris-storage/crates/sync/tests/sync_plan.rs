@@ -85,11 +85,11 @@ fn two_way_plan_coalesces_identical_changes_and_reports_edit_races() -> TestResu
     assert_eq!(p.conflicts[0].base.as_ref(), Some(&entry(2, false)));
     assert_eq!(p.conflicts[0].local.as_ref(), Some(&entry(4, false)));
     assert_eq!(p.conflicts[0].remote.as_ref(), Some(&entry(5, false)));
-    assert_eq!(strs(&p.upload), ["same"]);
-    assert_eq!(
-        p.expected_remote.get(&RelPath::new("same")?),
-        Some(&Some(entry(3, false)))
+    assert!(
+        p.upload.is_empty(),
+        "identical concurrent edits are already converged"
     );
+    assert!(!p.expected_remote.contains_key(&RelPath::new("same")?));
     Ok(())
 }
 

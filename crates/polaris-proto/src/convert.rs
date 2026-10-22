@@ -301,6 +301,12 @@ impl From<&Event> for pb::Event {
                     report: cid_to_pb(report),
                 })
             }
+            Event::BlastRadiusAlert { frame, report } => {
+                Kind::BlastRadiusAlert(m::BlastRadiusAlert {
+                    frame: frame_to_pb(frame),
+                    report: cid_to_pb(report),
+                })
+            }
             Event::ProofOfDoneBlocked { frame, report } => {
                 Kind::ProofOfDoneBlocked(m::ProofOfDoneBlocked {
                     frame: frame_to_pb(frame),
@@ -401,6 +407,10 @@ impl TryFrom<pb::Event> for Event {
             Kind::ProofOfDonePassed(m) => Self::ProofOfDonePassed {
                 frame: frame_from_pb("event.proof_of_done_passed.frame", m.frame)?,
                 report: cid_from_pb("event.proof_of_done_passed.report", m.report)?,
+            },
+            Kind::BlastRadiusAlert(m) => Self::BlastRadiusAlert {
+                frame: frame_from_pb("event.blast_radius_alert.frame", m.frame)?,
+                report: cid_from_pb("event.blast_radius_alert.report", m.report)?,
             },
             Kind::ProofOfDoneBlocked(m) => Self::ProofOfDoneBlocked {
                 frame: frame_from_pb("event.proof_of_done_blocked.frame", m.frame)?,

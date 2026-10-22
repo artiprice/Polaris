@@ -87,7 +87,7 @@ fn replay_rejects_newer_schema() -> TestResult {
         let txn = db.begin_write()?;
         {
             let mut table = txn.open_table(TableDefinition::<u64, &[u8]>::new(EVENTS_TABLE))?;
-            let mut future = 3u16.to_le_bytes().to_vec();
+            let mut future = 4u16.to_le_bytes().to_vec();
             future.extend_from_slice(b"{\"from\":\"the future\"}");
             table.insert(2u64, future.as_slice())?;
         }
@@ -97,8 +97,8 @@ fn replay_rejects_newer_schema() -> TestResult {
     assert!(matches!(
         log.replay(Seq::new(2)),
         Err(EventLogError::SchemaTooNew {
-            found: 3,
-            supported: 2
+            found: 4,
+            supported: 3
         })
     ));
     assert_eq!(

@@ -8,7 +8,11 @@
     { "test_name": "parses_default_running_distro_and_version", "description": "Parse default marker, state, and WSL generation into typed rows." },
     { "test_name": "validates_memory_units_nested_virtualization_and_duplicate_keys", "description": "Validate known .wslconfig keys, memory units, booleans, and duplicates." },
     { "test_name": "maps_drive_paths_and_wsl_unc_paths", "description": "Map Windows drive paths to /mnt and Linux paths to distro UNC paths." },
-    { "test_name": "doctor_report_api_is_serializable_and_provisioning_is_plan_only", "description": "Keep doctor output serializable and provisioning side-effect-free until explicitly confirmed." }
+    { "test_name": "doctor_report_api_is_serializable_and_provisioning_is_plan_only", "description": "Keep doctor output serializable and provisioning side-effect-free until explicitly confirmed." },
+    { "test_name": "cancelling_exec_future_kills_linux_descendants_and_reader_owners", "description": "Cancel an in-flight WSL call and verify the Linux descendant is gone without detached output readers." },
+    { "test_name": "dropping_keepalive_terminates_retained_linux_group", "description": "Drop a retained keepalive and verify its Linux process group no longer exists." },
+    { "test_name": "timeout_kills_linux_descendant_process_group", "description": "Timeout a command with a child process and verify the Linux descendant PID is gone." },
+    { "test_name": "exec_enforces_bounded_output_and_preserves_success_bytes", "description": "Reject output beyond the per-stream cap while preserving byte-exact output for a successful small command." }
   ],
   "dependencies": ["DistroName", "LinuxPath", "WslReport", "ExecOutput"],
   "libraries": ["tokio", "serde", "thiserror", "which"],

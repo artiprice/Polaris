@@ -9,8 +9,8 @@
       "description": "After apply, the fake sandbox holds exactly the local files byte for byte and deleted files are gone."
     },
     {
-      "test_name": "apply_sets_exec_bit_via_chmod",
-      "description": "Executable entries get chmod +x through exec argv (no shell)."
+      "test_name": "apply_installs_executable_mode_in_commit",
+      "description": "Executable mode is carried in the batch manifest and installed with exact bytes."
     },
     {
       "test_name": "partial_failure_is_reported_and_resumable",
@@ -22,12 +22,28 @@
     },
     {
       "test_name": "upload_concurrency_is_bounded",
-      "description": "In-flight uploads never exceed ApplyOpts::concurrency."
+      "description": "A batch uses one bounded archive upload at a time."
+    },
+    {
+      "test_name": "more_than_one_bounded_batch_is_applied_and_reported_exactly",
+      "description": "520 file updates cross the batch mutation limit and are applied through two exact-result batch commits."
+    },
+    {
+      "test_name": "remote_change_during_transfer_is_preserved_for_replace_and_delete",
+      "description": "An intervening remote edit fails expected-state comparison, remains intact, and requires a rescan."
+    },
+    {
+      "test_name": "secret_precheck_blocks_exact_bytes_before_remote_staging",
+      "description": "Secret checks run on exact re-hashed bytes before the batch is staged."
+    },
+    {
+      "test_name": "cancellation_never_reports_unperformed_deletion",
+      "description": "Cancellation before a batch starts never reports a deletion as applied."
     }
   ],
   "dependencies": [
     "polaris_sdk::ids::Cid",
-    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, ExecRequest, SandboxError}"
+    "polaris_sdk::registry::{SandboxBackend, SandboxHandle, SandboxSyncBatch, SandboxBatchResult}"
   ],
   "libraries": [
     "blake3",
@@ -35,6 +51,9 @@
     "ignore (gitignore matcher)",
     "globset",
     "futures",
+    "tar",
+    "serde_json",
+    "uuid",
     "thiserror",
     "tokio (dev)",
     "proptest (dev)",
@@ -69,9 +88,9 @@
     {
       "name": "opts",
       "type": "&ApplyOpts",
-      "description": "Remote root and concurrency."
+      "description": "Remote root, compatibility concurrency hint and optional cancellation signal."
     }
   ],
   "output_type": "Result<SyncReport, SyncError>",
-  "output_description": "Uploaded, deleted, changed-since-scan and failed paths."
+  "output_description": "Uploaded, deleted, changed, conflict, failed and cancelled paths; `rescan_required` marks conflict or uncertain remote state."
 }

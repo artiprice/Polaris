@@ -33,6 +33,10 @@
       "description": "max_patterns is enforced at build time (TooManyPatterns)."
     },
     {
+      "test_name": "default_limits_reject_a_five_thousand_pattern_pack",
+      "description": "The default compiler limit rejects a 5,000-pattern pack before compiling the automaton."
+    },
+    {
       "test_name": "prop_scan_matches_reference_regex",
       "description": "For random haystacks, matches equal the regex crate's leftmost-first find_iter over the alternation of the same patterns."
     }

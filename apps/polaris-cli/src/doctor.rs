@@ -213,6 +213,8 @@ fn native_probes(
                     .map(|tool| {
                         if tool == "cargo-mutants" {
                             native(cwd, "cargo", &["mutants", "--version"], None)
+                        } else if tool == "cargo-binstall" {
+                            native(cwd, tool, &["-V"], None)
                         } else {
                             native(cwd, tool, &["--version"], None)
                         }
@@ -425,17 +427,6 @@ async fn collect_wsl(probes: &mut BTreeMap<String, Value>) {
             Some("active"),
         ),
         (
-            "wsl-openshell",
-            &[
-                "systemctl",
-                "--user",
-                "show",
-                "openshell-gateway",
-                "--property=Environment",
-            ],
-            Some("OPENSHELL_COMPUTE_DRIVER=docker"),
-        ),
-        (
             "wsl-rust",
             &["/home/dev/.cargo/bin/rustc", "--version"],
             Some("1.99.0"),
@@ -476,7 +467,7 @@ async fn collect_wsl(probes: &mut BTreeMap<String, Value>) {
         ),
         (
             "wsl-rust",
-            &["/home/dev/.cargo/bin/cargo", "binstall", "--version"],
+            &["/home/dev/.cargo/bin/cargo", "binstall", "-V"],
             None,
         ),
         (

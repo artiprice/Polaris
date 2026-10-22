@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use bytes::Bytes;
 use openshell_sdk::raw::{self, proto};
-use openshell_sdk::{EdgeAuthInterceptor, OpenShellClient};
+use openshell_sdk::{DeletionOutcome, EdgeAuthInterceptor, OpenShellClient, SdkError};
 use polaris_openshell_policy::Policy;
 use polaris_sdk::ids::Cid;
 use polaris_sdk::registry::{
@@ -36,7 +36,7 @@ pub const MAX_SNAPSHOT_PAGE_ENTRIES: u32 = 4096;
 /// Maximum total entries accepted from one immutable guest snapshot.
 pub const MAX_SNAPSHOT_TOTAL_ENTRIES: u64 = 100_000;
 const GATEWAY_VERSION: &str = "0.1.4";
-const CONNECT_STARTUP_DEADLINE: Duration = Duration::from_secs(3);
+const CONNECT_STARTUP_DEADLINE: Duration = Duration::from_secs(10);
 const CONNECT_RETRY_BACKOFF: Duration = Duration::from_millis(150);
 
 /// TLS materials read from a per-machine OpenShell gateway certificate directory.
@@ -96,6 +96,17 @@ pub enum DriverKind {
     Docker,
     /// OpenShell libkrun driver. Experimental and requires KVM on the gateway host.
     Vm,
+}
+
+/// Nonsecret driver identity reported by the authenticated OpenShell gateway.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GatewayDriverInfo {
+    /// Gateway-selected name used for routing and configuration.
+    pub configured_name: String,
+    /// Driver implementation name advertised by the selected driver.
+    pub driver_name: String,
+    /// Driver implementation version advertised during gateway startup.
+    pub driver_version: String,
 }
 
 /// Resolve a `SandboxSpec.policy` CID to the exact canonical YAML bytes.
@@ -166,6 +177,7 @@ pub struct OpenShellBackend<P = PolicyCatalog> {
     client: Arc<OpenShellClient>,
     policies: P,
     config: OpenShellConfig,
+    gateway_driver: GatewayDriverInfo,
 }
 
 impl<P: std::fmt::Debug> std::fmt::Debug for OpenShellBackend<P> {
@@ -217,7 +229,7 @@ impl<P: PolicySource> OpenShellBackend<P> {
             Ok(channel) => channel,
             Err(ConnectRetryError::Deadline) => {
                 return Err(SandboxError::Unavailable(
-                    "OpenShell gateway connection exceeded the 3 second startup deadline"
+                    "OpenShell gateway connection exceeded the 10 second startup deadline"
                         .to_owned(),
                 ));
             }
@@ -236,11 +248,19 @@ impl<P: PolicySource> OpenShellBackend<P> {
                 config.expected_version, health.version
             )));
         }
+        let gateway_driver = read_gateway_driver(&client).await?;
+        validate_gateway_driver_kind(&gateway_driver, config.driver)?;
         Ok(Self {
             client: Arc::new(client),
             policies,
             config,
+            gateway_driver,
         })
+    }
+
+    /// Return the authenticated gateway's selected, nonsecret driver metadata.
+    pub fn gateway_driver_info(&self) -> &GatewayDriverInfo {
+        &self.gateway_driver
     }
 
     /// Return the configured gateway driver.
@@ -288,8 +308,10 @@ impl<P: PolicySource> OpenShellBackend<P> {
             ));
         }
         let wire_policy = to_wire_policy(policy.document())?;
+        let resources = sandbox_resource_limits(spec.cpu_millis, spec.memory_mib);
         let template = Some(proto::SandboxTemplate {
             image: image.to_owned(),
+            resources,
             ..Default::default()
         });
         let request = raw::CreateSandboxRequest {
@@ -373,12 +395,6 @@ impl<P: PolicySource> OpenShellBackend<P> {
             .map_err(|error| SandboxError::Protocol(error.to_string()))?;
         let policy = Policy::parse_yaml(text)
             .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
-        if spec.cpu_millis.is_some() || spec.memory_mib.is_some() {
-            return Err(SandboxError::Protocol(
-                "OpenShell v0.1.4 SDK adapter cannot apply per-sandbox CPU/memory limits"
-                    .to_owned(),
-            ));
-        }
         self.create_raw(spec, bytes, policy, providers).await
     }
 
@@ -552,12 +568,6 @@ impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
             .map_err(|error| SandboxError::Protocol(error.to_string()))?;
         let policy = Policy::parse_yaml(text)
             .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
-        if spec.cpu_millis.is_some() || spec.memory_mib.is_some() {
-            return Err(SandboxError::Protocol(
-                "OpenShell v0.1.4 SDK adapter cannot apply per-sandbox CPU/memory limits"
-                    .to_owned(),
-            ));
-        }
         self.create_raw(spec, bytes, policy, &[]).await
     }
 
@@ -687,15 +697,24 @@ impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
 
     async fn destroy(&self, sandbox: &SandboxHandle) -> Result<(), SandboxError> {
         let sandbox_name = String::from(sandbox.clone());
-        match self
+        let result = match self
             .client
             .delete_sandbox(&sandbox_name, Default::default())
             .await
         {
-            Ok(_) => Ok(()),
-            Err(error) if error.to_string().to_ascii_lowercase().contains("not found") => Ok(()),
-            Err(error) => Err(SandboxError::Unavailable(error.to_string())),
-        }
+            Ok(result) => result,
+            Err(SdkError::NotFound { .. }) => return Ok(()),
+            Err(error) => return Err(SandboxError::Unavailable(error.to_string())),
+        };
+        let expected_sandbox_id = validate_delete_ack(result)?;
+        self.client
+            .wait_deleted(
+                &sandbox_name,
+                Duration::from_secs(30),
+                expected_sandbox_id.as_deref(),
+            )
+            .await
+            .map_err(|error| SandboxError::Unavailable(error.to_string()))
     }
 
     async fn conditional_commit(
@@ -744,8 +763,9 @@ impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
             Ok(())
         } else {
             Err(SandboxError::Protocol(format!(
-                "sync-init helper exited with code {}",
-                output.exit_code
+                "sync-init helper exited with code {}: {}",
+                output.exit_code,
+                diagnostic_preview(&output.stderr, 2048)
             )))
         }
     }
@@ -919,6 +939,78 @@ fn map_create_error(error: tonic::Status) -> SandboxError {
     }
 }
 
+const fn expected_driver_name(kind: DriverKind) -> &'static str {
+    match kind {
+        DriverKind::Docker => "docker",
+        DriverKind::Vm => "vm",
+    }
+}
+
+fn validate_gateway_driver_kind(
+    driver: &GatewayDriverInfo,
+    expected: DriverKind,
+) -> Result<(), SandboxError> {
+    let expected_name = expected_driver_name(expected);
+    if driver.driver_name.eq_ignore_ascii_case(expected_name) {
+        Ok(())
+    } else {
+        Err(SandboxError::Protocol(format!(
+            "OpenShell driver mismatch: configured {expected_name}, gateway reports {}",
+            driver.driver_name
+        )))
+    }
+}
+
+async fn read_gateway_driver(client: &OpenShellClient) -> Result<GatewayDriverInfo, SandboxError> {
+    let mut grpc = client
+        .raw_grpc_fresh()
+        .await
+        .map_err(|error| SandboxError::Unavailable(error.to_string()))?;
+    let response = grpc
+        .get_gateway_info(proto::GetGatewayInfoRequest::default())
+        .await
+        .map_err(|error| SandboxError::Unavailable(error.to_string()))?
+        .into_inner();
+    let mut drivers = response.compute_drivers.into_iter();
+    let driver = drivers.next().ok_or_else(|| {
+        SandboxError::Protocol("OpenShell gateway reports no selected compute driver".to_owned())
+    })?;
+    if drivers.next().is_some() {
+        return Err(SandboxError::Protocol(
+            "OpenShell gateway reports multiple selected compute drivers".to_owned(),
+        ));
+    }
+    let capabilities = driver.capabilities.ok_or_else(|| {
+        SandboxError::Protocol("OpenShell compute driver omitted capabilities".to_owned())
+    })?;
+    if driver.name.trim().is_empty()
+        || capabilities.driver_name.trim().is_empty()
+        || capabilities.driver_version.trim().is_empty()
+    {
+        return Err(SandboxError::Protocol(
+            "OpenShell gateway returned incomplete compute driver identity".to_owned(),
+        ));
+    }
+    Ok(GatewayDriverInfo {
+        configured_name: driver.name,
+        driver_name: capabilities.driver_name,
+        driver_version: capabilities.driver_version,
+    })
+}
+
+fn validate_delete_ack(
+    result: openshell_sdk::DeletionResult,
+) -> Result<Option<String>, SandboxError> {
+    match result.outcome {
+        DeletionOutcome::Completed => Ok(result.sandbox_id),
+        DeletionOutcome::AlreadyAbsent if result.sandbox_id.is_none() => Ok(None),
+        DeletionOutcome::Accepted if result.sandbox_id.is_some() => Ok(result.sandbox_id),
+        outcome => Err(SandboxError::Protocol(format!(
+            "gateway returned invalid delete acknowledgement {outcome:?}"
+        ))),
+    }
+}
+
 fn extend_bounded(target: &mut Vec<u8>, chunk: &[u8]) -> Result<(), SandboxError> {
     let new_len = target
         .len()
@@ -931,6 +1023,10 @@ fn extend_bounded(target: &mut Vec<u8>, chunk: &[u8]) -> Result<(), SandboxError
     }
     target.extend_from_slice(chunk);
     Ok(())
+}
+
+fn diagnostic_preview(bytes: &[u8], limit: usize) -> String {
+    String::from_utf8_lossy(&bytes[..bytes.len().min(limit)]).into_owned()
 }
 
 fn validate_path(path: &str) -> Result<(), SandboxError> {
@@ -962,6 +1058,45 @@ fn validate_gateway_name(name: &str) -> Result<(), SandboxError> {
         return Err(SandboxError::Protocol("OpenShell v0.1.4 sandbox names must be 1-19 ASCII characters, begin with an alphanumeric, and contain only alphanumerics, '-', '_' or '.'".to_owned()));
     }
     Ok(())
+}
+
+/// Convert Polaris quota units to the pinned gateway's Kubernetes-style limit Struct.
+/// OpenShell v0.1.4's curated `SandboxSpec` omits CPU/memory, so create uses the
+/// SDK-authenticated raw RPC and this official `SandboxTemplate.resources` field.
+fn sandbox_resource_limits(
+    cpu_millis: Option<u32>,
+    memory_mib: Option<u32>,
+) -> Option<prost_types::Struct> {
+    use prost_types::{Struct, Value, value::Kind};
+
+    let mut limits = BTreeMap::new();
+    if let Some(cpu_millis) = cpu_millis {
+        limits.insert(
+            "cpu".to_owned(),
+            Value {
+                kind: Some(Kind::StringValue(format!("{cpu_millis}m"))),
+            },
+        );
+    }
+    if let Some(memory_mib) = memory_mib {
+        limits.insert(
+            "memory".to_owned(),
+            Value {
+                kind: Some(Kind::StringValue(format!("{memory_mib}Mi"))),
+            },
+        );
+    }
+    if limits.is_empty() {
+        return None;
+    }
+    Some(Struct {
+        fields: BTreeMap::from([(
+            "limits".to_owned(),
+            Value {
+                kind: Some(Kind::StructValue(Struct { fields: limits })),
+            },
+        )]),
+    })
 }
 
 fn validate_image_reference(image: &str) -> Result<(), SandboxError> {
@@ -1338,6 +1473,35 @@ mod tests {
     use polaris_openshell_policy::{AgentRole, ExecTier, policy_for};
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+    #[test]
+    fn quota_limits_use_the_gateway_struct_shape_and_units() {
+        let Some(resources) = sandbox_resource_limits(Some(1_000), Some(512)) else {
+            panic!("requested limits should be present")
+        };
+        let Some(prost_types::value::Kind::StructValue(limits)) = resources
+            .fields
+            .get("limits")
+            .and_then(|value| value.kind.as_ref())
+        else {
+            panic!("limits object should be present")
+        };
+        assert_eq!(
+            limits
+                .fields
+                .get("cpu")
+                .and_then(|value| value.kind.as_ref()),
+            Some(&prost_types::value::Kind::StringValue("1000m".to_owned()))
+        );
+        assert_eq!(
+            limits
+                .fields
+                .get("memory")
+                .and_then(|value| value.kind.as_ref()),
+            Some(&prost_types::value::Kind::StringValue("512Mi".to_owned()))
+        );
+        assert!(sandbox_resource_limits(None, None).is_none());
+    }
+
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum ConnectTestError {
         Transient,
@@ -1446,6 +1610,52 @@ mod tests {
             map_create_error(tonic::Status::permission_denied("denied")),
             SandboxError::Unavailable(_)
         ));
+    }
+
+    #[test]
+    fn gateway_driver_identity_must_match_the_selected_backend() {
+        let docker = GatewayDriverInfo {
+            configured_name: "default".to_owned(),
+            driver_name: "docker".to_owned(),
+            driver_version: "test".to_owned(),
+        };
+        assert!(validate_gateway_driver_kind(&docker, DriverKind::Docker).is_ok());
+        assert!(validate_gateway_driver_kind(&docker, DriverKind::Vm).is_err());
+    }
+
+    #[test]
+    fn delete_acknowledgements_require_a_terminal_or_pollable_target() {
+        let original_id = "sandbox-id".to_owned();
+        assert_eq!(
+            validate_delete_ack(openshell_sdk::DeletionResult {
+                outcome: DeletionOutcome::Accepted,
+                sandbox_id: Some(original_id.clone()),
+            })
+            .ok(),
+            Some(Some(original_id.clone()))
+        );
+        assert_eq!(
+            validate_delete_ack(openshell_sdk::DeletionResult {
+                outcome: DeletionOutcome::AlreadyAbsent,
+                sandbox_id: None,
+            })
+            .ok(),
+            Some(None)
+        );
+        assert!(
+            validate_delete_ack(openshell_sdk::DeletionResult {
+                outcome: DeletionOutcome::Accepted,
+                sandbox_id: None,
+            })
+            .is_err()
+        );
+        assert!(
+            validate_delete_ack(openshell_sdk::DeletionResult {
+                outcome: DeletionOutcome::Unspecified,
+                sandbox_id: Some(original_id),
+            })
+            .is_err()
+        );
     }
 
     #[test]

@@ -9,6 +9,10 @@ use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
 use polaris_sdk::registry::{CommitOutcome, SandboxCommitRequest};
+#[cfg(target_os = "linux")]
+use polaris_sdk::registry::{SandboxBatchResult, SandboxSyncBatch};
+#[cfg(target_os = "linux")]
+use std::collections::BTreeMap;
 
 const MAX_REQUEST_BYTES: u64 = 64 * 1024;
 
@@ -41,6 +45,24 @@ fn init_workspace(root: &str) -> Result<(), CommitError> {
 #[cfg(target_os = "linux")]
 pub(crate) fn prepare_workspace(root: &str) -> Result<(), String> {
     init_workspace(root).map_err(|error| error.to_string())
+}
+
+/// Apply a fully validated batch with one locked expected-state preflight.
+#[cfg(target_os = "linux")]
+pub(crate) fn commit_batch(
+    root: &std::path::Path,
+    batch: &SandboxSyncBatch,
+    payloads: &BTreeMap<String, Vec<u8>>,
+) -> Result<SandboxBatchResult, String> {
+    #[cfg(target_os = "linux")]
+    {
+        linux::commit_batch(root, batch, payloads).map_err(|error| error.to_string())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (root, batch, payloads);
+        Err("batch sync is unsupported on this platform".into())
+    }
 }
 
 /// Read one bounded request and execute it. Exit status: 0 applied, 3 conflict, 2 invalid/error.
@@ -99,8 +121,9 @@ enum CommitError {
 
 #[cfg(target_os = "linux")]
 mod linux {
+    use std::collections::BTreeMap;
     use std::fs::{self, OpenOptions};
-    use std::io::{self, Read};
+    use std::io::{self, Read, Write};
     use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
     use std::path::{Component, Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -110,7 +133,8 @@ mod linux {
     use fs4::FileExt;
     use polaris_sdk::ids::Cid;
     use polaris_sdk::registry::{
-        CommitOutcome, SandboxCommitAction, SandboxCommitRequest, SandboxFileState,
+        CommitOutcome, SandboxBatchAction, SandboxBatchMutation, SandboxBatchResult,
+        SandboxCommitAction, SandboxCommitRequest, SandboxFileState, SandboxSyncBatch,
     };
 
     use super::CommitError;
@@ -121,7 +145,15 @@ mod linux {
     static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     pub(super) fn commit(request: &SandboxCommitRequest) -> Result<CommitOutcome, CommitError> {
-        let root = checked_root(&request.root)?;
+        commit_under(request, Path::new("/sandbox"), false)
+    }
+
+    fn commit_under(
+        request: &SandboxCommitRequest,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<CommitOutcome, CommitError> {
+        let root = checked_root_under(&request.root, trusted_base, allow_base)?;
         let relative = checked_relative_path(&request.relative_path)?;
         ensure_not_reserved(&relative)?;
 
@@ -195,7 +227,200 @@ mod linux {
     }
 
     pub(super) fn init_workspace(root: &str) -> Result<(), CommitError> {
-        let root = checked_root(root)?;
+        init_workspace_under(root, Path::new("/sandbox"), false)
+    }
+
+    pub(super) fn commit_batch(
+        root: &Path,
+        batch: &SandboxSyncBatch,
+        payloads: &BTreeMap<String, Vec<u8>>,
+    ) -> Result<SandboxBatchResult, CommitError> {
+        commit_batch_under(root, batch, payloads, Path::new("/sandbox"), false)
+    }
+
+    fn commit_batch_under(
+        root_path: &Path,
+        batch: &SandboxSyncBatch,
+        payloads: &BTreeMap<String, Vec<u8>>,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<SandboxBatchResult, CommitError> {
+        let root = checked_root_under(
+            root_path.to_str().ok_or(CommitError::Invalid)?,
+            trusted_base,
+            allow_base,
+        )?;
+        if batch.version != 1 || batch.root != root.to_string_lossy() || batch.mutations.is_empty()
+        {
+            return Err(CommitError::Invalid);
+        }
+        let owner = fs::symlink_metadata(&root)?.uid();
+        let sync_dir = root.join(".polaris/sync");
+        let staging = sync_dir.join("staging");
+        ensure_private_dir(&root.join(".polaris"), owner)?;
+        ensure_private_dir(&sync_dir, owner)?;
+        ensure_private_dir(&staging, owner)?;
+        if fs::symlink_metadata(&staging)?.dev() != fs::symlink_metadata(&root)?.dev() {
+            return Err(CommitError::Invalid);
+        }
+        let lock = open_private_lock(&sync_dir.join("lock"), owner)?;
+        FileExt::lock(&lock)?;
+
+        let mut seen = std::collections::BTreeSet::new();
+        let mut targets = Vec::with_capacity(batch.mutations.len());
+        let mut conflicts = Vec::new();
+        for mutation in &batch.mutations {
+            let relative = checked_relative_path(&mutation.relative_path)?;
+            ensure_not_reserved(&relative)?;
+            if !seen.insert(mutation.relative_path.as_str()) {
+                return Err(CommitError::Invalid);
+            }
+            let target = checked_target(&root, &relative)?;
+            if observe(&target)?.as_ref() != mutation.expected.as_ref() {
+                conflicts.push(mutation.relative_path.clone());
+            }
+            targets.push((mutation, relative, target));
+        }
+        if !conflicts.is_empty() {
+            let conflict_paths = conflicts
+                .iter()
+                .map(String::as_str)
+                .collect::<std::collections::BTreeSet<_>>();
+            let failed = batch
+                .mutations
+                .iter()
+                .filter(|mutation| !conflict_paths.contains(mutation.relative_path.as_str()))
+                .map(|mutation| mutation.relative_path.clone())
+                .collect();
+            FileExt::unlock(&lock)?;
+            return Ok(SandboxBatchResult {
+                applied: Vec::new(),
+                conflicts,
+                failed,
+            });
+        }
+
+        let mut prepared = Vec::with_capacity(targets.len());
+        for (mutation, relative, target) in &targets {
+            if !matches!(&mutation.action, SandboxBatchAction::Delete) {
+                ensure_target_parents(&root, relative)?;
+                recheck_target_parents(&root, relative)?;
+            }
+            let temp = match &mutation.action {
+                SandboxBatchAction::Delete => None,
+                SandboxBatchAction::File {
+                    payload,
+                    hash,
+                    executable,
+                } => {
+                    let bytes = payloads.get(payload).ok_or(CommitError::Invalid)?;
+                    if u64::try_from(bytes.len()).map_err(|_| CommitError::Invalid)?
+                        > MAX_FILE_BYTES
+                        || cid(blake3::hash(bytes).as_bytes()) != *hash
+                    {
+                        return Err(CommitError::Invalid);
+                    }
+                    let anchor = staging.join(target.file_name().ok_or(CommitError::Invalid)?);
+                    let temp = unique_temp(&anchor)?;
+                    let mut options = OpenOptions::new();
+                    options
+                        .write(true)
+                        .create_new(true)
+                        .mode(0o600)
+                        .custom_flags(O_NOFOLLOW);
+                    let mut file = options.open(&temp)?;
+                    file.write_all(bytes)?;
+                    file.sync_all()?;
+                    fs::set_permissions(
+                        &temp,
+                        fs::Permissions::from_mode(if *executable { 0o755 } else { 0o644 }),
+                    )?;
+                    Some(temp)
+                }
+                SandboxBatchAction::Link { target: link, hash } => {
+                    if cid(blake3::hash(link.as_bytes()).as_bytes()) != *hash
+                        || !safe_link_target(
+                            relative.parent().unwrap_or_else(|| Path::new("")),
+                            link,
+                        )
+                    {
+                        return Err(CommitError::Invalid);
+                    }
+                    let anchor = staging.join(target.file_name().ok_or(CommitError::Invalid)?);
+                    let temp = unique_temp(&anchor)?;
+                    std::os::unix::fs::symlink(link, &temp)?;
+                    Some(temp)
+                }
+            };
+            prepared.push((
+                mutation.relative_path.clone(),
+                &mutation.action,
+                target.clone(),
+                temp,
+            ));
+        }
+
+        let mut result = apply_prepared(&prepared, |action, target, temp| match action {
+            SandboxBatchAction::Delete => match fs::symlink_metadata(target) {
+                Ok(_) => fs::remove_file(target),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+                Err(error) => Err(error),
+            },
+            _ => fs::rename(
+                temp.as_ref()
+                    .ok_or_else(|| io::Error::other("missing prepared file"))?,
+                target,
+            ),
+        });
+        for (name, _, _, temp) in &prepared {
+            if let Some(path) = temp {
+                if let Err(error) = fs::remove_file(path) {
+                    if error.kind() != io::ErrorKind::NotFound {
+                        result.failed.push(name.clone());
+                    }
+                }
+            }
+        }
+        FileExt::unlock(&lock)?;
+        Ok(result)
+    }
+
+    fn apply_prepared<F>(
+        prepared: &[(String, &SandboxBatchAction, PathBuf, Option<PathBuf>)],
+        mut apply_one: F,
+    ) -> SandboxBatchResult
+    where
+        F: FnMut(&SandboxBatchAction, &Path, &Option<PathBuf>) -> io::Result<()>,
+    {
+        let mut result = SandboxBatchResult {
+            applied: Vec::new(),
+            conflicts: Vec::new(),
+            failed: Vec::new(),
+        };
+        for (index, (name, action, target, temp)) in prepared.iter().enumerate() {
+            match apply_one(action, target, temp) {
+                Ok(()) => result.applied.push(name.clone()),
+                Err(_) => {
+                    result.failed.push(name.clone());
+                    result.failed.extend(
+                        prepared
+                            .iter()
+                            .skip(index.saturating_add(1))
+                            .map(|(path, _, _, _)| path.clone()),
+                    );
+                    break;
+                }
+            }
+        }
+        result
+    }
+
+    fn init_workspace_under(
+        root: &str,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<(), CommitError> {
+        let root = checked_root_under(root, trusted_base, allow_base)?;
         let owner = fs::symlink_metadata(&root)?.uid();
         let polaris = root.join(".polaris");
         let sync_dir = polaris.join("sync");
@@ -206,7 +431,11 @@ mod linux {
         Ok(())
     }
 
-    fn checked_root(root: &str) -> Result<PathBuf, CommitError> {
+    fn checked_root_under(
+        root: &str,
+        trusted_base: &Path,
+        allow_base: bool,
+    ) -> Result<PathBuf, CommitError> {
         if root.is_empty()
             || root.len() > MAX_PATH_BYTES
             || !root.starts_with('/')
@@ -222,7 +451,12 @@ mod linux {
             return Err(CommitError::Invalid);
         }
         let canonical = fs::canonicalize(&path)?;
-        if canonical != path || !fs::symlink_metadata(&canonical)?.is_dir() {
+        let base = fs::canonicalize(trusted_base)?;
+        if canonical != path
+            || (!allow_base && canonical == base)
+            || !canonical.starts_with(&base)
+            || !fs::symlink_metadata(&canonical)?.is_dir()
+        {
             return Err(CommitError::Invalid);
         }
         Ok(canonical)
@@ -546,6 +780,22 @@ mod linux {
             path
         }
 
+        fn init_workspace(root: &str) -> Result<(), CommitError> {
+            super::init_workspace_under(root, Path::new(root), true)
+        }
+
+        fn commit(request: &SandboxCommitRequest) -> Result<CommitOutcome, CommitError> {
+            super::commit_under(request, Path::new(&request.root), true)
+        }
+
+        fn commit_batch(
+            root: &Path,
+            batch: &SandboxSyncBatch,
+            payloads: &BTreeMap<String, Vec<u8>>,
+        ) -> Result<SandboxBatchResult, CommitError> {
+            super::commit_batch_under(root, batch, payloads, root, true)
+        }
+
         #[test]
         fn sync_init_creates_only_private_staging_hierarchy_and_is_idempotent() {
             let workspace = TempWorkspace::new();
@@ -615,6 +865,115 @@ mod linux {
                 executable,
                 link_target: None,
             }
+        }
+
+        #[test]
+        fn batch_conflict_applies_nothing_and_preserves_intervening_edit() {
+            let workspace = TempWorkspace::new();
+            let root = workspace.path();
+            prepare_staging(root);
+            let target = root.join("keep.txt");
+            fs::write(&target, b"intervening edit").expect("target");
+            let wrong = state(b"old bytes", false);
+            let batch = SandboxSyncBatch {
+                version: 1,
+                root: root.to_string_lossy().into_owned(),
+                mutations: vec![SandboxBatchMutation {
+                    relative_path: "keep.txt".into(),
+                    expected: Some(wrong),
+                    action: SandboxBatchAction::Delete,
+                }],
+            };
+            let result = commit_batch(root, &batch, &BTreeMap::new()).expect("CAS result");
+            assert!(result.applied.is_empty());
+            assert_eq!(result.conflicts, ["keep.txt"]);
+            assert_eq!(
+                fs::read(target).expect("preserved target"),
+                b"intervening edit"
+            );
+        }
+
+        #[test]
+        fn batch_preserves_crlf_mode_link_target_and_delete() {
+            let workspace = TempWorkspace::new();
+            let root = workspace.path();
+            prepare_staging(root);
+            let gone = root.join("gone.txt");
+            fs::write(&gone, b"gone").expect("old file");
+            let gone_state = SandboxFileState {
+                hash: hash_file(&gone).expect("hash"),
+                executable: false,
+                link_target: None,
+            };
+            let bytes = b"first\r\nsecond\r\n";
+            let batch = SandboxSyncBatch {
+                version: 1,
+                root: root.to_string_lossy().into_owned(),
+                mutations: vec![
+                    SandboxBatchMutation {
+                        relative_path: "dir/file.txt".into(),
+                        expected: None,
+                        action: SandboxBatchAction::File {
+                            payload: "payload/000000".into(),
+                            hash: cid(blake3::hash(bytes).as_bytes()),
+                            executable: true,
+                        },
+                    },
+                    SandboxBatchMutation {
+                        relative_path: "dir/link".into(),
+                        expected: None,
+                        action: SandboxBatchAction::Link {
+                            target: "file.txt".into(),
+                            hash: cid(blake3::hash(b"file.txt").as_bytes()),
+                        },
+                    },
+                    SandboxBatchMutation {
+                        relative_path: "gone.txt".into(),
+                        expected: Some(gone_state),
+                        action: SandboxBatchAction::Delete,
+                    },
+                ],
+            };
+            let payloads = BTreeMap::from([("payload/000000".into(), bytes.to_vec())]);
+            let result = commit_batch(root, &batch, &payloads).expect("batch");
+            assert_eq!(result.applied, ["dir/file.txt", "dir/link", "gone.txt"]);
+            let file = root.join("dir/file.txt");
+            assert_eq!(fs::read(&file).expect("bytes"), bytes);
+            assert_ne!(
+                fs::metadata(&file).expect("mode").permissions().mode() & 0o111,
+                0
+            );
+            assert_eq!(
+                fs::read_link(root.join("dir/link")).expect("link"),
+                PathBuf::from("file.txt")
+            );
+            assert!(!gone.exists());
+        }
+
+        #[test]
+        fn partial_batch_failure_reports_exact_applied_and_unstarted_paths() {
+            let actions = [
+                SandboxBatchAction::Delete,
+                SandboxBatchAction::Delete,
+                SandboxBatchAction::Delete,
+            ];
+            let prepared = vec![
+                ("one".into(), &actions[0], PathBuf::from("one"), None),
+                ("two".into(), &actions[1], PathBuf::from("two"), None),
+                ("three".into(), &actions[2], PathBuf::from("three"), None),
+            ];
+            let mut calls = 0usize;
+            let result = apply_prepared(&prepared, |_, _, _| {
+                calls += 1;
+                if calls == 2 {
+                    Err(io::Error::other("injected filesystem failure"))
+                } else {
+                    Ok(())
+                }
+            });
+            assert_eq!(result.applied, ["one"]);
+            assert_eq!(result.failed, ["two", "three"]);
+            assert!(result.conflicts.is_empty());
         }
 
         #[test]

@@ -56,6 +56,8 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                 .collect::<String>()
         )),
         policy: Some(cid),
+        cpu_millis: Some(1_000),
+        memory_mib: Some(512),
         ..Default::default()
     };
     let sandbox = backend.create(&spec).await?;
@@ -151,6 +153,33 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                 "live file listing omitted uploaded file".to_owned(),
             ));
         }
+        let sync_root = "/sandbox/p2-sync-contract";
+        let made_sync_root = backend
+            .exec(
+                &sandbox,
+                &ExecRequest {
+                    argv: vec![
+                        "mkdir".to_owned(),
+                        "-p".to_owned(),
+                        sync_root.to_owned(),
+                    ],
+                    ..Default::default()
+                },
+            )
+            .await?;
+        if made_sync_root.exit_code != 0 {
+            return Err(polaris_sdk::registry::SandboxError::Protocol(
+                "could not create live sync contract root".to_owned(),
+            ));
+        }
+        backend.prepare_sync(&sandbox, sync_root).await?;
+        backend
+            .upload(
+                &sandbox,
+                &format!("{sync_root}/polaris-p2-contract.bin"),
+                content.clone(),
+            )
+            .await?;
         let toolchain_dir = "/sandbox/.polaris/openshell-toolchain-contract";
         let made_toolchain_dir = backend
             .exec(
@@ -204,6 +233,8 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                         ("CARGO_HOME".to_owned(), "/sandbox/cargo".to_owned()),
                         ("CARGO_TARGET_DIR".to_owned(), "/sandbox/build".to_owned()),
                         ("CARGO_NET_OFFLINE".to_owned(), "true".to_owned()),
+                        ("RUSTUP_HOME".to_owned(), "/usr/local/rustup".to_owned()),
+                        ("RUSTUP_TOOLCHAIN".to_owned(), "1.99.0".to_owned()),
                         ("RUSTUP_AUTO_INSTALL".to_owned(), "0".to_owned()),
                     ],
                     ..Default::default()
@@ -220,9 +251,8 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                 String::from_utf8_lossy(&cargo_test.stderr),
             )));
         }
-        backend.prepare_sync(&sandbox, "/sandbox").await?;
         let snapshot = backend
-            .snapshot_page(&sandbox, "/sandbox", None, 0, 128)
+            .snapshot_page(&sandbox, sync_root, None, 0, 128)
             .await?;
         if !snapshot
             .entries
@@ -252,15 +282,15 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                 ));
             }
         }
-        let stage_dir = "/sandbox/.polaris/sync/staging";
+        let stage_dir = format!("{sync_root}/.polaris/sync/staging");
         let staged_path = format!("{stage_dir}/contract-stage.bin");
-        let destination = "/sandbox/polaris-p2-committed.bin";
+        let destination = format!("{sync_root}/polaris-p2-committed.bin");
         backend
             .upload(&sandbox, &staged_path, content.clone())
             .await?;
         let content_hash = polaris_sdk::ids::Cid::from_bytes(*blake3::hash(&content).as_bytes());
         let commit = SandboxCommitRequest {
-            root: "/sandbox".to_owned(),
+            root: sync_root.to_owned(),
             relative_path: "polaris-p2-committed.bin".to_owned(),
             expected: None,
             action: SandboxCommitAction::File {
@@ -274,7 +304,7 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
                 "initial live conditional commit did not apply".to_owned(),
             ));
         }
-        if backend.download(&sandbox, destination).await? != content {
+        if backend.download(&sandbox, &destination).await? != content {
             return Err(polaris_sdk::registry::SandboxError::Protocol(
                 "live conditional commit content mismatch".to_owned(),
             ));

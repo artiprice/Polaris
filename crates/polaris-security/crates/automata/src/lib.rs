@@ -13,8 +13,9 @@
 //!   secret candidates.
 //! - [`DfaRedactor`] — the sdk `Redactor` for logs and model-bound text.
 //!
-//! Residual risk: secrets that are encoded, split across tokens or disguised with homoglyphs or
-//! zero-width characters are not detected.
+//! Residual risk: secrets that are encoded, line-folded, split across semantic tokens, or disguised
+//! with homoglyphs or zero-width characters are not detected. Finite-width stream scanning only
+//! preserves matches across byte chunks when callers use [`StreamScanner`].
 //!
 //! Test-first descriptors: `specs/descriptors/automata_*.json`.
 

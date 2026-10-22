@@ -15,7 +15,7 @@ use tokio::sync::{broadcast, watch};
 
 use super::{
     key::LeaseKey,
-    scope::{LeaseScope, scopes_conflict},
+    scope::{LeaseScope, scopes_conflict, scopes_overlap},
 };
 
 const MAX_REQUESTS_PER_ACQUIRE: usize = 256;
@@ -230,9 +230,15 @@ struct Inner {
     config: LeaseConfig,
     state: Mutex<State>,
     changed: watch::Sender<u64>,
-    holders: ArcSwap<Vec<Holder>>,
+    holders: ArcSwap<HolderSnapshot>,
     invalidations: broadcast::Sender<Invalidation>,
     ticket_token: Arc<()>,
+}
+
+#[derive(Default)]
+struct HolderSnapshot {
+    holders: Vec<Holder>,
+    ranges: HashMap<LeaseKey, std::ops::Range<usize>>,
 }
 
 /// Shared lease manager. `holder_of` reads a published immutable snapshot without taking the
@@ -260,7 +266,7 @@ impl LeaseManager {
                 config,
                 state: Mutex::new(State::default()),
                 changed,
-                holders: ArcSwap::from_pointee(Vec::new()),
+                holders: ArcSwap::from_pointee(HolderSnapshot::default()),
                 invalidations,
                 ticket_token: Arc::new(()),
             }),
@@ -367,12 +373,12 @@ impl LeaseManager {
     #[must_use]
     pub fn holder_of(&self, key: &LeaseKey, scope: &LeaseScope) -> Option<(FrameId, LeaseId)> {
         let snapshot = self.inner.holders.load();
-        snapshot
+        let range = snapshot.ranges.get(key)?;
+        let holders = snapshot.holders.get(range.clone())?;
+        let now = Instant::now();
+        holders
             .iter()
-            .find(|holder| {
-                holder.expires > Instant::now()
-                    && scopes_conflict(key, scope, &holder.key, &holder.scope)
-            })
+            .find(|holder| holder.expires > now && scopes_overlap(scope, &holder.scope))
             .map(|holder| (holder.agent, holder.id))
     }
 
@@ -601,6 +607,7 @@ impl LeaseGuard {
     pub fn owner(&self) -> Option<FrameId> {
         let snapshot = self.inner.holders.load();
         snapshot
+            .holders
             .iter()
             .find(|holder| holder.id == self.id && holder.expires > Instant::now())
             .map(|holder| holder.agent)
@@ -811,12 +818,24 @@ fn reap_locked(inner: &Arc<Inner>, state: &mut State, now: Instant) -> usize {
 }
 
 fn publish_holders(inner: &Inner, state: &State) {
-    let snapshot = state
+    let mut snapshot: Vec<_> = state
         .active
         .iter()
         .map(|record| record.holder.clone())
         .collect();
-    inner.holders.store(Arc::new(snapshot));
+    snapshot.sort_by(|left, right| left.key.cmp(&right.key));
+    let mut ranges: HashMap<LeaseKey, std::ops::Range<usize>> = HashMap::new();
+    for (index, holder) in snapshot.iter().enumerate() {
+        let end = index.saturating_add(1);
+        ranges
+            .entry(holder.key.clone())
+            .and_modify(|range| range.end = end)
+            .or_insert(index..end);
+    }
+    inner.holders.store(Arc::new(HolderSnapshot {
+        holders: snapshot,
+        ranges,
+    }));
 }
 
 fn lock_state(mutex: &Mutex<State>) -> MutexGuard<'_, State> {

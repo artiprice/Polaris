@@ -271,7 +271,8 @@ impl Aggregates {
             | Event::SessionClosed
             | Event::SessionConfigured { .. }
             | Event::SessionPaused
-            | Event::SessionResumed => {}
+            | Event::SessionResumed
+            | Event::BlastRadiusAlert { .. } => {}
         }
     }
 

@@ -4315,6 +4315,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo",
+ "tar",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
@@ -4531,6 +4532,7 @@ dependencies = [
  "polaris-log",
  "polaris-openshell-policy",
  "polaris-sdk",
+ "prost-types 0.14.4",
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
@@ -4712,8 +4714,11 @@ name = "polaris-runtime-leases"
 version = "0.1.0-alpha"
 dependencies = [
  "arc-swap",
+ "dhat",
  "polaris-code-intel",
  "polaris-sdk",
+ "proptest",
+ "tempfile",
  "thiserror 2.0.21",
  "tokio",
 ]
@@ -4966,6 +4971,7 @@ dependencies = [
  "ignore",
  "polaris-sdk",
  "proptest",
+ "serde_json",
  "tar",
  "tempfile",
  "thiserror 2.0.21",

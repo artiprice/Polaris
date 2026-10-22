@@ -1,0 +1,36 @@
+{
+  "type_of": "function",
+  "name": "encode_batch_archive",
+  "file_path": "crates/polaris-storage/crates/sync/src/batch.rs",
+  "logic_name": "Bounded Sync Batch Archive",
+  "test_list": [
+    {
+      "test_name": "archive_roundtrips_manifest_and_exact_payload_bytes",
+      "description": "The deterministic tar contains the typed manifest first and preserves exact file bytes including CRLF and NUL."
+    },
+    {
+      "test_name": "rejects_wrong_hash_deny_paths_and_unbounded_inputs",
+      "description": "Payload digests, protected paths and mutation limits fail closed before transfer."
+    }
+  ],
+  "dependencies": [
+    "SandboxSyncBatch",
+    "SandboxBatchAction",
+    "RelPath"
+  ],
+  "libraries": ["tar", "serde_json", "blake3", "bytes"],
+  "inputs": [
+    {
+      "name": "batch",
+      "type": "&SandboxSyncBatch",
+      "description": "Root-bound path mutations, expected states and synthetic payload references."
+    },
+    {
+      "name": "payloads",
+      "type": "&BTreeMap<String, Bytes>",
+      "description": "Exact bytes for each referenced synthetic payload member."
+    }
+  ],
+  "output_type": "Result<Bytes, SyncError>",
+  "output_description": "A deterministic uncompressed tar bounded to 32 MiB with no workspace paths as archive members."
+}

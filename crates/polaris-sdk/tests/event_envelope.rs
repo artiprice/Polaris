@@ -86,6 +86,10 @@ fn all_events() -> Vec<Event> {
         },
         Event::SessionPaused,
         Event::SessionResumed,
+        Event::BlastRadiusAlert {
+            frame,
+            report: cid(17),
+        },
     ]
 }
 
@@ -112,8 +116,8 @@ fn event_record_json_roundtrip() -> TestResult {
 
 #[test]
 fn schema_version_is_current() -> TestResult {
-    assert_eq!(EVENT_SCHEMA_VERSION, 2);
-    assert_eq!(record(Event::SessionClosed)?.schema(), 2);
+    assert_eq!(EVENT_SCHEMA_VERSION, 3);
+    assert_eq!(record(Event::SessionClosed)?.schema(), 3);
     Ok(())
 }
 

@@ -122,7 +122,7 @@ fn decode_rejects_newer_schema_before_parsing() {
         decode_record(&future),
         Err(EventLogError::SchemaTooNew {
             found: 7,
-            supported: 2
+            supported: 3
         })
     ));
 }

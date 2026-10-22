@@ -20,7 +20,7 @@ use crate::hex;
 use crate::ids::{AgentRole, Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 
 /// Current [`EventRecord`] schema version.
-pub const EVENT_SCHEMA_VERSION: u16 = 2;
+pub const EVENT_SCHEMA_VERSION: u16 = 3;
 
 /// Opaque capability token (a serialized Biscuit). The sdk never interprets it and never prints it:
 /// `Debug` shows only the length.
@@ -429,7 +429,7 @@ pub enum WorkerKind {
     Nano,
 }
 
-/// A domain event (schema v2, backwards-readable v1). Fixed-size and `Copy`: text and blobs
+/// A domain event (schema v3, backwards-readable v1/v2). Fixed-size and `Copy`: text and blobs
 /// are [`Cid`] references. Schema 2 adds configuration, pause and resume records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -582,6 +582,13 @@ pub enum Event {
     },
     /// The session closed.
     SessionClosed,
+    /// A conservative blast review awaits explicit operator approval (schema 3).
+    BlastRadiusAlert {
+        /// Frame requesting execution.
+        frame: FrameId,
+        /// Exact immutable review artifact, including blast facts, commands and policy.
+        report: Cid,
+    },
 }
 
 /// Versioned envelope appended to the event store.
@@ -608,6 +615,7 @@ impl EventRecord {
         event: Event,
     ) -> Result<Self, ParseError> {
         let minimum = match event {
+            Event::BlastRadiusAlert { .. } => 3,
             Event::SessionConfigured { .. } | Event::SessionPaused | Event::SessionResumed => 2,
             Event::SessionStarted { .. }
             | Event::DirectiveApplied { .. }
