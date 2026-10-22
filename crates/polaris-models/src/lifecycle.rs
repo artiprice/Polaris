@@ -1,9 +1,15 @@
 //! Shared loader work and lease-counted draining. No state lock is held across an await.
-use core::{fmt, future::Future};
-use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::{sync::{Arc, Mutex, MutexGuard, atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering}}, time::{Duration, Instant}};
-use tokio::{runtime::Handle, sync::Notify, task::JoinHandle};
 use crate::{LoadError, ModelsError};
+use core::{fmt, future::Future};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::{
+    sync::{
+        Arc, Mutex, MutexGuard,
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+    },
+    time::{Duration, Instant},
+};
+use tokio::{runtime::Handle, sync::Notify, task::JoinHandle};
 
 /// Real backend lifecycle contract. `M` must own its resources through RAII as a shutdown fallback.
 /// Load/unload futures must be cancellation-safe: their operation timeout may drop the future.
@@ -30,8 +36,12 @@ pub struct SlotConfig {
 
 impl Default for SlotConfig {
     fn default() -> Self {
-        Self { idle_ttl: Duration::from_secs(45), max_leases: 1024,
-            load_timeout: Duration::from_secs(300), unload_timeout: Duration::from_secs(30) }
+        Self {
+            idle_ttl: Duration::from_secs(45),
+            max_leases: 1024,
+            load_timeout: Duration::from_secs(300),
+            unload_timeout: Duration::from_secs(30),
+        }
     }
 }
 
@@ -93,12 +103,18 @@ struct Tracker {
 
 impl Tracker {
     fn now(&self) -> u64 {
-        match u64::try_from(self.epoch.elapsed().as_micros()) { Ok(now) => now, Err(_) => u64::MAX }
+        match u64::try_from(self.epoch.elapsed().as_micros()) {
+            Ok(now) => now,
+            Err(_) => u64::MAX,
+        }
     }
 }
 
 /// A live resource borrow. The model reference cannot outlive this non-cloneable lease.
-pub struct ModelLease<M> { model: Option<Arc<M>>, tracker: Arc<Tracker> }
+pub struct ModelLease<M> {
+    model: Option<Arc<M>>,
+    tracker: Arc<Tracker>,
+}
 
 impl<M> ModelLease<M> {
     /// Access the actual loaded resource while the lease is held.
@@ -109,7 +125,9 @@ impl<M> ModelLease<M> {
 }
 
 impl<M> fmt::Debug for ModelLease<M> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { f.debug_struct("ModelLease").finish_non_exhaustive() }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ModelLease").finish_non_exhaustive()
+    }
 }
 
 impl<M> Drop for ModelLease<M> {
@@ -120,8 +138,17 @@ impl<M> Drop for ModelLease<M> {
                 self.tracker.broken.store(true, Ordering::Release);
             }
         }
-        self.tracker.last_used.store(self.tracker.now(), Ordering::Release);
-        if self.tracker.leases.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| count.checked_sub(1)).is_err() {
+        self.tracker
+            .last_used
+            .store(self.tracker.now(), Ordering::Release);
+        if self
+            .tracker
+            .leases
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                count.checked_sub(1)
+            })
+            .is_err()
+        {
             self.tracker.broken.store(true, Ordering::Release);
         }
         self.tracker.changed.notify_waiters();
@@ -129,17 +156,35 @@ impl<M> Drop for ModelLease<M> {
 }
 
 enum Phase<M> {
-    Cold, Loading, Active(Arc<M>), Draining(Arc<M>), Unloading(Arc<M>), Releasing,
-    Failed { model: Option<Arc<M>>, error: LoadError, retry_load: bool }, Closed,
+    Cold,
+    Loading,
+    Active(Arc<M>),
+    Draining(Arc<M>),
+    Unloading(Arc<M>),
+    Releasing,
+    Failed {
+        model: Option<Arc<M>>,
+        error: LoadError,
+        retry_load: bool,
+    },
+    Closed,
 }
 
 struct State<M> {
-    phase: Phase<M>, paused: bool, closing: bool, eviction_requested: bool,
-    generation: u64, work: Option<JoinHandle<()>>, eviction_succeeded: bool,
+    phase: Phase<M>,
+    paused: bool,
+    closing: bool,
+    eviction_requested: bool,
+    generation: u64,
+    work: Option<JoinHandle<()>>,
+    eviction_succeeded: bool,
 }
 
 struct Inner<M, L> {
-    loader: L, config: SlotConfig, state: Mutex<State<M>>, tracker: Arc<Tracker>,
+    loader: L,
+    config: SlotConfig,
+    state: Mutex<State<M>>,
+    tracker: Arc<Tracker>,
 }
 
 /// Single-flight load, RAII usage leases, idle eviction and forced draining.
@@ -147,18 +192,28 @@ struct Inner<M, L> {
 /// Shared worker tasks own load/drain operations even if the initiating caller is canceled.
 /// `force_evict` pauses admission until `resume` so a heavy build does not race an immediate
 /// automatic reload. The composition root must call `close` during orderly shutdown.
-pub struct EvictableSlot<M, L> { inner: Arc<Inner<M, L>> }
+pub struct EvictableSlot<M, L> {
+    inner: Arc<Inner<M, L>>,
+}
 
 impl<M, L> Clone for EvictableSlot<M, L> {
-    fn clone(&self) -> Self { Self { inner: Arc::clone(&self.inner) } }
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
 }
 
 impl<M, L> fmt::Debug for EvictableSlot<M, L> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { f.debug_struct("EvictableSlot").finish_non_exhaustive() }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EvictableSlot").finish_non_exhaustive()
+    }
 }
 
 fn lock<M, L>(inner: &Inner<M, L>) -> Result<MutexGuard<'_, State<M>>, ModelsError> {
-    if inner.tracker.broken.load(Ordering::Acquire) { return Err(ModelsError::Integrity); }
+    if inner.tracker.broken.load(Ordering::Acquire) {
+        return Err(ModelsError::Integrity);
+    }
     inner.state.lock().map_err(|_| ModelsError::Integrity)
 }
 
@@ -177,7 +232,9 @@ fn view<M>(state: &State<M>, leases: u32) -> SlotState {
 
 fn retained<M>(phase: &Phase<M>) -> Option<Arc<M>> {
     match phase {
-        Phase::Active(model) | Phase::Draining(model) | Phase::Unloading(model) => Some(Arc::clone(model)),
+        Phase::Active(model) | Phase::Draining(model) | Phase::Unloading(model) => {
+            Some(Arc::clone(model))
+        }
         Phase::Failed { model, .. } => model.clone(),
         Phase::Cold | Phase::Loading | Phase::Releasing | Phase::Closed => None,
     }
@@ -189,7 +246,11 @@ fn recover_finished<M>(state: &mut State<M>) {
     if state.work.as_ref().is_some_and(JoinHandle::is_finished) {
         let model = retained(&state.phase);
         let retry_load = matches!(&state.phase, Phase::Loading);
-        state.phase = Phase::Failed { model, error: LoadError::TaskFailed, retry_load };
+        state.phase = Phase::Failed {
+            model,
+            error: LoadError::TaskFailed,
+            retry_load,
+        };
         state.eviction_succeeded = false;
         let _finished = state.work.take();
     }
@@ -211,8 +272,19 @@ struct WorkDropGuard<M, L> {
 }
 
 impl<M, L> WorkDropGuard<M, L> {
-    fn new(owner: Arc<Inner<M, L>>, generation: u64, kind: WorkKind, fallback: Option<Arc<M>>) -> Self {
-        Self { owner, generation, kind, fallback, armed: true }
+    fn new(
+        owner: Arc<Inner<M, L>>,
+        generation: u64,
+        kind: WorkKind,
+        fallback: Option<Arc<M>>,
+    ) -> Self {
+        Self {
+            owner,
+            generation,
+            kind,
+            fallback,
+            armed: true,
+        }
     }
 
     fn finish(&mut self) {
@@ -222,7 +294,9 @@ impl<M, L> WorkDropGuard<M, L> {
 
 impl<M, L> Drop for WorkDropGuard<M, L> {
     fn drop(&mut self) {
-        if !self.armed { return; }
+        if !self.armed {
+            return;
+        }
         let mut state = match self.owner.state.lock() {
             Ok(state) => state,
             Err(poisoned) => {
@@ -233,7 +307,10 @@ impl<M, L> Drop for WorkDropGuard<M, L> {
         if state.generation == self.generation {
             let interrupted = match self.kind {
                 WorkKind::Load => matches!(&state.phase, Phase::Loading | Phase::Active(_)),
-                WorkKind::Drain => matches!(&state.phase, Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing),
+                WorkKind::Drain => matches!(
+                    &state.phase,
+                    Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing
+                ),
             };
             if interrupted {
                 let retry_load = matches!(self.kind, WorkKind::Load);
@@ -262,15 +339,35 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
     /// # Errors
     /// Invalid zero bounds.
     pub fn new(loader: L, config: SlotConfig) -> Result<Self, ModelsError> {
-        if config.max_leases == 0 || config.load_timeout.is_zero() || config.unload_timeout.is_zero() {
+        if config.max_leases == 0
+            || config.load_timeout.is_zero()
+            || config.unload_timeout.is_zero()
+        {
             return Err(ModelsError::Config("slot bounds"));
         }
-        let tracker = Arc::new(Tracker { leases: AtomicU32::new(0), last_used: AtomicU64::new(0),
-            broken: AtomicBool::new(false), changed: Arc::new(Notify::new()), epoch: Instant::now() });
-        Ok(Self { inner: Arc::new(Inner { loader, config, tracker, state: Mutex::new(State {
-            phase: Phase::Cold, paused: false, closing: false, eviction_requested: false,
-            generation: 0, work: None, eviction_succeeded: false,
-        }) }) })
+        let tracker = Arc::new(Tracker {
+            leases: AtomicU32::new(0),
+            last_used: AtomicU64::new(0),
+            broken: AtomicBool::new(false),
+            changed: Arc::new(Notify::new()),
+            epoch: Instant::now(),
+        });
+        Ok(Self {
+            inner: Arc::new(Inner {
+                loader,
+                config,
+                tracker,
+                state: Mutex::new(State {
+                    phase: Phase::Cold,
+                    paused: false,
+                    closing: false,
+                    eviction_requested: false,
+                    generation: 0,
+                    work: None,
+                    eviction_succeeded: false,
+                }),
+            }),
+        })
     }
 
     /// Acquire a live model lease, sharing any in-flight load with concurrent callers.
@@ -286,22 +383,42 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
             {
                 let mut state = lock(&self.inner)?;
                 recover_finished(&mut state);
-                if state.closing { return Err(ModelsError::Closed); }
-                if state.paused { return Err(ModelsError::Draining); }
+                if state.closing {
+                    return Err(ModelsError::Closed);
+                }
+                if state.paused {
+                    return Err(ModelsError::Draining);
+                }
                 match &state.phase {
                     Phase::Active(model) => {
                         let model = Arc::clone(model);
-                        self.inner.tracker.leases.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
-                            if count < self.inner.config.max_leases { count.checked_add(1) } else { None }
-                        }).map_err(|_| ModelsError::LeaseLimit)?;
-                        self.inner.tracker.last_used.store(self.inner.tracker.now(), Ordering::Release);
-                        return Ok(ModelLease { model: Some(model), tracker: Arc::clone(&self.inner.tracker) });
-                    },
+                        self.inner
+                            .tracker
+                            .leases
+                            .try_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                                if count < self.inner.config.max_leases {
+                                    count.checked_add(1)
+                                } else {
+                                    None
+                                }
+                            })
+                            .map_err(|_| ModelsError::LeaseLimit)?;
+                        self.inner
+                            .tracker
+                            .last_used
+                            .store(self.inner.tracker.now(), Ordering::Release);
+                        return Ok(ModelLease {
+                            model: Some(model),
+                            tracker: Arc::clone(&self.inner.tracker),
+                        });
+                    }
                     Phase::Cold => start_load(&self.inner, &mut state, &runtime)?,
                     Phase::Failed { error, .. } => return Err(ModelsError::Load(error.clone())),
-                    Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing => return Err(ModelsError::Draining),
+                    Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing => {
+                        return Err(ModelsError::Draining);
+                    }
                     Phase::Closed => return Err(ModelsError::Closed),
-                    Phase::Loading => {},
+                    Phase::Loading => {}
                 }
             }
             notified.await;
@@ -315,7 +432,10 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
     pub fn state(&self) -> Result<SlotState, ModelsError> {
         let mut state = lock(&self.inner)?;
         recover_finished(&mut state);
-        Ok(view(&state, self.inner.tracker.leases.load(Ordering::Acquire)))
+        Ok(view(
+            &state,
+            self.inner.tracker.leases.load(Ordering::Acquire),
+        ))
     }
 
     /// Time since the slot was loaded or its most recent lease was released.
@@ -324,9 +444,11 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
     /// State synchronization or lease accounting failure.
     pub fn idle_for(&self) -> Result<Duration, ModelsError> {
         let _state = lock(&self.inner)?;
-        let elapsed = self.inner.tracker.now().saturating_sub(
-            self.inner.tracker.last_used.load(Ordering::Acquire),
-        );
+        let elapsed = self
+            .inner
+            .tracker
+            .now()
+            .saturating_sub(self.inner.tracker.last_used.load(Ordering::Acquire));
         Ok(Duration::from_micros(elapsed))
     }
 
@@ -337,13 +459,25 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
     pub fn retry_failed_load(&self) -> Result<(), ModelsError> {
         let mut state = lock(&self.inner)?;
         recover_finished(&mut state);
-        if state.closing { return Err(ModelsError::Closed); }
+        if state.closing {
+            return Err(ModelsError::Closed);
+        }
         match &state.phase {
-            Phase::Failed { model: None, retry_load: true, .. } => state.phase = Phase::Cold,
+            Phase::Failed {
+                model: None,
+                retry_load: true,
+                ..
+            } => state.phase = Phase::Cold,
             Phase::Failed { .. } => return Err(ModelsError::Draining),
-            Phase::Cold | Phase::Active(_) | Phase::Loading | Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing | Phase::Closed => {
+            Phase::Cold
+            | Phase::Active(_)
+            | Phase::Loading
+            | Phase::Draining(_)
+            | Phase::Unloading(_)
+            | Phase::Releasing
+            | Phase::Closed => {
                 return Err(ModelsError::Config("no failed load to retry"));
-            },
+            }
         }
         self.inner.tracker.changed.notify_waiters();
         Ok(())
@@ -356,8 +490,12 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
     pub fn resume(&self) -> Result<(), ModelsError> {
         let mut state = lock(&self.inner)?;
         recover_finished(&mut state);
-        if state.closing { return Err(ModelsError::Closed); }
-        if !matches!(&state.phase, Phase::Cold | Phase::Active(_)) { return Err(ModelsError::Draining); }
+        if state.closing {
+            return Err(ModelsError::Closed);
+        }
+        if !matches!(&state.phase, Phase::Cold | Phase::Active(_)) {
+            return Err(ModelsError::Draining);
+        }
         state.paused = false;
         state.eviction_requested = false;
         self.inner.tracker.changed.notify_waiters();
@@ -375,14 +513,26 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
             let mut state = lock(&self.inner)?;
             recover_finished(&mut state);
             let leases = self.inner.tracker.leases.load(Ordering::Acquire);
-            let since = self.inner.tracker.now().saturating_sub(self.inner.tracker.last_used.load(Ordering::Acquire));
+            let since = self
+                .inner
+                .tracker
+                .now()
+                .saturating_sub(self.inner.tracker.last_used.load(Ordering::Acquire));
             match &state.phase {
                 Phase::Cold | Phase::Closed => return Ok(EvictOutcome::NotLoaded),
-                Phase::Active(_) if leases == 0 && Duration::from_micros(since) >= self.inner.config.idle_ttl => {
+                Phase::Active(_)
+                    if leases == 0
+                        && Duration::from_micros(since) >= self.inner.config.idle_ttl =>
+                {
                     state.eviction_requested = true;
                     start_drain(&self.inner, &mut state, &runtime)?;
-                },
-                Phase::Active(_) | Phase::Loading | Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing | Phase::Failed { .. } => return Ok(EvictOutcome::NotIdle),
+                }
+                Phase::Active(_)
+                | Phase::Loading
+                | Phase::Draining(_)
+                | Phase::Unloading(_)
+                | Phase::Releasing
+                | Phase::Failed { .. } => return Ok(EvictOutcome::NotIdle),
             }
         }
         self.wait_evicted(self.inner.config.unload_timeout).await
@@ -417,11 +567,17 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
         state.eviction_requested = true;
         state.eviction_succeeded = false;
         match &state.phase {
-            Phase::Cold => { if state.closing { state.phase = Phase::Closed; } },
-            Phase::Closed => {},
-            Phase::Active(_) | Phase::Failed { model: Some(_), .. } => start_drain(&self.inner, &mut state, &runtime)?,
-            Phase::Failed { model: None, .. } => {},
-            Phase::Loading | Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing => {},
+            Phase::Cold => {
+                if state.closing {
+                    state.phase = Phase::Closed;
+                }
+            }
+            Phase::Closed => {}
+            Phase::Active(_) | Phase::Failed { model: Some(_), .. } => {
+                start_drain(&self.inner, &mut state, &runtime)?
+            }
+            Phase::Failed { model: None, .. } => {}
+            Phase::Loading | Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing => {}
         }
         self.inner.tracker.changed.notify_waiters();
         Ok(())
@@ -443,16 +599,22 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
                             } else {
                                 EvictOutcome::NotLoaded
                             });
-                        },
+                        }
                         Phase::Closed => {
                             return Ok(if state.eviction_succeeded {
                                 EvictOutcome::Evicted
                             } else {
                                 EvictOutcome::NotLoaded
                             });
-                        },
-                        Phase::Failed { error, .. } => return Ok(EvictOutcome::Failed(error.clone())),
-                        Phase::Loading | Phase::Active(_) | Phase::Draining(_) | Phase::Unloading(_) | Phase::Releasing => {},
+                        }
+                        Phase::Failed { error, .. } => {
+                            return Ok(EvictOutcome::Failed(error.clone()));
+                        }
+                        Phase::Loading
+                        | Phase::Active(_)
+                        | Phase::Draining(_)
+                        | Phase::Unloading(_)
+                        | Phase::Releasing => {}
                     }
                 }
                 notified.await;
@@ -462,18 +624,30 @@ impl<M: Send + Sync + 'static, L: ModelLoader<M>> EvictableSlot<M, L> {
             Ok(result) => result,
             Err(_) => {
                 let leases = self.inner.tracker.leases.load(Ordering::Acquire);
-                if leases > 0 { Ok(EvictOutcome::StillInUse { leases }) }
-                else { Ok(EvictOutcome::Pending { state: self.state()? }) }
-            },
+                if leases > 0 {
+                    Ok(EvictOutcome::StillInUse { leases })
+                } else {
+                    Ok(EvictOutcome::Pending {
+                        state: self.state()?,
+                    })
+                }
+            }
         }
     }
 }
 
 fn start_load<M: Send + Sync + 'static, L: ModelLoader<M>>(
-    inner: &Arc<Inner<M, L>>, state: &mut State<M>, runtime: &Handle,
+    inner: &Arc<Inner<M, L>>,
+    state: &mut State<M>,
+    runtime: &Handle,
 ) -> Result<(), ModelsError> {
-    if inner.tracker.leases.load(Ordering::Acquire) != 0 { return Err(ModelsError::Integrity); }
-    state.generation = state.generation.checked_add(1).ok_or(ModelsError::Integrity)?;
+    if inner.tracker.leases.load(Ordering::Acquire) != 0 {
+        return Err(ModelsError::Integrity);
+    }
+    state.generation = state
+        .generation
+        .checked_add(1)
+        .ok_or(ModelsError::Integrity)?;
     let generation = state.generation;
     state.phase = Phase::Loading;
     state.eviction_succeeded = false;
@@ -481,10 +655,11 @@ fn start_load<M: Send + Sync + 'static, L: ModelLoader<M>>(
     let worker = WorkDropGuard::new(Arc::clone(&owner), generation, WorkKind::Load, None);
     state.work = Some(runtime.spawn(async move {
         let mut work = worker;
-        let result = match tokio::time::timeout(owner.config.load_timeout, owner.loader.load()).await {
-            Ok(result) => result,
-            Err(_) => Err(LoadError::Timeout),
-        };
+        let result =
+            match tokio::time::timeout(owner.config.load_timeout, owner.loader.load()).await {
+                Ok(result) => result,
+                Err(_) => Err(LoadError::Timeout),
+            };
         if let Ok(mut state) = lock(&owner) {
             if state.generation != generation || !matches!(&state.phase, Phase::Loading) {
                 owner.tracker.broken.store(true, Ordering::Release);
@@ -495,21 +670,40 @@ fn start_load<M: Send + Sync + 'static, L: ModelLoader<M>>(
                         let model = Arc::new(model);
                         state.phase = Phase::Active(Arc::clone(&model));
                         work.fallback = Some(Arc::clone(&model));
-                        owner.tracker.last_used.store(owner.tracker.now(), Ordering::Release);
+                        owner
+                            .tracker
+                            .last_used
+                            .store(owner.tracker.now(), Ordering::Release);
                         if state.eviction_requested {
                             match Handle::try_current() {
                                 Ok(current) => {
                                     if start_drain(&owner, &mut state, &current).is_err() {
-                                        state.phase = Phase::Failed { model: Some(Arc::clone(&model)), error: LoadError::TaskFailed, retry_load: false };
+                                        state.phase = Phase::Failed {
+                                            model: Some(Arc::clone(&model)),
+                                            error: LoadError::TaskFailed,
+                                            retry_load: false,
+                                        };
                                     } else {
                                         work.fallback = None;
                                     }
-                                },
-                                Err(_) => state.phase = Phase::Failed { model: Some(Arc::clone(&model)), error: LoadError::TaskFailed, retry_load: false },
+                                }
+                                Err(_) => {
+                                    state.phase = Phase::Failed {
+                                        model: Some(Arc::clone(&model)),
+                                        error: LoadError::TaskFailed,
+                                        retry_load: false,
+                                    }
+                                }
                             }
                         }
-                    },
-                    Err(error) => state.phase = Phase::Failed { model: None, error, retry_load: true },
+                    }
+                    Err(error) => {
+                        state.phase = Phase::Failed {
+                            model: None,
+                            error,
+                            retry_load: true,
+                        }
+                    }
                 }
                 work.finish();
             }
@@ -523,15 +717,25 @@ fn start_load<M: Send + Sync + 'static, L: ModelLoader<M>>(
 }
 
 fn start_drain<M: Send + Sync + 'static, L: ModelLoader<M>>(
-    inner: &Arc<Inner<M, L>>, state: &mut State<M>, runtime: &Handle,
+    inner: &Arc<Inner<M, L>>,
+    state: &mut State<M>,
+    runtime: &Handle,
 ) -> Result<(), ModelsError> {
     let model = retained(&state.phase).ok_or(ModelsError::Integrity)?;
-    state.generation = state.generation.checked_add(1).ok_or(ModelsError::Integrity)?;
+    state.generation = state
+        .generation
+        .checked_add(1)
+        .ok_or(ModelsError::Integrity)?;
     let generation = state.generation;
     state.phase = Phase::Draining(Arc::clone(&model));
     state.eviction_succeeded = false;
     let owner = Arc::clone(inner);
-    let worker = WorkDropGuard::new(Arc::clone(&owner), generation, WorkKind::Drain, Some(Arc::clone(&model)));
+    let worker = WorkDropGuard::new(
+        Arc::clone(&owner),
+        generation,
+        WorkKind::Drain,
+        Some(Arc::clone(&model)),
+    );
     state.work = Some(runtime.spawn(async move {
         let mut work = worker;
         loop {
@@ -540,19 +744,34 @@ fn start_drain<M: Send + Sync + 'static, L: ModelLoader<M>>(
             let _registered = notified.as_mut().enable();
             let ready = match lock(&owner) {
                 Ok(mut state) => {
-                    if state.generation != generation { owner.tracker.broken.store(true, Ordering::Release); return; }
+                    if state.generation != generation {
+                        owner.tracker.broken.store(true, Ordering::Release);
+                        return;
+                    }
                     if owner.tracker.leases.load(Ordering::Acquire) == 0 {
                         state.phase = Phase::Unloading(Arc::clone(&model));
                         true
-                    } else { false }
-                },
-                Err(_) => { owner.tracker.broken.store(true, Ordering::Release); return; },
+                    } else {
+                        false
+                    }
+                }
+                Err(_) => {
+                    owner.tracker.broken.store(true, Ordering::Release);
+                    return;
+                }
             };
-            if ready { break; }
+            if ready {
+                break;
+            }
             notified.await;
         }
 
-        let result = match tokio::time::timeout(owner.config.unload_timeout, owner.loader.unload(model.as_ref())).await {
+        let result = match tokio::time::timeout(
+            owner.config.unload_timeout,
+            owner.loader.unload(model.as_ref()),
+        )
+        .await
+        {
             Ok(result) => result,
             Err(_) => Err(LoadError::Timeout),
         };
@@ -560,7 +779,11 @@ fn start_drain<M: Send + Sync + 'static, L: ModelLoader<M>>(
             if let Ok(mut state) = lock(&owner) {
                 if state.generation == generation {
                     let _previous = state.work.take();
-                    state.phase = Phase::Failed { model: Some(Arc::clone(&model)), error, retry_load: false };
+                    state.phase = Phase::Failed {
+                        model: Some(Arc::clone(&model)),
+                        error,
+                        retry_load: false,
+                    };
                     state.eviction_succeeded = false;
                     work.finish();
                 } else {
@@ -584,13 +807,13 @@ fn start_drain<M: Send + Sync + 'static, L: ModelLoader<M>>(
                         state.phase = other;
                         owner.tracker.broken.store(true, Ordering::Release);
                         None
-                    },
+                    }
                 }
-            },
+            }
             _ => {
                 owner.tracker.broken.store(true, Ordering::Release);
                 None
-            },
+            }
         };
         let Some(retired) = retired else {
             drop(work);
@@ -611,11 +834,19 @@ fn start_drain<M: Send + Sync + 'static, L: ModelLoader<M>>(
             if state.generation == generation && matches!(&state.phase, Phase::Releasing) {
                 let _previous = state.work.take();
                 if released {
-                    state.phase = if state.closing { Phase::Closed } else { Phase::Cold };
+                    state.phase = if state.closing {
+                        Phase::Closed
+                    } else {
+                        Phase::Cold
+                    };
                     state.eviction_succeeded = true;
                     state.eviction_requested = false;
                 } else {
-                    state.phase = Phase::Failed { model: None, error: LoadError::TaskFailed, retry_load: false };
+                    state.phase = Phase::Failed {
+                        model: None,
+                        error: LoadError::TaskFailed,
+                        retry_load: false,
+                    };
                     state.eviction_succeeded = false;
                 }
                 work.finish();

@@ -8,7 +8,7 @@
 use polaris_sdk::contracts::Timestamp;
 use polaris_sdk::ids::SessionId;
 use polaris_sdk::registry::ChatRole;
-use rusqlite::Connection;
+use rusqlite::{Connection, Row};
 use serde::{Deserialize, Serialize};
 
 use crate::error::RegistryError;
@@ -20,6 +20,9 @@ pub const MAX_SEARCH_LIMIT: u32 = 1000;
 
 /// Longest snippet, in characters.
 pub const SNIPPET_CHARS: usize = 160;
+
+/// Largest raw query accepted by search before it is copied to the database thread.
+pub const MAX_SEARCH_QUERY_BYTES: usize = 16 * 1024;
 
 /// Characters of context kept before the match in a snippet.
 const SNIPPET_LEAD: usize = 40;
@@ -78,16 +81,36 @@ fn snippet(text: &str, query: &str) -> String {
     if total <= SNIPPET_CHARS {
         return text.to_owned();
     }
-    let lowered = text.to_lowercase();
+    let (lowered, source_chars) = lowercase_with_source_offsets(text);
     let needle = query.to_lowercase();
     let match_char = lowered
         .find(&needle)
-        .and_then(|byte| lowered.get(..byte))
-        .map_or(0, |before| before.chars().count());
+        .and_then(|byte| {
+            let index = source_chars.partition_point(|(_, end, _)| *end <= byte);
+            source_chars
+                .get(index)
+                .filter(|(start, end, _)| *start <= byte && byte < *end)
+                .map(|(_, _, source_char)| *source_char)
+        })
+        .unwrap_or(0);
     let start = match_char
         .saturating_sub(SNIPPET_LEAD)
         .min(total.saturating_sub(SNIPPET_CHARS));
     text.chars().skip(start).take(SNIPPET_CHARS).collect()
+}
+
+/// Lowercases text while retaining a mapping from every folded character span to its source
+/// character index. Unicode lowercase can expand one scalar (for example `İ`) into multiple
+/// scalars, so counting characters in the folded string does not locate source snippet boundaries.
+fn lowercase_with_source_offsets(text: &str) -> (String, Vec<(usize, usize, usize)>) {
+    let mut lowered = String::with_capacity(text.len());
+    let mut source_chars = Vec::with_capacity(text.chars().count());
+    for (source_char, character) in text.chars().enumerate() {
+        let start = lowered.len();
+        lowered.extend(character.to_lowercase());
+        source_chars.push((start, lowered.len(), source_char));
+    }
+    (lowered, source_chars)
 }
 
 /// Runs the search; see [`crate::Registry::search_history`].
@@ -96,33 +119,70 @@ pub(crate) fn search(
     query: &str,
     limit: u32,
 ) -> Result<Vec<Hit>, RegistryError> {
+    search_in_session(conn, None, query, limit)
+}
+
+/// Runs a literal search restricted to one session in SQL, before ordering and limiting.
+pub(crate) fn search_for_session(
+    conn: &Connection,
+    session: SessionId,
+    query: &str,
+    limit: u32,
+) -> Result<Vec<Hit>, RegistryError> {
+    search_in_session(conn, Some(session), query, limit)
+}
+
+type RawHit = (String, String, i64, String);
+
+fn raw_hit(row: &Row<'_>) -> rusqlite::Result<RawHit> {
+    Ok((
+        row.get::<_, String>(0)?,
+        row.get::<_, String>(1)?,
+        row.get::<_, i64>(2)?,
+        row.get::<_, String>(3)?,
+    ))
+}
+
+fn search_in_session(
+    conn: &Connection,
+    session: Option<SessionId>,
+    query: &str,
+    limit: u32,
+) -> Result<Vec<Hit>, RegistryError> {
+    if query.len() > MAX_SEARCH_QUERY_BYTES {
+        return Err(RegistryError::BadValue(format!(
+            "search query exceeds the {MAX_SEARCH_QUERY_BYTES}-byte limit"
+        )));
+    }
     let limit = limit.min(MAX_SEARCH_LIMIT);
     let cleaned: String = query.chars().filter(|c| *c != '\0').collect();
     if limit == 0 || cleaned.is_empty() {
         return Ok(Vec::new());
     }
     let (sql, param) = if cleaned.chars().count() < TRIGRAM_MIN_CHARS {
-        (
+        let sql = if session.is_some() {
             "SELECT session, role, at_us, text FROM session_history_fts \
-             WHERE text LIKE ?1 ESCAPE '\\' ORDER BY at_us DESC, rowid DESC LIMIT ?2",
-            like_pattern(&cleaned),
-        )
+             WHERE text LIKE ?1 ESCAPE '\\' AND session = ?2 ORDER BY at_us DESC, rowid DESC LIMIT ?3"
+        } else {
+            "SELECT session, role, at_us, text FROM session_history_fts \
+             WHERE text LIKE ?1 ESCAPE '\\' ORDER BY at_us DESC, rowid DESC LIMIT ?2"
+        };
+        (sql, like_pattern(&cleaned))
     } else {
-        (
+        let sql = if session.is_some() {
             "SELECT session, role, at_us, text FROM session_history_fts \
-             WHERE session_history_fts MATCH ?1 ORDER BY at_us DESC, rowid DESC LIMIT ?2",
-            fts_phrase(&cleaned),
-        )
+             WHERE session_history_fts MATCH ?1 AND session = ?2 ORDER BY at_us DESC, rowid DESC LIMIT ?3"
+        } else {
+            "SELECT session, role, at_us, text FROM session_history_fts \
+             WHERE session_history_fts MATCH ?1 ORDER BY at_us DESC, rowid DESC LIMIT ?2"
+        };
+        (sql, fts_phrase(&cleaned))
     };
     let mut stmt = conn.prepare_cached(sql)?;
-    let rows = stmt.query_map((param, i64::from(limit)), |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, i64>(2)?,
-            row.get::<_, String>(3)?,
-        ))
-    })?;
+    let rows = match session {
+        Some(session) => stmt.query_map((param, session.to_string(), i64::from(limit)), raw_hit)?,
+        None => stmt.query_map((param, i64::from(limit)), raw_hit)?,
+    };
     let mut hits = Vec::new();
     for row in rows {
         let (session, role, at_us, text) = row?;

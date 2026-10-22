@@ -10,9 +10,11 @@ mod error;
 mod lifecycle;
 mod manager;
 
-pub use catalog::{Availability, CapabilitySupport, CascadePlan, CatalogProvenance, ModelChoice,
-    ModelEffort, ModelKind, ModelRegistry, ModelSpec, OverrideReport, PriceTable, ProviderKind,
-    ReasoningBudget, RegistryConfig};
+pub use catalog::{
+    Availability, CapabilitySupport, CascadePlan, CatalogProvenance, ModelChoice, ModelEffort,
+    ModelKind, ModelRegistry, ModelSpec, OverrideReport, PriceTable, ProviderKind, ReasoningBudget,
+    RegistryConfig,
+};
 pub use error::{LoadError, ModelsError};
 pub use lifecycle::{EvictOutcome, EvictableSlot, ModelLease, ModelLoader, SlotConfig, SlotState};
 pub use manager::{EvictReason, Evictable, EvictionManager, EvictionReport};

@@ -1,5 +1,8 @@
 //! Timeout, fallback, retry and race adapters around owner-provided operators.
-use polaris_sdk::{error::{ErrorKind, HasKind}, registry::FunctionalOperator};
+use polaris_sdk::{
+    error::{ErrorKind, HasKind},
+    registry::FunctionalOperator,
+};
 use std::{error::Error, fmt, future::Future, time::Duration};
 
 /// Deterministic fallback policy for a fail-open stage.
@@ -22,25 +25,59 @@ pub trait FailureOpenObserver: Send + Sync {
     /// Failure from recording the degradation.
     type Err: HasKind + Send;
     /// Persist or otherwise account for the degradation before fallback is returned.
-    fn record(&self, stage: &'static str, reason: FailureOpenReason) -> impl Future<Output = Result<(), Self::Err>> + Send;
+    fn record(
+        &self,
+        stage: &'static str,
+        reason: FailureOpenReason,
+    ) -> impl Future<Output = Result<(), Self::Err>> + Send;
 }
 
 /// Error from an open wrapper when degradation telemetry could not be recorded.
 #[derive(Debug)]
 pub struct OpenOpError<E>(pub E);
 impl<E: fmt::Display> fmt::Display for OpenOpError<E> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "failed-open event recording failed: {}", self.0) }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "failed-open event recording failed: {}", self.0)
+    }
 }
-impl<E: Error + 'static> Error for OpenOpError<E> { fn source(&self) -> Option<&(dyn Error + 'static)> { Some(&self.0) } }
-impl<E: HasKind> HasKind for OpenOpError<E> { fn kind(&self) -> ErrorKind { self.0.kind() } }
+impl<E: Error + 'static> Error for OpenOpError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.0)
+    }
+}
+impl<E: HasKind> HasKind for OpenOpError<E> {
+    fn kind(&self) -> ErrorKind {
+        self.0.kind()
+    }
+}
 
 /// Fail-open adapter requiring an explicit fallback and degradation observer.
 #[derive(Debug)]
-pub struct OpenOp<Op, Fb, Obs> { inner: Op, fallback: Fb, observer: Obs, timeout: Duration, stage: &'static str }
+pub struct OpenOp<Op, Fb, Obs> {
+    inner: Op,
+    fallback: Fb,
+    observer: Obs,
+    timeout: Duration,
+    stage: &'static str,
+}
 impl<Op, Fb, Obs> OpenOp<Op, Fb, Obs> {
     /// Create an open adapter with a finite timeout and mandatory observer.
     #[must_use]
-    pub const fn new(inner: Op, fallback: Fb, observer: Obs, timeout: Duration, stage: &'static str) -> Self { Self { inner, fallback, observer, timeout, stage } }
+    pub const fn new(
+        inner: Op,
+        fallback: Fb,
+        observer: Obs,
+        timeout: Duration,
+        stage: &'static str,
+    ) -> Self {
+        Self {
+            inner,
+            fallback,
+            observer,
+            timeout,
+            stage,
+        }
+    }
 }
 impl<Op, Fb, Obs> FunctionalOperator for OpenOp<Op, Fb, Obs>
 where
@@ -59,21 +96,31 @@ where
             Ok(Err(_stage_error)) => FailureOpenReason::Error,
             Err(_elapsed) => FailureOpenReason::Timeout,
         };
-        self.observer.record(self.stage, reason).await.map_err(OpenOpError)?;
+        self.observer
+            .record(self.stage, reason)
+            .await
+            .map_err(OpenOpError)?;
         Ok(self.fallback.fallback(&fallback_input))
     }
 }
 
 /// Fail-closed timeout adapter. Timeout and stage errors remain visible to the caller.
 #[derive(Debug)]
-pub struct ClosedOp<Op> { inner: Op, timeout: Duration }
+pub struct ClosedOp<Op> {
+    inner: Op,
+    timeout: Duration,
+}
 impl<Op> ClosedOp<Op> {
     /// Wrap an operator in a deadline; timed-out futures are dropped immediately.
     #[must_use]
-    pub const fn new(inner: Op, timeout: Duration) -> Self { Self { inner, timeout } }
+    pub const fn new(inner: Op, timeout: Duration) -> Self {
+        Self { inner, timeout }
+    }
 }
 impl<Op> FunctionalOperator for ClosedOp<Op>
-where Op: FunctionalOperator {
+where
+    Op: FunctionalOperator,
+{
     type In = Op::In;
     type Out = Op::Out;
     type Err = ClosedOpError<Op::Err>;
@@ -94,36 +141,81 @@ pub enum ClosedOpError<E> {
     /// Deadline elapsed and the inner future was dropped.
     Timeout,
 }
-impl<E: fmt::Display> fmt::Display for ClosedOpError<E> { fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { match self { Self::Stage(err) => write!(f, "operator failed: {err}"), Self::Timeout => f.write_str("operator deadline elapsed") } } }
-impl<E: Error + 'static> Error for ClosedOpError<E> { fn source(&self) -> Option<&(dyn Error + 'static)> { match self { Self::Stage(err) => Some(err), Self::Timeout => None } } }
-impl<E: HasKind> HasKind for ClosedOpError<E> { fn kind(&self) -> ErrorKind { match self { Self::Stage(err) => err.kind(), Self::Timeout => ErrorKind::Transient } } }
+impl<E: fmt::Display> fmt::Display for ClosedOpError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Stage(err) => write!(f, "operator failed: {err}"),
+            Self::Timeout => f.write_str("operator deadline elapsed"),
+        }
+    }
+}
+impl<E: Error + 'static> Error for ClosedOpError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Stage(err) => Some(err),
+            Self::Timeout => None,
+        }
+    }
+}
+impl<E: HasKind> HasKind for ClosedOpError<E> {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::Stage(err) => err.kind(),
+            Self::Timeout => ErrorKind::Transient,
+        }
+    }
+}
 
 /// Retry a transiently failing operator a bounded number of times.
 ///
 /// Only wrap idempotent or deduplicated operations: a transient error can occur after a remote
 /// side effect committed, and retrying cannot roll that effect back.
 #[derive(Debug)]
-pub struct RetryOp<Op> { inner: Op, max_attempts: u32, delay: Duration }
+pub struct RetryOp<Op> {
+    inner: Op,
+    max_attempts: u32,
+    delay: Duration,
+}
 impl<Op> RetryOp<Op> {
     /// Construct with attempts including the initial call; zero is rejected at execution as a
     /// permanent configuration error rather than silently issuing no operation.
     #[must_use]
-    pub const fn new(inner: Op, max_attempts: u32, delay: Duration) -> Self { Self { inner, max_attempts, delay } }
+    pub const fn new(inner: Op, max_attempts: u32, delay: Duration) -> Self {
+        Self {
+            inner,
+            max_attempts,
+            delay,
+        }
+    }
 }
 impl<Op> FunctionalOperator for RetryOp<Op>
-where Op: FunctionalOperator, Op::In: Clone {
+where
+    Op: FunctionalOperator,
+    Op::In: Clone,
+{
     type In = Op::In;
     type Out = Op::Out;
     type Err = RetryOpError<Op::Err>;
     async fn apply(&self, input: Self::In) -> Result<Self::Out, Self::Err> {
-        if self.max_attempts == 0 { return Err(RetryOpError::NoAttempts); }
+        if self.max_attempts == 0 {
+            return Err(RetryOpError::NoAttempts);
+        }
         let mut attempt = 0_u32;
         loop {
             attempt = attempt.saturating_add(1);
             match self.inner.apply(input.clone()).await {
                 Ok(output) => return Ok(output),
-                Err(error) if error.kind() == ErrorKind::Transient && attempt < self.max_attempts => tokio::time::sleep(self.delay).await,
-                Err(error) => return Err(RetryOpError::Stage { attempts: attempt, source: error }),
+                Err(error)
+                    if error.kind() == ErrorKind::Transient && attempt < self.max_attempts =>
+                {
+                    tokio::time::sleep(self.delay).await
+                }
+                Err(error) => {
+                    return Err(RetryOpError::Stage {
+                        attempts: attempt,
+                        source: error,
+                    });
+                }
             }
         }
     }
@@ -137,23 +229,55 @@ pub enum RetryOpError<E> {
     /// Final stage failure.
     Stage { attempts: u32, source: E },
 }
-impl<E: fmt::Display> fmt::Display for RetryOpError<E> { fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { match self { Self::NoAttempts => f.write_str("retry policy has zero attempts"), Self::Stage { attempts, source } => write!(f, "operator failed after {attempts} attempts: {source}") } } }
-impl<E: Error + 'static> Error for RetryOpError<E> { fn source(&self) -> Option<&(dyn Error + 'static)> { match self { Self::NoAttempts => None, Self::Stage { source, .. } => Some(source) } } }
-impl<E: HasKind> HasKind for RetryOpError<E> { fn kind(&self) -> ErrorKind { match self { Self::NoAttempts => ErrorKind::Permanent, Self::Stage { source, .. } => source.kind() } } }
+impl<E: fmt::Display> fmt::Display for RetryOpError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NoAttempts => f.write_str("retry policy has zero attempts"),
+            Self::Stage { attempts, source } => {
+                write!(f, "operator failed after {attempts} attempts: {source}")
+            }
+        }
+    }
+}
+impl<E: Error + 'static> Error for RetryOpError<E> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::NoAttempts => None,
+            Self::Stage { source, .. } => Some(source),
+        }
+    }
+}
+impl<E: HasKind> HasKind for RetryOpError<E> {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::NoAttempts => ErrorKind::Permanent,
+            Self::Stage { source, .. } => source.kind(),
+        }
+    }
+}
 
 /// Race two implementations on cloned inputs; first success wins and the loser future is dropped.
 ///
 /// Use only for read-only or duplicate-safe work. Dropping the losing future does not undo remote
 /// side effects already issued by that operator.
 #[derive(Debug)]
-pub struct RaceOp<Fast, Deep> { fast: Fast, deep: Deep }
+pub struct RaceOp<Fast, Deep> {
+    fast: Fast,
+    deep: Deep,
+}
 impl<Fast, Deep> RaceOp<Fast, Deep> {
     /// Build a race between two equivalent operator contracts.
     #[must_use]
-    pub const fn new(fast: Fast, deep: Deep) -> Self { Self { fast, deep } }
+    pub const fn new(fast: Fast, deep: Deep) -> Self {
+        Self { fast, deep }
+    }
 }
 impl<Fast, Deep> FunctionalOperator for RaceOp<Fast, Deep>
-where Fast: FunctionalOperator, Deep: FunctionalOperator<In = Fast::In, Out = Fast::Out, Err = Fast::Err>, Fast::In: Clone {
+where
+    Fast: FunctionalOperator,
+    Deep: FunctionalOperator<In = Fast::In, Out = Fast::Out, Err = Fast::Err>,
+    Fast::In: Clone,
+{
     type In = Fast::In;
     type Out = Fast::Out;
     type Err = Fast::Err;
@@ -167,5 +291,3 @@ where Fast: FunctionalOperator, Deep: FunctionalOperator<In = Fast::In, Out = Fa
         }
     }
 }
-
-

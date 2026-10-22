@@ -14,6 +14,12 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde-saphyr = { workspace = true }
+blake3 = { workspace = true }
+bytes = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-openshell-policy = { workspace = true }
+polaris-openshell-client = { workspace = true }

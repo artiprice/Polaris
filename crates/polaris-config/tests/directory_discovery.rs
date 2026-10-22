@@ -4,7 +4,8 @@ use std::error::Error;
 use std::fs;
 
 use polaris_config::{
-    ConfigError, EnvSnapshot, Layer, SessionOverrides, TrustGrant, discover_from, load, read_layers,
+    ConfigError, EnvSnapshot, Layer, MAX_CONFIG_FILE_BYTES, SessionOverrides, TrustGrant,
+    discover_from, load, read_layers,
 };
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -54,6 +55,27 @@ fn reads_bom_and_crlf_files() -> TestResult {
         "missing repo file is skipped"
     );
     assert_eq!(load(&layers, &TrustGrant::none())?.config.ratelimit.rpm, 77);
+    Ok(())
+}
+
+#[test]
+fn rejects_config_files_over_the_parser_bound() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    let home = tmp.path().join("home");
+    let config = home.join(".polaris").join("config.toml");
+    fs::create_dir_all(config.parent().ok_or("config path has no parent")?)?;
+    let content = vec![b' '; MAX_CONFIG_FILE_BYTES + 1];
+    fs::write(&config, content)?;
+    let dirs = discover_from(&home, &home)?;
+
+    let error = match read_layers(&dirs, &EnvSnapshot::empty(), &SessionOverrides::default()) {
+        Err(error) => error,
+        Ok(_) => return Err("oversized config was accepted".into()),
+    };
+    assert!(matches!(
+        error,
+        ConfigError::FileTooLarge { limit, .. } if limit == MAX_CONFIG_FILE_BYTES
+    ));
     Ok(())
 }
 

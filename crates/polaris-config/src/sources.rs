@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
-use std::io::ErrorKind as IoKind;
+use std::io::{ErrorKind as IoKind, Read};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -14,6 +14,10 @@ pub const CONFIG_FILE: &str = "config.toml";
 
 /// Environment variable prefix; `__` separates nesting levels.
 pub const ENV_PREFIX: &str = "POLARIS_";
+
+/// Maximum size of each on-disk TOML layer before parsing.
+pub const MAX_CONFIG_FILE_BYTES: usize = 1_048_576;
+const MAX_CONFIG_FILE_BYTES_U64: u64 = 1_048_576;
 
 /// The configuration directories.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,12 +81,32 @@ fn is_in_use(error: &std::io::Error) -> bool {
 }
 
 /// Reads `path`, retrying "file in use" errors with a bounded backoff.
-fn read_with_retry(path: &Path) -> std::io::Result<String> {
+enum ReadFailure {
+    Io(std::io::Error),
+    TooLarge,
+}
+
+fn read_once(path: &Path) -> Result<String, ReadFailure> {
+    let file = std::fs::File::open(path).map_err(ReadFailure::Io)?;
+    let mut text = String::new();
+    let take_limit = MAX_CONFIG_FILE_BYTES_U64
+        .checked_add(1)
+        .ok_or(ReadFailure::TooLarge)?;
+    file.take(take_limit)
+        .read_to_string(&mut text)
+        .map_err(ReadFailure::Io)?;
+    if text.len() > MAX_CONFIG_FILE_BYTES {
+        return Err(ReadFailure::TooLarge);
+    }
+    Ok(text)
+}
+
+fn read_with_retry(path: &Path) -> Result<String, ReadFailure> {
     let mut delay = READ_BASE_DELAY;
     let mut attempt = 1;
     loop {
-        match std::fs::read_to_string(path) {
-            Err(e) if is_in_use(&e) && attempt < READ_ATTEMPTS => {
+        match read_once(path) {
+            Err(ReadFailure::Io(e)) if is_in_use(&e) && attempt < READ_ATTEMPTS => {
                 std::thread::sleep(delay);
                 delay = delay.saturating_mul(2).min(READ_MAX_DELAY);
                 attempt += 1;
@@ -96,8 +120,12 @@ fn read_file_layer(layer: Layer, dir: &Path) -> Result<Option<LayerInput>, Confi
     let path = dir.join(CONFIG_FILE);
     match read_with_retry(&path) {
         Ok(text) => LayerInput::parse(layer, &text, Some(path)).map(Some),
-        Err(e) if e.kind() == IoKind::NotFound => Ok(None),
-        Err(e) => Err(io_error(&path, &e)),
+        Err(ReadFailure::Io(e)) if e.kind() == IoKind::NotFound => Ok(None),
+        Err(ReadFailure::Io(e)) => Err(io_error(&path, &e)),
+        Err(ReadFailure::TooLarge) => Err(ConfigError::FileTooLarge {
+            path,
+            limit: MAX_CONFIG_FILE_BYTES,
+        }),
     }
 }
 

@@ -19,10 +19,12 @@ mod apply;
 mod ignore;
 mod path;
 mod plan;
+mod remote;
 mod scan;
 
 pub use apply::{ApplyOpts, SyncReport, apply};
 pub use ignore::{DEFAULT_DENY, Exclusion, IgnoreRules, POLARISIGNORE};
 pub use path::{RelPath, SyncError};
-pub use plan::{PathConflict, SyncPlan, detect_conflicts, plan};
+pub use plan::{PathConflict, SyncConflict, SyncPlan, detect_conflicts, plan, plan_two_way};
+pub use remote::SandboxSyncBackend;
 pub use scan::{EntryKind, FileEntry, HashMode, Manifest, ScanCache, ScanOutcome, ScanStats, scan};

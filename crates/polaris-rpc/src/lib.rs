@@ -17,12 +17,11 @@
 //! and client construction remain transport work and are deliberately not represented as a
 //! successful `serve` stub here.
 
-
 mod auth;
 mod server;
 
 pub use auth::{
-    AuthorizationLease, MAX_BEARER_HEADER_BYTES, MAX_METADATA_BYTES, MAX_METADATA_ENTRIES, RequestSubject, RpcAuthenticator,
-    TrustedFacts, TrustedFactsResolver,
+    AuthorizationLease, MAX_BEARER_HEADER_BYTES, MAX_METADATA_BYTES, MAX_METADATA_ENTRIES,
+    RequestSubject, RpcAuthenticator, TrustedFacts, TrustedFactsResolver,
 };
 pub use server::{Readiness, RpcError, RpcLimits, RpcService, TerminalApi};

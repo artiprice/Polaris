@@ -1,11 +1,15 @@
 //! Typestate transitions retain exact proof bindings and remove raw artifact references.
+use crate::{DataLabError, OptIn};
 use core::{fmt, marker::PhantomData};
-use polaris_sdk::{contracts::Timestamp, ids::{Cid, FrameId, SessionId}, registry::Redactor};
+use polaris_sdk::{
+    contracts::Timestamp,
+    ids::{Cid, FrameId, SessionId},
+    registry::Redactor,
+};
 use polaris_security_automata::{Category, DfaScanner, EntropyCfg, ScanBuf, high_entropy_spans};
 use polaris_storage_cas::{Cas, content_id};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
-use crate::{DataLabError, OptIn};
 
 /// Collected data which has not yet passed a proof gate.
 #[derive(Debug)]
@@ -42,34 +46,48 @@ pub enum RawContent {
 impl RawContent {
     /// Wrap text in zeroizing storage.
     #[must_use]
-    pub fn text(value: String) -> Self { Self::Inline(Zeroizing::new(value)) }
+    pub fn text(value: String) -> Self {
+        Self::Inline(Zeroizing::new(value))
+    }
 
     fn resolve(&self, cas: &Cas, limit: usize) -> Result<Zeroizing<Vec<u8>>, DataLabError> {
         let bytes = match self {
             Self::Inline(text) => {
-                if text.len() > limit { return Err(DataLabError::Limit); }
+                if text.len() > limit {
+                    return Err(DataLabError::Limit);
+                }
                 text.as_bytes().to_vec()
-            },
+            }
             Self::Blob(cid) => {
                 let bytes = cas.get(cid)?;
-                if content_id(&bytes) != *cid { return Err(DataLabError::DigestMismatch); }
+                if content_id(&bytes) != *cid {
+                    return Err(DataLabError::DigestMismatch);
+                }
                 bytes.to_vec()
-            },
+            }
         };
         let bytes = Zeroizing::new(bytes);
-        if bytes.len() > limit { return Err(DataLabError::Limit); }
+        if bytes.len() > limit {
+            return Err(DataLabError::Limit);
+        }
         Ok(bytes)
     }
 
     pub(crate) fn masked_text(&self) -> Result<&str, DataLabError> {
-        match self { Self::Inline(text) => Ok(text.as_str()), Self::Blob(_) => Err(DataLabError::Schema("unresolved masked message")) }
+        match self {
+            Self::Inline(text) => Ok(text.as_str()),
+            Self::Blob(_) => Err(DataLabError::Schema("unresolved masked message")),
+        }
     }
 }
 
 impl fmt::Debug for RawContent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Inline(text) => f.debug_struct("Inline").field("bytes", &text.len()).finish(),
+            Self::Inline(text) => f
+                .debug_struct("Inline")
+                .field("bytes", &text.len())
+                .finish(),
             Self::Blob(cid) => f.debug_tuple("Blob").field(cid).finish(),
         }
     }
@@ -152,8 +170,13 @@ pub struct TrajectoryLimits {
 
 impl Default for TrajectoryLimits {
     fn default() -> Self {
-        Self { max_messages: 4096, max_content_bytes: 4 * 1024 * 1024,
-            max_total_bytes: 32 * 1024 * 1024, max_tool_calls: 8192, require_license: true }
+        Self {
+            max_messages: 4096,
+            max_content_bytes: 4 * 1024 * 1024,
+            max_total_bytes: 32 * 1024 * 1024,
+            max_tool_calls: 8192,
+            require_license: true,
+        }
     }
 }
 
@@ -203,9 +226,12 @@ pub struct Trajectory<S> {
 
 impl<S> fmt::Debug for Trajectory<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Trajectory").field("session", &self.input.session)
-            .field("frame", &self.input.frame).field("messages", &self.input.messages.len())
-            .field("proof", &self.proof).finish_non_exhaustive()
+        f.debug_struct("Trajectory")
+            .field("session", &self.input.session)
+            .field("frame", &self.input.frame)
+            .field("messages", &self.input.messages.len())
+            .field("proof", &self.proof)
+            .finish_non_exhaustive()
     }
 }
 
@@ -214,41 +240,93 @@ impl Trajectory<Draft> {
     ///
     /// # Errors
     /// Invalid bounds, restricted provenance, malformed tool sequence or absent consent.
-    pub fn collect(input: TrajectoryInput, optin: &OptIn, limits: TrajectoryLimits) -> Result<Self, DataLabError> {
+    pub fn collect(
+        input: TrajectoryInput,
+        optin: &OptIn,
+        limits: TrajectoryLimits,
+    ) -> Result<Self, DataLabError> {
         let permit = optin.permit(input.session)?;
-        if limits.max_messages == 0 || limits.max_content_bytes == 0 || limits.max_total_bytes == 0
-            || input.messages.is_empty() || input.messages.len() > limits.max_messages
+        if limits.max_messages == 0
+            || limits.max_content_bytes == 0
+            || limits.max_total_bytes == 0
+            || input.messages.is_empty()
+            || input.messages.len() > limits.max_messages
             || input.provenance.tool_versions.len() > 128
             || input.provenance.model.len() > 1024
-            || input.provenance.repository.as_ref().is_some_and(|value| value.len() > 4096)
-            || input.provenance.license.as_ref().is_some_and(|value| value.len() > 4096)
-            || input.provenance.tool_versions.iter().any(|value| value.len() > 4096)
-        { return Err(DataLabError::Limit); }
-        if input.provenance.excluded || (limits.require_license && input.provenance.license.as_deref().is_none_or(|license| license.trim().is_empty())) {
+            || input
+                .provenance
+                .repository
+                .as_ref()
+                .is_some_and(|value| value.len() > 4096)
+            || input
+                .provenance
+                .license
+                .as_ref()
+                .is_some_and(|value| value.len() > 4096)
+            || input
+                .provenance
+                .tool_versions
+                .iter()
+                .any(|value| value.len() > 4096)
+        {
+            return Err(DataLabError::Limit);
+        }
+        if input.provenance.excluded
+            || (limits.require_license
+                && input
+                    .provenance
+                    .license
+                    .as_deref()
+                    .is_none_or(|license| license.trim().is_empty()))
+        {
             return Err(DataLabError::ProvenanceExcluded);
         }
         validate_messages(&input.messages, limits.max_tool_calls)?;
-        Ok(Self { input, proof: None, limits, consent: permit.record(), state: PhantomData })
+        Ok(Self {
+            input,
+            proof: None,
+            limits,
+            consent: permit.record(),
+            state: PhantomData,
+        })
     }
 
     /// Bind the draft to real passing proof bytes from CAS through a trusted record adapter.
     ///
     /// # Errors
     /// Consent revocation, missing/corrupt proof or any source/execution identity mismatch.
-    pub fn verified(self, cas: &Cas, resolver: &impl ProofResolver, proof: Cid, optin: &OptIn)
-        -> Result<Trajectory<Verified>, DataLabError>
-    {
+    pub fn verified(
+        self,
+        cas: &Cas,
+        resolver: &impl ProofResolver,
+        proof: Cid,
+        optin: &OptIn,
+    ) -> Result<Trajectory<Verified>, DataLabError> {
         let permit = optin.permit(self.input.session)?;
         let bytes = cas.get(&proof)?;
-        if bytes.len() > self.limits.max_content_bytes { return Err(DataLabError::Limit); }
-        if content_id(&bytes) != proof { return Err(DataLabError::DigestMismatch); }
+        if bytes.len() > self.limits.max_content_bytes {
+            return Err(DataLabError::Limit);
+        }
+        if content_id(&bytes) != proof {
+            return Err(DataLabError::DigestMismatch);
+        }
         let facts = resolver.resolve(&bytes)?;
-        if facts.status != ProofStatus::Passed || facts.session != self.input.session || facts.frame != self.input.frame
-            || facts.workspace_snapshot != self.input.workspace_snapshot || facts.diff != self.input.diff
+        if facts.status != ProofStatus::Passed
+            || facts.session != self.input.session
+            || facts.frame != self.input.frame
+            || facts.workspace_snapshot != self.input.workspace_snapshot
+            || facts.diff != self.input.diff
             || facts.test_run != self.input.test_run
-        { return Err(DataLabError::NotVerified); }
-        Ok(Trajectory { input: self.input, proof: Some(proof), limits: self.limits,
-            consent: permit.record(), state: PhantomData })
+        {
+            return Err(DataLabError::NotVerified);
+        }
+        Ok(Trajectory {
+            input: self.input,
+            proof: Some(proof),
+            limits: self.limits,
+            consent: permit.record(),
+            state: PhantomData,
+        })
     }
 }
 
@@ -267,8 +345,12 @@ impl ResidualGuard {
     /// # Errors
     /// Rule compilation errors.
     pub fn new() -> Result<Self, DataLabError> {
-        Ok(Self { secrets: DfaScanner::default_pack_for(&[Category::Secret])?,
-            pii: DfaScanner::default_pack_for(&[Category::Pii])?, matches: 8192, entropy: EntropyCfg::default() })
+        Ok(Self {
+            secrets: DfaScanner::default_pack_for(&[Category::Secret])?,
+            pii: DfaScanner::default_pack_for(&[Category::Pii])?,
+            matches: 8192,
+            entropy: EntropyCfg::default(),
+        })
     }
 
     /// Reject any residual signature/entropy candidate. No finding echoes the matched value.
@@ -277,11 +359,15 @@ impl ResidualGuard {
     /// Residual content or inability to finish the bounded scan.
     pub fn check(&self, bytes: &[u8]) -> Result<(), DataLabError> {
         for scanner in [&self.secrets, &self.pii] {
-            if scanner.any_match(bytes)? { return Err(DataLabError::ResidualSecret); }
+            if scanner.any_match(bytes)? {
+                return Err(DataLabError::ResidualSecret);
+            }
         }
         let mut out = ScanBuf::with_capacity(self.matches);
         let _count = high_entropy_spans(bytes, &self.entropy, &mut out)?;
-        if !out.is_empty() { return Err(DataLabError::ResidualSecret); }
+        if !out.is_empty() {
+            return Err(DataLabError::ResidualSecret);
+        }
         Ok(())
     }
 }
@@ -291,25 +377,40 @@ impl Trajectory<Verified> {
     ///
     /// # Errors
     /// Revoked consent, content bounds, malformed arguments, residual sensitive data or CAS I/O.
-    pub fn mask(mut self, cas: &Cas, redactor: &impl Redactor, guard: &ResidualGuard, optin: &OptIn)
-        -> Result<Trajectory<Masked>, DataLabError>
-    {
+    pub fn mask(
+        mut self,
+        cas: &Cas,
+        redactor: &impl Redactor,
+        guard: &ResidualGuard,
+        optin: &OptIn,
+    ) -> Result<Trajectory<Masked>, DataLabError> {
         let permit = optin.permit(self.input.session)?;
         let mut total = 0usize;
         for message in &mut self.input.messages {
-            let raw = message.content.resolve(cas, self.limits.max_content_bytes)?;
+            let raw = message
+                .content
+                .resolve(cas, self.limits.max_content_bytes)?;
             add_total(&mut total, raw.len(), self.limits.max_total_bytes)?;
-            message.content = RawContent::text(mask_text(&raw, redactor, guard, self.limits.max_content_bytes)?);
-            if let Some(id) = &mut message.tool_call_id { *id = mask_text(id.as_bytes(), redactor, guard, 128)?; }
+            message.content = RawContent::text(mask_text(
+                &raw,
+                redactor,
+                guard,
+                self.limits.max_content_bytes,
+            )?);
+            if let Some(id) = &mut message.tool_call_id {
+                *id = mask_text(id.as_bytes(), redactor, guard, 128)?;
+            }
             for call in &mut message.tool_calls {
                 call.id = mask_text(call.id.as_bytes(), redactor, guard, 128)?;
                 call.name = mask_text(call.name.as_bytes(), redactor, guard, 128)?;
                 let raw = call.arguments.resolve(cas, self.limits.max_content_bytes)?;
                 add_total(&mut total, raw.len(), self.limits.max_total_bytes)?;
                 // Masking may alter JSON contents, but must not turn tool calls into invalid data.
-                let _: serde_json::Value = serde_json::from_slice(&raw).map_err(|_| DataLabError::Schema("tool arguments JSON"))?;
+                let _: serde_json::Value = serde_json::from_slice(&raw)
+                    .map_err(|_| DataLabError::Schema("tool arguments JSON"))?;
                 let masked = mask_text(&raw, redactor, guard, self.limits.max_content_bytes)?;
-                let value: serde_json::Value = serde_json::from_str(&masked).map_err(|_| DataLabError::Schema("masked tool arguments JSON"))?;
+                let value: serde_json::Value = serde_json::from_str(&masked)
+                    .map_err(|_| DataLabError::Schema("masked tool arguments JSON"))?;
                 scan_json_values(&value, guard, 0)?;
                 call.arguments = RawContent::text(masked);
             }
@@ -317,28 +418,65 @@ impl Trajectory<Verified> {
         for artifact in [&mut self.input.diff, &mut self.input.test_run] {
             let raw = RawContent::Blob(*artifact).resolve(cas, self.limits.max_content_bytes)?;
             add_total(&mut total, raw.len(), self.limits.max_total_bytes)?;
-            let masked = Zeroizing::new(mask_text(&raw, redactor, guard, self.limits.max_content_bytes)?);
+            let masked = Zeroizing::new(mask_text(
+                &raw,
+                redactor,
+                guard,
+                self.limits.max_content_bytes,
+            )?);
             *artifact = cas.put(masked.as_bytes())?;
-            if *artifact != content_id(masked.as_bytes()) { return Err(DataLabError::DigestMismatch); }
+            if *artifact != content_id(masked.as_bytes()) {
+                return Err(DataLabError::DigestMismatch);
+            }
         }
-        for text in [&mut self.input.provenance.repository, &mut self.input.provenance.license].into_iter().flatten() {
-            *text = mask_text(text.as_bytes(), redactor, guard, self.limits.max_content_bytes)?;
+        for text in [
+            &mut self.input.provenance.repository,
+            &mut self.input.provenance.license,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            *text = mask_text(
+                text.as_bytes(),
+                redactor,
+                guard,
+                self.limits.max_content_bytes,
+            )?;
         }
-        self.input.provenance.model = mask_text(self.input.provenance.model.as_bytes(), redactor, guard, 1024)?;
+        self.input.provenance.model = mask_text(
+            self.input.provenance.model.as_bytes(),
+            redactor,
+            guard,
+            1024,
+        )?;
         for version in &mut self.input.provenance.tool_versions {
             *version = mask_text(version.as_bytes(), redactor, guard, 4096)?;
         }
         validate_messages(&self.input.messages, self.limits.max_tool_calls)?;
-        Ok(Trajectory { input: self.input, proof: self.proof, limits: self.limits,
-            consent: permit.record(), state: PhantomData })
+        Ok(Trajectory {
+            input: self.input,
+            proof: self.proof,
+            limits: self.limits,
+            consent: permit.record(),
+            state: PhantomData,
+        })
     }
 }
 
-fn mask_text(raw: &[u8], redactor: &impl Redactor, guard: &ResidualGuard, limit: usize) -> Result<String, DataLabError> {
-    if raw.len() > limit { return Err(DataLabError::Limit); }
+fn mask_text(
+    raw: &[u8],
+    redactor: &impl Redactor,
+    guard: &ResidualGuard,
+    limit: usize,
+) -> Result<String, DataLabError> {
+    if raw.len() > limit {
+        return Err(DataLabError::Limit);
+    }
     let mut masked = Zeroizing::new(Vec::with_capacity(raw.len()));
     let _stats = redactor.redact_into(raw, &mut masked);
-    if masked.len() > limit { return Err(DataLabError::Limit); }
+    if masked.len() > limit {
+        return Err(DataLabError::Limit);
+    }
     guard.check(&masked)?;
     let text = std::str::from_utf8(&masked).map_err(|_| DataLabError::Schema("text encoding"))?;
     Ok(text.to_owned())
@@ -346,22 +484,39 @@ fn mask_text(raw: &[u8], redactor: &impl Redactor, guard: &ResidualGuard, limit:
 
 fn add_total(total: &mut usize, bytes: usize, limit: usize) -> Result<(), DataLabError> {
     *total = total.checked_add(bytes).ok_or(DataLabError::Limit)?;
-    if *total > limit { return Err(DataLabError::Limit); }
+    if *total > limit {
+        return Err(DataLabError::Limit);
+    }
     Ok(())
 }
 
-fn scan_json_values(value: &serde_json::Value, guard: &ResidualGuard, depth: usize) -> Result<(), DataLabError> {
-    if depth > 64 { return Err(DataLabError::Limit); }
+fn scan_json_values(
+    value: &serde_json::Value,
+    guard: &ResidualGuard,
+    depth: usize,
+) -> Result<(), DataLabError> {
+    if depth > 64 {
+        return Err(DataLabError::Limit);
+    }
     let next = depth.saturating_add(1);
     match value {
         serde_json::Value::String(text) => guard.check(text.as_bytes()),
         serde_json::Value::Array(values) => {
-            for value in values { scan_json_values(value, guard, next)?; } Ok(())
-        },
+            for value in values {
+                scan_json_values(value, guard, next)?;
+            }
+            Ok(())
+        }
         serde_json::Value::Object(values) => {
-            for (key, value) in values { guard.check(key.as_bytes())?; scan_json_values(value, guard, next)?; } Ok(())
-        },
-        serde_json::Value::Null | serde_json::Value::Bool(_) | serde_json::Value::Number(_) => Ok(()),
+            for (key, value) in values {
+                guard.check(key.as_bytes())?;
+                scan_json_values(value, guard, next)?;
+            }
+            Ok(())
+        }
+        serde_json::Value::Null | serde_json::Value::Bool(_) | serde_json::Value::Number(_) => {
+            Ok(())
+        }
     }
 }
 
@@ -374,19 +529,33 @@ fn validate_messages(messages: &[MessageInput], max_calls: usize) -> Result<(), 
             return Err(DataLabError::Schema("tool calls on non-assistant message"));
         }
         for call in &message.tool_calls {
-            if call.id.is_empty() || call.id.len() > 128 || call.name.is_empty() || call.name.len() > 128
-                || !call.name.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
+            if call.id.is_empty()
+                || call.id.len() > 128
+                || call.name.is_empty()
+                || call.name.len() > 128
+                || !call
+                    .name
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
                 || !calls.insert(call.id.as_str())
-            { return Err(DataLabError::Schema("tool call identity")); }
+            {
+                return Err(DataLabError::Schema("tool call identity"));
+            }
             let _inserted = pending.insert(call.id.as_str());
-            if calls.len() > max_calls { return Err(DataLabError::Limit); }
+            if calls.len() > max_calls {
+                return Err(DataLabError::Limit);
+            }
         }
         match (&message.tool_call_id, message.role) {
-            (Some(id), MessageRole::Tool) if pending.remove(id.as_str()) => {},
-            (None, MessageRole::Tool) | (Some(_), _) => return Err(DataLabError::Schema("unmatched tool result")),
-            (None, MessageRole::System | MessageRole::User | MessageRole::Assistant) => {},
+            (Some(id), MessageRole::Tool) if pending.remove(id.as_str()) => {}
+            (None, MessageRole::Tool) | (Some(_), _) => {
+                return Err(DataLabError::Schema("unmatched tool result"));
+            }
+            (None, MessageRole::System | MessageRole::User | MessageRole::Assistant) => {}
         }
     }
-    if !pending.is_empty() { return Err(DataLabError::Schema("unresolved tool calls")); }
+    if !pending.is_empty() {
+        return Err(DataLabError::Schema("unresolved tool calls"));
+    }
     Ok(())
 }

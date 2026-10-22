@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "diff_apply",
+  "file_path": "src/patch.rs",
+  "logic_name": "Pure Unified Patch Application",
+  "test_list": [
+    { "test_name": "exact_context_required", "description": "Require every context and deletion line to match the supplied base." },
+    { "test_name": "line_endings_preserved", "description": "Preserve CRLF/LF and final-newline state in the candidate result." },
+    { "test_name": "malformed_hunks_rejected", "description": "Reject malformed counts, unsupported records, and out-of-bounds hunks." }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    { "name": "base", "type": "String", "description": "Caller-provided UTF-8 base text." },
+    { "name": "patch", "type": "String", "description": "Single-file or hunk-only unified patch." }
+  ],
+  "output_type": "Result<String, ToolError>",
+  "output_description": "Candidate patched text only; the operation does not persist changes."
+}

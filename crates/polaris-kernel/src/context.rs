@@ -27,8 +27,8 @@ pub struct KernelCtx {
     pub(crate) writer: Mutex<()>,
     active: Mutex<BTreeSet<SessionId>>,
     closed: AtomicBool,
-    // Retained for the orchestrator to own once its verified dispatcher is assembled.
-    _commands: Mutex<CommandReceiver>,
+    // Taken exactly once by the local command owner; other callers cannot consume its queue.
+    commands: Mutex<Option<CommandReceiver>>,
     root: PathBuf,
 }
 pub(crate) async fn blocking<T: Send + 'static>(
@@ -76,7 +76,7 @@ impl KernelCtx {
             writer: Mutex::new(()),
             active: Mutex::new(BTreeSet::new()),
             closed: AtomicBool::new(false),
-            _commands: Mutex::new(commands),
+            commands: Mutex::new(Some(commands)),
             root,
         }))
     }
@@ -84,6 +84,13 @@ impl KernelCtx {
     #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
+    }
+    pub(crate) fn take_commands(&self) -> Result<CommandReceiver, KernelError> {
+        self.commands
+            .lock()
+            .map_err(|_| KernelError::Poisoned)?
+            .take()
+            .ok_or(KernelError::Closed)
     }
     pub(crate) fn ensure_open(&self) -> Result<(), KernelError> {
         if self.closed.load(Ordering::Acquire) {

@@ -1,7 +1,12 @@
 //! S1 triage adapter over the real router with masked-only inputs.
 use crate::MaskedText;
-use polaris_sdk::{error::{ErrorKind, HasKind}, registry::{DecisionEngine, FunctionalOperator}};
-use polaris_system_one_router::{DirectiveSnapshot, RepoFacts, Route, RouteInput, Router, RouterError};
+use polaris_sdk::{
+    error::{ErrorKind, HasKind},
+    registry::{DecisionEngine, FunctionalOperator},
+};
+use polaris_system_one_router::{
+    DirectiveSnapshot, RepoFacts, Route, RouteInput, Router, RouterError,
+};
 use polaris_system_one_schemas::SchemaCatalog;
 
 /// Bounded, already-sanitized task facts for the routing stage.
@@ -26,29 +31,49 @@ impl HasKind for TriageError {
     fn kind(&self) -> ErrorKind {
         match &self.0 {
             RouterError::Engine(_) => ErrorKind::Transient,
-            RouterError::InvalidCandidate(_) | RouterError::EmptyCandidates | RouterError::TopKZero => ErrorKind::Permanent,
-            RouterError::NoAllowedEffort | RouterError::SandboxUnavailable(_) | RouterError::NoSafeSandbox => ErrorKind::Policy,
-            RouterError::Schema(_) | RouterError::InvalidConfig(_) | RouterError::InvalidLexicalScore | RouterError::Probability(_) => ErrorKind::Fatal,
+            RouterError::InvalidCandidate(_)
+            | RouterError::EmptyCandidates
+            | RouterError::TopKZero => ErrorKind::Permanent,
+            RouterError::NoAllowedEffort
+            | RouterError::SandboxUnavailable(_)
+            | RouterError::NoSafeSandbox => ErrorKind::Policy,
+            RouterError::Schema(_)
+            | RouterError::InvalidConfig(_)
+            | RouterError::InvalidLexicalScore
+            | RouterError::Probability(_) => ErrorKind::Fatal,
         }
     }
 }
 impl TriageError {
     /// Underlying router failure for structured caller reporting.
     #[must_use]
-    pub fn source_error(&self) -> &RouterError { &self.0 }
+    pub fn source_error(&self) -> &RouterError {
+        &self.0
+    }
 }
-impl From<RouterError> for TriageError { fn from(error: RouterError) -> Self { Self(error) } }
+impl From<RouterError> for TriageError {
+    fn from(error: RouterError) -> Self {
+        Self(error)
+    }
+}
 
 /// Calls the injected System-One router. The result is advisory and does not grant tool access.
 #[derive(Debug)]
-pub struct S1TriageOp<D, C> { router: Router<D, C> }
+pub struct S1TriageOp<D, C> {
+    router: Router<D, C>,
+}
 impl<D, C> S1TriageOp<D, C> {
     /// Wrap an actual configured router and its real S1 engine/schema catalog.
     #[must_use]
-    pub const fn new(router: Router<D, C>) -> Self { Self { router } }
+    pub const fn new(router: Router<D, C>) -> Self {
+        Self { router }
+    }
 }
 impl<D, C> FunctionalOperator for S1TriageOp<D, C>
-where D: DecisionEngine, C: SchemaCatalog {
+where
+    D: DecisionEngine,
+    C: SchemaCatalog,
+{
     type In = TriageInput;
     type Out = Route;
     type Err = TriageError;
@@ -59,6 +84,9 @@ where D: DecisionEngine, C: SchemaCatalog {
             repo_facts: input.repo_facts,
             directives: input.directives,
         };
-        self.router.route(&route_input).await.map_err(TriageError::from)
+        self.router
+            .route(&route_input)
+            .await
+            .map_err(TriageError::from)
     }
 }

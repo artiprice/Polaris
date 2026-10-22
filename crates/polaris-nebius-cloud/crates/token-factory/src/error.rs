@@ -10,7 +10,10 @@ pub enum TfError {
     Configuration,
     /// HTTP status failure. Response bodies are intentionally not included.
     #[error("Token Factory returned HTTP status {status}")]
-    Http { status: u16, retry_after_ms: Option<u64> },
+    Http {
+        status: u16,
+        retry_after_ms: Option<u64>,
+    },
     /// Request was rejected as malformed or too large.
     #[error("Token Factory rejected the request")]
     BadRequest,
@@ -40,7 +43,10 @@ pub enum TfError {
 impl From<TfError> for ModelError {
     fn from(error: TfError) -> Self {
         match error {
-            TfError::Http { status: 429, retry_after_ms } => Self::RateLimited { retry_after_ms },
+            TfError::Http {
+                status: 429,
+                retry_after_ms,
+            } => Self::RateLimited { retry_after_ms },
             TfError::Unauthorized => Self::Unauthorized,
             TfError::Timeout => Self::Timeout,
             TfError::BadRequest => Self::BadRequest("provider rejected request".to_owned()),

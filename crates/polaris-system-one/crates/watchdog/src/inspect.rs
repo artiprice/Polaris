@@ -2,8 +2,7 @@
 
 use crate::{
     FrameSnapshot, HealthVerdict, LoopWindow, ProposedStep, RatioThreshold, RoleTable, StepIndex,
-    StepOutcome, UncheckedReason, WatchdogConfig,
-    build_step_record, loops::ratio_at_least,
+    StepOutcome, UncheckedReason, WatchdogConfig, build_step_record, loops::ratio_at_least,
 };
 use polaris_sdk::{
     registry::DecisionEngine,
@@ -68,11 +67,7 @@ where
     /// engine errors, timeouts, and malformed decisions return [`HealthVerdict::Unchecked`],
     /// preserving the watchdog's fail-open advisory policy. Capability authorization remains the
     /// only source of tool authority.
-    pub async fn inspect(
-        &self,
-        snapshot: &FrameSnapshot,
-        step: &ProposedStep,
-    ) -> HealthVerdict {
+    pub async fn inspect(&self, snapshot: &FrameSnapshot, step: &ProposedStep) -> HealthVerdict {
         if let Some(call) = step.tool_call.as_ref() {
             if !self.role_table.allows(snapshot.role, call) {
                 return HealthVerdict::RoleViolation {
@@ -103,10 +98,12 @@ where
                     reason: UncheckedReason::StepTooLarge,
                 };
             }
-            Err(crate::StepBuildError::InvalidShingleSize
-            | crate::StepBuildError::InvalidByteLimit
-            | crate::StepBuildError::InvalidWindowSize
-            | crate::StepBuildError::TooManyShingles) => {
+            Err(
+                crate::StepBuildError::InvalidShingleSize
+                | crate::StepBuildError::InvalidByteLimit
+                | crate::StepBuildError::InvalidWindowSize
+                | crate::StepBuildError::TooManyShingles,
+            ) => {
                 return HealthVerdict::Unchecked {
                     reason: UncheckedReason::InvalidDecision,
                 };
@@ -204,16 +201,14 @@ where
             context: Some(bounded_text(&snapshot.root_goal, max_chars)),
         };
         let deadline = Duration::from_millis(u64::from(schema.fail.deadline_ms));
-        let decision = match tokio::time::timeout(
-            deadline,
-            self.engine.decide(&schema.questions, &input),
-        )
-        .await
-        {
-            Ok(Ok(decision)) => decision,
-            Ok(Err(_)) => return unchecked(UncheckedReason::EngineFailure),
-            Err(_) => return unchecked(UncheckedReason::EngineTimeout),
-        };
+        let decision =
+            match tokio::time::timeout(deadline, self.engine.decide(&schema.questions, &input))
+                .await
+            {
+                Ok(Ok(decision)) => decision,
+                Ok(Err(_)) => return unchecked(UncheckedReason::EngineFailure),
+                Err(_) => return unchecked(UncheckedReason::EngineTimeout),
+            };
         let verdicts = match schema.apply(&decision) {
             Ok(verdicts) => verdicts,
             Err(_) => return unchecked(UncheckedReason::InvalidDecision),
@@ -245,9 +240,8 @@ where
 }
 
 fn validate_config(config: WatchdogConfig) -> Result<(), WatchdogError> {
-    let valid_ratio = |ratio: RatioThreshold| {
-        ratio.denominator > 0 && ratio.numerator <= ratio.denominator
-    };
+    let valid_ratio =
+        |ratio: RatioThreshold| ratio.denominator > 0 && ratio.numerator <= ratio.denominator;
     if config.max_step_bytes == 0
         || config.max_step_bytes > 1_048_576
         || config.loops.window_size == 0

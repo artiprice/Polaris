@@ -42,7 +42,10 @@ pub enum DataLabError {
 impl HasKind for DataLabError {
     fn kind(&self) -> ErrorKind {
         match self {
-            Self::NotOptedIn | Self::NotVerified | Self::ProvenanceExcluded | Self::ResidualSecret => ErrorKind::Policy,
+            Self::NotOptedIn
+            | Self::NotVerified
+            | Self::ProvenanceExcluded
+            | Self::ResidualSecret => ErrorKind::Policy,
             Self::Limit | Self::Schema(_) => ErrorKind::Permanent,
             Self::ConsentUnavailable | Self::DigestMismatch => ErrorKind::Fatal,
             Self::Cas(error) => error.kind(),

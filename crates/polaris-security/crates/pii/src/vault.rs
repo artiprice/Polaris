@@ -2,8 +2,7 @@
 
 use std::{
     collections::HashMap,
-    fmt,
-    str,
+    fmt, str,
     sync::{
         Mutex,
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -282,7 +281,10 @@ impl PiiVault {
     /// Number of reversible values currently retained, without exposing their contents.
     #[must_use]
     pub fn entry_count(&self) -> Result<usize, PiiError> {
-        self.state.lock().map(|state| state.entries.len()).map_err(|_| PiiError::StateUnavailable)
+        self.state
+            .lock()
+            .map(|state| state.entries.len())
+            .map_err(|_| PiiError::StateUnavailable)
     }
 
     /// Number of times the infallible SDK redactor had to fail closed.
@@ -302,13 +304,20 @@ impl PiiVault {
         self.scanner.scan(input, &mut rule_matches)?;
         let mut entropy_matches = ScanBuf::with_capacity(self.limits.max_matches_per_input);
         high_entropy_spans(input, &self.entropy, &mut entropy_matches)?;
-        let total = rule_matches.len().checked_add(entropy_matches.len()).ok_or(PiiError::CounterOverflow)?;
+        let total = rule_matches
+            .len()
+            .checked_add(entropy_matches.len())
+            .ok_or(PiiError::CounterOverflow)?;
         if total > self.limits.max_matches_per_input {
             return Err(PiiError::Capacity);
         }
         let mut spans = Vec::new();
         spans.try_reserve(total).map_err(|_| PiiError::Capacity)?;
-        for matched in rule_matches.matches().iter().chain(entropy_matches.matches()) {
+        for matched in rule_matches
+            .matches()
+            .iter()
+            .chain(entropy_matches.matches())
+        {
             let start = usize::try_from(matched.start).map_err(|_| PiiError::CounterOverflow)?;
             let end = usize::try_from(matched.end).map_err(|_| PiiError::CounterOverflow)?;
             let kind = if matched.rule == polaris_security_automata::RuleId::ENTROPY {
@@ -337,7 +346,9 @@ impl PiiVault {
         state: &mut VaultState,
     ) -> Result<Masked, PiiError> {
         let mut output = String::new();
-        output.try_reserve(text.len()).map_err(|_| PiiError::Capacity)?;
+        output
+            .try_reserve(text.len())
+            .map_err(|_| PiiError::Capacity)?;
         let mut pending = Vec::<VaultEntry>::new();
         let mut counts = Vec::<(PiiKind, u32)>::new();
         let mut items_masked = 0_u32;
@@ -348,53 +359,108 @@ impl PiiVault {
                 continue;
             }
             let value = text.get(span.start..span.end).ok_or(PiiError::InputLimit)?;
-            append_bounded(&mut output, text.get(cursor..span.start).ok_or(PiiError::InputLimit)?, self.limits.max_output_bytes)?;
-            let existing_token = state.entries.iter().find(|entry| entry.secret.as_str() == value)
+            append_bounded(
+                &mut output,
+                text.get(cursor..span.start).ok_or(PiiError::InputLimit)?,
+                self.limits.max_output_bytes,
+            )?;
+            let existing_token = state
+                .entries
+                .iter()
+                .find(|entry| entry.secret.as_str() == value)
                 .map(|entry| entry.token.clone())
-                .or_else(|| pending.iter().find(|entry| entry.secret.as_str() == value).map(|entry| entry.token.clone()));
+                .or_else(|| {
+                    pending
+                        .iter()
+                        .find(|entry| entry.secret.as_str() == value)
+                        .map(|entry| entry.token.clone())
+                });
             let token = match existing_token {
                 Some(token) => token,
                 None => {
-                    let next_id = state.next_token.checked_add(u64::try_from(pending.len()).map_err(|_| PiiError::CounterOverflow)?)
+                    let next_id = state
+                        .next_token
+                        .checked_add(
+                            u64::try_from(pending.len()).map_err(|_| PiiError::CounterOverflow)?,
+                        )
                         .ok_or(PiiError::CounterOverflow)?;
                     let token = self.unique_marker(text, span.kind, next_id, state, &pending)?;
                     let mut secret = Zeroizing::new(String::new());
-                    secret.try_reserve(value.len()).map_err(|_| PiiError::Capacity)?;
+                    secret
+                        .try_reserve(value.len())
+                        .map_err(|_| PiiError::Capacity)?;
                     secret.push_str(value);
                     pending.try_reserve(1).map_err(|_| PiiError::Capacity)?;
-                    pending.push(VaultEntry { secret, token: token.clone() });
+                    pending.push(VaultEntry {
+                        secret,
+                        token: token.clone(),
+                    });
                     token
                 }
             };
             append_bounded(&mut output, &token, self.limits.max_output_bytes)?;
-            items_masked = items_masked.checked_add(1).ok_or(PiiError::CounterOverflow)?;
+            items_masked = items_masked
+                .checked_add(1)
+                .ok_or(PiiError::CounterOverflow)?;
             increment_count(&mut counts, span.kind)?;
             cursor = span.end;
         }
-        append_bounded(&mut output, text.get(cursor..).ok_or(PiiError::InputLimit)?, self.limits.max_output_bytes)?;
+        append_bounded(
+            &mut output,
+            text.get(cursor..).ok_or(PiiError::InputLimit)?,
+            self.limits.max_output_bytes,
+        )?;
 
         let added_secret_bytes = pending.iter().try_fold(0_usize, |sum, entry| {
-            sum.checked_add(entry.secret.len()).ok_or(PiiError::CounterOverflow)
+            sum.checked_add(entry.secret.len())
+                .ok_or(PiiError::CounterOverflow)
         })?;
-        let new_count = state.entries.len().checked_add(pending.len()).ok_or(PiiError::CounterOverflow)?;
-        let new_secret_bytes = state.secret_bytes.checked_add(added_secret_bytes).ok_or(PiiError::CounterOverflow)?;
+        let new_count = state
+            .entries
+            .len()
+            .checked_add(pending.len())
+            .ok_or(PiiError::CounterOverflow)?;
+        let new_secret_bytes = state
+            .secret_bytes
+            .checked_add(added_secret_bytes)
+            .ok_or(PiiError::CounterOverflow)?;
         let pending_count = u64::try_from(pending.len()).map_err(|_| PiiError::CounterOverflow)?;
-        let _final_token_counter = state.next_token.checked_add(pending_count).ok_or(PiiError::CounterOverflow)?;
+        let _final_token_counter = state
+            .next_token
+            .checked_add(pending_count)
+            .ok_or(PiiError::CounterOverflow)?;
         if new_count > self.limits.max_entries || new_secret_bytes > self.limits.max_secret_bytes {
             return Err(PiiError::Capacity);
         }
-        state.entries.try_reserve(pending.len()).map_err(|_| PiiError::Capacity)?;
-        state.token_to_entry.try_reserve(pending.len()).map_err(|_| PiiError::Capacity)?;
+        state
+            .entries
+            .try_reserve(pending.len())
+            .map_err(|_| PiiError::Capacity)?;
+        state
+            .token_to_entry
+            .try_reserve(pending.len())
+            .map_err(|_| PiiError::Capacity)?;
         for entry in pending {
             let index = state.entries.len();
-            state.next_token = state.next_token.checked_add(1).ok_or(PiiError::CounterOverflow)?;
-            state.secret_bytes = state.secret_bytes.checked_add(entry.secret.len()).ok_or(PiiError::CounterOverflow)?;
+            state.next_token = state
+                .next_token
+                .checked_add(1)
+                .ok_or(PiiError::CounterOverflow)?;
+            state.secret_bytes = state
+                .secret_bytes
+                .checked_add(entry.secret.len())
+                .ok_or(PiiError::CounterOverflow)?;
             state.token_to_entry.insert(entry.token.clone(), index);
             state.entries.push(entry);
         }
         Ok(Masked {
             text: output,
-            report: SanitizeReport { items_masked, counts, ner_used: false, degraded: true },
+            report: SanitizeReport {
+                items_masked,
+                counts,
+                ner_used: false,
+                degraded: true,
+            },
         })
     }
 
@@ -430,13 +496,23 @@ impl Redactor for PiiVault {
             Ok(masked) => {
                 out.extend_from_slice(masked.text.as_bytes());
                 self.last_redactor_failed.store(false, Ordering::Relaxed);
-                RedactStats { bytes_in, replacements: masked.report.items_masked }
+                RedactStats {
+                    bytes_in,
+                    replacements: masked.report.items_masked,
+                }
             }
             Err(_) => {
                 out.extend_from_slice(FAILURE_MARKER);
                 self.last_redactor_failed.store(true, Ordering::Relaxed);
-                let _previous = self.redactor_failures.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |count| count.checked_add(1));
-                RedactStats { bytes_in, replacements: 0 }
+                let _previous = self.redactor_failures.try_update(
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                    |count| count.checked_add(1),
+                );
+                RedactStats {
+                    bytes_in,
+                    replacements: 0,
+                }
             }
         }
     }
@@ -444,7 +520,9 @@ impl Redactor for PiiVault {
 
 fn merge_spans(mut spans: Vec<Span>) -> Result<Vec<Span>, PiiError> {
     let mut merged = Vec::<Span>::new();
-    merged.try_reserve(spans.len()).map_err(|_| PiiError::Capacity)?;
+    merged
+        .try_reserve(spans.len())
+        .map_err(|_| PiiError::Capacity)?;
     for span in spans.drain(..) {
         if let Some(previous) = merged.last_mut() {
             if span.start < previous.end {
@@ -471,11 +549,16 @@ fn increment_count(counts: &mut Vec<(PiiKind, u32)>, kind: PiiKind) -> Result<()
 }
 
 fn append_bounded(output: &mut String, value: &str, maximum: usize) -> Result<(), PiiError> {
-    let new_len = output.len().checked_add(value.len()).ok_or(PiiError::CounterOverflow)?;
+    let new_len = output
+        .len()
+        .checked_add(value.len())
+        .ok_or(PiiError::CounterOverflow)?;
     if new_len > maximum {
         return Err(PiiError::Capacity);
     }
-    output.try_reserve(value.len()).map_err(|_| PiiError::Capacity)?;
+    output
+        .try_reserve(value.len())
+        .map_err(|_| PiiError::Capacity)?;
     output.push_str(value);
     Ok(())
 }
@@ -486,29 +569,59 @@ fn unmask_issued_tokens(
     maximum: usize,
 ) -> Result<Zeroizing<String>, PiiError> {
     let mut output = Zeroizing::new(String::new());
-    output.try_reserve(text.len()).map_err(|_| PiiError::Capacity)?;
+    output
+        .try_reserve(text.len())
+        .map_err(|_| PiiError::Capacity)?;
     let mut cursor = 0_usize;
-    while let Some(relative_start) = text.get(cursor..).ok_or(PiiError::InputLimit)?.find(TOKEN_PREFIX) {
-        let start = cursor.checked_add(relative_start).ok_or(PiiError::CounterOverflow)?;
+    while let Some(relative_start) = text
+        .get(cursor..)
+        .ok_or(PiiError::InputLimit)?
+        .find(TOKEN_PREFIX)
+    {
+        let start = cursor
+            .checked_add(relative_start)
+            .ok_or(PiiError::CounterOverflow)?;
         let token_tail = text.get(start..).ok_or(PiiError::InputLimit)?;
         let Some(relative_end) = token_tail.find('>') else {
-            append_bounded(&mut output, text.get(cursor..).ok_or(PiiError::InputLimit)?, maximum)?;
+            append_bounded(
+                &mut output,
+                text.get(cursor..).ok_or(PiiError::InputLimit)?,
+                maximum,
+            )?;
             return Ok(output);
         };
-        let end = start.checked_add(relative_end).and_then(|value| value.checked_add(1)).ok_or(PiiError::CounterOverflow)?;
+        let end = start
+            .checked_add(relative_end)
+            .and_then(|value| value.checked_add(1))
+            .ok_or(PiiError::CounterOverflow)?;
         let token = text.get(start..end).ok_or(PiiError::InputLimit)?;
         let Some(entry_index) = state.token_to_entry.get(token).copied() else {
             let copy_end = start.checked_add(1).ok_or(PiiError::CounterOverflow)?;
-            append_bounded(&mut output, text.get(cursor..copy_end).ok_or(PiiError::InputLimit)?, maximum)?;
+            append_bounded(
+                &mut output,
+                text.get(cursor..copy_end).ok_or(PiiError::InputLimit)?,
+                maximum,
+            )?;
             cursor = copy_end;
             continue;
         };
-        let entry = state.entries.get(entry_index).ok_or(PiiError::StateUnavailable)?;
-        append_bounded(&mut output, text.get(cursor..start).ok_or(PiiError::InputLimit)?, maximum)?;
+        let entry = state
+            .entries
+            .get(entry_index)
+            .ok_or(PiiError::StateUnavailable)?;
+        append_bounded(
+            &mut output,
+            text.get(cursor..start).ok_or(PiiError::InputLimit)?,
+            maximum,
+        )?;
         append_bounded(&mut output, entry.secret.as_str(), maximum)?;
         cursor = end;
     }
-    append_bounded(&mut output, text.get(cursor..).ok_or(PiiError::InputLimit)?, maximum)?;
+    append_bounded(
+        &mut output,
+        text.get(cursor..).ok_or(PiiError::InputLimit)?,
+        maximum,
+    )?;
     Ok(output)
 }
 
@@ -525,4 +638,3 @@ fn hex_tag(tag: &[u8; 16]) -> String {
     }
     output
 }
-

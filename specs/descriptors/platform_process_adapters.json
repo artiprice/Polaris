@@ -1,0 +1,20 @@
+{
+  "type_of": "module",
+  "name": "platform_process_adapters",
+  "file_path": "crates/polaris-platform/crates/process/src/lib.rs",
+  "logic_name": "Platform Process Adapters",
+  "test_list": [
+    { "test_name": "absolute_program_resolution_canonicalizes_and_flags_batch_targets", "description": "Resolve a real executable to an absolute canonical path and classify batch scripts." },
+    { "test_name": "environment_policy_rejects_secrets_and_duplicate_names", "description": "Reject secret-like and case-insensitive duplicate child environment keys." },
+    { "test_name": "watcher_emits_real_create_event_and_ignores_default_noise", "description": "Observe a real filesystem create and suppress ignored directory changes." },
+    { "test_name": "conpty_starts_cmd_and_streams_output_with_bounded_records", "description": "Start a native Windows PTY child and receive its output over the bounded byte channel." }
+  ],
+  "dependencies": ["EnvPolicy", "ProgramResolution", "PtySession", "FsWatcher"],
+  "libraries": ["portable-pty", "notify", "which", "process-wrap"],
+  "inputs": [
+    { "name": "program", "type": "&Path", "description": "Absolute program path." },
+    { "name": "environment", "type": "EnvPolicy", "description": "Explicit environment allow-list." }
+  ],
+  "output_type": "Result<PlatformAdapter, PlatformError>",
+  "output_description": "A real process, terminal, executable-resolution, or filesystem-watch adapter result."
+}

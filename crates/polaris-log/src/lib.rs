@@ -23,9 +23,8 @@
 //! - **Process-wide state.** [`init`] installs the global subscriber once; [`start`] builds the
 //!   same pipeline without installing it (tests, embedding).
 //!
-//! Not in P1 (see the crate PLAN section): daily rotation combined with size rotation, span
-//! context in records, flush on panic hook / Ctrl+C (the app calls [`LogGuard::flush`] from its
-//! hooks), a telemetry-specific record format.
+//! Daily and size rotation share retention. The application flushes [`LogGuard::flush`] from its
+//! panic/signal paths. Span context and a telemetry-specific record format are later extensions.
 //!
 //! Test-first descriptors: `specs/descriptors/log_*.json`.
 

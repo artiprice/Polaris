@@ -75,6 +75,15 @@ fn control_characters_are_dropped_and_tabs_kept() -> TestResult {
 }
 
 #[test]
+fn fast_utf8_path_still_removes_c1_controls() -> TestResult {
+    assert_eq!(
+        decode_stream("diagnostic\u{0085}text\n".as_bytes()),
+        "diagnostictext\n"
+    );
+    Ok(())
+}
+
+#[test]
 fn invalid_utf8_is_replaced_not_fatal() -> TestResult {
     let out = decode_stream(b"ok \xff\xfe end\n");
     assert!(out.starts_with("ok "), "got {out:?}");

@@ -13,14 +13,20 @@ use bytes::{Bytes, BytesMut};
 use futures::{Stream, StreamExt};
 use polaris_sdk::{
     ids::{ModelId, TokenCount},
-    registry::{ChatChunk, ChatChunkSource, ChatModel, ChatRequest, ChatRole, ChatToolCall, EmbeddingProvider, FinishReason, ModelError, ToolSpec, Usage},
+    registry::{
+        ChatChunk, ChatChunkSource, ChatModel, ChatRequest, ChatRole, ChatToolCall,
+        EmbeddingProvider, FinishReason, ModelError, ToolSpec, Usage,
+    },
 };
 use reqwest::{Client, Method, Response, StatusCode, Url};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::{error::TfError, sse::{SseEvent, SseParser}};
+use crate::{
+    error::TfError,
+    sse::{SseEvent, SseParser},
+};
 
 /// Base URL for an OpenAI-compatible API.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -36,8 +42,14 @@ impl BaseUrl {
         let mut url = Url::parse(value).map_err(|_| TfError::Configuration)?;
         let host = url.host_str().ok_or(TfError::Configuration)?;
         let loopback = host == "localhost" || is_literal_loopback_ip(host);
-        if url.scheme() != "https" && !(url.scheme() == "http" && loopback) { return Err(TfError::Configuration); }
-        if !url.username().is_empty() || url.password().is_some() || url.query().is_some() || url.fragment().is_some() {
+        if url.scheme() != "https" && !(url.scheme() == "http" && loopback) {
+            return Err(TfError::Configuration);
+        }
+        if !url.username().is_empty()
+            || url.password().is_some()
+            || url.query().is_some()
+            || url.fragment().is_some()
+        {
             return Err(TfError::Configuration);
         }
         if !url.path().ends_with('/') {
@@ -58,7 +70,10 @@ impl BaseUrl {
 }
 
 fn is_literal_loopback_ip(host: &str) -> bool {
-    let address = match host.strip_prefix('[').and_then(|value| value.strip_suffix(']')) {
+    let address = match host
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(']'))
+    {
         Some(unbracketed) => unbracketed,
         None => host,
     };
@@ -80,13 +95,17 @@ impl ApiKey {
     /// Returns Configuration for empty credentials or ASCII control characters.
     pub fn new(secret: SecretString) -> Result<Self, TfError> {
         let value = secret.expose_secret();
-        if value.is_empty() || value.chars().any(|character| character.is_ascii_control()) { return Err(TfError::Configuration); }
+        if value.is_empty() || value.chars().any(|character| character.is_ascii_control()) {
+            return Err(TfError::Configuration);
+        }
         Ok(Self(secret))
     }
 }
 
 impl std::fmt::Debug for ApiKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { f.write_str("ApiKey([REDACTED])") }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ApiKey([REDACTED])")
+    }
 }
 
 enum Credentials {
@@ -151,13 +170,24 @@ impl ClientConfig {
     /// # Errors
     /// Returns Configuration if a timeout or capacity is zero, or the retry cap exceeds its bound.
     pub fn validate(&self) -> Result<(), TfError> {
-        if self.request_timeout.is_zero() || self.connect_timeout.is_zero() || self.stream_idle_timeout.is_zero()
-            || self.max_sse_frame_bytes == 0 || self.max_events_per_chunk == 0 || self.max_chat_stream_bytes == 0
-            || self.max_text_bytes == 0 || self.max_tool_argument_bytes == 0 || self.max_json_response_bytes == 0 || self.max_request_bytes == 0
-            || self.retry_base_delay.is_zero() || self.max_retry_delay.is_zero() {
+        if self.request_timeout.is_zero()
+            || self.connect_timeout.is_zero()
+            || self.stream_idle_timeout.is_zero()
+            || self.max_sse_frame_bytes == 0
+            || self.max_events_per_chunk == 0
+            || self.max_chat_stream_bytes == 0
+            || self.max_text_bytes == 0
+            || self.max_tool_argument_bytes == 0
+            || self.max_json_response_bytes == 0
+            || self.max_request_bytes == 0
+            || self.retry_base_delay.is_zero()
+            || self.max_retry_delay.is_zero()
+        {
             return Err(TfError::Configuration);
         }
-        if self.max_429_retries > 8 { return Err(TfError::Configuration); }
+        if self.max_429_retries > 8 {
+            return Err(TfError::Configuration);
+        }
         Ok(())
     }
 }
@@ -191,11 +221,17 @@ impl TokenFactoryClient {
     /// # Errors
     /// Returns Configuration unless the base URL host is the IPv4 or IPv6 loopback address.
     pub fn anonymous_loopback(base: BaseUrl, config: ClientConfig) -> Result<Self, TfError> {
-        if !base.is_literal_loopback_ip() { return Err(TfError::Configuration); }
+        if !base.is_literal_loopback_ip() {
+            return Err(TfError::Configuration);
+        }
         Self::build(base, Credentials::AnonymousLoopback, config)
     }
 
-    fn build(base: BaseUrl, credentials: Credentials, config: ClientConfig) -> Result<Self, TfError> {
+    fn build(
+        base: BaseUrl,
+        credentials: Credentials,
+        config: ClientConfig,
+    ) -> Result<Self, TfError> {
         config.validate()?;
         let builder = Client::builder()
             .connect_timeout(config.connect_timeout)
@@ -207,7 +243,14 @@ impl TokenFactoryClient {
             builder
         };
         let http = builder.build().map_err(|_| TfError::Configuration)?;
-        Ok(Self { inner: Arc::new(ClientInner { http, base, credentials, config }) })
+        Ok(Self {
+            inner: Arc::new(ClientInner {
+                http,
+                base,
+                credentials,
+                config,
+            }),
+        })
     }
 
     /// Fetch available model identifiers from the OpenAI-compatible models endpoint.
@@ -217,12 +260,20 @@ impl TokenFactoryClient {
     pub async fn list_models(&self) -> Result<Vec<ModelInfo>, TfError> {
         let url = self.inner.base.endpoint("models")?;
         let response = self.send_with_429_retry(Method::GET, url, None).await?;
-        let bytes = read_bounded(response, self.inner.config.max_json_response_bytes, self.inner.config.stream_idle_timeout).await?;
+        let bytes = read_bounded(
+            response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await?;
         let result: ModelListWire = serde_json::from_slice(&bytes).map_err(|_| TfError::Json)?;
         let mut seen = BTreeSet::new();
         let mut models = Vec::with_capacity(result.data.len());
         for item in result.data {
-            if item.id.is_empty() || item.id.chars().any(char::is_control) || !seen.insert(item.id.clone()) {
+            if item.id.is_empty()
+                || item.id.chars().any(char::is_control)
+                || !seen.insert(item.id.clone())
+            {
                 return Err(TfError::Protocol);
             }
             models.push(ModelInfo { id: item.id });
@@ -232,64 +283,131 @@ impl TokenFactoryClient {
 
     /// Request a batch of embeddings. The response's actual vector dimension is returned and
     /// checked for consistency; no dimension is assumed from a model name.
-    pub async fn embeddings(&self, model: &ModelId, batch: &[&str], config: &EmbeddingConfig) -> Result<EmbeddingBatch, TfError> {
+    pub async fn embeddings(
+        &self,
+        model: &ModelId,
+        batch: &[&str],
+        config: &EmbeddingConfig,
+    ) -> Result<EmbeddingBatch, TfError> {
         config.validate()?;
-        if batch.is_empty() || batch.len() > config.max_batch_items || batch.iter().any(|text| text.len() > config.max_input_bytes) {
+        if batch.is_empty()
+            || batch.len() > config.max_batch_items
+            || batch.iter().any(|text| text.len() > config.max_input_bytes)
+        {
             return Err(TfError::Configuration);
         }
         let body = json!({"model": model.as_str(), "input": batch});
-        if serde_json::to_vec(&body).map_err(|_| TfError::Json)?.len() > self.inner.config.max_request_bytes { return Err(TfError::TooLarge); }
-        let response = self.send_with_429_retry(Method::POST, self.inner.base.endpoint("embeddings")?, Some(body)).await?;
-        let bytes = read_bounded(response, self.inner.config.max_json_response_bytes, self.inner.config.stream_idle_timeout).await?;
-        let parsed: EmbeddingResponseWire = serde_json::from_slice(&bytes).map_err(|_| TfError::Json)?;
-        if parsed.data.len() != batch.len() { return Err(TfError::Protocol); }
+        if serde_json::to_vec(&body).map_err(|_| TfError::Json)?.len()
+            > self.inner.config.max_request_bytes
+        {
+            return Err(TfError::TooLarge);
+        }
+        let response = self
+            .send_with_429_retry(
+                Method::POST,
+                self.inner.base.endpoint("embeddings")?,
+                Some(body),
+            )
+            .await?;
+        let bytes = read_bounded(
+            response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await?;
+        let parsed: EmbeddingResponseWire =
+            serde_json::from_slice(&bytes).map_err(|_| TfError::Json)?;
+        if parsed.data.len() != batch.len() {
+            return Err(TfError::Protocol);
+        }
         let mut vectors = BTreeMap::new();
         for item in parsed.data {
-            if item.index >= batch.len() || vectors.insert(item.index, item.embedding).is_some() { return Err(TfError::Protocol); }
+            if item.index >= batch.len() || vectors.insert(item.index, item.embedding).is_some() {
+                return Err(TfError::Protocol);
+            }
         }
         let mut ordered = Vec::with_capacity(batch.len());
         for expected_index in 0..batch.len() {
-            let Some(vector) = vectors.remove(&expected_index) else { return Err(TfError::Protocol); };
-            if vector.is_empty() || vector.len() > config.max_dimensions || vector.iter().any(|value| !value.is_finite()) {
+            let Some(vector) = vectors.remove(&expected_index) else {
+                return Err(TfError::Protocol);
+            };
+            if vector.is_empty()
+                || vector.len() > config.max_dimensions
+                || vector.iter().any(|value| !value.is_finite())
+            {
                 return Err(TfError::Protocol);
             }
             ordered.push(vector);
         }
         let dimension = ordered.first().map(Vec::len).ok_or(TfError::Protocol)?;
-        if ordered.iter().any(|vector| vector.len() != dimension) { return Err(TfError::Protocol); }
-        Ok(EmbeddingBatch { vectors: ordered, dimension })
+        if ordered.iter().any(|vector| vector.len() != dimension) {
+            return Err(TfError::Protocol);
+        }
+        Ok(EmbeddingBatch {
+            vectors: ordered,
+            dimension,
+        })
     }
 
     /// Create an SDK embedding adapter that checks each real response against an explicitly
     /// configured dimension observed or otherwise verified by the composition root.
     /// # Errors
     /// Returns Configuration for a zero or unsupported expected dimension.
-    pub fn embedding_provider(&self, model: ModelId, config: EmbeddingConfig, expected_dimension: usize) -> Result<EmbeddingClient, TfError> {
+    pub fn embedding_provider(
+        &self,
+        model: ModelId,
+        config: EmbeddingConfig,
+        expected_dimension: usize,
+    ) -> Result<EmbeddingClient, TfError> {
         config.validate()?;
-        if expected_dimension == 0 || expected_dimension > config.max_dimensions { return Err(TfError::Configuration); }
-        Ok(EmbeddingClient { client: self.clone(), model, config, expected_dimension })
+        if expected_dimension == 0 || expected_dimension > config.max_dimensions {
+            return Err(TfError::Configuration);
+        }
+        Ok(EmbeddingClient {
+            client: self.clone(),
+            model,
+            config,
+            expected_dimension,
+        })
     }
 
-    async fn send_with_429_retry(&self, method: Method, url: Url, body: Option<Value>) -> Result<Response, TfError> {
+    async fn send_with_429_retry(
+        &self,
+        method: Method,
+        url: Url,
+        body: Option<Value>,
+    ) -> Result<Response, TfError> {
         let mut retries = 0_u8;
         let start = tokio::time::Instant::now();
-        let Some(deadline) = start.checked_add(self.inner.config.request_timeout) else { return Err(TfError::Configuration); };
+        let Some(deadline) = start.checked_add(self.inner.config.request_timeout) else {
+            return Err(TfError::Configuration);
+        };
         loop {
             let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
-            if remaining.is_zero() { return Err(TfError::Timeout); }
+            if remaining.is_zero() {
+                return Err(TfError::Timeout);
+            }
             let mut request = self.inner.http.request(method.clone(), url.clone());
             if let Credentials::Bearer(key) = &self.inner.credentials {
                 request = request.bearer_auth(key.0.expose_secret());
             }
-            if let Some(json_body) = body.as_ref() { request = request.json(json_body); }
+            if let Some(json_body) = body.as_ref() {
+                request = request.json(json_body);
+            }
             let response = match tokio::time::timeout(remaining, request.send()).await {
                 Err(_) => return Err(TfError::Timeout),
                 Ok(Err(_)) => return Err(TfError::Transport),
                 Ok(Ok(response)) => response,
             };
             let status = response.status();
-            if status == StatusCode::TOO_MANY_REQUESTS && retries < self.inner.config.max_429_retries {
-                let delay = retry_delay(response.headers().get(reqwest::header::RETRY_AFTER), retries, self.inner.config);
+            if status == StatusCode::TOO_MANY_REQUESTS
+                && retries < self.inner.config.max_429_retries
+            {
+                let delay = retry_delay(
+                    response.headers().get(reqwest::header::RETRY_AFTER),
+                    retries,
+                    self.inner.config,
+                );
                 if delay >= deadline.saturating_duration_since(tokio::time::Instant::now()) {
                     return Err(status_error(response));
                 }
@@ -297,7 +415,9 @@ impl TokenFactoryClient {
                 tokio::time::sleep(delay).await;
                 continue;
             }
-            if !status.is_success() { return Err(status_error(response)); }
+            if !status.is_success() {
+                return Err(status_error(response));
+            }
             return Ok(response);
         }
     }
@@ -305,29 +425,59 @@ impl TokenFactoryClient {
 
 impl std::fmt::Debug for TokenFactoryClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TokenFactoryClient").field("base", &self.inner.base)
-            .field("credential", &self.inner.credentials).finish()
+        f.debug_struct("TokenFactoryClient")
+            .field("base", &self.inner.base)
+            .field("credential", &self.inner.credentials)
+            .finish()
     }
 }
 
 impl ChatModel for TokenFactoryClient {
     type Stream = ProviderStream;
 
-    fn stream(&self, req: ChatRequest) -> impl Future<Output = Result<Self::Stream, ModelError>> + Send {
+    fn stream(
+        &self,
+        req: ChatRequest,
+    ) -> impl Future<Output = Result<Self::Stream, ModelError>> + Send {
         async move {
-            let request_body = chat_request_json(&req, self.inner.config.reasoning_replay).map_err(ModelError::from)?;
-            if serde_json::to_vec(&request_body).map_err(|_| TfError::Json).map_err(ModelError::from)?.len() > self.inner.config.max_request_bytes {
+            let request_body = chat_request_json(&req, self.inner.config.reasoning_replay)
+                .map_err(ModelError::from)?;
+            if serde_json::to_vec(&request_body)
+                .map_err(|_| TfError::Json)
+                .map_err(ModelError::from)?
+                .len()
+                > self.inner.config.max_request_bytes
+            {
                 return Err(ModelError::from(TfError::TooLarge));
             }
-            let url = self.inner.base.endpoint("chat/completions").map_err(ModelError::from)?;
-            let response = self.send_with_429_retry(Method::POST, url, Some(request_body)).await.map_err(ModelError::from)?;
-            let body: BodyStream = Box::pin(response.bytes_stream());
-            let parser = SseParser::new(self.inner.config.max_sse_frame_bytes, self.inner.config.max_events_per_chunk)
+            let url = self
+                .inner
+                .base
+                .endpoint("chat/completions")
                 .map_err(ModelError::from)?;
+            let response = self
+                .send_with_429_retry(Method::POST, url, Some(request_body))
+                .await
+                .map_err(ModelError::from)?;
+            let body: BodyStream = Box::pin(response.bytes_stream());
+            let parser = SseParser::new(
+                self.inner.config.max_sse_frame_bytes,
+                self.inner.config.max_events_per_chunk,
+            )
+            .map_err(ModelError::from)?;
             Ok(ProviderStream {
-                body, parser, pending: VecDeque::new(), config: self.inner.config,
-                raw_bytes: 0, text_bytes: 0, tool_bytes: 0, tools: BTreeMap::new(),
-                finish_reason: None, saw_done: false, terminal: false, eof_flushed: false,
+                body,
+                parser,
+                pending: VecDeque::new(),
+                config: self.inner.config,
+                raw_bytes: 0,
+                text_bytes: 0,
+                tool_bytes: 0,
+                tools: BTreeMap::new(),
+                finish_reason: None,
+                saw_done: false,
+                terminal: false,
+                eof_flushed: false,
             })
         }
     }
@@ -341,14 +491,23 @@ pub struct ModelInfo {
 }
 
 #[derive(Deserialize)]
-struct ModelListWire { data: Vec<ModelListEntryWire> }
+struct ModelListWire {
+    data: Vec<ModelListEntryWire>,
+}
 #[derive(Deserialize)]
-struct ModelListEntryWire { id: String }
+struct ModelListEntryWire {
+    id: String,
+}
 
 #[derive(Deserialize)]
-struct EmbeddingResponseWire { data: Vec<EmbeddingItemWire> }
+struct EmbeddingResponseWire {
+    data: Vec<EmbeddingItemWire>,
+}
 #[derive(Deserialize)]
-struct EmbeddingItemWire { index: usize, embedding: Vec<f32> }
+struct EmbeddingItemWire {
+    index: usize,
+    embedding: Vec<f32>,
+}
 
 /// Actual embedding response batch and dimension.
 #[derive(Debug, Clone, PartialEq)]
@@ -393,24 +552,38 @@ pub struct EmbeddingClient {
 
 impl std::fmt::Debug for EmbeddingClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EmbeddingClient").field("model", &self.model).field("expected_dimension", &self.expected_dimension).finish()
+        f.debug_struct("EmbeddingClient")
+            .field("model", &self.model)
+            .field("expected_dimension", &self.expected_dimension)
+            .finish()
     }
 }
 
 impl EmbeddingClient {
     /// Fetch a batch and return the dimension observed in the provider response.
     pub async fn embeddings(&self, batch: &[&str]) -> Result<EmbeddingBatch, TfError> {
-        self.client.embeddings(&self.model, batch, &self.config).await
+        self.client
+            .embeddings(&self.model, batch, &self.config)
+            .await
     }
 }
 
 impl EmbeddingProvider for EmbeddingClient {
-    fn dimension(&self) -> usize { self.expected_dimension }
+    fn dimension(&self) -> usize {
+        self.expected_dimension
+    }
 
-    fn embed(&self, batch: &[&str]) -> impl Future<Output = Result<Vec<Vec<f32>>, ModelError>> + Send {
+    fn embed(
+        &self,
+        batch: &[&str],
+    ) -> impl Future<Output = Result<Vec<Vec<f32>>, ModelError>> + Send {
         async move {
             let result = self.embeddings(batch).await.map_err(ModelError::from)?;
-            if result.dimension != self.expected_dimension { return Err(ModelError::Protocol("embedding dimension mismatch".to_owned())); }
+            if result.dimension != self.expected_dimension {
+                return Err(ModelError::Protocol(
+                    "embedding dimension mismatch".to_owned(),
+                ));
+            }
             Ok(result.vectors)
         }
     }
@@ -438,9 +611,14 @@ impl ChatChunkSource for ProviderStream {
     fn next_chunk(&mut self) -> impl Future<Output = Option<Result<ChatChunk, ModelError>>> + Send {
         async move {
             loop {
-                if let Some(chunk) = self.pending.pop_front() { return Some(chunk); }
-                if self.terminal { return None; }
-                let next = tokio::time::timeout(self.config.stream_idle_timeout, self.body.next()).await;
+                if let Some(chunk) = self.pending.pop_front() {
+                    return Some(chunk);
+                }
+                if self.terminal {
+                    return None;
+                }
+                let next =
+                    tokio::time::timeout(self.config.stream_idle_timeout, self.body.next()).await;
                 match next {
                     Err(_) => return self.fail(TfError::Timeout),
                     Ok(Some(Err(_))) => return self.fail(TfError::Transport),
@@ -450,24 +628,38 @@ impl ChatChunkSource for ProviderStream {
                             _ => return self.fail(TfError::TooLarge),
                         };
                         let mut events = Vec::new();
-                        if let Err(error) = self.parser.feed(&bytes, &mut events) { return self.fail(error); }
+                        if let Err(error) = self.parser.feed(&bytes, &mut events) {
+                            return self.fail(error);
+                        }
                         for event in events {
-                            if let Err(error) = self.consume_event(event) { return self.fail(error); }
+                            if let Err(error) = self.consume_event(event) {
+                                return self.fail(error);
+                            }
                         }
                     }
                     Ok(None) => {
                         if !self.eof_flushed {
                             let mut events = Vec::new();
-                            if let Err(error) = self.parser.finish(&mut events) { return self.fail(error); }
+                            if let Err(error) = self.parser.finish(&mut events) {
+                                return self.fail(error);
+                            }
                             self.eof_flushed = true;
                             for event in events {
-                                if let Err(error) = self.consume_event(event) { return self.fail(error); }
+                                if let Err(error) = self.consume_event(event) {
+                                    return self.fail(error);
+                                }
                             }
                         }
-                        if !self.saw_done || self.finish_reason.is_none() { return self.fail(TfError::StreamTruncated); }
-                        if let Err(error) = self.validate_tool_calls() { return self.fail(error); }
+                        if !self.saw_done || self.finish_reason.is_none() {
+                            return self.fail(TfError::StreamTruncated);
+                        }
+                        if let Err(error) = self.validate_tool_calls() {
+                            return self.fail(error);
+                        }
                         self.terminal = true;
-                        let Some(reason) = self.finish_reason else { return self.fail(TfError::StreamTruncated); };
+                        let Some(reason) = self.finish_reason else {
+                            return self.fail(TfError::StreamTruncated);
+                        };
                         return Some(Ok(ChatChunk::Finished(reason)));
                     }
                 }
@@ -484,34 +676,59 @@ impl ProviderStream {
     }
 
     fn consume_event(&mut self, event: SseEvent) -> Result<(), TfError> {
-        if self.saw_done { return Err(TfError::Protocol); }
+        if self.saw_done {
+            return Err(TfError::Protocol);
+        }
         match event {
             SseEvent::Done => {
-                if self.finish_reason.is_none() { return Err(TfError::StreamTruncated); }
+                if self.finish_reason.is_none() {
+                    return Err(TfError::StreamTruncated);
+                }
                 self.validate_tool_calls()?;
                 self.saw_done = true;
             }
             SseEvent::Data(data) => {
-                let chunk: ChatCompletionChunk = serde_json::from_str(&data).map_err(|_| TfError::Json)?;
-                if chunk.choices.len() > 1 { return Err(TfError::Protocol); }
-                if let Some(usage) = chunk.usage { self.pending.push_back(Ok(ChatChunk::Usage(usage.into()))); }
+                let chunk: ChatCompletionChunk =
+                    serde_json::from_str(&data).map_err(|_| TfError::Json)?;
+                if chunk.choices.len() > 1 {
+                    return Err(TfError::Protocol);
+                }
+                if let Some(usage) = chunk.usage {
+                    self.pending.push_back(Ok(ChatChunk::Usage(usage.into())));
+                }
                 for choice in chunk.choices {
-                    if choice.index != 0 { return Err(TfError::Protocol); }
-                    let has_delta = choice.delta.content.is_some() || choice.delta.reasoning_content.is_some()
+                    if choice.index != 0 {
+                        return Err(TfError::Protocol);
+                    }
+                    let has_delta = choice.delta.content.is_some()
+                        || choice.delta.reasoning_content.is_some()
                         || !choice.delta.tool_calls.is_empty();
-                    if self.finish_reason.is_some() && has_delta { return Err(TfError::Protocol); }
+                    if self.finish_reason.is_some() && has_delta {
+                        return Err(TfError::Protocol);
+                    }
                     if let Some(content) = choice.delta.content {
                         self.add_text_bytes(content.len())?;
-                        if !content.is_empty() { self.pending.push_back(Ok(ChatChunk::Text(content))); }
+                        if !content.is_empty() {
+                            self.pending.push_back(Ok(ChatChunk::Text(content)));
+                        }
                     }
                     if let Some(reasoning) = choice.delta.reasoning_content {
                         self.add_text_bytes(reasoning.len())?;
-                        if !reasoning.is_empty() { self.pending.push_back(Ok(ChatChunk::Reasoning(reasoning))); }
+                        if !reasoning.is_empty() {
+                            self.pending.push_back(Ok(ChatChunk::Reasoning(reasoning)));
+                        }
                     }
-                    for delta in choice.delta.tool_calls { self.add_tool_delta(delta)?; }
+                    for delta in choice.delta.tool_calls {
+                        self.add_tool_delta(delta)?;
+                    }
                     if let Some(reason) = choice.finish_reason {
                         let mapped = parse_finish_reason(&reason);
-                        if self.finish_reason.is_some_and(|existing| existing != mapped) { return Err(TfError::Protocol); }
+                        if self
+                            .finish_reason
+                            .is_some_and(|existing| existing != mapped)
+                        {
+                            return Err(TfError::Protocol);
+                        }
                         self.finish_reason = Some(mapped);
                     }
                 }
@@ -521,14 +738,24 @@ impl ProviderStream {
     }
 
     fn add_text_bytes(&mut self, bytes: usize) -> Result<(), TfError> {
-        self.text_bytes = self.text_bytes.checked_add(bytes).ok_or(TfError::TooLarge)?;
-        if self.text_bytes > self.config.max_text_bytes { return Err(TfError::TooLarge); }
+        self.text_bytes = self
+            .text_bytes
+            .checked_add(bytes)
+            .ok_or(TfError::TooLarge)?;
+        if self.text_bytes > self.config.max_text_bytes {
+            return Err(TfError::TooLarge);
+        }
         Ok(())
     }
 
     fn add_tool_delta(&mut self, delta: ToolCallDeltaWire) -> Result<(), TfError> {
-        self.tool_bytes = self.tool_bytes.checked_add(delta.function.arguments.len()).ok_or(TfError::TooLarge)?;
-        if self.tool_bytes > self.config.max_tool_argument_bytes { return Err(TfError::TooLarge); }
+        self.tool_bytes = self
+            .tool_bytes
+            .checked_add(delta.function.arguments.len())
+            .ok_or(TfError::TooLarge)?;
+        if self.tool_bytes > self.config.max_tool_argument_bytes {
+            return Err(TfError::TooLarge);
+        }
         let state = self.tools.entry(delta.index).or_default();
         set_consistent(&mut state.id, delta.id.clone())?;
         set_consistent(&mut state.name, delta.function.name.clone())?;
@@ -545,57 +772,104 @@ impl ProviderStream {
     fn validate_tool_calls(&self) -> Result<(), TfError> {
         let mut seen_ids = BTreeSet::new();
         for call in self.tools.values() {
-            let id = call.id.as_deref().filter(|id| !id.is_empty()).ok_or(TfError::StreamTruncated)?;
-            let name = call.name.as_deref().filter(|name| !name.is_empty())
+            let id = call
+                .id
+                .as_deref()
+                .filter(|id| !id.is_empty())
                 .ok_or(TfError::StreamTruncated)?;
-            if !seen_ids.insert(id) || !name.chars().all(|character| character.is_ascii_alphanumeric() || character == '_') {
+            let name = call
+                .name
+                .as_deref()
+                .filter(|name| !name.is_empty())
+                .ok_or(TfError::StreamTruncated)?;
+            if !seen_ids.insert(id)
+                || !name
+                    .chars()
+                    .all(|character| character.is_ascii_alphanumeric() || character == '_')
+            {
                 return Err(TfError::Protocol);
             }
-            let args: Value = serde_json::from_str(&call.arguments).map_err(|_| TfError::StreamTruncated)?;
-            if !args.is_object() { return Err(TfError::StreamTruncated); }
+            let args: Value =
+                serde_json::from_str(&call.arguments).map_err(|_| TfError::StreamTruncated)?;
+            if !args.is_object() {
+                return Err(TfError::StreamTruncated);
+            }
         }
         Ok(())
     }
 }
 
 #[derive(Default)]
-struct ToolCallState { id: Option<String>, name: Option<String>, arguments: String }
+struct ToolCallState {
+    id: Option<String>,
+    name: Option<String>,
+    arguments: String,
+}
 
 fn set_consistent(target: &mut Option<String>, update: Option<String>) -> Result<(), TfError> {
     if let Some(update) = update {
         if let Some(existing) = target.as_ref() {
-            if existing != &update { return Err(TfError::Protocol); }
-        } else { *target = Some(update); }
+            if existing != &update {
+                return Err(TfError::Protocol);
+            }
+        } else {
+            *target = Some(update);
+        }
     }
     Ok(())
 }
 
 #[derive(Deserialize)]
-struct ChatCompletionChunk { #[serde(default)] choices: Vec<ChoiceWire>, usage: Option<UsageWire> }
+struct ChatCompletionChunk {
+    #[serde(default)]
+    choices: Vec<ChoiceWire>,
+    usage: Option<UsageWire>,
+}
 #[derive(Deserialize)]
-struct ChoiceWire { #[serde(default)] index: u32, #[serde(default)] delta: DeltaWire, finish_reason: Option<String> }
+struct ChoiceWire {
+    #[serde(default)]
+    index: u32,
+    #[serde(default)]
+    delta: DeltaWire,
+    finish_reason: Option<String>,
+}
 #[derive(Deserialize, Default)]
 struct DeltaWire {
     content: Option<String>,
     reasoning_content: Option<String>,
-    #[serde(default)] tool_calls: Vec<ToolCallDeltaWire>,
+    #[serde(default)]
+    tool_calls: Vec<ToolCallDeltaWire>,
 }
 #[derive(Deserialize)]
-struct ToolCallDeltaWire { index: u32, id: Option<String>, function: FunctionDeltaWire }
+struct ToolCallDeltaWire {
+    index: u32,
+    id: Option<String>,
+    function: FunctionDeltaWire,
+}
 #[derive(Deserialize)]
-struct FunctionDeltaWire { name: Option<String>, #[serde(default)] arguments: String }
+struct FunctionDeltaWire {
+    name: Option<String>,
+    #[serde(default)]
+    arguments: String,
+}
 #[derive(Deserialize)]
 struct UsageWire {
     prompt_tokens: u32,
     completion_tokens: u32,
-    #[serde(default)] prompt_tokens_details: Option<PromptTokenDetailsWire>,
+    #[serde(default)]
+    prompt_tokens_details: Option<PromptTokenDetailsWire>,
 }
 #[derive(Deserialize)]
-struct PromptTokenDetailsWire { cached_tokens: Option<u32> }
+struct PromptTokenDetailsWire {
+    cached_tokens: Option<u32>,
+}
 
 impl From<UsageWire> for Usage {
     fn from(value: UsageWire) -> Self {
-        let cached = value.prompt_tokens_details.and_then(|details| details.cached_tokens).map_or(0, |tokens| tokens);
+        let cached = value
+            .prompt_tokens_details
+            .and_then(|details| details.cached_tokens)
+            .map_or(0, |tokens| tokens);
         Self {
             prompt_tokens: TokenCount::new(value.prompt_tokens),
             completion_tokens: TokenCount::new(value.completion_tokens),
@@ -614,35 +888,65 @@ fn parse_finish_reason(value: &str) -> FinishReason {
     }
 }
 
-fn chat_request_json(req: &ChatRequest, reasoning_replay: ReasoningReplay) -> Result<Value, TfError> {
+fn chat_request_json(
+    req: &ChatRequest,
+    reasoning_replay: ReasoningReplay,
+) -> Result<Value, TfError> {
     validate_history(&req.messages)?;
-    let messages: Vec<Value> = req.messages.iter().map(|message| {
-        let mut wire = serde_json::Map::new();
-        let role = match message.role {
-            ChatRole::System => "system", ChatRole::User => "user", ChatRole::Assistant => "assistant", ChatRole::Tool => "tool",
-        };
-        wire.insert("role".to_owned(), json!(role));
-        wire.insert("content".to_owned(), json!(message.content));
-        if let Some(call_id) = &message.tool_call_id { wire.insert("tool_call_id".to_owned(), json!(call_id)); }
-        if !message.tool_calls.is_empty() {
-            let calls: Vec<Value> = message.tool_calls.iter().map(tool_call_message_json).collect();
-            wire.insert("tool_calls".to_owned(), Value::Array(calls));
-        }
-        if reasoning_replay == ReasoningReplay::ReasoningContent {
-            if let Some(reasoning) = &message.reasoning { wire.insert("reasoning_content".to_owned(), json!(reasoning)); }
-        }
-        Value::Object(wire)
-    }).collect();
+    let messages: Vec<Value> = req
+        .messages
+        .iter()
+        .map(|message| {
+            let mut wire = serde_json::Map::new();
+            let role = match message.role {
+                ChatRole::System => "system",
+                ChatRole::User => "user",
+                ChatRole::Assistant => "assistant",
+                ChatRole::Tool => "tool",
+            };
+            wire.insert("role".to_owned(), json!(role));
+            wire.insert("content".to_owned(), json!(message.content));
+            if let Some(call_id) = &message.tool_call_id {
+                wire.insert("tool_call_id".to_owned(), json!(call_id));
+            }
+            if !message.tool_calls.is_empty() {
+                let calls: Vec<Value> = message
+                    .tool_calls
+                    .iter()
+                    .map(tool_call_message_json)
+                    .collect();
+                wire.insert("tool_calls".to_owned(), Value::Array(calls));
+            }
+            if reasoning_replay == ReasoningReplay::ReasoningContent {
+                if let Some(reasoning) = &message.reasoning {
+                    wire.insert("reasoning_content".to_owned(), json!(reasoning));
+                }
+            }
+            Value::Object(wire)
+        })
+        .collect();
     let mut body = serde_json::Map::new();
     body.insert("model".to_owned(), json!(req.model.as_str()));
     body.insert("messages".to_owned(), Value::Array(messages));
     body.insert("stream".to_owned(), json!(true));
     body.insert("n".to_owned(), json!(1));
-    if let Some(max_tokens) = req.max_output_tokens { body.insert("max_tokens".to_owned(), json!(max_tokens.get())); }
+    if let Some(max_tokens) = req.max_output_tokens {
+        body.insert("max_tokens".to_owned(), json!(max_tokens.get()));
+    }
     if !req.tools.is_empty() {
         let mut names = BTreeSet::new();
-        if req.tools.iter().any(|tool| !names.insert(tool.name.as_ref())) { return Err(TfError::BadRequest); }
-        let tools = req.tools.iter().map(tool_json).collect::<Result<Vec<_>, _>>()?;
+        if req
+            .tools
+            .iter()
+            .any(|tool| !names.insert(tool.name.as_ref()))
+        {
+            return Err(TfError::BadRequest);
+        }
+        let tools = req
+            .tools
+            .iter()
+            .map(tool_json)
+            .collect::<Result<Vec<_>, _>>()?;
         body.insert("tools".to_owned(), Value::Array(tools));
     }
     // The SDK carries effort, but the provider-specific reasoning control is unverified (S0-5).
@@ -655,29 +959,53 @@ fn validate_history(messages: &[polaris_sdk::registry::ChatMessage]) -> Result<(
     let mut known_calls = BTreeSet::new();
     let mut outstanding_calls = BTreeSet::new();
     for message in messages {
-        if message.reasoning.is_some() && message.role != ChatRole::Assistant { return Err(TfError::BadRequest); }
-        if !outstanding_calls.is_empty() && message.role != ChatRole::Tool { return Err(TfError::BadRequest); }
+        if message.reasoning.is_some() && message.role != ChatRole::Assistant {
+            return Err(TfError::BadRequest);
+        }
+        if !outstanding_calls.is_empty() && message.role != ChatRole::Tool {
+            return Err(TfError::BadRequest);
+        }
         match message.role {
             ChatRole::Assistant => {
-                if message.tool_call_id.is_some() { return Err(TfError::BadRequest); }
+                if message.tool_call_id.is_some() {
+                    return Err(TfError::BadRequest);
+                }
                 for call in &message.tool_calls {
-                    if call.id.is_empty() || call.name.is_empty() || !known_calls.insert(call.id.clone())
-                        || !outstanding_calls.insert(call.id.clone()) { return Err(TfError::BadRequest); }
-                    let args: Value = serde_json::from_str(&call.arguments_json).map_err(|_| TfError::BadRequest)?;
-                    if !args.is_object() { return Err(TfError::BadRequest); }
+                    if call.id.is_empty()
+                        || call.name.is_empty()
+                        || !known_calls.insert(call.id.clone())
+                        || !outstanding_calls.insert(call.id.clone())
+                    {
+                        return Err(TfError::BadRequest);
+                    }
+                    let args: Value = serde_json::from_str(&call.arguments_json)
+                        .map_err(|_| TfError::BadRequest)?;
+                    if !args.is_object() {
+                        return Err(TfError::BadRequest);
+                    }
                 }
             }
             ChatRole::Tool => {
-                if !message.tool_calls.is_empty() { return Err(TfError::BadRequest); }
-                let Some(call_id) = message.tool_call_id.as_ref() else { return Err(TfError::BadRequest); };
-                if !outstanding_calls.remove(call_id) { return Err(TfError::BadRequest); }
+                if !message.tool_calls.is_empty() {
+                    return Err(TfError::BadRequest);
+                }
+                let Some(call_id) = message.tool_call_id.as_ref() else {
+                    return Err(TfError::BadRequest);
+                };
+                if !outstanding_calls.remove(call_id) {
+                    return Err(TfError::BadRequest);
+                }
             }
             ChatRole::System | ChatRole::User => {
-                if !message.tool_calls.is_empty() || message.tool_call_id.is_some() { return Err(TfError::BadRequest); }
+                if !message.tool_calls.is_empty() || message.tool_call_id.is_some() {
+                    return Err(TfError::BadRequest);
+                }
             }
         }
     }
-    if !outstanding_calls.is_empty() { return Err(TfError::BadRequest); }
+    if !outstanding_calls.is_empty() {
+        return Err(TfError::BadRequest);
+    }
     Ok(())
 }
 
@@ -686,15 +1014,27 @@ fn tool_call_message_json(call: &ChatToolCall) -> Value {
 }
 
 fn tool_json(tool: &ToolSpec) -> Result<Value, TfError> {
-    let parameters: Value = serde_json::from_str(&tool.input_schema_json).map_err(|_| TfError::BadRequest)?;
-    if tool.name.is_empty() || !tool.name.chars().all(|character| character.is_ascii_alphanumeric() || character == '_')
-        || !parameters.is_object() { return Err(TfError::BadRequest); }
+    let parameters: Value =
+        serde_json::from_str(&tool.input_schema_json).map_err(|_| TfError::BadRequest)?;
+    if tool.name.is_empty()
+        || !tool
+            .name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        || !parameters.is_object()
+    {
+        return Err(TfError::BadRequest);
+    }
     Ok(json!({"type": "function", "function": {
         "name": tool.name, "description": tool.description, "parameters": parameters
     }}))
 }
 
-async fn read_bounded(response: Response, maximum: usize, idle_timeout: Duration) -> Result<Bytes, TfError> {
+async fn read_bounded(
+    response: Response,
+    maximum: usize,
+    idle_timeout: Duration,
+) -> Result<Bytes, TfError> {
     let mut stream = Box::pin(response.bytes_stream());
     let mut buffer = BytesMut::new();
     loop {
@@ -703,8 +1043,13 @@ async fn read_bounded(response: Response, maximum: usize, idle_timeout: Duration
             Ok(None) => return Ok(buffer.freeze()),
             Ok(Some(Err(_))) => return Err(TfError::Transport),
             Ok(Some(Ok(bytes))) => {
-                let length = buffer.len().checked_add(bytes.len()).ok_or(TfError::TooLarge)?;
-                if length > maximum { return Err(TfError::TooLarge); }
+                let length = buffer
+                    .len()
+                    .checked_add(bytes.len())
+                    .ok_or(TfError::TooLarge)?;
+                if length > maximum {
+                    return Err(TfError::TooLarge);
+                }
                 buffer.extend_from_slice(&bytes);
             }
         }
@@ -713,23 +1058,41 @@ async fn read_bounded(response: Response, maximum: usize, idle_timeout: Duration
 
 fn status_error(response: Response) -> TfError {
     let status = response.status();
-        let retry_after_ms = response.headers().get(reqwest::header::RETRY_AFTER)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.trim().parse::<u64>().ok())
-            .and_then(|seconds| seconds.checked_mul(1_000));
+    let retry_after_ms = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .and_then(|seconds| seconds.checked_mul(1_000));
     match status {
         StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => TfError::Unauthorized,
-        StatusCode::BAD_REQUEST | StatusCode::PAYLOAD_TOO_LARGE | StatusCode::UNPROCESSABLE_ENTITY => TfError::BadRequest,
-        _ => TfError::Http { status: status.as_u16(), retry_after_ms },
+        StatusCode::BAD_REQUEST
+        | StatusCode::PAYLOAD_TOO_LARGE
+        | StatusCode::UNPROCESSABLE_ENTITY => TfError::BadRequest,
+        _ => TfError::Http {
+            status: status.as_u16(),
+            retry_after_ms,
+        },
     }
 }
 
-fn retry_delay(header: Option<&reqwest::header::HeaderValue>, retry: u8, config: ClientConfig) -> Duration {
-    let server = header.and_then(|value| value.to_str().ok())
+fn retry_delay(
+    header: Option<&reqwest::header::HeaderValue>,
+    retry: u8,
+    config: ClientConfig,
+) -> Duration {
+    let server = header
+        .and_then(|value| value.to_str().ok())
         .and_then(|value| value.trim().parse::<u64>().ok())
         .and_then(|seconds| seconds.checked_mul(1_000))
         .map(Duration::from_millis);
-    let multiplier = 1_u32.checked_shl(u32::from(retry)).map_or(u32::MAX, |value| value);
+    let multiplier = 1_u32
+        .checked_shl(u32::from(retry))
+        .map_or(u32::MAX, |value| value);
     let exponential = config.retry_base_delay.saturating_mul(multiplier);
-    match server { Some(delay) => delay, None => exponential }.min(config.max_retry_delay)
+    match server {
+        Some(delay) => delay,
+        None => exponential,
+    }
+    .min(config.max_retry_delay)
 }

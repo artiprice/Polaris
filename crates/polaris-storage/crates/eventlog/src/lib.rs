@@ -21,7 +21,11 @@ pub mod codec;
 mod error;
 mod locks;
 mod log;
+mod owner;
+mod replay;
 
 pub use error::EventLogError;
 pub use locks::LockRecord;
 pub use log::{Checkpoint, Durability, EVENTS_TABLE, EventLog, EventLogConfig};
+pub use owner::{AsyncEventLog, OwnerError};
+pub use replay::Replay;

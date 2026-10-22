@@ -1,8 +1,8 @@
 //! Explicit eviction triggers over real loader-backed slots selected by the composition root.
-use core::future::Future;
-use std::time::{Duration, Instant};
-use polaris_sdk::registry::MemoryPressure;
 use crate::{EvictOutcome, EvictableSlot, ModelLoader, ModelsError};
+use core::future::Future;
+use polaris_sdk::registry::MemoryPressure;
+use std::time::{Duration, Instant};
 
 /// Why the caller selected a model for eviction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,27 +22,42 @@ pub trait Evictable: Send + Sync {
     /// Time since loading or the most recent lease release, for LRU ordering.
     fn idle_for(&self) -> Result<Duration, ModelsError>;
     /// Request a real eviction. A deadline cannot justify unloading an active lease.
-    fn evict(&self, reason: EvictReason, deadline: Duration)
-        -> impl Future<Output = Result<EvictOutcome, ModelsError>> + Send;
+    fn evict(
+        &self,
+        reason: EvictReason,
+        deadline: Duration,
+    ) -> impl Future<Output = Result<EvictOutcome, ModelsError>> + Send;
     /// Resume a previously paused slot only after the caller's heavy/pressure work is over.
     fn resume_admission(&self) -> Result<(), ModelsError>;
 }
 
 impl<M: Send + Sync + 'static, L: ModelLoader<M>> Evictable for EvictableSlot<M, L> {
-    fn idle_for(&self) -> Result<Duration, ModelsError> { EvictableSlot::idle_for(self) }
+    fn idle_for(&self) -> Result<Duration, ModelsError> {
+        EvictableSlot::idle_for(self)
+    }
 
-    async fn evict(&self, reason: EvictReason, deadline: Duration) -> Result<EvictOutcome, ModelsError> {
+    async fn evict(
+        &self,
+        reason: EvictReason,
+        deadline: Duration,
+    ) -> Result<EvictOutcome, ModelsError> {
         match reason {
             EvictReason::Idle => match tokio::time::timeout(deadline, self.evict_if_idle()).await {
                 Ok(result) => result,
-                Err(_) => Ok(EvictOutcome::Pending { state: self.state()? }),
+                Err(_) => Ok(EvictOutcome::Pending {
+                    state: self.state()?,
+                }),
             },
-            EvictReason::MemoryPressure | EvictReason::HeavyBuild => self.force_evict(deadline).await,
+            EvictReason::MemoryPressure | EvictReason::HeavyBuild => {
+                self.force_evict(deadline).await
+            }
             EvictReason::Shutdown => self.close(deadline).await,
         }
     }
 
-    fn resume_admission(&self) -> Result<(), ModelsError> { self.resume() }
+    fn resume_admission(&self) -> Result<(), ModelsError> {
+        self.resume()
+    }
 }
 
 /// One observed slot result, including errors rather than hiding unsuccessful unloads.
@@ -58,7 +73,9 @@ pub struct EvictionReport {
 
 /// Bounded collection of evictable real model slots. It owns no invented backend implementations.
 #[derive(Debug)]
-pub struct EvictionManager<E> { slots: Vec<(String, E)> }
+pub struct EvictionManager<E> {
+    slots: Vec<(String, E)>,
+}
 
 impl<E: Evictable> EvictionManager<E> {
     /// Register uniquely named slots.
@@ -66,10 +83,16 @@ impl<E: Evictable> EvictionManager<E> {
     /// # Errors
     /// Duplicate/invalid names or more than 256 slots.
     pub fn new(slots: Vec<(String, E)>) -> Result<Self, ModelsError> {
-        if slots.len() > 256 { return Err(ModelsError::Config("too many eviction slots")); }
+        if slots.len() > 256 {
+            return Err(ModelsError::Config("too many eviction slots"));
+        }
         let mut names = std::collections::BTreeSet::new();
         for (name, _) in &slots {
-            if name.is_empty() || name.len() > 128 || name.chars().any(char::is_control) || !names.insert(name) {
+            if name.is_empty()
+                || name.len() > 128
+                || name.chars().any(char::is_control)
+                || !names.insert(name)
+            {
                 return Err(ModelsError::Config("eviction slot name"));
             }
         }
@@ -80,9 +103,16 @@ impl<E: Evictable> EvictionManager<E> {
     /// later slots still receive a zero-wait drain request so shutdown/admission closure is not
     /// silently skipped. Per-slot work remains owned until its leases actually release.
     pub async fn evict_all(&self, reason: EvictReason, budget: Duration) -> Vec<EvictionReport> {
-        let mut order: Vec<_> = self.slots.iter().map(|(name, slot)| (name, slot, slot.idle_for())).collect();
+        let mut order: Vec<_> = self
+            .slots
+            .iter()
+            .map(|(name, slot)| (name, slot, slot.idle_for()))
+            .collect();
         order.sort_by(|(an, _, age_a), (bn, _, age_b)| {
-            let age = |value: &Result<Duration, ModelsError>| match value { Ok(age) => *age, Err(_) => Duration::MAX };
+            let age = |value: &Result<Duration, ModelsError>| match value {
+                Ok(age) => *age,
+                Err(_) => Duration::MAX,
+            };
             age(age_b).cmp(&age(age_a)).then_with(|| an.cmp(bn))
         });
         let started = Instant::now();
@@ -95,7 +125,11 @@ impl<E: Evictable> EvictionManager<E> {
                 Err(error) if reason == EvictReason::Idle => Err(error),
                 Err(_) => slot.evict(reason, remaining).await,
             };
-            reports.push(EvictionReport { name: name.clone(), reason, outcome });
+            reports.push(EvictionReport {
+                name: name.clone(),
+                reason,
+                outcome,
+            });
         }
         reports
     }
@@ -103,7 +137,11 @@ impl<E: Evictable> EvictionManager<E> {
     /// Apply an observed platform memory state. Elevated pressure evicts idle models; critical
     /// pressure requests draining everywhere. Normal pressure does not implicitly resume slots
     /// which may have been paused for a heavy build or explicit user action.
-    pub async fn on_memory_pressure(&self, pressure: MemoryPressure, budget: Duration) -> Vec<EvictionReport> {
+    pub async fn on_memory_pressure(
+        &self,
+        pressure: MemoryPressure,
+        budget: Duration,
+    ) -> Vec<EvictionReport> {
         match pressure {
             MemoryPressure::Normal => Vec::new(),
             MemoryPressure::Elevated => self.evict_all(EvictReason::Idle, budget).await,
@@ -115,6 +153,9 @@ impl<E: Evictable> EvictionManager<E> {
     /// has ended. Failed resumes are returned individually; shutdown stays permanently closed.
     #[must_use]
     pub fn resume_all(&self) -> Vec<(String, Result<(), ModelsError>)> {
-        self.slots.iter().map(|(name, slot)| (name.clone(), slot.resume_admission())).collect()
+        self.slots
+            .iter()
+            .map(|(name, slot)| (name.clone(), slot.resume_admission()))
+            .collect()
     }
 }

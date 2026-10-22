@@ -30,7 +30,7 @@ git-ignored; a crash is turned into a regular unit test in the owning crate.
 | `directives_grammar` | `polaris-kernel-directives` | P1 | **exists** — no panic, valid spans, `parse(render(d)) == d` (137,091 runs / 61 s clean, §E14) |
 | `cas_blob_decode` | `polaris-storage-cas` | P1 | **exists** — bounded decode, encode→decode roundtrip (3,962,414 runs / 61 s clean, §E14) |
 | `rtk_stream` | `polaris-tools-rtk` | P1 | **exists** — filter/decode/report/ledger: no panic; no ESC/CR; text filter never invents text; report count = issues; reconcile idempotent; ledger parse/render fixed point |
-| `cas_short_ref_roundtrip` | `polaris-storage-cas` | P1 | planned |
+| `cas_short_ref_roundtrip` | `polaris-storage-cas` | P1 | **exists** — CID/short-ref format and parse roundtrip; bounded formatter |
 | `eventlog_decode` | `polaris-storage-eventlog` | P1 | **exists** — arbitrary stored bytes: no panic; decode→encode→decode stable |
 | `config_toml_layer` | `polaris-config` | P1 | **exists** — arbitrary bytes as a repo config: no panic; an untrusted layer that loads changed only allow-listed keys |
 | `ui_completion` | `polaris-ui-model` | P1 | **exists** — arbitrary UTF-8 and invalid cursor offsets: ordered nonempty classification spans, valid token/replacement ranges, at most 100 suggestions |
@@ -41,9 +41,15 @@ git-ignored; a crash is turned into a regular unit test in the owning crate.
 | `context_fold_roundtrip` | `polaris-runtime-context` | P3 | planned |
 | `pii_mask_unmask` | `polaris-security-pii` | P4 | planned |
 | `dfa_scan` | `polaris-security-automata` | P2 | planned |
-| `proto_decode` | `polaris-proto` | P1 | planned |
+| `proto_decode` | `polaris-proto` | P1 | **exists** — bounded prost decode plus SDK conversion; unverified commands only |
 | `ingest_docx` / `ingest_xlsx` / `ingest_pdf` | `polaris-ingest` | P5 | planned |
-| `diff_apply` | `polaris-tools-builtin` | P1 | planned |
+| `diff_apply` | `polaris-tools-builtin` | P1 | **exists** — arbitrary unified patches: typed rejection or bounded pure output |
 
 Each target asserts **no panic** plus a round-trip or invariant property (e.g. `unmask(mask(x)) == x`,
 `expand(fold(x)) == x` byte-for-byte).
+
+Current P1 evidence and exact limits: [P1_LOGIC_STATUS.md](../../@prime/P1_LOGIC_STATUS.md).
+Additional P1 targets: `bus_ops`, `registry_fts_query`, `registry_migration_open`,
+`code_intel_parse`, `code_intel_skeleton`, `code_intel_merge3`. They use real adapters or explicitly
+labeled test-only models, and enforce bounded inputs. The mandatory six run in `verify-p1-fuzz.sh`;
+registry/code-intel/bus runners retain separate raw logs.

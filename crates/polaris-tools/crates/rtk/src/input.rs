@@ -97,6 +97,15 @@ fn skip_escape(chars: &mut Peekable<Chars<'_>>) {
 ///   `LF` and `TAB` are removed, so nothing a compiler prints can drive the terminal or the ledger.
 #[must_use]
 pub fn decode_stream(bytes: &[u8]) -> String {
+    let utf8_body = match bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]) {
+        Some(body) => body,
+        None => bytes,
+    };
+    if let Ok(text) = std::str::from_utf8(utf8_body) {
+        if !has_controls_or_escape(text.as_bytes()) {
+            return text.to_owned();
+        }
+    }
     let text = decode_encoding(bytes);
     let mut out = String::with_capacity(text.len());
     let mut chars = text.chars().peekable();
@@ -115,4 +124,24 @@ pub fn decode_stream(bytes: &[u8]) -> String {
         }
     }
     out
+}
+
+fn has_controls_or_escape(bytes: &[u8]) -> bool {
+    for (index, byte) in bytes.iter().copied().enumerate() {
+        if byte == b'\r'
+            || byte == 0x1B
+            || byte == 0x7F
+            || (byte < 0x20 && byte != b'\n' && byte != b'\t')
+        {
+            return true;
+        }
+        if byte == 0xC2
+            && bytes
+                .get(index.saturating_add(1))
+                .is_some_and(|next| (0x80..=0x9F).contains(next))
+        {
+            return true;
+        }
+    }
+    false
 }

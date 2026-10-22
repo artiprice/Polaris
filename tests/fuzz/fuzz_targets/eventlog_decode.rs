@@ -7,7 +7,9 @@ use polaris_storage_eventlog::codec::{decode_record, encode_record};
 
 fuzz_target!(|data: &[u8]| {
     if let Ok(record) = decode_record(data) {
-        let again = encode_record(&record).ok().and_then(|bytes| decode_record(&bytes).ok());
+        let again = encode_record(&record)
+            .ok()
+            .and_then(|bytes| decode_record(&bytes).ok());
         assert_eq!(again, Some(record));
     }
 });

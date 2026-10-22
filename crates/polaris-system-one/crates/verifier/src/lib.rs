@@ -14,11 +14,17 @@ mod scan;
 mod semantic;
 mod types;
 
-pub use diagnostics::{Diagnostic, DiagnosticId, DiagnosticSeverity, RankedDiagnostic, rank_diagnostics};
+pub use diagnostics::{
+    Diagnostic, DiagnosticId, DiagnosticSeverity, RankedDiagnostic, rank_diagnostics,
+};
 pub use error::VerifierError;
 pub use gate::{CommandFacts, ShellDialect};
-pub use postflight::{FalsifierEvidence, MutationEvidence, ProofEvidence, ProofVerdict, TestRunFacts};
+pub use postflight::{
+    FalsifierEvidence, MutationEvidence, ProofEvidence, ProofVerdict, TestRunFacts,
+};
 pub use scan::{SafetyScanner, Scanner};
 pub use semantic::{CalibrationBindings, Verifier, VerifierConfig};
-pub use types::{DegradedReason, Finding, GateVerdict, MergeDecision, MutationSafety,
-    PostflightReport, PreflightReport, SafetyAssessment, SafetyRequest, SourceLocation, TamperKind};
+pub use types::{
+    DegradedReason, Finding, GateVerdict, MergeDecision, MutationSafety, PostflightReport,
+    PreflightReport, SafetyAssessment, SafetyRequest, SourceLocation, TamperKind,
+};

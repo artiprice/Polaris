@@ -31,6 +31,19 @@ impl Default for BusConfig {
     }
 }
 
+impl BusConfig {
+    /// Check capacities before calling channel constructors that could panic on excessive sizes.
+    /// # Errors
+    /// A capacity exceeds the supported channel bound.
+    pub fn validate(self) -> Result<(), BusError> {
+        if self.command_capacity.get() > MAX_CAPACITY || self.event_capacity.get() > MAX_CAPACITY {
+            Err(BusError::Config("capacity too large"))
+        } else {
+            Ok(())
+        }
+    }
+}
+
 /// Well below tokio's own channel limits (which panic when exceeded).
 const MAX_CAPACITY: usize = usize::MAX >> 4;
 
@@ -71,6 +84,10 @@ pub struct CommandReceiver {
 }
 
 impl CommandReceiver {
+    /// Reject future sends while retaining already accepted commands for draining.
+    pub fn close(&mut self) {
+        self.rx.close();
+    }
     /// The next command; `None` once the bus is dropped and the queue is drained.
     pub async fn recv(&mut self) -> Option<Command<Unverified>> {
         self.rx.recv().await
@@ -111,9 +128,7 @@ impl<S: EventStore> Bus<S> {
     /// # Errors
     /// [`BusError::Config`] when a capacity is unreasonably large.
     pub fn new(cfg: BusConfig, store: S) -> Result<(Self, CommandReceiver), BusError> {
-        if cfg.command_capacity.get() > MAX_CAPACITY || cfg.event_capacity.get() > MAX_CAPACITY {
-            return Err(BusError::Config("capacity too large"));
-        }
+        cfg.validate()?;
         let (commands, rx) = mpsc::channel(cfg.command_capacity.get());
         let (events, _initial) = broadcast::channel(cfg.event_capacity.get());
         let bus = Self {

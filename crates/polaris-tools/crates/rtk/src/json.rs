@@ -89,6 +89,11 @@ fn parse_line(line: &str, matcher: &ThirdPartyMatcher) -> Option<Diagnostic> {
     if !line.contains("\"compiler-message\"") {
         return None;
     }
+    // Rustc emits all Cargo messages as compact single-line JSON. Most are build artifacts or
+    // non-issue notes; skip deserialization unless the line can contain an error or warning.
+    if !line.contains("error") && !line.contains("warning") {
+        return None;
+    }
     // serde_json's default recursion limit (128) rejects hostile nesting instead of overflowing.
     let parsed: CargoLine = serde_json::from_str(line.trim()).ok()?;
     if parsed.reason.as_deref() != Some("compiler-message") {

@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "repo_map",
+  "file_path": "src/registry.rs",
+  "logic_name": "Bounded Repository Symbol Map",
+  "test_list": [
+    { "test_name": "supported_sources_only", "description": "Index only files supported by the actual code-intel parser." },
+    { "test_name": "token_budget_applied", "description": "Respect requested map token budget and configured scan bounds." },
+    { "test_name": "symlink_and_secret_omitted", "description": "Do not traverse symlinks or include secret-bearing paths." }
+  ],
+  "dependencies": ["ParserPool", "SymbolGraph", "RepoMapBudget", "ToolLimits"],
+  "libraries": ["polaris-code-intel", "ignore"],
+  "inputs": [
+    { "name": "focus_files", "type": "Vec<String>", "description": "Optional workspace-relative files ranked for inclusion." },
+    { "name": "max_tokens", "type": "u32", "description": "Requested symbol-map token ceiling." }
+  ],
+  "output_type": "Result<RepoMapOutput, ToolError>",
+  "output_description": "Actual parser-derived repository outline with token estimate and scan truncation state."
+}

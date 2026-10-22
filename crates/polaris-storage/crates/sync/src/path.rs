@@ -32,6 +32,17 @@ pub enum SyncError {
     /// Invalid ignore pattern.
     #[error("invalid ignore rule: {0}")]
     Rule(String),
+    /// Sandbox API or remote command failed while acquiring a snapshot.
+    #[error("sandbox backend failed: {0}")]
+    Backend(String),
+    /// A configured scan or remote snapshot limit was reached.
+    #[error("sync limit exceeded for {what} (limit {limit})")]
+    Limit {
+        /// Kind of bounded resource.
+        what: &'static str,
+        /// Maximum allowed value.
+        limit: u64,
+    },
 }
 
 impl HasKind for SyncError {
@@ -40,6 +51,8 @@ impl HasKind for SyncError {
             Self::Io { .. } | Self::Walk(_) => ErrorKind::Transient,
             Self::RootEscape(_) => ErrorKind::Policy,
             Self::InvalidPath { .. } | Self::Rule(_) => ErrorKind::Permanent,
+            Self::Backend(_) => ErrorKind::Transient,
+            Self::Limit { .. } => ErrorKind::Permanent,
         }
     }
 }

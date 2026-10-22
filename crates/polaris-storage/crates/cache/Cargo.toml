@@ -21,3 +21,4 @@ polaris-sdk = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 tokio = { workspace = true }
+loom = { workspace = true }

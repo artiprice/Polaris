@@ -14,7 +14,7 @@ mod scope;
 
 pub use key::LeaseKey;
 pub use manager::{
-    ChurnVerdict, Invalidation, LeaseConfig, LeaseError, LeaseGuard, LeaseManager, LeaseRequest,
-    LeaseId, RevokeReason, WriteTicket,
+    ChurnVerdict, Invalidation, LeaseConfig, LeaseError, LeaseGuard, LeaseId, LeaseManager,
+    LeaseRequest, RevokeReason, WriteTicket,
 };
 pub use scope::{LeaseScope, SymbolPath, scopes_conflict};

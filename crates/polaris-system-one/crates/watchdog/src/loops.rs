@@ -5,7 +5,7 @@ use crate::{
     StepRecord, ToolCallFacts, WatchdogConfig,
 };
 use std::collections::{BTreeSet, VecDeque};
-use xxhash_rust::xxh3::{xxh3_128, xxh3_64};
+use xxhash_rust::xxh3::{xxh3_64, xxh3_128};
 
 /// Failure to form a bounded step record.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -159,7 +159,10 @@ pub fn build_step_record(
         index,
         fingerprint,
         shingles,
-        tool: step.tool_call.as_ref().map(|call| call.tool.as_str().to_owned()),
+        tool: step
+            .tool_call
+            .as_ref()
+            .map(|call| call.tool.as_str().to_owned()),
         outcome,
     })
 }

@@ -321,9 +321,11 @@ pub fn blast_radius<V: WorkspaceView>(
         }
     }
     let total_bytes = byte_sizes.values().try_fold(0_u64, |sum, bytes| {
-        sum.checked_add(*bytes).ok_or(GuardError::ArithmeticOverflow)
+        sum.checked_add(*bytes)
+            .ok_or(GuardError::ArithmeticOverflow)
     })?;
-    let affected_count = u64::try_from(byte_sizes.len()).map_err(|_| GuardError::ArithmeticOverflow)?;
+    let affected_count =
+        u64::try_from(byte_sizes.len()).map_err(|_| GuardError::ArithmeticOverflow)?;
     let confidence = classification.confidence;
     let dirty_count = u64::try_from(dirty_hit.len()).map_err(|_| GuardError::ArithmeticOverflow)?;
     let severity = severity_for(
@@ -371,10 +373,7 @@ fn severity_for(
         || limits.dirty_is_critical && dirty > 0
     {
         Severity::Critical
-    } else if files >= limits.approval_files
-        || bytes >= limits.approval_bytes
-        || dirty > 0
-    {
+    } else if files >= limits.approval_files || bytes >= limits.approval_bytes || dirty > 0 {
         Severity::High
     } else if files == 0 && bytes == 0 {
         Severity::None
@@ -401,11 +400,13 @@ fn classify(
     let mut effects = Vec::new();
     let (confidence, reason) = match tokens.first().map(String::as_str) {
         Some("rm") => classify_remove(&tokens, cwd, &mut effects, shell, false),
-        Some("del") if shell != ShellKind::Posix => classify_remove(&tokens, cwd, &mut effects, shell, true),
-        Some("rmdir") => {
+        Some("del") if shell != ShellKind::Posix => {
+            classify_remove(&tokens, cwd, &mut effects, shell, true)
+        }
+        Some("rmdir") => classify_rmdir(&tokens, cwd, &mut effects, shell),
+        Some("rd") if shell != ShellKind::Posix => {
             classify_rmdir(&tokens, cwd, &mut effects, shell)
         }
-        Some("rd") if shell != ShellKind::Posix => classify_rmdir(&tokens, cwd, &mut effects, shell),
         Some("Remove-Item") if shell == ShellKind::PowerShell => {
             classify_remove_item(&tokens, cwd, &mut effects)
         }
@@ -455,24 +456,41 @@ fn classify_remove(
             recursive = true;
         } else if !after_delimiter && token.starts_with('-') {
             let flags = token.trim_start_matches('-');
-            if flags.chars().all(|flag| matches!(flag, 'r' | 'R' | 'f' | 'v')) {
+            if flags
+                .chars()
+                .all(|flag| matches!(flag, 'r' | 'R' | 'f' | 'v'))
+            {
                 recursive |= flags.contains('r') || flags.contains('R');
             } else {
-                return (Confidence::Unknown, "remove command has unsupported flags".to_owned());
+                return (
+                    Confidence::Unknown,
+                    "remove command has unsupported flags".to_owned(),
+                );
             }
         } else if token.starts_with('/') && !token.contains('*') && !token.contains('?') {
-            return (Confidence::Unknown, "absolute paths are not classified".to_owned());
+            return (
+                Confidence::Unknown,
+                "absolute paths are not classified".to_owned(),
+            );
         } else {
             operands.push(token.as_str());
         }
     }
     if operands.is_empty() {
-        return (Confidence::Unknown, "remove command has no target".to_owned());
+        return (
+            Confidence::Unknown,
+            "remove command has no target".to_owned(),
+        );
     }
     for operand in operands {
         match add_path_effect(effects, cwd, operand, EffectKind::Deleted, recursive, false) {
             Ok(()) => {}
-            Err(_) => return (Confidence::Unknown, "remove target escapes workspace".to_owned()),
+            Err(_) => {
+                return (
+                    Confidence::Unknown,
+                    "remove target escapes workspace".to_owned(),
+                );
+            }
         }
     }
     (Confidence::Exact, "recognized remove command".to_owned())
@@ -491,7 +509,10 @@ fn classify_rmdir(
         if matches!(lower.as_str(), "/s" | "/q" | "-r" | "-recurse") {
             recursive |= matches!(lower.as_str(), "/s" | "-r" | "-recurse");
         } else if token.starts_with('-') || token.starts_with('/') && shell == ShellKind::Posix {
-            return (Confidence::Unknown, "rmdir has unsupported flags".to_owned());
+            return (
+                Confidence::Unknown,
+                "rmdir has unsupported flags".to_owned(),
+            );
         } else {
             operands.push(token.as_str());
         }
@@ -501,7 +522,10 @@ fn classify_rmdir(
     }
     for operand in operands {
         if add_path_effect(effects, cwd, operand, EffectKind::Deleted, recursive, false).is_err() {
-            return (Confidence::Unknown, "rmdir target escapes workspace".to_owned());
+            return (
+                Confidence::Unknown,
+                "rmdir target escapes workspace".to_owned(),
+            );
         }
     }
     (Confidence::Exact, "recognized rmdir command".to_owned())
@@ -526,20 +550,32 @@ fn classify_remove_item(
         } else if lower == "-path" || lower == "-literalpath" {
             expect_path = true;
         } else if token.starts_with('-') {
-            return (Confidence::Unknown, "Remove-Item has unsupported parameters".to_owned());
+            return (
+                Confidence::Unknown,
+                "Remove-Item has unsupported parameters".to_owned(),
+            );
         } else {
             operands.push(token.as_str());
         }
     }
     if expect_path || operands.is_empty() {
-        return (Confidence::Unknown, "Remove-Item has no complete path argument".to_owned());
+        return (
+            Confidence::Unknown,
+            "Remove-Item has no complete path argument".to_owned(),
+        );
     }
     for operand in operands {
         if add_path_effect(effects, cwd, operand, EffectKind::Deleted, recursive, false).is_err() {
-            return (Confidence::Unknown, "Remove-Item target escapes workspace".to_owned());
+            return (
+                Confidence::Unknown,
+                "Remove-Item target escapes workspace".to_owned(),
+            );
         }
     }
-    (Confidence::Exact, "recognized Remove-Item command".to_owned())
+    (
+        Confidence::Exact,
+        "recognized Remove-Item command".to_owned(),
+    )
 }
 
 fn classify_cargo(
@@ -549,7 +585,10 @@ fn classify_cargo(
     effects: &mut Vec<Effect>,
 ) -> (Confidence, String) {
     let Some(subcommand) = tokens.get(1).map(String::as_str) else {
-        return (Confidence::Unknown, "cargo command has no subcommand".to_owned());
+        return (
+            Confidence::Unknown,
+            "cargo command has no subcommand".to_owned(),
+        );
     };
     let mut explicit_target = None;
     let mut expect_target = false;
@@ -564,28 +603,67 @@ fn classify_cargo(
                 .split_once('=')
                 .and_then(|(_, path)| resolve_operand(cwd, path));
         } else if token == "--manifest-path" || token.starts_with("--manifest-path=") {
-            return (Confidence::Unknown, "Cargo manifest root is not classified".to_owned());
+            return (
+                Confidence::Unknown,
+                "Cargo manifest root is not classified".to_owned(),
+            );
         }
     }
     if expect_target {
-        return (Confidence::Unknown, "Cargo target directory argument is missing".to_owned());
+        return (
+            Confidence::Unknown,
+            "Cargo target directory argument is missing".to_owned(),
+        );
     }
-    let target_dir = explicit_target.or_else(|| known_target_dir.map(|path| path.as_str().to_owned()));
+    let target_dir =
+        explicit_target.or_else(|| known_target_dir.map(|path| path.as_str().to_owned()));
     let Some(target_dir) = target_dir else {
-        return (Confidence::Unknown, "effective Cargo target directory is unavailable".to_owned());
+        return (
+            Confidence::Unknown,
+            "effective Cargo target directory is unavailable".to_owned(),
+        );
     };
     match subcommand {
-        "clean" => match add_path_effect(effects, &WorkspacePath::root(), &target_dir, EffectKind::Deleted, true, false) {
-            Ok(()) => (Confidence::Estimated, "cargo clean may delete the configured target tree".to_owned()),
-            Err(_) => (Confidence::Unknown, "cargo clean target path is invalid".to_owned()),
+        "clean" => match add_path_effect(
+            effects,
+            &WorkspacePath::root(),
+            &target_dir,
+            EffectKind::Deleted,
+            true,
+            false,
+        ) {
+            Ok(()) => (
+                Confidence::Estimated,
+                "cargo clean may delete the configured target tree".to_owned(),
+            ),
+            Err(_) => (
+                Confidence::Unknown,
+                "cargo clean target path is invalid".to_owned(),
+            ),
         },
         "test" | "check" | "build" | "clippy" => {
-            match add_path_effect(effects, &WorkspacePath::root(), &target_dir, EffectKind::Overwritten, true, false) {
-                Ok(()) => (Confidence::Estimated, "Cargo may update the target tree".to_owned()),
-                Err(_) => (Confidence::Unknown, "Cargo target path is invalid".to_owned()),
+            match add_path_effect(
+                effects,
+                &WorkspacePath::root(),
+                &target_dir,
+                EffectKind::Overwritten,
+                true,
+                false,
+            ) {
+                Ok(()) => (
+                    Confidence::Estimated,
+                    "Cargo may update the target tree".to_owned(),
+                ),
+                Err(_) => (
+                    Confidence::Unknown,
+                    "Cargo target path is invalid".to_owned(),
+                ),
             }
         }
-        _ => (Confidence::Unknown, "cargo subcommand is not classified".to_owned()),
+        _ => (
+            Confidence::Unknown,
+            "cargo subcommand is not classified".to_owned(),
+        ),
     }
 }
 
@@ -595,26 +673,42 @@ fn classify_git(tokens: &[String], effects: &mut Vec<Effect>) -> (Confidence, St
         && tokens.len() == 3
     {
         return match add_pattern_effect(effects, "**", EffectKind::Overwritten, true, true) {
-            Ok(()) => (Confidence::Estimated, "git reset --hard rewrites uncommitted tracked paths".to_owned()),
-            Err(_) => (Confidence::Unknown, "git reset target pattern is invalid".to_owned()),
+            Ok(()) => (
+                Confidence::Estimated,
+                "git reset --hard rewrites uncommitted tracked paths".to_owned(),
+            ),
+            Err(_) => (
+                Confidence::Unknown,
+                "git reset target pattern is invalid".to_owned(),
+            ),
         };
     }
     if tokens.get(1).is_some_and(|value| value == "clean") {
         let flags = tokens.get(2).map(String::as_str);
-        if tokens.len() == 3 && flags.is_some_and(|value| value.starts_with('-') && value.contains('f') && value.contains('d') && value.chars().skip(1).all(|c| matches!(c, 'f' | 'd' | 'q'))) {
-            return match add_pattern_effect(
-                effects,
-                "**",
-                EffectKind::Deleted,
-                true,
-                false,
-            ) {
-                Ok(()) => (Confidence::Estimated, "git clean may remove uncommitted paths".to_owned()),
-                Err(_) => (Confidence::Unknown, "git clean target pattern is invalid".to_owned()),
+        if tokens.len() == 3
+            && flags.is_some_and(|value| {
+                value.starts_with('-')
+                    && value.contains('f')
+                    && value.contains('d')
+                    && value.chars().skip(1).all(|c| matches!(c, 'f' | 'd' | 'q'))
+            })
+        {
+            return match add_pattern_effect(effects, "**", EffectKind::Deleted, true, false) {
+                Ok(()) => (
+                    Confidence::Estimated,
+                    "git clean may remove uncommitted paths".to_owned(),
+                ),
+                Err(_) => (
+                    Confidence::Unknown,
+                    "git clean target pattern is invalid".to_owned(),
+                ),
             };
         }
     }
-    (Confidence::Unknown, "git command is not classified".to_owned())
+    (
+        Confidence::Unknown,
+        "git command is not classified".to_owned(),
+    )
 }
 
 fn classify_move(
@@ -623,22 +717,41 @@ fn classify_move(
     effects: &mut Vec<Effect>,
 ) -> (Confidence, String) {
     if tokens.len() != 3 {
-        return (Confidence::Unknown, "mv requires exactly one source and destination".to_owned());
+        return (
+            Confidence::Unknown,
+            "mv requires exactly one source and destination".to_owned(),
+        );
     }
     let source = match tokens.get(1).and_then(|value| resolve_operand(cwd, value)) {
         Some(path) => path,
-        None => return (Confidence::Unknown, "mv source escapes workspace".to_owned()),
+        None => {
+            return (
+                Confidence::Unknown,
+                "mv source escapes workspace".to_owned(),
+            );
+        }
     };
     let destination = match tokens.get(2).and_then(|value| resolve_operand(cwd, value)) {
         Some(path) => path,
-        None => return (Confidence::Unknown, "mv destination escapes workspace".to_owned()),
+        None => {
+            return (
+                Confidence::Unknown,
+                "mv destination escapes workspace".to_owned(),
+            );
+        }
     };
-    for (path, kind) in [(&source, EffectKind::Deleted), (&destination, EffectKind::Overwritten)] {
+    for (path, kind) in [
+        (&source, EffectKind::Deleted),
+        (&destination, EffectKind::Overwritten),
+    ] {
         if add_pattern_effect(effects, path.as_str(), kind, true, false).is_err() {
             return (Confidence::Unknown, "mv target glob is invalid".to_owned());
         }
     }
-    (Confidence::Estimated, "mv may remove its source and replace its destination".to_owned())
+    (
+        Confidence::Estimated,
+        "mv may remove its source and replace its destination".to_owned(),
+    )
 }
 
 fn classify_find(
@@ -647,16 +760,27 @@ fn classify_find(
     effects: &mut Vec<Effect>,
 ) -> (Confidence, String) {
     if tokens.len() < 3 || tokens.last().is_none_or(|token| token != "-delete") {
-        return (Confidence::Unknown, "find expression is not classified".to_owned());
+        return (
+            Confidence::Unknown,
+            "find expression is not classified".to_owned(),
+        );
     }
     let root = match tokens.get(1).and_then(|value| resolve_operand(cwd, value)) {
         Some(path) => path,
-        None => return (Confidence::Unknown, "find root escapes workspace".to_owned()),
+        None => {
+            return (
+                Confidence::Unknown,
+                "find root escapes workspace".to_owned(),
+            );
+        }
     };
     if add_pattern_effect(effects, root.as_str(), EffectKind::Deleted, true, false).is_err() {
         return (Confidence::Unknown, "find root glob is invalid".to_owned());
     }
-    (Confidence::Estimated, "find -delete may remove matching descendants".to_owned())
+    (
+        Confidence::Estimated,
+        "find -delete may remove matching descendants".to_owned(),
+    )
 }
 
 fn classify_redirection(
@@ -766,7 +890,8 @@ fn resolve_operand(cwd: &WorkspacePath, operand: &str) -> Option<String> {
 
 fn normalize_relative(path: &str) -> Result<WorkspacePath, GuardError> {
     let normalized = path.replace('\\', "/");
-    if normalized.starts_with('/') || normalized.starts_with("//") || has_drive_prefix(&normalized) {
+    if normalized.starts_with('/') || normalized.starts_with("//") || has_drive_prefix(&normalized)
+    {
         return Err(GuardError::InvalidPath);
     }
     let mut parts = Vec::new();
@@ -796,7 +921,8 @@ fn tokenize(command: &str, shell: ShellKind) -> Option<Vec<String>> {
             escaped = false;
             continue;
         }
-        if quote.is_some_and(|value| value == '"') && character == '\\' && shell == ShellKind::Posix {
+        if quote.is_some_and(|value| value == '"') && character == '\\' && shell == ShellKind::Posix
+        {
             escaped = true;
             continue;
         }

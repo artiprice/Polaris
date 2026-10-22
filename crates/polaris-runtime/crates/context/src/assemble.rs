@@ -1,9 +1,18 @@
 //! Prompt assembly, budget accounting, and the context virtualization facade.
 
-use std::{collections::{HashSet, VecDeque}, sync::{Mutex, atomic::{AtomicU64, Ordering}}};
+use std::{
+    collections::{HashSet, VecDeque},
+    sync::{
+        Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
+};
 
 use bytes::Bytes;
-use polaris_sdk::{ids::ShortRef, registry::{ChatMessage, ChatRole, ToolSpec}};
+use polaris_sdk::{
+    ids::ShortRef,
+    registry::{ChatMessage, ChatRole, ToolSpec},
+};
 use polaris_storage_cas::Cas;
 
 use crate::{
@@ -59,7 +68,10 @@ pub trait TokenEstimator: Send + Sync {
             add_text_estimate(self, &mut tokens, &mut is_estimate, &call.arguments_json)?;
             add_estimate(self, &mut tokens, &mut is_estimate, "tool call structure")?;
         }
-        Ok(TokenEstimate { tokens, is_estimate })
+        Ok(TokenEstimate {
+            tokens,
+            is_estimate,
+        })
     }
 }
 
@@ -70,7 +82,9 @@ fn add_text_estimate<K: TokenEstimator + ?Sized>(
     text: &str,
 ) -> Result<(), ContextError> {
     let estimate = estimator.estimate(text)?;
-    *total = total.checked_add(estimate.tokens).ok_or(ContextError::EstimateOverflow)?;
+    *total = total
+        .checked_add(estimate.tokens)
+        .ok_or(ContextError::EstimateOverflow)?;
     *is_estimate |= estimate.is_estimate;
     Ok(())
 }
@@ -92,7 +106,10 @@ impl TokenEstimator for ByteHeuristic {
     fn estimate(&self, text: &str) -> Result<TokenEstimate, ContextError> {
         let bytes = u64::try_from(text.len()).map_err(|_| ContextError::EstimateOverflow)?;
         let tokens = bytes.checked_add(3).ok_or(ContextError::EstimateOverflow)? / 4;
-        Ok(TokenEstimate { tokens, is_estimate: true })
+        Ok(TokenEstimate {
+            tokens,
+            is_estimate: true,
+        })
     }
 }
 
@@ -109,7 +126,11 @@ pub struct ContextConfig {
 
 impl Default for ContextConfig {
     fn default() -> Self {
-        Self { fold: FoldConfig::default(), scratchpad: ScratchpadConfig::default(), max_context_tokens: 32_000 }
+        Self {
+            fold: FoldConfig::default(),
+            scratchpad: ScratchpadConfig::default(),
+            max_context_tokens: 32_000,
+        }
     }
 }
 
@@ -215,9 +236,16 @@ impl<K: TokenEstimator> ContextVirtualizer<Cas, K> {
     #[must_use]
     pub fn new(cas: Cas, estimator: K, config: ContextConfig) -> Self {
         Self {
-            cas, estimator, config, folds: FoldState::default(),
-            folded_saved_tokens: AtomicU64::new(0), prefix_previous: Mutex::new(None),
-            prefix_stability: Mutex::new(PrefixStability { requests: 0, consecutive_matches: 0 }),
+            cas,
+            estimator,
+            config,
+            folds: FoldState::default(),
+            folded_saved_tokens: AtomicU64::new(0),
+            prefix_previous: Mutex::new(None),
+            prefix_stability: Mutex::new(PrefixStability {
+                requests: 0,
+                consecutive_matches: 0,
+            }),
         }
     }
 
@@ -227,87 +255,160 @@ impl<K: TokenEstimator> ContextVirtualizer<Cas, K> {
         let original = String::from_utf8_lossy(request.output);
         let before = self.estimator.estimate(&original)?.tokens;
         let after = self.estimator.estimate(&folded.view)?.tokens;
-        let _updated = self.folded_saved_tokens.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
-            Some(current.saturating_add(before.saturating_sub(after)))
-        });
+        let _updated =
+            self.folded_saved_tokens
+                .try_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                    Some(current.saturating_add(before.saturating_sub(after)))
+                });
         Ok(folded)
     }
 
     /// Expand a short reference, validating ambiguity through the CAS resolver.
-    pub fn expand(&self, reference: ShortRef, range: Option<ByteRange>) -> Result<Bytes, ContextError> {
+    pub fn expand(
+        &self,
+        reference: ShortRef,
+        range: Option<ByteRange>,
+    ) -> Result<Bytes, ContextError> {
         expand(&self.cas, reference, range)
     }
 
     /// Append an epistemic fact using this virtualizer's configured CAS overflow threshold.
-    pub fn append_scratchpad(&self, scratchpad: &mut EpistemicScratchpad, turn: u32, kind: crate::EntryKind, text: &str) -> Result<(), ContextError> {
+    pub fn append_scratchpad(
+        &self,
+        scratchpad: &mut EpistemicScratchpad,
+        turn: u32,
+        kind: crate::EntryKind,
+        text: &str,
+    ) -> Result<(), ContextError> {
         let _entry = scratchpad.append(turn, kind, text, &self.cas, self.config.scratchpad)?;
         Ok(())
     }
 
     /// Assemble a prompt without modifying the stable prefix or scratchpad.
     pub fn assemble(&self, request: &AssembleRequest<'_>) -> Result<AssembledPrompt, ContextError> {
-        let prefix = StablePrefix::new(request.system_prompt, request.tools, request.repo_map_version, request.repo_map)?;
+        let prefix = StablePrefix::new(
+            request.system_prompt,
+            request.tools,
+            request.repo_map_version,
+            request.repo_map,
+        )?;
         self.observe_prefix(prefix.hash)?;
         let scratchpad = request.scratchpad.render();
         let active_scope = request.active_scope.to_owned();
         let prefix_estimate = self.estimator.estimate(&prefix.bytes)?;
         let scratchpad_estimate = self.estimator.estimate(&scratchpad)?;
         let active_estimate = self.estimator.estimate(&active_scope)?;
-        let immutable = prefix_estimate.tokens
-            .checked_add(scratchpad_estimate.tokens).and_then(|sum| sum.checked_add(active_estimate.tokens))
+        let immutable = prefix_estimate
+            .tokens
+            .checked_add(scratchpad_estimate.tokens)
+            .and_then(|sum| sum.checked_add(active_estimate.tokens))
             .ok_or(ContextError::EstimateOverflow)?;
-        if immutable > self.config.max_context_tokens { return Err(ContextError::Budget); }
+        if immutable > self.config.max_context_tokens {
+            return Err(ContextError::Budget);
+        }
 
         let groups = validated_window_groups(request.window, &self.estimator)?;
         let mut retained_groups: VecDeque<WindowGroup> = groups.into();
         let mut window_tokens = retained_groups.iter().try_fold(0_u64, |sum, group| {
-            sum.checked_add(group.tokens).ok_or(ContextError::EstimateOverflow)
+            sum.checked_add(group.tokens)
+                .ok_or(ContextError::EstimateOverflow)
         })?;
         let mut omitted = 0_u64;
-        while immutable.checked_add(window_tokens).ok_or(ContextError::EstimateOverflow)? > self.config.max_context_tokens {
-            let Some(removed_group) = retained_groups.pop_front() else { return Err(ContextError::Budget); };
-            window_tokens = window_tokens.checked_sub(removed_group.tokens).ok_or(ContextError::EstimateOverflow)?;
-            let removed_messages = removed_group.end.checked_sub(removed_group.start).ok_or(ContextError::EstimateOverflow)?;
-            omitted = omitted.checked_add(u64::try_from(removed_messages).map_err(|_| ContextError::EstimateOverflow)?)
+        while immutable
+            .checked_add(window_tokens)
+            .ok_or(ContextError::EstimateOverflow)?
+            > self.config.max_context_tokens
+        {
+            let Some(removed_group) = retained_groups.pop_front() else {
+                return Err(ContextError::Budget);
+            };
+            window_tokens = window_tokens
+                .checked_sub(removed_group.tokens)
+                .ok_or(ContextError::EstimateOverflow)?;
+            let removed_messages = removed_group
+                .end
+                .checked_sub(removed_group.start)
+                .ok_or(ContextError::EstimateOverflow)?;
+            omitted = omitted
+                .checked_add(
+                    u64::try_from(removed_messages).map_err(|_| ContextError::EstimateOverflow)?,
+                )
                 .ok_or(ContextError::EstimateOverflow)?;
         }
         // Text-tokenizer precision does not account for provider roles, tool-call framing, or the
         // provider-specific chat template. Keep the public total honest until that seam exists.
         let is_estimate = true;
-        let total_tokens = immutable.checked_add(window_tokens).ok_or(ContextError::EstimateOverflow)?;
+        let total_tokens = immutable
+            .checked_add(window_tokens)
+            .ok_or(ContextError::EstimateOverflow)?;
         let stats = AssemblyStats {
-            prefix_tokens: prefix_estimate.tokens, scratchpad_tokens: scratchpad_estimate.tokens,
-            active_scope_tokens: active_estimate.tokens, window_tokens, total_tokens, omitted_messages: omitted,
+            prefix_tokens: prefix_estimate.tokens,
+            scratchpad_tokens: scratchpad_estimate.tokens,
+            active_scope_tokens: active_estimate.tokens,
+            window_tokens,
+            total_tokens,
+            omitted_messages: omitted,
             is_estimate,
         };
-        let retained_start = retained_groups.front().map_or(request.window.len(), |group| group.start);
-        let retained = request.window.get(retained_start..).ok_or(ContextError::ToolHistory)?;
-        Ok(AssembledPrompt { prefix, scratchpad, active_scope, window: retained.to_vec(), stats })
+        let retained_start = retained_groups
+            .front()
+            .map_or(request.window.len(), |group| group.start);
+        let retained = request
+            .window
+            .get(retained_start..)
+            .ok_or(ContextError::ToolHistory)?;
+        Ok(AssembledPrompt {
+            prefix,
+            scratchpad,
+            active_scope,
+            window: retained.to_vec(),
+            stats,
+        })
     }
 
     /// Current prefix stability sample.
     pub fn prefix_stability(&self) -> Result<PrefixStability, ContextError> {
-        self.prefix_stability.lock().map(|state| *state).map_err(|_| ContextError::StatePoisoned)
+        self.prefix_stability
+            .lock()
+            .map(|state| *state)
+            .map_err(|_| ContextError::StatePoisoned)
     }
 
     /// Build the context-map accounting view for the latest assembly.
     #[must_use]
     pub fn context_map(&self, prompt: &AssembledPrompt) -> ContextMapReport {
         ContextMapReport {
-            total_tokens: prompt.stats.total_tokens, window_cap: self.config.max_context_tokens,
-            prefix_tokens: prompt.stats.prefix_tokens, scratchpad_tokens: prompt.stats.scratchpad_tokens,
-            active_scope_tokens: prompt.stats.active_scope_tokens.saturating_add(prompt.stats.window_tokens),
+            total_tokens: prompt.stats.total_tokens,
+            window_cap: self.config.max_context_tokens,
+            prefix_tokens: prompt.stats.prefix_tokens,
+            scratchpad_tokens: prompt.stats.scratchpad_tokens,
+            active_scope_tokens: prompt
+                .stats
+                .active_scope_tokens
+                .saturating_add(prompt.stats.window_tokens),
             folded_saved_tokens: self.folded_saved_tokens.load(Ordering::Relaxed),
             is_estimate: prompt.stats.is_estimate,
         }
     }
 
     fn observe_prefix(&self, hash: PrefixHash) -> Result<(), ContextError> {
-        let mut previous = self.prefix_previous.lock().map_err(|_| ContextError::StatePoisoned)?;
-        let mut stats = self.prefix_stability.lock().map_err(|_| ContextError::StatePoisoned)?;
-        stats.requests = stats.requests.checked_add(1).ok_or(ContextError::EstimateOverflow)?;
+        let mut previous = self
+            .prefix_previous
+            .lock()
+            .map_err(|_| ContextError::StatePoisoned)?;
+        let mut stats = self
+            .prefix_stability
+            .lock()
+            .map_err(|_| ContextError::StatePoisoned)?;
+        stats.requests = stats
+            .requests
+            .checked_add(1)
+            .ok_or(ContextError::EstimateOverflow)?;
         if previous.as_ref().is_some_and(|old| *old == hash) {
-            stats.consecutive_matches = stats.consecutive_matches.checked_add(1).ok_or(ContextError::EstimateOverflow)?;
+            stats.consecutive_matches = stats
+                .consecutive_matches
+                .checked_add(1)
+                .ok_or(ContextError::EstimateOverflow)?;
         }
         *previous = Some(hash);
         Ok(())
@@ -341,8 +442,10 @@ fn validated_window_groups<K: TokenEstimator>(
         if !message.tool_calls.is_empty() {
             let mut pending = HashSet::new();
             for call in &message.tool_calls {
-                if call.id.trim().is_empty() || call.name.trim().is_empty()
-                    || !seen_call_ids.insert(call.id.clone()) || !pending.insert(call.id.clone())
+                if call.id.trim().is_empty()
+                    || call.name.trim().is_empty()
+                    || !seen_call_ids.insert(call.id.clone())
+                    || !pending.insert(call.id.clone())
                 {
                     return Err(ContextError::ToolHistory);
                 }
@@ -353,19 +456,27 @@ fn validated_window_groups<K: TokenEstimator>(
                 if result.role != ChatRole::Tool || !result.tool_calls.is_empty() {
                     return Err(ContextError::ToolHistory);
                 }
-                let result_id = result.tool_call_id.as_deref().filter(|id| !id.trim().is_empty())
+                let result_id = result
+                    .tool_call_id
+                    .as_deref()
+                    .filter(|id| !id.trim().is_empty())
                     .ok_or(ContextError::ToolHistory)?;
                 if !pending.remove(result_id) {
                     return Err(ContextError::ToolHistory);
                 }
-                group_tokens = group_tokens.checked_add(estimator.estimate_message(result)?.tokens)
+                group_tokens = group_tokens
+                    .checked_add(estimator.estimate_message(result)?.tokens)
                     .ok_or(ContextError::EstimateOverflow)?;
                 index = index.checked_add(1).ok_or(ContextError::EstimateOverflow)?;
             }
         } else {
             index = index.checked_add(1).ok_or(ContextError::EstimateOverflow)?;
         }
-        groups.push(WindowGroup { start, end: index, tokens: group_tokens });
+        groups.push(WindowGroup {
+            start,
+            end: index,
+            tokens: group_tokens,
+        });
     }
     Ok(groups)
 }

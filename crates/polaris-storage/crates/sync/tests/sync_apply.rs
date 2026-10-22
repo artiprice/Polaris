@@ -52,6 +52,22 @@ impl SandboxBackend for FakeSandbox {
             .filter(|a| !a.starts_with('-') && *a != "+x")
             .collect();
         match cmd.as_str() {
+            "test" => {
+                let executable = lock(&self.executable)?;
+                let path = match paths.first() {
+                    Some(path) => path.as_str(),
+                    None => "",
+                };
+                let expected = req.argv.iter().any(|arg| arg == "-x");
+                let observed = executable.contains(path);
+                if expected == observed {
+                    return Ok(ExecOutput::default());
+                }
+                return Ok(ExecOutput {
+                    exit_code: 1,
+                    ..ExecOutput::default()
+                });
+            }
             "rm" => {
                 let mut files = lock(&self.files)?;
                 paths.iter().for_each(|p| {
@@ -118,6 +134,7 @@ fn opts(concurrency: usize) -> ApplyOpts {
     ApplyOpts {
         remote_root: "/sandbox/ws".into(),
         concurrency,
+        cancellation: None,
     }
 }
 
@@ -141,7 +158,12 @@ async fn apply_uploads_and_deletes_byte_exact() -> TestResult {
     let mut remote = Manifest::default();
     remote.entries.insert(
         RelPath::new("stale.rs")?,
-        local.entries.values().next().ok_or("empty")?.clone(),
+        polaris_storage_sync::FileEntry {
+            size: 3,
+            hash: polaris_sdk::ids::Cid::from_bytes(*blake3::hash(b"old").as_bytes()),
+            executable: false,
+            kind: polaris_storage_sync::EntryKind::File,
+        },
     );
     let p = plan(&local, &remote);
     let report = apply(&fake, &handle()?, tmp.path(), &local, &p, &opts(4)).await?;

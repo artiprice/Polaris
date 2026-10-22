@@ -52,6 +52,17 @@ impl PlatformOps for FakePlatform {
         self.answer.clone()
     }
 
+    fn kill_tree(&self, _tree: &ProcessTree) -> Result<(), PlatformError> {
+        Ok(())
+    }
+
+    async fn try_wait_tree(
+        &self,
+        _tree: &ProcessTree,
+    ) -> Result<Option<polaris_sdk::registry::ProcessExit>, PlatformError> {
+        Ok(None)
+    }
+
     fn memory_pressure(&self) -> Result<MemoryPressure, PlatformError> {
         Ok(MemoryPressure::Normal)
     }
@@ -63,7 +74,13 @@ async fn stop_one(
     let dir = tempfile::tempdir()?;
     let reaper = Reaper::new(dir.path())?;
     let platform = FakePlatform::answering(answer);
-    let id = reaper.register_process(Arc::clone(&platform), ProcessTree { root_pid: 4242 })?;
+    let id = reaper.register_process(
+        Arc::clone(&platform),
+        ProcessTree {
+            root_pid: 4242,
+            handle_id: 1,
+        },
+    )?;
     let config = ShutdownConfig {
         graceful: Duration::from_secs(8),
         ..ShutdownConfig::default()
@@ -114,7 +131,13 @@ fn process_registration_is_journaled_by_pid() -> TestResult {
     let reaper = Reaper::new(dir.path())?;
     let platform = FakePlatform::answering(Ok(StopOutcome::Killed));
 
-    let id = reaper.register_process(platform, ProcessTree { root_pid: 777 })?;
+    let id = reaper.register_process(
+        platform,
+        ProcessTree {
+            root_pid: 777,
+            handle_id: 1,
+        },
+    )?;
 
     let report = reaper.leak_report();
     let entry = report.entries.first().ok_or("process not listed")?;

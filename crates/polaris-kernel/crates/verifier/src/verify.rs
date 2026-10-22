@@ -1,16 +1,20 @@
 //! Ordered hybrid verification pipeline.
 
-use crate::{EvidenceError, EvidenceStore};
-use polaris_code_intel::{MutationMetrics, ParserPool, metrics};
+use crate::{EvidenceError, EvidenceStore, mutation_digest};
+use polaris_code_intel::{AnalysisCoverage, MutationMetrics, ParserPool, analyze_safety, metrics};
 use polaris_sdk::{
-    contracts::{ApprovalWitness, ApproverId, Command, CommandBody, Timestamp, Unverified, Verified},
+    contracts::{
+        ApprovalWitness, ApproverId, Command, CommandBody, Timestamp, Unverified, Verified,
+    },
     ids::{Cid, CommandId, FrameId},
 };
 use polaris_security_capability::{
     Authorization, CapabilityError, Clock, Facts, PublicKeyBytes, ResourcePath, Right, Token,
     authorize,
 };
-use polaris_system_one_verifier::{DegradedReason, MutationSafety, SafetyAssessment, SafetyRequest};
+use polaris_system_one_verifier::{
+    DegradedReason, MutationSafety, SafetyAssessment, SafetyRequest,
+};
 use serde::Serialize;
 use std::{collections::BTreeMap, path::Path, time::Duration};
 
@@ -131,6 +135,8 @@ pub enum VerificationDecision {
 /// Why an otherwise valid mutation needs a human decision.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApprovalReason {
+    /// The supported-language analyzer cannot prove complete unsafe-change coverage.
+    UnsafeAnalysisCoverage,
     /// The semantic safety assessor requested human review.
     SafetyDegraded(DegradedReason),
     /// S1 did not finish within the configured timeout.
@@ -143,6 +149,9 @@ pub enum ApprovalReason {
 /// Errors from trusted parser, safety, or evidence infrastructure. Callers must fail closed.
 #[derive(Debug, thiserror::Error)]
 pub enum VerifierError {
+    /// A mutation field length could not be encoded safely.
+    #[error(transparent)]
+    Binding(#[from] crate::MutationBindingError),
     /// The code-intelligence parser or metric engine failed.
     #[error("mutation analysis failed")]
     CodeIntel(#[from] polaris_code_intel::CodeIntelError),
@@ -288,15 +297,33 @@ where
         request: MutationRequest<'_>,
     ) -> Result<VerificationDecision, VerifierError> {
         let input_caps = [
-            (InputField::Capability, request.command.token().as_bytes().len(), MAX_TOKEN_BYTES),
+            (
+                InputField::Capability,
+                request.command.token().as_bytes().len(),
+                MAX_TOKEN_BYTES,
+            ),
             (InputField::Target, request.target.len(), MAX_TARGET_BYTES),
-            (InputField::OldSource, request.old_source.len(), MAX_SOURCE_BYTES),
-            (InputField::NewSource, request.new_source.len(), MAX_SOURCE_BYTES),
+            (
+                InputField::OldSource,
+                request.old_source.len(),
+                MAX_SOURCE_BYTES,
+            ),
+            (
+                InputField::NewSource,
+                request.new_source.len(),
+                MAX_SOURCE_BYTES,
+            ),
             (InputField::Diff, request.diff.len(), MAX_DIFF_BYTES),
             (InputField::Intent, request.intent.len(), MAX_INTENT_BYTES),
         ];
-        if let Some((field, _observed, max_bytes)) = input_caps.iter().find(|(_, observed, limit)| observed > limit) {
-            return Ok(VerificationDecision::Rejected(Rejection::InputLimit { field: *field, max_bytes: *max_bytes }));
+        if let Some((field, _observed, max_bytes)) = input_caps
+            .iter()
+            .find(|(_, observed, limit)| observed > limit)
+        {
+            return Ok(VerificationDecision::Rejected(Rejection::InputLimit {
+                field: *field,
+                max_bytes: *max_bytes,
+            }));
         }
         let expected_diff = cid_for(request.diff);
         let (command_id, agent, token_bytes) = match request.command.body() {
@@ -320,8 +347,12 @@ where
             Ok(resource) => resource,
             Err(_) => return Ok(VerificationDecision::Rejected(Rejection::Authorization)),
         };
-        let old = self.parser.parse_file(Path::new(request.target), request.old_source)?;
-        let new = self.parser.parse_file(Path::new(request.target), request.new_source)?;
+        let old = self
+            .parser
+            .parse_file(Path::new(request.target), request.old_source)?;
+        let new = self
+            .parser
+            .parse_file(Path::new(request.target), request.new_source)?;
         if old.has_syntax_error() || new.has_syntax_error() {
             return Ok(VerificationDecision::Rejected(Rejection::Metric(
                 Metric::TreeEditDistance,
@@ -337,8 +368,8 @@ where
                 reason: ApprovalReason::UnsafeAnalysisCoverage,
             });
         }
-        let touches_unsafe = unsafe_observations(&old, &old_safety)
-            != unsafe_observations(&new, &new_safety);
+        let touches_unsafe =
+            unsafe_observations(&old, &old_safety) != unsafe_observations(&new, &new_safety);
         let diff = expected_diff;
         let old_source = cid_for(request.old_source);
         let new_source = cid_for(request.new_source);
@@ -458,11 +489,18 @@ where
                 .collect(),
             checked_at: self.clock.now(),
         };
-        let symbol_bytes = report.changed_symbols.iter().fold(0_usize, |size, symbol| size.saturating_add(symbol.len()));
-        if symbol_bytes > MAX_EVIDENCE_BYTES { return Err(VerifierError::EvidenceTooLarge); }
+        let symbol_bytes = report
+            .changed_symbols
+            .iter()
+            .fold(0_usize, |size, symbol| size.saturating_add(symbol.len()));
+        if symbol_bytes > MAX_EVIDENCE_BYTES {
+            return Err(VerifierError::EvidenceTooLarge);
+        }
         let evidence_bytes =
             serde_json::to_vec(&report).map_err(|_| VerifierError::EvidenceEncoding)?;
-        if evidence_bytes.len() > MAX_EVIDENCE_BYTES { return Err(VerifierError::EvidenceTooLarge); }
+        if evidence_bytes.len() > MAX_EVIDENCE_BYTES {
+            return Err(VerifierError::EvidenceTooLarge);
+        }
         let evidence_cid = self.evidence.put(&evidence_bytes)?;
         if evidence_cid != cid_for(&evidence_bytes) {
             return Err(EvidenceError::DigestMismatch.into());
@@ -551,6 +589,3 @@ fn unsafe_observations(
     }
     observations
 }
-
-
-

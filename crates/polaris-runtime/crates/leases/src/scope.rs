@@ -1,8 +1,8 @@
 //! AST symbol scopes used by the file lease manager.
 
 use super::key::LeaseKey;
-use polaris_code_intel::Lang;
 use super::manager::LeaseError;
+use polaris_code_intel::Lang;
 
 /// A validated qualified symbol path, represented by bounded named components.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -21,7 +21,11 @@ impl SymbolPath {
         let mut out = Vec::new();
         for part in parts {
             let value = part.as_ref();
-            if value.is_empty() || value.len() > 256 || value.contains("::") || value.chars().any(char::is_whitespace) {
+            if value.is_empty()
+                || value.len() > 256
+                || value.contains("::")
+                || value.chars().any(|c| c.is_whitespace() || c.is_control())
+            {
                 return Err(LeaseError::InvalidScope);
             }
             if out.len() >= 128 {
@@ -68,25 +72,35 @@ impl LeaseScope {
     /// The caller must resolve the symbol against the parsed source before this call. Unknown languages conservatively receive whole-file scope.
     #[must_use]
     pub fn for_language(language: Option<Lang>, symbol: SymbolPath) -> Self {
-        match language { Some(_) => Self::AstNode(symbol), None => Self::EntireFile }
+        match language {
+            Some(_) => Self::AstNode(symbol),
+            None => Self::EntireFile,
+        }
     }
 }
 
 /// Determines whether two scopes on the same key overlap.
 #[must_use]
-pub fn scopes_conflict(left_key: &LeaseKey, left: &LeaseScope, right_key: &LeaseKey, right: &LeaseScope) -> bool {
+pub fn scopes_conflict(
+    left_key: &LeaseKey,
+    left: &LeaseScope,
+    right_key: &LeaseKey,
+    right: &LeaseScope,
+) -> bool {
     if left_key != right_key {
         return false;
     }
     match (left, right) {
         (LeaseScope::EntireFile, _) | (_, LeaseScope::EntireFile) => true,
-        (LeaseScope::AstNode(a), LeaseScope::AstNode(b)) => {
-            is_prefix(a, b) || is_prefix(b, a)
-        }
+        (LeaseScope::AstNode(a), LeaseScope::AstNode(b)) => is_prefix(a, b) || is_prefix(b, a),
     }
 }
 
 fn is_prefix(prefix: &SymbolPath, candidate: &SymbolPath) -> bool {
     prefix.len() <= candidate.len()
-        && prefix.components().iter().zip(candidate.components()).all(|(a, b)| a == b)
+        && prefix
+            .components()
+            .iter()
+            .zip(candidate.components())
+            .all(|(a, b)| a == b)
 }

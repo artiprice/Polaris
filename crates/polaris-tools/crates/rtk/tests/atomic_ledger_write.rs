@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::fs;
+use std::process::Command;
 use std::time::Duration;
 
 use jiff::Timestamp;
@@ -216,5 +217,65 @@ fn concurrent_updates_lose_no_history() -> TestResult {
         }
     }
     assert_eq!(ledger.render().lines().count(), THREADS * ROUNDS);
+    Ok(())
+}
+
+#[test]
+fn cross_process_worker() -> TestResult {
+    let path = match std::env::var_os("POLARIS_RTK_TEST_LEDGER") {
+        Some(path) => path,
+        None => return Ok(()),
+    };
+    let writer = std::env::var("POLARIS_RTK_TEST_WRITER")?;
+    let file = LedgerFile::new(path);
+    let now = T1.parse::<Timestamp>()?;
+    for index in 0..8 {
+        file.update(&[error(&format!("process {writer} issue {index}"))], now)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn separate_process_updates_preserve_all_history() -> TestResult {
+    let dir = tempfile::tempdir()?;
+    let ledger = dir.path().join(".polaris").join("issues.md");
+    let executable = std::env::current_exe()?;
+    let mut children = Vec::new();
+    for writer in ["left", "right"] {
+        let child = Command::new(&executable)
+            .args(["--exact", "cross_process_worker", "--nocapture"])
+            .env("POLARIS_RTK_TEST_LEDGER", &ledger)
+            .env("POLARIS_RTK_TEST_WRITER", writer)
+            .spawn()?;
+        children.push((writer, child));
+    }
+    for (writer, child) in children {
+        let output = child.wait_with_output()?;
+        assert!(
+            output.status.success(),
+            "writer {writer} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let file = LedgerFile::new(ledger);
+    let lines = file.load()?.lines().to_vec();
+    let ids: Vec<&IssueId> = lines
+        .iter()
+        .filter_map(|line| match line {
+            LedgerLine::Issue(issue) => Some(&issue.id),
+            LedgerLine::Raw(_) => None,
+        })
+        .collect();
+    assert_eq!(
+        ids.len(),
+        16,
+        "all process writes should remain in the ledger"
+    );
+    for writer in ["left", "right"] {
+        for index in 0..8 {
+            let expected = IssueId::from_message(&format!("error: process {writer} issue {index}"));
+            assert!(ids.contains(&&expected), "lost {writer} issue {index}");
+        }
+    }
     Ok(())
 }

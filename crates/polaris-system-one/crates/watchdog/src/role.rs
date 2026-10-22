@@ -15,9 +15,9 @@ impl ToolId {
     pub fn new(value: &str) -> Result<Self, RoleTableError> {
         if value.is_empty()
             || value.len() > 128
-            || !value
-                .bytes()
-                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"_.-".contains(&byte))
+            || !value.bytes().all(|byte| {
+                byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"_.-".contains(&byte)
+            })
         {
             return Err(RoleTableError::InvalidToolId);
         }

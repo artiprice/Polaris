@@ -184,20 +184,42 @@ impl ChatMessage {
     /// Construct a text-only message with no tool or reasoning metadata.
     #[must_use]
     pub fn text(role: ChatRole, content: String) -> Self {
-        Self { role, content, tool_calls: Vec::new(), tool_call_id: None, reasoning: None }
+        Self {
+            role,
+            content,
+            tool_calls: Vec::new(),
+            tool_call_id: None,
+            reasoning: None,
+        }
     }
 
     /// Construct one explicit tool-result message. The adapter validates history linkage.
     #[must_use]
     pub fn tool_result(call_id: String, content: String) -> Self {
-        Self { role: ChatRole::Tool, content, tool_calls: Vec::new(), tool_call_id: Some(call_id), reasoning: None }
+        Self {
+            role: ChatRole::Tool,
+            content,
+            tool_calls: Vec::new(),
+            tool_call_id: Some(call_id),
+            reasoning: None,
+        }
     }
 
     /// Construct an assistant tool-call turn with the exact complete calls and optional isolated
     /// reasoning channel. This stores data and does not authorize or execute any call.
     #[must_use]
-    pub fn assistant_calls(content: String, calls: Vec<ChatToolCall>, reasoning: Option<String>) -> Self {
-        Self { role: ChatRole::Assistant, content, tool_calls: calls, tool_call_id: None, reasoning }
+    pub fn assistant_calls(
+        content: String,
+        calls: Vec<ChatToolCall>,
+        reasoning: Option<String>,
+    ) -> Self {
+        Self {
+            role: ChatRole::Assistant,
+            content,
+            tool_calls: calls,
+            tool_call_id: None,
+            reasoning,
+        }
     }
 }
 
@@ -940,6 +962,19 @@ pub struct SpawnSpec {
 pub struct ProcessTree {
     /// Root process id.
     pub root_pid: u32,
+    /// Opaque adapter-owned handle identifying this exact live process tree.
+    ///
+    /// This identifier is meaningful only to the `PlatformOps` instance that created it. It is
+    /// not a durable process identity and must never be used to recover or signal a PID after a
+    /// host restart.
+    pub handle_id: u64,
+}
+
+/// Exit information for a process tree whose root has exited.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProcessExit {
+    /// Exit code when the operating system reports one.
+    pub code: Option<i32>,
 }
 
 /// How a stop request ended.
@@ -967,9 +1002,10 @@ pub enum MemoryPressure {
 
 /// OS seam (keeps the later Linux/macOS port honest).
 ///
-/// Windows semantics: there is no SIGTERM. `graceful_stop` sends `CTRL_BREAK_EVENT` to the
-/// process group where the child has a console, waits `grace`, then terminates the whole Job
-/// Object. Unix implementations send SIGTERM, wait, then SIGKILL the process group.
+/// Windows semantics: the adapter may close the worker's stdin to allow cooperative exit, waits
+/// for `grace`, then terminates the whole Job Object. Unix implementations send SIGTERM, wait,
+/// then SIGKILL the process group. [`PlatformOps::kill_tree`] is the synchronous emergency path
+/// used when an owning task is dropped before async teardown completes.
 pub trait PlatformOps: Send + Sync {
     /// Starts a supervised process tree.
     ///
@@ -982,6 +1018,25 @@ pub trait PlatformOps: Send + Sync {
         tree: &ProcessTree,
         grace: Duration,
     ) -> impl Future<Output = Result<StopOutcome, PlatformError>> + Send;
+    /// Immediately sends the platform's force-stop operation to a retained live tree handle.
+    ///
+    /// This synchronous emergency path is used by Drop guards when a task is aborted or unwinds.
+    /// It must never re-resolve the root PID.
+    ///
+    /// # Errors
+    /// [`PlatformError`] when the handle cannot be found or the OS refuses the operation.
+    fn kill_tree(&self, tree: &ProcessTree) -> Result<(), PlatformError>;
+    /// Checks whether the root process has exited without blocking.
+    ///
+    /// Implementations must validate the opaque handle against their retained live-process
+    /// record. A PID lookup alone is not a valid implementation.
+    ///
+    /// # Errors
+    /// [`PlatformError`] when the tree handle is unknown or the OS query fails.
+    fn try_wait_tree(
+        &self,
+        tree: &ProcessTree,
+    ) -> impl Future<Output = Result<Option<ProcessExit>, PlatformError>> + Send;
     /// Current memory pressure.
     ///
     /// # Errors
@@ -1004,13 +1059,16 @@ pub enum PlatformError {
     /// Not supported on this OS.
     #[error("unsupported on this platform: {0}")]
     Unsupported(&'static str),
+    /// The requested operation violates the platform adapter's process policy.
+    #[error("platform policy rejected operation: {0}")]
+    Policy(String),
 }
 
 impl HasKind for PlatformError {
     fn kind(&self) -> ErrorKind {
         match self {
             Self::NotFound(_) | Self::Unsupported(_) => ErrorKind::Permanent,
-            Self::PermissionDenied(_) => ErrorKind::Policy,
+            Self::PermissionDenied(_) | Self::Policy(_) => ErrorKind::Policy,
             Self::Io(_) => ErrorKind::Transient,
         }
     }

@@ -1,0 +1,30 @@
+{
+  "type_of": "integration_test",
+  "name": "polaris-tests::cache_uses_real_redb_store_across_reopen_and_purge",
+  "file_path": "tests/tests/cache_redb.rs",
+  "logic_name": "Tiered Cache With redb L2",
+  "test_list": [
+    {
+      "test_name": "cache_uses_real_redb_store_across_reopen_and_purge",
+      "description": "A TieredCache backed by the production EventLog redb ExactCacheStore persists across owner reopen and purges only the selected scope."
+    }
+  ],
+  "dependencies": [
+    "polaris_storage::cache::{TieredCache, CacheConfig, key_for_s1}",
+    "polaris_storage::eventlog::{EventLog, EventLogConfig}"
+  ],
+  "inputs": [
+    {
+      "name": "workspace_key",
+      "type": "CacheKey",
+      "description": "A real cache key derived in a workspace scope."
+    },
+    {
+      "name": "event_log_path",
+      "type": "PathBuf",
+      "description": "A unique temporary redb database path."
+    }
+  ],
+  "output_type": "Result<(), Box<dyn Error>>",
+  "output_description": "The test verifies cache persistence, L2 hit promotion and isolated scope purge using the production redb adapter."
+}

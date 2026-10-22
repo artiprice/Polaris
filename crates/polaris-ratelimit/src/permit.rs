@@ -1,7 +1,7 @@
 //! Request reservations and post-response usage reconciliation.
 
+use crate::{Clock, RateLimitError, Shared, gcra};
 use std::{sync::Arc, time::Duration};
-use crate::{gcra, Clock, RateLimitError, Shared};
 
 /// Result of reconciling provider-reported usage against the pre-dispatch reservation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,15 +24,25 @@ pub struct Permit<C: Clock> {
 }
 
 impl<C: Clock> Permit<C> {
-    pub(crate) fn new(shared: Arc<Shared<C>>, reserved_tokens: u64) -> Self { Self { shared, reserved_tokens, dispatched_minute: None } }
+    pub(crate) fn new(shared: Arc<Shared<C>>, reserved_tokens: u64) -> Self {
+        Self {
+            shared,
+            reserved_tokens,
+            dispatched_minute: None,
+        }
+    }
 
     /// Mark the point at which the HTTP request can become externally visible. Must run before
     /// handing the request to the transport. A failed ledger update prevents caller dispatch.
     pub fn mark_dispatched(&mut self) -> Result<(), RateLimitError> {
-        if self.dispatched_minute.is_some() { return Err(RateLimitError::Accounting); }
+        if self.dispatched_minute.is_some() {
+            return Err(RateLimitError::Accounting);
+        }
         let now = self.shared.clock.now();
         let minute = now.as_secs() / 60;
-        self.shared.windows.record_dispatch(minute, self.reserved_tokens)?;
+        self.shared
+            .windows
+            .record_dispatch(minute, self.reserved_tokens)?;
         self.dispatched_minute = Some(minute);
         Ok(())
     }
@@ -44,23 +54,38 @@ impl<C: Clock> Permit<C> {
         let minute = self.dispatched_minute.ok_or(RateLimitError::Undispatched)?;
         let reservation_overrun = actual_tokens > self.reserved_tokens;
         if reservation_overrun {
-            let extra = actual_tokens.checked_sub(self.reserved_tokens).ok_or(RateLimitError::Accounting)?;
-            let now = gcra::duration_ns(self.shared.clock.now()).ok_or(RateLimitError::Accounting)?;
+            let extra = actual_tokens
+                .checked_sub(self.reserved_tokens)
+                .ok_or(RateLimitError::Accounting)?;
+            let now =
+                gcra::duration_ns(self.shared.clock.now()).ok_or(RateLimitError::Accounting)?;
             self.shared.tpm.charge_actual(now, extra)?;
         }
         self.shared.windows.record_actual(minute, actual_tokens)?;
-        Ok(Reconciliation { reserved_tokens: self.reserved_tokens, actual_tokens, reservation_overrun })
+        Ok(Reconciliation {
+            reserved_tokens: self.reserved_tokens,
+            actual_tokens,
+            reservation_overrun,
+        })
     }
 
     /// Reserved amount used by HTTP adapters for telemetry before dispatch.
     #[must_use]
-    pub const fn reserved_tokens(&self) -> u64 { self.reserved_tokens }
+    pub const fn reserved_tokens(&self) -> u64 {
+        self.reserved_tokens
+    }
 
     /// Conservative retry duration implied by the shared penalty at the current monotonic time.
     #[must_use]
     pub fn retry_after(&self) -> Duration {
-        let now = match gcra::duration_ns(self.shared.clock.now()) { Some(value) => value, None => u64::MAX };
-        let until = self.shared.penalty_until_ns.load(std::sync::atomic::Ordering::Acquire);
+        let now = match gcra::duration_ns(self.shared.clock.now()) {
+            Some(value) => value,
+            None => u64::MAX,
+        };
+        let until = self
+            .shared
+            .penalty_until_ns
+            .load(std::sync::atomic::Ordering::Acquire);
         Duration::from_nanos(until.saturating_sub(now))
     }
 }

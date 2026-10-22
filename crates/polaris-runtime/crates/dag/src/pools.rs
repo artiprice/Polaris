@@ -119,7 +119,9 @@ impl PoolInner {
     fn queue(self: &Arc<Self>) -> Result<QueueGuard, DagError> {
         let _gate = self.lock();
         self.queued
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| count.checked_add(1))
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+                count.checked_add(1)
+            })
             .map_err(|_| DagError::CounterOverflow)?;
         Ok(QueueGuard {
             inner: Arc::clone(self),
@@ -144,11 +146,11 @@ impl PoolInner {
     }
 
     fn note_aborted(&self) {
-        let _ = self.aborted_early.fetch_update(
-            Ordering::SeqCst,
-            Ordering::SeqCst,
-            |count| Some(count.saturating_add(1)),
-        );
+        let _ = self
+            .aborted_early
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+                Some(count.saturating_add(1))
+            });
     }
 }
 

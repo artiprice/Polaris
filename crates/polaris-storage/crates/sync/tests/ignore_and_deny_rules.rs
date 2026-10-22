@@ -62,6 +62,26 @@ fn git_config_denied() -> TestResult {
 }
 
 #[test]
+fn git_and_polaris_metadata_are_denied_even_with_negation() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    let rules = IgnoreRules::new(
+        tmp.path(),
+        Some("!.git/**\n!.polaris/**\n!.git\n!.polaris\n"),
+    )?;
+    for (path, is_dir) in [
+        (".git", true),
+        (".git/config", false),
+        ("work/.git", false),
+        (".polaris", true),
+        (".polaris/vcs-undo.json", false),
+        ("work/.polaris/cas/file", false),
+    ] {
+        assert_eq!(rules.classify(&RelPath::new(path)?, is_dir), Exclusion::Denied, "{path}");
+    }
+    Ok(())
+}
+
+#[test]
 fn ignored_directory_prunes_children() -> TestResult {
     let tmp = tempfile::tempdir()?;
     let rules = IgnoreRules::new(tmp.path(), Some("node_modules/\n"))?;

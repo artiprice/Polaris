@@ -42,7 +42,7 @@ pub use schema::{
 };
 pub use secret_ref::SecretRef;
 pub use sources::{
-    CONFIG_FILE, Dirs, ENV_PREFIX, EnvSnapshot, SessionOverrides, discover, discover_from,
-    read_layers,
+    CONFIG_FILE, Dirs, ENV_PREFIX, EnvSnapshot, MAX_CONFIG_FILE_BYTES, SessionOverrides, discover,
+    discover_from, read_layers,
 };
 pub use trust::{REPO_ALLOWED, TrustGrant, filter_repo_layer};

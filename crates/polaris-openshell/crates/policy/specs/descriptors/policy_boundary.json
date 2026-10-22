@@ -1,0 +1,21 @@
+{
+  "type_of": "module",
+  "name": "policy",
+  "file_path": "src/implementation.rs",
+  "logic_name": "OpenShell Policy Boundary",
+  "test_list": [
+    { "test_name": "every_role_tier_produces_valid_upstream_policy", "description": "Derive all supported role and driver combinations and validate through the pinned OpenShell policy schema." },
+    { "test_name": "rejects_unknown_fields_root_write_and_relative_paths", "description": "Fail closed on upstream unknown fields, bare-root write access, and non-absolute or traversing paths." },
+    { "test_name": "canonical_yaml_round_trips_and_network_delta_rejects_other_sections", "description": "Canonical serialization round-trips and hot reload accepts only the network_policies section." },
+    { "test_name": "provider_profile_is_exact_host_and_secret_free", "description": "Emit an exact-host Token Factory profile with credential references only and no secret value." }
+  ],
+  "dependencies": ["openshell-policy-schema", "polaris-sdk::SandboxError"],
+  "libraries": ["serde", "serde-saphyr", "thiserror"],
+  "inputs": [
+    { "name": "yaml", "type": "&str", "description": "Authored OpenShell policy YAML." },
+    { "name": "role", "type": "AgentRole", "description": "Polaris frame role used for least-privilege derivation." },
+    { "name": "tier", "type": "ExecTier", "description": "OpenShell execution driver class." }
+  ],
+  "output_type": "Result<Policy, PolicyError>",
+  "output_description": "An upstream-schema-valid, bounded policy or a typed error."
+}

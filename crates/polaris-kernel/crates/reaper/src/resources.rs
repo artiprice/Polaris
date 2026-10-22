@@ -51,34 +51,64 @@ pub(crate) fn remove_owned(path: &Path) -> std::io::Result<()> {
             "refused unowned directory",
         ));
     }
-    let metadata = match std::fs::symlink_metadata(path) {
-        Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(error),
-    };
-    if metadata.file_type().is_symlink() || !metadata.is_dir() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::PermissionDenied,
-            "refused replaced directory",
-        ));
-    }
-    let canonical = std::fs::canonicalize(path)?;
     let parent = path.parent().ok_or_else(|| {
         std::io::Error::new(std::io::ErrorKind::PermissionDenied, "missing parent")
     })?;
-    let canonical_parent = std::fs::canonicalize(parent)?;
-    if canonical.parent() != Some(canonical_parent.as_path()) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::PermissionDenied,
-            "directory escaped its parent",
-        ));
+    let mut attempts = 0u32;
+    loop {
+        let metadata = match std::fs::symlink_metadata(path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(error),
+        };
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "refused replaced directory",
+            ));
+        }
+        let canonical = std::fs::canonicalize(path)?;
+        let canonical_parent = std::fs::canonicalize(parent)?;
+        if canonical.parent() != Some(canonical_parent.as_path()) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "directory escaped its parent",
+            ));
+        }
+        match std::fs::remove_dir_all(&canonical) {
+            Ok(()) => return Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error)
+                if attempts < 4
+                    && matches!(
+                        error.kind(),
+                        std::io::ErrorKind::PermissionDenied | std::io::ErrorKind::WouldBlock
+                    ) =>
+            {
+                attempts = attempts.saturating_add(1);
+                std::thread::sleep(Duration::from_millis(
+                    20u64.saturating_mul(u64::from(attempts)),
+                ));
+            }
+            Err(error) => return Err(error),
+        }
     }
-    std::fs::remove_dir_all(&canonical)
 }
 
-pub(crate) struct ProcessResource<P> {
+pub(crate) struct ProcessResource<P: PlatformOps> {
     pub platform: Arc<P>,
     pub tree: ProcessTree,
+}
+impl<P: PlatformOps> Drop for ProcessResource<P> {
+    fn drop(&mut self) {
+        // This is a synchronous emergency backstop. Explicit shutdown remains responsible for
+        // waiting, reporting outcomes and updating the recovery journal.
+        match self.platform.kill_tree(&self.tree) {
+            Ok(()) | Err(polaris_sdk::registry::PlatformError::NotFound(_)) => {}
+            Err(error) => tracing::error!(pid = self.tree.root_pid, error = %error,
+                "failed to stop registered process while dropping resource guard"),
+        }
+    }
 }
 impl<P: PlatformOps> Teardown for ProcessResource<P> {
     async fn graceful(&mut self, ctx: TeardownContext) -> Result<Disposition, TeardownError> {

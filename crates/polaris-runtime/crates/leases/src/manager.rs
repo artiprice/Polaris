@@ -7,10 +7,16 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use polaris_sdk::{error::{ErrorKind, HasKind}, ids::{Cid, FrameId}};
+use polaris_sdk::{
+    error::{ErrorKind, HasKind},
+    ids::{Cid, FrameId},
+};
 use tokio::sync::{broadcast, watch};
 
-use super::{key::LeaseKey, scope::{scopes_conflict, LeaseScope}};
+use super::{
+    key::LeaseKey,
+    scope::{LeaseScope, scopes_conflict},
+};
 
 const MAX_REQUESTS_PER_ACQUIRE: usize = 256;
 const MAX_COMPONENTS_PER_REQUEST: usize = 128;
@@ -27,7 +33,9 @@ pub struct LeaseId(u64);
 impl LeaseId {
     /// Returns the stable identifier within this manager.
     #[must_use]
-    pub const fn get(self) -> u64 { self.0 }
+    pub const fn get(self) -> u64 {
+        self.0
+    }
 }
 
 /// Why a lease's write authority was revoked.
@@ -58,7 +66,13 @@ pub struct LeaseConfig {
 
 impl Default for LeaseConfig {
     fn default() -> Self {
-        Self { max_active_leases: 1024, max_waiters: 4096, acquire_timeout: Duration::from_secs(30), lease_ttl: Duration::from_secs(300), edits_before_revoke: 3 }
+        Self {
+            max_active_leases: 1024,
+            max_waiters: 4096,
+            acquire_timeout: Duration::from_secs(30),
+            lease_ttl: Duration::from_secs(300),
+            edits_before_revoke: 3,
+        }
     }
 }
 
@@ -134,7 +148,11 @@ impl HasKind for LeaseError {
             Self::Busy { .. } | Self::Timeout => ErrorKind::Transient,
             Self::StaleBase { .. } | Self::Revoked(_) => ErrorKind::Policy,
             Self::InvalidGuard | Self::IdExhausted => ErrorKind::Fatal,
-            Self::InvalidPath | Self::InvalidScope | Self::LimitExceeded | Self::OverlappingRequests | Self::MissingBase => ErrorKind::Permanent,
+            Self::InvalidPath
+            | Self::InvalidScope
+            | Self::LimitExceeded
+            | Self::OverlappingRequests
+            | Self::MissingBase => ErrorKind::Permanent,
         }
     }
 }
@@ -162,13 +180,19 @@ pub struct WriteTicket {
 impl WriteTicket {
     /// Returns the lease this ticket authorizes.
     #[must_use]
-    pub const fn lease(&self) -> LeaseId { self.lease }
+    pub const fn lease(&self) -> LeaseId {
+        self.lease
+    }
     /// Returns the frame authorized to apply this write.
     #[must_use]
-    pub const fn agent(&self) -> FrameId { self.agent }
+    pub const fn agent(&self) -> FrameId {
+        self.agent
+    }
     /// Returns the exact content id against which the write was checked.
     #[must_use]
-    pub const fn base(&self) -> Cid { self.base }
+    pub const fn base(&self) -> Cid {
+        self.base
+    }
 }
 
 #[derive(Clone)]
@@ -177,6 +201,7 @@ struct Holder {
     agent: FrameId,
     key: LeaseKey,
     scope: LeaseScope,
+    expires: Instant,
 }
 
 struct LeaseRecord {
@@ -230,7 +255,16 @@ impl LeaseManager {
             lease_ttl: config.lease_ttl.min(Duration::from_secs(86_400)),
             edits_before_revoke: config.edits_before_revoke,
         };
-        Self { inner: Arc::new(Inner { config, state: Mutex::new(State::default()), changed, holders: ArcSwap::from_pointee(Vec::new()), invalidations, ticket_token: Arc::new(()) }) }
+        Self {
+            inner: Arc::new(Inner {
+                config,
+                state: Mutex::new(State::default()),
+                changed,
+                holders: ArcSwap::from_pointee(Vec::new()),
+                invalidations,
+                ticket_token: Arc::new(()),
+            }),
+        }
     }
 
     /// Subscribes to stale-base, expiry, churn, and explicit-revocation notices.
@@ -254,25 +288,54 @@ impl LeaseManager {
     ///
     /// # Errors
     /// Returns a typed validation, capacity, timeout, or admission error.
-    pub async fn acquire_many(&self, mut requests: Vec<LeaseRequest>) -> Result<Vec<LeaseGuard>, LeaseError> {
+    pub async fn acquire_many(
+        &self,
+        mut requests: Vec<LeaseRequest>,
+    ) -> Result<Vec<LeaseGuard>, LeaseError> {
         validate_requests(&mut requests)?;
-        if requests.len() > self.inner.config.max_active_leases { return Err(LeaseError::LimitExceeded); }
+        if requests.len() > self.inner.config.max_active_leases {
+            return Err(LeaseError::LimitExceeded);
+        }
         let mut changed = self.inner.changed.subscribe();
         let ticket = self.enqueue(requests)?;
-        let _cleanup = QueueCleanup { inner: Arc::clone(&self.inner), ticket };
+        let _cleanup = QueueCleanup {
+            inner: Arc::clone(&self.inner),
+            ticket,
+        };
         let wait = async {
             loop {
                 let notified = changed.changed();
                 if let Some(ids) = take_grant(&self.inner, ticket)? {
                     return Ok(ids);
                 }
-                notified.await.map_err(|_| LeaseError::InvalidGuard)?;
+                let expires = {
+                    let state = lock_state(&self.inner.state);
+                    state.active.iter().map(|record| record.expires).min()
+                };
+                match expires {
+                    Some(expires) => {
+                        tokio::select! {
+                            result = notified => { result.map_err(|_| LeaseError::InvalidGuard)?; }
+                            () = tokio::time::sleep_until(tokio::time::Instant::from_std(expires)) => {
+                                self.reap_expired();
+                            }
+                        }
+                    }
+                    None => { notified.await.map_err(|_| LeaseError::InvalidGuard)?; }
+                }
             }
         };
         let ids = tokio::time::timeout(self.inner.config.acquire_timeout, wait)
-            .await.map_err(|_| LeaseError::Timeout)??;
+            .await
+            .map_err(|_| LeaseError::Timeout)??;
         signal(&self.inner);
-        Ok(ids.into_iter().map(|id| LeaseGuard { inner: Arc::clone(&self.inner), id }).collect())
+        Ok(ids
+            .into_iter()
+            .map(|id| LeaseGuard {
+                inner: Arc::clone(&self.inner),
+                id,
+            })
+            .collect())
     }
 
     /// Attempts immediate admission without bypassing existing FIFO waiters.
@@ -292,14 +355,19 @@ impl LeaseManager {
         let id = ids.into_iter().next().ok_or(LeaseError::InvalidGuard)?;
         drop(state);
         signal(&self.inner);
-        Ok(LeaseGuard { inner: Arc::clone(&self.inner), id })
+        Ok(LeaseGuard {
+            inner: Arc::clone(&self.inner),
+            id,
+        })
     }
 
     /// Lock-free snapshot lookup for the current conflicting holder.
     #[must_use]
     pub fn holder_of(&self, key: &LeaseKey, scope: &LeaseScope) -> Option<(FrameId, LeaseId)> {
         let snapshot = self.inner.holders.load();
-        snapshot.iter().find(|holder| scopes_conflict(key, scope, &holder.key, &holder.scope))
+        snapshot
+            .iter()
+            .find(|holder| holder.expires > Instant::now() && scopes_conflict(key, scope, &holder.key, &holder.scope))
             .map(|holder| (holder.agent, holder.id))
     }
 
@@ -310,18 +378,40 @@ impl LeaseManager {
     /// # Errors
     /// Returns [`LeaseError::StaleBase`] when the caller's content has changed.
     pub fn check_write(&self, guard: &LeaseGuard, current: Cid) -> Result<WriteTicket, LeaseError> {
-        if !Arc::ptr_eq(&self.inner, &guard.inner) { return Err(LeaseError::InvalidGuard); }
+        if !Arc::ptr_eq(&self.inner, &guard.inner) {
+            return Err(LeaseError::InvalidGuard);
+        }
         let mut state = lock_state(&self.inner.state);
         reap_locked(&self.inner, &mut state, Instant::now());
-        let record = state.active.iter_mut().find(|record| record.holder.id == guard.id).ok_or(LeaseError::InvalidGuard)?;
-        if !record.write_allowed { return Err(LeaseError::Revoked(RevokeReason::ChurnLimit)); }
+        let record = state
+            .active
+            .iter_mut()
+            .find(|record| record.holder.id == guard.id)
+            .ok_or(LeaseError::InvalidGuard)?;
+        if !record.write_allowed {
+            return Err(LeaseError::Revoked(RevokeReason::ChurnLimit));
+        }
         let expected = record.base.ok_or(LeaseError::MissingBase)?;
         if expected != current {
-            let event = Invalidation { agent: record.holder.agent, key: record.holder.key.clone(), lease: record.holder.id, current: Some(current), reason: None };
+            let event = Invalidation {
+                agent: record.holder.agent,
+                key: record.holder.key.clone(),
+                lease: record.holder.id,
+                current: Some(current),
+                reason: None,
+            };
             let _ = self.inner.invalidations.send(event);
-            return Err(LeaseError::StaleBase { expected, actual: current });
+            return Err(LeaseError::StaleBase {
+                expected,
+                actual: current,
+            });
         }
-        Ok(WriteTicket { manager: Arc::downgrade(&self.inner.ticket_token), lease: record.holder.id, agent: record.holder.agent, base: expected })
+        Ok(WriteTicket {
+            manager: Arc::downgrade(&self.inner.ticket_token),
+            lease: record.holder.id,
+            agent: record.holder.agent,
+            base: expected,
+        })
     }
 
     /// Revalidates a ticket immediately before applying its write.
@@ -331,31 +421,72 @@ impl LeaseManager {
     ///
     /// # Errors
     /// Returns [`LeaseError::InvalidGuard`], [`LeaseError::Revoked`], or [`LeaseError::StaleBase`].
-    pub fn validate_write_ticket(&self, ticket: WriteTicket, current: Cid) -> Result<(), LeaseError> {
+    pub fn validate_write_ticket(
+        &self,
+        ticket: WriteTicket,
+        current: Cid,
+    ) -> Result<(), LeaseError> {
         let manager = ticket.manager.upgrade().ok_or(LeaseError::InvalidGuard)?;
-        if !Arc::ptr_eq(&manager, &self.inner.ticket_token) { return Err(LeaseError::InvalidGuard); }
-        if !Arc::ptr_eq(&manager, &self.inner.ticket_token) { return Err(LeaseError::InvalidGuard); }
+        if !Arc::ptr_eq(&manager, &self.inner.ticket_token) {
+            return Err(LeaseError::InvalidGuard);
+        }
+        if !Arc::ptr_eq(&manager, &self.inner.ticket_token) {
+            return Err(LeaseError::InvalidGuard);
+        }
         let mut state = lock_state(&self.inner.state);
         reap_locked(&self.inner, &mut state, Instant::now());
-        let record = state.active.iter().find(|record| record.holder.id == ticket.lease && record.holder.agent == ticket.agent).ok_or(LeaseError::InvalidGuard)?;
-        if !record.write_allowed { return Err(LeaseError::Revoked(RevokeReason::ChurnLimit)); }
+        let record = state
+            .active
+            .iter()
+            .find(|record| record.holder.id == ticket.lease && record.holder.agent == ticket.agent)
+            .ok_or(LeaseError::InvalidGuard)?;
+        if !record.write_allowed {
+            return Err(LeaseError::Revoked(RevokeReason::ChurnLimit));
+        }
         let expected = record.base.ok_or(LeaseError::MissingBase)?;
-        if expected != ticket.base { return Err(LeaseError::InvalidGuard); }
+        if expected != ticket.base {
+            return Err(LeaseError::InvalidGuard);
+        }
         if current != ticket.base {
-            let event = Invalidation { agent: record.holder.agent, key: record.holder.key.clone(), lease: record.holder.id, current: Some(current), reason: None };
+            let event = Invalidation {
+                agent: record.holder.agent,
+                key: record.holder.key.clone(),
+                lease: record.holder.id,
+                current: Some(current),
+                reason: None,
+            };
             let _ = self.inner.invalidations.send(event);
-            return Err(LeaseError::StaleBase { expected: ticket.base, actual: current });
+            return Err(LeaseError::StaleBase {
+                expected: ticket.base,
+                actual: current,
+            });
         }
         Ok(())
     }
 
     /// Records a file edit and revokes write rights after the configured number of edits.
-    pub fn note_edit(&self, agent: FrameId, key: &LeaseKey, subtask: &str) -> Result<ChurnVerdict, LeaseError> {
-        if subtask.is_empty() || subtask.len() > MAX_SUBTASK_LEN { return Err(LeaseError::LimitExceeded); }
+    pub fn note_edit(
+        &self,
+        agent: FrameId,
+        key: &LeaseKey,
+        subtask: &str,
+    ) -> Result<ChurnVerdict, LeaseError> {
+        if subtask.is_empty() || subtask.len() > MAX_SUBTASK_LEN {
+            return Err(LeaseError::LimitExceeded);
+        }
         let mut state = lock_state(&self.inner.state);
-        if !state.active.iter().any(|record| record.holder.agent == agent && &record.holder.key == key) { return Err(LeaseError::InvalidGuard); }
+        reap_locked(&self.inner, &mut state, Instant::now());
+        if !state
+            .active
+            .iter()
+            .any(|record| record.holder.agent == agent && &record.holder.key == key)
+        {
+            return Err(LeaseError::InvalidGuard);
+        }
         let churn_key = (agent, key.clone(), subtask.to_owned());
-        if !state.churn.contains_key(&churn_key) && state.churn.len() >= MAX_CHURN_RECORDS { return Err(LeaseError::LimitExceeded); }
+        if !state.churn.contains_key(&churn_key) && state.churn.len() >= MAX_CHURN_RECORDS {
+            return Err(LeaseError::LimitExceeded);
+        }
         let count = state.churn.entry(churn_key).or_default();
         *count = count.saturating_add(1);
         let edits = *count;
@@ -365,13 +496,24 @@ impl LeaseManager {
             for record in &mut state.active {
                 if record.holder.agent == agent && &record.holder.key == key {
                     record.write_allowed = false;
-                    events.push(Invalidation { agent, key: key.clone(), lease: record.holder.id, current: None, reason: Some(RevokeReason::ChurnLimit) });
+                    events.push(Invalidation {
+                        agent,
+                        key: key.clone(),
+                        lease: record.holder.id,
+                        current: None,
+                        reason: Some(RevokeReason::ChurnLimit),
+                    });
                 }
             }
             publish_holders(&self.inner, &state);
             drop(state);
-            for event in events { let _ = self.inner.invalidations.send(event); }
-            Ok(ChurnVerdict::Revoke { edits, escalate_to_s2: true })
+            for event in events {
+                let _ = self.inner.invalidations.send(event);
+            }
+            Ok(ChurnVerdict::Revoke {
+                edits,
+                escalate_to_s2: true,
+            })
         } else if edits == threshold {
             Ok(ChurnVerdict::Warn { edits })
         } else {
@@ -385,14 +527,24 @@ impl LeaseManager {
         let mut events = Vec::new();
         state.active.retain(|record| {
             if record.holder.agent == agent {
-                events.push(Invalidation { agent, key: record.holder.key.clone(), lease: record.holder.id, current: None, reason: Some(why.clone()) });
+                events.push(Invalidation {
+                    agent,
+                    key: record.holder.key.clone(),
+                    lease: record.holder.id,
+                    current: None,
+                    reason: Some(why.clone()),
+                });
                 false
-            } else { true }
+            } else {
+                true
+            }
         });
         publish_holders(&self.inner, &state);
         service_queue(&self.inner, &mut state);
         drop(state);
-        for event in events { let _ = self.inner.invalidations.send(event); }
+        for event in events {
+            let _ = self.inner.invalidations.send(event);
+        }
         signal(&self.inner);
     }
 
@@ -405,11 +557,19 @@ impl LeaseManager {
     fn enqueue(&self, requests: Vec<LeaseRequest>) -> Result<u64, LeaseError> {
         let mut state = lock_state(&self.inner.state);
         reap_locked(&self.inner, &mut state, Instant::now());
-        if state.order.len() >= self.inner.config.max_waiters { return Err(LeaseError::LimitExceeded); }
+        if state.order.len() >= self.inner.config.max_waiters {
+            return Err(LeaseError::LimitExceeded);
+        }
         let id = state.next_ticket;
         state.next_ticket = id.checked_add(1).ok_or(LeaseError::IdExhausted)?;
         state.order.push_back(id);
-        state.waiters.insert(id, Waiter { requests, granted: None });
+        state.waiters.insert(
+            id,
+            Waiter {
+                requests,
+                granted: None,
+            },
+        );
         service_queue(&self.inner, &mut state);
         publish_holders(&self.inner, &state);
         drop(state);
@@ -427,17 +587,24 @@ pub struct LeaseGuard {
 impl LeaseGuard {
     /// Returns this guard's lease id.
     #[must_use]
-    pub const fn id(&self) -> LeaseId { self.id }
+    pub const fn id(&self) -> LeaseId {
+        self.id
+    }
 
     /// Returns the owner bound to this lease, if it remains active.
     #[must_use]
     pub fn owner(&self) -> Option<FrameId> {
         let snapshot = self.inner.holders.load();
-        snapshot.iter().find(|holder| holder.id == self.id).map(|holder| holder.agent)
+        snapshot
+            .iter()
+            .find(|holder| holder.id == self.id && holder.expires > Instant::now())
+            .map(|holder| holder.agent)
     }
 
     /// Releases now rather than waiting for drop.
-    pub fn release(self) { drop(self); }
+    pub fn release(self) {
+        drop(self);
+    }
 }
 
 impl Drop for LeaseGuard {
@@ -451,14 +618,19 @@ impl Drop for LeaseGuard {
     }
 }
 
-struct QueueCleanup { inner: Arc<Inner>, ticket: u64 }
+struct QueueCleanup {
+    inner: Arc<Inner>,
+    ticket: u64,
+}
 impl Drop for QueueCleanup {
     fn drop(&mut self) {
         let mut state = lock_state(&self.inner.state);
         state.order.retain(|id| *id != self.ticket);
         if let Some(waiter) = state.waiters.remove(&self.ticket) {
             if let Some(ids) = waiter.granted {
-                state.active.retain(|record| !ids.contains(&record.holder.id));
+                state
+                    .active
+                    .retain(|record| !ids.contains(&record.holder.id));
             }
         }
         service_queue(&self.inner, &mut state);
@@ -469,37 +641,63 @@ impl Drop for QueueCleanup {
 }
 
 fn validate_requests(requests: &mut Vec<LeaseRequest>) -> Result<(), LeaseError> {
-    if requests.is_empty() || requests.len() > MAX_REQUESTS_PER_ACQUIRE { return Err(LeaseError::LimitExceeded); }
+    if requests.is_empty() || requests.len() > MAX_REQUESTS_PER_ACQUIRE {
+        return Err(LeaseError::LimitExceeded);
+    }
     requests.sort_by(|a, b| a.key.cmp(&b.key));
     for req in requests.iter() {
         if let LeaseScope::AstNode(path) = &req.scope {
-            if path.len() > MAX_COMPONENTS_PER_REQUEST { return Err(LeaseError::LimitExceeded); }
+            if path.len() > MAX_COMPONENTS_PER_REQUEST {
+                return Err(LeaseError::LimitExceeded);
+            }
         }
     }
     for (index, left) in requests.iter().enumerate() {
         for right in requests.iter().skip(index.saturating_add(1)) {
-            if scopes_conflict(&left.key, &left.scope, &right.key, &right.scope) { return Err(LeaseError::OverlappingRequests); }
+            if scopes_conflict(&left.key, &left.scope, &right.key, &right.scope) {
+                return Err(LeaseError::OverlappingRequests);
+            }
         }
     }
     Ok(())
 }
 fn take_grant(inner: &Arc<Inner>, ticket: u64) -> Result<Option<Vec<LeaseId>>, LeaseError> {
     let mut state = lock_state(&inner.state);
-    let granted = state.waiters.get(&ticket).and_then(|waiter| waiter.granted.clone());
-    if granted.is_some() { state.waiters.remove(&ticket); }
+    let granted = state
+        .waiters
+        .get(&ticket)
+        .and_then(|waiter| waiter.granted.clone());
+    if granted.is_some() {
+        state.waiters.remove(&ticket);
+    }
     Ok(granted)
 }
 
 fn service_queue(inner: &Arc<Inner>, state: &mut State) {
     loop {
-        let Some(ticket) = state.order.front().copied() else { break; };
-        let Some(waiter) = state.waiters.get(&ticket) else { state.order.pop_front(); continue; };
-        if waiter.granted.is_some() { state.order.pop_front(); continue; }
-        if !can_grant(state, &waiter.requests) || state.active.len().saturating_add(waiter.requests.len()) > inner.config.max_active_leases { break; }
+        let Some(ticket) = state.order.front().copied() else {
+            break;
+        };
+        let Some(waiter) = state.waiters.get(&ticket) else {
+            state.order.pop_front();
+            continue;
+        };
+        if waiter.granted.is_some() {
+            state.order.pop_front();
+            continue;
+        }
+        if !can_grant(state, &waiter.requests)
+            || state.active.len().saturating_add(waiter.requests.len())
+                > inner.config.max_active_leases
+        {
+            break;
+        }
         let requests = waiter.requests.clone();
         match grant_locked(inner, state, requests) {
             Ok(ids) => {
-                if let Some(waiter) = state.waiters.get_mut(&ticket) { waiter.granted = Some(ids); }
+                if let Some(waiter) = state.waiters.get_mut(&ticket) {
+                    waiter.granted = Some(ids);
+                }
                 state.order.pop_front();
             }
             Err(_) => break,
@@ -508,28 +706,75 @@ fn service_queue(inner: &Arc<Inner>, state: &mut State) {
 }
 
 fn can_grant(state: &State, requests: &[LeaseRequest]) -> bool {
-    requests.iter().all(|request| state.active.iter().all(|active| !scopes_conflict(&request.key, &request.scope, &active.holder.key, &active.holder.scope)))
+    requests.iter().all(|request| {
+        state.active.iter().all(|active| {
+            !scopes_conflict(
+                &request.key,
+                &request.scope,
+                &active.holder.key,
+                &active.holder.scope,
+            )
+        })
+    })
 }
 
-fn grant_locked(inner: &Arc<Inner>, state: &mut State, requests: Vec<LeaseRequest>) -> Result<Vec<LeaseId>, LeaseError> {
+fn grant_locked(
+    inner: &Arc<Inner>,
+    state: &mut State,
+    requests: Vec<LeaseRequest>,
+) -> Result<Vec<LeaseId>, LeaseError> {
+    if !can_grant(state, &requests) {
+        return Err(busy_holder(state, &requests));
+    }
     let next_len = u64::try_from(requests.len()).map_err(|_| LeaseError::LimitExceeded)?;
-    let next_id = state.next_lease.checked_add(next_len).ok_or(LeaseError::IdExhausted)?;
-    if state.active.len().saturating_add(requests.len()) > inner.config.max_active_leases { return Err(LeaseError::LimitExceeded); }
-    let expires = Instant::now().checked_add(inner.config.lease_ttl).ok_or(LeaseError::LimitExceeded)?;
+    let next_id = state
+        .next_lease
+        .checked_add(next_len)
+        .ok_or(LeaseError::IdExhausted)?;
+    if state.active.len().saturating_add(requests.len()) > inner.config.max_active_leases {
+        return Err(LeaseError::LimitExceeded);
+    }
+    let expires = Instant::now()
+        .checked_add(inner.config.lease_ttl)
+        .ok_or(LeaseError::LimitExceeded)?;
     let mut ids = Vec::with_capacity(requests.len());
     let mut raw = state.next_lease;
     for request in requests {
         let id = LeaseId(raw);
         raw = raw.checked_add(1).ok_or(LeaseError::IdExhausted)?;
         ids.push(id);
-        state.active.push(LeaseRecord { holder: Holder { id, agent: request.agent, key: request.key, scope: request.scope }, base: request.base, expires, write_allowed: true });
+        state.active.push(LeaseRecord {
+            holder: Holder {
+                id,
+                agent: request.agent,
+                key: request.key,
+                scope: request.scope,
+                expires,
+            },
+            base: request.base,
+            expires,
+            write_allowed: true,
+        });
     }
     state.next_lease = next_id;
     Ok(ids)
 }
 
 fn busy_holder(state: &State, requests: &[LeaseRequest]) -> LeaseError {
-    let holder = state.active.iter().find(|active| requests.iter().any(|request| scopes_conflict(&request.key, &request.scope, &active.holder.key, &active.holder.scope))).map(|active| active.holder.agent);
+    let holder = state
+        .active
+        .iter()
+        .find(|active| {
+            requests.iter().any(|request| {
+                scopes_conflict(
+                    &request.key,
+                    &request.scope,
+                    &active.holder.key,
+                    &active.holder.scope,
+                )
+            })
+        })
+        .map(|active| active.holder.agent);
     LeaseError::Busy { holder }
 }
 
@@ -538,20 +783,34 @@ fn reap_locked(inner: &Arc<Inner>, state: &mut State, now: Instant) -> usize {
     let mut events = Vec::new();
     state.active.retain(|record| {
         if record.expires <= now {
-            events.push(Invalidation { agent: record.holder.agent, key: record.holder.key.clone(), lease: record.holder.id, current: None, reason: Some(RevokeReason::Expired) });
+            events.push(Invalidation {
+                agent: record.holder.agent,
+                key: record.holder.key.clone(),
+                lease: record.holder.id,
+                current: None,
+                reason: Some(RevokeReason::Expired),
+            });
             false
-        } else { true }
+        } else {
+            true
+        }
     });
     let removed = before.saturating_sub(state.active.len());
     service_queue(inner, state);
     publish_holders(inner, state);
-    for event in events { let _ = inner.invalidations.send(event); }
+    for event in events {
+        let _ = inner.invalidations.send(event);
+    }
     signal(inner);
     removed
 }
 
 fn publish_holders(inner: &Inner, state: &State) {
-    let snapshot = state.active.iter().map(|record| record.holder.clone()).collect();
+    let snapshot = state
+        .active
+        .iter()
+        .map(|record| record.holder.clone())
+        .collect();
     inner.holders.store(Arc::new(snapshot));
 }
 
@@ -562,5 +821,7 @@ fn lock_state(mutex: &Mutex<State>) -> MutexGuard<'_, State> {
     }
 }
 fn signal(inner: &Inner) {
-    inner.changed.send_modify(|version| *version = version.saturating_add(1));
+    inner
+        .changed
+        .send_modify(|version| *version = version.saturating_add(1));
 }

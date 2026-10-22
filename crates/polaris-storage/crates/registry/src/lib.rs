@@ -9,7 +9,9 @@
 //!   [`Registry::unarchive`].
 //! - **Search**: [`Registry::index_message`] feeds an FTS5 table with the `trigram` tokenizer;
 //!   [`Registry::search_history`] finds any substring of three or more characters (shorter queries
-//!   use `LIKE`). Queries are quoted ([`fts_phrase`]) so user text is never FTS5 syntax.
+//!   use `LIKE`). [`Registry::search_history_for_session`] applies its session filter in SQL
+//!   before the result limit. Queries are quoted ([`fts_phrase`]) so user text is never FTS5
+//!   syntax; each query is bounded before entering the database-thread queue.
 //! - **Masked text only**: the registry stores what it is given. Use
 //!   [`Registry::index_message_redacted`] (or mask first) so secrets never reach the file.
 //! - **Concurrency**: each [`Registry`] owns a database thread; WAL lets the CLI, daemon and
@@ -31,5 +33,7 @@ mod sessions;
 pub use error::RegistryError;
 pub use migrate::{SCHEMA_VERSION, migrate};
 pub use registry::{DB_FILE_NAME, Registry, RegistryConfig, open_connection};
-pub use search::{Hit, MAX_SEARCH_LIMIT, SNIPPET_CHARS, fts_phrase, like_pattern};
+pub use search::{
+    Hit, MAX_SEARCH_LIMIT, MAX_SEARCH_QUERY_BYTES, SNIPPET_CHARS, fts_phrase, like_pattern,
+};
 pub use sessions::{SessionFilter, SessionMeta, SessionStatus};

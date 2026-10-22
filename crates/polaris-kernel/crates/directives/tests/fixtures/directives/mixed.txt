@@ -1,0 +1,3 @@
+Review src/main.rs while retaining `literal $effort(low)` and dev@example.com.
+$effort(high) $budget(usd=5)
+Use @file("src/main.rs") with CRLF preserved; Windows location C:\Users\dev\project.

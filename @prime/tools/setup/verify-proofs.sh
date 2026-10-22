@@ -11,10 +11,10 @@ FUZZ_SECONDS="${1:-60}"
 # Miri: pure crates only. Excluded: polaris-storage-cas (zstd C code through FFI) and polaris-storage-eventlog (redb file I/O),
 # which Miri cannot execute.
 MIRI_CRATES=(polaris-sdk polaris-kernel-directives polaris-kernel-bus)
-# Kani: only harnesses CBMC can finish within WSL memory (PLAN W24). polaris-storage-cas has none yet:
-# a fold_ref harness grew CBMC past 6 GB.
-KANI_CRATES=(polaris-sdk polaris-kernel-directives polaris-security-capability)
-FUZZ_TARGETS=(directives_grammar cas_blob_decode eventlog_decode config_toml_layer rtk_stream ui_completion biscuit_token_bytes)
+# Kani: harnesses CBMC can finish within WSL memory (PLAN W24). The fixed-array CAS formatter
+# replaced the iterator formulation that exceeded the memory guard; its original failure is retained.
+KANI_CRATES=(polaris-sdk polaris-kernel-directives polaris-kernel-bus polaris-code-intel polaris-storage-cas polaris-security-capability)
+FUZZ_TARGETS=(directives_grammar cas_short_ref_roundtrip eventlog_decode proto_decode diff_apply rtk_stream cas_blob_decode config_toml_layer ui_completion biscuit_token_bytes)
 # Tests skipped under Miri, by name, with the reason:
 #   event_record_json_snapshot — insta calls socketpair(type 5), which Miri does not support
 #   (an unsupported operation in the dev-dependency, not undefined behaviour in our code).
@@ -27,8 +27,18 @@ fail=0
 
 for crate in "${MIRI_CRATES[@]}"; do
   echo "== miri: $crate"
+  miri_tests=(--tests)
+  if [ "$crate" = polaris-kernel-bus ]; then
+    # Loom's native stack switch/getrlimit is unsupported in Miri; dhat instruments the allocator.
+    # Keep both checks native, and interpret the 13 bus behavior tests separately.
+    CARGO_TARGET_DIR="$HOME/.cache/polaris-target" cargo test -p "$crate" --test loom_ordering --test zero_alloc_hot_path >"$log" 2>&1
+    rc=$?
+    cat "$log"
+    [ "$rc" -eq 0 ] || fail=1
+    miri_tests=(--test command_backpressure --test lag_recovery --test log_then_publish)
+  fi
   CARGO_TARGET_DIR="$HOME/.cache/polaris-target-miri" PROPTEST_CASES=8 MIRIFLAGS="-Zmiri-disable-isolation" \
-    cargo +nightly miri test -p "$crate" --tests --no-fail-fast -- "${MIRI_SKIP[@]}" >"$log" 2>&1
+    cargo +nightly miri test -p "$crate" "${miri_tests[@]}" --no-fail-fast -- "${MIRI_SKIP[@]}" >"$log" 2>&1
   rc=$?
   grep -E "test result|Undefined Behavior|unsupported operation|panicked" "$log"
   echo "miri $crate exit=$rc"

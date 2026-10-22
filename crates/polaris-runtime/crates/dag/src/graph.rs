@@ -423,10 +423,7 @@ impl<T: NodeTask> DagBuilder<T> {
 }
 
 fn valid_limits(max_nodes: usize, max_edges: usize) -> bool {
-    max_nodes > 0
-        && max_nodes <= MAX_DAG_NODES
-        && max_edges > 0
-        && max_edges <= MAX_DAG_EDGES
+    max_nodes > 0 && max_nodes <= MAX_DAG_NODES && max_edges > 0 && max_edges <= MAX_DAG_EDGES
 }
 
 impl<T: NodeTask> Default for DagBuilder<T> {
@@ -464,7 +461,11 @@ pub async fn run<T: NodeTask>(
         None => count.max(1),
     };
     let run_token = cancellation.child_token();
-    let mut indegree: Vec<usize> = dag.nodes.iter().map(|node| node.dependencies.len()).collect();
+    let mut indegree: Vec<usize> = dag
+        .nodes
+        .iter()
+        .map(|node| node.dependencies.len())
+        .collect();
     let mut ready: BTreeSet<(NodeId, usize)> = dag
         .nodes
         .iter()
@@ -687,7 +688,10 @@ fn skip_descendants<T: NodeTask>(
     ready: &mut BTreeSet<(NodeId, usize)>,
 ) -> Result<(), DagError> {
     let mut pending = VecDeque::new();
-    let failed = dag.nodes.get(failed_index).ok_or(DagError::GraphInvariant)?;
+    let failed = dag
+        .nodes
+        .get(failed_index)
+        .ok_or(DagError::GraphInvariant)?;
     pending.extend(failed.dependents.iter().copied());
     while let Some(index) = pending.pop_front() {
         if started.contains(&index) {

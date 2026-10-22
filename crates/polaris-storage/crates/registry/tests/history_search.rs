@@ -5,7 +5,9 @@ use std::error::Error;
 use polaris_sdk::contracts::Timestamp;
 use polaris_sdk::ids::SessionId;
 use polaris_sdk::registry::ChatRole;
-use polaris_storage_registry::{MAX_SEARCH_LIMIT, Registry, SNIPPET_CHARS};
+use polaris_storage_registry::{
+    MAX_SEARCH_LIMIT, MAX_SEARCH_QUERY_BYTES, Registry, RegistryError, SNIPPET_CHARS,
+};
 use proptest::prelude::*;
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -167,6 +169,74 @@ fn snippet_is_a_window_around_the_match() -> TestResult {
     let windowed = hits.get(1).ok_or("no second hit")?;
     assert!(windowed.snippet.chars().count() <= SNIPPET_CHARS);
     assert!(windowed.snippet.contains("needle"));
+    Ok(())
+}
+
+#[test]
+fn unicode_lowercase_expansion_does_not_shift_snippet_window() -> TestResult {
+    let text = format!(
+        "{}{}needle{}",
+        "a".repeat(40),
+        "İ".repeat(60),
+        "b".repeat(220)
+    );
+    let (_dir, registry) = registry_with(&[&text])?;
+    let hits = registry.search_history("needle", 1)?;
+    let hit = hits.first().ok_or("missing Unicode snippet hit")?;
+    assert!(
+        hit.snippet.contains("needle"),
+        "snippet should include match: {:?}",
+        hit.snippet
+    );
+    assert_eq!(
+        hit.snippet
+            .chars()
+            .take_while(|character| *character == 'İ')
+            .count(),
+        40,
+        "the 40-character lead window must be measured in source text"
+    );
+    Ok(())
+}
+
+#[test]
+fn oversize_query_is_rejected_before_queueing() -> TestResult {
+    let (_dir, registry) = registry_with(&["bounded query"])?;
+    let query = "x".repeat(MAX_SEARCH_QUERY_BYTES + 1);
+    assert!(matches!(
+        registry.search_history(&query, 1),
+        Err(RegistryError::BadValue(_))
+    ));
+    assert!(matches!(
+        registry.search_history_for_session(SessionId::from_u128(1), &query, 1),
+        Err(RegistryError::BadValue(_))
+    ));
+    Ok(())
+}
+
+#[test]
+fn session_scope_is_applied_before_search_limit() -> TestResult {
+    let dir = tempfile::tempdir()?;
+    let registry = Registry::open(dir.path())?;
+    let target = SessionId::from_u128(1);
+    for (session, at, text) in [
+        (target, 1, "shared needle target older"),
+        (SessionId::from_u128(2), 10, "shared needle other newest"),
+        (SessionId::from_u128(3), 9, "shared needle other next"),
+    ] {
+        registry.index_message(session, ChatRole::User, text, ts(at)?)?;
+    }
+    let fts = registry.search_history_for_session(target, "needle", 1)?;
+    assert_eq!(fts.len(), 1);
+    assert_eq!(fts.first().map(|hit| hit.session), Some(target));
+    assert!(
+        fts.first()
+            .is_some_and(|hit| hit.snippet.contains("target"))
+    );
+
+    let short = registry.search_history_for_session(target, "ne", 1)?;
+    assert_eq!(short.len(), 1);
+    assert_eq!(short.first().map(|hit| hit.session), Some(target));
     Ok(())
 }
 

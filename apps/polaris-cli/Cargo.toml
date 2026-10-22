@@ -14,9 +14,27 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+serde_json = { workspace = true }
+mimalloc = { workspace = true }
+rustls = { workspace = true }
+tracing = { workspace = true }
+jiff = { workspace = true }
+polaris-tools-rtk = { workspace = true }
+polaris-storage-cas = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-kernel = { workspace = true }
 polaris-ui-cli = { workspace = true }
 polaris-rpc = { workspace = true }
 polaris-config = { workspace = true }
 polaris-log = { workspace = true }
+polaris-sdk = { workspace = true }
+polaris-security = { workspace = true }
+
+[[bin]]
+name = "polaris"
+path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "skeleton",
+  "file_path": "src/registry.rs",
+  "logic_name": "Source Signature Skeleton",
+  "test_list": [
+    { "test_name": "supported_file_parsed", "description": "Use the configured parser on a bounded text source file." },
+    { "test_name": "binary_and_oversized_rejected", "description": "Do not fabricate a skeleton for binary or truncated input." },
+    { "test_name": "secret_path_denied", "description": "Apply workspace secret-path and containment policy." }
+  ],
+  "dependencies": ["ParserPool", "WorkspacePath", "ToolLimits"],
+  "libraries": ["polaris-code-intel"],
+  "inputs": [{ "name": "path", "type": "String", "description": "Workspace-relative source file path." }],
+  "output_type": "Result<SkeletonOutput, ToolError>",
+  "output_description": "Parser-derived declaration signatures without file contents."
+}

@@ -24,7 +24,11 @@ impl LeaseKey {
     /// # Errors
     /// Returns [`LeaseError::InvalidPath`] if the string is not an unambiguous relative key.
     pub fn from_resolved_relative(path: &str) -> Result<Self, LeaseError> {
-        if path.is_empty() || path.len() > MAX_PATH_BYTES || path.starts_with('/') || path.starts_with('\\') {
+        if path.is_empty()
+            || path.len() > MAX_PATH_BYTES
+            || path.starts_with('/')
+            || path.starts_with('\\')
+        {
             return Err(LeaseError::InvalidPath);
         }
         if path.as_bytes().get(1) == Some(&b':') {
@@ -39,10 +43,15 @@ impl LeaseKey {
             if raw == ".." || (raw.ends_with('.') || raw.ends_with(' ')) || raw.contains(':') {
                 return Err(LeaseError::InvalidPath);
             }
-            if raw.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) {
+            if raw
+                .chars()
+                .any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*'))
+            {
                 return Err(LeaseError::InvalidPath);
             }
-            if parts.len() >= MAX_PATH_COMPONENTS { return Err(LeaseError::LimitExceeded); }
+            if parts.len() >= MAX_PATH_COMPONENTS {
+                return Err(LeaseError::LimitExceeded);
+            }
             let folded = raw.to_lowercase();
             if is_reserved_device(&folded) {
                 return Err(LeaseError::InvalidPath);
@@ -75,11 +84,16 @@ impl fmt::Display for LeaseKey {
 }
 
 fn is_reserved_device(component: &str) -> bool {
-    let base = match component.split('.').next() { Some(value) => value.trim_end_matches(' ').to_ascii_uppercase(), None => String::new() };
-    matches!(base.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$")
-        || ["COM", "LPT"].iter().any(|prefix| {
-            base.strip_prefix(prefix)
-                .and_then(|suffix| suffix.parse::<u8>().ok())
-                .is_some_and(|number| (1..=9).contains(&number))
-        })
+    let base = match component.split('.').next() {
+        Some(value) => value.trim_end_matches(' ').to_ascii_uppercase(),
+        None => String::new(),
+    };
+    matches!(
+        base.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
+    ) || ["COM", "LPT"].iter().any(|prefix| {
+        base.strip_prefix(prefix)
+            .and_then(|suffix| suffix.parse::<u8>().ok())
+            .is_some_and(|number| (1..=9).contains(&number))
+    })
 }

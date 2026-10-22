@@ -127,7 +127,7 @@ polaris-spike-web = { path = "tests/spike/web" }
 xtask = { path = "xtask" }
 
 # ---------------------------------------------------------------- async
-tokio = { version = "1.54.0", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "net", "fs", "process", "signal"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "sync", "time", "io-util", "net", "fs", "process", "signal"] }
 tokio-util = "0.7.20"
 tokio-stream = "0.1.19"
 futures = "0.3.34"
@@ -168,6 +168,7 @@ prost-types = "0.14.4"
 protoc-bin-vendored = "3.3.0"
 # Tag v0.1.4 (2026-10-13), pinned by commit rev.
 openshell-sdk = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
+openshell-policy-schema = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
 
 # ---------------------------------------------------------------- ipc
 iceoryx2 = "0.10.0"

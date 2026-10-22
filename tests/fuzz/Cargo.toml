@@ -23,6 +23,76 @@ polaris-security-capability = { path = "../../crates/polaris-security/crates/cap
 jiff = "0.2.38"
 serde_json = "1.0.154"
 polaris-storage-eventlog = { path = "../../crates/polaris-storage/crates/eventlog" }
+polaris-sdk = { path = "../../crates/polaris-sdk" }
+polaris-proto = { path = "../../crates/polaris-proto" }
+prost = "0.14.4"
+polaris-tools-builtin = { path = "../../crates/polaris-tools/crates/builtin" }
+polaris-code-intel = { path = "../../crates/polaris-code-intel" }
+polaris-storage-registry = { path = "../../crates/polaris-storage/crates/registry" }
+polaris-kernel-bus = { path = "../../crates/polaris-kernel/crates/bus" }
+
+[[bin]]
+name = "bus_ops"
+path = "fuzz_targets/bus_ops.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "registry_fts_query"
+path = "fuzz_targets/registry_fts_query.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "registry_migration_open"
+path = "fuzz_targets/registry_migration_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "code_intel_parse"
+path = "fuzz_targets/code_intel_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "code_intel_skeleton"
+path = "fuzz_targets/code_intel_skeleton.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "code_intel_merge3"
+path = "fuzz_targets/code_intel_merge3.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "diff_apply"
+path = "fuzz_targets/diff_apply.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cas_short_ref_roundtrip"
+path = "fuzz_targets/cas_short_ref_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "proto_decode"
+path = "fuzz_targets/proto_decode.rs"
+test = false
+doc = false
+bench = false
 
 [[bin]]
 name = "directives_grammar"

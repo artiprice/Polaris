@@ -11,6 +11,10 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[features]
+# Bounded verification of repo-map token-budget arithmetic.
+kani = []
+
 [dependencies]
 thiserror = { workspace = true }
 tree-sitter = { workspace = true }
@@ -26,3 +30,4 @@ polaris-sdk = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+sysinfo = { workspace = true }

@@ -1,0 +1,56 @@
+{
+  "type_of": "struct",
+  "name": "ProcessPlatform",
+  "file_path": "crates/polaris-platform/crates/process/src/lib.rs",
+  "logic_name": "Native process tree lifecycle",
+  "test_list": [
+    {
+      "test_name": "worker_path_must_be_absolute_and_unknown_handles_are_rejected",
+      "description": "Relative program paths and unknown opaque process handles are rejected before an OS PID lookup can occur."
+    },
+    {
+      "test_name": "secret_environment_keys_and_duplicate_names_are_rejected",
+      "description": "Explicit secret-like environment keys and duplicate case-normalized names are denied."
+    },
+    {
+      "test_name": "native_process_tree_stops_descendants_and_scrubs_inherited_environment",
+      "description": "A real worker tree stops its grandchild through the OS process group or Job Object and receives only its explicit non-secret environment."
+    },
+    {
+      "test_name": "dropping_final_platform_owner_kills_the_process_group_or_job",
+      "description": "Dropping the final platform owner force-stops the retained tree, including a grandchild."
+    },
+    {
+      "test_name": "memory_pressure_threshold_edges_are_inclusive",
+      "description": "The measured available-memory ratio maps at 5%, 6%, 15%, and 16% to Critical, Elevated, Elevated, and Normal; zero total memory is an error."
+    },
+    {
+      "test_name": "killing_owner_without_rust_drop_closes_job_and_kills_descendants",
+      "description": "Windows-only: forcibly terminate the owner process, bypassing Rust Drop, and observe the grandchild exit through JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::registry::{PlatformOps, ProcessTree, ProcessExit, SpawnSpec, StopOutcome}",
+    "process_wrap::tokio::{ProcessGroup, JobObject}"
+  ],
+  "libraries": [
+    "process-wrap",
+    "sysinfo",
+    "tokio",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "spawn_spec",
+      "type": "SpawnSpec",
+      "description": "Absolute executable path, argument vector, optional working directory, and complete explicit environment allowlist. Secret-like keys are rejected and inherited host environment is cleared."
+    },
+    {
+      "name": "process_tree",
+      "type": "ProcessTree",
+      "description": "Root PID paired with an opaque adapter-owned live handle. Runtime signals resolve the retained group or Job Object and never re-resolve a PID."
+    }
+  ],
+  "output_type": "ProcessTree / ProcessExit / StopOutcome",
+  "output_description": "A retained native process tree with nonblocking exit observation, graceful stop followed by force stop, and synchronous force-stop for Drop guards."
+}

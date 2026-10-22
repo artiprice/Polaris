@@ -14,11 +14,14 @@ pub const POLARISIGNORE: &str = ".polarisignore";
 pub const DEFAULT_DENY: &[&str] = &[
     "**/.env",
     "**/.env.*",
+    "**/.git",
+    "**/.git/**",
+    "**/.polaris",
+    "**/.polaris/**",
     "**/*.pem",
     "**/*.key",
     "**/*.pfx",
     "**/*.p12",
-    "**/.git/config",
     "**/.ssh",
     "**/.ssh/**",
     "**/id_rsa",
@@ -57,7 +60,11 @@ impl IgnoreRules {
     /// [`SyncError::Rule`] for an invalid pattern.
     pub fn new(root: &Path, polarisignore: Option<&str>) -> Result<Self, SyncError> {
         let mut builder = GitignoreBuilder::new(root);
-        for line in polarisignore.unwrap_or_default().lines() {
+        let text = match polarisignore {
+            Some(text) => text,
+            None => "",
+        };
+        for line in text.lines() {
             builder
                 .add_line(None, line)
                 .map_err(|e| SyncError::Rule(e.to_string()))?;

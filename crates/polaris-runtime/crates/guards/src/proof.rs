@@ -3,7 +3,7 @@
 use crate::completion::{Completion, ProofRecord, Proven};
 use crate::error::GuardError;
 use polaris_sdk::error::{ErrorKind, HasKind};
-use polaris_sdk::ids::{Cid, CommandId};
+use polaris_sdk::ids::Cid;
 use polaris_sdk::registry::ExecOutput;
 use polaris_tools_rtk::LedgerSummary;
 use std::str;
@@ -11,9 +11,9 @@ use std::str;
 /// How the captured test summary was parsed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseStatus {
-    /// A recognized runner summary was parsed from captured stdout.
+    /// Complete recognized runner summaries were parsed from captured output.
     Parsed,
-    /// No complete recognized summary was present or stdout was not UTF-8.
+    /// No complete recognized summary was present or output was invalid or excessive.
     Unparseable,
 }
 
@@ -50,7 +50,7 @@ impl TestRunner {
     }
 }
 
-/// Parsed test counts bound to the content id of the exact captured stdout bytes.
+/// Parsed test counts bound to both exact captured output streams.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TestSummary {
     runner: Option<TestRunner>,
@@ -59,14 +59,23 @@ pub struct TestSummary {
     failed: u32,
     ignored: u32,
     stdout: Cid,
+    stderr: Cid,
 }
 
 impl TestSummary {
-    fn parse(command: &str, stdout: &[u8], stdout_cid: Cid) -> Self {
+    /// Parse both streams of actual captured output, binding their BLAKE3 identities.
+    /// Malformed, ambiguous, excessive or unrecognized output is marked `Unparseable`.
+    #[must_use]
+    pub fn from_output(command: &str, output: &ExecOutput) -> Self {
+        Self::parse(command, &output.stdout, &output.stderr, cid_for(&output.stdout), cid_for(&output.stderr))
+    }
+
+    fn parse(command: &str, stdout: &[u8], stderr: &[u8], stdout_cid: Cid, stderr_cid: Cid) -> Self {
         let runner = TestRunner::from_command(command);
-        let counts = str::from_utf8(stdout)
-            .ok()
-            .and_then(|text| runner.and_then(|runner| parse_summary(runner, text)));
+        let counts = stdout.len().checked_add(stderr.len())
+            .filter(|length| *length <= 16 * 1024 * 1024)
+            .and_then(|_| Some((str::from_utf8(stdout).ok()?, str::from_utf8(stderr).ok()?)))
+            .and_then(|(out, err)| runner.and_then(|runner| parse_summary(runner, out, err)));
         match counts {
             Some((passed, failed, ignored)) => Self {
                 runner,
@@ -75,6 +84,7 @@ impl TestSummary {
                 failed,
                 ignored,
                 stdout: stdout_cid,
+                stderr: stderr_cid,
             },
             None => Self {
                 runner,
@@ -83,6 +93,7 @@ impl TestSummary {
                 failed: 0,
                 ignored: 0,
                 stdout: stdout_cid,
+                stderr: stderr_cid,
             },
         }
     }
@@ -121,6 +132,12 @@ impl TestSummary {
     #[must_use]
     pub const fn stdout(&self) -> Cid {
         self.stdout
+    }
+
+    /// Content id of the stderr bytes included in parsing.
+    #[must_use]
+    pub const fn stderr(&self) -> Cid {
+        self.stderr
     }
 }
 
@@ -342,9 +359,9 @@ impl RunEvidence {
         if cid_for(output.stdout.as_ref()) != stdout || cid_for(output.stderr.as_ref()) != stderr {
             return Err(ProofFailure::OutputIdMismatch { stderr });
         }
-        let open_issues = u32::try_from(issues.open.len())
-            .map_err(|_| ProofFailure::CountOverflow { stderr })?;
-        let tests = TestSummary::parse(&command, output.stdout.as_ref(), stdout);
+        let open_issues =
+            u32::try_from(issues.open.len()).map_err(|_| ProofFailure::CountOverflow { stderr })?;
+        let tests = TestSummary::parse(&command, output.stdout.as_ref(), output.stderr.as_ref(), stdout, stderr);
         Ok(Self {
             command,
             exit_code: output.exit_code,
@@ -563,7 +580,7 @@ pub fn proof_of_done(
     if run.tests.parse != ParseStatus::Parsed {
         return Err(ProofFailure::Unparseable { stderr });
     }
-    if run.tests.stdout != run.stdout {
+    if run.tests.stdout != run.stdout || run.tests.stderr != run.stderr {
         return Err(ProofFailure::OutputIdMismatch { stderr });
     }
     if run.tests.passed == 0 {
@@ -626,30 +643,56 @@ fn cid_for(bytes: &[u8]) -> Cid {
     Cid::from_bytes(*blake3::hash(bytes).as_bytes())
 }
 
-fn parse_summary(runner: TestRunner, output: &str) -> Option<(u32, u32, u32)> {
-    match runner {
-        TestRunner::Cargo => output.lines().rev().find_map(parse_cargo_line),
-        TestRunner::Nextest => output.lines().rev().find_map(parse_nextest_line),
-        TestRunner::Pytest => output.lines().rev().find_map(parse_pytest_line),
+fn parse_summary(runner: TestRunner, stdout: &str, stderr: &str) -> Option<(u32, u32, u32)> {
+    let mut total: Option<(u32, u32, u32)> = None;
+    for line in stdout.lines().chain(stderr.lines()).map(str::trim) {
+        let candidate = match runner {
+            TestRunner::Cargo => line.starts_with("test result:"),
+            TestRunner::Nextest => line.starts_with("Summary ") && line.contains("tests run:"),
+            TestRunner::Pytest => line.starts_with("===") && line.contains(" in "),
+        };
+        if !candidate { continue; }
+        let counts = match runner {
+            TestRunner::Cargo => parse_cargo_line(line),
+            TestRunner::Nextest => parse_nextest_line(line),
+            TestRunner::Pytest => parse_pytest_line(line),
+        }?;
+        total = Some(match total {
+            Some((passed, failed, ignored)) => {
+                // Cargo emits a separate summary for every binary and doctest group.
+                // Nextest and pytest must emit exactly one terminal summary.
+                if runner != TestRunner::Cargo { return None; }
+                (passed.checked_add(counts.0)?, failed.checked_add(counts.1)?, ignored.checked_add(counts.2)?)
+            }
+            None => counts,
+        });
     }
+    total
 }
 
 fn parse_cargo_line(line: &str) -> Option<(u32, u32, u32)> {
-    let summary = line.split_once("test result:")?.1;
+    let summary = line.strip_prefix("test result: ")?;
+    let (status, summary) = summary.split_once(". ")?;
     let passed = named_count(summary, "passed")?;
     let failed = named_count(summary, "failed")?;
     let ignored = named_count(summary, "ignored")?;
+    if !matches!((status, failed), ("ok", 0) | ("FAILED", 1..)) { return None; }
     Some((passed, failed, ignored))
 }
 
 fn parse_nextest_line(line: &str) -> Option<(u32, u32, u32)> {
-    let summary = line.split_once("tests run:")?.1;
+    let line = line.strip_prefix("Summary ")?;
+    let (prefix, summary) = line.split_once("tests run:")?;
+    let run = prefix.split_whitespace().last()?.parse::<u32>().ok()?;
     let passed = named_count(summary, "passed")?;
     let failed = match named_count(summary, "failed") {
         Some(value) => value,
         None => 0,
     };
     let ignored = named_count(summary, "skipped")?;
+    // Unrecognized timeout, exec-failure and leak classifications cannot prove success.
+    if summary.contains("timed out") || summary.contains("exec failed") || summary.contains("leaky")
+        || passed.checked_add(failed)? != run { return None; }
     Some((passed, failed, ignored))
 }
 
@@ -665,15 +708,15 @@ fn parse_pytest_line(line: &str) -> Option<(u32, u32, u32)> {
         Some(value) => value,
         None => 0,
     };
-    let ignored = match named_count(line, "skipped").or_else(|| named_count(line, "deselected")) {
-        Some(value) => value,
-        None => 0,
-    };
+    if line.contains("error") || line.contains("xpassed") { return None; }
+    let skipped = match named_count(line, "skipped") { Some(count) => count, None => 0 };
+    let deselected = match named_count(line, "deselected") { Some(count) => count, None => 0 };
+    let ignored = skipped.checked_add(deselected)?;
     Some((passed, failed, ignored))
 }
 
 fn named_count(text: &str, name: &str) -> Option<u32> {
-    let mut previous = None;
+    let mut previous: Option<&str> = None;
     for word in text.split_whitespace() {
         let normalized = word.trim_matches(|character: char| {
             matches!(character, ':' | ';' | ',' | '.' | '[' | ']' | '(' | ')')

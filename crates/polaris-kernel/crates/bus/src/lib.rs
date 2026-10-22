@@ -15,6 +15,8 @@
 
 mod bus;
 mod error;
+#[cfg(feature = "kani")]
+mod kani_proofs;
 mod stream;
 
 pub use bus::{Bus, BusConfig, BusStats, CommandReceiver};

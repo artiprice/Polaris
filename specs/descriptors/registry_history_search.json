@@ -41,12 +41,24 @@
       "description": "The hit snippet is bounded in length and contains the matched text for long messages."
     },
     {
+      "test_name": "unicode_lowercase_expansion_does_not_shift_snippet_window",
+      "description": "Unicode lowercase expansion keeps the snippet offset mapped to source characters, so the matched text remains in the window."
+    },
+    {
+      "test_name": "oversize_query_is_rejected_before_queueing",
+      "description": "A query above the explicit byte bound returns BadValue before copying it to the bounded database-thread channel."
+    },
+    {
+      "test_name": "session_scope_is_applied_before_search_limit",
+      "description": "Both FTS and LIKE paths filter by session in SQL before newest-first ordering and limit."
+    },
+    {
       "test_name": "prop_indexed_text_found_by_any_substring",
       "description": "proptest: text indexed is returned for every substring of 3 or more characters (trigram property)."
     },
     {
       "test_name": "prop_search_never_errors",
-      "description": "proptest: search_history on arbitrary query strings (quotes, operators, NUL, unicode) never returns an error."
+      "description": "proptest: search_history on arbitrary bounded query strings (quotes, operators, NUL, unicode) never returns an error."
     }
   ],
   "dependencies": [
@@ -69,6 +81,11 @@
       "name": "limit",
       "type": "u32",
       "description": "Maximum number of hits."
+    },
+    {
+      "name": "session",
+      "type": "Option<SessionId>",
+      "description": "Optional session predicate applied in SQL before limiting results."
     }
   ],
   "output_type": "Result<Vec<Hit>, RegistryError>",

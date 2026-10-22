@@ -14,13 +14,36 @@ pub struct SyncPlan {
     pub delete: Vec<RelPath>,
     /// `(old, new)` pairs where a deleted file reappears with the same content.
     pub rename_hints: Vec<(RelPath, RelPath)>,
+    /// Remote state observed while planning, required for compare-and-swap writes/deletes.
+    /// `None` means the path was absent. Apply re-reads every target and refuses divergence.
+    pub expected_remote: BTreeMap<RelPath, Option<crate::scan::FileEntry>>,
+    /// Paths changed on both sides relative to the common base; callers must resolve these.
+    pub conflicts: Vec<SyncConflict>,
+    /// Windows path-fidelity conflicts in the union of both manifests.
+    pub path_conflicts: Vec<PathConflict>,
+}
+
+/// A two-way synchronization conflict relative to a previously shared manifest.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncConflict {
+    /// The conflicting workspace-relative path.
+    pub path: RelPath,
+    /// Base entry before either side changed.
+    pub base: Option<crate::scan::FileEntry>,
+    /// Current local entry.
+    pub local: Option<crate::scan::FileEntry>,
+    /// Current remote entry.
+    pub remote: Option<crate::scan::FileEntry>,
 }
 
 impl SyncPlan {
     /// `true` when nothing needs to change.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.upload.is_empty() && self.delete.is_empty()
+        self.upload.is_empty()
+            && self.delete.is_empty()
+            && self.conflicts.is_empty()
+            && self.path_conflicts.is_empty()
     }
 }
 
@@ -68,11 +91,66 @@ pub fn plan(local: &Manifest, remote: &Manifest) -> SyncPlan {
             rename_hints.push((old.clone(), new.clone()));
         }
     }
+    let mut expected_remote = BTreeMap::new();
+    for path in &upload {
+        expected_remote.insert(path.clone(), remote.entries.get(path).cloned());
+    }
+    for path in &delete {
+        expected_remote.insert(path.clone(), remote.entries.get(path).cloned());
+    }
+    let mut union = local.clone();
+    union.entries.extend(remote.entries.clone());
+    let path_conflicts = detect_conflicts(&union);
     SyncPlan {
         upload,
         delete,
         rename_hints,
+        expected_remote,
+        conflicts: Vec::new(),
+        path_conflicts,
     }
+}
+
+/// Plans a two-way sync against a common base. Concurrent edits and edit/delete races are
+/// returned as conflicts and excluded from mutation lists.
+#[must_use]
+pub fn plan_two_way(base: &Manifest, local: &Manifest, remote: &Manifest) -> SyncPlan {
+    let paths: BTreeSet<RelPath> = base
+        .entries
+        .keys()
+        .chain(local.entries.keys())
+        .chain(remote.entries.keys())
+        .cloned()
+        .collect();
+    let mut result = SyncPlan::default();
+    let mut union = local.clone();
+    union.entries.extend(remote.entries.clone());
+    result.path_conflicts = detect_conflicts(&union);
+    for path in paths {
+        let before = base.entries.get(&path);
+        let left = local.entries.get(&path);
+        let right = remote.entries.get(&path);
+        let local_changed = left != before;
+        let remote_changed = right != before;
+        if local_changed && remote_changed && left != right {
+            result.conflicts.push(SyncConflict {
+                path,
+                base: before.cloned(),
+                local: left.cloned(),
+                remote: right.cloned(),
+            });
+            continue;
+        }
+        if local_changed && left != right {
+            match left {
+                Some(_) => result.upload.push(path.clone()),
+                None if right.is_some() => result.delete.push(path.clone()),
+                None => {}
+            }
+            result.expected_remote.insert(path, right.cloned());
+        }
+    }
+    result
 }
 
 /// A path that cannot exist faithfully on one side of a Windows <-> Linux sync.
@@ -116,7 +194,10 @@ fn component_conflict(path: &RelPath, name: &str) -> Option<PathConflict> {
     {
         return Some(PathConflict::InvalidChar(path()));
     }
-    let stem = name.split('.').next().unwrap_or(name).to_ascii_uppercase();
+    let stem = match name.split('.').next() {
+        Some(stem) => stem.to_ascii_uppercase(),
+        None => name.to_ascii_uppercase(),
+    };
     if RESERVED.contains(&stem.as_str()) {
         return Some(PathConflict::ReservedName(path()));
     }
@@ -133,6 +214,9 @@ pub fn detect_conflicts(manifest: &Manifest) -> Vec<PathConflict> {
     let mut out = Vec::new();
     let mut prefixes: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for path in manifest.entries.keys() {
+        if path.as_str().len() > 260 {
+            out.push(PathConflict::TooLong(path.clone()));
+        }
         if let Some(conflict) = path
             .components()
             .find_map(|name| component_conflict(path, name))

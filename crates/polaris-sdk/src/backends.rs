@@ -17,9 +17,9 @@ use crate::registry::{
     CommandReceipt, DecisionEngine, DecisionError, DocParser, DocSource, Document,
     EmbeddingProvider, EventSource, EventStore, EventStoreError, ExactCacheStore, ExecOutput,
     ExecRequest, FunctionalOperator, IngestError, KernelApi, KernelError, MemoryPressure,
-    ModelError, PlatformError, PlatformOps, ProcessTree, RedactStats, Redactor, SandboxBackend,
-    SandboxError, SandboxHandle, SandboxSpec, SearchError, SearchHit, SearchQuery, SpawnSpec,
-    StopOutcome, VectorChunk, VectorError, VectorHit, VectorStore, WebSearch,
+    ModelError, PlatformError, PlatformOps, ProcessExit, ProcessTree, RedactStats, Redactor,
+    SandboxBackend, SandboxError, SandboxHandle, SandboxSpec, SearchError, SearchHit, SearchQuery,
+    SpawnSpec, StopOutcome, VectorChunk, VectorError, VectorHit, VectorStore, WebSearch,
 };
 use crate::system_one::{Decision, DecisionInput, Question};
 
@@ -222,6 +222,14 @@ macro_rules! forward_all {
 
             fn graceful_stop(&self, tree: &ProcessTree, grace: Duration) -> impl Future<Output = Result<StopOutcome, PlatformError>> + Send {
                 async move { $each!(self, v => v.graceful_stop(tree, grace).await) }
+            }
+
+            fn kill_tree(&self, tree: &ProcessTree) -> Result<(), PlatformError> {
+                $each!(self, v => v.kill_tree(tree))
+            }
+
+            fn try_wait_tree(&self, tree: &ProcessTree) -> impl Future<Output = Result<Option<ProcessExit>, PlatformError>> + Send {
+                async move { $each!(self, v => v.try_wait_tree(tree).await) }
             }
 
             fn memory_pressure(&self) -> Result<MemoryPressure, PlatformError> {

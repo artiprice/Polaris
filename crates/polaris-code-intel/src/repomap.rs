@@ -18,6 +18,26 @@ const BYTES_PER_TOKEN: usize = 4;
 /// Bumped whenever the rendered map format changes, so cached prompt prefixes are invalidated.
 const FORMAT_VERSION: u32 = 1;
 
+// PageRank is approximate floating-point arithmetic. Build counts without an unchecked numeric
+// cast; all byte steps are exact until the count exceeds f64's integral precision.
+fn count_as_f64(value: usize) -> f64 {
+    value
+        .to_le_bytes()
+        .iter()
+        .rev()
+        .fold(0.0, |count, byte| count * 256.0 + f64::from(*byte))
+}
+
+/// Converts a token budget to its approximate byte ceiling without overflowing.
+pub(crate) fn max_render_bytes(max_tokens: u32) -> u64 {
+    u64::from(max_tokens).saturating_mul(4)
+}
+
+/// Converts rendered bytes to the documented ceiling estimate, if it fits the public count type.
+pub(crate) fn estimated_tokens(byte_len: usize) -> Option<u32> {
+    u32::try_from(byte_len.div_ceil(BYTES_PER_TOKEN)).ok()
+}
+
 /// What the map is rendered for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RepoMapBudget {
@@ -120,7 +140,7 @@ pub fn rank_files(g: &SymbolGraph, focus: &[PathBuf]) -> Vec<(PathBuf, f64)> {
             if others.is_empty() {
                 continue;
             }
-            let share = f64::from(*count).sqrt() / others.len() as f64;
+            let share = f64::from(*count).sqrt() / count_as_f64(others.len());
             for t in others {
                 *acc.entry(t).or_insert(0.0) += share;
             }
@@ -137,9 +157,9 @@ pub fn rank_files(g: &SymbolGraph, focus: &[PathBuf]) -> Vec<(PathBuf, f64)> {
         .filter_map(|f| index.get(normalize_path(f).as_str()).copied())
         .collect();
     let personalization: Vec<f64> = if focus_ids.is_empty() {
-        vec![1.0 / n as f64; n]
+        vec![1.0 / count_as_f64(n); n]
     } else {
-        let share = 1.0 / focus_ids.len() as f64;
+        let share = 1.0 / count_as_f64(focus_ids.len());
         (0..n)
             .map(|i| if focus_ids.contains(&i) { share } else { 0.0 })
             .collect()
@@ -195,9 +215,7 @@ pub fn rank_files(g: &SymbolGraph, focus: &[PathBuf]) -> Vec<(PathBuf, f64)> {
 /// # Errors
 /// [`CodeIntelError::TooLarge`] if the map would exceed `u32::MAX` estimated tokens.
 pub fn repo_map(g: &SymbolGraph, b: &RepoMapBudget) -> Result<RepoMap, CodeIntelError> {
-    let max_bytes = usize::try_from(b.max_tokens.get())
-        .unwrap_or(usize::MAX)
-        .saturating_mul(BYTES_PER_TOKEN);
+    let max_bytes = usize::try_from(max_render_bytes(b.max_tokens.get())).unwrap_or(usize::MAX);
     let mut entries: Vec<RankedFile> = Vec::new();
     let mut used = 0usize;
     'files: for (path, rank) in rank_files(g, &b.focus_files) {
@@ -244,13 +262,11 @@ pub fn repo_map(g: &SymbolGraph, b: &RepoMapBudget) -> Result<RepoMap, CodeIntel
         },
     };
     let text = map.render();
-    map.token_estimate = TokenCount::new(
-        u32::try_from(text.len().div_ceil(BYTES_PER_TOKEN)).map_err(|_| {
-            CodeIntelError::TooLarge {
-                limit: usize::try_from(u32::MAX).unwrap_or(usize::MAX),
-            }
-        })?,
-    );
+    map.token_estimate = TokenCount::new(estimated_tokens(text.len()).ok_or(
+        CodeIntelError::TooLarge {
+            limit: usize::try_from(u32::MAX).unwrap_or(usize::MAX),
+        },
+    )?);
     map.version.digest = FastFingerprint::new(xxh3_64(text.as_bytes()));
     Ok(map)
 }

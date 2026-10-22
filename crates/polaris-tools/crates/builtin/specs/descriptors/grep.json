@@ -1,0 +1,21 @@
+{
+  "type_of": "function",
+  "name": "grep",
+  "file_path": "src/grep.rs",
+  "logic_name": "Bounded Ignore-Aware Grep",
+  "test_list": [
+    { "test_name": "respects_gitignore_and_polarisignore", "description": "Exclude ignored paths using repository and Polaris ignore rules." },
+    { "test_name": "result_cap_sets_truncated", "description": "Never emit more than max_results and set truncated when more matches exist." },
+    { "test_name": "regex_bomb_rejected", "description": "Reject patterns violating the shared regex HIR/size guard." },
+    { "test_name": "binary_files_skipped", "description": "Do not match files containing NUL bytes in the binary-detection prefix." },
+    { "test_name": "deadline_returns_partial_with_flag", "description": "Return bounded partial results and mark truncation when the deadline expires." }
+  ],
+  "dependencies": ["WorkspacePath", "ToolLimits", "polaris_security_automata::validate_user_regex"],
+  "libraries": ["ignore", "regex"],
+  "inputs": [
+    { "name": "pattern", "type": "&str", "description": "User regex validated before compiling." },
+    { "name": "query", "type": "&str", "description": "Regex source text." }
+  ],
+  "output_type": "Result<GrepOutput, ToolError>",
+  "output_description": "Capped, ordered match results and explicit truncation metadata."
+}

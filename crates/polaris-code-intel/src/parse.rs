@@ -130,8 +130,9 @@ impl Parsed {
         let mut hasher = Xxh3::new();
         walk_preorder(self.tree.root_node(), |node, depth| {
             hasher.update(&node.kind_id().to_le_bytes());
-            hasher.update(&(node.start_byte() as u64).to_le_bytes());
-            hasher.update(&(node.end_byte() as u64).to_le_bytes());
+            // Pointer-width bytes are sufficient for this local dirty-check (not a persisted CID).
+            hasher.update(&node.start_byte().to_le_bytes());
+            hasher.update(&node.end_byte().to_le_bytes());
             hasher.update(&depth.to_le_bytes());
             Descend::Into
         });

@@ -21,6 +21,7 @@ pub struct Telemetry {
     aggregates: Aggregates,
     rate: RateWindow,
     published: Arc<ArcSwap<TelemetrySnapshot>>,
+    last_record: Option<EventRecord>,
 }
 
 impl Telemetry {
@@ -37,6 +38,7 @@ impl Telemetry {
             aggregates,
             rate: RateWindow::default(),
             published: Arc::new(ArcSwap::new(initial)),
+            last_record: None,
         })
     }
 
@@ -57,7 +59,21 @@ impl Telemetry {
     /// # Errors
     /// [`TelemetryError::SessionMismatch`] (nothing is changed) for a record of another session.
     pub fn record_record(&mut self, record: &EventRecord) -> Result<(), TelemetryError> {
-        self.fold(None, record)
+        self.fold(None, record, false)
+    }
+
+    /// Folds an event-log replay record with sequence-based duplicate protection.
+    ///
+    /// The same latest record may be replayed once without double counting. A different record
+    /// with the same sequence or an older sequence is rejected. This is intended for sequential
+    /// event-log replay; live callers that synthesize envelopes should use [`Self::record_record`].
+    ///
+    /// # Errors
+    /// [`TelemetryError::SessionMismatch`] for a different session;
+    /// [`TelemetryError::ConflictingSequence`] for a different record with the latest sequence;
+    /// [`TelemetryError::OutOfOrder`] for an older sequence.
+    pub fn record_replay_record(&mut self, record: &EventRecord) -> Result<(), TelemetryError> {
+        self.fold(None, record, true)
     }
 
     /// Like [`Telemetry::record_record`], and also attributes a `ModelRequestCompleted` to
@@ -70,19 +86,36 @@ impl Telemetry {
         model: &ModelId,
         record: &EventRecord,
     ) -> Result<(), TelemetryError> {
-        self.fold(Some(model), record)
+        self.fold(Some(model), record, false)
     }
 
     fn fold(
         &mut self,
         model: Option<&ModelId>,
         record: &EventRecord,
+        replay_guard: bool,
     ) -> Result<(), TelemetryError> {
         if record.session() != self.session {
             return Err(TelemetryError::SessionMismatch {
                 expected: self.session,
                 found: record.session(),
             });
+        }
+        if replay_guard {
+            if let Some(previous) = self.last_record {
+                if record.seq() == previous.seq() {
+                    if *record == previous {
+                        return Ok(());
+                    }
+                    return Err(TelemetryError::ConflictingSequence(record.seq()));
+                }
+                if record.seq() < previous.seq() {
+                    return Err(TelemetryError::OutOfOrder {
+                        previous: previous.seq(),
+                        found: record.seq(),
+                    });
+                }
+            }
         }
         self.aggregates.record(model, record.event());
         if let Event::ModelRequestCompleted {
@@ -94,6 +127,9 @@ impl Telemetry {
             let billed =
                 u64::from(prompt_tokens.get()).saturating_add(u64::from(completion_tokens.get()));
             self.rate.add(record.at().as_second(), billed);
+        }
+        if replay_guard {
+            self.last_record = Some(*record);
         }
         Ok(())
     }

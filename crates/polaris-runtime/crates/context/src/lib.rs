@@ -8,7 +8,10 @@ mod fold;
 mod prefix;
 mod scratchpad;
 
-pub use assemble::{AssembleRequest, AssembledPrompt, AssemblyStats, ContextConfig, ContextMapReport, ContextVirtualizer, PrefixStability, TokenEstimate, TokenEstimator, ByteHeuristic};
+pub use assemble::{
+    AssembleRequest, AssembledPrompt, AssemblyStats, ByteHeuristic, ContextConfig,
+    ContextMapReport, ContextVirtualizer, PrefixStability, TokenEstimate, TokenEstimator,
+};
 pub use error::ContextError;
 pub use fold::{ByteRange, FileRead, FoldConfig, FoldKind, FoldRequest, Folded, ToolKind};
 pub use prefix::{PrefixHash, StablePrefix, ToolProfile, serialize_prefix};

@@ -36,7 +36,10 @@ impl HasKind for PiiError {
     fn kind(&self) -> ErrorKind {
         match self {
             Self::Scan(error) => error.kind(),
-            Self::InputLimit | Self::InvalidUtf8 | Self::Capacity | Self::CounterOverflow
+            Self::InputLimit
+            | Self::InvalidUtf8
+            | Self::Capacity
+            | Self::CounterOverflow
             | Self::RandomUnavailable => ErrorKind::Permanent,
             Self::BoundaryDenied => ErrorKind::Policy,
             Self::StateUnavailable => ErrorKind::Fatal,

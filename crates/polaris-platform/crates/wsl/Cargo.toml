@@ -18,3 +18,9 @@ thiserror = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-config = { workspace = true }
 polaris-log = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+which = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

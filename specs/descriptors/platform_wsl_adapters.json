@@ -1,0 +1,21 @@
+{
+  "type_of": "module",
+  "name": "platform_wsl_adapters",
+  "file_path": "crates/polaris-platform/crates/wsl/src/adapter.rs",
+  "logic_name": "Platform WSL Adapters",
+  "test_list": [
+    { "test_name": "decodes_utf16le_bom_and_strips_embedded_nuls", "description": "Decode WSL UTF-16LE output and reject malformed code units." },
+    { "test_name": "parses_default_running_distro_and_version", "description": "Parse default marker, state, and WSL generation into typed rows." },
+    { "test_name": "validates_memory_units_nested_virtualization_and_duplicate_keys", "description": "Validate known .wslconfig keys, memory units, booleans, and duplicates." },
+    { "test_name": "maps_drive_paths_and_wsl_unc_paths", "description": "Map Windows drive paths to /mnt and Linux paths to distro UNC paths." },
+    { "test_name": "doctor_report_api_is_serializable_and_provisioning_is_plan_only", "description": "Keep doctor output serializable and provisioning side-effect-free until explicitly confirmed." }
+  ],
+  "dependencies": ["DistroName", "LinuxPath", "WslReport", "ExecOutput"],
+  "libraries": ["tokio", "serde", "thiserror", "which"],
+  "inputs": [
+    { "name": "wsl_output", "type": "&[u8]", "description": "Raw output bytes emitted by wsl.exe." },
+    { "name": "config", "type": "&str", "description": "User-provided .wslconfig contents." }
+  ],
+  "output_type": "Result<WslReport, WslError>",
+  "output_description": "A decoded typed report or a descriptive WSL adapter error."
+}

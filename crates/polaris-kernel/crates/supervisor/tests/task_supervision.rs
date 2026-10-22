@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use polaris_kernel_bus::{Bus, BusConfig};
+use polaris_kernel_supervisor::WorkerSpec;
 use polaris_kernel_supervisor::{
     BackoffSpec, ChildName, ChildStatus, ExitClass, OnExhausted, RestartIntensity, RestartPolicy,
     StopOutcome, Supervisor, SupervisorConfig, SupervisorError, TaskError, TaskSpec,
@@ -13,6 +14,9 @@ use polaris_kernel_supervisor::{
 use polaris_sdk::contracts::{Event, EventRecord, WorkerKind};
 use polaris_sdk::ids::{Cid, Seq, SessionId};
 use polaris_sdk::registry::{EventStore, EventStoreError};
+use polaris_sdk::registry::{
+    MemoryPressure, PlatformError, PlatformOps, ProcessExit, ProcessTree, SpawnSpec,
+};
 use polaris_telemetry::Telemetry;
 use tokio::sync::mpsc;
 use tokio::time::Instant;
@@ -108,6 +112,61 @@ fn fixture_with(root: CancellationToken) -> Result<(Sup, Arc<MemStore>), Box<dyn
 
 fn fixture() -> Result<(Sup, Arc<MemStore>), Box<dyn Error>> {
     fixture_with(CancellationToken::new())
+}
+
+#[derive(Default)]
+struct FakeWorkerPlatform {
+    spawns: AtomicUsize,
+    stops: AtomicUsize,
+    kills: AtomicUsize,
+    hang_stop: AtomicBool,
+    exit_on_poll: AtomicBool,
+}
+
+impl PlatformOps for FakeWorkerPlatform {
+    fn spawn_tree(&self, _spec: &SpawnSpec) -> Result<ProcessTree, PlatformError> {
+        let sequence = self.spawns.fetch_add(1, Ordering::SeqCst);
+        let root_pid = u32::try_from(sequence.saturating_add(100))
+            .map_err(|error| PlatformError::Io(error.to_string()))?;
+        let handle_id = u64::try_from(sequence.saturating_add(1))
+            .map_err(|error| PlatformError::Io(error.to_string()))?;
+        Ok(ProcessTree {
+            root_pid,
+            handle_id,
+        })
+    }
+
+    async fn graceful_stop(
+        &self,
+        _tree: &ProcessTree,
+        _grace: Duration,
+    ) -> Result<polaris_sdk::registry::StopOutcome, PlatformError> {
+        self.stops.fetch_add(1, Ordering::SeqCst);
+        if self.hang_stop.load(Ordering::SeqCst) {
+            tokio::time::sleep(Duration::from_secs(60)).await;
+        }
+        Ok(polaris_sdk::registry::StopOutcome::Exited { code: None })
+    }
+
+    fn kill_tree(&self, _tree: &ProcessTree) -> Result<(), PlatformError> {
+        self.kills.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    async fn try_wait_tree(
+        &self,
+        _tree: &ProcessTree,
+    ) -> Result<Option<ProcessExit>, PlatformError> {
+        if self.exit_on_poll.load(Ordering::SeqCst) {
+            Ok(Some(ProcessExit { code: Some(17) }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn memory_pressure(&self) -> Result<MemoryPressure, PlatformError> {
+        Ok(MemoryPressure::Normal)
+    }
 }
 
 /// 100 ms .. 1 s backoff without jitter, `max_restarts` per hour.
@@ -268,6 +327,104 @@ async fn backoff_grows_between_restarts() -> TestResult {
         );
     }
     sup.stop(id, Duration::from_secs(1)).await?;
+    Ok(())
+}
+
+#[tokio::test(start_paused = true)]
+async fn worker_process_crashes_restart_at_one_millisecond_backoff_and_stop_at_intensity()
+-> TestResult {
+    let (sup, _store) = fixture()?;
+    let platform = Arc::new(FakeWorkerPlatform {
+        exit_on_poll: AtomicBool::new(true),
+        ..FakeWorkerPlatform::default()
+    });
+    let id = sup.spawn_worker(
+        Arc::clone(&platform),
+        WorkerSpec {
+            task: TaskSpec {
+                worker: Some(WorkerKind::S1),
+                backoff: BackoffSpec {
+                    min_delay: ms(1),
+                    max_delay: ms(1),
+                    jitter: false,
+                },
+                ..spec("native-worker-crash", 71, 2)
+            },
+            process: SpawnSpec::default(),
+            poll_interval: ms(1),
+            stop_grace: ms(5),
+        },
+    )?;
+    assert!(matches!(
+        sup.wait(id).await,
+        Err(SupervisorError::IntensityExceeded { .. })
+    ));
+    assert_eq!(platform.spawns.load(Ordering::SeqCst), 3);
+    assert_eq!(
+        sup.snapshot().children.first().map(|child| child.restarts),
+        Some(2)
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn worker_stop_terminates_the_owned_process_tree() -> TestResult {
+    let (sup, _store) = fixture()?;
+    let platform = Arc::new(FakeWorkerPlatform::default());
+    let id = sup.spawn_worker(
+        Arc::clone(&platform),
+        WorkerSpec {
+            task: TaskSpec {
+                worker: Some(WorkerKind::S1),
+                ..spec("native-worker-stop", 72, 2)
+            },
+            process: SpawnSpec::default(),
+            poll_interval: ms(10),
+            stop_grace: ms(5),
+        },
+    )?;
+    for _attempt in 0..10 {
+        if platform.spawns.load(Ordering::SeqCst) > 0 {
+            break;
+        }
+        tokio::task::yield_now().await;
+    }
+    let result = sup.stop(id, Duration::from_secs(1)).await?;
+    assert_eq!(result, StopOutcome::Graceful);
+    assert_eq!(platform.spawns.load(Ordering::SeqCst), 1);
+    assert_eq!(platform.stops.load(Ordering::SeqCst), 1);
+    assert_eq!(platform.kills.load(Ordering::SeqCst), 0);
+    Ok(())
+}
+
+#[tokio::test]
+async fn aborted_worker_stop_force_kills_the_tree_from_its_drop_guard() -> TestResult {
+    let (sup, _store) = fixture()?;
+    let platform = Arc::new(FakeWorkerPlatform {
+        hang_stop: AtomicBool::new(true),
+        ..FakeWorkerPlatform::default()
+    });
+    let id = sup.spawn_worker(
+        Arc::clone(&platform),
+        WorkerSpec {
+            task: TaskSpec {
+                worker: Some(WorkerKind::S1),
+                ..spec("native-worker-abort", 73, 2)
+            },
+            process: SpawnSpec::default(),
+            poll_interval: ms(10),
+            stop_grace: Duration::from_secs(1),
+        },
+    )?;
+    for _attempt in 0..10 {
+        if platform.spawns.load(Ordering::SeqCst) > 0 {
+            break;
+        }
+        tokio::task::yield_now().await;
+    }
+    let result = sup.stop(id, ms(1)).await?;
+    assert_eq!(result, StopOutcome::Aborted);
+    assert_eq!(platform.kills.load(Ordering::SeqCst), 1);
     Ok(())
 }
 

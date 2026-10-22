@@ -10,7 +10,9 @@ pub struct PrefixHash([u8; 32]);
 impl PrefixHash {
     /// Raw digest bytes.
     #[must_use]
-    pub const fn as_bytes(&self) -> &[u8; 32] { &self.0 }
+    pub const fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
 
     /// Lowercase hexadecimal digest.
     #[must_use]
@@ -52,10 +54,19 @@ impl StablePrefix {
     /// Tool definitions are sorted by name; equal names are rejected because their relative
     /// order would otherwise make an ambiguous prompt contract. Input line endings are normalized
     /// to LF in the system and repo-map text. Tool schema JSON is kept byte-for-byte as supplied.
-    pub fn new(system: &str, tools: &[ToolSpec], repo_map_version: &str, repo_map: &str) -> Result<Self, ContextError> {
+    pub fn new(
+        system: &str,
+        tools: &[ToolSpec],
+        repo_map_version: &str,
+        repo_map: &str,
+    ) -> Result<Self, ContextError> {
         let mut sorted = tools.to_vec();
         sorted.sort_by(|left, right| left.name.cmp(&right.name));
-        if sorted.windows(2).any(|pair| pair.first().zip(pair.get(1)).is_some_and(|(a, b)| a.name == b.name)) {
+        if sorted.windows(2).any(|pair| {
+            pair.first()
+                .zip(pair.get(1))
+                .is_some_and(|(a, b)| a.name == b.name)
+        }) {
             return Err(ContextError::DuplicateToolName);
         }
         let system = normalize_lf(system);
@@ -75,10 +86,19 @@ impl StablePrefix {
 ///
 /// The version tag is part of the byte stream. Lengths are decimal byte counts and always use
 /// base-10 with no leading zeros. The output contains LF separators and no timestamps or ids.
-pub fn serialize_prefix(system: &str, tools: &[ToolSpec], repo_map_version: &str, repo_map: &str) -> Result<String, ContextError> {
+pub fn serialize_prefix(
+    system: &str,
+    tools: &[ToolSpec],
+    repo_map_version: &str,
+    repo_map: &str,
+) -> Result<String, ContextError> {
     let mut sorted = tools.to_vec();
     sorted.sort_by(|left, right| left.name.cmp(&right.name));
-    if sorted.windows(2).any(|pair| pair.first().zip(pair.get(1)).is_some_and(|(a, b)| a.name == b.name)) {
+    if sorted.windows(2).any(|pair| {
+        pair.first()
+            .zip(pair.get(1))
+            .is_some_and(|(a, b)| a.name == b.name)
+    }) {
         return Err(ContextError::DuplicateToolName);
     }
     let mut out = String::new();
@@ -88,7 +108,13 @@ pub fn serialize_prefix(system: &str, tools: &[ToolSpec], repo_map_version: &str
         write_field(&mut out, "tool.name", &tool.name)?;
         write_field(&mut out, "tool.description", &tool.description)?;
         write_field(&mut out, "tool.schema", &tool.input_schema_json)?;
-        let effects = format!("{}{}{}{}", bool_digit(tool.effects.reads_workspace), bool_digit(tool.effects.writes_workspace), bool_digit(tool.effects.network), bool_digit(tool.effects.executes));
+        let effects = format!(
+            "{}{}{}{}",
+            bool_digit(tool.effects.reads_workspace),
+            bool_digit(tool.effects.writes_workspace),
+            bool_digit(tool.effects.network),
+            bool_digit(tool.effects.executes)
+        );
         write_field(&mut out, "tool.effects", &effects)?;
     }
     write_field(&mut out, "repo.version", repo_map_version)?;

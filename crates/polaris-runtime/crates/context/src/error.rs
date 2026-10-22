@@ -46,10 +46,13 @@ impl HasKind for ContextError {
     fn kind(&self) -> ErrorKind {
         match self {
             Self::Store(error) => error.kind(),
-            Self::Rtk(_) | Self::InvalidRange | Self::TurnOrder | Self::PrefixTooLarge
-            | Self::DuplicateToolName | Self::InvalidUtf8 | Self::ToolHistory => {
-                ErrorKind::Permanent
-            }
+            Self::Rtk(_)
+            | Self::InvalidRange
+            | Self::TurnOrder
+            | Self::PrefixTooLarge
+            | Self::DuplicateToolName
+            | Self::InvalidUtf8
+            | Self::ToolHistory => ErrorKind::Permanent,
             Self::Budget | Self::EstimateOverflow => ErrorKind::Permanent,
             Self::StatePoisoned => ErrorKind::Fatal,
         }

@@ -82,7 +82,9 @@ impl AstImpactLimits {
         if max_changed_symbols == 0 {
             return Err(GuardError::InvalidLimits);
         }
-        Ok(Self { max_changed_symbols })
+        Ok(Self {
+            max_changed_symbols,
+        })
     }
 }
 
@@ -138,8 +140,12 @@ pub fn ast_blast_radius<V: SymbolReferenceView>(
     let mut impacts = Vec::with_capacity(changed.len());
     let mut references_complete = true;
     for (symbol, change, old_span, new_span) in changed {
-        let call_sites = references.call_sites(&symbol).map_err(GuardError::Workspace)?;
-        if call_sites.is_none() || call_sites.is_some_and(|facts| facts.confidence == ReferenceConfidence::Unknown) {
+        let call_sites = references
+            .call_sites(&symbol)
+            .map_err(GuardError::Workspace)?;
+        if call_sites.is_none()
+            || call_sites.is_some_and(|facts| facts.confidence == ReferenceConfidence::Unknown)
+        {
             references_complete = false;
         }
         impacts.push(AstImpact {
@@ -192,7 +198,8 @@ fn signatures(skeleton: &Skeleton) -> BTreeMap<SymbolRef, Vec<&SkeletonItem>> {
 fn signatures_for(items: Option<&Vec<&SkeletonItem>>) -> Vec<String> {
     match items {
         Some(items) => {
-            let mut signatures: Vec<String> = items.iter().map(|item| item.signature.clone()).collect();
+            let mut signatures: Vec<String> =
+                items.iter().map(|item| item.signature.clone()).collect();
             signatures.sort_unstable();
             signatures
         }

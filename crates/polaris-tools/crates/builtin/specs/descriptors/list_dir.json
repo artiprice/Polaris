@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "list_dir",
+  "file_path": "src/search.rs",
+  "logic_name": "Workspace Directory Listing",
+  "test_list": [
+    { "test_name": "ordered_entries", "description": "Return workspace-relative entries in stable name order." },
+    { "test_name": "symlink_and_secret_denied", "description": "Omit symlinks and paths on the secret-file deny list." },
+    { "test_name": "bounded_rows", "description": "Stop after configured result and time limits and report truncation." }
+  ],
+  "dependencies": ["WorkspacePath", "ToolLimits"],
+  "libraries": ["ignore"],
+  "inputs": [{ "name": "path", "type": "Option<String>", "description": "Workspace-relative directory; omitted means workspace root." }],
+  "output_type": "Result<SearchOutput, ToolError>",
+  "output_description": "Stable workspace-relative directory rows with explicit truncation metadata."
+}

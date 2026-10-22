@@ -1,0 +1,33 @@
+{
+  "type_of": "struct",
+  "name": "Supervisor / Reaper",
+  "file_path": "crates/polaris-kernel/tests/lifecycle_stress.rs",
+  "logic_name": "Native P1 Lifecycle Stress",
+  "test_list": [
+    {
+      "test_name": "timed_out_health_probe_kills_owned_native_worker",
+      "description": "Injected hanging health transport times out; actual native process is reaped, retries stop at intensity zero, and one dead letter remains."
+    },
+    {
+      "test_name": "two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots",
+      "description": "Explicit stress workload: externally kill 200 actual native workers, observe 199 restarts and one dead letter, then check the process table for zero surviving roots."
+    },
+    {
+      "test_name": "reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes",
+      "description": "Explicit stress workload: durably register and remove 1000 directories, 50 labeled fake sandboxes and 20 actual native processes within ten seconds, retaining no recovery locators."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel::supervisor",
+    "polaris_kernel::reaper",
+    "polaris_platform::process::ProcessPlatform"
+  ],
+  "libraries": [
+    "tokio",
+    "sysinfo",
+    "tempfile"
+  ],
+  "inputs": [],
+  "output_type": "ShutdownReport / SupervisorSnapshot",
+  "output_description": "Actual lifecycle counts and zero surviving owned process roots; fake sandbox transport is not an OpenShell claim."
+}

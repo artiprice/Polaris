@@ -86,6 +86,8 @@ pub enum ExitClass {
     Panicked,
     /// Task was aborted or externally cancelled.
     Killed,
+    /// Native worker ended by a signal or an OS exception status.
+    Crashed,
 }
 /// Current child state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -180,14 +182,21 @@ impl Default for SupervisorConfig {
 pub struct TaskError {
     message: String,
     kind: ErrorKind,
+    exit: ExitClass,
 }
 impl TaskError {
+    /// Native crash, typed failure, or other classification retained by the supervisor.
+    #[must_use]
+    pub const fn exit_class(&self) -> ExitClass {
+        self.exit
+    }
     /// Retryable error.
     #[must_use]
     pub fn transient(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
             kind: ErrorKind::Transient,
+            exit: ExitClass::Failed,
         }
     }
     /// Integrity failure; immediately escalated without retry.
@@ -196,6 +205,16 @@ impl TaskError {
         Self {
             message: message.into(),
             kind: ErrorKind::Fatal,
+            exit: ExitClass::Failed,
+        }
+    }
+    /// Native process signal/exception failure; restart policy still decides whether to retry.
+    #[must_use]
+    pub fn crashed(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            kind: ErrorKind::Transient,
+            exit: ExitClass::Crashed,
         }
     }
 }
@@ -564,7 +583,7 @@ where
         }
         let (exit, fatal) = match result {
             Ok(Ok(())) => (ExitClass::Clean, false),
-            Ok(Err(error)) => (ExitClass::Failed, error.kind() == ErrorKind::Fatal),
+            Ok(Err(error)) => (error.exit, error.kind() == ErrorKind::Fatal),
             Err(error) if error.is_panic() => (ExitClass::Panicked, false),
             Err(_) => (ExitClass::Killed, false),
         };

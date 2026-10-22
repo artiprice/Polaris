@@ -36,3 +36,9 @@
 //! ## Planned external dependencies
 //!
 //! none (facade)
+
+pub use polaris_security_automata as automata;
+pub use polaris_security_capability as capability;
+pub use polaris_security_pii as pii;
+pub use polaris_security_rules as rules;
+pub use polaris_security_secrets as secrets;

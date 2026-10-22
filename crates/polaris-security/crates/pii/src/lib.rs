@@ -14,6 +14,6 @@ mod vault;
 
 pub use error::PiiError;
 pub use vault::{
-    DenySandboxUnmask, Masked, PiiKind, PiiLimits, PiiVault, SanitizeReport, SandboxUnmaskAuthorizer,
-    SealedBlob, Sealer,
+    DenySandboxUnmask, Masked, PiiKind, PiiLimits, PiiVault, SandboxUnmaskAuthorizer,
+    SanitizeReport, SealedBlob, Sealer,
 };

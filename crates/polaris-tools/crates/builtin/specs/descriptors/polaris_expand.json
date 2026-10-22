@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "polaris_expand",
+  "file_path": "src/registry.rs",
+  "logic_name": "CAS Content Expansion",
+  "test_list": [
+    { "test_name": "full_cid_resolved", "description": "Load content by its full validated CID from the actual CAS." },
+    { "test_name": "short_ref_collision_checked", "description": "Resolve short references only through the CAS collision-checking API." },
+    { "test_name": "byte_bound_enforced", "description": "Reject referenced content exceeding the configured byte limit." }
+  ],
+  "dependencies": ["Cas", "RefResolver"],
+  "libraries": ["polaris-storage-cas"],
+  "inputs": [{ "name": "reference", "type": "String", "description": "Full content ID or CAS-resolvable short reference." }],
+  "output_type": "Result<Value, ToolError>",
+  "output_description": "Actual referenced UTF-8 content and its CAS identity, or an explicit error."
+}

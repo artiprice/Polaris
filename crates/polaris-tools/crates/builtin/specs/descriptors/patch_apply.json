@@ -1,0 +1,20 @@
+{
+  "type_of": "function",
+  "name": "apply_unified_patch",
+  "file_path": "src/patch.rs",
+  "logic_name": "Pure Unified Patch Application",
+  "test_list": [
+    { "test_name": "applies_context_add_delete", "description": "Apply a valid hunk only when every context and deletion line matches the base." },
+    { "test_name": "rejects_stale_or_malformed_hunks", "description": "Reject malformed ranges and mismatched context without modifying source bytes." },
+    { "test_name": "preserves_crlf_and_final_newline", "description": "Preserve base line-ending style and final-newline state in derived bytes." },
+    { "test_name": "proposal_stores_diff_before_submit", "description": "Store proposal bytes in real CAS before submitting CommandBody::ProposeDiff; never write target files." }
+  ],
+  "dependencies": ["ProposalBackend", "polaris_sdk::KernelApi", "polaris_storage_cas::Cas"],
+  "libraries": ["polaris-sdk", "polaris-storage-cas"],
+  "inputs": [
+    { "name": "base", "type": "&[u8]", "description": "Current source bytes read from the workspace." },
+    { "name": "patch", "type": "&str", "description": "Unified patch text supplied by the model." }
+  ],
+  "output_type": "Result<Vec<u8>, ToolError>",
+  "output_description": "The derived content bytes only; persistence and command submission are a separate injected proposal operation."
+}

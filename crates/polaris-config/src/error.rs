@@ -15,6 +15,14 @@ pub enum ConfigError {
         /// OS error text.
         reason: String,
     },
+    /// A configuration file exceeded the bounded parser input size.
+    #[error("configuration file {path} exceeds the {limit}-byte limit", path = path.display())]
+    FileTooLarge {
+        /// The file.
+        path: PathBuf,
+        /// Maximum accepted file size.
+        limit: usize,
+    },
     /// TOML syntax error.
     #[error("{file}:{line}: {reason}", file = file.display())]
     Parse {
@@ -63,7 +71,8 @@ impl HasKind for ConfigError {
             | Self::UnknownKey(_)
             | Self::Invalid { .. }
             | Self::NoHome
-            | Self::Encode(_) => ErrorKind::Permanent,
+            | Self::Encode(_)
+            | Self::FileTooLarge { .. } => ErrorKind::Permanent,
         }
     }
 }

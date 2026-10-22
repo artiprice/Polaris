@@ -19,7 +19,7 @@ pub use blast::{
     BlastInput, BlastLimits, BlastReport, Confidence, EffectKind, FileFact, GlobPattern,
     GuardVerdict, Severity, ShellKind, WorkspacePath, WorkspaceView, blast_radius,
 };
-pub use completion::{Completion, Pending, Proven, ProofRecord};
+pub use completion::{Completion, Pending, ProofRecord, Proven};
 pub use error::{GuardError, ViewError};
 pub use proof::{
     IndependentCheck, IndependentProof, ParseStatus, ProofFailure, ProofPolicy, RunEvidence,

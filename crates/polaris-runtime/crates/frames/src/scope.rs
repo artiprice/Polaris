@@ -76,8 +76,14 @@ fn resource_subset(parent: &ResourceScope, child: &ResourceScope) -> bool {
             is_same_or_descendant(parent_path, path)
         }
         (
-            ResourceScope::Symbol { path: parent_path, symbol: parent_symbol },
-            ResourceScope::Symbol { path: child_path, symbol: child_symbol },
+            ResourceScope::Symbol {
+                path: parent_path,
+                symbol: parent_symbol,
+            },
+            ResourceScope::Symbol {
+                path: child_path,
+                symbol: child_symbol,
+            },
         ) => parent_path == child_path && parent_symbol == child_symbol,
         (ResourceScope::Symbol { .. }, ResourceScope::Exact(_) | ResourceScope::Prefix(_)) => false,
         (ResourceScope::Exact(_), ResourceScope::Prefix(_)) => false,
@@ -85,11 +91,19 @@ fn resource_subset(parent: &ResourceScope, child: &ResourceScope) -> bool {
 }
 
 fn is_same_or_descendant(parent: &ResourcePath, child: &ResourcePath) -> bool {
-    child == parent || child.as_str().strip_prefix(parent.as_str()).is_some_and(|rest| rest.starts_with('/'))
+    child == parent
+        || child
+            .as_str()
+            .strip_prefix(parent.as_str())
+            .is_some_and(|rest| rest.starts_with('/'))
 }
 
 /// Validate the relative lifetime against a previously recorded absolute parent expiry.
-pub(crate) fn child_expiry(parent_expires_at_micros: i64, now_micros: i64, ttl_micros: u128) -> Result<i64, ScopeError> {
+pub(crate) fn child_expiry(
+    parent_expires_at_micros: i64,
+    now_micros: i64,
+    ttl_micros: u128,
+) -> Result<i64, ScopeError> {
     let ttl = i64::try_from(ttl_micros).map_err(|_| ScopeError::Lifetime)?;
     if ttl <= 0 || now_micros >= parent_expires_at_micros {
         return Err(ScopeError::Lifetime);

@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "glob",
+  "file_path": "src/search.rs",
+  "logic_name": "Ignore-Aware Workspace Glob",
+  "test_list": [
+    { "test_name": "ignore_rules_respected", "description": "Honor repository ignore files while finding matching paths." },
+    { "test_name": "path_escape_rejected", "description": "Reject absolute, parent-traversing, and alternate-stream patterns." },
+    { "test_name": "bounded_results", "description": "Report truncation when result or time bounds are reached." }
+  ],
+  "dependencies": ["WorkspacePath", "ToolLimits"],
+  "libraries": ["ignore", "globset"],
+  "inputs": [{ "name": "pattern", "type": "String", "description": "Workspace-relative glob using slash separators." }],
+  "output_type": "Result<SearchOutput, ToolError>",
+  "output_description": "Ignore-aware ordered workspace path matches with explicit truncation metadata."
+}

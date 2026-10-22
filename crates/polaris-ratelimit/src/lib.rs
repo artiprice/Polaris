@@ -9,9 +9,13 @@ mod permit;
 mod retry;
 mod window;
 
-use std::{num::NonZeroU32, sync::{Arc, atomic::AtomicU64}, time::{Duration, Instant}};
 use polaris_sdk::error::{ErrorKind, HasKind};
 use polaris_sdk::ids::TokenCount;
+use std::{
+    num::NonZeroU32,
+    sync::{Arc, atomic::AtomicU64},
+    time::{Duration, Instant},
+};
 
 pub use gcra::{Denied, DenyReason, Utilization};
 pub use permit::{Permit, Reconciliation};
@@ -42,7 +46,12 @@ pub struct Estimate {
 
 /// Admission priority, ordered from lowest to highest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Priority { Background, SubAgent, Verifier, InteractiveUser }
+pub enum Priority {
+    Background,
+    SubAgent,
+    Verifier,
+    InteractiveUser,
+}
 
 /// Pressure thresholds used for best-effort shedding. InteractiveUser is never shed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,18 +65,38 @@ pub struct ShedPolicy {
 }
 
 impl Default for ShedPolicy {
-    fn default() -> Self { Self { background_above_pct: 70, subagent_above_pct: 85, verifier_above_pct: 95 } }
+    fn default() -> Self {
+        Self {
+            background_above_pct: 70,
+            subagent_above_pct: 85,
+            verifier_above_pct: 95,
+        }
+    }
 }
 
 /// Monotonic elapsed-time source. Implementations must never move backwards.
-pub trait Clock: Send + Sync + 'static { fn now(&self) -> Duration; }
+pub trait Clock: Send + Sync + 'static {
+    fn now(&self) -> Duration;
+}
 
 /// Process-local monotonic clock, anchored when constructed.
 #[derive(Debug, Clone)]
-pub struct MonotonicClock { origin: Instant }
+pub struct MonotonicClock {
+    origin: Instant,
+}
 
-impl Default for MonotonicClock { fn default() -> Self { Self { origin: Instant::now() } } }
-impl Clock for MonotonicClock { fn now(&self) -> Duration { self.origin.elapsed() } }
+impl Default for MonotonicClock {
+    fn default() -> Self {
+        Self {
+            origin: Instant::now(),
+        }
+    }
+}
+impl Clock for MonotonicClock {
+    fn now(&self) -> Duration {
+        self.origin.elapsed()
+    }
+}
 
 /// Local configuration or accounting failure.
 #[derive(Debug, thiserror::Error)]
@@ -101,6 +130,7 @@ impl HasKind for RateLimitError {
 
 pub(crate) struct Shared<C: Clock> {
     pub clock: C,
+    pub quota: Quota,
     pub rpm: gcra::GcraCell,
     pub tpm: gcra::GcraCell,
     pub penalty_until_ns: AtomicU64,
@@ -108,34 +138,85 @@ pub(crate) struct Shared<C: Clock> {
 }
 
 /// Shared provider limiter. Clones share both admission state and Retry-After penalties.
-pub struct DualLimiter<C: Clock> { pub(crate) shared: Arc<Shared<C>>, shed: ShedPolicy }
+pub struct DualLimiter<C: Clock> {
+    pub(crate) shared: Arc<Shared<C>>,
+    shed: ShedPolicy,
+}
 
 impl<C: Clock> Clone for DualLimiter<C> {
-    fn clone(&self) -> Self { Self { shared: Arc::clone(&self.shared), shed: self.shed } }
+    fn clone(&self) -> Self {
+        Self {
+            shared: Arc::clone(&self.shared),
+            shed: self.shed,
+        }
+    }
 }
 
 impl<C: Clock> DualLimiter<C> {
     /// Create a limiter from explicit provider/local quotas and a monotonic clock.
     pub fn new(quota: Quota, clock: C, shed: ShedPolicy) -> Result<Self, RateLimitError> {
-        if quota.burst_requests == 0 || quota.burst_tokens == 0 || shed.background_above_pct > 100 || shed.subagent_above_pct > 100 || shed.verifier_above_pct > 100 || shed.background_above_pct > shed.subagent_above_pct || shed.subagent_above_pct > shed.verifier_above_pct { return Err(RateLimitError::InvalidQuota); }
-        let rpm = gcra::GcraCell::new(quota.rpm.get(), quota.burst_requests, DenyReason::RpmExhausted)?;
-        let tpm = gcra::GcraCell::new(quota.tpm.get(), quota.burst_tokens, DenyReason::TpmExhausted)?;
-        Ok(Self { shared: Arc::new(Shared { clock, rpm, tpm, penalty_until_ns: AtomicU64::new(0), windows: window::WindowTracker::default() }), shed })
+        if quota.burst_requests == 0
+            || quota.burst_tokens == 0
+            || shed.background_above_pct > 100
+            || shed.subagent_above_pct > 100
+            || shed.verifier_above_pct > 100
+            || shed.background_above_pct > shed.subagent_above_pct
+            || shed.subagent_above_pct > shed.verifier_above_pct
+        {
+            return Err(RateLimitError::InvalidQuota);
+        }
+        let rpm = gcra::GcraCell::new(
+            quota.rpm.get(),
+            quota.burst_requests,
+            DenyReason::RpmExhausted,
+        )?;
+        let tpm = gcra::GcraCell::new(
+            quota.tpm.get(),
+            quota.burst_tokens,
+            DenyReason::TpmExhausted,
+        )?;
+        Ok(Self {
+            shared: Arc::new(Shared {
+                clock,
+                quota,
+                rpm,
+                tpm,
+                penalty_until_ns: AtomicU64::new(0),
+                windows: window::WindowTracker::default(),
+            }),
+            shed,
+        })
     }
 
     /// Nonblocking admission. No allocation or async timer is used by the GCRA checks.
     pub fn try_acquire(&self, estimate: Estimate, priority: Priority) -> Result<Permit<C>, Denied> {
         let now = self.shared.clock.now();
         let now_ns = gcra::duration_ns(now).ok_or_else(Denied::accounting)?;
-        let penalty = self.shared.penalty_until_ns.load(std::sync::atomic::Ordering::Acquire);
-        if penalty > now_ns { return Err(Denied::new(DenyReason::PenaltyActive, Duration::from_nanos(penalty - now_ns))); }
-        let cost = u64::from(estimate.prompt.get()).checked_add(u64::from(estimate.max_output.get())).ok_or_else(Denied::accounting)?;
-        if cost == 0 || cost > u64::from(self.shared.quota.burst_tokens) { return Err(Denied::new(DenyReason::ExceedsBurst, Duration::ZERO)); }
+        let penalty = self
+            .shared
+            .penalty_until_ns
+            .load(std::sync::atomic::Ordering::Acquire);
+        if penalty > now_ns {
+            return Err(Denied::new(
+                DenyReason::PenaltyActive,
+                Duration::from_nanos(penalty - now_ns),
+            ));
+        }
+        let cost = u64::from(estimate.prompt.get())
+            .checked_add(u64::from(estimate.max_output.get()))
+            .ok_or_else(Denied::accounting)?;
+        if cost == 0 || cost > u64::from(self.shared.quota.burst_tokens) {
+            return Err(Denied::new(DenyReason::ExceedsBurst, Duration::ZERO));
+        }
         let utilization = self.utilization();
         if let Some(threshold) = self.shed_threshold(priority) {
             let pressure = utilization.rpm_pct.max(utilization.tpm_pct);
             if pressure >= threshold {
-                let retry = self.shared.rpm.retry_after_pct(now_ns, threshold).max(self.shared.tpm.retry_after_pct(now_ns, threshold));
+                let retry = self
+                    .shared
+                    .rpm
+                    .retry_after_pct(now_ns, threshold)
+                    .max(self.shared.tpm.retry_after_pct(now_ns, threshold));
                 return Err(Denied::new(DenyReason::Shed(priority), retry));
             }
         }
@@ -151,13 +232,23 @@ impl<C: Clock> DualLimiter<C> {
 
     /// Wait for local capacity. Canceling this future before it returns drops no permit and charges
     /// no additional state beyond conservative partial reservations from a raced dual-cell check.
-    pub async fn acquire(&self, estimate: Estimate, priority: Priority) -> Result<Permit<C>, RateLimitError> {
+    pub async fn acquire(
+        &self,
+        estimate: Estimate,
+        priority: Priority,
+    ) -> Result<Permit<C>, RateLimitError> {
         loop {
             match self.try_acquire(estimate, priority) {
                 Ok(permit) => return Ok(permit),
-                Err(denied) if denied.reason == DenyReason::Accounting => return Err(RateLimitError::Accounting),
-                Err(denied) if denied.reason == DenyReason::ExceedsBurst => return Err(RateLimitError::ExceedsBurst),
-                Err(denied) => tokio::time::sleep(denied.retry_after.max(Duration::from_millis(1))).await,
+                Err(denied) if denied.reason == DenyReason::Accounting => {
+                    return Err(RateLimitError::Accounting);
+                }
+                Err(denied) if denied.reason == DenyReason::ExceedsBurst => {
+                    return Err(RateLimitError::ExceedsBurst);
+                }
+                Err(denied) => {
+                    tokio::time::sleep(denied.retry_after.max(Duration::from_millis(1))).await
+                }
             }
         }
     }
@@ -173,17 +264,29 @@ impl<C: Clock> DualLimiter<C> {
 
     /// Apply a parsed Retry-After only for HTTP 429 responses. Header parsing and provider header
     /// names belong to the HTTP adapter; no rate-limit headers are interpreted as local quotas.
-    pub fn on_response(&self, status: u16, retry_after: Option<Duration>) -> Result<(), RateLimitError> {
+    pub fn on_response(
+        &self,
+        status: u16,
+        retry_after: Option<Duration>,
+    ) -> Result<(), RateLimitError> {
         if status == 429 {
-            if let Some(delay) = retry_after { self.on_retry_after(delay)?; }
+            if let Some(delay) = retry_after {
+                self.on_retry_after(delay)?;
+            }
         }
         Ok(())
     }
 
     /// Current local RPM/TPM GCRA pressure; this is not a provider quota hint.
     pub fn utilization(&self) -> Utilization {
-        let now = match gcra::duration_ns(self.shared.clock.now()) { Some(value) => value, None => u64::MAX };
-        Utilization { rpm_pct: self.shared.rpm.utilization_pct(now), tpm_pct: self.shared.tpm.utilization_pct(now) }
+        let now = match gcra::duration_ns(self.shared.clock.now()) {
+            Some(value) => value,
+            None => u64::MAX,
+        };
+        Utilization {
+            rpm_pct: self.shared.rpm.utilization_pct(now),
+            tpm_pct: self.shared.tpm.utilization_pct(now),
+        }
     }
 
     /// Bounded, conservative 15-minute request/reservation/actual usage snapshot.
@@ -193,6 +296,11 @@ impl<C: Clock> DualLimiter<C> {
     }
 
     fn shed_threshold(&self, priority: Priority) -> Option<u8> {
-        match priority { Priority::Background => Some(self.shed.background_above_pct), Priority::SubAgent => Some(self.shed.subagent_above_pct), Priority::Verifier => Some(self.shed.verifier_above_pct), Priority::InteractiveUser => None }
+        match priority {
+            Priority::Background => Some(self.shed.background_above_pct),
+            Priority::SubAgent => Some(self.shed.subagent_above_pct),
+            Priority::Verifier => Some(self.shed.verifier_above_pct),
+            Priority::InteractiveUser => None,
+        }
     }
 }

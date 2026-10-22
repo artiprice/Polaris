@@ -1,0 +1,22 @@
+{
+  "type_of": "function",
+  "name": "read_file",
+  "file_path": "src/read.rs",
+  "logic_name": "Bounded Read File",
+  "test_list": [
+    { "test_name": "secret_file_denied", "description": "Deny secret-bearing paths before opening them." },
+    { "test_name": "utf16_bom_decoded", "description": "Detect and decode UTF-16 BOM input within configured byte bounds." },
+    { "test_name": "offset_limit_window", "description": "Return the requested byte window without exceeding the read limit." },
+    { "test_name": "crlf_reported_not_converted", "description": "Report CRLF counts and preserve original newline bytes in the returned text." },
+    { "test_name": "nul_prefix_reports_binary", "description": "Classify NUL bytes in the first 8 KiB as binary and do not emit file contents." }
+  ],
+  "dependencies": ["WorkspacePath", "ToolLimits"],
+  "libraries": ["serde", "encoding_rs"],
+  "inputs": [
+    { "name": "path", "type": "&str", "description": "Workspace-relative file path." },
+    { "name": "offset", "type": "u64", "description": "Byte offset in the original file." },
+    { "name": "limit", "type": "Option<u64>", "description": "Maximum source bytes returned." }
+  ],
+  "output_type": "Result<ReadFileOutput, ToolError>",
+  "output_description": "Bounded text window and encoding/newline metadata, or binary metadata without file content."
+}

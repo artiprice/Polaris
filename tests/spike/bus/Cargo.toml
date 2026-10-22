@@ -14,5 +14,9 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true }
+hdrhistogram = { workspace = true }
+sysinfo = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-kernel-bus = { workspace = true }
+polaris-sdk = { workspace = true }

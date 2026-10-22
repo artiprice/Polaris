@@ -1,13 +1,14 @@
 //! # polaris-kernel-supervisor
 //!
 //! One-for-one Tokio task supervision with bounded restart intensity, circuit breakers,
-//! observable dead letters, and explicit joined shutdown. Native worker processes require
-//! the platform process adapter and are not implemented by this task supervisor.
+//! observable dead letters, explicit joined shutdown, and native worker supervision through the
+//! SDK `PlatformOps` contract.
 
 mod breaker;
 mod dlq;
 mod intensity;
 mod task;
+mod worker;
 
 pub use breaker::{BreakerConfig, BreakerHandle, BreakerState, CircuitBreaker};
 pub use dlq::{DeadLetter, DeadLetterQueue};
@@ -17,3 +18,4 @@ pub use task::{
     OnExhausted, RestartPolicy, StopOutcome, Supervisor, SupervisorConfig, SupervisorError,
     SupervisorSnapshot, TaskError, TaskSpec,
 };
+pub use worker::{HealthPolicy, HealthProbe, WorkerSpec};

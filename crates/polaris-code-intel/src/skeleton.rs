@@ -81,7 +81,19 @@ pub(crate) fn signature_text(src: &[u8], start: usize, end: usize) -> String {
         .get(start..end)
         .map(String::from_utf8_lossy)
         .unwrap_or_default();
-    let collapsed = raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut collapsed = String::with_capacity(raw.len());
+    let mut whitespace = false;
+    for character in raw.chars() {
+        if character.is_whitespace() {
+            whitespace |= !collapsed.is_empty();
+            continue;
+        }
+        if whitespace {
+            collapsed.push(' ');
+            whitespace = false;
+        }
+        collapsed.push(character);
+    }
     let trimmed = collapsed
         .trim_end_matches(|c: char| c == ';' || c == ':' || c.is_whitespace())
         .to_owned();

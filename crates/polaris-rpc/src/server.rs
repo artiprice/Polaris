@@ -11,7 +11,11 @@ use polaris_security_capability::Right;
 use prost::Message;
 use std::{future::Future, pin::Pin, sync::Arc, time::Duration};
 use thiserror::Error;
-use tokio::{sync::{Semaphore, mpsc, watch}, task::JoinHandle, time};
+use tokio::{
+    sync::{Semaphore, mpsc, watch},
+    task::JoinHandle,
+    time,
+};
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status, Streaming};
 
@@ -79,7 +83,13 @@ where
     /// Create the service after validating bounded event-stream settings.
     /// # Errors
     /// Returns `InvalidLimits` for zero, excessive, or unbounded settings.
-    pub fn new(kernel: K, terminal: T, auth: RpcAuthenticator<A>, readiness: H, limits: RpcLimits) -> Result<Self, RpcError> {
+    pub fn new(
+        kernel: K,
+        terminal: T,
+        auth: RpcAuthenticator<A>,
+        readiness: H,
+        limits: RpcLimits,
+    ) -> Result<Self, RpcError> {
         if limits.event_buffer == 0
             || limits.event_buffer > 1024
             || limits.event_buffer.checked_add(1).is_none()
@@ -87,12 +97,20 @@ where
         {
             return Err(RpcError::InvalidLimits);
         }
-        Ok(Self { kernel: Arc::new(kernel), terminal, auth, readiness, limits })
+        Ok(Self {
+            kernel: Arc::new(kernel),
+            terminal,
+            auth,
+            readiness,
+            limits,
+        })
     }
 
     /// Wrap the adapter in the generated tonic service with protocol message bounds.
     #[must_use]
-    pub fn into_grpc_service(self) -> pb::polaris_kernel_service_server::PolarisKernelServiceServer<Self> {
+    pub fn into_grpc_service(
+        self,
+    ) -> pb::polaris_kernel_service_server::PolarisKernelServiceServer<Self> {
         pb::polaris_kernel_service_server::PolarisKernelServiceServer::new(self)
             .max_decoding_message_size(limits::MAX_MESSAGE_BYTES)
             .max_encoding_message_size(limits::MAX_MESSAGE_BYTES)
@@ -108,8 +126,10 @@ where
     A: TrustedFactsResolver,
     H: Readiness,
 {
-    type SubscribeStream = Pin<Box<dyn Stream<Item = Result<pb::EventRecord, Status>> + Send + 'static>>;
-    type AttachTerminalStream = Pin<Box<dyn Stream<Item = Result<pb::TerminalServerFrame, Status>> + Send + 'static>>;
+    type SubscribeStream =
+        Pin<Box<dyn Stream<Item = Result<pb::EventRecord, Status>> + Send + 'static>>;
+    type AttachTerminalStream =
+        Pin<Box<dyn Stream<Item = Result<pb::TerminalServerFrame, Status>> + Send + 'static>>;
 
     async fn submit_command(
         &self,
@@ -134,7 +154,10 @@ where
             RequestSubject::SubmitCommand(body),
             Some(command.token.as_slice()),
         )?;
-        let wire = request.into_inner().command.ok_or_else(|| Status::invalid_argument("command is required"))?;
+        let wire = request
+            .into_inner()
+            .command
+            .ok_or_else(|| Status::invalid_argument("command is required"))?;
         let command = Command::<Unverified>::try_from(wire)
             .map_err(|error| Status::invalid_argument(error.to_string()))?;
         let receipt = self.kernel.submit(command).await.map_err(kernel_status)?;
@@ -166,7 +189,16 @@ where
         let permits = Arc::new(Semaphore::new(self.limits.event_buffer));
         let backpressure_timeout = self.limits.backpressure_timeout;
         tokio::spawn(async move {
-            pump_events(events, session, from, sender, permits, backpressure_timeout, lease).await;
+            pump_events(
+                events,
+                session,
+                from,
+                sender,
+                permits,
+                backpressure_timeout,
+                lease,
+            )
+            .await;
         });
         let stream = ReceiverStream::new(receiver).map(|(item, permit)| {
             drop(permit);
@@ -179,14 +211,21 @@ where
         &self,
         request: Request<Streaming<pb::TerminalClientFrame>>,
     ) -> Result<Response<Self::AttachTerminalStream>, Status> {
-        let lease = self.auth.authorize(&request, Right::ExecuteTool, RequestSubject::AttachTerminal, None)?;
+        let lease = self.auth.authorize(
+            &request,
+            Right::ExecuteTool,
+            RequestSubject::AttachTerminal,
+            None,
+        )?;
         let input_lease = lease.clone();
         let (cancellation, cancel_rx) = watch::channel(false);
         let input_cancellation = cancellation.clone();
         let input_cancel_rx = cancel_rx.clone();
         let inbound = request.into_inner().map(move |result| {
             if *input_cancel_rx.borrow() {
-                return Err(Status::unauthenticated("terminal authorization expired or revoked"));
+                return Err(Status::unauthenticated(
+                    "terminal authorization expired or revoked",
+                ));
             }
             if let Err(status) = input_lease.revalidate() {
                 let _sent = input_cancellation.send(true);
@@ -216,7 +255,10 @@ where
                 }
             }
         });
-        let lifecycle = TerminalLifecycle { cancellation, watchdog: Some(watchdog) };
+        let lifecycle = TerminalLifecycle {
+            cancellation,
+            watchdog: Some(watchdog),
+        };
         // Authorization remains live while the injected backend is attaching too. A backend
         // that is waiting for its first input must not keep an expired attachment alive.
         let mut attach_cancellation = cancel_rx.clone();
@@ -228,52 +270,57 @@ where
                 return Err(Status::unauthenticated("terminal authorization expired or revoked"));
             }
         };
-        let mut output = Box::pin(stream);
+        let output = Box::pin(stream);
         let mut rechecks = time::interval(AUTH_RECHECK_INTERVAL);
         rechecks.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
         let output_cancel_rx = cancel_rx;
-        let bounded = futures::stream::unfold((output, lease, rechecks, output_cancel_rx, lifecycle, false), |(mut output, lease, mut rechecks, mut cancellation, lifecycle, done)| async move {
-            if done { return None; }
-            loop {
-                tokio::select! {
-                    changed = cancellation.changed() => {
-                        if changed.is_err() || *cancellation.borrow() {
-                            return Some((Err(Status::unauthenticated("terminal authorization expired or revoked")), (output, lease, rechecks, cancellation, lifecycle, true)));
-                        }
-                    },
-                    result = output.as_mut().next() => match result {
-                        Some(Err(status)) => {
-                            let _sent = lifecycle.cancellation.send(true);
-                            return Some((Err(status), (output, lease, rechecks, cancellation, lifecycle, true)));
-                        }
-                        Some(Ok(frame)) => {
+        let bounded = futures::stream::unfold(
+            (output, lease, rechecks, output_cancel_rx, lifecycle, false),
+            |(mut output, lease, mut rechecks, mut cancellation, lifecycle, done)| async move {
+                if done {
+                    return None;
+                }
+                loop {
+                    tokio::select! {
+                        changed = cancellation.changed() => {
+                            if changed.is_err() || *cancellation.borrow() {
+                                return Some((Err(Status::unauthenticated("terminal authorization expired or revoked")), (output, lease, rechecks, cancellation, lifecycle, true)));
+                            }
+                        },
+                        result = output.next() => match result {
+                            Some(Err(status)) => {
+                                let _sent = lifecycle.cancellation.send(true);
+                                return Some((Err(status), (output, lease, rechecks, cancellation, lifecycle, true)));
+                            }
+                            Some(Ok(frame)) => {
+                                if let Err(status) = lease.revalidate() {
+                                    let _sent = lifecycle.cancellation.send(true);
+                                    return Some((Err(status), (output, lease, rechecks, cancellation, lifecycle, true)));
+                                }
+                                if frame.encoded_len() > limits::MAX_MESSAGE_BYTES {
+                                    let _sent = lifecycle.cancellation.send(true);
+                                    return Some((Err(Status::resource_exhausted("terminal output frame too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
+                                }
+                                if let Some(pb::terminal_server_frame::Kind::Output(bytes)) = &frame.kind {
+                                    if bytes.len() > limits::MAX_CHUNK_BYTES {
+                                        let _sent = lifecycle.cancellation.send(true);
+                                        return Some((Err(Status::resource_exhausted("terminal output chunk too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
+                                    }
+                                }
+                                return Some((Ok(frame), (output, lease, rechecks, cancellation, lifecycle, false)));
+                            }
+                            None => return None,
+                        },
+                        _ = rechecks.tick() => {
                             if let Err(status) = lease.revalidate() {
                                 let _sent = lifecycle.cancellation.send(true);
                                 return Some((Err(status), (output, lease, rechecks, cancellation, lifecycle, true)));
                             }
-                            if frame.encoded_len() > limits::MAX_MESSAGE_BYTES {
-                                let _sent = lifecycle.cancellation.send(true);
-                                return Some((Err(Status::resource_exhausted("terminal output frame too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
-                            }
-                            if let Some(pb::terminal_server_frame::Kind::Output(bytes)) = &frame.kind {
-                                if bytes.len() > limits::MAX_CHUNK_BYTES {
-                                    let _sent = lifecycle.cancellation.send(true);
-                                    return Some((Err(Status::resource_exhausted("terminal output chunk too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
-                                }
-                            }
-                            return Some((Ok(frame), (output, lease, rechecks, cancellation, lifecycle, false)));
-                        }
-                        None => return None,
-                    },
-                    _ = rechecks.tick() => {
-                        if let Err(status) = lease.revalidate() {
-                            let _sent = lifecycle.cancellation.send(true);
-                            return Some((Err(status), (output, lease, rechecks, cancellation, lifecycle, true)));
                         }
                     }
                 }
-            }
-        });
+            },
+        );
         Ok(Response::new(Box::pin(bounded)))
     }
 
@@ -281,7 +328,8 @@ where
         &self,
         request: Request<pb::HealthRequest>,
     ) -> Result<Response<pb::HealthResponse>, Status> {
-        self.auth.authorize(&request, Right::Read, RequestSubject::Health, None)?;
+        self.auth
+            .authorize(&request, Right::Read, RequestSubject::Health, None)?;
         Ok(Response::new(pb::HealthResponse {
             protocol_version: Some(polaris_proto::PROTOCOL_VERSION.into()),
             build_version: env!("CARGO_PKG_VERSION").to_owned(),
@@ -294,7 +342,10 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
     mut events: E,
     session: SessionId,
     from: Seq,
-    sender: mpsc::Sender<(Result<pb::EventRecord, Status>, Option<tokio::sync::OwnedSemaphorePermit>)>,
+    sender: mpsc::Sender<(
+        Result<pb::EventRecord, Status>,
+        Option<tokio::sync::OwnedSemaphorePermit>,
+    )>,
     permits: Arc<Semaphore>,
     backpressure_timeout: Duration,
     lease: AuthorizationLease<A>,
@@ -314,18 +365,27 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
             },
             event = events.next_event() => event,
         };
-        let Some(record) = next else { return; };
+        let Some(record) = next else {
+            return;
+        };
         if let Err(status) = lease.revalidate() {
             let _sent = sender.try_send((Err(status), None));
             return;
         }
         let sequence = record.seq();
-        if sequence <= last { continue; }
+        if sequence <= last {
+            continue;
+        }
         last = sequence;
-        if record.session() != session { continue; }
+        if record.session() != session {
+            continue;
+        }
         let wire = pb::EventRecord::from(&record);
         if wire.encoded_len() > limits::MAX_MESSAGE_BYTES {
-            let _sent = sender.try_send((Err(Status::resource_exhausted("event record too large")), None));
+            let _sent = sender.try_send((
+                Err(Status::resource_exhausted("event record too large")),
+                None,
+            ));
             return;
         }
         let acquire = permits.clone().acquire_owned();
@@ -351,7 +411,9 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
                 }
             }
         };
-        if sender.send((Ok(wire), Some(permit))).await.is_err() { return; }
+        if sender.send((Ok(wire), Some(permit))).await.is_err() {
+            return;
+        }
     }
 }
 
@@ -364,7 +426,9 @@ fn command_right(body: &pb::CommandBody) -> Result<Right, Status> {
         Some(Kind::SpawnSubagent(_)) => Ok(Right::SpawnSubagent),
         Some(Kind::ExecuteTool(_)) => Ok(Right::ExecuteTool),
         Some(Kind::RollbackTo(_)) | Some(Kind::CancelFrame(_)) | Some(Kind::ApplyDirective(_)) => {
-            Err(Status::permission_denied("command has no RPC capability right"))
+            Err(Status::permission_denied(
+                "command has no RPC capability right",
+            ))
         }
         None => Err(Status::invalid_argument("command kind is required")),
     }

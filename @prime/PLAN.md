@@ -754,6 +754,8 @@ Canonical spelling follows initial.md (`$subagent-models(model(lo-hi), …)`); t
 
 ## 10. Dependencies & versions
 
+**2026-10-22 update:** Tokio 1.54.0 was yanked; crates.io resolution selected 1.54.1. Workspace, fuzz and dependency-probe locks were updated together, then native/Linux checks and dependency-deny were rerun. See P1_LOGIC_STATUS.md.
+
 All versions VERIFIED on crates.io on 2026-10-20 (sparse index audit: 156/156 OK, every `rust_version`
 ≤ 1.99). The authoritative list with features is `@prime/tools/workspace.toml` → root `Cargo.toml`
 `[workspace.dependencies]`.
@@ -926,6 +928,12 @@ transcript saved. Fallback path for judges without WSL2: E3/E4.
 
 ## 13. Module plans
 
+**P1 scope checkpoint (2026-10-22).** The user explicitly deferred UI and requested complete P1 logic.
+[P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md) is the current evidence matrix. Checked TODOs below record
+implemented P1 behavior; future P2/P3/P4/P5 tasks remain unchecked and phase-labeled. Full M1/TUI
+acceptance remains open. P1 composes durable stores, signed controls, read-only tools and native
+process ownership through `LocalBackends`; full model/sandbox/S1 execution bundles enter later phases.
+
 Each section below is the per-crate plan: purpose, API sketch, dependencies (pinned), TODO checklist,
 test matrix, test-first descriptors, risks, and chatlog sources. Package metadata (path, layer, phase,
 edges) is generated from `@prime/tools/workspace.toml`; if this text and the table disagree, the table wins.
@@ -1083,15 +1091,15 @@ pub enum ProtoError { MissingField(&'static str), UnknownVariant { field: &'stat
 **Dependencies.** Internal: `polaris-sdk`. External: `prost = 0.14.4`, `prost-types = 0.14.4`, `tonic = 0.14.6` (root: `default-features = false`; member opts into `codegen` plus `transport` as needed), `tonic-prost = 0.14.6`; build-deps `tonic-prost-build = 0.14.6`, `protoc-bin-vendored = 3.3.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: version negotiation, sdk<->pb conversions (Event, Command, Decision), oversize-message guard.
-- [ ] Draft the three `.proto` files; reserve field numbers; use `oneof` for `Event`/`Command` bodies; blobs are passed as CAS `Cid` references, not inline bytes.
-- [ ] Write `build.rs`: point prost/tonic builders at the vendored protoc binary; emit to `OUT_DIR`; `cargo:rerun-if-changed=proto`; no network, no env mutation.
-- [ ] Re-export generated modules under one `generated` module; confirm `cargo doc --workspace --no-deps` passes with generated code.
-- [ ] Implement `ProtocolVersion` + `negotiate`; the guest handshake rejects a differing major version.
-- [ ] Implement `TryFrom`/`From` conversions with exhaustive matching (no wildcard arms) and typed `ProtoError`.
-- [ ] Configure explicit max encode/decode message sizes for client/server stubs and document them (large payloads travel as CAS refs).
-- [ ] Commit a golden `FileDescriptorSet` snapshot and a wire-compat check (field removal/renumber fails CI) in xtask.
-- [ ] Windows: verify the build on `x86_64-pc-windows-msvc` with a short `target-dir`; confirm the vendored protoc binary runs without a system protoc; add the Linux check leg in WSL2.
+- [x] Write JSON descriptors (prompt.md §6.3) for: version negotiation, sdk<->pb conversions (Event, Command, Decision), oversize-message guard.
+- [x] Draft the three `.proto` files; reserve field numbers; use `oneof` for `Event`/`Command` bodies; blobs are passed as CAS `Cid` references, not inline bytes.
+- [x] Write `build.rs`: point prost/tonic builders at the vendored protoc binary; emit to `OUT_DIR`; `cargo:rerun-if-changed=proto`; no network, no env mutation.
+- [x] Re-export generated modules under one `generated` module; confirm `cargo doc --workspace --no-deps` passes with generated code.
+- [x] Implement `ProtocolVersion` + `negotiate`; the guest handshake rejects a differing major version.
+- [x] Implement `TryFrom`/`From` conversions with exhaustive matching (no wildcard arms) and typed `ProtoError`.
+- [x] Configure explicit max encode/decode message sizes for client/server stubs and document them (large payloads travel as CAS refs).
+- [x] Freeze the generated descriptor semantics in `tests/wire_schema_contract.rs`: services, methods, fields, numbers, types and enum shapes. Workspace tests run this contract; changing/removing a frozen field fails the suite. A raw binary descriptor golden is unnecessary because generation includes non-contract metadata.
+- [x] Windows: verify the build on `x86_64-pc-windows-msvc` with a short `target-dir`; confirm the vendored protoc binary runs without a system protoc; add the Linux check leg in WSL2.
 
 **Tests.**
 
@@ -1219,14 +1227,14 @@ pub enum LogError { AlreadyInitialised, Io(..), BadFilter(String), SinkInit(Stri
 **Dependencies.** Internal: `polaris-sdk`. External: `tracing = 0.1.44`, `tracing-subscriber = 0.3.23` (env-filter, json, registry, fmt, ansi, std), `spdlog-rs = 0.5.3`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: ring sink, redaction layer, file rotation, init/guard lifecycle.
-- [ ] Implement `RingSink` as a fixed-capacity overwrite-oldest buffer with a drop counter; never blocks, never allocates in `push` after construction.
-- [ ] Implement `RedactionLayer`: format the event into a reusable thread-local buffer, call `Redactor::redact_into`, then enqueue; confirm it adds no per-record allocation (counting allocator).
-- [ ] Wire spdlog-rs-backed sinks (rotating file, async drain) behind the layer; **if the allocation test shows spdlog-rs allocates per record**, keep the zero-alloc enqueue in our ring and let spdlog-rs run on the drain thread only.
-- [ ] Implement `init`/`LogGuard`: single-init guard, flush on drop, flush on panic hook and Ctrl+C path (coordinated with `kernel-reaper`).
-- [ ] TUI mode: when the TUI owns the terminal, no sink writes to stdout/stderr; only the ring and files are active.
-- [ ] File sink on Windows: daily + size rotation with retry when AV/indexers hold the file (`backon` is not in this crate's list; use a bounded manual retry or add the dependency via the toml owner).
-- [ ] Add a `JSON` formatter option and an `EnvFilter` from config (`RUST_LOG`-style), read via `var_os`.
+- [x] Write JSON descriptors (prompt.md §6.3) for: ring sink, redaction layer, file rotation, init/guard lifecycle.
+- [x] Implement `RingSink` as a fixed-capacity overwrite-oldest buffer with a drop counter; never blocks, never allocates in `push` after construction.
+- [x] Implement `RedactionLayer`: format the event into a reusable thread-local buffer, call `Redactor::redact_into`, then enqueue; confirm it adds no per-record allocation (counting allocator).
+- [x] Wire spdlog-rs-backed sinks (rotating file, async drain) behind the layer; **if the allocation test shows spdlog-rs allocates per record**, keep the zero-alloc enqueue in our ring and let spdlog-rs run on the drain thread only.
+- [x] Implement `init`/`LogGuard`: single-init guard, flush on drop, flush on panic hook and Ctrl+C path (coordinated with `kernel-reaper`).
+- [x] TUI mode: when the TUI owns the terminal, no sink writes to stdout/stderr; only the ring and files are active.
+- [x] File sink on Windows: daily + size rotation with retry when AV/indexers hold the file (`backon` is not in this crate's list; use a bounded manual retry or add the dependency via the toml owner).
+- [x] Add a `JSON` formatter option and an `EnvFilter` from config (`RUST_LOG`-style), read via `var_os`.
 
 **Tests.**
 
@@ -1250,7 +1258,7 @@ pub enum LogError { AlreadyInitialised, Io(..), BadFilter(String), SinkInit(Stri
 
 **Risks & open questions.**
 - `spdlog-rs` is a community crate, not an official port of the C++ library (plan correction, VERIFIED). The chatlog's "<150 ns per record" and "zero-alloc formatting" claims are **UNVERIFIED** for this crate; the plan treats them as hypotheses to measure.
-- `tracing-spdlog`-style adapters: the exact `spdlog-rs` sink/async-pool API is to be confirmed at implementation. Fallback: the in-house ring plus a plain file writer thread.
+- VERIFIED at P1 completion: the in-house bounded enqueue feeds an spdlog sink on a separate drain thread; producers do not perform sink I/O.
 - Redacting every record costs a DFA pass; budget (target, to be measured): < 1 µs per short record on the dev machine.
 - `tracing-appender` was dropped on purpose (plan); do not reintroduce.
 
@@ -1287,15 +1295,15 @@ pub enum TelemetryError { Histogram(String), PriceMissing(ModelId), Overflow }
 **Dependencies.** Internal: `polaris-sdk`. External: `hdrhistogram = 7.6.0` (group "test" in `workspace.toml` but listed here as runtime; see risks), `serde = 1.0.229` (derive). `arc-swap 1.9.3` is named in the crate's responsibilities but missing from its planned `ext` list.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: event folding, price-table cost, budget status, snapshot publication, HUD view.
-- [ ] Define `ModelUsage`/`StageStats`/`CacheStats` and make all counters saturating or checked (no overflow panic).
-- [ ] Implement `record(&Event)` as an exhaustive `match` over `Event` (no wildcard arm) so a new event variant forces a telemetry decision.
-- [ ] Implement `PriceTable` loading from config and integer `MicroUsd` arithmetic; unknown model -> `priced = false`, never a made-up price.
-- [ ] Implement latency histograms (hdrhistogram) for S1 and S2 stages plus TTFT; record with saturating semantics.
-- [ ] Implement snapshot publication: a single consumer task publishes `Arc<TelemetrySnapshot>` every N ms; readers never block the bus.
-- [ ] Implement `BudgetStatus` for `$budget(usd/tokens)` with warn thresholds (default 80% and 100%, configurable).
-- [ ] Implement `HudView`: cache hit % is `None` unless the provider reports cached tokens (spike S0-5); otherwise show a local prefix-stability metric.
-- [ ] Add `serde` serialisation of snapshots for `polaris --dump` and the Leptos/Slint UIs.
+- [x] Write JSON descriptors (prompt.md §6.3) for: event folding, price-table cost, budget status, snapshot publication, HUD view.
+- [x] Define `ModelUsage`/`StageStats`/`CacheStats` and make all counters saturating or checked (no overflow panic).
+- [x] Implement `record(&Event)` as an exhaustive `match` over `Event` (no wildcard arm) so a new event variant forces a telemetry decision.
+- [x] Implement `PriceTable` loading from config and integer `MicroUsd` arithmetic; unknown model -> `priced = false`, never a made-up price.
+- [x] Implement latency histograms (hdrhistogram) for S1 and S2 stages plus TTFT; record with saturating semantics.
+- [x] Implement snapshot publication: a single consumer task publishes `Arc<TelemetrySnapshot>` every N ms; readers never block the bus.
+- [x] Implement `BudgetStatus` for `$budget(usd/tokens)` with warn thresholds (default 80% and 100%, configurable).
+- [x] Implement `HudView`: cache hit % is `None` unless the provider reports cached tokens (spike S0-5); otherwise show a local prefix-stability metric.
+- [x] Add `serde` serialisation of snapshots for `polaris --dump` and the Leptos/Slint UIs.
 
 **Tests.**
 
@@ -1317,10 +1325,10 @@ pub enum TelemetryError { Histogram(String), PriceMissing(ModelId), Overflow }
 | Budget Monitor | method | `Telemetry::budget` | `crates/polaris-telemetry/src/budget.rs` | `below_threshold_is_ok`, `at_80_percent_warns`, `at_100_percent_exceeded`, `token_and_usd_limits_checked_independently` |
 
 **Risks & open questions.**
-- `hdrhistogram` is grouped as "test" and annotated with a v2 comment in `workspace.toml`, yet this crate needs it at runtime. **VERIFIED** inconsistency in the toml; owner should reclassify the dependency group.
-- `arc-swap` is required by the stated design but absent from `ext`. **VERIFIED**; add it to this crate's list (version `1.9.3` is already pinned in the `[[ext]]` table).
+- VERIFIED at P1 completion: `hdrhistogram` is a telemetry runtime dependency; measurements and counters are bounded/saturating.
+- VERIFIED at P1 completion: `arc-swap` is present in telemetry runtime dependencies and workspace metadata; snapshot readers use the published immutable Arc.
 - Provider cached-token reporting and rate-limit headers are **UNVERIFIED** until spike S0-5 (needs a key; BLOCKED-ON-ACCESS). The chatlog HUD sample (94.2% KV hit, $0.04/turn) is illustrative, not measured.
-- hdrhistogram API (`record`, `saturating_record`, bounds constructor) to confirm at implementation.
+- VERIFIED by native suites: histogram range overflow clamps without an error loop.
 
 **Chatlog sources.** Msg 31 (Token Weather and KV-cache HUD; keep-warm ping only if S0-5 allows), msg 9 (FinOps and token budgeting), msg 1 (`/usage`, `/stats`), msg 19 (`/cache stats`, `/quota`), msg 23 (`/context-map`). Corrected: Nebius pricing is configured, not assumed; prefix-cache reuse numbers (80%, TTFT 800 ms -> <100 ms) are unverified claims.
 
@@ -1357,7 +1365,7 @@ pub fn jittered_backoff(attempt: u32, retry_after: Option<core::time::Duration>)
 pub enum RateLimitError { InvalidQuota, Closed, Cancelled }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `governor = 0.10.4`, `backon = 1.6.0`, `tokio = 1.54.0` (member opts into `time`, `sync`, `macros`).
+**Dependencies.** Internal: `polaris-sdk`. External: `governor = 0.10.4`, `backon = 1.6.0`, `tokio = 1.54.1` (member opts into `time`, `sync`, `macros`).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: GCRA check, token reservation/reconcile, priority shedding, Retry-After penalty, window tracking.
@@ -1441,16 +1449,16 @@ pub enum CodeIntelError { UnsupportedLanguage, ParseTimeout, ParseFailed, TooLar
 **Dependencies.** Internal: `polaris-sdk`. External: `tree-sitter = 0.27.1`, `tree-sitter-rust = 0.24.2`, `tree-sitter-python = 0.25.0`, `tree-sitter-cpp = 0.23.4`, `tree-sitter-cuda = 0.21.2`, `tree-sitter-typescript = 0.23.2`, `ast-grep-core = 0.51.0` (requires tree-sitter ^0.27, VERIFIED in the plan), `imara-diff = 0.2.0`, `xxhash-rust = 0.8.19` (xxh3).
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: parser pool, skeleton extraction, repo-map ranking, mutation metrics, symbol-granular merge.
-- [ ] Spike inside the crate: confirm every grammar crate loads against `tree-sitter 0.27.1` (language-ABI compatibility) on `x86_64-pc-windows-msvc`; record results in PHASES_STATUS.
-- [ ] Implement `ParserPool` (per-thread parsers, parse size cap, timeout/progress cancellation; API to confirm in 0.27) and a language detector from extension plus shebang.
-- [ ] Implement `skeleton` per language with an **iterative** `TreeCursor` walk (no recursion on untrusted depth).
-- [ ] Implement the symbol graph and personalised PageRank (damping 0.85, fixed iteration cap, deterministic tie-break by path then name); output must be byte-stable so the repo map can sit in the cached prompt prefix.
-- [ ] Implement token-budget fitting for the repo map with a documented bytes/4 estimate; the real tokenizer is unavailable, so mark the estimate as approximate in the output.
-- [ ] Implement churn (imara-diff line diff), cyclomatic delta (per-language decision-node tables), and tree-edit distance with a node cap and an approximate fallback above it.
-- [ ] Implement xxh3 subtree fingerprints and use them to skip unchanged functions on re-analysis; never use them as a security identity.
-- [ ] Implement `merge3` at function granularity via `ast-grep-core` positions (API to confirm); report conflicts instead of writing.
-- [ ] Windows: keep spans as byte offsets of the original text (never rewrite EOLs), handle UTF-8 BOM, test paths with spaces/non-ASCII; add the WSL2 Linux check leg.
+- [x] Write JSON descriptors (prompt.md §6.3) for: parser pool, skeleton extraction, repo-map ranking, mutation metrics, symbol-granular merge.
+- [x] Spike inside the crate: confirm every grammar crate loads against `tree-sitter 0.27.1` (language-ABI compatibility) on `x86_64-pc-windows-msvc`; record results in PHASES_STATUS.
+- [x] Implement `ParserPool` (per-thread parsers, parse size cap, timeout/progress cancellation; API to confirm in 0.27) and a language detector from extension plus shebang.
+- [x] Implement `skeleton` per language with an **iterative** `TreeCursor` walk (no recursion on untrusted depth).
+- [x] Implement the symbol graph and personalised PageRank (damping 0.85, fixed iteration cap, deterministic tie-break by path then name); output must be byte-stable so the repo map can sit in the cached prompt prefix.
+- [x] Implement token-budget fitting for the repo map with a documented bytes/4 estimate; the real tokenizer is unavailable, so mark the estimate as approximate in the output.
+- [x] Implement churn (imara-diff line diff), cyclomatic delta (per-language decision-node tables), and tree-edit distance with a node cap and an approximate fallback above it.
+- [x] Implement xxh3 subtree fingerprints and use them to skip unchanged functions on re-analysis; never use them as a security identity.
+- [x] Implement `merge3` at function granularity via `ast-grep-core` positions (API to confirm); report conflicts instead of writing.
+- [x] Windows: keep spans as byte offsets of the original text (never rewrite EOLs), handle UTF-8 BOM, test paths with spaces/non-ASCII; add the WSL2 Linux check leg.
 
 **Tests.**
 
@@ -1476,8 +1484,8 @@ pub enum CodeIntelError { UnsupportedLanguage, ParseTimeout, ParseFailed, TooLar
 
 **Risks & open questions.**
 - tree-sitter and grammars are C code; a segfault is not catchable by `catch_unwind` (plan correction, VERIFIED). code-intel runs in-process at P1; the risk of a malicious repo crashing the kernel is **LIKELY low but real**. Mitigation: fuzzing plus size/depth caps; fallback: move parsing into a worker mode if fuzzing finds crashes.
-- `ast-grep-core 0.51` and the five grammar crates must agree on the tree-sitter language ABI; the plan verified only that ast-grep-core needs tree-sitter ^0.27. Grammar load compatibility is **UNVERIFIED** until the in-crate spike.
-- Exact tree-sitter 0.27 API (parse cancellation, timeouts, `TreeCursor`) and the ast-grep-core pattern API: API to confirm at implementation.
+- `ast-grep-core 0.51` and the five grammar crates must agree on the tree-sitter language ABI; the plan verified only that ast-grep-core needs tree-sitter ^0.27. All five grammar loads pass the native ABI contract tests on the pinned runtime.
+- VERIFIED by the parser suite: tree-sitter 0.27 cancellation, reset and iterative cursor walks. The symbol merge uses byte-span units and imara-diff; it does not depend on an unverified ast-grep pattern API.
 - Tree-edit distance (Zhang-Shasha style) is super-quadratic; the node cap and approximate-fallback thresholds are **GUESSING**.
 - The chatlog's savings claims (85-90% tokens, "10x fewer tokens") are **UNVERIFIED**; measure on real repos.
 
@@ -1495,9 +1503,9 @@ pub enum CodeIntelError { UnsupportedLanguage, ParseTimeout, ParseFailed, TooLar
 **Re-exports.** `pub use polaris_storage_cas as cas; pub use polaris_storage_eventlog as eventlog; pub use polaris_storage_registry as registry; pub use polaris_storage_cache as cache; pub use polaris_storage_vector as vector; pub use polaris_storage_sync as sync;`
 **Dependencies.** Internal: the six storage children. External: none.
 **TODO.**
-- [ ] Document the layout table: `registry.db` (SQLite FTS5 trigram), `events.redb` (events, locks, L2 cache, invariants, `RULES.md` mirror), `cas/<ab>/<cd>/<blake3>` (zstd), `vectors/` (LanceDB), L1 in RAM (`quick_cache`), `$storage-level(global|isolated)` scoping.
-- [ ] Resolve and document where `events.redb` and invariants live (global vs repo): chatlog msgs 18 and 31 disagree (ADR).
-- [ ] Add a facade smoke test that every re-export resolves (`cargo check` plus a doc-test per alias).
+- [x] Document the layout table: `registry.db` (SQLite FTS5 trigram), `events.redb` (events, locks, L2 cache, invariants, `RULES.md` mirror), `cas/<ab>/<cd>/<blake3>` (zstd), `vectors/` (LanceDB), L1 in RAM (`quick_cache`), `$storage-level(global|isolated)` scoping.
+- [x] Resolve and document where `events.redb` and invariants live (global vs repo): chatlog msgs 18 and 31 disagree (ADR).
+- [x] Add a facade smoke test that every re-export resolves (`cargo check` plus a doc-test per alias).
 
 ---
 
@@ -1538,12 +1546,12 @@ pub enum CasError { Io(..), NotFound(Cid), Corrupt { cid: Cid }, Ambiguous(Short
 - [x] Implement bounded retry on Windows sharing violations / AV scans (OS errors 5/32/33; exponential 10 ms → 500 ms, 8 attempts ≈ 1.8 s) and surface `CasError::Io` after the budget — VERIFIED with a real share-mode-0 handle (a single attempt fails, the retry policy succeeds).
 - [x] Implement `get` with a hard cap on decompressed size (read the zstd frame's declared content size, reject over-limit or undeclared size before allocating) and re-hash verification (`verify_on_get`, default on).
 - [x] Implement `resolve`/`fold_ref` and `short_ref_checked` (returns `ShortRefCollision` when another blob shares the 12-hex prefix, so the fold layer falls back to the full 64-hex ref). P1 change: the check is a separate call, not a `put` error — a `put` that stored the bytes must not report failure.
-- [x] Implement `put_file` with streaming BLAKE3 (`update_reader`) and no mmap (mmap risk avoided entirely); an existing blob is never re-read.
+- [x] Implement `put_file` with bounded streaming BLAKE3 and parallel chunk hashing and no mmap (mmap risk avoided entirely); an existing blob is never re-read.
 - [x] Implement `gc` driven by a live-Cid iterator, with a grace period and a dry-run mode; used by `/cache purge`.
-- [x] Windows: lower-case hex only, no partial blob on failure (temp file removed; tested). Root-path length and `dunce` canonicalisation are the caller's (config) concern — open item for `polaris-config`. Disk-full: not simulated (needs a full volume).
+- [x] Windows: lower-case hex only, no partial blob on failure (temp file removed; tested). Root canonicalisation belongs to config/the composition root. Real ENOSPC in a disposable WSL tmpfs leaves no partial blob or temporary residue.
 - [x] Counting-allocator tests (dhat testing mode, ADR-003) for `ShortRef::of`, `fold_ref`, `fast_fingerprint`, `content_id`: 0 blocks.
 - [x] Fuzz target `cas_blob_decode` (decode bound + encode→decode roundtrip; 3,962,414 runs / 61 s, no crash).
-- [ ] Kani harness for `fold_ref` (first attempt grew CBMC past 6 GB and was removed; needs a smaller formulation), `cas_shortref_parse` fuzz target, load/stress tests (10k blobs, disk full). Miri: not applicable to the zstd FFI paths.
+- [x] Fixed-array `fold_ref` Kani proof passes universally for every CID; short-ref roundtrip fuzz, 10k-blob latency, bounded parallel 1 GiB hash, and actual ENOSPC workloads pass. Earlier failed proof/slow measurements remain retained. Miri cannot execute zstd FFI.
 
 **Tests.**
 
@@ -1617,14 +1625,14 @@ pub enum EventLogError { Open(String), Locked, Codec(String), SchemaTooNew { fou
 - [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/eventlog_{event_append_and_read,replay_to_step,lock_table_recovery,exact_cache_store,event_codec}.json` (schema-version gate is covered in `event_codec` and `replay_to_step`).
 - [x] Table layout (P1 subset): `events` (u64 -> `[schema u16 LE][JSON]`), `meta` (layout version, next lease), `checkpoints`, `locks` (JSON `LockRecord`), `l2_cache` (`[scope tag][id][payload]`). `INVARIANTS`, `RULES_MIRROR`, `RESEARCH_CKPT` arrive with their owning features (P4/P7).
 - [x] Event envelope: sdk `EventRecord` (`schema: u16` v2, backwards-readable v1, `at`, `session`, `event`); the codec rejects `schema > SUPPORTED_SCHEMA` **before** parsing the body and rejects a prefix/envelope mismatch. Schema 2 adds immutable session configuration, pause and resume; old envelopes retain their version on encode/decode (§E24).
-- [x] `append`/`append_batch` assign gap-free `Seq` inside one write transaction (`batch_is_atomic`). Group commit across callers — open (needs the async owner thread below).
-- [x] `read_range`/`replay` are redb read transactions (MVCC, do not block the writer); newer schema rejected. `replay` returns a `Vec` — a lazy iterator is open.
+- [x] `append`/`append_batch` assign gap-free `Seq` inside one write transaction (`batch_is_atomic`). `AsyncEventLog` groups up to 128 queued callers on its bounded owner-thread channel.
+- [x] `read_range`/`replay` use MVCC read transactions; newer schema is rejected. `replay_iter` lazily reads an immutable committed prefix in pages of 256, detects sequence gaps and excludes later appends.
 - [x] Checkpoints store `(Seq, Cid)` (`checkpoint_beyond_head_is_rejected`); `replay_from_checkpoint_matches_full_replay`.
 - [x] Lock-table recovery: on open, leases held by a different (dead) owner pid are listed by `stale_locks()` for the Reaper, never silently dropped; locks survive reopen.
-- [ ] Async owner thread plus channel for tokio callers — open (callers use `spawn_blocking` meanwhile; the registry crate shows the owner-thread pattern).
+- [x] `AsyncEventLog` owns a bounded Tokio channel and native thread, groups accepted writes, and drains/joins independently of a cancelled shutdown waiter.
 - [x] `EventStore` and `ExactCacheStore` (sdk traits) implemented by `EventLog`; oversized cache values rejected (`max_cache_value_bytes`).
 - [x] Windows: a second open maps redb's `DatabaseAlreadyOpen` to `EventLogError::Locked` (tested); path with spaces + non-ASCII tested. OneDrive-synced folders: not tested. Power-loss flush semantics: documented (`Durability`), not claimed.
-- [x] Fuzz target `eventlog_decode` (arbitrary stored bytes: no panic; decode→encode→decode stable): 309,107 runs / 62 s clean (§E15). Miri: not applicable (redb file I/O). Load/stress: open.
+- [x] Fuzz target `eventlog_decode` (arbitrary stored bytes: no panic; decode→encode→decode stable): 309,107 runs / 62 s clean (§E15). Miri cannot execute redb file I/O. Native owner cancellation, killed-writer recovery, real ENOSPC, append latency, 100k replay and one-million-event workloads pass; see P1_LOGIC_STATUS.md.
 
 **Tests.**
 
@@ -1701,7 +1709,7 @@ pub enum RegistryError { Open(String), Busy, Migration { from: u32, to: u32 }, B
 - [x] Masked-only indexing: `index_message_redacted<R: Redactor>` (sdk trait, no dependency on `polaris-security`); a seeded secret is absent from `registry.db`, `-wal` and `-shm` while open and after close, with a negative control proving the scan can fail. Sign-off with `polaris-security-pii` on the masked-only decision: open (P4).
 - [x] Windows: path with spaces + non-ASCII, two handles share WAL data, 4 readers + 1 writer. Network drives: refused when WAL cannot be enabled (untested). Antivirus lock tolerance beyond `busy_timeout`: open.
 - [x] `/sessions` ordering (updated_at desc, id desc), status/workspace/limit filters, archive/unarchive.
-- [ ] Fuzz `fuzz_registry_fts_query`, `fuzz_registry_migration_open`; load/scalability (100k/1M messages); two-process writers and kill-during-write — open. Known imprecision: the snippet window is located on the lower-cased text, so characters whose lower case is longer (e.g. `İ`) can shift the window by a few characters (no panic; char-based slicing).
+- [x] Registry FTS/migration fuzz, 1M-message indexing, concurrent/two-process writers and kill-during-write integrity checks pass. Session scope is filtered before LIMIT; Unicode lowercase expansion maps back to source snippet positions. Mixed-load latency outliers are retained in the evidence.
 
 **Tests.**
 
@@ -1767,15 +1775,15 @@ pub enum CacheError { L2(String), L3(String), Codec(String), Poisoned }
 **Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `quick_cache = 0.7.0`, `xxhash-rust = 0.8.19` (xxh3), `blake3 = 1.8.7`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: L1 get/put with weights, key derivation, scope isolation, single-flight compute, purge.
-- [ ] Define the `ExactCacheStore` trait and decide its home (see risks); implement an in-memory test double only for unit tests, never shipped.
-- [ ] Implement key derivation: S2 completion keys hash `(model, sampling params, stable prefix Cid, tail)`; S1 keys hash `(schema digest, input)`.
-- [ ] Implement L1 with `quick_cache` weighting by bytes and a configurable capacity; no global static.
-- [ ] Implement `Scope` namespacing: keys from different workspaces never collide under `isolated`; `global` shares L2/L3.
-- [ ] Implement single-flight `get_or_compute` (concurrent identical requests run `f` once), cancel-safe.
+- [x] Write JSON descriptors (prompt.md §6.3) for: L1 get/put with weights, key derivation, scope isolation, single-flight compute, purge.
+- [x] Define the `ExactCacheStore` trait and decide its home (see risks); implement an in-memory test double only for unit tests, never shipped.
+- [x] Implement key derivation: S2 completion keys hash `(model, sampling params, stable prefix Cid, tail)`; S1 keys hash `(schema digest, input)`.
+- [x] Implement L1 with `quick_cache` weighting by bytes and a configurable capacity; no global static.
+- [x] Implement `Scope` namespacing: keys from different workspaces never collide under `isolated`; `global` shares L2/L3.
+- [x] Implement single-flight `get_or_compute` (concurrent identical requests run `f` once), cancel-safe.
 - [ ] Implement the optional L3 semantic lookup with a similarity threshold (chatlog 0.98) and **only** for non-safety kinds; thresholds are configuration, labelled GUESSING until calibrated.
-- [ ] Implement `purge` (`/cache purge`) and `stats` (`/cache stats`), and publish counters for telemetry.
-- [ ] Windows: nothing platform-specific except L2 file locking, which is the eventlog crate's concern; add a note and a cross-crate integration test in `polaris-tests`.
+- [x] Implement `purge` (`/cache purge`) and `stats` (`/cache stats`), and publish counters for telemetry.
+- [x] Windows: nothing platform-specific except L2 file locking, which is the eventlog crate's concern; add a note and a cross-crate integration test in `polaris-tests`.
 
 **Tests.**
 
@@ -1799,9 +1807,9 @@ pub enum CacheError { L2(String), L3(String), Codec(String), Poisoned }
 
 **Risks & open questions.**
 - Safety-verdict cache poisoning: keying S1 safety decisions by xxh3 (as the chatlog's fingerprint table does) lets an adversary craft collisions (**LIKELY**; xxh3 is non-cryptographic). Design rule: blake3 for anything security-relevant; xxh3 only for in-RAM dirty-checks.
-- `ExactCacheStore` is not in the sdk trait list in `workspace.toml`, and this crate does not depend on eventlog; the trait must live in sdk or here, then be wired at the composition root. Open question for the toml owner.
+- VERIFIED at P1 completion: `ExactCacheStore` lives in SDK and EventLog implements it. The cross-crate cache/redb reopen-and-purge test uses that actual adapter.
 - Semantic L3 correctness: a >0.98 embedding similarity does not guarantee the same answer for code tasks; restrict to low-risk kinds. **UNVERIFIED** benefit.
-- quick_cache 0.7.0 API (weighter, placeholder/guard API for single-flight): API to confirm at implementation.
+- VERIFIED by native pressure/cancellation tests: quick_cache weighting and single-flight owner cancellation; Loom separately explores the election model.
 - Prefix-cache hit rates quoted in the chatlog (80% RTT discount, 94% HUD) are provider-side claims, **UNVERIFIED** until S0-5.
 
 **Chatlog sources.** Msg 18 (multi-tier cache: L1 RAM DashMap+xxh3, L2 exact redb+BLAKE3, L3 semantic LanceDB >0.98, `/cache stats|purge`, `$storage-level`), msg 15 (L1 fingerprint table, `CachedAnalysis`), msg 29 (S1 result cache). Corrected: `dashmap` -> `quick_cache` (D8); xxh3 never used as a safety key; semantic tier restricted.
@@ -2422,14 +2430,14 @@ pub trait Projection { fn apply(&mut self, e: &EventEnvelope); }   // generic, n
 **Shutdown order (reverse, with one overall deadline, default 10 s, to be measured).** Stop accepting commands, then cancel the frame tree, drain in-flight tool calls, flush and fsync the event log, destroy sandboxes and temp dirs, stop workers (CTRL_BREAK then kill-tree), flush logs, drop secrets (zeroize). Returns a `ShutdownReport` (per-resource outcome), never `()`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: `Session` typestate transitions, `Kernel::start` startup/rollback order, `SandboxChoice` enum dispatch, `Kernel` shutdown report.
-- [ ] Re-export all six children; add compile-only doctests naming one public item per child.
-- [ ] Define `Backends`, the `*Choice` enums and `ProdBackends`; one `match` per trait method; contract test that every enum arm forwards (no logic in arms).
-- [x] Implement `Session<S>` typestate and the `Archived -> Paused` reopen path by replaying `SessionConfigured`/`DirectiveApplied` and explicit lifecycle events (D11). Real CAS/redb/SQLite, exclusive live ownership, paged replay, rebuildable catalogue and committed-projection failure reporting; PHASES_STATUS §E25. The full verified command dispatcher remains a separate open task.
-- [ ] Implement the orchestrator loop: command receive, verify (kernel-verifier), event-log append, projections, dispatch; `log-then-publish` ordering.
-- [ ] Implement startup with reverse-order rollback and the reaper-journal orphan sweep; Windows: Ctrl+C, CTRL_BREAK, console close and logoff events via `tokio::signal::windows`.
+- [x] Write JSON descriptors (prompt.md §6.3) for: `Session` typestate transitions, `Kernel::start` startup/rollback order, `SandboxChoice` enum dispatch, `Kernel` shutdown report.
+- [x] Re-export all six children; add compile-only doctests naming one public item per child.
+- [ ] P2/P3 execution profile: assemble full `ProdBackends` and runtime-selected model/sandbox/S1 choices when those real providers enter the composition root. P1 SDK enum forwarding is checked; P1 root uses concrete `LocalBackends` without unavailable-provider adapters.
+- [x] Implement `Session<S>` typestate and the `Archived -> Paused` reopen path by replaying `SessionConfigured`/`DirectiveApplied` and explicit lifecycle events (D11). Real CAS/redb/SQLite, exclusive live ownership, paged replay, rebuildable catalogue and committed-projection failure reporting; PHASES_STATUS §E25. The P1 signed directive dispatcher, durable receipts and replay subscriptions are now implemented and checked; execution-profile commands remain P2/P3.
+- [x] Implement the orchestrator loop: command receive, verify (kernel-verifier), event-log append, projections, dispatch; `log-then-publish` ordering.
+- [x] Implement startup with reverse-order rollback and the reaper-journal orphan sweep; Windows: Ctrl+C, CTRL_BREAK, console close and logoff events via `tokio::signal::windows`.
 - [ ] Wire fail-open / fail-closed policy per S1 consumer (plan matrix) at the pipeline assembly, not inside S1.
-- [ ] Expose `KernelHandle: KernelApi` and keep `polaris-rpc` free of any kernel dependency.
+- [x] Expose `KernelHandle: KernelApi` and keep `polaris-rpc` free of any kernel dependency.
 
 **Tests** (facade-level; child suites live in the children).
 | Category | Cases / budget |
@@ -2488,7 +2496,7 @@ pub enum FanoutOutcome { Delivered { receivers: usize }, NoReceivers }  // "no r
 pub enum BusError { Full, Closed, Lagged { missed: u64, resume_from: Seq }, Store(EventStoreError), Config(&'static str) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `tokio = 1.54.0` (features `sync`, `rt`), `tracing = 0.1.44`; dev: `proptest = 1.12.0`, `loom = 0.7.2`, `hdrhistogram = 7.6.0`.
+**Dependencies.** Internal: `polaris-sdk`. External: `tokio = 1.54.1` (features `sync`, `rt`), `tracing = 0.1.44`; dev: `proptest = 1.12.0`, `loom = 0.7.2`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
 - [x] Write JSON descriptors (prompt.md §6.3): `specs/descriptors/bus_{command_backpressure,log_then_publish,lag_recovery,zero_alloc_hot_path}.json` (red = unresolved API, then green).
@@ -2498,9 +2506,9 @@ pub enum BusError { Full, Closed, Lagged { missed: u64, resume_from: Seq }, Stor
 - [x] Lag handling: `RecvError::Lagged(n)` becomes `BusError::Lagged { missed, resume_from }`; the first retained event is stashed so nothing after the gap is lost; `resume_from_store_replays_missed_events` replays the gap from the store.
 - [x] Counting-allocator test (dhat): `try_send`, `try_recv`, `publish` and `try_next` perform **zero allocations after warm-up** — VERIFIED for tokio mpsc + broadcast (block reuse), so the ring fallback below is not needed.
 - [x] ~~Fallback ring of atomic slots~~ — not needed (previous item).
-- [ ] Loom model of publish/subscribe/close ordering — open: tokio's channels are not loom-instrumented; needs a loom-friendly model of the ordering lock (or `tokio`'s own loom cfg).
+- [x] Loom model of the publish/subscribe/close ordering lock and durable-prefix invariant. Tokio internals remain checked by their upstream implementation and our behavioral tests.
 - [x] `tracing` with structured fields only (`event subscriber lagged`: missed, resume_from); counters `rejected_full` and `lagged` exposed via `Bus::stats()` for telemetry.
-- [ ] Fuzz `fuzz_bus_ops` (random op sequences vs a model), load/stress (hdrhistogram) — open. Miri: 13 tests clean (§E15).
+- [x] `bus_ops` fuzz compares bounded command FIFO/backpressure/close and event sequence operations with a model; 378,173 runs / 61 s. Native million-event 1/8/64-subscriber workloads plus churn and command floods pass. Miri interprets the 13 behavior tests; Loom and dhat run natively (Miri cannot execute their runtime instrumentation).
 
 **Tests.**
 | Category | Cases / budgets (targets, not measured) |
@@ -2645,7 +2653,7 @@ pub fn render(d: &SessionDirective) -> String;   // canonical text form for /sta
 - [x] Implement `render`; canonical forms asserted explicitly (no insta needed) and `parse(render(d)) == d` proven by proptest (5,000 cases) and the fuzz target.
 - [x] Windows specifics: accept `\` in atoms and paths, make sure drive letters (`C:`) are never mistaken for `kv`/`range`, handle CRLF in multi-line input, keep `$` followed by digits (`$5`, `$100`) as prose.
 - [x] Miri over all 39 tests (no UB); fuzz target `directives_grammar` (parse + render→parse roundtrip; 137,091 runs / 61 s, no crash); Kani: cursor harnesses VERIFIED (`cursor_bump_stays_on_char_boundaries`, `cursor_take_while_stays_on_char_boundaries`). A whole-`parse` Kani harness is infeasible here (CBMC > 3.4 GB on 3-byte inputs, PLAN W24).
-- [ ] Load test (1 MiB of mixed prose at >= 100 MB/s, linear scaling) and `tests/fixtures/directives/*.txt` corpus — not done yet (P10 matrix).
+- [x] Synthetic mixed-prose corpus plus release throughput workload: 256 KiB / 512 KiB / 1 MiB measured 106.4 / 100.3 / 102.4 MB/s; full-size directive count checked. Explicit workload is ignored in the fast suite and was run separately.
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -2719,19 +2727,19 @@ pub struct DeadLetter<T> { pub item: T, pub child: ChildName, pub reason: ExitCl
 pub enum SupervisorError { UnknownChild, SpawnFailed(String), IntensityExceeded { child: ChildName }, Platform(PlatformError), ShuttingDown }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-log`, `polaris-telemetry`, `polaris-kernel-bus`. External: `tokio = 1.54.0` (+ dev feature `test-util`, flag 8), `tokio-util = 0.7.20`, `backon = 1.6.0`; dev: `proptest = 1.12.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-log`, `polaris-telemetry`, `polaris-kernel-bus`. External: `tokio = 1.54.1` (+ dev feature `test-util`, flag 8), `tokio-util = 0.7.20`, `backon = 1.6.0`; dev: `proptest = 1.12.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: restart-intensity accounting, `CircuitBreaker` state machine, task supervision loop, worker process supervision, DLQ routing.
+- [x] Write JSON descriptors (prompt.md §6.3) for: restart-intensity accounting, `CircuitBreaker` state machine, task supervision loop, worker process supervision, DLQ routing.
 - [x] Implement `CircuitBreaker` as a pure state machine over an injected `Instant` (fake clock friendly); no wall-clock calls inside. Evidence: PHASES_STATUS §E22.
 - [x] Implement `spawn_task`: run the factory under a `JoinHandle`, classify `JoinError` (panic vs cancel), apply `RestartPolicy`, backoff with jitter via `backon` (not the chatlog's fixed 50 ms sleep), cancel via a child token. Evidence: PHASES_STATUS §E22.
-- [ ] Implement restart intensity: more than `max_restarts` inside `window` trips the breaker, stops restarting, sends the item to the DLQ, publishes a `ChildFailed` event for the UI notice.
-- [ ] Implement `spawn_worker` over the sdk `PlatformOps` trait (Job Object tree on Windows, kill-on-drop); classify exit codes (`0xC0000005`-style access violations as `Crash`).
-- [ ] Implement the health loop (`HealthProbe`) with timeouts: a hung worker is killed and restarted; the in-flight request fails with a typed error so the S1 client can apply fail-open or fail-closed.
-- [ ] Implement graceful stop: cancel token, wait `grace`, then `PlatformOps` terminate (CTRL_BREAK where available, else kill-tree).
+- [x] Implement restart intensity: more than `max_restarts` inside `window` trips the breaker, stops restarting, sends the item to the DLQ, publishes a `ChildFailed` event for the UI notice.
+- [x] Implement `spawn_worker` over the sdk `PlatformOps` trait (Job Object tree on Windows, kill-on-drop); classify exit codes (`0xC0000005`-style access violations as `Crash`).
+- [x] `HealthProbe` and `HealthPolicy` bound an actual caller-provided health transport. A hung probe stops the owned native process before restart/intensity handling; the regression checks process-table cleanup and the dead letter. S1 protocol client wiring is P4.
+- [x] Implement graceful stop: cancel token, wait `grace`, then `PlatformOps` terminate (CTRL_BREAK where available, else kill-tree).
 - [x] Implement `SupervisorSnapshot` for `/stats` and `doctor` (restart counts, breaker state, DLQ length). Includes dropped letters and lost event publications; PHASES_STATUS §E22.
-- [ ] Windows specifics: worker control channel is a named pipe created by the composition root, not here; verify child cleanup when the parent is killed by Task Manager (Job Object `KILL_ON_JOB_CLOSE`).
-- [ ] Add the crash-loop stress harness (worker that exits immediately, worker that crashes after N ms, worker that hangs).
+- [x] Windows hard-kill backstop verified with a real owner process terminated without Rust Drop; explicit `process_wrap::KillOnDrop` registration enables `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`. Worker named-pipe protocol assembly is P4.
+- [x] Add the crash-loop stress harness (worker that exits immediately, worker that crashes after N ms, worker that hangs).
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -2756,8 +2764,8 @@ pub enum SupervisorError { UnknownChild, SpawnFailed(String), IntensityExceeded 
 **Risks & open questions.**
 - VERIFIED (PLAN core, D3): `panic = "unwind"` is required for task isolation; the chatlog claim that `catch_unwind` catches OCR/PDF segfaults is false and is corrected by the process split. A panic inside `Drop` during unwinding still aborts the process (LIKELY, Rust semantics).
 - UNVERIFIED: restart latency "<1 ms" (chatlog) is unmeasured; it also ignores backoff, which this design adds deliberately.
-- UNVERIFIED: Windows crash exit codes seen from `process-wrap` (NTSTATUS values) need confirmation on this machine in P2 (`polaris-platform-process`).
-- LIKELY: tests need `tokio::time::pause`, so `tokio` `test-util` must be a dev feature (flag 8).
+- Native exit classification checks cover clean zero, positive failure, signal absence and signed NTSTATUS exception values; actual owner hard-kill is tested separately. No real access violation is claimed from a synthetic status test.
+- VERIFIED: `tokio` test-util is enabled only as a dev feature for paused-clock backoff/intensity tests.
 - No spike covers it; the worker crash-loop is covered by the `stress` suite and the plan's spike list ("worker crash loops").
 
 **Chatlog sources.** msg 21 (section 4: Erlang/OTP supervision tree, one-for-one, circuit breaker 3 in 10 s, DLQ, UI notice "PDF parser skipped corrupted page 4"; section 5.3 `TaskSupervisor::spawn_resilient`), msg 13 (UI notice via bus). Corrected: `AssertUnwindSafe(..).catch_unwind()` replaced by `JoinError::is_panic`; "Let it crash" for native code means a separate process, not a `catch_unwind`; fixed 50 ms pause replaced by jittered backoff; `break` after the breaker trips now also publishes an event instead of a comment.
@@ -2793,18 +2801,18 @@ pub enum ReaperError { Journal(std::io::Error), AlreadyShutDown, UnknownResource
 ```
 Teardown order inside `shutdown_all`: (1) cancel the root token (cascades to frames, tools, workers); (2) wait a grace period for cooperative exit; (3) kill process trees (CTRL_BREAK, then Job Object terminate); (4) destroy sandboxes (registered closures call the `SandboxBackend`); (5) remove temp dirs; (6) unlink IPC segments (none until S0-8); (7) fsync and clear the journal.
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-log`, `polaris-kernel-bus`. External: `tokio-util = 0.7.20`, `tempfile = 3.27.0`; `+proposed tokio = 1.54.0` (timeouts, `signal`); the journal is a plain file written atomically with `tempfile::NamedTempFile::persist`; dev: `proptest = 1.12.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-log`, `polaris-kernel-bus`. External: `tokio-util = 0.7.20`, `tempfile = 3.27.0`; `+proposed tokio = 1.54.1` (timeouts, `signal`); the journal is a plain file written atomically with `tempfile::NamedTempFile::persist`; dev: `proptest = 1.12.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: cancellation cascade, ordered teardown with deadline, journal write/replay, orphan sweep, leak report.
+- [x] Write JSON descriptors (prompt.md §6.3) for: cancellation cascade, ordered teardown with deadline, journal write/replay, orphan sweep, leak report.
 - [x] Implement `child_token` / root cancel; test cascade through three levels and that cancelling a child does not cancel siblings. PHASES_STATUS §E23.
 - [x] Implement the registry with deterministic ordering (by `ResourceKind` priority then reverse registration order). PHASES_STATUS §E23.
 - [x] Implement the crash-safe journal (`.polaris/run/reaper.journal`, one record per live resource: kind, id, pid or sandbox id, path), written atomically on register and release. v1 escapes record separators, fsyncs the temporary file, and retains unresolved locators; PHASES_STATUS §E23. Power-loss testing remains unverified.
-- [ ] Implement `sweep_orphans`: on startup read the journal, check liveness (pid exists and start time matches, sandbox id still known to the gateway), reap leftovers, report each one.
-- [ ] Implement `shutdown_all` with a per-step and an overall deadline; `Forced` outcomes recorded; the function always returns a report and never panics or blocks forever.
-- [ ] Wire signals at the composition root (documented here): `tokio::signal::ctrl_c`, and on Windows `ctrl_break`, `ctrl_close`, `ctrl_shutdown`, `ctrl_logoff`.
-- [ ] Windows specifics: temp dirs may be locked by antivirus (retry removal with bounded backoff); a Job Object with `KILL_ON_JOB_CLOSE` is the backstop when the parent dies without running any Rust code; `/dev/shm` and `cgroup.kill` apply only inside Linux sandboxes, not on the Windows host.
-- [ ] Implement `Drop` for registered guards as synchronous best effort only (set cancel flag, try-remove temp path) and document that it is not the teardown path.
+- [x] P1 recovery sweeps only validated owned temp paths. PID-only and backend locators remain journaled and block kernel startup for operator review; no PID is killed from an unauthenticated/reused identity. P2/P4 backend recovery can provide stronger identities.
+- [x] Implement `shutdown_all` with a per-step and an overall deadline; `Forced` outcomes recorded; the function always returns a report and never panics or blocks forever.
+- [x] Wire signals at the composition root (documented here): `tokio::signal::ctrl_c`, and on Windows `ctrl_break`, `ctrl_close`, `ctrl_shutdown`, `ctrl_logoff`.
+- [x] Windows specifics: temp dirs may be locked by antivirus (retry removal with bounded backoff); a Job Object with `KILL_ON_JOB_CLOSE` is the backstop when the parent dies without running any Rust code; `/dev/shm` and `cgroup.kill` apply only inside Linux sandboxes, not on the Windows host.
+- [x] Implement `Drop` for registered guards as synchronous best effort only (set cancel flag, try-remove temp path) and document that it is not the teardown path.
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -2875,7 +2883,7 @@ pub struct RateLimitOp { /* DualLimiter, Priority */ }                    // acq
 pub struct ReflectOp<D: DecisionEngine> { /* P7: auto-learn project invariants */ }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-security-pii`, `polaris-system-one-router`, `polaris-ratelimit`; `+proposed polaris-kernel-directives` (L1, legal edge). External: `tokio = 1.54.0` (timeouts); dev: `proptest = 1.12.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-security-pii`, `polaris-system-one-router`, `polaris-ratelimit`; `+proposed polaris-kernel-directives` (L1, legal edge). External: `tokio = 1.54.1` (timeouts); dev: `proptest = 1.12.0`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Pipeline::pipe`, `fork_branch`, `OpenOp`/`ClosedOp` fail policies, `SanitizePiiOp`, `S1TriageOp`.
@@ -3059,7 +3067,7 @@ pub enum StepOutcome { Continue, ToolResults(Vec<ToolResultRef>), ClaimedDone, B
 pub enum FrameError { QuotaExceeded(&'static str), ScopeNotSubset, DepthLimit, StepLimit, Model(ModelError), Capability(CapabilityError) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-security-capability`, `polaris-models`. External: `tokio = 1.54.0`, `serde = 1.0.229` (features `derive`); dev: `proptest = 1.12.0`. (`ToolRunner`, `StepVerifier` are sdk-level traits to add; the frame crate must not depend on `kernel-operators`, `runtime-context` or `tools`.)
+**Dependencies.** Internal: `polaris-sdk`, `polaris-security-capability`, `polaris-models`. External: `tokio = 1.54.1`, `serde = 1.0.229` (features `derive`); dev: `proptest = 1.12.0`. (`ToolRunner`, `StepVerifier` are sdk-level traits to add; the frame crate must not depend on `kernel-operators`, `runtime-context` or `tools`.)
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `spawn_child` attenuation, frame typestate transitions, `record_step` limits, `run_step`, model selection on `activate`.
@@ -3220,7 +3228,7 @@ pub enum RaceOutcome<T> { Won { index: usize, value: T, aborted: usize }, NoneAc
 pub enum DagError { Cycle, UnknownNode(NodeId), DuplicateNode(NodeId), Closed, Cancelled, NodeFailed(NodeId) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `tokio = 1.54.0` (`JoinSet`, `Semaphore`, `sync`), `tokio-util = 0.7.20` (`CancellationToken`); dev: `proptest = 1.12.0`, `hdrhistogram = 7.6.0`, `tokio` feature `test-util` (flag 8).
+**Dependencies.** Internal: `polaris-sdk`. External: `tokio = 1.54.1` (`JoinSet`, `Semaphore`, `sync`), `tokio-util = 0.7.20` (`CancellationToken`); dev: `proptest = 1.12.0`, `hdrhistogram = 7.6.0`, `tokio` feature `test-util` (flag 8).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `DagBuilder::build` validation, `run` exactly-once scheduling, `Pools` permits and resize, `race` abort semantics.
@@ -3295,7 +3303,7 @@ pub enum ChurnVerdict { Ok, Warn { edits: u32 }, Revoke { escalate_to_s2: bool }
 pub enum LeaseError { Busy { holder: FrameId }, StaleBase { expected: Blake3Hash, actual: Blake3Hash }, Revoked(RevokeReason), Timeout, InvalidPath, Closed }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-code-intel`. External: `tokio = 1.54.0`, `dashmap = 6.2.1`; `+proposed arc-swap = 1.9.3` (read-mostly snapshot for the lookup hot path); dev: `proptest = 1.12.0`, `loom = 0.7.2`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-code-intel`. External: `tokio = 1.54.1`, `dashmap = 6.2.1`; `+proposed arc-swap = 1.9.3` (read-mostly snapshot for the lookup hot path); dev: `proptest = 1.12.0`, `loom = 0.7.2`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: scope conflict predicate, FIFO acquisition, OCC `check_write`, churn cycle breaker, `LeaseKey` canonicalisation.
@@ -3556,7 +3564,7 @@ pub struct EvictionManager<E: Evictable> { /* slots, policy */ }                
 pub enum ModelError { UnknownModel(String), BadAlias(String), EffortGap, Load(LoadError), Closed, Config(&'static str) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External: `serde = 1.0.229` (features `derive`), `tokio = 1.54.0`; dev: `proptest = 1.12.0`, `loom = 0.7.2`, `tokio` feature `test-util`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External: `serde = 1.0.229` (features `derive`), `tokio = 1.54.1`; dev: `proptest = 1.12.0`, `loom = 0.7.2`, `tokio` feature `test-util`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `model_for` mapping, `apply_subagent_models`, alias resolution, `cascade_for`, `EvictableSlot` state machine, `EvictionManager` triggers.
@@ -3612,10 +3620,10 @@ pub enum ModelError { UnknownModel(String), BadAlias(String), EffortGap, Load(Lo
 **Re-exports.** `pub use polaris_tools_builtin as builtin;` `polaris_tools_math as math;` `polaris_tools_rtk as rtk;` (workspace.toml: `pub use polaris_tools_*`).
 
 **TODO.**
-- [ ] Re-export the three children; compile-only doctest naming one item per child.
-- [ ] Generate `docs/tool-catalog.md` from the registered `ToolSpec`s (name, effects, tier, phase) as part of `cargo doc`/xtask so it cannot drift.
-- [ ] Add a `check-layers` expectation that no tool child depends on `polaris-tools`.
-- [ ] Record which tools are E0 read-only (P1), proposal-producing writes (P2), sandboxed exec (P2) and network (P5).
+- [x] Re-export the three children; compile doctest resolves every module alias and public items from P1 builtin/RTK. Math items join with P3.
+- [x] Generate `docs/tool-catalog.md` from actual sorted schemas with `cargo run -p polaris-tools --example catalog`; include it in rustdoc and fail `documentation_matches_registered_schemas` if it drifts.
+- [x] Add a `check-layers` expectation that no tool child depends on `polaris-tools`.
+- [x] Record which tools are E0 read-only (P1), proposal-producing writes (P2), sandboxed exec (P2) and network (P5).
 
 ---
 
@@ -3652,19 +3660,19 @@ pub fn classify_command(cmd: &str) -> CommandClass;
 pub enum ToolError { InvalidArgs(String), Path(PathError), Denied(&'static str), TooLarge { limit: u64 }, Regex(RegexError), Timeout, Capability(CapabilityError), Sandbox(SandboxError) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-code-intel`, `polaris-security-automata`. External: `ignore = 0.4.33`, `globset = 0.4.20`, `regex = 1.13.1`, `serde_json = 1.0.154`, `schemars = 1.2.3`; `+proposed serde = 1.0.229`, `tokio = 1.54.0` (timeouts only), `encoding_rs = 0.8.42` (UTF-16 detection for Windows tool output); dev: `proptest = 1.12.0`, `insta = 1.49.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-code-intel`, `polaris-security-automata`. External: `ignore = 0.4.33`, `globset = 0.4.20`, `regex = 1.13.1`, `serde_json = 1.0.154`, `schemars = 1.2.3`; `+proposed serde = 1.0.229`, `tokio = 1.54.1` (timeouts only), `encoding_rs = 0.8.42` (UTF-16 detection for Windows tool output); dev: `proptest = 1.12.0`, `insta = 1.49.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: path resolution/guard, `read_file`, `grep`, `glob`, `edit_file` proposal, `classify_command`, registry spec stability.
-- [ ] Move the `Tool` trait, `ToolSpec`, `Effects` into sdk (flag 1) and implement `ToolRegistry` with enum dispatch (no `dyn Tool`); specs sorted and byte-stable.
-- [ ] Implement `WorkspacePath` resolution (shared with leases via sdk): reject `..` escapes, absolute paths outside the root, UNC and verbatim prefixes, ADS names, reserved device names, trailing dots and spaces; resolve symlinks/junctions then re-check the prefix; reads open the file once to limit time-of-check/time-of-use gaps.
-- [ ] Implement read-only tools: `read_file` (offset/limit, binary detection by NUL in the first 8 KiB, BOM handling, UTF-16 detection, byte-exact line endings reported), `list_dir`, `glob`, `grep` (regex with `size_limit`, HIR guard from automata, result and time caps, `ignore`-aware traversal honouring `.gitignore` and `.polarisignore`), `repo_map`, `skeleton`, `json_query`, `regex_query`.
-- [ ] Deny secret-bearing paths by default for reads (`.env`, `*.pem`, `*.key`, `.git/config`; same deny-list as sync) unless a human-approved override is present in the token facts.
-- [ ] Implement `polaris_expand` / `polaris_recall` schemas and dispatch to `RefResolver` / `RecallBackend` traits (flag 6).
+- [x] Write JSON descriptors (prompt.md §6.3) for: path resolution/guard, `read_file`, `grep`, `glob`, `edit_file` proposal, `classify_command`, registry spec stability.
+- [x] Move the `Tool` trait, `ToolSpec`, `Effects` into sdk (flag 1) and implement `ToolRegistry` with enum dispatch (no `dyn Tool`); specs sorted and byte-stable.
+- [x] Implement `WorkspacePath` resolution (shared with leases via sdk): reject `..` escapes, absolute paths outside the root, UNC and verbatim prefixes, ADS names, reserved device names, trailing dots and spaces; resolve symlinks/junctions then re-check the prefix; reads open the file once to limit time-of-check/time-of-use gaps.
+- [x] Implement read-only tools: `read_file` (offset/limit, binary detection by NUL in the first 8 KiB, BOM handling, UTF-16 detection, byte-exact line endings reported), `list_dir`, `glob`, `grep` (regex with `size_limit`, HIR guard from automata, result and time caps, `ignore`-aware traversal honouring `.gitignore` and `.polarisignore`), `repo_map`, `skeleton`, `json_query`, `regex_query`.
+- [x] Deny secret-bearing paths by default for reads (`.env`, `*.pem`, `*.key`, `.git/config`; same deny-list as sync) unless a human-approved override is present in the token facts.
+- [x] Implement `polaris_expand` / `polaris_recall` schemas and dispatch to `RefResolver` / `RecallBackend` traits (flag 6).
 - [ ] Implement write tools as proposals (P2): `edit_file` with exact-match uniqueness and OCC base hash, `write_file`, `apply_patch`; line endings preserved; the proposal goes to the bus.
 - [ ] Implement `Shell` over `SandboxBackend` only; `classify_command` for heavy builds and destructive commands; large outputs are returned in full to the folder (context crate), not truncated here.
 - [ ] Keep the builtin tool list in the stable prompt prefix and let S1 prune only MCP tools into fixed profiles (see context risks).
-- [ ] Windows specifics: `\` and `/` both accepted in args, outputs use `/`; long paths with `\\?\` handled internally only; CRLF files edited without converting endings.
+- [x] Windows specifics: `\` and `/` both accepted in args, outputs use `/`; long paths with `\\?\` handled internally only; CRLF files edited without converting endings.
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -3687,7 +3695,7 @@ pub enum ToolError { InvalidArgs(String), Path(PathError), Denied(&'static str),
 | Command classification | function | `classify_command` | `crates/polaris-tools/crates/builtin/src/shell.rs` | `cargo_build_is_heavy`, `nvcc_is_heavy`, `rm_rf_is_destructive`, `unknown_is_unknown`, `powershell_remove_item_is_destructive` |
 
 **Risks & open questions.**
-- VERIFIED (read in `workspace.toml`): builtin lists neither `tokio`, `serde`, `encoding_rs` nor vcs/sync deps; the `Git` tool and patch application need primitives from vcs or code-intel (`imara-diff`); the builtin crate may only call them through sdk traits (open: confirm owner of the patch applier, which the plan lists as a fuzz target).
+- VERIFIED at P1 completion: builtin has serde/JSON/encoding dependencies. It owns a bounded pure unified-patch applier with a mandatory fuzz target. Actual mutation/exec remains behind SDK proposal/sandbox boundaries in P2.
 - VERIFIED (plan): Windows pitfalls apply (reserved names, case clashes, long paths); hostile-path corpora are generated at test time, not committed, to avoid AV quarantine.
 - LIKELY: S1 per-step tool pruning breaks prefix caching if it changes the tool list; mitigated as stated in the context crate.
 - UNVERIFIED: whether `regex` size limits fully bound compile memory for adversarial patterns; the HIR guard from `polaris-security-automata` is the first line and the fuzz target checks it.
@@ -3795,7 +3803,7 @@ pub enum MathError { Parse { at: usize }, DivideByZero, Overflow, NonFinite, Too
 - Detection: first non-whitespace character `{` means JSON.
 - JSON mode: only lines with `reason == "compiler-message"` and `message.level == "error"`; code from `message.code.code`; the primary span (`is_primary`) is followed through `expansion.span` chains to the outer call site; file, line, column from that span; `children[].message` become details; report `{status SUCCESS|FAILED, count, errors[{code, message, location{file,line,column}, details[]}]}` (the reference names the count field `vulnerabilities_count`; the port uses `error_count`).
 - Text mode: split into blocks starting at `error[E`, `error:` or `warning:` (`error: could not compile` is not a block start); if any error block exists, warning-only blocks are dropped; lines mentioning `.cargo/registry` or `.cargo/git` are dropped; `help:` and `note:` parts and `-->` paths are kept with consecutive-duplicate suppression; code-frame lines containing `|` or `^` are dropped.
-- Ledger lines: open `- [ ] <text> | ID: <id> | Opened: <ts>`, closed `- [x] ~~<text>~~ | ID: <id> | Opened: <ts> | Closed: <ts>`; id derived from the message text (reference: FNV-1a 64 as `#ERR-` plus 16 hex); unchanged errors stay open; vanished errors are closed with a timestamp; new errors are appended; non-issue lines are preserved verbatim; write to a temporary file in the same directory then rename; a legacy root-level `ISSUES.md` is migrated once.
+- Ledger lines: open `- [x] <text> | ID: <id> | Opened: <ts>`, closed `- [x] ~~<text>~~ | ID: <id> | Opened: <ts> | Closed: <ts>`; id derived from the message text (reference: FNV-1a 64 as `#ERR-` plus 16 hex); unchanged errors stay open; vanished errors are closed with a timestamp; new errors are appended; non-issue lines are preserved verbatim; write to a temporary file in the same directory then rename; a legacy root-level `ISSUES.md` is migrated once.
 
 **API sketch.**
 ```rust
@@ -3827,19 +3835,19 @@ pub async fn run(mode: RtkMode, stream: &[u8], file: &LedgerFile, now: jiff::Tim
 pub struct RtkOutput { pub filtered: String, pub summary: Option<LedgerSummary>, pub raw: Cid, pub exit_code: i32 }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `serde_json = 1.0.154` (with serde_json's default recursion limit, replacing the reference's unbounded recursive DOM parser), `blake3 = 1.8.7`, `backon = 1.6.0`, `jiff = 0.2.38`; `+proposed tempfile = 3.27.0` (unique temp file in the ledger directory), `tokio = 1.54.0` or sync `std::fs` behind `spawn_blocking`; dev: `proptest = 1.12.0`, `insta = 1.49.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `serde_json = 1.0.154` (with serde_json's default recursion limit, replacing the reference's unbounded recursive DOM parser), `blake3 = 1.8.7`, `backon = 1.6.0`, `jiff = 0.2.38`; `+proposed tempfile = 3.27.0` (unique temp file in the ledger directory), `tokio = 1.54.1` or sync `std::fs` behind `spawn_blocking`; dev: `proptest = 1.12.0`, `insta = 1.49.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: `detect_format`, `parse_diagnostics` (JSON and text), `filter_text`, `Ledger::reconcile`, `LedgerFile::save_atomic`, `exit_code`.
-- [ ] Port the JSON path with `serde_json` line by line (skip non-JSON lines instead of failing), including the `expansion.span` chain walk with a depth cap, and test against recorded cargo output (`--message-format=json`) for E0425, E0308, macro-expanded errors and multi-span errors.
-- [ ] Port the text segmenter and filters; normalise path separators before matching `.cargo/registry` and `.cargo/git` so Windows paths (`C:\Users\x\.cargo\registry\...`) are dropped too (the reference matches forward slashes only); honour a custom `CARGO_HOME`.
-- [ ] Add `Mixed` detection: JSON lines are parsed, other lines go through the text path, so `2>&1` output that starts with a stderr `Compiling ...` line is not misclassified as plain text (the reference decides on the first character only).
-- [ ] Port ledger parse / reconcile / render: id from the normalised message, open/closed transitions, timestamp on close, `Raw` lines preserved, new errors appended; exclude `error: could not compile ...` and `error: aborting due to ...` lines from the ledger (the reference text extractor includes them although its block segmenter excludes them).
-- [ ] Implement atomic save: unique temp file in the ledger directory, flush, rename over the target, bounded `backon` retry for transient `PermissionDenied` (antivirus or indexer locks), cleanup of the temp file on failure; detect a concurrent writer by comparing the ledger hash read before with the file at rename time and retry reconcile once.
-- [ ] Store the raw stream in CAS before filtering and return its `Cid` so the filtered view is never the only copy.
-- [ ] Implement ledger path resolution (`POLARIS_ISSUES_FILE` as a proposed name, explicit path, then workspace root found by `.git` or `.polaris`), and the one-time migration of a legacy `ISSUES.md`.
-- [ ] Expose a stable text rendering for the agent: `{open count, first-party errors with file:line, ledger summary, honesty note "reflects the last stream piped in"}`.
-- [ ] Windows specifics: CRLF and CR-only input lines, UTF-8 BOM at stream start, UTF-16 stream from PowerShell redirection (detect BOM, transcode), ledger written with LF (the repository `.gitattributes` uses LF).
+- [x] Write JSON descriptors (prompt.md §6.3) for: `detect_format`, `parse_diagnostics` (JSON and text), `filter_text`, `Ledger::reconcile`, `LedgerFile::save_atomic`, `exit_code`.
+- [x] Port the JSON path with `serde_json` line by line (skip non-JSON lines instead of failing), including the `expansion.span` chain walk with a depth cap, and test against recorded cargo output (`--message-format=json`) for E0425, E0308, macro-expanded errors and multi-span errors.
+- [x] Port the text segmenter and filters; normalise path separators before matching `.cargo/registry` and `.cargo/git` so Windows paths (`C:\Users\x\.cargo\registry\...`) are dropped too (the reference matches forward slashes only); honour a custom `CARGO_HOME`.
+- [x] Add `Mixed` detection: JSON lines are parsed, other lines go through the text path, so `2>&1` output that starts with a stderr `Compiling ...` line is not misclassified as plain text (the reference decides on the first character only).
+- [x] Port ledger parse / reconcile / render: id from the normalised message, open/closed transitions, timestamp on close, `Raw` lines preserved, new errors appended; exclude `error: could not compile ...` and `error: aborting due to ...` lines from the ledger (the reference text extractor includes them although its block segmenter excludes them).
+- [x] Implement atomic save: unique temp file in the ledger directory, flush, rename over the target, bounded `backon` retry for transient `PermissionDenied` (antivirus or indexer locks), cleanup of the temp file on failure; detect a concurrent writer by comparing the ledger hash read before with the file at rename time and retry reconcile once.
+- [x] Store the raw stream in CAS before filtering and return its `Cid` so the filtered view is never the only copy.
+- [x] Implement ledger path resolution (`POLARIS_ISSUES_FILE` as a proposed name, explicit path, then workspace root found by `.git` or `.polaris`), and the one-time migration of a legacy `ISSUES.md`.
+- [x] Expose a stable text rendering for the agent: `{open count, first-party errors with file:line, ledger summary, honesty note "reflects the last stream piped in"}`.
+- [x] Windows specifics: CRLF and CR-only input lines, UTF-8 BOM at stream start, UTF-16 stream from PowerShell redirection (detect BOM, transcode), ledger written with LF (the repository `.gitattributes` uses LF).
 
 **Tests.**
 | Category | Cases / budgets (targets) |
@@ -3865,7 +3873,7 @@ pub struct RtkOutput { pub filtered: String, pub summary: Option<LedgerSummary>,
 **Risks & open questions.**
 - VERIFIED (read in source): the reference decides JSON versus text by the first non-whitespace character only, matches registry markers with forward slashes only, includes `error: could not compile` lines in ledger extraction, writes one fixed temp name (`issues.md.tmp`), writes LF regardless of input, uses local time `%Y-%m-%d %H:%M:%S` in code but ISO-8601 `...Z` in the SKILL.md example, and documents ids as 8 hex in SKILL.md but derives 16 hex (`#ERR-` + FNV-1a 64) in code. The port fixes the first four and must pick one timestamp format (proposal: RFC 3339 UTC, second precision, injectable clock) and one id format (proposal: `#ERR-` + 16 hex of blake3).
 - VERIFIED (design property of the reference): the id depends on the message text only, so identical messages in different files collapse into one ledger entry; keeping this keeps ids stable when lines shift, at the cost of merging same-text errors. OPEN: include the file path in the id?
-- UNVERIFIED: that `std::fs::rename` replaces an existing file on Windows under all conditions (LIKELY yes); a rename failure is retried and then reported.
+- VERIFIED for the tested Windows filesystem: atomic ledger replacement, concurrent subprocess writers and sharing-failure retry/error paths. Other filesystems retain their platform-specific limitations.
 - UNVERIFIED: cargo's exact JSON shape across rustc versions (fields beyond those the reference reads); the parser ignores unknown fields.
 - No spike covers RTK; reference parity is checked by running both implementations on the same recorded fixtures (the C++ reference binary is not built here; UNVERIFIED that it builds on this machine).
 
@@ -3879,7 +3887,7 @@ pub struct RtkOutput { pub filtered: String, pub summary: Option<LedgerSummary>,
 
 **Group conventions (apply to every crate below; not repeated per crate).**
 - Safe Rust only; no `unwrap` / `expect` / `panic!` / slice indexing; every fallible fn returns `Result<_, <Crate>Error>` where `<Crate>Error` is a `thiserror` enum; no lint attributes anywhere (D10).
-- Versions are copied from `@prime/tools/workspace.toml` `[[ext]]`. Where a sketch needs a crate that the crate's `ext = [...]` list in `workspace.toml` does not yet contain, it is marked `+proposed` (parent must reconcile `workspace.toml` before `gen`). The commonly missing ones are `thiserror = 2.0.21`, `serde = 1.0.229` (features `derive`), `tokio = 1.54.0`.
+- Versions are copied from `@prime/tools/workspace.toml` `[[ext]]`. Where a sketch needs a crate that the crate's `ext = [...]` list in `workspace.toml` does not yet contain, it is marked `+proposed` (parent must reconcile `workspace.toml` before `gen`). The commonly missing ones are `thiserror = 2.0.21`, `serde = 1.0.229` (features `derive`), `tokio = 1.54.1`.
 - Layer rule used throughout: an L2 adapter depends only on `polaris-sdk`, L1 crates and its own external library, never on a sibling adapter of another parent. Cross-adapter wiring (for example "run a command in WSL2") is done with sdk traits and generics, and bound at the composition root (`polaris-kernel` facade, L5).
 - Label vocabulary: VERIFIED (checked this session against live output or docs), LIKELY (consistent with context, not checked), UNVERIFIED (open; covered by the named spike). Nothing in this file has been run or tested; every test row is a plan, and every number is a target to measure.
 - Descriptor file paths are the planned implementation paths. Generated test files go to `<crate>/tests/<logic_name_snake_case>.rs` (prompt.md §6.3) and start `#[ignore]`d until implemented.
@@ -3954,7 +3962,7 @@ pub enum WslError { NotInstalled, DistroMissing(DistroName), Decode, Exit { code
                     Timeout, KvmUnavailable, NeedsElevation, NeedsReboot, ConfigInvalid { key: String }, Io(std::io::Error) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `process-wrap = 10.0.1` (feature `tokio1`), `which = 8.0.6`; `+proposed`: `thiserror = 2.0.21`, `dunce = 1.0.5` (verbatim `\\?\` prefix handling).
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `process-wrap = 10.0.1` (feature `tokio1`), `which = 8.0.6`; `+proposed`: `thiserror = 2.0.21`, `dunce = 1.0.5` (verbatim `\\?\` prefix handling).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `decode_wsl_output`, `to_linux_path`/`to_windows_path`, `validate_wslconfig`, `Wsl::doctor`, `Distro::exec` argv builder, `KeepAlive` supervisor.
@@ -4035,7 +4043,7 @@ pub enum Pressure { Normal, Elevated, Critical }
 pub struct ProcessPlatform; /* impl polaris_sdk::PlatformOps for ProcessPlatform */
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-log`. External: `process-wrap = 10.0.1` (feature `tokio1`), `portable-pty = 0.9.0`, `notify = 8.2.0`, `notify-debouncer-full = 0.7.0`, `sysinfo = 0.39.6` (`default-features = false`, features `system`, `disk`), `tokio = 1.54.0`; `+proposed`: `thiserror = 2.0.21`, `which = 8.0.6`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-log`. External: `process-wrap = 10.0.1` (feature `tokio1`), `portable-pty = 0.9.0`, `notify = 8.2.0`, `notify-debouncer-full = 0.7.0`, `sysinfo = 0.39.6` (`default-features = false`, features `system`, `disk`), `tokio = 1.54.1`; `+proposed`: `thiserror = 2.0.21`, `which = 8.0.6`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `resolve_program`, `EnvPolicy::apply`, `ProcessTree::stop`, `spawn_pty`, `watch` overflow handling, `MemorySampler::pressure`.
@@ -4117,7 +4125,7 @@ pub trait GitRunner { async fn run(&self, args: &[GitArg]) -> Result<GitOutput, 
 pub enum VcsError { NotARepo, DirtyTree, InvalidRef(String), Conflict(Vec<RepoPath>), CasMissing(Cid), GitCli { code: i32 }, Gix(String), Io(std::io::Error) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `gix = 0.89.0` (`default-features = false`, features `max-performance-safe`, `status`, `revision`, `worktree-mutation`, `sha1`), `imara-diff = 0.2.0`, `similar = 3.2.0`; `+proposed`: `tokio = 1.54.0` (git CLI via sdk `PlatformOps`, no direct dependency on `polaris-platform-process`), `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-cas`. External: `gix = 0.89.0` (`default-features = false`, features `max-performance-safe`, `status`, `revision`, `worktree-mutation`, `sha1`), `imara-diff = 0.2.0`, `similar = 3.2.0`; `+proposed`: `tokio = 1.54.1` (git CLI via sdk `PlatformOps`, no direct dependency on `polaris-platform-process`), `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `BranchName::parse`, `Repo::status`, `Repo::diff`, `snapshot_before_edit` + `undo`, `rollback`, `worktree_add`/`remove`, `GitRunner` argument builder.
@@ -4249,7 +4257,7 @@ pub enum OpenShellError { VersionMismatch { expected: String, found: String }, D
 ```
 All signatures are Polaris-side; the shape of the `openshell-sdk` types is API to confirm at implementation (S0-1).
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `openshell-sdk` (git `https://github.com/NVIDIA/OpenShell`, `rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1"`, tag v0.1.4), `tokio = 1.54.0`, `tonic = 0.14.6`; `+proposed`: `thiserror = 2.0.21`, `bytes = 1.12.1`, `futures = 0.3.34`. Note: openshell-sdk brings tonic 0.14, reqwest 0.12.28 and rustls (aws-lc-rs); our own code uses reqwest 0.13.5 (accepted duplicate, reviewed in `cargo tree -d`).
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `openshell-sdk` (git `https://github.com/NVIDIA/OpenShell`, `rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1"`, tag v0.1.4), `tokio = 1.54.1`, `tonic = 0.14.6`; `+proposed`: `thiserror = 2.0.21`, `bytes = 1.12.1`, `futures = 0.3.34`. Note: openshell-sdk brings tonic 0.14, reqwest 0.12.28 and rustls (aws-lc-rs); our own code uses reqwest 0.13.5 (accepted duplicate, reviewed in `cargo tree -d`).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `OpenShellBackend::connect` (version gate), `Sandbox` lifecycle typestate, `exec` stream mapping, `put_blob`/`get_blob`, driver capability matrix, provider attach.
@@ -4548,7 +4556,7 @@ pub enum TfError { Http { status: u16, retry_after: Option<std::time::Duration> 
                    StreamTruncated, SseFrameTooLarge, Decode(String), Cancelled, Tls(String), Io(std::io::Error) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`, `polaris-ratelimit`, `polaris-telemetry`. External: `reqwest = 0.13.5` (`default-features = false`, features `rustls`, `http2`, `json`, `stream`, `charset`), `eventsource-stream = 0.2.3`, `serde = 1.0.229`, `serde_json = 1.0.154`, `bytes = 1.12.1`, `tokio = 1.54.0`, `secrecy = 0.10.3`; `+proposed`: `thiserror = 2.0.21`, `url = 2.5.8`, `futures = 0.3.34`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`, `polaris-ratelimit`, `polaris-telemetry`. External: `reqwest = 0.13.5` (`default-features = false`, features `rustls`, `http2`, `json`, `stream`, `charset`), `eventsource-stream = 0.2.3`, `serde = 1.0.229`, `serde_json = 1.0.154`, `bytes = 1.12.1`, `tokio = 1.54.1`, `secrecy = 0.10.3`; `+proposed`: `thiserror = 2.0.21`, `url = 2.5.8`, `futures = 0.3.34`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `SseParser::feed`, `ChatRequestBuilder`, delta decoding (content/reasoning/tool-call/usage), retry/`Retry-After` policy, `list_models`, embeddings batching, `BaseUrl` validation.
@@ -4637,7 +4645,7 @@ pub enum SandboxError { SidecarUnavailable, ToolInventoryDrift { missing: Vec<St
 ```
 Tool-name strings and request/response field names above come from the verified tool list; schemas of each tool are API to confirm at implementation (S0-13, `get_guide`).
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `rmcp = 3.5.1` (`default-features = false`, features `client`, `macros`, `transport-child-process`, `transport-streamable-http-client-reqwest`, `reqwest-tls-no-provider`), `tokio = 1.54.0`, `serde_json = 1.0.154`; `+proposed`: `thiserror = 2.0.21`, `serde = 1.0.229`, `bytes = 1.12.1`. Process spawn goes through the sdk `PlatformOps` trait (generic), not through `polaris-platform-process` directly; restart policy is the kernel supervisor's.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-log`. External: `rmcp = 3.5.1` (`default-features = false`, features `client`, `macros`, `transport-child-process`, `transport-streamable-http-client-reqwest`, `reqwest-tls-no-provider`), `tokio = 1.54.1`, `serde_json = 1.0.154`; `+proposed`: `thiserror = 2.0.21`, `serde = 1.0.229`, `bytes = 1.12.1`. Process spawn goes through the sdk `PlatformOps` trait (generic), not through `polaris-platform-process` directly; restart policy is the kernel supervisor's.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Sidecar::command`, `ContreeBackend::connect` (inventory check), `run` (wait / async operation modes), `branch_run` (budgeted fan-out), `sync_up` (approved paths only), `resolve_env`, operation `wait`/`cancel`.
@@ -4717,7 +4725,7 @@ pub fn residual_secret_scan(t: &Trajectory<Masked>) -> Result<(), DataLabError>;
 pub enum DataLabError { NotOptedIn, NotVerified, ResidualSecret, SchemaViolation(String), Transport(String), ApiUnverified, Io(std::io::Error) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-storage-cas`. External: `reqwest = 0.13.5` (feature set as in workspace), `serde_json = 1.0.154`; `+proposed`: `serde = 1.0.229`, `thiserror = 2.0.21`, `bytes = 1.12.1`, `tokio = 1.54.0`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-storage-cas`. External: `reqwest = 0.13.5` (feature set as in workspace), `serde_json = 1.0.154`; `+proposed`: `serde = 1.0.229`, `thiserror = 2.0.21`, `bytes = 1.12.1`, `tokio = 1.54.1`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Trajectory` typestate transitions, ShareGPT and ChatML serializers, `residual_secret_scan`, `OptIn` consent gate, batching/rotation of JSONL files.
@@ -4792,7 +4800,7 @@ pub struct BudgetGuard { /* max hourly cost, max total, price table from config 
 pub enum CloudError { Unauthorized, QuotaExceeded(String), BudgetExceeded, NotFound, Timeout, ApiUnverified, Transport(String), Config(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External: `reqwest = 0.13.5`, `tonic = 0.14.6`; `+proposed`: `thiserror = 2.0.21`, `tokio = 1.54.0`, `serde = 1.0.229`, `serde_json = 1.0.154`, possibly `rcgen = 0.14.10` if Polaris must mint client certificates (decide after reading the gateway's TLS model).
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External: `reqwest = 0.13.5`, `tonic = 0.14.6`; `+proposed`: `thiserror = 2.0.21`, `tokio = 1.54.1`, `serde = 1.0.229`, `serde_json = 1.0.154`, possibly `rcgen = 0.14.10` if Polaris must mint client certificates (decide after reading the gateway's TLS model).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `BudgetGuard` checks, `VmSpec` validation, `GatewayVm` state transitions, TTL/idle auto-stop scheduler, endpoint hand-off (`GatewayEndpoint` construction).
@@ -4889,7 +4897,7 @@ pub fn validate_flake_text(text: &str) -> Result<FlakeLint, NixError>;          
 pub enum NixError { NotInstalled, EvalFailed { stderr: String }, JsonTooLarge, JsonShape(String), UnsafeFlake(String), Timeout, Io(std::io::Error) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `serde_json = 1.0.154`, `tokio = 1.54.0`; `+proposed`: `serde = 1.0.229`, `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`. External: `serde_json = 1.0.154`, `tokio = 1.54.1`; `+proposed`: `serde = 1.0.229`, `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `eval_command`, `parse_dev_env`, `sanitize`, `cache_key`, `validate_flake_text`, `flake_draft_prompt`.
@@ -4971,7 +4979,7 @@ impl WarmPool {
 pub enum DockerError { EngineUnavailable, ApiVersion(String), ImageNotFound(String), Exec { code: i64 }, PoolExhausted, Timeout, Build(String), Transport(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `bollard = 0.21.1` (default features `http`, `pipe`; no TLS, which avoids `ring`), `tokio = 1.54.0`, `futures = 0.3.34`; `+proposed`: `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`. External: `bollard = 0.21.1` (default features `http`, `pipe`; no TLS, which avoids `ring`), `tokio = 1.54.1`, `futures = 0.3.34`; `+proposed`: `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Docker::connect` (endpoint autodetect + API negotiation), `ContainerSpec` hardening defaults, `WarmPool::acquire`/refill, `Container` lifecycle typestate, exec stream mapping, `build_image`.
@@ -5042,7 +5050,7 @@ pub fn rust_test_pipeline(ws: &WorkspaceFacts) -> Result<Pipeline<Draft>, CiErro
 pub enum CiError { InvalidPipeline(String), EngineUnavailable, StepTimeout(StepName), Cancelled, EngineFailure(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`. External: `dagger-sdk = 0.21.10` (optional, cargo feature `dagger`, pulls reqwest 0.11), `tokio = 1.54.0`; `+proposed`: `thiserror = 2.0.21`, `jiff = 0.2.38`. Default features: none of the Dagger stack; `cargo tree -d` must show reqwest 0.11 only with `--features dagger`.
+**Dependencies.** Internal: `polaris-sdk`. External: `dagger-sdk = 0.21.10` (optional, cargo feature `dagger`, pulls reqwest 0.11), `tokio = 1.54.1`; `+proposed`: `thiserror = 2.0.21`, `jiff = 0.2.38`. Default features: none of the Dagger stack; `cargo tree -d` must show reqwest 0.11 only with `--features dagger`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: `Pipeline::validate`, `rust_test_pipeline`, `SandboxEngine::run` (step ordering, timeouts, report assembly), matrix expansion, `CiReport` verdict rules, cache-status mapping.
@@ -5349,7 +5357,7 @@ impl<T: WorkerTransport, C: SchemaCatalog> S1Client<T, C> {
 pub enum ClientError { Config(String), Transport(TransportError), QueueFull, SchemaUnknown(SchemaId), WorkerUnhealthy }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-storage-cache`. External (workspace.toml): `tonic = 0.14.6`, `tokio = 1.54.0`, `quick_cache = 0.7.0`, `xxhash-rust = 0.8.19`. Proposed additions: `blake3 = 1.8.7` (strict-integrity keys), `thiserror = 2.0.21`, `tokio-util = 0.7.20` (cancellation), `tower = 0.5.3` (named-pipe connector, API to confirm).
+**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-storage-cache`. External (workspace.toml): `tonic = 0.14.6`, `tokio = 1.54.1`, `quick_cache = 0.7.0`, `xxhash-rust = 0.8.19`. Proposed additions: `blake3 = 1.8.7` (strict-integrity keys), `thiserror = 2.0.21`, `tokio-util = 0.7.20` (cancellation), `tower = 0.5.3` (named-pipe connector, API to confirm).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: request batcher, cache key + strict integrity, deadline/fail-mode resolution, named-pipe transport.
@@ -5738,7 +5746,7 @@ impl EmbeddingProvider for NeedleBridge { /* sdk trait */ }
 pub enum NanoError { EngineMissing(PathBuf), StartupTimeout, ProtocolError(String), SchemaInvalid, Dimension { expected: usize, got: usize }, Unsupported(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`. External (workspace.toml): `tokio = 1.54.0`, `serde_json = 1.0.154`. Proposed additions: `reqwest = 0.13.5` (if `--serve` is HTTP; protocol UNVERIFIED), `process-wrap = 10.0.1` (kill-tree for the engine child), `jsonschema = 0.59.0` (argument validation), `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`. External (workspace.toml): `tokio = 1.54.1`, `serde_json = 1.0.154`. Proposed additions: `reqwest = 0.13.5` (if `--serve` is HTTP; protocol UNVERIFIED), `process-wrap = 10.0.1` (kill-tree for the engine child), `jsonschema = 0.59.0` (argument validation), `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: engine supervision, argument filling with schema validation, embedding provider, embedding-model/dimension guard.
@@ -5840,7 +5848,7 @@ impl Fetcher { pub async fn fetch(&self, url: &Url) -> Result<FetchedPage, Searc
 pub enum SearchError { Http(String), Status(u16), RateLimited { retry_after: Option<Duration> }, Blocked(BlockReason), TooLarge, UnsupportedContent(String), Decode(String), ProviderConfig(String) }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-ratelimit`. External (workspace.toml): `reqwest = 0.13.5` (rustls, http2, json, stream, charset), `serde_json = 1.0.154`, `htmd = 0.5.6`, `url = 2.5.8`. Proposed additions: `serde = 1.0.229`, `tokio = 1.54.0`, `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-ratelimit`. External (workspace.toml): `reqwest = 0.13.5` (rustls, http2, json, stream, charset), `serde_json = 1.0.154`, `htmd = 0.5.6`, `url = 2.5.8`. Proposed additions: `serde = 1.0.229`, `tokio = 1.54.1`, `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: Tavily request/response mapping, SearXNG mapping, SSRF guard, fetch limits, HTML-to-Markdown extraction.
@@ -5921,7 +5929,7 @@ pub enum SiftError { Source(SourceError), Engine(DecisionError), Schema(SchemaEr
 ```
 Race implementation notes: `tokio::task::JoinSet`, `abort_all()` after acceptance; permits are RAII-released. Abort cancels at `.await` points and does not stop `spawn_blocking` work.
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-search-providers`. External (workspace.toml): `tokio = 1.54.0`. Proposed additions: `tokio-util = 0.7.20` (cancellation), `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-search-providers`. External (workspace.toml): `tokio = 1.54.1`. Proposed additions: `tokio-util = 0.7.20` (cancellation), `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: race, validation, sift with token budget, drop manifest, fail-open fallback.
@@ -6034,7 +6042,7 @@ pub enum McpError { Spawn(String), Handshake(String), VersionMismatch, ToolNotFo
 ```
 `rmcp = 3.5.1` types and method names are "API to confirm at implementation".
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External (workspace.toml): `rmcp = 3.5.1` (client, macros, transport-child-process, transport-streamable-http-client-reqwest, reqwest-tls-no-provider), `tokio = 1.54.0`, `schemars = 1.2.3`. Proposed additions: `serde = 1.0.229`, `serde_json = 1.0.154`, `url = 2.5.8`, `jsonschema = 0.59.0`, `thiserror = 2.0.21`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External (workspace.toml): `rmcp = 3.5.1` (client, macros, transport-child-process, transport-streamable-http-client-reqwest, reqwest-tls-no-provider), `tokio = 1.54.1`, `schemars = 1.2.3`. Proposed additions: `serde = 1.0.229`, `serde_json = 1.0.154`, `url = 2.5.8`, `jsonschema = 0.59.0`, `thiserror = 2.0.21`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: connect + handshake, namespacing, schema normalization, result bounding, trust gating, prune-summary sanitizer.
@@ -6271,7 +6279,7 @@ pub enum DocsError { Fetch(String), Parse(String), Index(String), Probe(ProbeErr
 ```
 Sources (VERIFIED, plan item 9): `llms.txt` at `docs.nvidia.com`, `docs.nvidia.com/cuda`, `developer.nvidia.com`, `.../openshell`, `.../nemoclaw`; appending `.md` to a page URL yields Markdown; docs MCP server at `https://docs.nvidia.com/nemoclaw/_mcp/server`. MCP availability for the other sites is LIKELY only.
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-registry`, `polaris-storage-vector`, `polaris-code-intel`, `polaris-ratelimit`. External (workspace.toml): `reqwest = 0.13.5`, `htmd = 0.5.6`, `pulldown-cmark = 0.13.4`, `url = 2.5.8`. Proposed additions: `serde = 1.0.229`, `tokio = 1.54.0`, `thiserror = 2.0.21`, `blake3 = 1.8.7` (chunk ids; or via storage-cas). The docs-MCP path is injected through a small `DocsTransport` trait implemented at the composition root with `polaris-ext-mcp` (no direct dependency).
+**Dependencies.** Internal: `polaris-sdk`, `polaris-storage-registry`, `polaris-storage-vector`, `polaris-code-intel`, `polaris-ratelimit`. External (workspace.toml): `reqwest = 0.13.5`, `htmd = 0.5.6`, `pulldown-cmark = 0.13.4`, `url = 2.5.8`. Proposed additions: `serde = 1.0.229`, `tokio = 1.54.1`, `thiserror = 2.0.21`, `blake3 = 1.8.7` (chunk ids; or via storage-cas). The docs-MCP path is injected through a small `DocsTransport` trait implemented at the composition root with `polaris-ext-mcp` (no direct dependency).
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: llms.txt parsing, incremental sync, Markdown chunking, stack detection, GPU target resolution, `nv_verify` launch checks, `nv_profile` rules.
@@ -6590,7 +6598,7 @@ message HandshakeRequest  { uint32 protocol_version = 1; string host_build = 2; 
 message HandshakeResponse { uint32 protocol_version = 1; bool compatible = 2; string guest_build = 3; }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-security-capability`. External: `tonic = 0.14.6` (features transport, router, codegen, tls-aws-lc, tls-native-roots), `tokio = 1.54.0`, `rustls = 0.23.46` (aws_lc_rs), `tokio-rustls = 0.26.6`, `rcgen = 0.14.10` (test CA and self-signed certs), `hyper-util = 0.1.21`, `tower = 0.5.3`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-security-capability`. External: `tonic = 0.14.6` (features transport, router, codegen, tls-aws-lc, tls-native-roots), `tokio = 1.54.1`, `rustls = 0.23.46` (aws_lc_rs), `tokio-rustls = 0.26.6`, `rcgen = 0.14.10` (test CA and self-signed certs), `hyper-util = 0.1.21`, `tower = 0.5.3`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: named-pipe connector/acceptor, auth interceptor, `AttachSession` handler, TLS config builder, event resume/replay.
@@ -7100,17 +7108,17 @@ Dropped from the demo: `D` (demo-data toggle), because Polaris shows real data o
 10. Overlays: completion menus (opaque, full width, one blank top row), bottom-sheet popups (`/model /status /usage /stats /diff /help /sessions /providers /context-map /parallel-dag`), attachment preview, approval (blast-radius), toasts (2 s `Copied N words`).
 11. Token-weather HUD placement is OPEN (candidates: right side of the footer, or a `/status` section); the demo has no HUD.
 
-**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-cli`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `clap = 4.6.7` (derive), `crossterm = 0.29.0`, `ratatui = 0.30.2`, `miette = 7.6.0` (fancy), `mimalloc = 0.1.52`, `rustls = 0.23.46`.
+**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-cli`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `clap = 4.6.7` (derive), `crossterm = 0.29.0`, `ratatui = 0.30.2`, `miette = 7.6.0` (fancy), `mimalloc = 0.1.52`, `rustls = 0.23.46`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: argument parsing, startup sequence, TUI event loop, headless runner, doctor report, dump mode.
-- [ ] Replace the doc-only lib skeleton with `src/main.rs` + bin target `polaris` (keep a thin `lib.rs` for testable logic if useful).
+- [x] Write JSON descriptors (prompt.md §6.3) for: argument parsing, startup sequence, TUI event loop, headless runner, doctor report, dump mode.
+- [x] Replace the doc-only lib skeleton with `src/main.rs` + bin target `polaris` (keep a thin `lib.rs` for testable logic if useful).
 - [ ] Implement clap definitions and validation (invalid `--color-depth`/`--theme` rejected with actionable messages; `--dump` parses `WxH`).
-- [ ] Startup: install aws-lc-rs as the rustls default provider, set mimalloc, init `polaris-log`, load config layers, build the kernel via the composition root.
+- [x] Startup: install aws-lc-rs as the rustls default provider, set mimalloc, init `polaris-log`, load config layers, build the kernel via the composition root.
 - [ ] TUI loop: alternate screen, bracketed paste, mouse capture, panic-safe terminal restore (with `panic = "unwind"`, restore in a guard `Drop`; no `unsafe`), resize handling, event channel from the kernel broadcast.
 - [ ] Implement `polaris --dump WxH` end to end and wire it to insta snapshots (first deliverable of P1 and a smoke test).
-- [ ] Implement `polaris run`: JSON-lines of events, exit codes (proposal: 0 verified done, 1 task failed, 2 usage error, 3 ProofOfDone blocked completion, 4 environment/doctor failure; decide in the descriptor).
-- [ ] Implement `polaris doctor`: collect checks from platform/openshell crates; keyed checks print `SKIPPED: no key`.
+- [x] P1 `polaris run` accepts one signed session directive and emits committed EventRecord JSONL after joined shutdown. Arbitrary model tasks fail with the explicit P3 execution-profile requirement. Exit zero confirms the local control operation; it is not a model-task proof-of-done.
+- [x] P1 `polaris doctor` reports real config, installed TLS provider, local state/recovery checks and key presence without secret values. P2 adds WSL/OpenShell/sandbox probes.
 - [ ] Windows terminal handling per spike S0-10: ConPTY bytes test via `portable-pty`, then pick Shift+Enter path or fallback chords.
 - [ ] `--connect` (P9): construct a `KernelClient` from `polaris-rpc` behind the same `KernelApi` trait so the TUI code path is identical.
 - [ ] BLOCKED-ON-ACCESS (Token Factory key): live `polaris run` against Nemotron; until then run against the local Ollama/llama.cpp endpoint (P3 plan).
@@ -7164,7 +7172,7 @@ struct Bridge { /* subscribes to events, calls polaris_ui_model::reduce, pushes 
 pub enum DesktopError { /* thiserror: Slint platform, Kernel, Rpc, Config */ }
 ```
 
-**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-gui`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `slint = 1.18.1`, `slint-build = 1.18.1`, `rustls = 0.23.46`. (A Windows GUI-subsystem build setting is not a lint attribute and does not conflict with D10; confirm the exact mechanism at implementation.)
+**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-gui`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `slint = 1.18.1`, `slint-build = 1.18.1`, `rustls = 0.23.46`. (A Windows GUI-subsystem build setting is not a lint attribute and does not conflict with D10; confirm the exact mechanism at implementation.)
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: runtime/UI thread bridge, kernel mode selection, shutdown sequence.
@@ -7227,7 +7235,7 @@ pub enum WebError { /* thiserror: Auth, Origin, Kernel, Render */ }
 ```
 (Axum 0.8 / leptos_axum 0.8.10 handler and extractor signatures are to be confirmed at implementation.)
 
-**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-web`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `axum = 0.8.9` (ws, macros), `tower-http = 0.6.11` (trace, cors, fs, compression-br, compression-zstd), `leptos = 0.8.22`, `leptos_axum = 0.8.10`, `leptos_router = 0.8.17`, `leptos_meta = 0.8.7`, `wasm-bindgen = 0.2.129`. The chatlog's "single binary via `include_dir!`" needs an embedding crate that is not in `workspace.toml`; either add one through the TOML or serve `pkg/` and assets from disk with `tower-http` `fs`.
+**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-web`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `axum = 0.8.9` (ws, macros), `tower-http = 0.6.11` (trace, cors, fs, compression-br, compression-zstd), `leptos = 0.8.22`, `leptos_axum = 0.8.10`, `leptos_router = 0.8.17`, `leptos_meta = 0.8.7`, `wasm-bindgen = 0.2.129`. The chatlog's "single binary via `include_dir!`" needs an embedding crate that is not in `workspace.toml`; either add one through the TOML or serve `pkg/` and assets from disk with `tower-http` `fs`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: router assembly, auth middleware, SSE endpoint, WebSocket terminal, security headers, static asset serving.
@@ -7295,7 +7303,7 @@ async fn serve_daemon(cfg: PolarisConfig, args: DaemonArgs) -> Result<(), Daemon
 pub enum DaemonError { /* thiserror: Config, Tls, Bind, AlreadyRunning, Kernel */ }
 ```
 
-**Dependencies.** Internal: `polaris-kernel`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `tonic = 0.14.6`, `rustls = 0.23.46`, `clap = 4.6.7`.
+**Dependencies.** Internal: `polaris-kernel`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `tonic = 0.14.6`, `rustls = 0.23.46`, `clap = 4.6.7`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: argument validation (TLS required off loopback), single-instance lock, token issue command, shutdown sequence, health reporting.
@@ -7359,7 +7367,7 @@ pub enum WorkerError { /* thiserror: Pipe, Auth, ModelLoad, Ingest, Evicted, Out
 // gRPC: polaris.v1.WorkerService { Health, Decide, Ingest (server-stream), Evict, Shutdown } (see polaris-rpc outline)
 ```
 
-**Dependencies.** Internal: `polaris-system-one-engine`, `polaris-system-one-nano`, `polaris-ingest`, `polaris-proto`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.0`, `tonic = 0.14.6`, `ort = =2.0.0-rc.13` (workspace.toml; the PLAN core (§0–§12) text says rc.15, a discrepancy to resolve in the dependency probe), `clap = 4.6.7`. The ORT DLL is loaded dynamically from beside the executable, never from System32.
+**Dependencies.** Internal: `polaris-system-one-engine`, `polaris-system-one-nano`, `polaris-ingest`, `polaris-proto`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `tonic = 0.14.6`, `ort = =2.0.0-rc.13` (workspace.toml; the PLAN core (§0–§12) text says rc.15, a discrepancy to resolve in the dependency probe), `clap = 4.6.7`. The ORT DLL is loaded dynamically from beside the executable, never from System32.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: mode dispatch, named-pipe server with token auth, health/memory reporting, eviction policy, ingest isolation limits.
@@ -7432,7 +7440,7 @@ async fn a11y_tree(req: A11yRequest) -> Result<A11yResponse, GuestError>;
 pub enum GuestError { /* thiserror: VersionMismatch, PathEscape, Exec, Browser, Sync */ }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-browser`, `polaris-log`. External: `tokio = 1.54.0`, `chromiumoxide = 0.9.1` (feature bytes), `prost = 0.14.4`. The server side of tonic is needed for `GuestService`; `tonic` is not in this crate's `ext` in workspace.toml (it arrives transitively through `polaris-proto`): add it explicitly via the TOML if the direct dependency is required.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-proto`, `polaris-browser`, `polaris-log`. External: `tokio = 1.54.1`, `chromiumoxide = 0.9.1` (feature bytes), `prost = 0.14.4`. The server side of tonic is needed for `GuestService`; `tonic` is not in this crate's `ext` in workspace.toml (it arrives transitively through `polaris-proto`): add it explicitly via the TOML if the direct dependency is required.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: handshake, path confinement, exec event stream, sync apply, screenshot request limits.
@@ -7546,7 +7554,7 @@ A `[[test]]` entry exists only for a file that exists. Heavy files start with `#
 6. Secret hygiene: the transcript, logs and captured outbound bodies contain none of the generated fake keys or PII samples; sandbox environment contains no key.
 Modes: **scripted** (MockTokenFactory, deterministic, keyless; needs a real sandbox to count as PASS, and is `#[ignore]` without WSL2) and **live** (`#[ignore = "needs NEBIUS_API_KEY"]`, real Nemotron on Token Factory, three runs recorded with raw output). Time budget for the scripted run is a target to measure (not asserted until measured).
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-storage` (as listed in workspace.toml). Needed in addition, to be added through the TOML: `polaris-kernel`, `polaris-ui-cli`/`polaris-ui-model`, `polaris-kernel-directives`, `polaris-ratelimit`, `polaris-system-one-client` (e2e, contract and load suites); binaries from other packages (`polaris`, `polarisd`, `polaris-worker`) must be built before the suites run (`xtask test` does this), because `assert_cmd` does not build other packages. External: `tokio = 1.54.0`, `tempfile = 3.27.0`, `wiremock = 0.6.5`, `proptest = 1.12.0`, `insta = 1.49.0`, `rstest = 0.28.0`, `assert_cmd = 2.2.2`, `predicates = 3.1.4`, `hdrhistogram = 7.6.0`; proposed: `portable-pty = 0.9.0`, `serde_json = 1.0.154`.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-config`, `polaris-storage` (as listed in workspace.toml). Needed in addition, to be added through the TOML: `polaris-kernel`, `polaris-ui-cli`/`polaris-ui-model`, `polaris-kernel-directives`, `polaris-ratelimit`, `polaris-system-one-client` (e2e, contract and load suites); binaries from other packages (`polaris`, `polarisd`, `polaris-worker`) must be built before the suites run (`xtask test` does this), because `assert_cmd` does not build other packages. External: `tokio = 1.54.1`, `tempfile = 3.27.0`, `wiremock = 0.6.5`, `proptest = 1.12.0`, `insta = 1.49.0`, `rstest = 0.28.0`, `assert_cmd = 2.2.2`, `predicates = 3.1.4`, `hdrhistogram = 7.6.0`; proposed: `portable-pty = 0.9.0`, `serde_json = 1.0.154`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: temp workspace, MockTokenFactory, CountingAlloc, hostile generators, histogram budget assert, MVP demo runner.
@@ -7615,7 +7623,7 @@ struct BurstReport { admitted: Vec<Admission>, shed: Vec<Shed>, wait_hist: Hist,
 fn assert_priority_order(report: &BurstReport) -> Result<(), SpikeError>;      // returns an error with the measured values, no panic
 ```
 
-**Dependencies.** Internal: `polaris-ratelimit` (plus `polaris-tests` helpers once the package may depend on it; add through the TOML). External: `tokio = 1.54.0`, `hdrhistogram = 7.6.0`.
+**Dependencies.** Internal: `polaris-ratelimit` (plus `polaris-tests` helpers once the package may depend on it; add through the TOML). External: `tokio = 1.54.1`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: burst driver, priority-order assertion, 429-storm scenario, TPM-exhaustion scenario.
@@ -7667,18 +7675,18 @@ async fn run_flood(bus: &Bus, f: &Flood) -> Result<FloodReport, SpikeError>;
 struct FloodReport { published: u64, delivered: Vec<u64>, lagged: Vec<u64>, rejected_commands: u64, rss_delta_bytes: i64, publish_hist: Hist }
 ```
 
-**Dependencies.** Internal: `polaris-kernel-bus` (plus test helpers via the TOML). External: `tokio = 1.54.0`, `hdrhistogram = 7.6.0`.
+**Dependencies.** Internal: `polaris-kernel-bus` (plus test helpers via the TOML). External: `tokio = 1.54.1`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
-- [ ] Write JSON descriptors (prompt.md §6.3) for: flood driver, subscriber kinds, memory-bound assertion.
-- [ ] Replace the doc-only lib skeleton with `tests/flood.rs`.
-- [ ] Scenario A: 1M events, 1/8/64 fast subscribers; record publish p50/p99 and delivered counts.
-- [ ] Scenario B: add one `Stalled` subscriber; assert the others are unaffected and the stalled one is lagged/dropped with an explicit signal.
-- [ ] Scenario C: command flood into the bounded mpsc; every command is either processed or rejected with a typed backpressure error (count adds up exactly).
-- [ ] Scenario D: UI churn: 1k subscribers connect and drop in a loop while events flow; no leaked receivers, no panic.
-- [ ] Memory: measure RSS before/after with `sysinfo` (pinned in workspace.toml; add to the package ext via the TOML); assert the delta stays under a limit calibrated after the first run.
-- [ ] Feed results to the loom model tests for the bus (loom lives with the bus crate, not here).
-- [ ] Linux leg: run the same spike in WSL2 to compare scheduling behaviour.
+- [x] Write JSON descriptors (prompt.md §6.3) for: flood driver, subscriber kinds, memory-bound assertion.
+- [x] Replace the doc-only lib skeleton with `tests/flood.rs`.
+- [x] Scenario A: 1M events, 1/8/64 fast subscribers; record publish p50/p99 and delivered counts.
+- [x] Scenario B: add one `Stalled` subscriber; assert the others are unaffected and the stalled one is lagged/dropped with an explicit signal.
+- [x] Scenario C: command flood into the bounded mpsc; every command is either processed or rejected with a typed backpressure error (count adds up exactly).
+- [x] Scenario D: UI churn: 1k subscribers connect and drop in a loop while events flow; no leaked receivers, no panic.
+- [x] Memory: measure RSS before/after with `sysinfo` (pinned in workspace.toml; add to the package ext via the TOML); assert the delta stays under a limit calibrated after the first run.
+- [x] Feed results to the loom model tests for the bus (loom lives with the bus crate, not here).
+- [x] Linux leg: run the same spike in WSL2 to compare scheduling behaviour.
 
 **Tests.**
 | Category | Cases |
@@ -7720,7 +7728,7 @@ struct FaultPlan { kill_worker_at: Option<Duration>, add_latency: Option<Duratio
 struct S1Report { model_invocations: u64, cache_hits: u64, fail_open: u64, fail_closed: u64, restarts: u32, latency: Hist }
 ```
 
-**Dependencies.** Internal: `polaris-system-one-client` (plus the worker binary built by `xtask`, and helpers via the TOML). External: `tokio = 1.54.0`, `hdrhistogram = 7.6.0`.
+**Dependencies.** Internal: `polaris-system-one-client` (plus the worker binary built by `xtask`, and helpers via the TOML). External: `tokio = 1.54.1`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: decision burst driver, fault plan, fail-open/closed assertions, stampede check.
@@ -7773,7 +7781,7 @@ async fn checkout_flood(ws: &Workspace, sync: &SyncEngine, files: usize) -> Resu
 struct SyncReport { overflow_seen: bool, rescan_forced: bool, manifest_equal: bool, duration: Duration }
 ```
 
-**Dependencies.** Internal: `polaris-openshell` (plus `polaris-kernel-reaper`, `polaris-storage-sync`, `polaris-platform` via the TOML). External: `tokio = 1.54.0`.
+**Dependencies.** Internal: `polaris-openshell` (plus `polaris-kernel-reaper`, `polaris-storage-sync`, `polaris-platform` via the TOML). External: `tokio = 1.54.1`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: sandbox burst driver, leak report, checkout flood driver, manifest equality check.
@@ -7825,7 +7833,7 @@ struct WebReport { connected: usize, refused: usize, event_latency: Hist, rss_pe
 ```
 HTTP client choice for the spike (reqwest 0.13.5 is pinned in workspace.toml; `eventsource-stream` 0.2.3 for SSE) must be added through the TOML.
 
-**Dependencies.** Internal: `polaris-ui-web` (plus the `polaris-web` binary and test helpers). External: `tokio = 1.54.0`, `hdrhistogram = 7.6.0`.
+**Dependencies.** Internal: `polaris-ui-web` (plus the `polaris-web` binary and test helpers). External: `tokio = 1.54.1`, `hdrhistogram = 7.6.0`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: client flood driver, behaviours, report schema, bounded-memory assertion.

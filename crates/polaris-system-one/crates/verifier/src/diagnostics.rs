@@ -49,11 +49,19 @@ pub struct RankedDiagnostic {
 
 /// Deduplicate by producer group and prioritize severity, changed ranges and primary causes.
 #[must_use]
-pub fn rank_diagnostics(diagnostics: &[Diagnostic], changed: &[ByteSpan], limit: usize) -> Vec<RankedDiagnostic> {
+pub fn rank_diagnostics(
+    diagnostics: &[Diagnostic],
+    changed: &[ByteSpan],
+    limit: usize,
+) -> Vec<RankedDiagnostic> {
     let mut groups: BTreeMap<u64, (&Diagnostic, usize)> = BTreeMap::new();
-    let touches = |diagnostic: &Diagnostic| diagnostic.span.is_some_and(|span| {
-        changed.iter().any(|range| range.start < span.end && span.start < range.end)
-    });
+    let touches = |diagnostic: &Diagnostic| {
+        diagnostic.span.is_some_and(|span| {
+            changed
+                .iter()
+                .any(|range| range.start < span.end && span.start < range.end)
+        })
+    };
     for diagnostic in diagnostics {
         let entry = groups.entry(diagnostic.group).or_insert((diagnostic, 0));
         entry.1 = entry.1.saturating_add(1);
@@ -63,19 +71,30 @@ pub fn rank_diagnostics(diagnostics: &[Diagnostic], changed: &[ByteSpan], limit:
             entry.0 = diagnostic;
         }
     }
-    let mut ranked: Vec<_> = groups.into_values().map(|(diagnostic, count)| {
-        (diagnostic.primary, RankedDiagnostic {
-            id: diagnostic.id,
-            severity: diagnostic.severity,
-            touches_change: touches(diagnostic),
-            duplicates: count.saturating_sub(1),
+    let mut ranked: Vec<_> = groups
+        .into_values()
+        .map(|(diagnostic, count)| {
+            (
+                diagnostic.primary,
+                RankedDiagnostic {
+                    id: diagnostic.id,
+                    severity: diagnostic.severity,
+                    touches_change: touches(diagnostic),
+                    duplicates: count.saturating_sub(1),
+                },
+            )
         })
-    }).collect();
+        .collect();
     ranked.sort_by(|(ap, a), (bp, b)| {
-        b.severity.cmp(&a.severity)
+        b.severity
+            .cmp(&a.severity)
             .then_with(|| b.touches_change.cmp(&a.touches_change))
             .then_with(|| bp.cmp(ap))
             .then_with(|| a.id.cmp(&b.id))
     });
-    ranked.into_iter().take(limit).map(|(_, diagnostic)| diagnostic).collect()
+    ranked
+        .into_iter()
+        .take(limit)
+        .map(|(_, diagnostic)| diagnostic)
+        .collect()
 }

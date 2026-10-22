@@ -30,7 +30,10 @@ pub fn codec_of(blob: &[u8]) -> Option<Codec> {
 fn with_header(codec: Codec, payload: &[u8]) -> Vec<u8> {
     let mut blob = Vec::with_capacity(payload.len().saturating_add(2));
     blob.push(FORMAT_VERSION);
-    blob.push(codec as u8);
+    blob.push(match codec {
+        Codec::Raw => 0,
+        Codec::Zstd => 1,
+    });
     blob.extend_from_slice(payload);
     blob
 }

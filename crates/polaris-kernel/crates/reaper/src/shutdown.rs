@@ -63,7 +63,7 @@ struct State {
 pub struct Reaper {
     root: CancellationToken,
     journal: PathBuf,
-    state: Mutex<State>,
+    state: Arc<Mutex<State>>,
 }
 impl core::fmt::Debug for Reaper {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -108,12 +108,12 @@ impl Reaper {
         Ok(Self {
             root: CancellationToken::new(),
             journal,
-            state: Mutex::new(State {
+            state: Arc::new(Mutex::new(State {
                 entries,
                 next,
                 shutdown: false,
                 ignored,
-            }),
+            })),
         })
     }
     /// New descendant token; already cancelled when root cancellation has begun.
@@ -337,7 +337,7 @@ impl Reaper {
         &self,
         config: &ShutdownConfig,
     ) -> Result<ShutdownReport, ReaperError> {
-        let mut resources: Vec<_> = {
+        let resources: Vec<_> = {
             let mut state = lock(&self.state);
             if state.shutdown {
                 return Err(ReaperError::AlreadyShutDown);
@@ -355,44 +355,85 @@ impl Reaper {
                 .collect()
         };
         self.root.cancel();
-        resources.sort_by_key(|(meta, _)| (meta.kind, Reverse(meta.id)));
-        let started = Instant::now();
-        let mut entries = Vec::new();
-        for (meta, resource) in resources {
-            let remaining = config.overall.saturating_sub(started.elapsed());
-            let outcome = if remaining.is_zero() {
-                Outcome::Skipped
-            } else {
-                let config = *config;
-                let result =
-                    tokio::spawn(async move { teardown_one(resource, config, remaining).await })
-                        .await;
-                match result {
-                    Ok(outcome) => outcome,
-                    Err(error) => Outcome::Failed(format!("teardown task failed: {error}")),
-                }
-            };
-            if outcome.resolved() {
-                let _released = lock(&self.state).entries.remove(&meta.id);
-            }
-            entries.push(ShutdownEntry {
-                id: meta.id,
-                kind: meta.kind,
-                outcome,
-            });
-        }
-        let elapsed = started.elapsed();
-        let journal_error = self
-            .persist(&lock(&self.state))
-            .err()
-            .map(|error| error.to_string());
-        Ok(ShutdownReport {
-            entries,
-            elapsed,
-            deadline_exceeded: elapsed >= config.overall,
-            journal_error,
-        })
+        let journal = self.journal.clone();
+        let state = Arc::clone(&self.state);
+        let config = *config;
+        tokio::spawn(async move { shutdown_run(journal, state, resources, config).await })
+            .await
+            .map_err(|error| ReaperError::ShutdownWorker(error.to_string()))
     }
+}
+
+async fn shutdown_run(
+    journal: PathBuf,
+    state: Arc<Mutex<State>>,
+    mut resources: Vec<(LeakEntry, Resource)>,
+    config: ShutdownConfig,
+) -> ShutdownReport {
+    resources.sort_by_key(|(meta, _)| (meta.kind, Reverse(meta.id)));
+    let started = Instant::now();
+    let mut entries = Vec::new();
+    let mut journal_error = None;
+    let mut pending_releases = 0usize;
+    for (meta, resource) in resources {
+        let remaining = config.overall.saturating_sub(started.elapsed());
+        let outcome = if remaining.is_zero() {
+            Outcome::Skipped
+        } else {
+            let step_config = config;
+            let result =
+                tokio::spawn(async move { teardown_one(resource, step_config, remaining).await })
+                    .await;
+            match result {
+                Ok(outcome) => outcome,
+                Err(error) => Outcome::Failed(format!("teardown task failed: {error}")),
+            }
+        };
+        if outcome.resolved() {
+            {
+                let mut current = lock(&state);
+                let _released = current.entries.remove(&meta.id);
+            }
+            pending_releases = pending_releases.saturating_add(1);
+            // A crash between checkpoints can only retain already-released locators; it cannot
+            // forget a live resource. Avoid rewriting/fsyncing an O(n) journal n times.
+            if pending_releases >= 32 {
+                if let Err(error) = persist_journal_async(&journal, &state).await {
+                    journal_error = Some(error);
+                }
+                pending_releases = 0;
+            }
+        }
+        entries.push(ShutdownEntry {
+            id: meta.id,
+            kind: meta.kind,
+            outcome,
+        });
+    }
+    let elapsed = started.elapsed();
+    if let Err(error) = persist_journal_async(&journal, &state).await {
+        journal_error = Some(error);
+    }
+    ShutdownReport {
+        entries,
+        elapsed,
+        deadline_exceeded: elapsed >= config.overall,
+        journal_error,
+    }
+}
+
+async fn persist_journal_async(journal: &Path, state: &Arc<Mutex<State>>) -> Result<(), String> {
+    let journal = journal.to_owned();
+    let state = Arc::clone(state);
+    tokio::task::spawn_blocking(move || {
+        persist_journal(&journal, &lock(&state)).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+fn persist_journal(path: &Path, state: &State) -> Result<(), ReaperError> {
+    journal::write(path, state.entries.values().map(|entry| entry.meta.clone()))
 }
 impl Drop for Reaper {
     fn drop(&mut self) {

@@ -1,0 +1,692 @@
+P1 non-UI logic verification — 2026-10-22
+
+Selected raw command output. Full logs remain under @prime/tmp/p1/.
+Reference host: Windows 11 / Ryzen 7 2700 / 16 GB; WSL2 Ubuntu 24.04.5.
+Scope and limitations: @prime/P1_LOGIC_STATUS.md. No UI or later-phase acceptance is asserted.
+Cargo result-line aggregate (computed from the retained log): 1009 passed; 0 failed; 14 ignored; 345 groups. Ignored workload cases have separate executions below.
+
+$ cargo test --workspace --no-fail-fast
+source: @prime/tmp/p1/workspace-tests-final4.txt
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.53s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
+test repo_map_scalability_and_skeleton_throughput ... ignored, release-mode workload; run explicitly to record machine-specific budgets
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes ... ignored, 1000-directory and 20-process durable teardown workload; run explicitly
+test two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots ... ignored, native 200-process crash/kill stress; run explicitly
+test result: ok. 3 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.14s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.94s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.59s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test one_mebibyte_mixed_prose_throughput ... ignored, release throughput workload; run explicitly with --release --ignored --nocapture
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.10s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test measure_parallel_l1_hits ... ignored, manual release measurement; reports rather than asserts a latency target
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.12s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test disk_full_leaves_no_partial_blob ... ignored, requires CAS_TEST_FULL_DIRECTORY pointing at a disposable <=64KiB filesystem
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test gib_streaming_hash ... ignored, explicit 1 GiB zero-filled streaming hash measurement
+test ten_thousand_small_blobs ... ignored, explicit 10k-blob release filesystem workload
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+test append_failure_preserves_committed_prefix ... ignored, requires EVENTLOG_TEST_FULL_DIRECTORY on a disposable 16MiB filesystem
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test append_latency_for_each_durability ... ignored, explicit append latency measurement with actual configured durability
+test million_events_and_replay ... ignored, explicit one-million-event release workload
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.08s
+test million_message_index_and_search_measurement ... ignored, explicit one-million-message release workload
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.13s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.13s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.08s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.15s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+test measures_cargo_json_parse_throughput ... ignored, 100 MiB throughput measurement; invoke explicitly
+test measures_text_filter_throughput ... ignored, 100 MiB throughput measurement; invoke explicitly
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+$ wsl: bash @prime/tools/setup/verify-linux-leg.sh
+source: @prime/tmp/p1/linux-leg-final3.txt
+check-vendored-biscuit: 94 published files; 7 feature guards + prost attribute formatting -> OK
+toolchain: rustc 1.99.0 (b940084d7 2026-09-28) | nightly: rustc 1.101.0-nightly (07e526db9 2026-10-19) | nextest: cargo-nextest 0.9.148 (cd1d6d546 2026-10-07) | fuzz: cargo-fuzz 0.13.2 | kani: Kani Rust Verifier 0.68.0 (cargo plugin)
+    Checking polaris-web v0.1.0-alpha (/mnt/c/mDev/Polaris/apps/polaris-web)
+    Finished `dev` profile [unoptimized] target(s) in 37.74s
+   Generated /home/dev/.cache/polaris-target/doc/polaris_browser/index.html and 93 other files
+fmt: ok
+packages: 93
+RESULT: PASS
+
+$ wsl: RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps (after documentation changes)
+source: @prime/tmp/p1/linux-doc-final-after-docs.txt
+    Finished `dev` profile [unoptimized] target(s) in 37.96s
+   Generated /home/dev/.cache/polaris-target/doc/polaris_browser/index.html and 93 other files
+
+$ cargo xtask check-members
+source: @prime/tmp/p1/check-members-final.txt
+check-members: 93 packages -> OK
+
+$ cargo xtask check-layers
+source: @prime/tmp/p1/check-layers-final.txt
+check-layers: 93 packages, 258 edges -> OK
+
+$ cargo xtask check-witness
+source: @prime/tmp/p1/check-witness-final.txt
+check-witness: 0 violation(s) -> OK
+
+$ cargo deny check
+source: @prime/tmp/p1/dependency-deny-fixed.txt
+advisories ok, bans ok, licenses ok, sources ok
+
+$ cargo update -p tokio
+source: @prime/tmp/p1/tokio-update-final.txt
+    Updating crates.io index
+     Locking 1 package to highest Rust 1.99 compatible version
+    Updating tokio v1.54.0 -> v1.54.1
+note: pass `--verbose` to see 4 unchanged dependencies behind latest
+
+$ wsl: bash @prime/tools/setup/verify-p1-fuzz.sh
+source: @prime/tmp/p1/fuzz-post-tokio-summary.txt
+START directives_grammar
+Done 22683 runs in 62 second(s)
+PASS directives_grammar
+START rtk_stream
+Done 34218 runs in 62 second(s)
+PASS rtk_stream
+START cas_short_ref_roundtrip
+Done 2684504 runs in 61 second(s)
+PASS cas_short_ref_roundtrip
+START eventlog_decode
+Done 142542 runs in 61 second(s)
+PASS eventlog_decode
+START proto_decode
+Done 127880 runs in 65 second(s)
+PASS proto_decode
+START diff_apply
+Done 718966 runs in 61 second(s)
+PASS diff_apply
+P1 mandatory fuzz targets: PASS
+
+$ wsl: SDK/directive/budget Kani and supported bus Miri
+source: @prime/tmp/p1/p1-pure-post-tokio-summary.txt
+Checking harness kani_proofs::effort_try_from_is_total...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 1.2024158s
+Complete - 3 successfully verified harnesses, 0 failures, 3 total.
+kani polaris-sdk exit=0 wall_s=65
+VERIFICATION:- SUCCESSFUL
+Verification Time: 33.527752s
+Complete - 2 successfully verified harnesses, 0 failures, 2 total.
+kani polaris-kernel-directives exit=0 wall_s=69
+Checking harness kani_proofs::repo_map_budget_ceiling_respects_token_limit...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.17622398s
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.
+kani polaris-code-intel exit=0 wall_s=22
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 303.05s
+
+$ wsl: kani-guarded.sh (crate recorded in raw output)
+source: @prime/tmp/p1/polaris-sdk-kani-final.txt
+Checking harness kani_proofs::lifecycle_schema_admission_is_exact...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 6.331276s
+Checking harness kani_proofs::probability_new_stays_in_range...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 1.7244623s
+Checking harness kani_proofs::effort_try_from_is_total...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 1.2024158s
+Complete - 3 successfully verified harnesses, 0 failures, 3 total.
+kani polaris-sdk exit=0 wall_s=65
+
+$ wsl: kani-guarded.sh (crate recorded in raw output)
+source: @prime/tmp/p1/polaris-kernel-directives-kani-final.txt
+Checking harness kani_proofs::cursor_take_while_stays_on_char_boundaries...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 23.043247s
+Checking harness kani_proofs::cursor_bump_stays_on_char_boundaries...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 33.527752s
+Complete - 2 successfully verified harnesses, 0 failures, 2 total.
+kani polaris-kernel-directives exit=0 wall_s=69
+
+$ wsl: kani-guarded.sh (crate recorded in raw output)
+source: @prime/tmp/p1/polaris-code-intel-kani-final.txt
+Checking harness kani_proofs::repo_map_budget_ceiling_respects_token_limit...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.17622398s
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.
+kani polaris-code-intel exit=0 wall_s=22
+
+$ wsl: kani-guarded.sh (crate recorded in raw output)
+source: @prime/tmp/p1/bus-kani-current.txt
+Checking harness kani_proofs::sequence_increment_rejects_overflow...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.1015248s
+Checking harness kani_proofs::channel_capacity_admission_is_exact...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.2904292s
+Complete - 2 successfully verified harnesses, 0 failures, 2 total.
+kani polaris-kernel-bus exit=0 wall_s=37
+
+$ wsl: kani-guarded.sh (crate recorded in raw output)
+source: @prime/tmp/p1/cas-kani-fixed.txt
+Checking harness kani_proofs::fold_ref_fills_exact_destination...
+VERIFICATION:- SUCCESSFUL
+Verification Time: 1.343055s
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.
+kani polaris-storage-cas exit=0 wall_s=17
+
+$ wsl: cargo +nightly miri test -p polaris-kernel-bus --test command_backpressure --test lag_recovery --test log_then_publish
+source: @prime/tmp/p1/bus-miri-supported-final.txt
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 28.30s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.17s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 303.05s
+
+$ wsl: Miri supported pure tests (SDK insta socketpair exception documented)
+source: @prime/tmp/p1/p1-sdk-miri-current.txt
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 29.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.32s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 14.42s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.71s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.89s
+
+$ wsl: Miri supported pure tests (SDK insta socketpair exception documented)
+source: @prime/tmp/p1/p1-directives-miri-current.txt
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.39s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 46.98s
+test directive_inside_code_span_is_ignored ... ok
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 218.87s
+test mention_in_code_span_is_ignored ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.63s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.77s
+
+$ wsl: bounded additional fuzz runner
+source: @prime/tmp/p1/bus-fuzz-final-summary.txt
+Done 378173 runs in 61 second(s)
+
+$ wsl: bounded additional fuzz runner
+source: @prime/tmp/p1/registry-fuzz-current-summary.txt
+START registry_fts_query
+Done 63872 runs in 61 second(s)
+PASS registry_fts_query
+START registry_migration_open
+Done 12297 runs in 61 second(s)
+PASS registry_migration_open
+
+$ wsl: bounded additional fuzz runner
+source: @prime/tmp/p1/codeintel-fuzz-final-summary.txt
+Done 37823 runs in 61 second(s)
+PASS code_intel_parse
+Done 39387 runs in 61 second(s)
+PASS code_intel_skeleton
+Done 40764 runs in 61 second(s)
+PASS code_intel_merge3
+
+$ cargo test -p polaris-kernel --test lifecycle_stress -- --ignored --nocapture --test-threads=1 (Windows)
+source: @prime/tmp/p1/lifecycle-stress-windows-final.txt
+reaper dirs=1000 fake_sandboxes=50 native_processes=20 unresolved=0 elapsed=2.5819217s
+native worker kills=200 restarts=199 dlq=1 surviving_roots=0 elapsed=43.7858476s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 55.84s
+
+$ cargo test -p polaris-kernel --test lifecycle_stress -- --ignored --nocapture --test-threads=1 (WSL)
+source: @prime/tmp/p1/lifecycle-stress-linux-fixed.txt
+test reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes ... reaper dirs=1000 fake_sandboxes=50 native_processes=20 unresolved=0 elapsed=867.234325ms
+test two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots ... native worker kills=200 restarts=199 dlq=1 surviving_roots=0 elapsed=1.527406721s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 20.02s
+
+$ cargo test -p polaris-platform-process --test process_lifecycle -- --nocapture
+source: @prime/tmp/p1/native-parent-kill-fixed2.txt
+test grandchild_fixture ... ok
+test worker_fixture ... ok
+test secret_environment_keys_and_duplicate_names_are_rejected ... ok
+test worker_path_must_be_absolute_and_unknown_handles_are_rejected ... ok
+test job_owner_fixture ... ok
+test killing_owner_without_rust_drop_closes_job_and_kills_descendants ... ok
+test dropping_final_platform_owner_kills_the_process_group_or_job ... ok
+test native_process_tree_stops_descendants_and_scrubs_inherited_environment ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+$ cargo test -p polaris-kernel --test lifecycle_stress timed_out_health_probe -- --nocapture
+source: @prime/tmp/p1/worker-health-final.txt
+test timed_out_health_probe_kills_owned_native_worker ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.10s
+
+$ disposable WSL tmpfs actual CAS + eventlog ENOSPC checks
+source: @prime/tmp/p1/storage-disk-full-current.txt
+test disk_full_leaves_no_partial_blob ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+actual limited-filesystem append failure: event log storage error: I/O error: No space left on device (os error 28)
+test append_failure_preserves_committed_prefix ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.02s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/cas-put-quiescent-release.txt
+CAS synthetic 10000 unique small blobs: elapsed=40.3808382s put_p50=3.8719ms put_p99=4.947ms
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 45.07s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/cas-stream-rayon-release.txt
+BLAKE3 Rayon streaming 1GiB zero-filled file: elapsed=345.5567ms GB_per_second=3.107 digest=94b4ec39d8d42ebda685fbb5429e8ab0086e65245e750142c1eea36a26abc24d
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.41s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/cas-load-current.txt
+BLAKE3 streaming 1GiB zero-filled file: elapsed=1.1351849s GB_per_second=0.946 digest=94b4ec39d8d42ebda685fbb5429e8ab0086e65245e750142c1eea36a26abc24d
+CAS synthetic 10000 unique small blobs: elapsed=46.6274045s put_p50=4.3675ms put_p99=6.1716ms
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 51.55s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/eventlog-load-current.txt
+synthetic eventlog durability=Eventual append_p50=15.7µs append_p99=29.5µs
+synthetic eventlog eventual records=100000 append_elapsed=235.8ms half_replay=38.3554ms file_bytes=16846848
+synthetic eventlog eventual records=200000 append_elapsed=505.6843ms half_replay=76.0454ms file_bytes=33689600
+synthetic eventlog eventual records=300000 append_elapsed=819.604ms half_replay=114.3482ms file_bytes=67375104
+synthetic eventlog eventual records=400000 append_elapsed=1.1744956s half_replay=153.6798ms file_bytes=67375104
+synthetic eventlog eventual records=500000 append_elapsed=1.5853495s half_replay=189.5067ms file_bytes=134746112
+synthetic eventlog durability=Immediate append_p50=1.779ms append_p99=2.6789ms
+synthetic eventlog eventual records=600000 append_elapsed=2.0411185s half_replay=227.5116ms file_bytes=134746112
+synthetic eventlog eventual records=700000 append_elapsed=2.5256791s half_replay=262.3541ms file_bytes=134746112
+synthetic eventlog eventual records=800000 append_elapsed=3.0495595s half_replay=298.4042ms file_bytes=134746112
+synthetic eventlog eventual records=900000 append_elapsed=3.6162532s half_replay=339.9928ms file_bytes=269488128
+synthetic eventlog eventual records=1000000 append_elapsed=4.2147964s half_replay=371.8666ms file_bytes=269488128
+synthetic eventlog replay100k=85.7285ms
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.80s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/registry-million-current.txt
+synthetic registry messages=100000 elapsed=57.4239021s search_p99=61.5301ms storage_bytes=37010672
+synthetic registry messages=200000 elapsed=125.9426291s search_p99=78.5878ms storage_bytes=66112752
+synthetic registry messages=300000 elapsed=184.9331835s search_p99=28.9358ms storage_bytes=94944496
+synthetic registry messages=400000 elapsed=237.6682629s search_p99=18.0242ms storage_bytes=124177648
+synthetic registry messages=500000 elapsed=277.2070767s search_p99=14.6643ms storage_bytes=154184944
+synthetic registry messages=600000 elapsed=313.698001s search_p99=9.7041ms storage_bytes=182889712
+synthetic registry messages=700000 elapsed=347.4122972s search_p99=10.3896ms storage_bytes=211705072
+synthetic registry messages=800000 elapsed=380.3034061s search_p99=9.593ms storage_bytes=240758000
+synthetic registry messages=900000 elapsed=414.6204065s search_p99=13.3901ms storage_bytes=270426792
+synthetic registry messages=1000000 elapsed=449.6220366s search_p99=9.111ms storage_bytes=300860072
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 449.71s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/cache-current-load-release.txt
+CACHE_LOAD tier=L1 operation=get threads=8 operations=8000000 elapsed_ms=830 ns_per_op=103 profile=release
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.83s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/codeintel-scalability-current.txt
+repo-map: files=1000 build_elapsed_ms=13 map_elapsed_ms=2 entries=1000 estimated_tokens=10195
+repo-map: files=10000 build_elapsed_ms=117 map_elapsed_ms=24 entries=10000 estimated_tokens=106945
+repo-map: files=100000 build_elapsed_ms=1165 map_elapsed_ms=287 entries=100000 estimated_tokens=1119445
+skeleton-throughput: bytes=1110000 items=30000 elapsed_ms=50 mib_per_second=20
+code-intel-rss-after-scalability-bytes=Some(179777536)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/rtk-current-load-release.txt
+RTK_LOAD cargo_json input_bytes=104857600 elapsed_ms=311 throughput_mib_s=320.67 target_mib_s=100 rust_profile=release
+RTK_LOAD text_filter input_bytes=104857600 elapsed_ms=415 throughput_mib_s=240.82 target_mib_s=200 rust_profile=release
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/directives-load-final2.txt
+directive parse bytes=262094 repeats=20 directives=2716 elapsed=49.258027ms MB/s=106.4167673626067
+directive parse bytes=524381 repeats=20 directives=5434 elapsed=104.58794ms MB/s=100.2756149513988
+directive parse bytes=1048762 repeats=20 directives=10868 elapsed=204.926623ms MB/s=102.35488045884598
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.38s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/telemetry-load-final.txt
+telemetry load: 1000000 events folded in 79.2572ms
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+$ explicit synthetic workload (release where the log records the release profile)
+source: @prime/tmp/p1/bus-load-final-linux.txt
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+bus flood: subscribers=8 events=1000000 elapsed=358.636551ms publish_p50=162ns publish_p99=1286ns rss_delta_bytes=Some(167903232)
+bus flood: subscribers=1 events=1000000 elapsed=187.408423ms publish_p50=102ns publish_p99=476ns rss_delta_bytes=Some(167903232)
+bus flood: subscribers=64 events=1000000 elapsed=422.909574ms publish_p50=334ns publish_p99=737ns rss_delta_bytes=Some(168034304)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.17s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Additional observed checks:
+python -X utf8 -I @prime/tools/workspace.py check-docs
+check-docs: 93 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK
+python -X utf8 -I @prime/tools/workspace.py render-docs --check
+PHASES.md: up to date (11 generated blocks)
+PHASES_STATUS.md: up to date (10 generated blocks)
+root Cargo.toml: exact workspace.toml render -> OK
+Cargo.lock: tokio 1.54.1 -> OK
+tests/fuzz/Cargo.lock: tokio 1.54.1 -> OK
+@prime/tools/dep-probe/Cargo.lock: tokio 1.54.1 -> OK
+descriptor JSON: 136 files -> OK
+cargo fmt --all --check: exit 0, no output
+cargo fmt --manifest-path tests/fuzz/Cargo.toml --all --check: exit 0, no output
+bash -n for P1 and common proof runners: exit 0, no output

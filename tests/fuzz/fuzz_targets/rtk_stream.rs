@@ -40,7 +40,10 @@ fn check(data: &[u8]) {
     if let Ok(report) = render_json_report(&diagnostics) {
         let value: serde_json::Value =
             serde_json::from_str(&report).expect("the report is valid JSON");
-        let issues = diagnostics.iter().filter(|d| Diagnostic::is_issue(d)).count();
+        let issues = diagnostics
+            .iter()
+            .filter(|d| Diagnostic::is_issue(d))
+            .count();
         assert_eq!(value.get("error_count"), Some(&serde_json::json!(issues)));
     }
 

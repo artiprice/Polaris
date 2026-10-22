@@ -1,7 +1,7 @@
 //! Telemetry failures.
 
 use polaris_sdk::error::{ErrorKind, HasKind};
-use polaris_sdk::ids::SessionId;
+use polaris_sdk::ids::{Seq, SessionId};
 
 /// Failures of the telemetry aggregates. Counter overflow is deliberately not an error: counters
 /// saturate and the snapshot carries a `saturated` flag (see the crate documentation).
@@ -18,6 +18,17 @@ pub enum TelemetryError {
         /// The session named by the rejected record.
         found: SessionId,
     },
+    /// Two different records claimed the same sequence number as the latest folded record.
+    #[error("conflicting event records at sequence {0:?}")]
+    ConflictingSequence(Seq),
+    /// An event older than the latest folded record was submitted.
+    #[error("event sequence {found:?} follows newer sequence {previous:?}")]
+    OutOfOrder {
+        /// The latest successfully folded sequence.
+        previous: Seq,
+        /// The older sequence that was rejected.
+        found: Seq,
+    },
     /// A warn threshold outside `1..=100` percent.
     #[error("warn percent {0} is outside 1..=100")]
     InvalidWarnPercent(u8),
@@ -26,9 +37,11 @@ pub enum TelemetryError {
 impl HasKind for TelemetryError {
     fn kind(&self) -> ErrorKind {
         match self {
-            Self::Histogram(_) | Self::SessionMismatch { .. } | Self::InvalidWarnPercent(_) => {
-                ErrorKind::Permanent
-            }
+            Self::Histogram(_)
+            | Self::SessionMismatch { .. }
+            | Self::ConflictingSequence(_)
+            | Self::OutOfOrder { .. }
+            | Self::InvalidWarnPercent(_) => ErrorKind::Permanent,
         }
     }
 }

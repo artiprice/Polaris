@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 use std::fs;
-use std::io;
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
@@ -154,13 +154,22 @@ impl Cas {
                 size,
             });
         }
-        let mut hasher = blake3::Hasher::new();
-        hasher.update_reader(fs::File::open(path)?)?;
-        let cid = Cid::from_bytes(*hasher.finalize().as_bytes());
+        let read_limit = self.cfg.max_blob_bytes.saturating_add(1);
+        let cid = crate::content_id_reader(fs::File::open(path)?, self.cfg.max_blob_bytes)?;
         if self.blob_path(&cid).is_file() {
             return Ok(cid);
         }
-        let bytes = fs::read(path)?;
+        let mut bytes = Vec::new();
+        fs::File::open(path)?
+            .take(read_limit)
+            .read_to_end(&mut bytes)?;
+        let read_bytes = size_u64(bytes.len());
+        if read_bytes > self.cfg.max_blob_bytes {
+            return Err(CasError::TooLarge {
+                limit: self.cfg.max_blob_bytes,
+                size: read_bytes,
+            });
+        }
         if content_id(&bytes) != cid {
             return Err(CasError::Io(io::Error::other(
                 "file changed while it was being stored",
@@ -176,11 +185,31 @@ impl Cas {
     /// [`CasError::NotFound`], [`CasError::Corrupt`] (verification), [`CasError::TooLarge`],
     /// [`CasError::Decompress`] / [`CasError::Format`] for damaged blobs, [`CasError::Io`].
     pub fn get(&self, cid: &Cid) -> Result<Bytes, CasError> {
-        let blob = match fs::read(self.blob_path(cid)) {
-            Ok(blob) => blob,
+        let file = match fs::File::open(self.blob_path(cid)) {
+            Ok(file) => file,
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(CasError::NotFound(*cid)),
             Err(e) => return Err(e.into()),
         };
+        // Every format-v1 blob produced by encode_blob is at most raw bytes + its two-byte
+        // header. Bound the encoded read too, including growth after the metadata check.
+        let encoded_limit = self.cfg.max_blob_bytes.saturating_add(2);
+        let size = file.metadata()?.len();
+        if size > encoded_limit {
+            return Err(CasError::TooLarge {
+                limit: encoded_limit,
+                size,
+            });
+        }
+        let mut blob = Vec::new();
+        file.take(encoded_limit.saturating_add(1))
+            .read_to_end(&mut blob)?;
+        let size = size_u64(blob.len());
+        if size > encoded_limit {
+            return Err(CasError::TooLarge {
+                limit: encoded_limit,
+                size,
+            });
+        }
         let bytes = decode_blob(&blob, self.cfg.max_blob_bytes)?;
         if self.cfg.verify_on_get && content_id(&bytes) != *cid {
             return Err(CasError::Corrupt { cid: *cid });

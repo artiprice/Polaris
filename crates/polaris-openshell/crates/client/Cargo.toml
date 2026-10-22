@@ -14,7 +14,17 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true }
+bytes = { workspace = true }
+futures = { workspace = true }
+tonic = { workspace = true }
+openshell-sdk = { workspace = true }
+openshell-policy-schema = { workspace = true }
+blake3 = { workspace = true }
+uuid = { workspace = true }
+tracing = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-config = { workspace = true }
 polaris-log = { workspace = true }
+polaris-openshell-policy = { workspace = true }

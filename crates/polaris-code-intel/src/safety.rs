@@ -181,10 +181,19 @@ pub fn analyze_safety(parsed: &Parsed) -> Result<SafetyAnalysis, CodeIntelError>
     let mut calls = Vec::new();
     let mut unsafe_constructs = Vec::new();
     let mut tautologies = Vec::new();
+    let mut skip_markers = Vec::new();
 
     for node in &nodes {
         if is_call_node(*node, lang) {
             let callee = call_name(*node, source);
+            if callee.as_deref().is_some_and(is_skip_name) {
+                skip_markers.push(TestMarker {
+                    kind: MarkerKind::IgnoreOrSkip,
+                    node_kind: node.kind().to_owned(),
+                    span: span(*node),
+                    evidence: text(*node, source).into_owned(),
+                });
+            }
             calls.push(AstObservation {
                 node_kind: node.kind().to_owned(),
                 span: span(*node),
@@ -224,6 +233,7 @@ pub fn analyze_safety(parsed: &Parsed) -> Result<SafetyAnalysis, CodeIntelError>
         }
     }
 
+    assign_marker_tests(&mut tests, skip_markers);
     let assertion_spans_by_test = assign_test_identities(&tests, &mut assertions, &mut tautologies);
     for (test, spans) in tests.iter_mut().zip(assertion_spans_by_test) {
         test.assertion_spans = spans;
@@ -319,18 +329,14 @@ fn assign_test_identities(
                 break;
             }
         }
-        let owner = active
-            .iter()
-            .find_map(|(_, index)| {
-                tests
-                    .get(*index)
-                    .filter(|test| contains(test.span, observed_span))
-                    .map(|_| *index)
-            });
+        // Tests are inserted only after their start and removed once their end precedes this
+        // observation, so every active test contains the observation. The smallest span is the
+        // nearest lexical test and the first BTreeSet item gives it in O(log n) total sweep work.
+        let owner = active.iter().next().map(|(_, index)| *index);
         if is_tautology {
             if let Some(value) = tautologies.get_mut(observation_index) {
-                value.test_identity = owner
-                    .and_then(|index| tests.get(index).map(|test| test.identity.clone()));
+                value.test_identity =
+                    owner.and_then(|index| tests.get(index).map(|test| test.identity.clone()));
             }
         } else if let Some(value) = assertions.get_mut(observation_index) {
             if let Some((index, identity)) =
@@ -348,10 +354,6 @@ fn assign_test_identities(
 
 fn span(node: Node<'_>) -> ByteSpan {
     ByteSpan::new(node.start_byte(), node.end_byte())
-}
-
-fn contains(outer: ByteSpan, inner: ByteSpan) -> bool {
-    outer.start <= inner.start && outer.end >= inner.end
 }
 
 fn text<'a>(node: Node<'_>, source: &'a [u8]) -> Cow<'a, str> {
@@ -412,22 +414,46 @@ fn is_assertion_name(name: &str) -> bool {
     };
     matches!(
         tail,
-        "assert" | "assert_eq" | "assert_ne" | "debug_assert" | "debug_assert_eq"
-            | "debug_assert_ne" | "assertEqual" | "assertNotEqual" | "assertTrue"
-            | "assertFalse" | "assertIsNone" | "assertIsNotNone" | "assertRaises"
-            | "ok" | "equal" | "strictEqual" | "deepEqual" | "expect"
-            | "toBe" | "toEqual" | "toStrictEqual" | "toBeTruthy" | "toBeFalsy"
-            | "toHaveBeenCalled" | "toThrow"
+        "assert"
+            | "assert_eq"
+            | "assert_ne"
+            | "debug_assert"
+            | "debug_assert_eq"
+            | "debug_assert_ne"
+            | "assertEqual"
+            | "assertNotEqual"
+            | "assertTrue"
+            | "assertFalse"
+            | "assertIsNone"
+            | "assertIsNotNone"
+            | "assertRaises"
+            | "ok"
+            | "equal"
+            | "strictEqual"
+            | "deepEqual"
+            | "expect"
+            | "toBe"
+            | "toEqual"
+            | "toStrictEqual"
+            | "toBeTruthy"
+            | "toBeFalsy"
+            | "toHaveBeenCalled"
+            | "toThrow"
     )
+}
+
+fn is_skip_name(name: &str) -> bool {
+    let lowered = name.to_ascii_lowercase();
+    lowered.ends_with(".skip") || lowered.ends_with(".ignore") || lowered.ends_with(".todo")
 }
 
 fn is_unsafe_node(node: Node<'_>, lang: Lang, source: &[u8]) -> bool {
     match lang {
         Lang::Rust => matches!(node.kind(), "unsafe_block" | "unsafe_function_item"),
         Lang::Python => {
-            node.kind() == "call" && call_name(node, source).is_some_and(|name| {
-                matches!(name.as_str(), "eval" | "exec" | "compile")
-            })
+            node.kind() == "call"
+                && call_name(node, source)
+                    .is_some_and(|name| matches!(name.as_str(), "eval" | "exec" | "compile"))
         }
         Lang::Cpp | Lang::Cuda => {
             matches!(node.kind(), "pointer_declarator" | "cast_expression")
@@ -453,7 +479,8 @@ fn tautology_kind(node: Node<'_>, lang: Lang, source: &[u8]) -> Option<Tautology
     if is_true_literal(first, lang, source) {
         return Some(TautologyKind::LiteralTrueAssertion);
     }
-    let expression = if first.kind() == "binary_expression" || first.kind() == "comparison_operator" {
+    let expression = if first.kind() == "binary_expression" || first.kind() == "comparison_operator"
+    {
         first
     } else {
         return None;
@@ -506,7 +533,8 @@ fn is_true_literal(node: Node<'_>, lang: Lang, source: &[u8]) -> bool {
             node.kind() == "true" || node.kind() == "boolean_literal"
         }
     };
-    kind_matches && text(node, source).trim() == "true" || lang == Lang::Python && text(node, source).trim() == "True"
+    kind_matches && text(node, source).trim() == "true"
+        || lang == Lang::Python && text(node, source).trim() == "True"
 }
 
 fn test_identity<'tree>(
@@ -519,14 +547,25 @@ fn test_identity<'tree>(
             if !has_rust_test_attribute(node, source) {
                 return None;
             }
-            let name = node.child_by_field_name("name").map(|n| text(n, source).into_owned())?;
+            let name = node
+                .child_by_field_name("name")
+                .map(|n| text(n, source).into_owned())?;
             Some((qualified_identity(node, name, lang, source), node))
         }
-        Lang::Python if matches!(node.kind(), "function_definition" | "async_function_definition") => {
-            let name = node.child_by_field_name("name").map(|n| text(n, source).into_owned())?;
-            let decorators = has_child_kind(node, "decorator") || has_child_kind(node, "decorated_definition");
+        Lang::Python
+            if matches!(
+                node.kind(),
+                "function_definition" | "async_function_definition"
+            ) =>
+        {
+            let name = node
+                .child_by_field_name("name")
+                .map(|n| text(n, source).into_owned())?;
+            let decorators =
+                has_child_kind(node, "decorator") || has_child_kind(node, "decorated_definition");
             let conventional = name.starts_with("test_") || name.starts_with("test");
-            if conventional || decorators && (name.starts_with("test_") || name.starts_with("test")) {
+            if conventional || decorators && (name.starts_with("test_") || name.starts_with("test"))
+            {
                 Some((qualified_identity(node, name, lang, source), node))
             } else {
                 None
@@ -558,18 +597,40 @@ fn is_test_invocation(name: &str) -> bool {
 }
 
 fn has_rust_test_attribute(node: Node<'_>, source: &[u8]) -> bool {
-    let mut cursor = node.walk();
-    node.named_children(&mut cursor).any(|child| {
-        child.kind() == "attribute_item" && {
-            let value = text(child, source);
-            value.contains("test")
+    preceding_attributes(node)
+        .iter()
+        .any(|attribute| is_test_attribute(*attribute, source))
+}
+
+fn is_test_attribute(node: Node<'_>, source: &[u8]) -> bool {
+    let value = text(node, source);
+    let body = value
+        .trim()
+        .strip_prefix("#[")
+        .and_then(|value| value.strip_suffix(']'))
+        .unwrap_or_default();
+    let name = body.split(['(', '=']).next().unwrap_or_default().trim();
+    matches!(name, "test" | "tokio::test" | "async_std::test")
+}
+
+fn preceding_attributes<'tree>(node: Node<'tree>) -> Vec<Node<'tree>> {
+    let mut attributes = Vec::new();
+    let mut previous = node.prev_named_sibling();
+    while let Some(sibling) = previous {
+        if sibling.kind() != "attribute_item" {
+            break;
         }
-    })
+        attributes.push(sibling);
+        previous = sibling.prev_named_sibling();
+    }
+    attributes.reverse();
+    attributes
 }
 
 fn has_child_kind(node: Node<'_>, kind: &str) -> bool {
     let mut cursor = node.walk();
-    node.named_children(&mut cursor).any(|child| child.kind() == kind)
+    node.named_children(&mut cursor)
+        .any(|child| child.kind() == kind)
 }
 
 fn qualified_identity(node: Node<'_>, own_name: String, lang: Lang, source: &[u8]) -> String {
@@ -579,13 +640,17 @@ fn qualified_identity(node: Node<'_>, own_name: String, lang: Lang, source: &[u8
         let mut scope_name = match lang {
             Lang::Rust => matches!(parent.kind(), "mod_item" | "impl_item" | "trait_item"),
             Lang::Python => matches!(parent.kind(), "class_definition" | "function_definition"),
-            Lang::TypeScript => matches!(parent.kind(), "class_declaration" | "class_body" | "namespace_declaration"),
-            Lang::Cpp | Lang::Cuda => matches!(parent.kind(), "namespace_definition" | "class_specifier"),
+            Lang::TypeScript => matches!(
+                parent.kind(),
+                "class_declaration" | "class_body" | "namespace_declaration"
+            ),
+            Lang::Cpp | Lang::Cuda => {
+                matches!(parent.kind(), "namespace_definition" | "class_specifier")
+            }
         };
         if lang == Lang::TypeScript && parent.kind() == "call_expression" {
-            scope_name = call_name(parent, source).is_some_and(|name| {
-                matches!(name.as_str(), "describe" | "suite")
-            });
+            scope_name = call_name(parent, source)
+                .is_some_and(|name| matches!(name.as_str(), "describe" | "suite"));
             if scope_name {
                 if let Some(label) = first_string_argument(parent, source) {
                     parents.push(label);
@@ -622,28 +687,52 @@ fn first_string_argument(node: Node<'_>, source: &[u8]) -> Option<String> {
 fn markers_for(test: Node<'_>, lang: Lang, source: &[u8]) -> Vec<TestMarker> {
     let mut markers = Vec::new();
     let mut marker_nodes = Vec::new();
+    marker_nodes.extend(preceding_attributes(test));
     let mut cursor = test.walk();
-    marker_nodes.extend(test.named_children(&mut cursor).filter(|child| {
-        child.kind() == "attribute_item" || child.kind() == "decorator"
-    }));
+    marker_nodes.extend(
+        test.named_children(&mut cursor)
+            .filter(|child| child.kind() == "attribute_item" || child.kind() == "decorator"),
+    );
     if lang == Lang::Python {
-        if let Some(parent) = test.parent().filter(|parent| parent.kind() == "decorated_definition") {
+        if let Some(parent) = test
+            .parent()
+            .filter(|parent| parent.kind() == "decorated_definition")
+        {
             let mut parent_cursor = parent.walk();
-            marker_nodes.extend(parent.named_children(&mut parent_cursor).filter(|child| {
-                child.kind() == "decorator"
-            }));
+            marker_nodes.extend(
+                parent
+                    .named_children(&mut parent_cursor)
+                    .filter(|child| child.kind() == "decorator"),
+            );
         }
     }
     for child in marker_nodes {
         if child.kind() == "attribute_item" || child.kind() == "decorator" {
             let evidence = text(child, source).into_owned();
             let lowered = evidence.to_ascii_lowercase();
-            let kind = if lowered.contains("cfg") && (lowered.contains("false") || lowered.contains("any()")) {
-                MarkerKind::CfgDisabled
-            } else if lowered.contains("ignore") || lowered.contains("skip") || lowered.contains("disabled") {
+            let trimmed = lowered.trim();
+            let body = trimmed
+                .strip_prefix("#[")
+                .and_then(|value| value.strip_suffix(']'))
+                .or_else(|| trimmed.strip_prefix('@'))
+                .unwrap_or_default();
+            let name = body.split(['(', '=']).next().unwrap_or_default().trim();
+            let kind = if name == "cfg" || name == "cfg_attr" {
+                if lowered.contains("false") || lowered.contains("any()") {
+                    MarkerKind::CfgDisabled
+                } else {
+                    MarkerKind::UnknownDisableMarker
+                }
+            } else if is_skip_name(name) || matches!(name, "ignore" | "disabled") {
                 MarkerKind::IgnoreOrSkip
-            } else if lang == Lang::Rust || lang == Lang::Python || lang == Lang::TypeScript {
-                MarkerKind::UnknownDisableMarker
+            } else if lang == Lang::Python && name.starts_with("pytest.mark.skip") {
+                if name.ends_with("skipif") {
+                    MarkerKind::UnknownDisableMarker
+                } else {
+                    MarkerKind::IgnoreOrSkip
+                }
+            } else if lang == Lang::Python && name.starts_with("unittest.skip") {
+                MarkerKind::IgnoreOrSkip
             } else {
                 continue;
             };
@@ -655,26 +744,49 @@ fn markers_for(test: Node<'_>, lang: Lang, source: &[u8]) -> Vec<TestMarker> {
             });
         }
     }
-    let mut descendants = Vec::new();
-    walk_preorder(test, |node, _depth| {
-        if is_call_node(node, lang) {
-            descendants.push(node);
+    markers
+}
+
+fn assign_marker_tests(tests: &mut [TestObservation], markers: Vec<TestMarker>) {
+    let mut test_order: Vec<(usize, usize, usize)> = tests
+        .iter()
+        .enumerate()
+        .map(|(index, test)| (test.span.start, test.span.end, index))
+        .collect();
+    test_order.sort_unstable();
+    let mut marker_order: Vec<TestMarker> = markers;
+    marker_order.sort_by_key(|marker| (marker.span.start, marker.span.end));
+
+    let mut next_test = 0usize;
+    let mut active: BTreeSet<(usize, usize)> = BTreeSet::new();
+    let mut expirations: BinaryHeap<Reverse<(usize, usize)>> = BinaryHeap::new();
+    for marker in marker_order {
+        while let Some((test_start, test_end, test_index)) = test_order.get(next_test).copied() {
+            if test_start > marker.span.start {
+                break;
+            }
+            if let Some(test) = tests.get(test_index) {
+                if test.span.end == test_end {
+                    active.insert((test.span.len(), test_index));
+                    expirations.push(Reverse((test.span.end, test_index)));
+                }
+            }
+            next_test = next_test.saturating_add(1);
         }
-        Descend::Into
-    });
-    for call in descendants {
-        let Some(name) = call_name(call, source) else {
-            continue;
-        };
-        let lowered = name.to_ascii_lowercase();
-        if lowered.contains(".skip") || lowered.contains(".ignore") || lowered.contains(".todo") {
-            markers.push(TestMarker {
-                kind: MarkerKind::IgnoreOrSkip,
-                node_kind: call.kind().to_owned(),
-                span: span(call),
-                evidence: text(call, source).into_owned(),
-            });
+        while let Some(Reverse((end, test_index))) = expirations.peek().copied() {
+            if end >= marker.span.end {
+                break;
+            }
+            if expirations.pop().is_some() {
+                if let Some(test) = tests.get(test_index) {
+                    active.remove(&(test.span.len(), test_index));
+                }
+            }
+        }
+        if let Some((_, index)) = active.iter().next() {
+            if let Some(test) = tests.get_mut(*index) {
+                test.markers.push(marker);
+            }
         }
     }
-    markers
 }

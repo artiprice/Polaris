@@ -77,6 +77,23 @@ fn try_send_after_close_returns_closed() -> TestResult {
     Ok(())
 }
 
+#[tokio::test]
+async fn receiver_close_rejects_new_commands_and_drains_accepted_ones() -> TestResult {
+    let (bus, mut rx) = Bus::new(config(4, 8)?, CountingStore::default())?;
+    bus.try_send(command(1))?;
+    bus.try_send(command(2))?;
+    rx.close();
+
+    assert!(matches!(
+        bus.try_send(command(3)),
+        Err(TrySendError::Closed(cmd)) if cmd.id() == command(3).id()
+    ));
+    assert_eq!(rx.recv().await.map(|cmd| cmd.id()), Some(command(1).id()));
+    assert_eq!(rx.recv().await.map(|cmd| cmd.id()), Some(command(2).id()));
+    assert_eq!(rx.recv().await, None);
+    Ok(())
+}
+
 #[test]
 fn try_send_never_blocks() -> TestResult {
     // No async runtime exists in this test: try_send/try_recv must work without one.

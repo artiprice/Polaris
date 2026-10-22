@@ -17,3 +17,13 @@ thiserror = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-log = { workspace = true }
+process-wrap = { workspace = true }
+portable-pty = { workspace = true }
+notify = { workspace = true }
+sysinfo = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+which = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

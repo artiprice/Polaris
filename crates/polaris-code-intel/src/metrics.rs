@@ -398,7 +398,12 @@ fn zhang_shasha(a: &SigTree, b: &SigTree) -> usize {
             }
         }
     }
-    treedist.get(m - 1, n - 1) as usize
+    match usize::try_from(treedist.get(m - 1, n - 1)) {
+        Ok(distance) => distance,
+        // The trees are node-capped below u32::MAX. On an unusually narrow target a capped
+        // approximation is safer than truncating the distance.
+        Err(_) => usize::MAX,
+    }
 }
 
 /// The identity of a declaration within a file: qualified name, kind and occurrence number

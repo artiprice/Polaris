@@ -73,6 +73,9 @@ pub enum KernelError {
     /// An owned blocking operation panicked or was cancelled by the runtime.
     #[error("kernel owner task failed: {0}")]
     Runtime(String),
+    /// Shared result of an already-completed shutdown attempt.
+    #[error("kernel shutdown failed: {0}")]
+    Shutdown(std::sync::Arc<KernelError>),
     /// Internal state mutex was poisoned; do not continue mutation.
     #[error("kernel state poisoned")]
     Poisoned,
@@ -92,6 +95,7 @@ impl HasKind for KernelError {
             Self::Directive(error) => error.kind(),
             Self::Registry(error) => error.kind(),
             Self::EventLog(error) => error.kind(),
+            Self::Shutdown(error) => error.kind(),
             Self::Integrity(_)
             | Self::ProjectionBehind { .. }
             | Self::Reaper(_)

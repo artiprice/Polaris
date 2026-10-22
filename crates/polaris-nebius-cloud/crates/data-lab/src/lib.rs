@@ -13,6 +13,8 @@ mod trajectory;
 pub use consent::{ConsentRecord, OptIn};
 pub use error::DataLabError;
 pub use export::{ExportConfig, ExportFormat, ExportPreview, ExportReceipt, TrajectoryExporter};
-pub use trajectory::{Draft, Masked, Verified, MessageInput, MessageRole, ProofFacts, ProofResolver,
-    ProofStatus, Provenance, RawContent, ResidualGuard, ToolCallInput, Trajectory, TrajectoryInput,
-    TrajectoryLimits};
+pub use trajectory::{
+    Draft, Masked, MessageInput, MessageRole, ProofFacts, ProofResolver, ProofStatus, Provenance,
+    RawContent, ResidualGuard, ToolCallInput, Trajectory, TrajectoryInput, TrajectoryLimits,
+    Verified,
+};

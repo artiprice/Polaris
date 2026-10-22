@@ -32,7 +32,9 @@ impl HasKind for VerifierError {
         match self {
             Self::Parse(error) => error.kind(),
             Self::Scanner(error) => error.kind(),
-            Self::Schema(_) | Self::InputLimit { .. } | Self::InvalidInput { .. } => ErrorKind::Permanent,
+            Self::Schema(_) | Self::InputLimit { .. } | Self::InvalidInput { .. } => {
+                ErrorKind::Permanent
+            }
         }
     }
 }

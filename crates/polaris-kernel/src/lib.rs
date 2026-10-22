@@ -8,7 +8,7 @@
 //! | Kind | facade |
 //! | Phase | P1 |
 //! | Parent facade | — |
-//! | Status | durable session lifecycle in progress; full orchestrator remains pending |
+//! | Status | P1 local session, command, tool and shutdown composition implemented |
 //!
 //! ## Children
 //!
@@ -26,9 +26,18 @@
 //! - Model sessions as typestate (Created -> Configured -> Running -> Paused -> Archived).
 //! - Run session and registry projections from the event log; UI consumers live above L5.
 //!
-//! ## Planned API
+//! All six child modules are available through this facade:
+//! ```
+//! use polaris_kernel::{bus::BusConfig, directives::ParseLimits, supervisor::SupervisorConfig,
+//!     reaper::ShutdownConfig, operators::RequestStage, verifier::VerifierConfig};
+//! let _configs = (BusConfig::default(), ParseLimits::default(), SupervisorConfig::default(),
+//!     ShutdownConfig::default(), VerifierConfig::default());
+//! let _stage = RequestStage::Directives;
+//! ```
 //!
-//! - `struct Kernel<B: Backends>`
+//! ## API
+//!
+//! - `struct Kernel` with the concrete P1 `LocalBackends` profile
 //! - `fn start(config) -> KernelHandle`
 //!
 //! ## Internal dependencies
@@ -50,9 +59,13 @@ pub use polaris_storage as storage;
 mod context;
 mod error;
 mod evidence;
+mod runtime;
 pub mod session;
+mod tools;
 
 pub use context::KernelCtx;
 pub use error::KernelError;
 pub use evidence::KernelEvidence;
+pub use runtime::{Kernel, KernelEvents, KernelHandle, LocalBackends, LocalKernelConfig};
 pub use session::{Archived, Configured, Created, Paused, Running, Session, SessionConfig};
+pub use tools::{KernelRecall, LocalTools};

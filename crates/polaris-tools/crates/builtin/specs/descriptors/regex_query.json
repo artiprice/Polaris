@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "regex_query",
+  "file_path": "src/query.rs",
+  "logic_name": "Bounded Regex Query",
+  "test_list": [
+    { "test_name": "bounded_matches", "description": "Return byte offsets and stop at the configured result cap." },
+    { "test_name": "unsafe_pattern_rejected", "description": "Use the shared automata validator before compiling a pattern." },
+    { "test_name": "unicode_byte_ranges", "description": "Report UTF-8 byte ranges for Unicode matches." }
+  ],
+  "dependencies": ["ToolLimits"],
+  "libraries": ["regex", "polaris-security-automata"],
+  "inputs": [
+    { "name": "text", "type": "String", "description": "Caller-provided bounded text." },
+    { "name": "pattern", "type": "String", "description": "Regex checked by the shared automata safety limits." }
+  ],
+  "output_type": "Result<RegexQueryOutput, ToolError>",
+  "output_description": "Bounded matches with UTF-8 byte offsets and explicit truncation state."
+}

@@ -14,10 +14,7 @@ pub const MAX_RACE_BRANCHES: usize = 1_024;
 /// Asynchronous acceptance policy for race candidates.
 pub trait Accept<T>: Send + Sync + 'static {
     /// Evaluates a completed candidate. Returning `false` lets other branches continue.
-    fn accept<'a>(
-        &'a self,
-        candidate: &'a T,
-    ) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>>;
+    fn accept<'a>(&'a self, candidate: &'a T) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>>;
 }
 
 /// One injected operator branch in a speculative race.

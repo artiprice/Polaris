@@ -252,10 +252,21 @@ struct Edit {
 fn edits_of(diff: &Diff, base: &[Unit<'_>], side: &[Unit<'_>]) -> Vec<Edit> {
     let mut edits = Vec::new();
     for h in diff.hunks() {
+        let bounds =
+            [h.before.start, h.before.end, h.after.start, h.after.end].map(usize::try_from);
+        let [Ok(start), Ok(end), Ok(repl_start), Ok(repl_end)] = bounds else {
+            // A platform unable to represent the diff offsets must compare the whole units.
+            // Never truncate a range or silently drop a proposed change.
+            return vec![Edit {
+                start: 0,
+                end: base.len(),
+                repl: 0..side.len(),
+            }];
+        };
         let edit = Edit {
-            start: h.before.start as usize,
-            end: h.before.end as usize,
-            repl: h.after.start as usize..h.after.end as usize,
+            start,
+            end,
+            repl: repl_start..repl_end,
         };
         // Myers coalesces adjacent replacements. If identities align exactly, each declaration
         // is still its own merge unit; otherwise one shared conflict would absorb unrelated

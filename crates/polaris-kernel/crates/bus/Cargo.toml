@@ -21,3 +21,7 @@ polaris-sdk = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 dhat = { workspace = true }
+loom = { workspace = true }
+
+[features]
+kani = []

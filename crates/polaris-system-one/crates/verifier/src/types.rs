@@ -182,8 +182,10 @@ pub enum SafetyAssessment {
 /// Injectable safety boundary; implementations must not execute mutations.
 pub trait MutationSafety: Send + Sync {
     /// Assess the supplied snapshots, failing closed on errors.
-    fn assess(&self, request: &SafetyRequest<'_>)
-        -> impl Future<Output = Result<SafetyAssessment, crate::VerifierError>> + Send;
+    fn assess(
+        &self,
+        request: &SafetyRequest<'_>,
+    ) -> impl Future<Output = Result<SafetyAssessment, crate::VerifierError>> + Send;
 }
 
 /// Report after execution, requiring independent proof for a pass.

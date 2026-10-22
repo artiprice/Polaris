@@ -254,4 +254,7 @@ pub enum ReaperError {
     /// Resource not registered or orphan already acknowledged.
     #[error("unknown resource")]
     UnknownResource,
+    /// The background shutdown coordinator failed unexpectedly.
+    #[error("reaper shutdown coordinator failed: {0}")]
+    ShutdownWorker(String),
 }

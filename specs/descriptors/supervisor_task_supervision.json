@@ -67,12 +67,25 @@
     {
       "test_name": "telemetry_folds_supervisor_events",
       "description": "Events published by the supervisor, folded into polaris_telemetry::Telemetry, produce worker_restarts, circuits_tripped and dead_letters counters."
+    },
+    {
+      "test_name": "worker_process_crashes_restart_at_one_millisecond_backoff_and_stop_at_intensity",
+      "description": "A process worker returning an exit code is restarted at the 1 ms configured backoff and stops after the configured restart intensity."
+    },
+    {
+      "test_name": "worker_stop_terminates_the_owned_process_tree",
+      "description": "Stopping a running worker calls the platform's graceful process-tree stop exactly once."
+    },
+    {
+      "test_name": "aborted_worker_stop_force_kills_the_tree_from_its_drop_guard",
+      "description": "If async graceful stop is aborted by the supervisor deadline, the worker process guard synchronously force-stops the retained tree."
     }
   ],
   "dependencies": [
     "polaris_sdk::contracts::{Event, EventRecord, WorkerKind}",
     "polaris_sdk::error::{ErrorKind, HasKind}",
     "polaris_sdk::registry::EventStore",
+    "polaris_sdk::registry::PlatformOps",
     "polaris_kernel_bus::Bus",
     "polaris_telemetry::Telemetry"
   ],

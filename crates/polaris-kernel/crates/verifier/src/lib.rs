@@ -9,12 +9,16 @@
 
 mod binding;
 mod evidence;
+mod execution;
+mod local;
 mod verify;
 
 pub use binding::{MutationBindingError, mutation_digest};
 pub use evidence::{EvidenceError, EvidenceStore};
+pub use execution::LocalExecutionVerifier;
+pub use local::{LocalDirectiveVerifier, LocalVerificationError};
 pub use verify::{
-    ApprovedMutation, ApprovalReason, HybridMutationVerifier, InputField, Metric, MutationRequest,
-    Rejection, VerificationDecision, VerifierConfig, VerifierError, MAX_DIFF_BYTES,
+    ApprovalReason, ApprovedMutation, HybridMutationVerifier, InputField, MAX_DIFF_BYTES,
     MAX_EVIDENCE_BYTES, MAX_INTENT_BYTES, MAX_SOURCE_BYTES, MAX_TARGET_BYTES, MAX_TOKEN_BYTES,
+    Metric, MutationRequest, Rejection, VerificationDecision, VerifierConfig, VerifierError,
 };

@@ -31,3 +31,6 @@
 //! ## Planned external dependencies
 //!
 //! `serde`, `serde-saphyr`
+
+mod implementation;
+pub use implementation::*;

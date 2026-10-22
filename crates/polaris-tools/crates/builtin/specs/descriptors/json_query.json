@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "json_query",
+  "file_path": "src/query.rs",
+  "logic_name": "JSON Pointer Query",
+  "test_list": [
+    { "test_name": "root_pointer", "description": "Return the complete parsed value for an empty JSON Pointer." },
+    { "test_name": "nested_pointer", "description": "Resolve object and array locations using RFC 6901 pointers." },
+    { "test_name": "invalid_and_missing", "description": "Reject malformed JSON and report absent pointers." }
+  ],
+  "dependencies": [],
+  "libraries": ["serde_json"],
+  "inputs": [
+    { "name": "json", "type": "String", "description": "Caller-provided JSON document." },
+    { "name": "pointer", "type": "String", "description": "RFC 6901 JSON Pointer; empty selects the root." }
+  ],
+  "output_type": "Result<JsonQueryOutput, ToolError>",
+  "output_description": "Selected JSON value, or an explicit invalid-input/not-found error."
+}

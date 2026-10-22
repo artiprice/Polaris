@@ -8,15 +8,15 @@ mod sanitize;
 mod triage;
 
 pub use pipeline::{
-    FoldOperator, Guard, IncompleteRequest, Pipeline, PipelineError, RequestStage, StageRecord,
-    StageStatus, MAX_FOLD_ITEMS, MAX_STAGE_RECORDS,
+    FoldOperator, Guard, IncompleteRequest, MAX_FOLD_ITEMS, MAX_STAGE_RECORDS, Pipeline,
+    PipelineError, RequestStage, StageRecord, StageStatus,
 };
 pub use policy::{
-    ClosedOp, ClosedOpError, FailureOpenObserver, FailureOpenReason, Fallback, OpenOp,
-    OpenOpError, RaceOp, RetryOp, RetryOpError,
+    ClosedOp, ClosedOpError, FailureOpenObserver, FailureOpenReason, Fallback, OpenOp, OpenOpError,
+    RaceOp, RetryOp, RetryOpError,
 };
-pub use sanitize::{MaskedText, MAX_SANITIZE_BYTES, SanitizeConfigError, SanitizeError, SanitizePiiOp};
-
-
+pub use sanitize::{
+    MAX_SANITIZE_BYTES, MaskedText, SanitizeConfigError, SanitizeError, SanitizePiiOp,
+};
 
 pub use triage::{S1TriageOp, TriageError, TriageInput};

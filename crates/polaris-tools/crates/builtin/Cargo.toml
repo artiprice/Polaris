@@ -14,7 +14,18 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+ignore = { workspace = true }
+globset = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+encoding_rs = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-code-intel = { workspace = true }
 polaris-security-automata = { workspace = true }
+polaris-storage-cas = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tempfile = { workspace = true }

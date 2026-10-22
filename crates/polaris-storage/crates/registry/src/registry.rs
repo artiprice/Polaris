@@ -1,7 +1,7 @@
 //! The [`Registry`] handle, its configuration and the database-thread actor behind it.
 
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ use rusqlite::Connection;
 
 use crate::error::RegistryError;
 use crate::migrate::migrate;
-use crate::search::Hit;
+use crate::search::{Hit, MAX_SEARCH_QUERY_BYTES};
 use crate::sessions::{SessionFilter, SessionMeta, SessionStatus};
 use crate::{history, search, sessions};
 
@@ -78,6 +78,7 @@ enum Request {
     SetStatus(SessionId, SessionStatus, Timestamp, Reply<bool>),
     Index(SessionId, ChatRole, String, Timestamp, Reply<()>),
     Search(String, u32, Reply<Vec<Hit>>),
+    SearchForSession(SessionId, String, u32, Reply<Vec<Hit>>),
 }
 
 /// Runs `op`, retrying with a growing pause while it reports [`RegistryError::Busy`].
@@ -124,6 +125,11 @@ fn serve(conn: &Connection, requests: &Receiver<Request>, cfg: &RegistryConfig) 
             Request::Search(query, limit, reply) => {
                 let _ = reply.send(with_retry(cfg, || search::search(conn, &query, limit)));
             }
+            Request::SearchForSession(session, query, limit, reply) => {
+                let _ = reply.send(with_retry(cfg, || {
+                    search::search_for_session(conn, session, &query, limit)
+                }));
+            }
         }
     }
 }
@@ -141,7 +147,7 @@ fn serve(conn: &Connection, requests: &Receiver<Request>, cfg: &RegistryConfig) 
 /// Dropping the handle stops the thread, which closes the connection.
 #[derive(Debug)]
 pub struct Registry {
-    requests: Option<Sender<Request>>,
+    requests: Option<SyncSender<Request>>,
     thread: Option<JoinHandle<()>>,
     path: PathBuf,
 }
@@ -166,7 +172,7 @@ impl Registry {
             .map_err(|e| RegistryError::Open(format!("cannot create {}: {e}", dir.display())))?;
         let path = dir.join(DB_FILE_NAME);
         let conn = open_connection(&path, cfg)?;
-        let (requests, inbox) = mpsc::channel();
+        let (requests, inbox) = mpsc::sync_channel(256);
         let cfg = *cfg;
         let thread = std::thread::Builder::new()
             .name("polaris-registry".to_owned())
@@ -289,14 +295,40 @@ impl Registry {
     ///
     /// Queries of three or more characters use the FTS5 trigram index; shorter ones fall back to
     /// `LIKE`. The query is untrusted: it is quoted/escaped and never interpreted as FTS5 or SQL
-    /// syntax, so any string is accepted (an empty one, or `limit == 0`, yields no hits). At most
-    /// `limit` hits, capped at [`crate::MAX_SEARCH_LIMIT`], are returned.
+    /// syntax, so any string within the byte bound is accepted (an empty one, or `limit == 0`,
+    /// yields no hits). At most `limit` hits, capped at [`crate::MAX_SEARCH_LIMIT`], are returned.
+    /// Queries above [`crate::MAX_SEARCH_QUERY_BYTES`] bytes return [`RegistryError::BadValue`]
+    /// before being copied into the bounded database-thread queue.
     ///
     /// # Errors
     /// SQLite errors; [`RegistryError::Corrupt`] for an undecodable row.
     pub fn search_history(&self, query: &str, limit: u32) -> Result<Vec<Hit>, RegistryError> {
+        check_search_query_size(query)?;
         self.call(|reply| Request::Search(query.to_owned(), limit, reply))
     }
+
+    /// Finds literal matches in exactly one session. Session filtering happens in SQLite before
+    /// sorting and applying `limit`, so messages from other sessions cannot crowd out results.
+    ///
+    /// Query syntax, bounds, ordering and errors match [`Registry::search_history`].
+    pub fn search_history_for_session(
+        &self,
+        session: SessionId,
+        query: &str,
+        limit: u32,
+    ) -> Result<Vec<Hit>, RegistryError> {
+        check_search_query_size(query)?;
+        self.call(|reply| Request::SearchForSession(session, query.to_owned(), limit, reply))
+    }
+}
+
+fn check_search_query_size(query: &str) -> Result<(), RegistryError> {
+    if query.len() > MAX_SEARCH_QUERY_BYTES {
+        return Err(RegistryError::BadValue(format!(
+            "search query exceeds the {MAX_SEARCH_QUERY_BYTES}-byte limit"
+        )));
+    }
+    Ok(())
 }
 
 impl Drop for Registry {

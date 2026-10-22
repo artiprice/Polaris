@@ -44,6 +44,41 @@ pub struct Manifest {
     pub entries: BTreeMap<RelPath, FileEntry>,
 }
 
+impl Manifest {
+    /// A deterministic BLAKE3 digest binding every path, size, content hash, mode, and link target.
+    #[must_use]
+    pub fn content_id(&self) -> Cid {
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(b"polaris-sync-manifest-v1\0");
+        for (path, entry) in &self.entries {
+            let path_bytes = path.as_str().as_bytes();
+            let path_len = match u64::try_from(path_bytes.len()) {
+                Ok(length) => length,
+                Err(_) => u64::MAX,
+            };
+            hasher.update(&path_len.to_be_bytes());
+            hasher.update(path_bytes);
+            hasher.update(&entry.size.to_be_bytes());
+            hasher.update(entry.hash.as_bytes());
+            hasher.update(&[u8::from(entry.executable)]);
+            match &entry.kind {
+                EntryKind::File => hasher.update(&[0]),
+                EntryKind::Link { target } => {
+                    hasher.update(&[1]);
+                    let target_bytes = target.as_bytes();
+                    let target_len = match u64::try_from(target_bytes.len()) {
+                        Ok(length) => length,
+                        Err(_) => u64::MAX,
+                    };
+                    hasher.update(&target_len.to_be_bytes());
+                    hasher.update(target_bytes)
+                }
+            };
+        }
+        Cid::from_bytes(*hasher.finalize().as_bytes())
+    }
+}
+
 /// How unchanged files are detected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HashMode {
@@ -75,6 +110,30 @@ pub struct ScanStats {
     pub hashed: usize,
     /// Files whose cached hash was reused.
     pub reused: usize,
+}
+
+/// Hard bounds for one workspace scan.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScanLimits {
+    /// Maximum filesystem entries visited, including directories and denied paths.
+    pub max_walk_entries: u64,
+    /// Maximum files and links in the manifest.
+    pub max_manifest_entries: u64,
+    /// Maximum bytes in one regular file.
+    pub max_file_bytes: u64,
+    /// Maximum aggregate bytes hashed or reused from the cache.
+    pub max_total_bytes: u64,
+}
+
+impl Default for ScanLimits {
+    fn default() -> Self {
+        Self {
+            max_walk_entries: 1_000_000,
+            max_manifest_entries: 100_000,
+            max_file_bytes: 256 * 1024 * 1024,
+            max_total_bytes: 4 * 1024 * 1024 * 1024,
+        }
+    }
 }
 
 /// Result of [`scan`].
@@ -113,39 +172,72 @@ fn io_err(rel: &RelPath, e: &std::io::Error) -> SyncError {
 }
 
 /// Streams a file through blake3; also reports whether it starts with `#!`.
-pub(crate) fn hash_file(path: &Path, rel: &RelPath) -> Result<(Cid, u64, bool), SyncError> {
+pub(crate) fn hash_file(path: &Path, rel: &RelPath, max_bytes: u64) -> Result<(Cid, u64, bool), SyncError> {
     let mut file = File::open(path).map_err(|e| io_err(rel, &e))?;
-    let mut head = [0u8; 2];
-    let mut got = 0;
-    while got < head.len() {
-        let slot = head.get_mut(got..).unwrap_or_default();
-        match file.read(slot) {
+    let mut buffer = [0u8; 64 * 1024];
+    let mut head = Vec::with_capacity(2);
+    let mut size = 0_u64;
+    let mut hasher = blake3::Hasher::new();
+    loop {
+        match file.read(&mut buffer) {
             Ok(0) => break,
-            Ok(n) => got += n,
+            Ok(count) => {
+                let count = u64::try_from(count).map_err(|_| SyncError::Limit { what: "file bytes", limit: max_bytes })?;
+                size = size.checked_add(count).ok_or(SyncError::Limit { what: "file bytes", limit: max_bytes })?;
+                if size > max_bytes {
+                    return Err(SyncError::Limit { what: "file bytes", limit: max_bytes });
+                }
+                if head.len() < 2 {
+                    let read_count = match usize::try_from(count) {
+                        Ok(count) => count,
+                        Err(_) => return Err(SyncError::Limit { what: "file bytes", limit: max_bytes }),
+                    };
+                    let needed = 2_usize.saturating_sub(head.len()).min(read_count);
+                    if let Some(prefix) = buffer.get(..needed) {
+                        head.extend_from_slice(prefix);
+                    }
+                }
+                let read = match usize::try_from(count) {
+                    Ok(count) => count,
+                    Err(_) => return Err(SyncError::Limit { what: "file bytes", limit: max_bytes }),
+                };
+                let bytes = buffer.get(..read).ok_or(SyncError::Limit { what: "file bytes", limit: max_bytes })?;
+                hasher.update(bytes);
+            }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
             Err(e) => return Err(io_err(rel, &e)),
         }
     }
-    let head = head.get(..got).unwrap_or_default();
-    let mut hasher = blake3::Hasher::new();
-    hasher.update(head);
-    hasher
-        .update_reader(&mut file)
-        .map_err(|e| io_err(rel, &e))?;
-    let size = file.metadata().map_err(|e| io_err(rel, &e))?.len();
     Ok((
         Cid::from_bytes(*hasher.finalize().as_bytes()),
         size,
-        head == b"#!",
+        executable_file(&file, &head)?,
     ))
+}
+
+#[cfg(unix)]
+fn executable_file(file: &File, _head: &[u8]) -> Result<bool, SyncError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let mode = file
+        .metadata()
+        .map_err(|error| SyncError::Walk(error.to_string()))?
+        .permissions()
+        .mode();
+    Ok(mode & 0o111 != 0)
+}
+
+#[cfg(not(unix))]
+fn executable_file(_file: &File, head: &[u8]) -> Result<bool, SyncError> {
+    Ok(head == b"#!")
 }
 
 /// The link target relative to the workspace, or `None` if it is absolute or leaves the root.
 fn link_target(rel: &RelPath, target: &Path) -> Option<String> {
-    let mut depth: Vec<&str> = rel
-        .parent()
-        .map(|p| p.split('/').collect())
-        .unwrap_or_default();
+    let mut depth: Vec<&str> = match rel.parent() {
+        Some(parent) => parent.split('/').collect(),
+        None => Vec::new(),
+    };
     let mut parts = Vec::new();
     for component in target.components() {
         match component {
@@ -177,7 +269,20 @@ pub fn scan(
     cache: Option<&ScanCache>,
     mode: HashMode,
 ) -> Result<ScanOutcome, SyncError> {
+    scan_with_limits(root, rules, cache, mode, ScanLimits::default())
+}
+
+/// Scans a workspace under explicit entry and byte limits.
+pub fn scan_with_limits(
+    root: &Path,
+    rules: &IgnoreRules,
+    cache: Option<&ScanCache>,
+    mode: HashMode,
+    limits: ScanLimits,
+) -> Result<ScanOutcome, SyncError> {
     let mut out = ScanOutcome::default();
+    let mut walked = 0_u64;
+    let mut total_bytes = 0_u64;
     let mut walker = WalkDir::new(root)
         .follow_links(false)
         .sort_by_file_name()
@@ -185,6 +290,10 @@ pub fn scan(
         .into_iter();
     while let Some(entry) = walker.next() {
         let entry = entry.map_err(|e| SyncError::Walk(e.to_string()))?;
+        walked = walked.checked_add(1).ok_or(SyncError::Limit { what: "walk entries", limit: limits.max_walk_entries })?;
+        if walked > limits.max_walk_entries {
+            return Err(SyncError::Limit { what: "walk entries", limit: limits.max_walk_entries });
+        }
         let Some(rel) = rel_of(root, entry.path()) else {
             out.unrepresentable.push(entry.path().to_path_buf());
             if entry.file_type().is_dir() {
@@ -215,8 +324,13 @@ pub fn scan(
             let target = std::fs::read_link(entry.path()).map_err(|e| io_err(&rel, &e))?;
             match link_target(&rel, &target) {
                 Some(target) => {
+                    let size = u64::try_from(target.len()).map_err(|_| SyncError::Limit { what: "link bytes", limit: limits.max_file_bytes })?;
+                    total_bytes = total_bytes.checked_add(size).ok_or(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes })?;
+                    if size > limits.max_file_bytes || total_bytes > limits.max_total_bytes {
+                        return Err(SyncError::Limit { what: "link or total bytes", limit: limits.max_total_bytes.min(limits.max_file_bytes) });
+                    }
+                    check_entry_limit(&out, limits)?;
                     let entry = FileEntry {
-                        size: u64::try_from(target.len()).unwrap_or(u64::MAX),
                         hash: Cid::from_bytes(*blake3::hash(target.as_bytes()).as_bytes()),
                         executable: false,
                         kind: EntryKind::Link { target },
@@ -233,6 +347,13 @@ pub fn scan(
         let meta = entry
             .metadata()
             .map_err(|e| SyncError::Walk(e.to_string()))?;
+        if meta.len() > limits.max_file_bytes {
+            return Err(SyncError::Limit { what: "file bytes", limit: limits.max_file_bytes });
+        }
+        total_bytes = total_bytes.checked_add(meta.len()).ok_or(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes })?;
+        if total_bytes > limits.max_total_bytes {
+            return Err(SyncError::Limit { what: "total bytes", limit: limits.max_total_bytes });
+        }
         let mtime_ns = meta
             .modified()
             .ok()
@@ -248,7 +369,7 @@ pub fn scan(
             }
             None => {
                 out.stats.hashed += 1;
-                hash_file(entry.path(), &rel)?
+                hash_file(entry.path(), &rel, limits.max_file_bytes)?
             }
         };
         if let Some(mtime_ns) = mtime_ns {
@@ -262,6 +383,7 @@ pub fn scan(
                 },
             );
         }
+        check_entry_limit(&out, limits)?;
         out.manifest.entries.insert(
             rel,
             FileEntry {
@@ -273,4 +395,15 @@ pub fn scan(
         );
     }
     Ok(out)
+}
+
+fn check_entry_limit(out: &ScanOutcome, limits: ScanLimits) -> Result<(), SyncError> {
+    let count = u64::try_from(out.manifest.entries.len()).map_err(|_| SyncError::Limit {
+        what: "manifest entries",
+        limit: limits.max_manifest_entries,
+    })?;
+    if count >= limits.max_manifest_entries {
+        return Err(SyncError::Limit { what: "manifest entries", limit: limits.max_manifest_entries });
+    }
+    Ok(())
 }

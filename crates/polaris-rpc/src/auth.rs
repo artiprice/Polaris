@@ -1,11 +1,14 @@
 //! Per-RPC capability authentication. Transport authentication never replaces command verification.
 use polaris_proto::pb;
 use polaris_security_capability::{
-    Authorization, CapabilityError, Facts, PublicKeyBytes, ResourcePath, Right, SystemClock,
-    Token, authorize_with_revocations,
+    Authorization, CapabilityError, Facts, PublicKeyBytes, ResourcePath, Right, SystemClock, Token,
+    authorize_with_revocations,
 };
 use std::sync::Arc;
-use tonic::{Request, Status, metadata::{KeyAndValueRef, MetadataMap}};
+use tonic::{
+    Request, Status,
+    metadata::{KeyAndValueRef, MetadataMap},
+};
 
 /// Maximum ASCII bearer header size, including scheme and hex encoding.
 pub const MAX_BEARER_HEADER_BYTES: usize = 2 * polaris_security_capability::MAX_TOKEN_BYTES + 7;
@@ -46,11 +49,7 @@ pub struct TrustedFacts {
 /// untrusted request data as trusted filesystem facts.
 pub trait TrustedFactsResolver: Send + Sync + 'static {
     /// Resolve actual facts for this method and decoded request.
-    fn resolve(
-        &self,
-        right: Right,
-        subject: RequestSubject<'_>,
-    ) -> Result<TrustedFacts, Status>;
+    fn resolve(&self, right: Right, subject: RequestSubject<'_>) -> Result<TrustedFacts, Status>;
 
     /// Check whether a token has been revoked since its stream or RPC was authorized.
     ///
@@ -105,14 +104,8 @@ impl<R: TrustedFactsResolver> AuthorizationLease<R> {
             diff_blake3: self.facts.diff_blake3,
             right: self.right,
         };
-        match authorize_with_revocations(
-            &self.token,
-            &facts,
-            &self.root,
-            &SystemClock,
-            &[],
-        )
-        .map_err(map_capability_error)?
+        match authorize_with_revocations(&self.token, &facts, &self.root, &SystemClock, &[])
+            .map_err(map_capability_error)?
         {
             Authorization::Allowed => Ok(()),
             Authorization::Denied { .. } => Err(Status::permission_denied("capability denied")),
@@ -124,7 +117,10 @@ impl<R: TrustedFactsResolver> RpcAuthenticator<R> {
     /// Create a fail-closed authenticator for one pinned issuer and trusted context resolver.
     #[must_use]
     pub fn new(root: PublicKeyBytes, resolver: R) -> Self {
-        Self { root, resolver: Arc::new(resolver) }
+        Self {
+            root,
+            resolver: Arc::new(resolver),
+        }
     }
 
     /// Require and authorize the bearer credential for a decoded RPC operation.
@@ -147,7 +143,9 @@ impl<R: TrustedFactsResolver> RpcAuthenticator<R> {
         let metadata_bytes = metadata.iter().fold(0_usize, |total, pair| {
             let (key, value) = match pair {
                 KeyAndValueRef::Ascii(key, value) => (key.as_str().len(), value.as_bytes().len()),
-                KeyAndValueRef::Binary(key, value) => (key.as_str().len(), value.as_bytes().len()),
+                KeyAndValueRef::Binary(key, value) => {
+                    (key.as_str().len(), value.as_encoded_bytes().len())
+                }
             };
             total.saturating_add(key).saturating_add(value)
         });
@@ -200,8 +198,10 @@ fn bearer_bytes(metadata: &MetadataMap) -> Result<Vec<u8>, Status> {
     let mut bytes = Vec::with_capacity(hex.len() / 2);
     let mut nibbles = hex.bytes();
     while let (Some(high), Some(low)) = (nibbles.next(), nibbles.next()) {
-        let high = hex_nibble(high).ok_or_else(|| Status::unauthenticated("malformed bearer credential"))?;
-        let low = hex_nibble(low).ok_or_else(|| Status::unauthenticated("malformed bearer credential"))?;
+        let high = hex_nibble(high)
+            .ok_or_else(|| Status::unauthenticated("malformed bearer credential"))?;
+        let low = hex_nibble(low)
+            .ok_or_else(|| Status::unauthenticated("malformed bearer credential"))?;
         bytes.push((high << 4) | low);
     }
     if bytes.len() > polaris_security_capability::MAX_TOKEN_BYTES {

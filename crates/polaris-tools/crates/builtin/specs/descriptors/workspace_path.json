@@ -1,0 +1,20 @@
+{
+  "type_of": "function",
+  "name": "resolve_in_workspace",
+  "file_path": "src/path.rs",
+  "logic_name": "Workspace Path Guard",
+  "test_list": [
+    { "test_name": "rejects_dotdot_and_absolute_escapes", "description": "Reject parent traversal, rooted paths, UNC and device prefixes before filesystem access." },
+    { "test_name": "rejects_windows_ads_and_reserved_names", "description": "Reject alternate data streams, reserved device names and trailing dot/space components." },
+    { "test_name": "rejects_reparse_components_and_external_targets", "description": "Fail closed on symlink/junction components and canonical paths outside the workspace." },
+    { "test_name": "denies_secret_paths_case_insensitively", "description": "Deny .env, PEM/key files and .git/config without an approval fact." }
+  ],
+  "dependencies": ["ToolLimits"],
+  "libraries": ["std::fs", "std::path"],
+  "inputs": [
+    { "name": "root", "type": "&Path", "description": "Trusted workspace root selected by the composition root." },
+    { "name": "relative", "type": "&str", "description": "User-supplied workspace-relative path." }
+  ],
+  "output_type": "Result<PathBuf, ToolError>",
+  "output_description": "A workspace-contained path after lexical and filesystem containment checks, or a policy/input/I/O error. Component check/open remains subject to a documented OS race without handle-relative resolver support."
+}

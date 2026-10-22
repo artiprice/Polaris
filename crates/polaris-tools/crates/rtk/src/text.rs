@@ -52,7 +52,7 @@ pub(crate) fn segment(text: &str) -> Vec<Block<'_>> {
                 header: line,
                 body: Vec::new(),
             });
-        } else if line.trim().is_empty() {
+        } else if current.is_some() && line.trim().is_empty() {
             blocks.extend(current.take());
         } else if let Some(block) = current.as_mut() {
             block.body.push(line);

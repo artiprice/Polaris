@@ -41,7 +41,13 @@ pub struct FoldConfig {
 }
 
 impl Default for FoldConfig {
-    fn default() -> Self { Self { inline_threshold: 1_200, head_lines: 20, tail_lines: 20 } }
+    fn default() -> Self {
+        Self {
+            inline_threshold: 1_200,
+            head_lines: 20,
+            tail_lines: 20,
+        }
+    }
 }
 
 /// Request to fold one exact tool result.
@@ -103,15 +109,24 @@ pub(crate) struct FoldState {
 }
 
 impl FoldState {
-    pub(crate) fn fold(&self, cas: &Cas, config: FoldConfig, request: FoldRequest<'_>) -> Result<Folded, ContextError> {
-        let original_bytes = u64::try_from(request.output.len()).map_err(|_| ContextError::EstimateOverflow)?;
+    pub(crate) fn fold(
+        &self,
+        cas: &Cas,
+        config: FoldConfig,
+        request: FoldRequest<'_>,
+    ) -> Result<Folded, ContextError> {
+        let original_bytes =
+            u64::try_from(request.output.len()).map_err(|_| ContextError::EstimateOverflow)?;
         let tracked_file = if request.tool == ToolKind::File {
             if let Some(read) = request.file_read {
                 let cid = cas.put(request.output)?;
                 let reference = cas.short_ref_checked(&cid)?;
                 let path = normalize_path(&read.path);
                 let prior = {
-                    let mut entries = self.previous_files.lock().map_err(|_| ContextError::StatePoisoned)?;
+                    let mut entries = self
+                        .previous_files
+                        .lock()
+                        .map_err(|_| ContextError::StatePoisoned)?;
                     let prior = entries.get(&path).copied();
                     entries.insert(path.clone(), (cid, read.turn));
                     prior
@@ -119,15 +134,24 @@ impl FoldState {
                 if let Some((previous, since_turn)) = prior {
                     if previous == cid {
                         return Ok(Folded {
-                            view: format!("[FILE: {path} | {} | unchanged since turn {since_turn}]", reference.to_marker()),
-                            reference: Some(reference), content_id: Some(cid), original_bytes,
+                            view: format!(
+                                "[FILE: {path} | {} | unchanged since turn {since_turn}]",
+                                reference.to_marker()
+                            ),
+                            reference: Some(reference),
+                            content_id: Some(cid),
+                            original_bytes,
                             kind: FoldKind::UnchangedFile { since_turn },
                         });
                     }
                 }
                 Some((path, cid, reference))
-            } else { None }
-        } else { None };
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         if request.output.len() <= config.inline_threshold {
             if let Ok(text) = std::str::from_utf8(request.output) {
                 let (content_id, reference) = match tracked_file.as_ref() {
@@ -135,7 +159,10 @@ impl FoldState {
                     None => (None, None),
                 };
                 return Ok(Folded {
-                    view: text.to_owned(), reference, content_id, original_bytes,
+                    view: text.to_owned(),
+                    reference,
+                    content_id,
+                    original_bytes,
                     kind: FoldKind::Inline,
                 });
             }
@@ -161,7 +188,10 @@ impl FoldState {
                 view.push_str(&reference.to_marker());
                 view.push_str("]\n");
                 return Ok(Folded {
-                    view, reference: Some(reference), content_id: Some(cid), original_bytes,
+                    view,
+                    reference: Some(reference),
+                    content_id: Some(cid),
+                    original_bytes,
                     kind: FoldKind::Diagnostics,
                 });
             }
@@ -176,33 +206,48 @@ impl FoldState {
         if let Some((path, _, _)) = tracked_file.as_ref() {
             return Ok(Folded {
                 view: format!("[FILE: {path}]\n{with_marker}"),
-                reference: Some(reference), content_id: Some(cid), original_bytes,
+                reference: Some(reference),
+                content_id: Some(cid),
+                original_bytes,
                 kind: FoldKind::FileRef,
             });
         }
         Ok(Folded {
             view: with_marker,
-            reference: Some(reference), content_id: Some(cid), original_bytes,
+            reference: Some(reference),
+            content_id: Some(cid),
+            original_bytes,
             kind: FoldKind::HeadTail { head, tail },
         })
     }
 }
 
 /// Resolve a CAS short reference and optionally return an exact byte range.
-pub(crate) fn expand(cas: &Cas, reference: ShortRef, range: Option<ByteRange>) -> Result<Bytes, ContextError> {
+pub(crate) fn expand(
+    cas: &Cas,
+    reference: ShortRef,
+    range: Option<ByteRange>,
+) -> Result<Bytes, ContextError> {
     let cid = cas.resolve(&reference)?;
     let bytes = cas.get(&cid)?;
-    let Some(range) = range else { return Ok(bytes); };
-    if range.start > range.end || range.end > u64::try_from(bytes.len()).map_err(|_| ContextError::InvalidRange)? {
+    let Some(range) = range else {
+        return Ok(bytes);
+    };
+    if range.start > range.end
+        || range.end > u64::try_from(bytes.len()).map_err(|_| ContextError::InvalidRange)?
+    {
         return Err(ContextError::InvalidRange);
     }
     let start = usize::try_from(range.start).map_err(|_| ContextError::InvalidRange)?;
-    let length = usize::try_from(range.end - range.start).map_err(|_| ContextError::InvalidRange)?;
+    let length =
+        usize::try_from(range.end - range.start).map_err(|_| ContextError::InvalidRange)?;
     let selected: Vec<u8> = bytes.iter().skip(start).take(length).copied().collect();
     Ok(Bytes::from(selected))
 }
 
-fn normalize_path(path: &str) -> String { path.replace('\\', "/") }
+fn normalize_path(path: &str) -> String {
+    path.replace('\\', "/")
+}
 
 fn head_tail(text: &str, head_count: usize, tail_count: usize) -> (String, u32, u32) {
     let lines: Vec<&str> = text.lines().collect();
@@ -213,10 +258,16 @@ fn head_tail(text: &str, head_count: usize, tail_count: usize) -> (String, u32, 
         out.push_str(line);
         out.push('\n');
     }
-    let omitted = lines.len().saturating_sub(head_len).saturating_sub(tail_len);
+    let omitted = lines
+        .len()
+        .saturating_sub(head_len)
+        .saturating_sub(tail_len);
     if omitted > 0 {
         use std::fmt::Write as _;
-        let _ = writeln!(out, "[… {omitted} lines omitted; full output is retained in CAS …]");
+        let _ = writeln!(
+            out,
+            "[… {omitted} lines omitted; full output is retained in CAS …]"
+        );
     }
     for line in lines.iter().skip(lines.len().saturating_sub(tail_len)) {
         out.push_str(line);
@@ -226,4 +277,3 @@ fn head_tail(text: &str, head_count: usize, tail_count: usize) -> (String, u32, 
     let tail = u32::try_from(tail_len).map_or(u32::MAX, |value| value);
     (out, head, tail)
 }
-

@@ -18,11 +18,11 @@
     },
     {
       "test_name": "process_registration_is_journaled_by_pid",
-      "description": "The root pid is journaled so a later start-up can list the orphan."
+      "description": "The root PID is journaled as an unresolved orphan; a later start-up never signals it because the live opaque handle cannot survive host restart."
     }
   ],
   "dependencies": [
-    "polaris_sdk::registry::{PlatformOps, ProcessTree, StopOutcome, PlatformError, SpawnSpec, MemoryPressure}",
+    "polaris_sdk::registry::{PlatformOps, ProcessTree, ProcessExit, StopOutcome, PlatformError, SpawnSpec, MemoryPressure}",
     "polaris_kernel_reaper::{Reaper, ProcessTeardown}"
   ],
   "libraries": [
@@ -34,7 +34,7 @@
     {
       "name": "platform",
       "type": "Arc<P: PlatformOps>",
-      "description": "The OS seam; the real Job Object / process-group implementation is polaris-platform-process (P2). Tests use a fake."
+      "description": "The OS seam; the production adapter retains Windows Job Objects and Unix process groups in polaris-platform-process. Seam behavior is also tested with a fake."
     },
     {
       "name": "tree",

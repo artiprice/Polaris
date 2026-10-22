@@ -158,10 +158,7 @@ impl ChatModel for Refusing {
 async fn one_of2_forwards_async_chat_stream() -> TestResult {
     let req = ChatRequest {
         model: ModelId::new("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")?,
-        messages: vec![ChatMessage {
-            role: ChatRole::User,
-            content: "hi".into(),
-        }],
+        messages: vec![ChatMessage::text(ChatRole::User, "hi".into())],
         tools: Vec::new(),
         max_output_tokens: None,
         effort: Effort::Low,

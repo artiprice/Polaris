@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "polaris_recall",
+  "file_path": "src/registry.rs",
+  "logic_name": "Persisted Context Recall",
+  "test_list": [
+    { "test_name": "configured_backend_used", "description": "Delegate only to the composition root's actual recall backend." },
+    { "test_name": "no_backend_is_success", "description": "Unavailable or failing persistence does not return synthetic memories." },
+    { "test_name": "result_count_bounded", "description": "Pass the configured maximum result count to the backend." }
+  ],
+  "dependencies": ["RecallBackend"],
+  "libraries": [],
+  "inputs": [{ "name": "query", "type": "String", "description": "Caller-provided retrieval query." }],
+  "output_type": "Result<Value, ToolError>",
+  "output_description": "Actual backend retrieval data or a surfaced backend error."
+}
