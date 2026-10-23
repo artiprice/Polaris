@@ -1,10 +1,10 @@
 {
-  "snapshot_utc": "2026-10-23T15:02:11.174982+00:00",
+  "snapshot_utc": "2026-10-23T21:58:17.329060+00:00",
   "scope": "First-party source/config/spec files under apps, crates, tests, xtask, @prime/tools, @prime/spikes, specs, .cargo/.github/.config plus root Cargo/toolchain/deny configuration; no vendor, targets, tmp, dep-probe, node_modules or fuzz corpora/artifacts.",
-  "source_fingerprint_sha256": "d03dcfc169984a10092ff72f6b2d05794024efd3e528802e994adde21c6f393d",
-  "file_count": 950,
-  "rust_file_count": 585,
-  "line_count_including_docs_tests_config": 136723,
+  "source_fingerprint_sha256": "a6b9a1e9da9af93ccc53a048ced57d9b4b31f3d8a80f172f06dc1a139becede5",
+  "file_count": 979,
+  "rust_file_count": 603,
+  "line_count_including_docs_tests_config": 145226,
   "packages": [
     {
       "name": "polaris-cli",
@@ -710,35 +710,45 @@
           "text": "Run Miri over the crate (27 integration tests; `event_record_json_snapshot` skipped under Miri because insta calls `socketpair`, unsupported by Miri) and Kani harnesses for `Effort::try_from(u8)` and `Probability::new` (`src/kani_proofs.rs`, feature `kani`): both VERIFIED. Runner: `@prime/tools/setup/verify-proofs.sh`."
         }
       ],
-      "rust_files": 18,
-      "production_rust_lines": 4247,
-      "test_markers": 40,
+      "rust_files": 22,
+      "production_rust_lines": 4613,
+      "test_markers": 50,
       "files": {
         "crates/polaris-sdk/Cargo.toml": {
-          "sha256": "3ac80a39caa40edc1f84d3171e8b8b06cd663f5ae9cc239fd948606035bdd324",
-          "bytes": 873,
-          "lines": 29,
-          "nonblank_noncomment_lines_approx": 24,
+          "sha256": "38b96a49168fcd367afdb14ad945782eebcc986cf2a24dc116d63ebac42fda20",
+          "bytes": 904,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 25,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/backends.rs": {
-          "sha256": "69f1589e0e94423ac202f4d5f085107695a2bfc3ce4fc1c6f3e8503240b6c867",
-          "bytes": 16359,
-          "lines": 450,
-          "nonblank_noncomment_lines_approx": 346,
-          "function_definitions": 57,
+          "sha256": "4a9470691324403376670bd90d4252983587434585652f45443c52b48566eb12",
+          "bytes": 18131,
+          "lines": 495,
+          "nonblank_noncomment_lines_approx": 382,
+          "function_definitions": 66,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-sdk/src/content.rs": {
+          "sha256": "8b18c41e3564f7523287acfbaf527e5de57a3cbf8fd8c7141986d64752a17aab",
+          "bytes": 2351,
+          "lines": 66,
+          "nonblank_noncomment_lines_approx": 29,
+          "function_definitions": 4,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/contracts.rs": {
-          "sha256": "6876615c8ceecd5c34c32fb21d6a274faee0e24116608247334e0a2eb14bc06f",
-          "bytes": 20361,
-          "lines": 714,
-          "nonblank_noncomment_lines_approx": 423,
+          "sha256": "d9c2e75b1acd322529471fde9e73c97013d287648d93897c196a5ac4a23fa357",
+          "bytes": 21824,
+          "lines": 752,
+          "nonblank_noncomment_lines_approx": 442,
           "function_definitions": 38,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -795,21 +805,31 @@
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/lib.rs": {
-          "sha256": "d60c8ab7df4b8980453202620e4b26ba6a650145d7a05a97fd527cf6859eb208",
-          "bytes": 1860,
-          "lines": 33,
-          "nonblank_noncomment_lines_approx": 9,
+          "sha256": "493a9bda79da3e7721ad5e0d5c9f724eb530c803f04600d48d7a85697585e694",
+          "bytes": 1987,
+          "lines": 36,
+          "nonblank_noncomment_lines_approx": 11,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/registry.rs": {
-          "sha256": "7d867c3f4b6fa533ea0483f3c93181fc56124eb9c5b1c3599ffa37619dde990e",
-          "bytes": 47744,
-          "lines": 1415,
-          "nonblank_noncomment_lines_approx": 728,
+          "sha256": "ec2072ee965e1adfd46e62dd805f2e913dd290e23def6932cbedf523ec4181f9",
+          "bytes": 47912,
+          "lines": 1420,
+          "nonblank_noncomment_lines_approx": 732,
           "function_definitions": 58,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-sdk/src/secrets.rs": {
+          "sha256": "815f5845aa2eb8d71e735c1bfde4029228f6c23f5d96a98e71f2ee17c729b73f",
+          "bytes": 7188,
+          "lines": 209,
+          "nonblank_noncomment_lines_approx": 125,
+          "function_definitions": 13,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -825,7 +845,7 @@
           "doc_skeleton": false
         },
         "crates/polaris-sdk/tests/blast_alert_schema.rs": {
-          "sha256": "b5811cbc6cb8bbfc820ef0db47d6b2f2cc61b8606fee581307da65f85a8071d9",
+          "sha256": "318b2331ffbccb4fef9552dbb68c9b2401434c0cd520beac757bd98bf8024cc7",
           "bytes": 753,
           "lines": 26,
           "nonblank_noncomment_lines_approx": 23,
@@ -854,6 +874,16 @@
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-sdk/tests/content_store_dispatch.rs": {
+          "sha256": "0d1ce058bc16b0f1b62897266af1c8662903a4c569a2c467a35d10bb7ce135ae",
+          "bytes": 5233,
+          "lines": 183,
+          "nonblank_noncomment_lines_approx": 160,
+          "function_definitions": 10,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-sdk/tests/effort_parsing.rs": {
           "sha256": "6e31b4a18669c273c17c636f959500e496e18784cd3a556c57c638d53b3e337a",
           "bytes": 2107,
@@ -865,10 +895,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-sdk/tests/event_envelope.rs": {
-          "sha256": "1747a060cc9dd19c52d98affb4f2502b86f4683e742e558dede074823a68fd58",
-          "bytes": 4229,
-          "lines": 148,
-          "nonblank_noncomment_lines_approx": 133,
+          "sha256": "2c98000408dde682b4684f703bc6e1ac11b5c4ef21bdf49cc21c987b12992c53",
+          "bytes": 4542,
+          "lines": 161,
+          "nonblank_noncomment_lines_approx": 146,
           "function_definitions": 8,
           "tests": 4,
           "explicit_todo_unimplemented": 0,
@@ -894,8 +924,18 @@
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-sdk/tests/secret_source_contract.rs": {
+          "sha256": "94c99f483382d17045fb742a926178d4158b1aee264dfd70c609c37949e174a1",
+          "bytes": 3853,
+          "lines": 114,
+          "nonblank_noncomment_lines_approx": 93,
+          "function_definitions": 11,
+          "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-sdk/tests/session_lifecycle.rs": {
-          "sha256": "eb829d5e22e948f73734481a7f2681d50ee1d3e9181287a0546be6b67e0ed499",
+          "sha256": "62f2577b0eef9eae49cd377ca3486c8cd241819dcd8052f84df6be45cfcd65c1",
           "bytes": 3876,
           "lines": 119,
           "nonblank_noncomment_lines_approx": 107,
@@ -959,7 +999,7 @@
         }
       ],
       "rust_files": 12,
-      "production_rust_lines": 1040,
+      "production_rust_lines": 1095,
       "test_markers": 48,
       "files": {
         "crates/polaris-proto/build.rs": {
@@ -1003,10 +1043,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/proto/polaris/v1/kernel.proto": {
-          "sha256": "1c5d8820cf5bc25345a6af062bd3c1ac705b10fd069a30d8ba38ecd3602d2ff8",
-          "bytes": 6280,
-          "lines": 232,
-          "nonblank_noncomment_lines_approx": 196,
+          "sha256": "b850b1f3cbdf93372ebcc7bbf77ba06bee2a119e34094fdac56a540b31ce40f7",
+          "bytes": 7036,
+          "lines": 253,
+          "nonblank_noncomment_lines_approx": 214,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -1023,11 +1063,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/src/convert.rs": {
-          "sha256": "fc56f47f316447cbec70ea1205884cdfd5e78b8fb351ea1ea4e36960447c796d",
-          "bytes": 29922,
-          "lines": 772,
-          "nonblank_noncomment_lines_approx": 675,
-          "function_definitions": 36,
+          "sha256": "cc020b7a0a45c70aaff2e00f8b227356705f125ab8352ae53b13b9a2a5b4efdc",
+          "bytes": 32504,
+          "lines": 827,
+          "nonblank_noncomment_lines_approx": 728,
+          "function_definitions": 38,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -1073,8 +1113,8 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/tests/command_conversion.rs": {
-          "sha256": "540b2efc3187ea124444a485d200b8c7e237cfabbc0cd39b12753be7cf9ffb1c",
-          "bytes": 9195,
+          "sha256": "c5b38c23ffcafd71b6176ec7a1e4fe5c03dd4968f1464dc6fba6054ecdefaac2",
+          "bytes": 9163,
           "lines": 293,
           "nonblank_noncomment_lines_approx": 263,
           "function_definitions": 17,
@@ -1083,8 +1123,8 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/tests/decision_conversion.rs": {
-          "sha256": "42c9d733fc035ce982f362014aea69bf3a961db6b336f37d70448fd9d7883338",
-          "bytes": 10731,
+          "sha256": "bd4c02094d2cd277c30613fae9e07b3f0bc1deba9a428102b0aa4f1ea0067b80",
+          "bytes": 10691,
           "lines": 341,
           "nonblank_noncomment_lines_approx": 307,
           "function_definitions": 20,
@@ -1093,10 +1133,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/tests/event_conversion.rs": {
-          "sha256": "c50cb90c15192f0c446db71744da5fbabb986b76b752a2a62f166b97793d39ac",
-          "bytes": 18652,
-          "lines": 576,
-          "nonblank_noncomment_lines_approx": 533,
+          "sha256": "ca02f432f2b249ec73895285a0a8cee0f076358e0502fa2ea41879f5f72ce80b",
+          "bytes": 20483,
+          "lines": 636,
+          "nonblank_noncomment_lines_approx": 593,
           "function_definitions": 20,
           "tests": 10,
           "explicit_todo_unimplemented": 0,
@@ -1123,10 +1163,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-proto/tests/wire_schema_contract.rs": {
-          "sha256": "c7dda20109e5d04110cbcce10aabb245cb1f0689bebaaf12313cd8acbcbf55ab",
-          "bytes": 12797,
-          "lines": 406,
-          "nonblank_noncomment_lines_approx": 367,
+          "sha256": "3c2ae29471e297b7ae596d4e856c3271e5f2db4c57c1bfcc653ca8a8cdc45c20",
+          "bytes": 13492,
+          "lines": 429,
+          "nonblank_noncomment_lines_approx": 390,
           "function_definitions": 15,
           "tests": 8,
           "explicit_todo_unimplemented": 0,
@@ -1191,8 +1231,8 @@
         }
       ],
       "rust_files": 13,
-      "production_rust_lines": 1258,
-      "test_markers": 30,
+      "production_rust_lines": 1266,
+      "test_markers": 32,
       "files": {
         "crates/polaris-config/Cargo.toml": {
           "sha256": "336a177d769aef717e5a0e05c62d6fd32cb0753e0c12c6980de89101f775cb99",
@@ -1255,11 +1295,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-config/src/secret_ref.rs": {
-          "sha256": "21046268ff2a582467964515033e09be348c1371436ae38de073da6554dfca23",
-          "bytes": 3277,
-          "lines": 93,
-          "nonblank_noncomment_lines_approx": 64,
-          "function_definitions": 7,
+          "sha256": "21c58a9a6cac25752534d8e49478c73172f9fc0918dde994df2d136a48deb3ef",
+          "bytes": 3780,
+          "lines": 101,
+          "nonblank_noncomment_lines_approx": 69,
+          "function_definitions": 6,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -1325,12 +1365,12 @@
           "doc_skeleton": false
         },
         "crates/polaris-config/tests/secret_reference_parsing.rs": {
-          "sha256": "20b3aca37b732f5c5e5591198283b32923ae8c6c26dd11c6c82c3494f09e59f1",
-          "bytes": 1664,
-          "lines": 68,
-          "nonblank_noncomment_lines_approx": 56,
-          "function_definitions": 4,
-          "tests": 4,
+          "sha256": "336f252f3e08987a0cae256d4a90f7e15094e0dbb91b045239d2b2dc51b2a48b",
+          "bytes": 2879,
+          "lines": 100,
+          "nonblank_noncomment_lines_approx": 84,
+          "function_definitions": 6,
+          "tests": 6,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -1623,7 +1663,7 @@
         }
       ],
       "rust_files": 18,
-      "production_rust_lines": 1124,
+      "production_rust_lines": 1126,
       "test_markers": 51,
       "files": {
         "crates/polaris-telemetry/Cargo.toml": {
@@ -1637,10 +1677,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-telemetry/src/aggregate.rs": {
-          "sha256": "72c0468f24b93386d5b714997c389650021c82cb1e0fe75af02ce19d4b68ede4",
-          "bytes": 16444,
-          "lines": 423,
-          "nonblank_noncomment_lines_approx": 321,
+          "sha256": "ca421e2ff1c42fff92403b78b82a9acb1f1f020f5efed1ca7e66d82a89b6e851",
+          "bytes": 16536,
+          "lines": 425,
+          "nonblank_noncomment_lines_approx": 323,
           "function_definitions": 9,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -2328,8 +2368,8 @@
         }
       ],
       "rust_files": 15,
-      "production_rust_lines": 754,
-      "test_markers": 36,
+      "production_rust_lines": 796,
+      "test_markers": 37,
       "files": {
         "crates/polaris-storage/crates/cas/Cargo.toml": {
           "sha256": "b5ebc522b8ff99957598f72f1ff15daa2b35a198c73b296947d3cd320ce7b38d",
@@ -2402,11 +2442,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-storage/crates/cas/src/store.rs": {
-          "sha256": "2198f4b706aef2b6edfea140905a7363cf750fa5d68d2c0d8bc82fd35ad4f7ef",
-          "bytes": 11796,
-          "lines": 336,
-          "nonblank_noncomment_lines_approx": 247,
-          "function_definitions": 15,
+          "sha256": "967c41d70468927400d3b2042c8a910af3c6117c45d79978dda36e9d7d90a635",
+          "bytes": 13551,
+          "lines": 378,
+          "nonblank_noncomment_lines_approx": 279,
+          "function_definitions": 20,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -2422,12 +2462,12 @@
           "doc_skeleton": false
         },
         "crates/polaris-storage/crates/cas/tests/blob_store_round_trip.rs": {
-          "sha256": "3d42c4fc21894b08c551fd0c243b1655d63176414fd495b8addae7afcb797a71",
-          "bytes": 6088,
-          "lines": 206,
-          "nonblank_noncomment_lines_approx": 177,
-          "function_definitions": 12,
-          "tests": 10,
+          "sha256": "5e2336e81b638949853c0c9e998208df36bbbbad2130ef79e2d563b16a88a09f",
+          "bytes": 6601,
+          "lines": 224,
+          "nonblank_noncomment_lines_approx": 192,
+          "function_definitions": 13,
+          "tests": 11,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -3165,9 +3205,9 @@
       "phase": "P5",
       "kind": "lib",
       "layer": 1,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open.",
       "responsibilities": [
         "Implement the sdk `VectorStore` trait over a usearch HNSW index + SQLite metadata under ~/.polaris/vectors and .polaris/vectors (S0-9: 1 min 41 s build, 4.3 MB exe, kNN p50 0.475 ms at 10k x 384).",
         "Persist the index with save-to-temp + atomic rename; parallel insert (single-threaded insert measured at ~1 ms/vector).",
@@ -3215,14 +3255,24 @@
           "text": "Windows: handle file locks on index files, `target-dir` length, and path normalisation (`dunce`); the Linux leg builds in WSL2."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 35,
-      "test_markers": 0,
+      "rust_files": 5,
+      "production_rust_lines": 1189,
+      "test_markers": 20,
       "files": {
         "crates/polaris-storage/crates/vector/Cargo.toml": {
-          "sha256": "ebf57465e7dfdbc05f57f76d62ca5348483b6428dea784d1dd1ac48dbd18284d",
-          "bytes": 683,
-          "lines": 18,
+          "sha256": "be6f1b5881409eb1cb435960232e99974fc6abb27d0ad221c80bc5af63174e5c",
+          "bytes": 889,
+          "lines": 26,
+          "nonblank_noncomment_lines_approx": 21,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-storage/crates/vector/src/error.rs": {
+          "sha256": "eb0a30904ff19a22af6d6a1139670d9d1168a2d2ebac096c960f45b8499fd00d",
+          "bytes": 1784,
+          "lines": 39,
           "nonblank_noncomment_lines_approx": 14,
           "function_definitions": 0,
           "tests": 0,
@@ -3230,12 +3280,42 @@
           "doc_skeleton": false
         },
         "crates/polaris-storage/crates/vector/src/lib.rs": {
-          "sha256": "8ba7e905df53d9ec7f2a8f5b31f3d244beefab98f41ea812e6dff51119c1c086",
-          "bytes": 1522,
-          "lines": 35,
-          "nonblank_noncomment_lines_approx": 0,
-          "function_definitions": 2,
+          "sha256": "cb4ce75dcd22b86ec33bf2f817f1412f87ebd59bc6c47bcfa133f9e9ac4c5e1d",
+          "bytes": 554,
+          "lines": 13,
+          "nonblank_noncomment_lines_approx": 6,
+          "function_definitions": 0,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-storage/crates/vector/src/store.rs": {
+          "sha256": "51510cd94af2f10671a718ae976c856ad0930dafeb6902389db637b4ffadfa42",
+          "bytes": 36664,
+          "lines": 1031,
+          "nonblank_noncomment_lines_approx": 942,
+          "function_definitions": 35,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-storage/crates/vector/src/types.rs": {
+          "sha256": "f2e27135d3cac25cdd2de985f09bf0b3028dfee94d7e1f53228fee502a5bdee9",
+          "bytes": 3257,
+          "lines": 106,
+          "nonblank_noncomment_lines_approx": 76,
+          "function_definitions": 6,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-storage/crates/vector/tests/vector_store.rs": {
+          "sha256": "7497a355f240b0efbef375c8d69295cda56d4aaf24633d59f9b451d5149f8341",
+          "bytes": 18120,
+          "lines": 507,
+          "nonblank_noncomment_lines_approx": 441,
+          "function_definitions": 24,
+          "tests": 20,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -3885,9 +3965,9 @@
       "phase": "P3",
       "kind": "lib",
       "layer": 1,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-24 E32: bounded zeroizing AEAD vault, SDK source, identifier/storage limits and isolated real Windows keyring store/load/delete pass. Other host backends and full P3 assembly remain open.",
       "responsibilities": [
         "Load NEBIUS_API_KEY / TAVILY_API_KEY from keyring or env into `SecretBox` values.",
         "Seal secrets at rest in RAM; decrypt only for the duration of a call; zeroize on drop.",
@@ -3931,27 +4011,67 @@
           "text": "Windows: Credential Manager blob size limit handling (large values rejected with a typed error), per-user scope documented, Linux leg uses the Secret Service or env fallback."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 33,
-      "test_markers": 0,
+      "rust_files": 5,
+      "production_rust_lines": 724,
+      "test_markers": 19,
       "files": {
         "crates/polaris-security/crates/secrets/Cargo.toml": {
-          "sha256": "6665c60d38481bf219dd655a0cfbf8d87bd3c79c7db29914f00d44a38626619f",
-          "bytes": 619,
-          "lines": 18,
-          "nonblank_noncomment_lines_approx": 14,
+          "sha256": "513f0521acafed906c1ef688636f8d9d3ffecc2200f58ee5bcc7d8923e487577",
+          "bytes": 890,
+          "lines": 27,
+          "nonblank_noncomment_lines_approx": 22,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
-        "crates/polaris-security/crates/secrets/src/lib.rs": {
-          "sha256": "d9f62cf139b5d68cb1f23ff9f6a9873008123df6f881bab1886676e3de0eea90",
-          "bytes": 1173,
-          "lines": 33,
-          "nonblank_noncomment_lines_approx": 0,
+        "crates/polaris-security/crates/secrets/src/error.rs": {
+          "sha256": "387e2ad6f9bc61688a769c43f1b745518b40e40f352c11b0b51a675e3b29baca",
+          "bytes": 2767,
+          "lines": 78,
+          "nonblank_noncomment_lines_approx": 40,
           "function_definitions": 1,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-security/crates/secrets/src/lib.rs": {
+          "sha256": "0b32a3847a63970bc995195f14b42237e26085f61279676d485278085bad9d76",
+          "bytes": 1390,
+          "lines": 36,
+          "nonblank_noncomment_lines_approx": 10,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-security/crates/secrets/src/source.rs": {
+          "sha256": "c06310baf7621b3dadff52f66e4443eca9ad30a547604072c804892d27d62b6e",
+          "bytes": 4282,
+          "lines": 111,
+          "nonblank_noncomment_lines_approx": 98,
+          "function_definitions": 8,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-security/crates/secrets/src/vault.rs": {
+          "sha256": "c603a6b1c513821b40b374ae3ec3a930f01b7d0d36fa795f79eb0bc6eae56baf",
+          "bytes": 16923,
+          "lines": 499,
+          "nonblank_noncomment_lines_approx": 341,
+          "function_definitions": 35,
+          "tests": 2,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-security/crates/secrets/tests/secret_contract.rs": {
+          "sha256": "2b8bdf5fe77f2bb2008c6ac542684a4f9e7255c43434274485e2d5ab1d80ab87",
+          "bytes": 12278,
+          "lines": 371,
+          "nonblank_noncomment_lines_approx": 316,
+          "function_definitions": 25,
+          "tests": 17,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -5253,7 +5373,7 @@
       "layer": 2,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Production reqwest chat/SSE adapter, tool replay, model listing and embedding transport written; UNVERIFIED. Credentials/live API, throughput and validation remain pending.",
+      "metadata_evidence": "2026-10-24 E32: bounded HTTP/SSE chat, reasoning/tool replay, embeddings/models and injected SDK credentials pass 24 local fixture/contract tests; strict owned-package Clippy passes. Live keyed provider and full S2 composition remain open.",
       "responsibilities": [
         "Implement ChatModel and EmbeddingProvider for https://api.tokenfactory.nebius.com/v1/ (also any OpenAI-compatible base, e.g. local Ollama for the P3 walking skeleton).",
         "Parse SSE frames without per-frame allocation (hot path); surface reasoning/tool-call deltas.",
@@ -5305,9 +5425,9 @@
           "text": "Installed TLS provider check: client must work with aws-lc-rs installed by `main`; gate is `cargo tree -i ring` empty (owned by the app crates, verified here in a smoke test)."
         }
       ],
-      "rust_files": 5,
-      "production_rust_lines": 2955,
-      "test_markers": 22,
+      "rust_files": 6,
+      "production_rust_lines": 2987,
+      "test_markers": 25,
       "files": {
         "crates/polaris-nebius-cloud/crates/token-factory/Cargo.toml": {
           "sha256": "9df7f1f4b74cd6b3d96a085f09c759a46af404287021f4bdf40b4ec334c09034",
@@ -5320,28 +5440,28 @@
           "doc_skeleton": false
         },
         "crates/polaris-nebius-cloud/crates/token-factory/src/client.rs": {
-          "sha256": "054c043e45d926e2e0f31d13b61c341843377a59d18f27e250f77e8102a36dfe",
-          "bytes": 93119,
-          "lines": 2456,
-          "nonblank_noncomment_lines_approx": 2192,
-          "function_definitions": 84,
+          "sha256": "dd8cc28debe77b14f0bee0b411c40d474a98f727c9b22fd8bf06336ebcb6a762",
+          "bytes": 93503,
+          "lines": 2462,
+          "nonblank_noncomment_lines_approx": 2190,
+          "function_definitions": 85,
           "tests": 16,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-nebius-cloud/crates/token-factory/src/error.rs": {
-          "sha256": "4afbd28e9fa3c7e650675fcd3764378fe011bed33dd8d3b2eac0d8dd3758d490",
-          "bytes": 2615,
-          "lines": 62,
-          "nonblank_noncomment_lines_approx": 34,
-          "function_definitions": 1,
+          "sha256": "e39777183d2f8f7060fec240463d3fcdff4cd8f619b811c30f25fea143c6b0e4",
+          "bytes": 3503,
+          "lines": 88,
+          "nonblank_noncomment_lines_approx": 51,
+          "function_definitions": 2,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-nebius-cloud/crates/token-factory/src/lib.rs": {
-          "sha256": "6692f079f19bbda91f0bbf3e18e94bf0d168b2ec9de5004d3e86e0fa958f1fa5",
-          "bytes": 1962,
+          "sha256": "dbedcc214c91404cb7092fb7c987a6b524f4c9990240f5bd2d8dfe62459cb14d",
+          "bytes": 1981,
           "lines": 47,
           "nonblank_noncomment_lines_approx": 9,
           "function_definitions": 0,
@@ -5350,12 +5470,22 @@
           "doc_skeleton": false
         },
         "crates/polaris-nebius-cloud/crates/token-factory/src/sse.rs": {
-          "sha256": "78a6b3875e5736983408af2587cf2b09688c2548393813ce506f1f6d8e18be11",
-          "bytes": 13406,
+          "sha256": "d18a5ca8ae31362cec223358e5262c22adef5d93cc03e3ff5137ff8fa37fd64a",
+          "bytes": 13403,
           "lines": 390,
           "nonblank_noncomment_lines_approx": 325,
           "function_definitions": 14,
           "tests": 5,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-nebius-cloud/crates/token-factory/tests/secret_credentials.rs": {
+          "sha256": "c7cf8318cb0303997bc10f3c2cdfe660a9a9ed307045fe9b468df535944e5560",
+          "bytes": 2778,
+          "lines": 82,
+          "nonblank_noncomment_lines_approx": 74,
+          "function_definitions": 7,
+          "tests": 3,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -8322,7 +8452,7 @@
         }
       ],
       "rust_files": 10,
-      "production_rust_lines": 3375,
+      "production_rust_lines": 3450,
       "test_markers": 18,
       "files": {
         "crates/polaris-tools/crates/builtin/Cargo.toml": {
@@ -8466,8 +8596,8 @@
           "doc_skeleton": false
         },
         "crates/polaris-tools/crates/builtin/src/lib.rs": {
-          "sha256": "1fba1a74a9c3c085b9b156dd593d798ae2372b2f4f2fa56495cf4d89fbd1e9db",
-          "bytes": 3867,
+          "sha256": "419cf9f6256f3d41ff2d17f61b8ad8492fec382c276130cb121444dd2253df3a",
+          "bytes": 3905,
           "lines": 114,
           "nonblank_noncomment_lines_approx": 60,
           "function_definitions": 1,
@@ -8496,11 +8626,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-tools/crates/builtin/src/proposal.rs": {
-          "sha256": "b8a12cd447e9d6caa1809699672f62ff247b904d279459a526dc7b75be5c7077",
-          "bytes": 23848,
-          "lines": 673,
-          "nonblank_noncomment_lines_approx": 594,
-          "function_definitions": 26,
+          "sha256": "9b584033f9dbef58e95d46d6490d3121b538e4d26721465d9ae0e4202d83b847",
+          "bytes": 26896,
+          "lines": 748,
+          "nonblank_noncomment_lines_approx": 658,
+          "function_definitions": 28,
           "tests": 2,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -9334,7 +9464,7 @@
       "layer": 4,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Production frame typestate, bounded quotas, attenuation and streamed step execution in progress; UNVERIFIED, full root assembly remains pending.",
+      "metadata_evidence": "2026-10-24 E32: bounded model/tool/verifier loop with linked transcript replay, quota charging and CAS-before-event journaling; focused contracts pass. Full production plan/edit/test/proof composition remains open.",
       "responsibilities": [
         "Create child frames with attenuated Biscuit tokens and sandbox quotas; track step counts and history CIDs.",
         "Implement the agent loop step (assemble -> S2 -> tools -> verify) per frame."
@@ -9373,25 +9503,35 @@
           "text": "Add per-frame concurrency accounting hook for the shared Token Factory permit pool (the frames share one client and one rate limiter)."
         }
       ],
-      "rust_files": 5,
-      "production_rust_lines": 1388,
-      "test_markers": 0,
+      "rust_files": 7,
+      "production_rust_lines": 1962,
+      "test_markers": 22,
       "files": {
         "crates/polaris-runtime/crates/frames/Cargo.toml": {
-          "sha256": "45cb1bf7edce97a7ba669f378649bdce0a1ae08f06f48df2e5f59103aa2ecc9f",
-          "bytes": 806,
-          "lines": 23,
-          "nonblank_noncomment_lines_approx": 19,
+          "sha256": "52f52bf6357112e5e30381840a89c1a509540c1961c4519be36ca0148abc7cbf",
+          "bytes": 1010,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 25,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-runtime/crates/frames/src/journal.rs": {
+          "sha256": "9fac52ebc777ba83929be23bd26e23d22ea4dd6edfbf4d0dc65498491bfbecbd",
+          "bytes": 5786,
+          "lines": 157,
+          "nonblank_noncomment_lines_approx": 108,
+          "function_definitions": 5,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-runtime/crates/frames/src/lib.rs": {
-          "sha256": "819549af9cb2d4a19c58c3b956eda87398e39339d2ff6b4d4495d8cbb0c768f3",
-          "bytes": 1041,
-          "lines": 23,
-          "nonblank_noncomment_lines_approx": 16,
+          "sha256": "dd4adc82c9e4040fcca9933aa5ce5a5aadb51c42b6d1e6fc3f79563cbdddc463",
+          "bytes": 1324,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 23,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -9408,8 +9548,8 @@
           "doc_skeleton": false
         },
         "crates/polaris-runtime/crates/frames/src/scope.rs": {
-          "sha256": "47424d7fe66b4c0bdd9eb57979835704b243b61e6058a2b1754682cacd783ae7",
-          "bytes": 4540,
+          "sha256": "6117b11c5142cf1a9b33d433e975ea0fd6d123e67d08b8e4bd295c6fae251051",
+          "bytes": 4528,
           "lines": 116,
           "nonblank_noncomment_lines_approx": 88,
           "function_definitions": 4,
@@ -9418,22 +9558,32 @@
           "doc_skeleton": false
         },
         "crates/polaris-runtime/crates/frames/src/state.rs": {
-          "sha256": "f113f2532414e5b86a828d36f90f8ad403d0401bc87b4b00e5d679e256f94c87",
-          "bytes": 19846,
-          "lines": 565,
-          "nonblank_noncomment_lines_approx": 434,
-          "function_definitions": 27,
+          "sha256": "7618a6189a3d83858ce5a16a63ba87053a2317ead0403f7579178cdbd3716316",
+          "bytes": 20517,
+          "lines": 581,
+          "nonblank_noncomment_lines_approx": 443,
+          "function_definitions": 28,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-runtime/crates/frames/src/step.rs": {
-          "sha256": "45ddf4f14318dcf1ceeba539e27b8cde665ecbc40602adebac9938f4f94935d7",
-          "bytes": 18914,
-          "lines": 508,
-          "nonblank_noncomment_lines_approx": 410,
-          "function_definitions": 7,
+          "sha256": "9dcbd08e4f5ea0cd59d8fbe0d93a57f517868ce5152887d6eed275ac511a3b45",
+          "bytes": 34679,
+          "lines": 902,
+          "nonblank_noncomment_lines_approx": 725,
+          "function_definitions": 11,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/frames/tests/frame_execution.rs": {
+          "sha256": "9797f9dd597c94a2cc359f35a9f3781de3bd41a46c7b075828f52b20b7be4e43",
+          "bytes": 50799,
+          "lines": 1546,
+          "nonblank_noncomment_lines_approx": 1455,
+          "function_definitions": 50,
+          "tests": 22,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -10505,7 +10655,7 @@
         }
       ],
       "rust_files": 18,
-      "production_rust_lines": 3577,
+      "production_rust_lines": 3579,
       "test_markers": 47,
       "files": {
         "crates/polaris-kernel/Cargo.toml": {
@@ -10629,10 +10779,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-kernel/src/session.rs": {
-          "sha256": "0482211806f9c362a8f5637d72cdee9503378752c13f2f6d7a581e9e4ade9612",
-          "bytes": 21540,
-          "lines": 586,
-          "nonblank_noncomment_lines_approx": 486,
+          "sha256": "c98468f94120d5495dca65e6ee5fe927f448081fb432164896b17491d18477c4",
+          "bytes": 21624,
+          "lines": 588,
+          "nonblank_noncomment_lines_approx": 488,
           "function_definitions": 23,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -10738,7 +10888,7 @@
       "layer": 5,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Production request authentication and tonic service adapters in progress; UNVERIFIED. Named-pipe/mTLS listener assembly and validation remain open.",
+      "metadata_evidence": "2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open.",
       "responsibilities": [
         "Implement named-pipe connector/acceptor (pre-create next instance) and mTLS transport.",
         "Authenticate clients with Biscuit tokens on every transport (default pipe DACL is too broad).",
@@ -10794,47 +10944,77 @@
           "text": "BLOCKED-ON-ACCESS (Nebius AI Cloud VM + quota): remote-daemon smoke over real mTLS across the internet."
         }
       ],
-      "rust_files": 3,
-      "production_rust_lines": 703,
-      "test_markers": 0,
+      "rust_files": 6,
+      "production_rust_lines": 1810,
+      "test_markers": 9,
       "files": {
         "crates/polaris-rpc/Cargo.toml": {
-          "sha256": "9633726845e7195f36ee977b1db98402cea87b96cd04d85baa410637c60a7e73",
-          "bytes": 883,
-          "lines": 25,
-          "nonblank_noncomment_lines_approx": 21,
+          "sha256": "04c24e8305dd5f521aedaa56c0a36e4be022a31261de1c3ff3b5b56563c4b3e7",
+          "bytes": 1173,
+          "lines": 35,
+          "nonblank_noncomment_lines_approx": 30,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-rpc/src/auth.rs": {
-          "sha256": "1bdec7564b0df38f9cfc0824a5148be51c3968859e4f99b608071f38d8a82fb0",
-          "bytes": 8817,
-          "lines": 224,
+          "sha256": "d053a9dcfd07efe9f8366f74f6149f566ed3fe9145e6ca1315dfd1cc29ddf6a7",
+          "bytes": 8978,
+          "lines": 226,
           "nonblank_noncomment_lines_approx": 172,
           "function_definitions": 9,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-rpc/src/client.rs": {
+          "sha256": "8c2b9c73f833afc67b46efe60f156c3db6907ef29617c5bde3132ae7013b1acd",
+          "bytes": 17450,
+          "lines": 459,
+          "nonblank_noncomment_lines_approx": 393,
+          "function_definitions": 23,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-rpc/src/lib.rs": {
-          "sha256": "c9d9919816d3e36a4f8a33227738b1cc49efe55b7d45638fed528d1ea70fa8c9",
-          "bytes": 1627,
-          "lines": 27,
-          "nonblank_noncomment_lines_approx": 7,
+          "sha256": "c8b00e4e0d33ad4dc4ecd3ea338ec8478b7f7e6514077d4166d75c3890cfceb9",
+          "bytes": 2125,
+          "lines": 39,
+          "nonblank_noncomment_lines_approx": 16,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-rpc/src/server.rs": {
-          "sha256": "f5326a7f628e556d6c98b8c61a6d205d09c30bbe6edbbc4f46a8b1fb5ec6819a",
-          "bytes": 17954,
+          "sha256": "188c0b959c507adf390ff87f316b41b107fa94925d68a70852cb5b50ea2ce5ed",
+          "bytes": 17987,
           "lines": 452,
           "nonblank_noncomment_lines_approx": 410,
           "function_definitions": 12,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-rpc/src/transport.rs": {
+          "sha256": "6dc22e176701233cffee996d5a780c0e7617c750736318a47c688dabece9d617",
+          "bytes": 22527,
+          "lines": 634,
+          "nonblank_noncomment_lines_approx": 552,
+          "function_definitions": 34,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-rpc/tests/transport_contracts.rs": {
+          "sha256": "e2b5eeeb7e164aac54481ab0a2646703e499af9d3c2ae38ecadcb5b3cdffa816",
+          "bytes": 27852,
+          "lines": 805,
+          "nonblank_noncomment_lines_approx": 778,
+          "function_definitions": 25,
+          "tests": 9,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -10904,7 +11084,7 @@
         }
       ],
       "rust_files": 18,
-      "production_rust_lines": 3188,
+      "production_rust_lines": 3190,
       "test_markers": 112,
       "files": {
         "crates/polaris-ui/crates/model/Cargo.toml": {
@@ -10988,10 +11168,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/reduce.rs": {
-          "sha256": "d38bdfa9d0c242c25560e45f7f9af93b8361781eab97b4da5db36981ae160cd6",
-          "bytes": 7075,
-          "lines": 190,
-          "nonblank_noncomment_lines_approx": 180,
+          "sha256": "207972876e9a6557b5c72733ab669af147f9b0c060ef172078ab3db9628e8af2",
+          "bytes": 7159,
+          "lines": 192,
+          "nonblank_noncomment_lines_approx": 182,
           "function_definitions": 2,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -12530,10 +12710,10 @@
       "doc_skeleton": true
     },
     "@prime/tools/workspace.toml": {
-      "sha256": "fcbf34d11a414ebf6bbf676799bf0cba03639c0fbd412d1b3cbe604b07120ccd",
-      "bytes": 109808,
-      "lines": 2752,
-      "nonblank_noncomment_lines_approx": 2538,
+      "sha256": "37fa570b9eb3e1db83dd2e4396c9ffd142f98ce7147d272f4606e8d011a467a0",
+      "bytes": 110676,
+      "lines": 2758,
+      "nonblank_noncomment_lines_approx": 2544,
       "function_definitions": 100,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -13510,10 +13690,10 @@
       "doc_skeleton": false
     },
     "specs/descriptors/config_secret_reference_parsing.json": {
-      "sha256": "a9e5a68a86303ebd803007a19d2b07fedfa1b86a67df4f5005455436b0e22356",
-      "bytes": 1145,
-      "lines": 45,
-      "nonblank_noncomment_lines_approx": 45,
+      "sha256": "f0aaddbd77176f0914ef5192ee5a0c20c60984839bd394c28803a1d38e6bdf35",
+      "bytes": 1585,
+      "lines": 53,
+      "nonblank_noncomment_lines_approx": 53,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -13644,6 +13824,26 @@
       "bytes": 1355,
       "lines": 47,
       "nonblank_noncomment_lines_approx": 47,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/frame_execution.json": {
+      "sha256": "ddd0b9b21852dd6fb0801eb001b27ddf2f416914c5dbcc12af2f5f3f61df4c70",
+      "bytes": 4112,
+      "lines": 89,
+      "nonblank_noncomment_lines_approx": 89,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/frame_scope_quota.json": {
+      "sha256": "b9e804e41d49e965804980e4db817b80b57bf57261bf4df56a12b6ac5f6269df",
+      "bytes": 1396,
+      "lines": 41,
+      "nonblank_noncomment_lines_approx": 41,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -14259,6 +14459,16 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/rpc_transport.json": {
+      "sha256": "89041504a0cc5974851d6c80d9e275be5aa60af597169e8876d56e8718437f99",
+      "bytes": 2669,
+      "lines": 66,
+      "nonblank_noncomment_lines_approx": 66,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/rtk_atomic_ledger_write.json": {
       "sha256": "06e37cae5b49ec6c6a7f8629252c70c6d83ae1f5c1bef60d62d4ea0177b3fdf4",
       "bytes": 1982,
@@ -14494,6 +14704,46 @@
       "bytes": 1393,
       "lines": 18,
       "nonblank_noncomment_lines_approx": 18,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/secret_ram_sealing.json": {
+      "sha256": "132b7b4059f49f8711e6427b634dda5f56115a06c255a2f946d8380d8d01e795",
+      "bytes": 1807,
+      "lines": 48,
+      "nonblank_noncomment_lines_approx": 48,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/secret_scoped_access.json": {
+      "sha256": "11857b4ac8cf1fb83db4c9aa3515c51de8b4966512b0522f63cbf4db29b84d66",
+      "bytes": 1406,
+      "lines": 40,
+      "nonblank_noncomment_lines_approx": 40,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/secret_source_loading.json": {
+      "sha256": "189dfcb30c8b43386cf84e88ec351771dc86a76269e80fc60745ad08dc561554",
+      "bytes": 1989,
+      "lines": 48,
+      "nonblank_noncomment_lines_approx": 48,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/secret_source_registry.json": {
+      "sha256": "ad4ff103ad62c2ae070a8fabbf60f8805fd6d4de2cb97da539955b755b5cfacb",
+      "bytes": 1649,
+      "lines": 39,
+      "nonblank_noncomment_lines_approx": 39,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -14749,6 +14999,16 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/token_factory_secret_credentials.json": {
+      "sha256": "16ce4c12571bb0400a804255e1f8b6e31e3a147835d48e9d268ef6ad0483ae63",
+      "bytes": 1218,
+      "lines": 16,
+      "nonblank_noncomment_lines_approx": 16,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/uimodel_completion_ranking.json": {
       "sha256": "4f09562d905b914f3158706e8d2d5782988044ee8023962515cd737a78e961b5",
       "bytes": 3337,
@@ -14884,6 +15144,36 @@
       "bytes": 1388,
       "lines": 18,
       "nonblank_noncomment_lines_approx": 18,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/vector_recovery_delete_concurrency.json": {
+      "sha256": "cf97d8e0117cc25d3692f99378f0ea4d215e374ada3790caf4d7cbd9cd2c2881",
+      "bytes": 2543,
+      "lines": 62,
+      "nonblank_noncomment_lines_approx": 62,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/vector_table_metadata.json": {
+      "sha256": "b836fc1d1c9444deb6ad7bf647532a1660b0613d58187007a183593f0ff450c3",
+      "bytes": 1860,
+      "lines": 53,
+      "nonblank_noncomment_lines_approx": 53,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/vector_upsert_search.json": {
+      "sha256": "fbcf88cacd08290dcafba9c96dac54902a9aafa919bb81dec673d805cad20c32",
+      "bytes": 2402,
+      "lines": 67,
+      "nonblank_noncomment_lines_approx": 67,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,

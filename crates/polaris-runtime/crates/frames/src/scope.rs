@@ -50,10 +50,10 @@ pub fn scope_is_subset(parent: &Scope, child: &Scope) -> Result<(), ScopeError> 
     if child.allow_unsafe && !parent.allow_unsafe {
         return Err(ScopeError::Unsafe);
     }
-    if let Some(parent_hash) = parent.diff_blake3 {
-        if child.diff_blake3 != Some(parent_hash) {
-            return Err(ScopeError::Diff);
-        }
+    if let Some(parent_hash) = parent.diff_blake3
+        && child.diff_blake3 != Some(parent_hash)
+    {
+        return Err(ScopeError::Diff);
     }
     Ok(())
 }

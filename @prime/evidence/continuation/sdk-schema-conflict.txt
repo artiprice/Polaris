@@ -1,0 +1,24 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Finished `test` profile [unoptimized] target(s) in 1.24s
+     Running tests\blast_alert_schema.rs (target\debug\deps\blast_alert_schema-463bcd537b5607db.exe)
+
+running 1 test
+test blast_alert_requires_schema_three ... FAILED
+
+failures:
+
+---- blast_alert_requires_schema_three stdout ----
+
+thread 'blast_alert_requires_schema_three' (17948) panicked at crates\polaris-sdk\tests\blast_alert_schema.rs:20:9:
+assertion `left == right` failed: exact alert minimum and maximum schema
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    blast_alert_requires_schema_three
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-sdk --test blast_alert_schema`

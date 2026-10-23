@@ -270,11 +270,11 @@ proptest! {
         body in arb_body(),
         flips in vec((any::<usize>(), any::<u8>()), 0..4),
     ) {
-        if let Ok(msg) = pb::Command::decode(raw.as_slice()) {
-            if let Ok(parsed) = Command::<Unverified>::try_from(msg) {
-                let back = roundtrip(&parsed).map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Command::decode(raw.as_slice())
+            && let Ok(parsed) = Command::<Unverified>::try_from(msg)
+        {
+            let back = roundtrip(&parsed).map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
         let mut bytes = pb::Command::from(&command(body)).encode_to_vec();
         for (pos, value) in flips {
@@ -283,11 +283,11 @@ proptest! {
                 *slot = value;
             }
         }
-        if let Ok(msg) = pb::Command::decode(bytes.as_slice()) {
-            if let Ok(parsed) = Command::<Unverified>::try_from(msg) {
-                let back = roundtrip(&parsed).map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Command::decode(bytes.as_slice())
+            && let Ok(parsed) = Command::<Unverified>::try_from(msg)
+        {
+            let back = roundtrip(&parsed).map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
     }
 }

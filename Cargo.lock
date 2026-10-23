@@ -5202,6 +5202,8 @@ dependencies = [
  "polaris-models",
  "polaris-sdk",
  "polaris-security-capability",
+ "polaris-storage-cas",
+ "polaris-storage-eventlog",
  "serde",
  "serde_json",
  "thiserror 2.0.21",

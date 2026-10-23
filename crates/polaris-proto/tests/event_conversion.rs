@@ -602,19 +602,19 @@ proptest! {
         flips in vec((any::<usize>(), any::<u8>()), 0..4),
     ) {
         // Fully random input.
-        if let Ok(msg) = pb::Event::decode(raw.as_slice()) {
-            if let Ok(parsed) = Event::try_from(msg) {
-                let back = Event::try_from(pb::Event::from(&parsed))
-                    .map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Event::decode(raw.as_slice())
+            && let Ok(parsed) = Event::try_from(msg)
+        {
+            let back = Event::try_from(pb::Event::from(&parsed))
+                .map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
-        if let Ok(msg) = pb::EventRecord::decode(raw.as_slice()) {
-            if let Ok(parsed) = EventRecord::try_from(msg) {
-                let back = EventRecord::try_from(pb::EventRecord::from(&parsed))
-                    .map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::EventRecord::decode(raw.as_slice())
+            && let Ok(parsed) = EventRecord::try_from(msg)
+        {
+            let back = EventRecord::try_from(pb::EventRecord::from(&parsed))
+                .map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
 
         // A valid message with a few corrupted bytes reaches deeper into the converters.
@@ -625,12 +625,12 @@ proptest! {
                 *slot = value;
             }
         }
-        if let Ok(msg) = pb::Event::decode(bytes.as_slice()) {
-            if let Ok(parsed) = Event::try_from(msg) {
-                let back = Event::try_from(pb::Event::from(&parsed))
-                    .map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Event::decode(bytes.as_slice())
+            && let Ok(parsed) = Event::try_from(msg)
+        {
+            let back = Event::try_from(pb::Event::from(&parsed))
+                .map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
     }
 }

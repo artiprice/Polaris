@@ -91,7 +91,9 @@ impl<R> Clone for AuthorizationLease<R> {
 impl<R: TrustedFactsResolver> AuthorizationLease<R> {
     /// Recheck token expiry, revocation, resource, mutation facts, and method right.
     /// # Errors
-    /// Returns `UNAUTHENTICATED` when the capability is expired, revoked, invalid, or denied.
+    /// Returns `UNAUTHENTICATED` for revocation or invalid credentials and `PERMISSION_DENIED`
+    /// when a valid signature fails a scope, time, or method-right check. The capability
+    /// evaluator deliberately does not expose which sensitive Datalog constraint failed.
     pub fn revalidate(&self) -> Result<(), Status> {
         if self.resolver.is_revoked(&self.token)? {
             return Err(Status::unauthenticated("capability revoked"));

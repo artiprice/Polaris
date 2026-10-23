@@ -1,0 +1,34 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Finished `test` profile [unoptimized] target(s) in 2.07s
+     Running tests\content_store_dispatch.rs (target\debug\deps\content_store_dispatch-c86a9a9fcee49c0a.exe)
+
+running 3 tests
+test one_of_three_content_store_forwards_every_variant ... ok
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-0e2a68444b5e5266.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests\secret_source_contract.rs (target\debug\deps\secret_source_contract-7fb3f91b434523c1.exe)
+
+running 7 tests
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+test has_kind_maps_transient_and_permanent_failures ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test source_error_display_is_sanitized ... ok
+test validated_locations_contain_identifiers_only ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

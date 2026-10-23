@@ -13,19 +13,19 @@
       "description": "Upsert is idempotent by chunk id and a replacement moves the nearest-neighbor result and payload."
     },
     {
-      "test_name": "filters_before_k_limit",
+      "test_name": "filters_payloads_before_applying_result_limit",
       "description": "Payload-filtered search returns k eligible neighbors even when closer ineligible rows exist."
     },
     {
-      "test_name": "empty_table_and_k_zero_return_empty",
+      "test_name": "empty_search_and_zero_limit_return_no_results",
       "description": "Searching an empty table or requesting zero results yields an empty list."
     },
     {
-      "test_name": "scores_are_finite_and_higher_is_closer",
+      "test_name": "metric_scores_are_finite_and_higher_is_closer",
       "description": "Returned scores are finite and sorted from the closest eligible vector down."
     },
     {
-      "test_name": "prop_inserted_vector_is_exact_top_hit",
+      "test_name": "prop_inserted_vector_is_top_hit_among_fifty_rows",
       "description": "For deterministic arbitrary finite vectors, querying an inserted vector returns that id first."
     }
   ],
@@ -37,6 +37,7 @@
   "libraries": [
     "rusqlite",
     "usearch",
+    "rayon",
     "proptest (dev)"
   ],
   "inputs": [

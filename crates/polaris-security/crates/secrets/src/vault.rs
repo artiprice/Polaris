@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::fmt;
 
 use chacha20poly1305::{
-    aead::{AeadInOut, KeyInit},
     ChaCha20Poly1305, Key, Nonce, Tag,
+    aead::{AeadInOut, KeyInit},
 };
 use getrandom::fill;
 use polaris_sdk::secrets::{KeyringLocation, SecretLocation, SecretSource};
@@ -115,9 +115,8 @@ impl fmt::Debug for SealedBlob {
     }
 }
 
-/// Ephemeral 256-bit in-memory sealing key. It is never copied or exposed via formatting.
-pub struct SessionSealKey(Box<Zeroizing<[u8; KEY_BYTES]>>);
-
+/// Ephemeral 256-bit in-memory sealing key; never copied or exposed via formatting.
+///
 /// Session key types intentionally implement no formatting or serialization traits.
 ///
 /// ```compile_fail
@@ -137,6 +136,7 @@ pub struct SessionSealKey(Box<Zeroizing<[u8; KEY_BYTES]>>);
 /// fn needs_serialize<T: serde::Serialize>() {}
 /// needs_serialize::<SessionSealKey>();
 /// ```
+pub struct SessionSealKey(Box<Zeroizing<[u8; KEY_BYTES]>>);
 
 /// Bounds applied to the in-memory secret vault.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -479,9 +479,11 @@ mod tests {
         let original = SecretName::new("NEBIUS_API_KEY")?;
         let replacement = SecretName::new("TAVILY_API_KEY")?;
         let blob = vault.seal_named(original.as_str().as_bytes(), b"synthetic-canary")?;
-        assert!(vault
-            .open_named(replacement.as_str().as_bytes(), &blob)
-            .is_err());
+        assert!(
+            vault
+                .open_named(replacement.as_str().as_bytes(), &blob)
+                .is_err()
+        );
         Ok(())
     }
 

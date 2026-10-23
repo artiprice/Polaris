@@ -175,7 +175,7 @@ impl SseParser {
             None => &[],
         };
         if field == b"data" {
-            let value = match value.strip_prefix(&[b' ']) {
+            let value = match value.strip_prefix(b" ") {
                 Some(rest) => rest,
                 None => value,
             };

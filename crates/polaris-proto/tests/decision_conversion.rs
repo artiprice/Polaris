@@ -313,12 +313,12 @@ proptest! {
         decision in arb_decision(),
         flips in vec((any::<usize>(), any::<u8>()), 0..4),
     ) {
-        if let Ok(msg) = pb::Decision::decode(raw.as_slice()) {
-            if let Ok(parsed) = Decision::try_from(msg) {
-                let back = decision_roundtrip(&parsed)
-                    .map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Decision::decode(raw.as_slice())
+            && let Ok(parsed) = Decision::try_from(msg)
+        {
+            let back = decision_roundtrip(&parsed)
+                .map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
         if let Ok(msg) = pb::Question::decode(raw.as_slice()) {
             let _ = Question::try_from(msg);
@@ -330,12 +330,12 @@ proptest! {
                 *slot = value;
             }
         }
-        if let Ok(msg) = pb::Decision::decode(bytes.as_slice()) {
-            if let Ok(parsed) = Decision::try_from(msg) {
-                let back = decision_roundtrip(&parsed)
-                    .map_err(|e| TestCaseError::fail(e.to_string()))?;
-                prop_assert_eq!(back, parsed);
-            }
+        if let Ok(msg) = pb::Decision::decode(bytes.as_slice())
+            && let Ok(parsed) = Decision::try_from(msg)
+        {
+            let back = decision_roundtrip(&parsed)
+                .map_err(|e| TestCaseError::fail(e.to_string()))?;
+            prop_assert_eq!(back, parsed);
         }
     }
 }

@@ -6,13 +6,14 @@ use polaris_sdk::{
     ids::{AgentRole, Cid, FastFingerprint, FrameId, TokenCount},
     registry::{
         ChatChunk, ChatChunkSource, ChatMessage, ChatModel, ChatRequest, ChatToolCall, Effects,
-        FinishReason, FunctionalOperator, ToolSpec,
+        FinishReason, FunctionalOperator, ToolSpec, Usage,
     },
 };
 use polaris_security_capability::Token;
 use std::{
     collections::{BTreeMap, BTreeSet},
     future::Future,
+    io::{self, Write},
 };
 use tokio_util::sync::CancellationToken;
 
@@ -52,6 +53,36 @@ pub struct ToolCall {
     pub arguments: String,
 }
 
+/// One streamed provider tool call as preserved in the durable assistant response.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct CapturedToolCall {
+    /// Provider ordering index.
+    pub index: u32,
+    /// Call identifier if its delta has arrived.
+    pub id: Option<String>,
+    /// Tool name if its delta has arrived.
+    pub name: Option<String>,
+    /// Bounded argument JSON accumulated so far.
+    pub arguments: String,
+}
+
+/// Bounded response state captured from the provider stream for audit and recovery.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct AssistantResponseCapture {
+    /// Model-visible text accumulated so far.
+    pub text: String,
+    /// Separate provider reasoning channel, retained as private transcript data.
+    pub reasoning: String,
+    /// Tool call deltas ordered by provider index; entries may be partial.
+    pub tool_calls: Vec<CapturedToolCall>,
+    /// Provider terminal reason, when a finish chunk arrived.
+    pub finish_reason: Option<FinishReason>,
+    /// Provider usage, when reported once before or after the finish chunk.
+    pub usage: Option<Usage>,
+    /// Whether a valid finish chunk was followed by bounded, clean end-of-stream.
+    pub complete: bool,
+}
+
 /// A tool result returned by the real tool runner. `content` is model-visible data, not proof.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ToolResultRef {
@@ -89,10 +120,14 @@ pub trait ToolRunner: Send + Sync {
         call: ToolCall,
     ) -> impl Future<Output = Result<Self::Authorized, Self::Error>> + Send;
     /// Execute only the permit returned by `authorize`.
+    /// Implementations must stop collecting model-visible content at `max_result_bytes` and
+    /// return a typed error when the result exceeds that bound. The frame checks returned content
+    /// again before it is verified or replayed.
     fn execute(
         &self,
         permit: Self::Authorized,
         frame: FrameId,
+        max_result_bytes: usize,
     ) -> impl Future<Output = Result<ToolResultRef, Self::Error>> + Send;
 }
 
@@ -174,6 +209,10 @@ pub struct StepInput<'a> {
     pub prior_messages: Vec<ChatMessage>,
     /// Captures the exact request before provider dispatch so interrupted attempts can be journaled.
     pub request_capture: &'a mut Option<ChatRequest>,
+    /// Captures successfully executed and CID-validated results for interrupted-attempt journals.
+    pub executed_tool_results_capture: &'a mut Vec<ExecutedToolResult>,
+    /// Captures bounded provider response data, including partial streams, for the transcript.
+    pub assistant_response_capture: &'a mut Option<AssistantResponseCapture>,
     /// Cancellation shared by the frame and stream owner.
     pub cancellation: &'a Cancellation,
     /// Maximum caller-supplied goal bytes.
@@ -222,6 +261,8 @@ where
         goal,
         prior_messages,
         request_capture,
+        executed_tool_results_capture,
+        assistant_response_capture,
         cancellation,
         max_goal_bytes,
         max_prompt_bytes,
@@ -255,21 +296,7 @@ where
             exposed_tools.push(spec);
         }
     }
-    let prompt_bytes = prompt.messages.iter().try_fold(0_usize, |total, message| {
-        total
-            .checked_add(message.content.len())
-            .ok_or(FrameError::OutputLimit)
-    })?;
-    let prompt_bytes = exposed_tools.iter().try_fold(prompt_bytes, |total, spec| {
-        total
-            .checked_add(spec.name.len())
-            .and_then(|value| value.checked_add(spec.description.len()))
-            .and_then(|value| value.checked_add(spec.input_schema_json.len()))
-            .ok_or(FrameError::OutputLimit)
-    })?;
-    if prompt_bytes > max_prompt_bytes {
-        return Err(FrameError::OutputLimit);
-    }
+    validate_prompt_size(&prompt.messages, &exposed_tools, max_prompt_bytes)?;
     let output_limit =
         frame.reserve_model_tokens(prompt.input_token_upper_bound, prompt.max_output_tokens)?;
     let request = ChatRequest {
@@ -292,83 +319,106 @@ where
     let mut finish_reason: Option<FinishReason> = None;
     let mut usage = None;
     let mut stream_chunks = 0_usize;
-    loop {
-        let next = tokio::select! {
-            biased;
-            _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
-            chunk = stream.next_chunk() => chunk,
-        };
-        let Some(chunk) = next else {
-            break;
-        };
-        stream_chunks = stream_chunks
-            .checked_add(1)
-            .ok_or(FrameError::OutputLimit)?;
-        if stream_chunks > max_stream_chunks {
-            return Err(FrameError::OutputLimit);
-        }
-        let chunk = chunk.map_err(FrameError::Model)?;
-        if usage.is_some() && !matches!(chunk, ChatChunk::Finished(_)) {
-            return Err(FrameError::InvalidUsage);
-        }
-        match chunk {
-            ChatChunk::Text(part) => {
-                let new_len = text
-                    .len()
-                    .checked_add(reasoning.len())
-                    .and_then(|len| len.checked_add(part.len()))
-                    .ok_or(FrameError::OutputLimit)?;
-                if new_len > max_output_bytes {
-                    return Err(FrameError::OutputLimit);
-                }
-                text.push_str(&part);
-            }
-            ChatChunk::ToolCallDelta {
-                index,
-                id,
-                name,
-                arguments_fragment,
-            } => {
-                if usize::try_from(index).map_err(|_| FrameError::InvalidToolCall)?
-                    >= max_tool_calls
-                {
-                    return Err(FrameError::OutputLimit);
-                }
-                let call = calls.entry(index).or_default();
-                append_optional(&mut call.id, id, 256)?;
-                append_optional(&mut call.name, name, 256)?;
-                let argument_len = call
-                    .arguments
-                    .len()
-                    .checked_add(arguments_fragment.len())
-                    .ok_or(FrameError::OutputLimit)?;
-                if argument_len > max_tool_argument_bytes {
-                    return Err(FrameError::OutputLimit);
-                }
-                call.arguments.push_str(&arguments_fragment);
-            }
-            ChatChunk::Reasoning(part) => {
-                let new_len = text
-                    .len()
-                    .checked_add(reasoning.len())
-                    .and_then(|len| len.checked_add(part.len()))
-                    .ok_or(FrameError::OutputLimit)?;
-                if new_len > max_output_bytes {
-                    return Err(FrameError::OutputLimit);
-                }
-                reasoning.push_str(&part);
-            }
-            ChatChunk::Usage(report) => {
-                if usage.replace(report).is_some() {
-                    return Err(FrameError::InvalidUsage);
-                }
-            }
-            ChatChunk::Finished(reason) => {
-                finish_reason = Some(reason);
+    let stream_result: Result<(), FrameError> = async {
+        loop {
+            let next = tokio::select! {
+                biased;
+                _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
+                chunk = stream.next_chunk() => chunk,
+            };
+            let Some(chunk) = next else {
                 break;
+            };
+            stream_chunks = stream_chunks
+                .checked_add(1)
+                .ok_or(FrameError::OutputLimit)?;
+            if stream_chunks > max_stream_chunks {
+                return Err(FrameError::OutputLimit);
+            }
+            let chunk = chunk.map_err(FrameError::Model)?;
+            if finish_reason.is_some() && !matches!(chunk, ChatChunk::Usage(_)) {
+                return Err(FrameError::InvalidStream);
+            }
+            match chunk {
+                ChatChunk::Text(part) => {
+                    let new_len = text
+                        .len()
+                        .checked_add(reasoning.len())
+                        .and_then(|len| len.checked_add(part.len()))
+                        .ok_or(FrameError::OutputLimit)?;
+                    if new_len > max_output_bytes {
+                        return Err(FrameError::OutputLimit);
+                    }
+                    text.push_str(&part);
+                }
+                ChatChunk::ToolCallDelta {
+                    index,
+                    id,
+                    name,
+                    arguments_fragment,
+                } => {
+                    if usize::try_from(index).map_err(|_| FrameError::InvalidToolCall)?
+                        >= max_tool_calls
+                    {
+                        return Err(FrameError::OutputLimit);
+                    }
+                    let call = calls.entry(index).or_default();
+                    append_optional(&mut call.id, id, 256)?;
+                    append_optional(&mut call.name, name, 256)?;
+                    let argument_len = call
+                        .arguments
+                        .len()
+                        .checked_add(arguments_fragment.len())
+                        .ok_or(FrameError::OutputLimit)?;
+                    if argument_len > max_tool_argument_bytes {
+                        return Err(FrameError::OutputLimit);
+                    }
+                    call.arguments.push_str(&arguments_fragment);
+                }
+                ChatChunk::Reasoning(part) => {
+                    let new_len = text
+                        .len()
+                        .checked_add(reasoning.len())
+                        .and_then(|len| len.checked_add(part.len()))
+                        .ok_or(FrameError::OutputLimit)?;
+                    if new_len > max_output_bytes {
+                        return Err(FrameError::OutputLimit);
+                    }
+                    reasoning.push_str(&part);
+                }
+                ChatChunk::Usage(report) => {
+                    if usage.replace(report).is_some() {
+                        return Err(FrameError::InvalidUsage);
+                    }
+                }
+                ChatChunk::Finished(reason) => {
+                    if finish_reason.replace(reason).is_some() {
+                        return Err(FrameError::InvalidStream);
+                    }
+                }
             }
         }
+        Ok(())
     }
+    .await;
+    let stream_complete = stream_result.is_ok() && finish_reason.is_some();
+    *assistant_response_capture = Some(AssistantResponseCapture {
+        text: text.clone(),
+        reasoning: reasoning.clone(),
+        tool_calls: calls
+            .iter()
+            .map(|(index, call)| CapturedToolCall {
+                index: *index,
+                id: call.id.clone(),
+                name: call.name.clone(),
+                arguments: call.arguments.clone(),
+            })
+            .collect(),
+        finish_reason,
+        usage,
+        complete: stream_complete,
+    });
+    stream_result?;
     let finish_reason = finish_reason.ok_or(FrameError::IncompleteStream)?;
     if let Some(report) = usage {
         frame.validate_reported_usage(prompt.input_token_upper_bound, output_limit, report)?;
@@ -431,7 +481,7 @@ where
         let result = tokio::select! {
             biased;
             _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
-            result = tools.execute(permit, frame.id) => result.map_err(|error| FrameError::Backend(error.kind(), "tool execution"))?,
+            result = tools.execute(permit, frame.id, max_tool_result_bytes) => result.map_err(|error| FrameError::Backend(error.kind(), "tool execution"))?,
         };
         if result.content.len() > max_tool_result_bytes {
             return Err(FrameError::OutputLimit);
@@ -440,6 +490,10 @@ where
         if content_digest.as_bytes() != result.content_cid.as_bytes() {
             return Err(FrameError::ToolResultReferenceMismatch);
         }
+        executed_tool_results_capture.push(ExecutedToolResult {
+            tool_call_id: call_id.clone(),
+            result: result.clone(),
+        });
         results.push(ExecutedToolResult {
             tool_call_id: call_id,
             result,
@@ -498,6 +552,50 @@ where
     }
 }
 
+fn validate_prompt_size(
+    messages: &[ChatMessage],
+    tools: &[ToolSpec],
+    maximum_bytes: usize,
+) -> Result<(), FrameError> {
+    let mut counter = BoundedByteCounter {
+        bytes: 0,
+        maximum_bytes,
+        exceeded: false,
+    };
+    let serialization = serde_json::to_writer(&mut counter, &(messages, tools));
+    if counter.exceeded {
+        return Err(FrameError::OutputLimit);
+    }
+    serialization.map_err(|_| FrameError::Accounting)
+}
+
+struct BoundedByteCounter {
+    bytes: usize,
+    maximum_bytes: usize,
+    exceeded: bool,
+}
+
+impl Write for BoundedByteCounter {
+    fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
+        let Some(next_bytes) = self.bytes.checked_add(buffer.len()) else {
+            self.exceeded = true;
+            return Err(io::Error::other("serialized prompt size overflow"));
+        };
+        if next_bytes > self.maximum_bytes {
+            self.exceeded = true;
+            return Err(io::Error::other(
+                "serialized prompt exceeds configured bound",
+            ));
+        }
+        self.bytes = next_bytes;
+        Ok(buffer.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 /// Hard bounds and byte limits used by every attempt in a frame run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FrameRunLimits {
@@ -521,6 +619,19 @@ pub struct FrameRunLimits {
     pub max_tool_result_bytes: usize,
     /// Maximum chunks per model stream, including empty/usage chunks.
     pub max_stream_chunks: usize,
+}
+
+/// Mutable frame state and run-level policy supplied to the bounded production driver.
+#[derive(Debug)]
+pub struct FrameRunInput<'a> {
+    /// Active frame that owns capability, step and token quota ledgers.
+    pub frame: &'a mut AgentContextFrame<Active>,
+    /// Goal text supplied to every attempt in the run.
+    pub goal: &'a str,
+    /// Cancellation shared with all backend calls.
+    pub cancellation: &'a Cancellation,
+    /// Hard attempt, tool-loop and byte bounds.
+    pub limits: FrameRunLimits,
 }
 
 /// Terminal reason for a bounded multi-step frame run.
@@ -560,10 +671,7 @@ pub struct FrameRunOutcome {
 /// are replayed under the exact call ids supplied by the model. Every attempt goes through
 /// `run_step`, so steps and full token reservations remain charged on failure and cancellation.
 pub async fn run_frame<A, M, T, V, J>(
-    frame: &mut AgentContextFrame<Active>,
-    goal: &str,
-    cancellation: &Cancellation,
-    limits: FrameRunLimits,
+    input: FrameRunInput<'_>,
     assemble: &A,
     chat: &M,
     tools: &T,
@@ -577,6 +685,12 @@ where
     V: StepVerifier,
     J: FrameJournal,
 {
+    let FrameRunInput {
+        frame,
+        goal,
+        cancellation,
+        limits,
+    } = input;
     if limits.maximum_attempts == 0 {
         return Err(FrameError::StepLimit);
     }
@@ -590,12 +704,16 @@ where
         }
         let starting_step = frame.steps();
         let mut request_capture = None;
+        let mut executed_tool_results_capture = Vec::new();
+        let mut assistant_response_capture = None;
         let execution = run_step(
             StepInput {
                 frame,
                 goal,
                 prior_messages: prior_messages.clone(),
                 request_capture: &mut request_capture,
+                executed_tool_results_capture: &mut executed_tool_results_capture,
+                assistant_response_capture: &mut assistant_response_capture,
                 cancellation,
                 max_goal_bytes: limits.max_goal_bytes,
                 max_prompt_bytes: limits.max_prompt_bytes,
@@ -625,11 +743,14 @@ where
                         polaris_sdk::contracts::FrameStepOutcome::Failed
                     };
                     let record = FrameStepRecord {
+                        schema: crate::FRAME_STEP_RECORD_SCHEMA_VERSION,
                         frame: frame.view().id,
                         step: frame.steps(),
                         goal: goal.to_owned(),
                         request: request_capture,
+                        assistant_response: assistant_response_capture,
                         result: None,
+                        executed_tool_results: executed_tool_results_capture,
                         outcome,
                     };
                     let _transcript = journal.record(&record).await.map_err(|journal_error| {
@@ -651,11 +772,18 @@ where
             StepOutcome::Aborted => polaris_sdk::contracts::FrameStepOutcome::Rejected,
         };
         let record = FrameStepRecord {
+            schema: crate::FRAME_STEP_RECORD_SCHEMA_VERSION,
             frame: frame.view().id,
             step: frame.steps(),
             goal: goal.to_owned(),
             request: Some(execution.request),
+            assistant_response: assistant_response_capture,
             result: Some(outcome.clone()),
+            executed_tool_results: if matches!(&outcome, StepOutcome::ToolResults { .. }) {
+                Vec::new()
+            } else {
+                executed_tool_results_capture
+            },
             outcome: journal_outcome,
         };
         let _transcript = journal

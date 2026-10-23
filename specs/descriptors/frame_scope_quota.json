@@ -1,0 +1,41 @@
+{
+  "type_of": "pipeline",
+  "name": "spawn_child",
+  "file_path": "crates/polaris-runtime/crates/frames/src/state.rs",
+  "logic_name": "Frame Scope and Quota Attenuation",
+  "test_list": [
+    {
+      "test_name": "child_scope_only_narrows_and_only_unused_quota_returns",
+      "description": "A broader child resource scope fails before quota debit; a valid narrower child spends only its leased step/token budget and returns unused CPU, memory, step and token allowance on drop."
+    }
+  ],
+  "dependencies": [
+    "AgentContextFrame",
+    "FrameScope",
+    "ResourceQuota",
+    "CapabilityToken"
+  ],
+  "libraries": [
+    "tokio",
+    "biscuit-auth"
+  ],
+  "inputs": [
+    {
+      "name": "parent",
+      "type": "&mut AgentContextFrame<Active>",
+      "description": "Active parent frame owning capability and remaining quota."
+    },
+    {
+      "name": "child_scope",
+      "type": "Scope",
+      "description": "Requested child capability scope that must be a proven subset of its parent."
+    },
+    {
+      "name": "child_quota",
+      "type": "ResourceQuota",
+      "description": "Numeric and network policy allowance reserved from the parent while the child exists."
+    }
+  ],
+  "output_type": "Result<AgentContextFrame<Spawned>, FrameError>",
+  "output_description": "A child frame with an attenuated capability and a leased quota allocation, or a typed error without overdraw."
+}

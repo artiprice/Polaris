@@ -9,10 +9,6 @@
       "description": "Opening a new table persists its dimension, embedder identity, and metric in SQLite."
     },
     {
-      "test_name": "reopen_preserves_table_and_scope_metadata",
-      "description": "Reopening the same table and explicit global or session scope recovers its rows and index."
-    },
-    {
       "test_name": "rejects_dimension_embedder_and_metric_mismatch",
       "description": "A table cannot be reopened with a different dimension, embedder, or metric."
     },
@@ -21,8 +17,8 @@
       "description": "A handle is permanently bounded to its configured global or session partition."
     },
     {
-      "test_name": "rejects_invalid_table_names_and_dimensions",
-      "description": "Empty or unsafe table identities and zero or oversized dimensions fail before storage mutation."
+      "test_name": "invalid_names_dimensions_and_zero_cosine_vectors_are_rejected",
+      "description": "Unsafe table names, zero dimensions, and zero cosine vectors are rejected before storage mutation."
     }
   ],
   "dependencies": [
@@ -32,6 +28,7 @@
   "libraries": [
     "rusqlite",
     "usearch",
+    "rayon",
     "tempfile (dev)"
   ],
   "inputs": [

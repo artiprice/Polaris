@@ -382,8 +382,10 @@ fn credential_header(token: &TokenBytes) -> Result<MetadataValue<Ascii>, ClientE
             );
         }
     }
-    MetadataValue::try_from(header)
-        .map_err(|_| ClientError::Protocol("invalid credential metadata"))
+    let mut value = MetadataValue::try_from(header)
+        .map_err(|_| ClientError::Protocol("invalid credential metadata"))?;
+    value.set_sensitive(true);
+    Ok(value)
 }
 fn kernel_error(error: ClientError) -> KernelError {
     match error {

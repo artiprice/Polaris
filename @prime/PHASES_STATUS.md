@@ -1,6 +1,6 @@
 # Polaris — Phase status
 
-> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-22 (P1 logic completion verification) · **Branch:** `main`
+> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-24 (non-UI P3/P5/P9 continuation; historical P1 acceptance retained) · **Branch:** `main`
 > (the team's periodic commits picked up part of the P0 work; this session committed nothing) ·
 > **Reference PC:** Windows 11 LTSC 2024, Ryzen 7 2700, 16 GB RAM, GTX 1650 4 GB, rustc/cargo 1.99.0,
 > WSL2 Ubuntu 24.04.5.
@@ -18,9 +18,9 @@
 |---|---|
 | PASS | 45 |
 | FAIL | 3 |
-| IN PROGRESS | 52 |
+| IN PROGRESS | 54 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 48 |
+| NOT STARTED | 46 |
 | **total** | 163 |
 
 **P1 non-UI logic: PASS. UI remains deferred by the user.** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
@@ -210,13 +210,13 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | Production RPM/TPM reservation, priority admission and usage reconciliation in progress; UNVERIFIED, validation deferred by user. |
 | `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | §E28–§E29: real Ed25519/Biscuit root issuance, signed monotone attenuation, scoped rights/metrics/expiry/hash checks, revocation hook and bounded evaluation. 20 contracts + 2 compile-fail tests, Windows/Linux, 95,847 fuzz executions, isolated expiry Kani proof and path Miri. Published-source vendor patch verified; dependency audit debt and full mutation-pipeline integration remain open. |
-| `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | Production reqwest chat/SSE adapter, tool replay, model listing and embedding transport written; UNVERIFIED. Credentials/live API, throughput and validation remain pending. |
+| `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | IN PROGRESS | 2026-10-24 E32: bounded zeroizing AEAD vault, SDK source, identifier/storage limits and isolated real Windows keyring store/load/delete pass. Other host backends and full P3 assembly remain open. |
+| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | 2026-10-24 E32: bounded HTTP/SSE chat, reasoning/tool replay, embeddings/models and injected SDK credentials pass 24 local fixture/contract tests; strict owned-package Clippy passes. Live keyed provider and full S2 composition remain open. |
 | `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-models` | `polaris-models` | P3 | IN PROGRESS | Production model catalog, effort policy and cancellable local slot lifecycle in progress; UNVERIFIED, validation deferred by user. |
 | `crate:polaris-tools-math` | `polaris-tools-math` | P3 | IN PROGRESS | 2026-10-23: 25 math contracts cover expression evaluation, interpolation, statistics and sourced GPU specifications; full P3 audit remains open. |
-| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | Production frame typestate, bounded quotas, attenuation and streamed step execution in progress; UNVERIFIED, full root assembly remains pending. |
+| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | 2026-10-24 E32: bounded model/tool/verifier loop with linked transcript replay, quota charging and CAS-before-event journaling; focused contracts pass. Full production plan/edit/test/proof composition remains open. |
 | `crate:polaris-runtime-context` | `polaris-runtime-context` | P3 | IN PROGRESS | Production deterministic prompt assembly and byte-exact CAS context folding in progress; UNVERIFIED, validation deferred. |
 | `crate:polaris-kernel-operators` | `polaris-kernel-operators` | P3 | IN PROGRESS | Production typed operator combinators, cancellation, bounded retries and stage-order contracts in progress; UNVERIFIED, full composition remains open. |
 | `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | P3 | IN PROGRESS | Production hybrid mutation verification and evidence-backed approvals in progress; UNVERIFIED, validation deferred by user. Existing wire-contract tests preserved (§E25). |
@@ -244,7 +244,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P5 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | IN PROGRESS | 2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open. |
 | `crate:polaris-ingest` | `polaris-ingest` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-search-providers` | `polaris-search-providers` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | Production provenance-preserving ranking/filtering written with bounded S1 calls and fail-open fallback; UNVERIFIED, source race and validation remain open. |
@@ -292,7 +292,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-desktop` | `polaris-desktop` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-web` | `polaris-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-daemon` | `polaris-daemon` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | Production request authentication and tonic service adapters in progress; UNVERIFIED. Named-pipe/mTLS listener assembly and validation remain open. |
+| `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open. |
 | `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-ui-web` | `polaris-ui-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-spike-web` | `polaris-spike-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
@@ -1230,3 +1230,51 @@ version 0.1.4; the cause of the initial transient failure is unknown. The retain
 status output are in `@prime/evidence/p2/doctor-headless-transient-badsig.json`,
 `@prime/evidence/p2/doctor-headless-intermediate-probe-fixes.json`, and
 `@prime/evidence/p2/openshell-status-repeat-current.txt`.
+
+## E32 — non-UI P3/P5/P9 continuation (2026-10-24)
+
+VERIFIED scope: the user explicitly paused Phase 2 work and deferred UI. This continuation implements
+P3 secret custody and bounded frame execution, P5 default vector storage, and P9 authenticated RPC.
+None of those full phases is declared PASS. The existing P1 acceptance is historical and scoped.
+
+- **P3 secrets:** actual Windows Credential Manager/read-only environment SDK source; validated source
+  locations; zeroizing ChaCha20-Poly1305 RAM vault with independent key/ciphertext allocations,
+  entry/aggregate-byte bounds, replacement accounting, tamper rejection, and nonprintable sealing key.
+  A random test-owned synthetic Windows credential completed store/load/delete. No existing user
+  credentials were read. Config references now convert into the validated SDK location, and Token
+  Factory resolves exactly that injected source with distinct missing/provider/invalid errors.
+- **P3 frames:** bounded multi-turn assemble/model/tool/verifier driver; attenuated role/quota checks,
+  conservative token reservations, exact call/result links, CID checks, retry/tool-round/cancellation
+  limits, partial assistant capture, clean-EOF/usage lifecycle checks, bounded full prompt serialization and versioned CAS transcript-before-event journal (22 focused tests). The real
+  CAS/EventLog integration appends, closes, reopens, and reads the transcript. Completion claims remain
+  unproven until independent proof-of-done; this is not the production kernel edit/test/proof assembly.
+- **P5 vectors:** actual immutable table/model/dimension/metric and session/global scope; SQLite WAL
+  authoritative rows; staged HNSW mutation before SQL commit, generation refresh across handles,
+  exact payload filtering before K, and recoverable index cache. Parallel native graph insertion
+  failed the original exact-self-neighbor property and was removed; sequential graph insertion
+  passes it. Parallel work is confined to bounded byte serialization. The representative 100k × 768
+  debug run took 506.315803 seconds (198 vectors/s); release took 568.1559863 seconds (176 vectors/s). Both measured runs miss the 100k/min target. They ran during concurrent development; an isolated performance calibration is still open.
+  No optional LanceDB implementation, complete recall study, or whole P5 pipeline is claimed.
+- **P9 RPC:** real local Windows pipes (next instance created before handoff), private Unix sockets,
+  TCP with mandatory mTLS off loopback, bounded connections/streams/shutdown, and SDK client.
+  Every call carries a capability; the client refuses credential mismatch and missing/mismatched
+  receipts. The additive optional acceptance-sequence wire field retains the kernel receipt exactly.
+  Real network tests exercise missing/malformed/duplicate/expired/wrong-issuer/insufficient-right
+  credentials, idle-stream revocation, required client TLS identity and server name, inclusive replay
+  from sequence zero, foreign-session isolation, and shutdown. Windows covers 100 pipe cycles;
+  Linux covers UDS ownership and path cleanup. Transport tests inject a fixture KernelApi; they do
+  not establish real daemon command integration. Only the four published RPCs are implemented.
+
+VERIFIED commands and raw results are retained in [the continuation evidence](evidence/continuation/README.md).
+The percentage report is [PHASES_STATUS_PERCENTAGE.md](PHASES_STATUS_PERCENTAGE.md); every percentage is
+an engineering estimate, not a release/readiness guarantee.
+
+Open consistency gate: additive frame events require durable event schema 4, and older event kinds
+remain valid at that schema. The existing SDK `blast_alert_requires_schema_three` test hardcodes that
+only schema 3 is legal. Its assertion remains unchanged; that full SDK test gate is RED. Current-schema
+SDK and proto conversion contracts pass. Dependency-wide Clippy/audit debt, live keyed providers,
+production daemon and full local S2 integration, wider crash/formal/fuzz/performance gates remain open.
+UI-model changes are explicit neutral event-match arms needed to keep the expanded schema compiling;
+no rendering or interactive UI implementation was added. Phase 2 remains paused.
+
+Additional VERIFIED open gate at the final checkpoint: `cargo xtask check-witness` reports one violation at `crates/polaris-ext/crates/skills/src/approval_cache.rs:197`, where an existing unit-test fixture calls `ApprovalWitness::new` outside SDK/verifier. The checker and fixture were not weakened or bypassed. Raw output: [consistency.txt](evidence/continuation/consistency.txt). This is not a clean whole-system source-policy verdict.

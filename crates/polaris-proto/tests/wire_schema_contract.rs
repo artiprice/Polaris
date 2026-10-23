@@ -169,6 +169,10 @@ fn field_numbers_are_frozen() -> TestResult {
             vec![("id", 1), ("frame", 2), ("token", 3), ("body", 4)],
         ),
         (
+            "SubmitCommandResponse",
+            vec![("command_id", 1), ("accepted_at", 2)],
+        ),
+        (
             "CommandBody",
             vec![
                 ("submit_user_input", 1),
@@ -217,6 +221,8 @@ fn field_numbers_are_frozen() -> TestResult {
                 ("session_paused", 20),
                 ("session_resumed", 21),
                 ("blast_radius_alert", 22),
+                ("frame_step_recorded", 23),
+                ("diff_needs_approval", 24),
             ],
         ),
         (
@@ -241,6 +247,16 @@ fn field_numbers_are_frozen() -> TestResult {
     for (name, rows) in table {
         assert_eq!(field_table(find(&all, name)?), expected(&rows), "{name}");
     }
+    let receipt = find(&all, "SubmitCommandResponse")?;
+    let sequence = receipt
+        .field
+        .iter()
+        .find(|field| field.name() == "accepted_at")
+        .ok_or("acceptance sequence field missing")?;
+    assert!(
+        sequence.proto3_optional(),
+        "legacy missing sequence must differ from sequence zero"
+    );
     Ok(())
 }
 
@@ -283,7 +299,10 @@ fn enums_start_with_unspecified() -> TestResult {
     let set = set()?;
     let all = enums(&set);
     let names: Vec<&str> = all.iter().map(|e| e.name()).collect();
-    assert_eq!(names, ["AgentRole", "Effort", "WorkerKind"]);
+    assert_eq!(
+        names,
+        ["AgentRole", "Effort", "WorkerKind", "FrameStepOutcome"]
+    );
     for e in &all {
         let first = e.value.first().ok_or("enum without values")?;
         assert_eq!(first.number(), 0, "{}", e.name());
@@ -293,6 +312,10 @@ fn enums_start_with_unspecified() -> TestResult {
     assert_eq!(pb::AgentRole::default(), pb::AgentRole::Unspecified);
     assert_eq!(pb::Effort::default(), pb::Effort::Unspecified);
     assert_eq!(pb::WorkerKind::default(), pb::WorkerKind::Unspecified);
+    assert_eq!(
+        pb::FrameStepOutcome::default(),
+        pb::FrameStepOutcome::Unspecified
+    );
     Ok(())
 }
 

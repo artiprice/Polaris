@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on build directory
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Finished `dev` profile [unoptimized] target(s) in 12.16s

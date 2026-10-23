@@ -67,7 +67,10 @@ mod fixture {
     pub struct ReplayKernel(pub Vec<EventRecord>);
     impl KernelApi for ReplayKernel {
         type Events = ReplayEvents;
-        async fn submit(&self, _command: Command<Unverified>) -> Result<CommandReceipt, KernelError> {
+        async fn submit(
+            &self,
+            _command: Command<Unverified>,
+        ) -> Result<CommandReceipt, KernelError> {
             Err(KernelError::Closed)
         }
         async fn subscribe(&self, _from: Seq) -> Result<Self::Events, KernelError> {
@@ -125,6 +128,19 @@ mod fixture {
             true
         }
     }
+    pub struct RevocableResolver(pub Arc<std::sync::atomic::AtomicBool>);
+    impl TrustedFactsResolver for RevocableResolver {
+        fn resolve(
+            &self,
+            right: Right,
+            subject: RequestSubject<'_>,
+        ) -> Result<TrustedFacts, Status> {
+            Resolver.resolve(right, subject)
+        }
+        fn is_revoked(&self, _token: &polaris_security_capability::Token) -> Result<bool, Status> {
+            Ok(self.0.load(Ordering::SeqCst))
+        }
+    }
     pub type Service = RpcService<TestKernel, TestTerminal, Resolver, Ready>;
     pub fn service(key: PublicKeyBytes, calls: Arc<AtomicUsize>) -> Result<Service, Failure> {
         Ok(RpcService::new(
@@ -139,6 +155,13 @@ mod fixture {
         )?)
     }
     pub fn token(authority: &Authority, rights: &[Right]) -> Result<TokenBytes, Failure> {
+        token_at(authority, rights, &SystemClock)
+    }
+    pub fn token_at(
+        authority: &Authority,
+        rights: &[Right],
+        clock: &impl polaris_security_capability::Clock,
+    ) -> Result<TokenBytes, Failure> {
         Ok(authority
             .issue_root(
                 FrameId::from_u128(2),
@@ -150,7 +173,7 @@ mod fixture {
                     diff_blake3: None,
                     rights: Rights::new(rights),
                 },
-                &SystemClock,
+                clock,
             )?
             .to_bytes()
             .clone())
@@ -159,31 +182,153 @@ mod fixture {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn replay_includes_zero_cursor_and_isolates_other_session_sequences() -> Result<(), fixture::Failure> {
+async fn idle_stream_revocation_is_enforced_and_failure_is_retained() -> Result<(), fixture::Failure>
+{
     use fixture::*;
-    use polaris_rpc::{BoundAddress, BoundServer, ClientTransport, KernelClient, RpcAuthenticator, RpcLimits, RpcService, TransportLimits};
-    use polaris_sdk::{contracts::{Event, EventRecord}, ids::{Seq, SessionId, Timestamp}};
+    use polaris_rpc::{
+        BoundAddress, BoundServer, ClientError, ClientTransport, KernelClient, RpcAuthenticator,
+        RpcLimits, RpcService, RpcStreamError, TransportLimits,
+    };
+    use polaris_sdk::ids::Seq;
+    use polaris_security_capability::{Authority, Right};
+    use std::{
+        sync::{
+            Arc,
+            atomic::{AtomicBool, AtomicUsize, Ordering},
+        },
+        time::Duration,
+    };
+    let authority = Authority::new_session()?;
+    let revoked = Arc::new(AtomicBool::new(false));
+    let server = BoundServer::bind(Transport::Tcp {
+        addr: "127.0.0.1:0".parse()?,
+        tls: None,
+    })
+    .await?;
+    let BoundAddress::Tcp(addr) = server.address() else {
+        return Err("unexpected listener".into());
+    };
+    let addr = *addr;
+    let service = RpcService::new(
+        TestKernel(Arc::new(AtomicUsize::new(0))),
+        TestTerminal,
+        RpcAuthenticator::new(
+            authority.public_key(),
+            RevocableResolver(Arc::clone(&revoked)),
+        ),
+        Ready,
+        RpcLimits {
+            event_buffer: 4,
+            backpressure_timeout: Duration::from_millis(100),
+        },
+    )?;
+    let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+    let serving = tokio::spawn(
+        server.serve(service, TransportLimits::default(), async move {
+            let _received = stop_rx.await;
+        }),
+    );
+    let client = KernelClient::connect(
+        ClientTransport::Tcp { addr, tls: None },
+        SESSION,
+        token(&authority, &[Right::Read])?,
+    )
+    .await?;
+    let mut events = client.subscribe_checked(Seq::ZERO).await?;
+    revoked.store(true, Ordering::SeqCst);
+    let error = tokio::time::timeout(Duration::from_secs(3), events.next_record()).await?;
+    assert!(
+        matches!(error, Err(RpcStreamError::Status(status)) if status.code() == tonic::Code::Unauthenticated)
+    );
+    assert!(
+        matches!(events.terminal_error(), Some(RpcStreamError::Status(status)) if status.code() == tonic::Code::Unauthenticated)
+    );
+    assert!(events.next_record().await?.is_none());
+    assert!(events.terminal_error().is_some());
+    assert!(
+        matches!(client.health().await, Err(ClientError::Status(status)) if status.code() == tonic::Code::Unauthenticated)
+    );
+    stop_tx
+        .send(())
+        .map_err(|_| "shutdown receiver disappeared")?;
+    tokio::time::timeout(Duration::from_secs(3), serving).await???;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn replay_includes_zero_cursor_and_isolates_other_session_sequences()
+-> Result<(), fixture::Failure> {
+    use fixture::*;
+    use polaris_rpc::{
+        BoundAddress, BoundServer, ClientTransport, KernelClient, RpcAuthenticator, RpcLimits,
+        RpcService, TransportLimits,
+    };
+    use polaris_sdk::{
+        contracts::{Event, EventRecord, Timestamp},
+        ids::{Seq, SessionId},
+    };
     use polaris_security_capability::{Authority, Right};
     let authority = Authority::new_session()?;
-    let record = |session, sequence| EventRecord::new(Seq::new(sequence), Timestamp::from_micros(1), session, Event::SessionClosed);
-    let records = vec![record(SESSION, 0), record(SessionId::from_u128(99), 100), record(SESSION, 1), record(SESSION, 1), record(SESSION, 2)];
-    let server = BoundServer::bind(Transport::Tcp { addr: "127.0.0.1:0".parse()?, tls: None }).await?;
-    let BoundAddress::Tcp(addr) = server.address() else { return Err("unexpected listener".into()); };
+    let record = |session, sequence| {
+        EventRecord::new(
+            Seq::new(sequence),
+            Timestamp::UNIX_EPOCH,
+            session,
+            Event::SessionClosed,
+        )
+    };
+    let records = vec![
+        record(SESSION, 0),
+        record(SessionId::from_u128(99), 100),
+        record(SESSION, 1),
+        record(SESSION, 1),
+        record(SESSION, 2),
+    ];
+    let server = BoundServer::bind(Transport::Tcp {
+        addr: "127.0.0.1:0".parse()?,
+        tls: None,
+    })
+    .await?;
+    let BoundAddress::Tcp(addr) = server.address() else {
+        return Err("unexpected listener".into());
+    };
     let addr = *addr;
     let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
-    let service = RpcService::new(ReplayKernel(records), TestTerminal, RpcAuthenticator::new(authority.public_key(), Resolver), Ready, RpcLimits::default())?;
-    let serving = tokio::spawn(server.serve(service, TransportLimits::default(), async move { let _received = stop_rx.await; }));
-    let client = KernelClient::connect(ClientTransport::Tcp {addr, tls:None}, SESSION, token(&authority, &[Right::Read])?).await?;
+    let service = RpcService::new(
+        ReplayKernel(records),
+        TestTerminal,
+        RpcAuthenticator::new(authority.public_key(), Resolver),
+        Ready,
+        RpcLimits {
+            event_buffer: 8,
+            backpressure_timeout: std::time::Duration::from_secs(1),
+        },
+    )?;
+    let serving = tokio::spawn(
+        server.serve(service, TransportLimits::default(), async move {
+            let _received = stop_rx.await;
+        }),
+    );
+    let client = KernelClient::connect(
+        ClientTransport::Tcp { addr, tls: None },
+        SESSION,
+        token(&authority, &[Right::Read])?,
+    )
+    .await?;
     for from in [0, 1, 2, 3] {
         let mut events = client.subscribe_checked(Seq::new(from)).await?;
         let mut received = Vec::new();
-        while let Some(record) = tokio::time::timeout(std::time::Duration::from_secs(2), events.next_record()).await?? {
+        while let Some(record) =
+            tokio::time::timeout(std::time::Duration::from_secs(2), events.next_record()).await??
+        {
             received.push(record.seq().get());
         }
         assert_eq!(received, (from..3).collect::<Vec<_>>());
         assert!(events.terminal_error().is_none());
     }
-    stop_tx.send(()).map_err(|_| "shutdown receiver disappeared")?;
+    stop_tx
+        .send(())
+        .map_err(|_| "shutdown receiver disappeared")?;
     tokio::time::timeout(std::time::Duration::from_secs(3), serving).await???;
     Ok(())
 }
@@ -245,11 +390,74 @@ async fn tcp_authentication_and_receipt_roundtrip() -> Result<(), fixture::Failu
     let channel = tonic::transport::Endpoint::from_shared(format!("http://{addr}"))?
         .connect()
         .await?;
-    let error =
-        polaris_proto::pb::polaris_kernel_service_client::PolarisKernelServiceClient::new(channel)
-            .health(polaris_proto::pb::HealthRequest {})
-            .await;
+    let error = polaris_proto::pb::polaris_kernel_service_client::PolarisKernelServiceClient::new(
+        channel.clone(),
+    )
+    .health(polaris_proto::pb::HealthRequest {})
+    .await;
     assert!(matches!(error,Err(status) if status.code()==tonic::Code::Unauthenticated));
+    for header in ["Basic abc", "Bearer ", "Bearer 0", "Bearer zz", "Bearer 00"] {
+        let mut request = tonic::Request::new(polaris_proto::pb::HealthRequest {});
+        request
+            .metadata_mut()
+            .insert("authorization", header.parse()?);
+        let result =
+            polaris_proto::pb::polaris_kernel_service_client::PolarisKernelServiceClient::new(
+                channel.clone(),
+            )
+            .health(request)
+            .await;
+        assert!(matches!(result, Err(status) if status.code() == tonic::Code::Unauthenticated));
+    }
+    let mut duplicate = tonic::Request::new(polaris_proto::pb::HealthRequest {});
+    duplicate
+        .metadata_mut()
+        .append("authorization", "Bearer 00".parse()?);
+    duplicate
+        .metadata_mut()
+        .append("authorization", "Bearer 00".parse()?);
+    let duplicate_result =
+        polaris_proto::pb::polaris_kernel_service_client::PolarisKernelServiceClient::new(channel)
+            .health(duplicate)
+            .await;
+    assert!(matches!(duplicate_result, Err(status) if status.code()==tonic::Code::Unauthenticated));
+    struct Past;
+    impl polaris_security_capability::Clock for Past {
+        fn now(&self) -> polaris_sdk::contracts::Timestamp {
+            polaris_sdk::contracts::Timestamp::UNIX_EPOCH
+        }
+    }
+    let expired = KernelClient::connect(
+        ClientTransport::Tcp { addr, tls: None },
+        SESSION,
+        token_at(&authority, &[Right::Read], &Past)?,
+    )
+    .await?;
+    let expired_response = expired.health().await;
+    assert!(
+        matches!(&expired_response, Err(ClientError::Status(status)) if status.code()==tonic::Code::PermissionDenied),
+        "expired capability response: {expired_response:?}"
+    );
+    let readonly = token(&authority, &[Right::Read])?;
+    let readonly_client = KernelClient::connect(
+        ClientTransport::Tcp { addr, tls: None },
+        SESSION,
+        readonly.clone(),
+    )
+    .await?;
+    let denied = readonly_client
+        .submit_checked(Command::new(
+            CommandId::from_u128(4),
+            FrameId::from_u128(2),
+            readonly,
+            CommandBody::ExecuteTool {
+                call: Cid::from_bytes([1; 32]),
+            },
+        ))
+        .await;
+    assert!(
+        matches!(denied, Err(ClientError::Status(status)) if status.code()==tonic::Code::PermissionDenied)
+    );
     let wrong_authority = Authority::new_session()?;
     let bad = KernelClient::connect(
         ClientTransport::Tcp { addr, tls: None },
@@ -556,8 +764,14 @@ async fn unix_private_socket_roundtrip_and_cleanup() -> Result<(), fixture::Fail
     use fixture::*;
     use polaris_rpc::{BoundServer, ClientTransport, KernelClient, TransportLimits};
     use polaris_security_capability::{Authority, Right};
-    use std::sync::{Arc, atomic::AtomicUsize};
-    let directory = tempfile::tempdir()?;
+    use std::{
+        os::unix::fs::PermissionsExt,
+        sync::{Arc, atomic::AtomicUsize},
+    };
+    let directory = tempfile::Builder::new()
+        .prefix("polaris-rpc-")
+        .tempdir_in("/tmp")?;
+    std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700))?;
     let path = directory.path().join("rpc.sock");
     let endpoint = LocalEndpoint::unix(path.clone())?;
     let authority = Authority::new_session()?;

@@ -140,6 +140,62 @@ fn successful_mutations_reclaim_obsolete_index_generations() -> TestResult {
 }
 
 #[test]
+fn reopening_collects_old_published_index_files() -> TestResult {
+    let dir = tempdir()?;
+    let table = spec("cache-reopen-gc")?;
+    let store = HnswStore::open(dir.path(), &table, VectorScope::Global)?;
+    store.upsert(&[chunk(1, vec![1.0, 0.0, 0.0], 11)])?;
+
+    let connection = Connection::open(dir.path().join("vectors.sqlite3"))?;
+    let active_file: String = connection.query_row(
+        "SELECT index_file FROM vector_partitions WHERE table_name = ?1",
+        [table.name.as_str()],
+        |row| row.get(0),
+    )?;
+    let (cache_key, _) = active_file
+        .split_once('-')
+        .ok_or("invalid index filename")?;
+    let orphan = dir.path().join(format!("{cache_key}-0-old-cache.usearch"));
+    std::fs::copy(dir.path().join(active_file), &orphan)?;
+
+    let reopened = HnswStore::open(dir.path(), &table, VectorScope::Global)?;
+    assert_eq!(reopened.count()?, 1);
+    assert!(!orphan.exists());
+    Ok(())
+}
+
+#[test]
+fn rebuilds_parseable_same_count_index_with_wrong_keys() -> TestResult {
+    let dir = tempdir()?;
+    let current_table = spec("cache-authoritative")?;
+    let stale_table = spec("cache-stale-source")?;
+    let current_store = HnswStore::open(dir.path(), &current_table, VectorScope::Global)?;
+    let stale_store = HnswStore::open(dir.path(), &stale_table, VectorScope::Global)?;
+    current_store.upsert(&[chunk(1, vec![1.0, 0.0, 0.0], 11)])?;
+    stale_store.upsert(&[chunk(2, vec![0.0, 1.0, 0.0], 12)])?;
+
+    let connection = Connection::open(dir.path().join("vectors.sqlite3"))?;
+    let cache_file = |table_name: &str| -> rusqlite::Result<String> {
+        connection.query_row(
+            "SELECT index_file FROM vector_partitions WHERE table_name = ?1",
+            [table_name],
+            |row| row.get(0),
+        )
+    };
+    let current_cache = cache_file(&current_table.name)?;
+    let stale_cache = cache_file(&stale_table.name)?;
+    drop(connection);
+    drop(current_store);
+    drop(stale_store);
+
+    std::fs::copy(dir.path().join(stale_cache), dir.path().join(current_cache))?;
+    let recovered = HnswStore::open(dir.path(), &current_table, VectorScope::Global)?;
+    let hits = recovered.search(&[1.0, 0.0, 0.0], 1)?;
+    assert_eq!(hits.first().map(|hit| hit.id), Some(cid(1)));
+    Ok(())
+}
+
+#[test]
 fn delete_only_removes_ids_from_the_bound_scope() -> TestResult {
     let dir = tempdir()?;
     let table = spec("delete-scope")?;
@@ -387,20 +443,27 @@ fn concurrent_handles_upsert_batches_and_reopen_without_lost_rows() -> TestResul
 #[ignore = "manual native ingestion throughput characterization"]
 fn benchmark_ingests_one_hundred_thousand_local_vectors() -> TestResult {
     let dir = tempdir()?;
-    let store = HnswStore::open(
-        dir.path(),
-        &spec("ingestion-benchmark")?,
-        VectorScope::Global,
-    )?;
+    let mut table = spec("ingestion-benchmark")?;
+    table.dimension = 768;
+    let store = HnswStore::open(dir.path(), &table, VectorScope::Global)?;
     let started = Instant::now();
     for batch_number in 0_u64..10 {
         let mut chunks = Vec::with_capacity(10_000);
         for offset in 0_u64..10_000 {
             let seed = batch_number * 10_000 + offset;
             let id = Cid::from_bytes(*blake3::hash(&seed.to_le_bytes()).as_bytes());
+            let mut state = seed.wrapping_add(0x9e37_79b9_7f4a_7c15);
+            let mut vector = Vec::with_capacity(table.dimension);
+            for _ in 0..table.dimension {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                let coordinate = u16::try_from((state >> 53) + 1)?;
+                vector.push(f32::from(coordinate) / 2048.0);
+            }
             chunks.push(VectorChunk {
                 id,
-                vector: vec![1.0, 0.1, 0.0],
+                vector,
                 payload: id,
             });
         }

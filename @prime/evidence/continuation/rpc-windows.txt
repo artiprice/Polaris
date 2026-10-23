@@ -1,0 +1,31 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Finished `test` profile [unoptimized] target(s) in 9.15s
+     Running unittests src\lib.rs (target\debug\deps\polaris_rpc-73994863b2365cf9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\transport_contracts.rs (target\debug\deps\transport_contracts-65c37e71b9cf2382.exe)
+
+running 8 tests
+test local_endpoint_rejects_remote_or_ambiguous_names ... ok
+test public_plaintext_bind_is_refused ... ok
+test idle_stream_revocation_is_enforced_and_failure_is_retained ... ok
+test replay_includes_zero_cursor_and_isolates_other_session_sequences ... ok
+test tcp_authentication_and_receipt_roundtrip ... ok
+test mtls_rejects_missing_or_wrong_client_identity ... ok
+test shutdown_closes_idle_streams_within_grace ... ok
+test named_pipe_name_ownership_and_grpc_roundtrip ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+   Doc-tests polaris_rpc
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

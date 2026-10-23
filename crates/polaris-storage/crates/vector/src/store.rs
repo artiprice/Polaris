@@ -497,21 +497,26 @@ impl StoreInner {
     }
 
     fn reload_from_sqlite(&mut self, opening: bool) -> Result<(), VectorStoreError> {
+        let snapshot = self.connection.transaction()?;
         let (generation, indexed_generation, index_file) =
-            partition_state(&self.connection, &self.table.name, &self.scope_key)?;
+            partition_state(&snapshot, &self.table.name, &self.scope_key)?;
         let rows = read_rows(
-            &self.connection,
+            &snapshot,
             &self.table.name,
             &self.scope_key,
             self.table.dimension,
         )?;
+        snapshot.commit()?;
         if generation == indexed_generation
             && let Some(name) = index_file.as_deref()
             && let Some(path) = safe_index_path(&self.root, name)
             && path.is_file()
         {
             let index = new_index(&self.table)?;
-            if index.load(&path.to_string_lossy()).is_ok() && index.size() == rows.len() {
+            if index.load(&path.to_string_lossy()).is_ok()
+                && index.size() == rows.len()
+                && index_matches_rows(&index, &rows)
+            {
                 self.index = index;
                 self.rows = rows
                     .iter()
@@ -519,6 +524,7 @@ impl StoreInner {
                     .collect();
                 self.id_to_key = rows.iter().map(|row| (row.value.id, row.key)).collect();
                 self.generation = generation;
+                self.cache_error = self.cleanup_current_generation();
                 return Ok(());
             }
         }
@@ -550,7 +556,24 @@ impl StoreInner {
                 self.cache_error = Some(error.to_string());
             }
         }
+        if self.cache_error.is_none() {
+            self.cache_error = self.cleanup_current_generation();
+        }
         Ok(())
+    }
+
+    fn cleanup_current_generation(&self) -> Option<String> {
+        match partition_state(&self.connection, &self.table.name, &self.scope_key) {
+            Ok((generation, _, index_file)) => cleanup_obsolete_indexes(
+                &self.root,
+                &self.cache_key,
+                generation,
+                index_file.as_deref(),
+            ),
+            Err(error) => Some(format!(
+                "could not inspect current vector generation: {error}"
+            )),
+        }
     }
 }
 
@@ -627,6 +650,13 @@ fn build_index(table: &TableSpec, rows: &[IndexedRow]) -> Result<Index, VectorSt
     Ok(index)
 }
 
+fn index_matches_rows(index: &Index, rows: &[IndexedRow]) -> bool {
+    rows.iter().all(|row| {
+        let mut vector = vec![0.0_f32; row.vector.len()];
+        matches!(index.get(row.key, &mut vector), Ok(1)) && vector == row.vector
+    })
+}
+
 fn clone_index(
     table: &TableSpec,
     source: &Index,
@@ -635,10 +665,17 @@ fn clone_index(
 ) -> Result<Index, VectorStoreError> {
     let nonce = NEXT_TEMP_FILE.fetch_add(1, Ordering::Relaxed);
     let temporary = root.join(format!("{key}-clone-{}-{nonce}.tmp", std::process::id()));
-    source
-        .save(&temporary.to_string_lossy())
-        .map_err(|error| VectorStoreError::Index(error.to_string()))?;
-    let cloned = new_index(table)?;
+    if let Err(error) = source.save(&temporary.to_string_lossy()) {
+        remove_if_exists(&temporary);
+        return Err(VectorStoreError::Index(error.to_string()));
+    }
+    let cloned = match new_index(table) {
+        Ok(index) => index,
+        Err(error) => {
+            remove_if_exists(&temporary);
+            return Err(error);
+        }
+    };
     let load_result = cloned.load(&temporary.to_string_lossy());
     remove_if_exists(&temporary);
     load_result.map_err(|error| VectorStoreError::Index(error.to_string()))?;
@@ -788,18 +825,27 @@ fn stage_index(
     let stem = format!("{key}-{generation}-{}-{nonce}", std::process::id());
     let temporary = root.join(format!("{stem}.tmp"));
     let final_path = root.join(format!("{stem}.usearch"));
-    index
-        .save(&temporary.to_string_lossy())
-        .map_err(|error| VectorStoreError::Index(error.to_string()))?;
-    OpenOptions::new()
+    if let Err(error) = index.save(&temporary.to_string_lossy()) {
+        remove_if_exists(&temporary);
+        return Err(VectorStoreError::Index(error.to_string()));
+    }
+    let sync_result = OpenOptions::new()
         .write(true)
-        .open(&temporary)?
-        .sync_all()?;
-    let file_name = final_path
-        .file_name()
-        .and_then(OsStr::to_str)
-        .ok_or_else(|| VectorStoreError::Corrupt("index cache filename is invalid".to_owned()))?
-        .to_owned();
+        .open(&temporary)
+        .and_then(|file| file.sync_all());
+    if let Err(error) = sync_result {
+        remove_if_exists(&temporary);
+        return Err(VectorStoreError::Io(error));
+    }
+    let file_name = match final_path.file_name().and_then(OsStr::to_str) {
+        Some(file_name) => file_name.to_owned(),
+        None => {
+            remove_if_exists(&temporary);
+            return Err(VectorStoreError::Corrupt(
+                "index cache filename is invalid".to_owned(),
+            ));
+        }
+    };
     Ok(StagedIndex {
         temporary,
         final_path,
@@ -878,6 +924,55 @@ fn safe_index_path(root: &Path, file_name: &str) -> Option<PathBuf> {
         return None;
     }
     Some(root.join(path))
+}
+
+fn cleanup_obsolete_indexes(
+    root: &Path,
+    key: &str,
+    generation: i64,
+    active_file: Option<&str>,
+) -> Option<String> {
+    let entries = match fs::read_dir(root) {
+        Ok(entries) => entries,
+        Err(error) => return Some(format!("could not inspect old index cache files: {error}")),
+    };
+    let prefix = format!("{key}-");
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(error) => return Some(format!("could not inspect old index cache file: {error}")),
+        };
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        if active_file == Some(file_name) || !file_name.ends_with(".usearch") {
+            continue;
+        }
+        let Some(stem) = file_name.strip_suffix(".usearch") else {
+            continue;
+        };
+        let Some(suffix) = stem.strip_prefix(&prefix) else {
+            continue;
+        };
+        let Some((file_generation, _)) = suffix.split_once('-') else {
+            continue;
+        };
+        let Ok(file_generation) = file_generation.parse::<i64>() else {
+            continue;
+        };
+        if file_generation >= generation {
+            continue;
+        }
+        match fs::remove_file(entry.path()) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
+                return Some(format!("could not reclaim obsolete index cache: {error}"));
+            }
+        }
+    }
+    None
 }
 
 fn remove_if_exists(path: &Path) {

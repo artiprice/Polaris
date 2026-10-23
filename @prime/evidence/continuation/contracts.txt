@@ -1,0 +1,290 @@
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Finished `test` profile [unoptimized] target(s) in 2.30s
+     Running unittests src\lib.rs (target\debug\deps\polaris_config-4ad4a78328bd940d.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\config_layer_merge.rs (target\debug\deps\config_layer_merge-161e20bfff44e0fd.exe)
+
+running 9 tests
+test provenance_reports_winning_layer ... ok
+test defaults_only_is_valid ... ok
+test later_layer_overrides_earlier ... ok
+test unknown_key_is_rejected ... ok
+test tables_merge_scalars_replace ... ok
+test budget_usd_accepts_integer_and_decimal_text ... ok
+test invalid_value_is_rejected ... ok
+test prop_merge_with_itself_is_idempotent ... ok
+test prop_highest_layer_wins_per_key ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\directory_discovery.rs (target\debug\deps\directory_discovery-ca742096d07e28d8.exe)
+
+running 11 tests
+test env_conflicting_paths_are_invalid ... ok
+test env_layer_uses_prefix_and_double_underscore ... ok
+test session_overrides_roundtrip ... ok
+test no_repo_dir_is_none ... ok
+test reads_bom_and_crlf_files ... ok
+test home_global_dir_is_not_a_repo_dir ... ok
+test finds_nearest_repo_dir_walking_up ... ok
+test parse_error_reports_file_and_line ... ok
+test rejects_config_files_over_the_parser_bound ... ok
+test long_path_repo_dir_is_found ... ok
+test windows_locked_file_is_retried ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests\golden_provenance.rs (target\debug\deps\golden_provenance-84365cf050054e6d.exe)
+
+running 1 test
+test golden_provenance_snapshot ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests\repo_layer_trust_filter.rs (target\debug\deps\repo_layer_trust_filter-019d4c8bdcea3ba8.exe)
+
+running 5 tests
+test repo_cannot_downgrade_sandbox_tier ... ok
+test repo_cannot_set_endpoint ... ok
+test repo_may_set_allowlisted_style_keys ... ok
+test trust_grant_unlocks_listed_key ... ok
+test repo_literal_secret_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_reference_parsing.rs (target\debug\deps\secret_reference_parsing-bb5bdcf3c4e2da31.exe)
+
+running 6 tests
+test parses_env_scheme ... ok
+test rejects_empty_name ... ok
+test reference_parser_enforces_provider_identifier_bounds ... ok
+test rejects_bare_literal ... ok
+test reference_converts_to_validated_sdk_location ... ok
+test parses_keyring_scheme ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_nebius_cloud_token_factory-6b6e3176a76d8ac7.exe)
+
+running 21 tests
+test client::tests::local_ollama_chat_model_smoke ... ignored, requires the explicitly installed local Ollama nemotron-mini:latest model
+test client::tests::retry_after_is_honored_but_capped ... ok
+test client::tests::base_url_requires_tls_for_non_loopback_and_rejects_embedded_credentials ... ok
+test client::tests::retry_fallback_jitter_stays_within_exponential_and_global_caps ... ok
+test client::tests::empty_chat_history_is_rejected_by_both_endpoints ... ok
+test client::tests::retry_after_accepts_http_date_form ... ok
+test client::tests::responses_request_replays_linked_function_call_and_result ... ok
+test sse::tests::parses_comment_multiline_data_and_done_with_crlf ... ok
+test sse::tests::arbitrary_chunk_split_inside_multibyte_utf8_preserves_event ... ok
+test sse::tests::rejects_invalid_utf8_and_feed_after_finish ... ok
+test sse::tests::rejects_oversized_frame_and_excess_events_before_unbounded_buffering ... ok
+test client::tests::synthetic_unauthorized_fixture_maps_without_echoing_response_body ... ok
+test client::tests::streamed_tool_call_state_respects_configured_count_bound ... ok
+test client::tests::synthetic_redirect_is_not_followed_with_bearer_credentials ... ok
+test client::tests::synthetic_chat_fixture_streams_reasoning_tool_deltas_and_usage ... ok
+test client::tests::synthetic_responses_fixture_streams_text_tool_call_and_usage ... ok
+test client::tests::synthetic_503_retries_within_configured_attempt_budget ... ok
+test client::tests::synthetic_models_and_embeddings_fixture_orders_vectors_and_retries_429 ... ok
+test client::tests::retry_after_penalty_blocks_later_admission_within_request_deadline ... ok
+test sse::tests::arbitrary_chunk_partition_preserves_multibyte_sse_data ... ok
+test client::tests::slow_loris_stream_is_stopped_by_total_request_deadline ... ok
+
+test result: ok. 20 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests\secret_credentials.rs (target\debug\deps\secret_credentials-106ca4dd401db5f8.exe)
+
+running 3 tests
+test malformed_provider_credentials_fail_without_leaking_values ... ok
+test missing_and_failed_credentials_remain_distinct ... ok
+test provider_value_is_resolved_once_and_debug_is_redacted ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\sse_allocations.rs (target\debug\deps\sse_allocations-1a36a9d6004b0525.exe)
+
+running 1 test
+test borrowed_frame_routing_allocates_nothing_after_parser_initialization ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_proto-abe270ee6e8bc433.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\command_conversion.rs (target\debug\deps\command_conversion-7a49508ed0c287a4.exe)
+
+running 6 tests
+test conversion_never_panics_on_default_message ... ok
+test unknown_role_and_effort_are_errors ... ok
+test missing_fields_are_errors ... ok
+test every_command_body_roundtrips ... ok
+test prop_command_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\decision_conversion.rs (target\debug\deps\decision_conversion-5caeb22df3264ad7.exe)
+
+running 9 tests
+test conversion_never_panics_on_default_message ... ok
+test invalid_names_are_errors ... ok
+test decision_with_all_answer_kinds_roundtrips ... ok
+test invalid_probability_is_error ... ok
+test missing_answer_is_error ... ok
+test questions_and_input_roundtrip ... ok
+test prop_question_roundtrip ... ok
+test prop_decision_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\event_conversion.rs (target\debug\deps\event_conversion-1b29f0730d7e296e.exe)
+
+running 10 tests
+test conversion_never_panics_on_default_message ... ok
+test unknown_enum_value_is_error ... ok
+test missing_oneof_body_is_error ... ok
+test old_envelope_version_is_preserved_and_new_variants_require_v4 ... ok
+test event_record_roundtrips_with_timestamp_edges ... ok
+test every_event_variant_roundtrips ... ok
+test malformed_cid_and_schema_are_errors ... ok
+test prop_event_roundtrip ... ok
+test prop_event_record_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\message_size_guard.rs (target\debug\deps\message_size_guard-38ddf1a69aafb84f.exe)
+
+running 7 tests
+test at_limit_is_accepted ... ok
+test limit_is_configurable ... ok
+test over_limit_is_rejected ... ok
+test zero_length_is_accepted ... ok
+test gateway_constants_match_pitfall_w22 ... ok
+test decode_checked_rejects_before_decoding ... ok
+test encode_checked_rejects_before_encoding ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\protocol_version_negotiation.rs (target\debug\deps\protocol_version_negotiation-bed1180a12fd17ea.exe)
+
+running 8 tests
+test display_is_major_dot_minor ... ok
+test different_major_is_rejected ... ok
+test guest_spike_handshake_still_holds ... ok
+test negotiation_is_symmetric_on_success ... ok
+test same_major_negotiates_to_min_minor ... ok
+test wire_version_out_of_range_is_error ... ok
+test zero_major_is_rejected ... ok
+test prop_negotiation_matches_the_rule ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\wire_schema_contract.rs (target\debug\deps\wire_schema_contract-5710c2de7af99223.exe)
+
+running 8 tests
+test generated_stubs_exist_for_every_service ... ok
+test golden_bytes_are_stable ... ok
+test descriptor_set_lists_the_three_services ... ok
+test enums_start_with_unspecified ... ok
+test growing_messages_reserve_a_range ... ok
+test guest_handshake_keeps_the_spike_fields ... ok
+test blobs_are_cid_references ... ok
+test field_numbers_are_frozen ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_rpc-ca220f09d68c4d01.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\transport_contracts.rs (target\debug\deps\transport_contracts-c6c348cc3e4903ad.exe)
+
+running 8 tests
+test local_endpoint_rejects_remote_or_ambiguous_names ... ok
+test public_plaintext_bind_is_refused ... ok
+test replay_includes_zero_cursor_and_isolates_other_session_sequences ... ok
+test idle_stream_revocation_is_enforced_and_failure_is_retained ... ok
+test tcp_authentication_and_receipt_roundtrip ... ok
+test mtls_rejects_missing_or_wrong_client_identity ... ok
+test shutdown_closes_idle_streams_within_grace ... ok
+test named_pipe_name_ownership_and_grpc_roundtrip ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_security_secrets-d094716e21e67101.exe)
+
+running 2 tests
+test vault::tests::associated_secret_name_prevents_ciphertext_relabeling ... ok
+test vault::tests::session_key_and_ciphertext_use_distinct_allocations ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_contract.rs (target\debug\deps\secret_contract-bf4a7318d8724860.exe)
+
+running 17 tests
+test system_environment_adapter_reads_only_the_explicit_fixture_name ... ignored, run only with POLARIS_SECRET_FIXTURE set to an isolated synthetic value
+test debug_output_redacts_vault_ciphertext_and_secret_wrapper ... ok
+test system_keyring_store_load_delete_use_only_a_fresh_test_owned_location ... ignored, opt in with POLARIS_TEST_KEYRING=1; creates and removes one random synthetic credential
+test keyring_store_load_and_delete_use_the_injected_fixture_provider ... ok
+test fixture_source_loads_into_scoped_decryption ... ok
+test missing_source_is_typed_and_closure_is_not_called ... ok
+test configured_vault_capacity_accounts_replacements_and_forget ... ok
+test production_environment_adapter_rejects_mutation_without_reading_values ... ok
+test oversized_secret_is_rejected ... ok
+test provider_failure_is_typed_and_does_not_echo_backend_text ... ok
+test system_environment_adapter_reports_a_missing_synthetic_name ... ok
+test seal_open_roundtrip_and_nonce_uniqueness ... ok
+test direct_system_keyring_store_rejects_oversized_value_before_backend_access ... ok
+test vault_aggregate_plaintext_limit_rejects_without_replacing_existing_entry ... ok
+test tampered_ciphertext_is_rejected ... ok
+test oversized_ciphertext_is_rejected_before_decryption ... ok
+test prop_secret_names_are_bounded_and_restricted ... ok
+
+test result: ok. 15 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_config
+
+running 1 test
+test crates\polaris-config\src\lib.rs - (line 15) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+all doctests ran in 1.02s; merged doctests compilation took 0.85s
+   Doc-tests polaris_nebius_cloud_token_factory
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_proto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_rpc
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_security_secrets
+
+running 4 tests
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 128) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SecretVault::with_secret (line 296) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 122) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 134) - compile fail ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+

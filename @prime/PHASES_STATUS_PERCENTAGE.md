@@ -1,8 +1,8 @@
 # Phase completion percentages
 
-> Snapshot: 2026-10-23T15:02:11.174982+00:00 · Working tree, including uncommitted implementation.
+> Snapshot: 2026-10-23T21:58:17.329060+00:00 · Working tree, including uncommitted implementation.
 > **LIKELY — every percentage below is an engineering estimate, not a measured proof of correctness.**
-> **VERIFIED — scope inventory:** 93 workspace packages; 950 first-party source/config/spec files; 585 Rust files read by the inventory pass.
+> **VERIFIED — scope inventory:** 93 workspace packages; 979 first-party source/config/spec files; 603 Rust files read by the inventory pass.
 
 ## How to read the percentages
 
@@ -20,27 +20,30 @@
 |---|---:|---:|---|
 | P0 — Foundations and de-risking | 78% | **72%** | OPEN — audits/access/manual spike conditions remain. |
 | P1 — Offline kernel core | 100% | **95%** | Historical non-UI PASS (2026-10-22); M1/UI deferred; final expanded-tree gates not re-certified. |
-| P2 — Execution plane | 87% | **75%** | OPEN — substantial live evidence; write/shell/blueprint composition and final gates incomplete. |
-| P3 — S2 loop, providers, models and frames | 36% | **17%** | OPEN — complete phase acceptance not demonstrated. |
+| P2 — Execution plane | 87% | **75%** | PAUSED by user — prior live evidence retained; composition/final gates remain open. |
+| P3 — S2 loop, providers, models and frames | 43% | **25%** | OPEN — complete phase acceptance not demonstrated. |
 | P4 — System One, inference and safety | 28% | **10%** | OPEN — complete phase acceptance not demonstrated. |
-| P5 — Knowledge, search, vectors and ingest | 8% | **3%** | OPEN — complete phase acceptance not demonstrated. |
+| P5 — Knowledge, search, vectors and ingest | 17% | **9%** | OPEN — complete phase acceptance not demonstrated. |
 | P6 — Nebius depth and remote execution | 18% | **5%** | OPEN — complete phase acceptance not demonstrated. |
 | P7 — Advanced agentics, research and extensions | 23% | **15%** | OPEN — complete phase acceptance not demonstrated. |
 | P8 — DevEnv and Needle | 44% | **26%** | OPEN — complete phase acceptance not demonstrated. |
-| P9 — Daemon, RPC and interfaces | 20% | **8%** | OPEN — complete phase acceptance not demonstrated. |
+| P9 — Daemon, RPC and interfaces | 44% | **36%** | OPEN — complete phase acceptance not demonstrated. |
 | P10 — Hardening and submission | 33% | **18%** | OPEN — complete phase acceptance not demonstrated. |
 
 **Use the bold Verified % as the conservative progress indicator.** No percentage converts the current system into a production-ready release.
 
 ## Current facts that limit readiness
 
+- **VERIFIED failure:** `cargo xtask check-witness` reports one existing skills unit-test fixture constructing `ApprovalWitness` outside SDK/verifier at `approval_cache.rs:197`. The check and fixture remain unchanged; the source-policy gate is RED. [Current gate output](evidence/continuation/consistency.txt).
+- **VERIFIED:** non-UI P3/P5/P9 continuation adds actual secret custody, bounded frame execution/journaling, scoped SQLite/HNSW storage and authenticated native/network RPC. Current commands, limitations and failures are recorded in [E32](PHASES_STATUS.md#e32--non-ui-p3p5p9-continuation-2026-10-24). Full phase acceptance remains open.
+- **VERIFIED failure:** the existing SDK `blast_alert_requires_schema_three` assertion accepts only schema 3; additive frame events require schema 4, where older event kinds remain legal. That assertion is retained unchanged and the full SDK suite is not green. Focused current-schema contracts pass.
 - **VERIFIED:** P1’s scoped 2026-10-22 record contains 1,009 passing Windows tests, Linux checks and separate workload/fuzz/formal evidence. That is a historical scoped acceptance, not a fresh all-phase result: [P1 record](P1_LOGIC_STATUS.md), [raw excerpt](evidence/p1/verification.txt).
 - **VERIFIED:** current P2 evidence includes an immutable image, actual 3 ordinary + 2 independent sandbox tests, signed review/proof, 100 create/exec/destroy cycles on the 6-GiB VM, real gateway interruption recovery and zero final resources: [P2 checkpoint](P2_LOGIC_STATUS.md).
 - **VERIFIED:** corrected 6-GiB S0-7: initial apply 6,333ms, incremental 5,180ms, fresh remote no-op round trip 109ms; real 10k checkout overflow/rescan passed in 325.85s. [S0-7 raw](tmp/p2/sync-s0-7-live-6g-roundtrip.txt), [checkout raw](tmp/p2/checkout-flood-real-6g.txt).
 - **VERIFIED:** new builtin proposal/shell library paths have focused tests, but the current kernel still uses P1 tools and has no working general `ProposeDiff` dispatch. Existing-file replacement is implemented; create-new `write_file` is missing. Library schemas alone do not close this integration gap.
 - **VERIFIED:** current dependency gate failed on one vulnerability and four unmaintained findings. `ctutils` was updated 0.4.3 → 0.4.4; a clean post-update deny result is **not yet established**. `cargo vet --locked` reports **584 unvetted dependencies**. No new exemption was added. [deny raw](tmp/p2/current-dependency-deny.txt), [vet raw](tmp/p2/current-dependency-vet.txt), [update raw](tmp/p2/ctutils-security-update.txt).
 - **VERIFIED:** strict workspace Clippy failed; focused condition/conversion fixes were checked afterwards, but there is no final full clean result yet. [full raw](tmp/p2/current-workspace-clippy.txt), [focused raw](tmp/p2/clippy-sync-ratelimit2.txt).
-- **VERIFIED failure / NOT VERIFIED property:** the full arbitrary-32-byte entropy Kani attempt reached its 1,500-second harness timeout: `VERIFICATION:- FAILED`, `CBMC timed out`, 0 successful harnesses. It peaked at 2GiB RAM without a cgroup OOM kill. Whole-crate automata Miri is running and has no final verdict. Neither is counted as a successful proof. [Kani raw](tmp/p2/automata-kani-entropy-scoped-20261023-02.txt).
+- **VERIFIED failure / NOT VERIFIED property:** the full arbitrary-32-byte entropy Kani attempt reached its 1,500-second harness timeout: `VERIFICATION:- FAILED`, `CBMC timed out`, 0 successful harnesses. It peaked at 2GiB RAM without a cgroup OOM kill. No final whole-crate automata Miri verdict is captured in this snapshot; P2 is paused. Neither is counted as a successful proof. [Kani raw](tmp/p2/automata-kani-entropy-scoped-20261023-02.txt).
 - **VERIFIED source / NOT VERIFIED execution:** the new resident-pressure scenario compiles and passes focused Clippy but has not run against the real gateway. The generic hardened image context passes locked metadata; its changed full Docker build and production blueprint apply remain unverified.
 - **VERIFIED:** credentials are missing from the doctor’s presence-only report; the report contains no secret payloads. [doctor JSON](evidence/p2/doctor-headless-current.json).
 
@@ -158,13 +161,13 @@
 |---|---:|---:|---|
 | [`polaris-ratelimit`](../crates/polaris-ratelimit/src) | 65% | 20% | Dual RPM/TPM/GCRA reservation/reconciliation source; complete behavioral/load verification missing. |
 | [`polaris-security-capability`](../crates/polaris-security/crates/capability/src) | 85% | 75% | Real signed Biscuit scopes/attenuation/expiry plus tests/fuzz/proofs; full mutation assembly/security audit open. |
-| [`polaris-security-secrets`](../crates/polaris-security/crates/secrets/src) | 0% | 0% | Documentation-only secret vault; no production credential custody implementation. |
-| [`polaris-nebius-cloud-token-factory`](../crates/polaris-nebius-cloud/crates/token-factory/src) | 65% | 30% | Actual HTTP/SSE/tools/models/embeddings source and offline tests; live provider, throughput and full loop absent. |
+| [`polaris-security-secrets`](../crates/polaris-security/crates/secrets/src) | 85% | 75% | Real OS/environment SDK source and bounded zeroizing AEAD vault; Windows synthetic keyring roundtrip and contracts pass. Linux credential backend, fuzz/formal and full composition remain open; E32. |
+| [`polaris-nebius-cloud-token-factory`](../crates/polaris-nebius-cloud/crates/token-factory/src) | 70% | 50% | Actual HTTP/SSE/tools/models/embeddings and injected SDK credentials; local protocol/security fixtures pass. Live keyed provider and full loop remain open; E32. |
 | [`polaris-nebius-cloud-sandboxes`](../crates/polaris-nebius-cloud/crates/sandboxes/src) | 0% | 0% | Documentation-only Contree adapter; access also missing. |
 | [`polaris-nebius-cloud`](../crates/polaris-nebius-cloud/src) | 0% | 0% | Documentation-only facade; child implementations do not implement its own exports. |
 | [`polaris-models`](../crates/polaris-models/src) | 65% | 25% | Catalog/effort/cancellable lifecycle source; real model assembly/eviction and validation incomplete. |
 | [`polaris-tools-math`](../crates/polaris-tools/crates/math/src) | 80% | 55% | Decimal/interpolation/statistics/GPU logic with 25 contracts; full requirements/performance/fuzz audit incomplete. |
-| [`polaris-runtime-frames`](../crates/polaris-runtime/crates/frames/src) | 65% | 20% | Frame typestate/quota/scope/streamed-step logic; working composed S2 loop not demonstrated. |
+| [`polaris-runtime-frames`](../crates/polaris-runtime/crates/frames/src) | 85% | 65% | Bounded multi-turn model/tool/verifier driver, quota accounting, CAS-bound results and durable step journal. Focused contracts pass; production local edit/test/proof assembly remains open; E32. |
 | [`polaris-runtime-context`](../crates/polaris-runtime/crates/context/src) | 65% | 20% | Folding/assembly/scratchpad/prefix logic; end-to-end context lifecycle not verified. |
 | [`polaris-kernel-operators`](../crates/polaris-kernel/crates/operators/src) | 65% | 20% | Typed operators/retry/cancel policies exist; production agent-loop composition and validation open. |
 | [`polaris-kernel-verifier`](../crates/polaris-kernel/crates/verifier/src) | 60% | 20% | Hybrid mutation/evidence logic exists; only narrower authority/terminal cases verified, full mutation route open. |
@@ -203,7 +206,7 @@
 
 | Crate / subphase | Code % | Verified % | What exists / what remains |
 |---|---:|---:|---|
-| [`polaris-storage-vector`](../crates/polaris-storage/crates/vector/src) | 0% | 0% | Documentation-only VectorStore implementation. |
+| [`polaris-storage-vector`](../crates/polaris-storage/crates/vector/src) | 85% | 60% | Real scoped usearch/SQLite store with immutable embedding identity, atomic mutations, exact pre-limit payload filtering and cache recovery. Focused contracts pass; measured 100k x 768 debug/release throughput misses the target. Broader crash/recall and optional LanceDB gates remain open; E32. |
 | [`polaris-ingest`](../crates/polaris-ingest/src) | 0% | 0% | Documentation-only document/OCR ingestion. |
 | [`polaris-search-providers`](../crates/polaris-search/crates/providers/src) | 0% | 0% | Documentation-only live search providers. |
 | [`polaris-search-sift`](../crates/polaris-search/crates/sift/src) | 60% | 20% | Provenance-preserving sift/fallback logic; integrated source races and validation incomplete. |
@@ -266,7 +269,7 @@
 | [`polaris-desktop`](../apps/polaris-desktop/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-web`](../apps/polaris-web/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-daemon`](../apps/polaris-daemon/src) | 0% | 0% | Documentation-only daemon; no authenticated running listener. |
-| [`polaris-rpc`](../crates/polaris-rpc/src) | 50% | 20% | Request auth/service adapter source; named-pipe/mTLS listener assembly and live verification absent. |
+| [`polaris-rpc`](../crates/polaris-rpc/src) | 85% | 70% | Real pipe/UDS/TCP+mTLS servers and credential-bound SDK client; Windows/Linux network, receipt, replay and shutdown checks pass. Production daemon/full-kernel assembly remains open; E32. |
 | [`polaris-ui-gui`](../crates/polaris-ui/crates/gui/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-ui-web`](../crates/polaris-ui/crates/web/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-spike-web`](../tests/spike/web/src) | 0% | 0% | Documentation-only backend connection/load spike. |
@@ -274,7 +277,7 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P9-X-1` | 0% | 0% | Welcome-page visual acceptance is user-deferred. **UI deferred; excluded from aggregate.** |
-| `P9-X-2` | 30% | 10% | Auth helpers exist; no complete named-pipe/mTLS running transport acceptance. |
+| `P9-X-2` | 90% | 75% | Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass; independent security audit and production daemon assembly remain open; E32. |
 
 ### P10 — Hardening and submission
 
@@ -341,7 +344,7 @@ These are the retained doctor observations on this reference PC. A successful in
 
 Excluded from implementation credit: third-party `vendor/`, generated/build output, `target/`, dependency-probe resolution copies, `@prime/tmp/`, node_modules, fuzz corpora and binaries. Test/fixture source is inventoried but its mere presence does not count as a passing run. Existing PLAN checkbox state and status labels were not treated as sole evidence.
 
-Inventory: [source-inventory.json](evidence/progress/source-inventory.json). Source fingerprint SHA256: `d03dcfc169984a10092ff72f6b2d05794024efd3e528802e994adde21c6f393d`. The working tree is changing during ongoing P2 implementation; this snapshot should be refreshed after the pending integration/final checks.
+Inventory: [source-inventory.json](evidence/progress/source-inventory.json). Source fingerprint SHA256: `a6b9a1e9da9af93ccc53a048ced57d9b4b31f3d8a80f172f06dc1a139becede5`. The working tree is changing during non-UI P3/P5/P9 implementation; P2 is paused. This snapshot is an evidence checkpoint, not phase acceptance.
 
 Important status reconciliation: `PHASES_STATUS.md` still has old P2 text such as “doc-only sandbox spike” or “live acceptance pending”; current code and newer raw P2 logs supersede those descriptions. Conversely, its P1 PASS labels certify the P1 slice, not later extensions in those crates. This report does not rewrite historical evidence or mark any open phase PASS.
 
@@ -349,10 +352,10 @@ Sources: [prompt.md](prompt.md), [PLAN.md](PLAN.md), [PHASES.md](PHASES.md), [PH
 
 ## Highest-impact unfinished work
 
-1. Finish P2 production proposal/write/sandbox-shell and blueprint composition, including new-file edits and the intended hybrid authorization path.
-2. Close P2 formal/adversarial evidence and run the complete current Windows/Linux verification matrix; resolve dependency/security failures without weakening gates.
-3. Compose P3 into an actual local plan → edit → sandbox test → proof loop; then validate keyed services when access exists.
+1. Compose P3 into an actual local plan/edit/test/proof run using the real provider, tool, context and journal adapters; close transcript/usage and cross-backend acceptance gaps.
+2. Complete later non-UI worker/inference, retrieval/ingest/provider, research/MCP/browser/hacker and daemon compositions; close representative performance and dependency/security gates.
+3. Validate keyed Token Factory, Contree, search and cloud integrations when access exists; local fixtures do not certify those services.
 4. Implement the S1 worker/engine/client and calibrated runtime path before treating the P4 policy/router code as a working System One.
-5. Complete the absent provider/vector/ingest/MCP/browser/hacker/daemon adapters and their real integration before claiming later phases production-ready.
+5. P2 work is explicitly paused by the user. Its retained write/shell/blueprint composition, formal and adversarial gaps remain open for a later resumption.
 
 No UI work is authorized by this report; UI remains deferred.

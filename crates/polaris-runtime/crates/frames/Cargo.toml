@@ -26,3 +26,5 @@ polaris-models = { workspace = true }
 
 [dev-dependencies]
 bytes = { workspace = true }
+polaris-storage-cas = { workspace = true }
+polaris-storage-eventlog = { workspace = true }

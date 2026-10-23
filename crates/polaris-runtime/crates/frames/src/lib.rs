@@ -10,7 +10,10 @@ mod scope;
 mod state;
 mod step;
 
-pub use journal::{FrameJournal, FrameJournalError, FrameStepRecord, JournalAdapter};
+pub use journal::{
+    FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameStepRecord,
+    JournalAdapter,
+};
 pub use polaris_sdk::ids::{AgentRole, Cid, FastFingerprint, FrameId, ModelId, TokenCount};
 pub use polaris_security_capability::Scope;
 pub use quota::{NetworkPolicy, QuotaError, QuotaLease, ResourceQuota};
@@ -20,7 +23,8 @@ pub use state::{
     FrameView, ModelSelection, ScratchpadRef, Spawned, StepNo, Suspended,
 };
 pub use step::{
-    AssembleRequest, Cancellation, ExecutedToolResult, FramePrompt, FrameRunLimits,
-    FrameRunOutcome, FrameRunStop, StepExecution, StepInput, StepOutcome, StepTool, StepVerifier,
-    ToolCall, ToolResultRef, ToolRunner, Verification, run_frame, run_step,
+    AssembleRequest, AssistantResponseCapture, Cancellation, CapturedToolCall, ExecutedToolResult,
+    FramePrompt, FrameRunInput, FrameRunLimits, FrameRunOutcome, FrameRunStop, StepExecution,
+    StepInput, StepOutcome, StepTool, StepVerifier, ToolCall, ToolResultRef, ToolRunner,
+    Verification, run_frame, run_step,
 };

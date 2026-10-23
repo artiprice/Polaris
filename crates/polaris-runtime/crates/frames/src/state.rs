@@ -142,6 +142,9 @@ pub enum FrameError {
     /// Stream ended without a terminal finish chunk.
     #[error("model stream ended before a finish chunk")]
     IncompleteStream,
+    /// Provider emitted chunks after its finish marker or repeated the finish marker.
+    #[error("invalid model stream chunk ordering")]
+    InvalidStream,
     /// Tool call fragments were incomplete or malformed.
     #[error("invalid model tool call")]
     InvalidToolCall,
@@ -170,9 +173,10 @@ impl HasKind for FrameError {
 
             Self::Model(error) => error.kind(),
             Self::Cancelled => ErrorKind::Transient,
-            Self::OutputLimit | Self::IncompleteStream | Self::InvalidToolCall => {
-                ErrorKind::Permanent
-            }
+            Self::OutputLimit
+            | Self::IncompleteStream
+            | Self::InvalidStream
+            | Self::InvalidToolCall => ErrorKind::Permanent,
             Self::Backend(kind, _) => *kind,
         }
     }
@@ -370,9 +374,10 @@ impl AgentContextFrame<Active> {
             .token_budget
             .checked_sub(input)
             .ok_or(FrameError::TokenBudget)?;
-        let available_output = match u32::try_from(available) {
-            Ok(value) => value,
-            Err(_) => u32::MAX,
+        let available_output = if available > u64::from(u32::MAX) {
+            u32::MAX
+        } else {
+            u32::try_from(available).map_err(|_| FrameError::Accounting)?
         };
         let output =
             requested_output.map_or(available_output, |count| count.get().min(available_output));

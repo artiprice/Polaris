@@ -1,6 +1,32 @@
 //! Provider error types without secret-bearing diagnostics.
 
 use polaris_sdk::registry::ModelError;
+use polaris_sdk::{
+    error::{ErrorKind, HasKind},
+    secrets::SecretSourceError,
+};
+
+/// Credential resolution failures without source identifiers or secret values.
+#[derive(Debug, Clone, Copy, thiserror::Error)]
+pub enum CredentialError {
+    /// The explicitly selected source could not complete the read.
+    #[error("credential provider failed: {0}")]
+    Source(#[from] SecretSourceError),
+    /// The selected location has no value; no other location is tried.
+    #[error("configured credential is missing")]
+    Missing,
+    /// The provider returned an empty or header-unsafe credential.
+    #[error("configured credential is invalid")]
+    Invalid,
+}
+impl HasKind for CredentialError {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::Source(error) => error.kind(),
+            Self::Missing | Self::Invalid => ErrorKind::Permanent,
+        }
+    }
+}
 
 /// Configuration, transport, or protocol failure in the Token Factory adapter.
 #[derive(Debug, thiserror::Error)]

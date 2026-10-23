@@ -9,20 +9,28 @@
       "description": "Deleting an id removes that row from the current table and scope without affecting another partition."
     },
     {
-      "test_name": "reopen_rebuilds_a_missing_index_from_sqlite_authority",
-      "description": "Removing the persisted HNSW cache file does not lose rows and reopening reconstructs searchable results from SQLite."
+      "test_name": "reopen_rebuilds_missing_or_corrupt_index_from_sqlite_authority",
+      "description": "Removing or truncating the persisted HNSW cache does not lose rows; reopening reconstructs searchable results from SQLite."
     },
     {
-      "test_name": "reopen_recovers_from_corrupt_index_file",
-      "description": "A truncated or invalid HNSW artifact is discarded and rebuilt from committed SQLite vectors."
+      "test_name": "rebuilds_parseable_same_count_index_with_wrong_keys",
+      "description": "A parseable cache from another same-sized table is rejected by verifying index keys and vectors against SQLite rows."
     },
     {
-      "test_name": "failed_transaction_leaves_existing_rows_and_index_usable",
+      "test_name": "reopening_collects_old_published_index_files",
+      "description": "Reopening removes obsolete published cache generations while preserving the current index."
+    },
+    {
+      "test_name": "failed_sqlite_commit_keeps_previous_rows_searchable",
       "description": "A failed SQLite commit leaves the last committed data searchable and does not publish an index generation."
     },
     {
-      "test_name": "concurrent_upserts_and_searches_are_serialized_safely",
+      "test_name": "concurrent_upserts_and_searches_preserve_committed_rows",
       "description": "Shared-handle concurrent readers and writers return valid results and preserve every committed row."
+    },
+    {
+      "test_name": "concurrent_handles_upsert_batches_and_reopen_without_lost_rows",
+      "description": "Independent SQLite handles serialize overlapping batch commits and reopen with all rows present."
     }
   ],
   "dependencies": [
@@ -33,6 +41,7 @@
   "libraries": [
     "rusqlite",
     "usearch",
+    "rayon",
     "tempfile (dev)",
     "proptest (dev)"
   ],

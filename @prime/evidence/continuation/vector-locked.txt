@@ -1,0 +1,40 @@
+    Finished `dev` profile [unoptimized] target(s) in 0.71s
+    Finished `test` profile [unoptimized] target(s) in 0.69s
+     Running unittests src\lib.rs (target\debug\deps\polaris_storage_vector-d9309061e4b1fee5.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\vector_store.rs (target\debug\deps\vector_store-235e5dab98604714.exe)
+
+running 20 tests
+test benchmark_ingests_one_hundred_thousand_local_vectors ... ignored, manual native ingestion throughput characterization
+test creates_table_with_dimension_embedder_and_metric ... ok
+test invalid_names_dimensions_and_zero_cosine_vectors_are_rejected ... ok
+test empty_search_and_zero_limit_return_no_results ... ok
+test rejects_dimension_mismatch_and_non_finite_vectors_atomically ... ok
+test rejects_dimension_embedder_and_metric_mismatch ... ok
+test filters_payloads_before_applying_result_limit ... ok
+test failed_sqlite_commit_keeps_previous_rows_searchable ... ok
+test sdk_vector_store_adapter_uses_the_handles_fixed_scope ... ok
+test concurrent_handles_upsert_batches_and_reopen_without_lost_rows ... ok
+test reopening_collects_old_published_index_files ... ok
+test metric_scores_are_finite_and_higher_is_closer ... ok
+test delete_only_removes_ids_from_the_bound_scope ... ok
+test upsert_same_id_replaces_vector_and_payload ... ok
+test rebuilds_parseable_same_count_index_with_wrong_keys ... ok
+test concurrent_upserts_and_searches_preserve_committed_rows ... ok
+test successful_mutations_reclaim_obsolete_index_generations ... ok
+test session_scope_never_reads_global_or_other_session_rows ... ok
+test reopen_rebuilds_missing_or_corrupt_index_from_sqlite_authority ... ok
+test prop_inserted_vector_is_top_hit_among_fifty_rows ... ok
+
+test result: ok. 19 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 10.94s
+
+   Doc-tests polaris_storage_vector
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

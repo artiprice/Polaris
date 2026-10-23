@@ -1,1 +1,66 @@
-{"type_of":"module","name":"transport","file_path":"crates/polaris-rpc/src/transport.rs","logic_name":"Authenticated RPC transports","test_list":[{"test_name":"public_plaintext_bind_is_refused","description":"Off-loopback TCP refuses to bind without mandatory mTLS."},{"test_name":"named_pipe_name_ownership_and_grpc_roundtrip","description":"First named-pipe instance owns the name, the next listener is created before handoff, remote clients are rejected and actual authenticated gRPC traffic round-trips."},{"test_name":"tcp_authentication_and_receipt_roundtrip","description":"Real loopback HTTP/2 rejects missing credentials, accepts a valid bounded capability and preserves command acceptance sequence."},{"test_name":"shutdown_closes_idle_streams_within_grace","description":"A live event stream cannot keep transport shutdown alive beyond the configured grace."},{"test_name":"mtls_rejects_missing_or_wrong_client_identity","description":"Real TLS handshakes require the configured client CA and pinned server identity; neither TLS nor capability checks may downgrade."}],"dependencies":["KernelApi","RpcService","RpcAuthenticator"],"libraries":["tonic","tokio","tokio-util","tower","hyper-util","secrecy"],"inputs":[{"name":"service","type":"RpcService<K,T,A,H>","description":"Authenticated generic SDK service; no arbitrary unauthenticated service entry point."}],"output_type":"Result<(), TransportError>","output_description":"Bounded real pipe/UDS/TCP transport with explicit graceful shutdown and cancellation-owned connections."}
+{
+  "type_of": "module",
+  "name": "transport",
+  "file_path": "crates/polaris-rpc/src/transport.rs",
+  "logic_name": "Authenticated RPC transports",
+  "test_list": [
+    {
+      "test_name": "public_plaintext_bind_is_refused",
+      "description": "Off-loopback TCP refuses to bind without mandatory mTLS."
+    },
+    {
+      "test_name": "named_pipe_name_ownership_and_grpc_roundtrip",
+      "description": "First named-pipe instance owns the name, the next listener is created before handoff, remote clients are rejected and actual authenticated gRPC traffic round-trips."
+    },
+    {
+      "test_name": "tcp_authentication_and_receipt_roundtrip",
+      "description": "Real loopback HTTP/2 rejects missing credentials, accepts a valid bounded capability and preserves command acceptance sequence."
+    },
+    {
+      "test_name": "shutdown_closes_idle_streams_within_grace",
+      "description": "A live event stream cannot keep transport shutdown alive beyond the configured grace."
+    },
+    {
+      "test_name": "mtls_rejects_missing_or_wrong_client_identity",
+      "description": "Real TLS handshakes require the configured client CA and pinned server identity; neither TLS nor capability checks may downgrade."
+    },
+    {
+      "test_name": "local_endpoint_rejects_remote_or_ambiguous_names",
+      "description": "Remote UNC, traversal and ambiguous pipe basenames fail validation."
+    },
+    {
+      "test_name": "replay_includes_zero_cursor_and_isolates_other_session_sequences",
+      "description": "Zero cursor is inclusive; foreign-session and duplicate records cannot hide or duplicate eligible events."
+    },
+    {
+      "test_name": "idle_stream_revocation_is_enforced_and_failure_is_retained",
+      "description": "Revoking an idle stream terminates it, retains typed failure after EOF, and rejects later RPCs."
+    },
+    {
+      "test_name": "unix_private_socket_roundtrip_and_cleanup",
+      "description": "Actual Linux private UDS ownership, authenticated RPC and owned-path cleanup."
+    }
+  ],
+  "dependencies": [
+    "KernelApi",
+    "RpcService",
+    "RpcAuthenticator"
+  ],
+  "libraries": [
+    "tonic",
+    "tokio",
+    "tokio-util",
+    "tower",
+    "hyper-util",
+    "secrecy"
+  ],
+  "inputs": [
+    {
+      "name": "service",
+      "type": "RpcService<K,T,A,H>",
+      "description": "Authenticated generic SDK service; no arbitrary unauthenticated service entry point."
+    }
+  ],
+  "output_type": "Result<(), TransportError>",
+  "output_description": "Bounded real pipe/UDS/TCP transport with explicit graceful shutdown and cancellation-owned connections."
+}

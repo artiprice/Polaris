@@ -3,8 +3,8 @@ use std::sync::Mutex;
 
 use polaris_sdk::secrets::{KeyringLocation, SecretLocation, SecretSource, SecretSourceError};
 use polaris_security_secrets::{
-    CapacityResource, SecretName, SecretVault, SystemSecretSource, VaultLimits,
-    MAX_KEYRING_SECRET_BYTES, MAX_SECRET_BYTES,
+    CapacityResource, MAX_KEYRING_SECRET_BYTES, MAX_SECRET_BYTES, SecretName, SecretVault,
+    SystemSecretSource, VaultLimits,
 };
 use proptest::prelude::*;
 use secrecy::{ExposeSecret, SecretString};

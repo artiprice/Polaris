@@ -9,7 +9,9 @@ use core::future::Future;
 use core::time::Duration;
 
 use bytes::Bytes;
+use secrecy::SecretString;
 
+use crate::content::{ContentStore, ContentStoreError};
 use crate::contracts::{Command, EventRecord, Unverified};
 use crate::ids::{Cid, Seq};
 use crate::registry::{
@@ -21,6 +23,7 @@ use crate::registry::{
     SandboxBackend, SandboxError, SandboxHandle, SandboxSpec, SearchError, SearchHit, SearchQuery,
     SpawnSpec, StopOutcome, VectorChunk, VectorError, VectorHit, VectorStore, WebSearch,
 };
+use crate::secrets::{SecretLocation, SecretSource, SecretSourceError};
 use crate::system_one::{Decision, DecisionInput, Question};
 
 /// Every backend the kernel needs, chosen once at the composition root.
@@ -268,6 +271,34 @@ macro_rules! forward_all {
                 $each!(self, v => v.clear_scope(scope))
             }
         }
+
+        impl<$($p: SecretSource),+> SecretSource for $wrapper<$($p),+> {
+            fn load(&self, location: &SecretLocation) -> Result<Option<SecretString>, SecretSourceError> {
+                $each!(self, v => v.load(location))
+            }
+
+            fn store(&self, location: &SecretLocation, value: &SecretString) -> Result<(), SecretSourceError> {
+                $each!(self, v => v.store(location, value))
+            }
+
+            fn delete(&self, location: &SecretLocation) -> Result<bool, SecretSourceError> {
+                $each!(self, v => v.delete(location))
+            }
+        }
+
+        impl<$($p: ContentStore),+> ContentStore for $wrapper<$($p),+> {
+            fn put(&self, content: &[u8]) -> Result<Cid, ContentStoreError> {
+                $each!(self, v => v.put(content))
+            }
+
+            fn contains(&self, cid: &Cid) -> Result<bool, ContentStoreError> {
+                $each!(self, v => v.contains(cid))
+            }
+
+            fn get(&self, cid: &Cid, max_bytes: u64) -> Result<Bytes, ContentStoreError> {
+                $each!(self, v => v.get(cid, max_bytes))
+            }
+        }
     };
 }
 
@@ -309,10 +340,10 @@ mod shared {
     use std::sync::Arc;
 
     use super::{
-        CacheScope, CacheStoreError, Cid, DocParser, DocSource, Document, EventRecord, EventStore,
-        EventStoreError, ExactCacheStore, ExecOutput, ExecRequest, IngestError, RedactStats,
-        Redactor, SandboxBackend, SandboxError, SandboxHandle, SandboxSpec, Seq, VectorChunk,
-        VectorError, VectorHit, VectorStore,
+        CacheScope, CacheStoreError, Cid, ContentStore, ContentStoreError, DocParser, DocSource,
+        Document, EventRecord, EventStore, EventStoreError, ExactCacheStore, ExecOutput,
+        ExecRequest, IngestError, RedactStats, Redactor, SandboxBackend, SandboxError,
+        SandboxHandle, SandboxSpec, Seq, VectorChunk, VectorError, VectorHit, VectorStore,
     };
     use crate::registry::SandboxSnapshotPage;
     use bytes::Bytes;
@@ -369,6 +400,20 @@ mod shared {
 
         fn clear_scope(&self, scope: &CacheScope) -> Result<u64, CacheStoreError> {
             (**self).clear_scope(scope)
+        }
+    }
+
+    impl<T: ContentStore + ?Sized> ContentStore for Arc<T> {
+        fn put(&self, content: &[u8]) -> Result<Cid, ContentStoreError> {
+            (**self).put(content)
+        }
+
+        fn contains(&self, cid: &Cid) -> Result<bool, ContentStoreError> {
+            (**self).contains(cid)
+        }
+
+        fn get(&self, cid: &Cid, max_bytes: u64) -> Result<Bytes, ContentStoreError> {
+            (**self).get(cid, max_bytes)
         }
     }
 

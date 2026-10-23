@@ -1,0 +1,19 @@
+Observed command result: non-ui-phase-format.txt
+{
+  "command": "cargo fmt --all -- --check",
+  "exit_code": 0
+}
+
+Observed command result: non-ui-phase-members.txt
+check-members: 93 packages -> OK
+
+Observed command result: non-ui-phase-layers.txt
+check-layers: 93 packages, 267 edges -> OK
+
+Observed command result: cargo xtask check-witness
+FAIL ApprovalWitness::new outside sdk/verifier at crates/polaris-ext/crates/skills/src/approval_cache.rs:197
+check-witness: 1 violation(s) -> FAILED
+
+Document commands: python -I @prime/tools/workspace.py render-docs --check; python -I @prime/tools/workspace.py check-docs
+PHASES.md: up to date (11 generated blocks)
+PHASES_STATUS.md: up to date (10 generated blocks)

@@ -1,0 +1,24 @@
+   Compiling polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Finished `test` profile [unoptimized] target(s) in 5.38s
+     Running tests\transport_contracts.rs (target\debug\deps\transport_contracts-65c37e71b9cf2382.exe)
+
+running 1 test
+test replay_includes_zero_cursor_and_isolates_other_session_sequences ... FAILED
+
+failures:
+
+---- replay_includes_zero_cursor_and_isolates_other_session_sequences stdout ----
+
+thread 'replay_includes_zero_cursor_and_isolates_other_session_sequences' (5016) panicked at crates\polaris-rpc\tests\transport_contracts.rs:183:9:
+assertion `left == right` failed
+  left: []
+ right: [0, 1, 2]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    replay_includes_zero_cursor_and_isolates_other_session_sequences
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p polaris-rpc --test transport_contracts`

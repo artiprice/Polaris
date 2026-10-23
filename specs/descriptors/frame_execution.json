@@ -17,8 +17,12 @@
       "description": "Repeated tool-call turns stop before a model invocation beyond the configured tool-round limit."
     },
     {
-      "test_name": "cancellation_keeps_reserved_step_and_tokens_charged",
+      "test_name": "cancellation_records_an_incomplete_assistant_stream_as_partial_and_keeps_reserved_quota",
       "description": "Cancellation during a provider stream returns Cancelled and does not refund reserved model tokens or the step attempt."
+    },
+    {
+      "test_name": "cancellation_after_tool_execution_journals_the_partial_result",
+      "description": "Cancellation between already authorized tool calls journals the completed result, exact assistant call name/arguments/ID, and complete provider finish state."
     },
     {
       "test_name": "provider_finish_reason_must_match_tool_call_presence",
@@ -29,12 +33,20 @@
       "description": "Accepted verifier CIDs are recorded against the reserved step; rejected and claimed-done outcomes do not add diff history."
     },
     {
+      "test_name": "claimed_done_remains_unproven_and_keeps_frame_active",
+      "description": "A model completion claim stops this bounded run without creating proof, diff history, or changing the active frame state."
+    },
+    {
       "test_name": "frame_execution_preserves_tool_result_cas_references",
       "description": "Tool result CIDs remain attached to the exact model-issued call identity as the transcript is carried across bounded steps."
     },
     {
       "test_name": "tool_model_visible_content_must_match_durable_cid",
       "description": "A tool result whose model-visible content does not hash to its declared content CID is rejected before verifier acceptance or replay."
+    },
+    {
+      "test_name": "tool_outputs_are_bounded_before_model_replay",
+      "description": "The configured maximum model-visible result byte count is passed to the tool adapter and oversized results never reach verification or a later model request."
     }
   ],
   "dependencies": [
@@ -44,7 +56,7 @@
     "ToolRunner",
     "StepVerifier"
   ],
-  "libraries": ["tokio", "tokio-util"],
+  "libraries": ["tokio", "tokio-util", "blake3", "serde_json"],
   "inputs": [
     {
       "name": "frame",
@@ -65,6 +77,11 @@
       "name": "maximum_tool_rounds",
       "type": "u32",
       "description": "Hard ceiling on tool-bearing model turns."
+    },
+    {
+      "name": "max_tool_result_bytes",
+      "type": "usize",
+      "description": "Maximum model-visible tool result size passed into the tool adapter and checked again by the frame."
     }
   ],
   "output_type": "Result<FrameRunOutcome, FrameError>",

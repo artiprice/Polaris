@@ -1,5 +1,5 @@
 {
-  "snapshot_utc": "2026-10-23T15:02:11.174982+00:00",
+  "snapshot_utc": "2026-10-23T21:58:17.329060+00:00",
   "package_estimates": {
     "polaris-sdk": {
       "code": 100,
@@ -260,15 +260,15 @@
       "ui": false
     },
     "polaris-security-secrets": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only secret vault; no production credential custody implementation.",
+      "code": 85,
+      "verified": 75,
+      "reason": "Real OS/environment SDK source and bounded zeroizing AEAD vault; Windows synthetic keyring roundtrip and contracts pass. Linux credential backend, fuzz/formal and full composition remain open; E32.",
       "ui": false
     },
     "polaris-nebius-cloud-token-factory": {
-      "code": 65,
-      "verified": 30,
-      "reason": "Actual HTTP/SSE/tools/models/embeddings source and offline tests; live provider, throughput and full loop absent.",
+      "code": 70,
+      "verified": 50,
+      "reason": "Actual HTTP/SSE/tools/models/embeddings and injected SDK credentials; local protocol/security fixtures pass. Live keyed provider and full loop remain open; E32.",
       "ui": false
     },
     "polaris-nebius-cloud-sandboxes": {
@@ -296,9 +296,9 @@
       "ui": false
     },
     "polaris-runtime-frames": {
-      "code": 65,
-      "verified": 20,
-      "reason": "Frame typestate/quota/scope/streamed-step logic; working composed S2 loop not demonstrated.",
+      "code": 85,
+      "verified": 65,
+      "reason": "Bounded multi-turn model/tool/verifier driver, quota accounting, CAS-bound results and durable step journal. Focused contracts pass; production local edit/test/proof assembly remains open; E32.",
       "ui": false
     },
     "polaris-runtime-context": {
@@ -392,9 +392,9 @@
       "ui": false
     },
     "polaris-storage-vector": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only VectorStore implementation.",
+      "code": 85,
+      "verified": 60,
+      "reason": "Real scoped usearch/SQLite store with immutable embedding identity, atomic mutations, exact pre-limit payload filtering and cache recovery. Focused contracts pass; measured 100k x 768 debug/release throughput misses the target. Broader crash/recall and optional LanceDB gates remain open; E32.",
       "ui": false
     },
     "polaris-ingest": {
@@ -524,9 +524,9 @@
       "ui": false
     },
     "polaris-rpc": {
-      "code": 50,
-      "verified": 20,
-      "reason": "Request auth/service adapter source; named-pipe/mTLS listener assembly and live verification absent.",
+      "code": 85,
+      "verified": 70,
+      "reason": "Real pipe/UDS/TCP+mTLS servers and credential-bound SDK client; Windows/Linux network, receipt, replay and shutdown checks pass. Production daemon/full-kernel assembly remains open; E32.",
       "ui": false
     },
     "polaris-spike-web": {
@@ -1036,9 +1036,9 @@
     {
       "phase": "P9",
       "id": "P9-X-2",
-      "code": 30,
-      "verified": 10,
-      "reason": "Auth helpers exist; no complete named-pipe/mTLS running transport acceptance.",
+      "code": 90,
+      "verified": 75,
+      "reason": "Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass; independent security audit and production daemon assembly remain open; E32.",
       "ui": false
     },
     {
@@ -1107,8 +1107,8 @@
       "leaf_count": 19
     },
     "P3": {
-      "code": 36,
-      "verified": 17,
+      "code": 43,
+      "verified": 25,
       "leaf_count": 17
     },
     "P4": {
@@ -1117,8 +1117,8 @@
       "leaf_count": 13
     },
     "P5": {
-      "code": 8,
-      "verified": 3,
+      "code": 17,
+      "verified": 9,
       "leaf_count": 10
     },
     "P6": {
@@ -1137,8 +1137,8 @@
       "leaf_count": 5
     },
     "P9": {
-      "code": 20,
-      "verified": 8,
+      "code": 44,
+      "verified": 36,
       "leaf_count": 4
     },
     "P10": {

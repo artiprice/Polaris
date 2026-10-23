@@ -350,7 +350,7 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
     backpressure_timeout: Duration,
     lease: AuthorizationLease<A>,
 ) {
-    let mut last = Seq::new(from.get().saturating_sub(1));
+    let mut last: Option<Seq> = None;
     let mut rechecks = time::interval(AUTH_RECHECK_INTERVAL);
     rechecks.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
     loop {
@@ -373,13 +373,13 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
             return;
         }
         let sequence = record.seq();
-        if sequence <= last {
+        if record.session() != session
+            || sequence < from
+            || last.is_some_and(|previous| sequence <= previous)
+        {
             continue;
         }
-        last = sequence;
-        if record.session() != session {
-            continue;
-        }
+        last = Some(sequence);
         let wire = pb::EventRecord::from(&record);
         if wire.encoded_len() > limits::MAX_MESSAGE_BYTES {
             let _sent = sender.try_send((

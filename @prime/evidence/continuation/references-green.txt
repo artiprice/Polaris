@@ -1,0 +1,14 @@
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Finished `test` profile [unoptimized] target(s) in 2.30s
+     Running tests\secret_reference_parsing.rs (target\debug\deps\secret_reference_parsing-fefe20b3cb010e0c.exe)
+
+running 6 tests
+test parses_env_scheme ... ok
+test reference_converts_to_validated_sdk_location ... ok
+test rejects_empty_name ... ok
+test rejects_bare_literal ... ok
+test reference_parser_enforces_provider_identifier_bounds ... ok
+test parses_keyring_scheme ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

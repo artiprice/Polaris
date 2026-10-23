@@ -1,0 +1,17 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Finished `test` profile [unoptimized] target(s) in 49.76s
+     Running tests\wire_schema_contract.rs (target\debug\deps\wire_schema_contract-88b0db3a525e7335.exe)
+
+running 8 tests
+test generated_stubs_exist_for_every_service ... ok
+test golden_bytes_are_stable ... ok
+test enums_start_with_unspecified ... ok
+test descriptor_set_lists_the_three_services ... ok
+test guest_handshake_keeps_the_spike_fields ... ok
+test blobs_are_cid_references ... ok
+test growing_messages_reserve_a_range ... ok
+test field_numbers_are_frozen ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

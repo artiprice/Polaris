@@ -1,0 +1,6 @@
+    Blocking waiting for file lock on build directory
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Finished `dev` profile [unoptimized] target(s) in 17.58s

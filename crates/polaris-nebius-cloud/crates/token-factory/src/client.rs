@@ -3,7 +3,6 @@
 use std::{
     borrow::Cow,
     collections::{BTreeMap, BTreeSet, VecDeque},
-    future::Future,
     net::IpAddr,
     pin::Pin,
     sync::Arc,
@@ -93,6 +92,23 @@ fn is_literal_loopback_ip(host: &str) -> bool {
 pub struct ApiKey(SecretString);
 
 impl ApiKey {
+    /// Resolve exactly one explicitly configured SDK location into an opaque API credential.
+    /// No environment, keyring, anonymous, or alternative-location fallback is performed here.
+    ///
+    /// This synchronous source read belongs on a blocking initialization task when used by an
+    /// asynchronous composition root; the HTTP adapter itself never reads host credential state.
+    /// # Errors
+    /// Returns a typed provider failure, missing value, or invalid credential error.
+    pub fn from_source(
+        source: &(impl polaris_sdk::secrets::SecretSource + ?Sized),
+        location: &polaris_sdk::secrets::SecretLocation,
+    ) -> Result<Self, crate::CredentialError> {
+        let secret = source
+            .load(location)?
+            .ok_or(crate::CredentialError::Missing)?;
+        Self::new(secret).map_err(|_| crate::CredentialError::Invalid)
+    }
+
     /// Wrap a credential resolved by the composition root.
     /// # Errors
     /// Returns Configuration for empty credentials or ASCII control characters.
@@ -584,13 +600,13 @@ impl TokenFactoryClient {
                 .headers()
                 .get(reqwest::header::RETRY_AFTER)
                 .and_then(parse_retry_after);
-            if status == StatusCode::TOO_MANY_REQUESTS {
-                if let Some(policy) = &self.rate_limit {
-                    policy
-                        .limiter
-                        .on_response(status.as_u16(), retry_after)
-                        .map_err(rate_limit_error)?;
-                }
+            if status == StatusCode::TOO_MANY_REQUESTS
+                && let Some(policy) = &self.rate_limit
+            {
+                policy
+                    .limiter
+                    .on_response(status.as_u16(), retry_after)
+                    .map_err(rate_limit_error)?;
             }
             let retry_limit = if status == StatusCode::TOO_MANY_REQUESTS {
                 self.inner.config.max_429_retries
@@ -631,14 +647,9 @@ impl std::fmt::Debug for TokenFactoryClient {
 impl ChatModel for TokenFactoryClient {
     type Stream = ProviderStream;
 
-    fn stream(
-        &self,
-        req: ChatRequest,
-    ) -> impl Future<Output = Result<Self::Stream, ModelError>> + Send {
-        async move {
-            self.start_stream(req, StreamProtocol::ChatCompletions)
-                .await
-        }
+    async fn stream(&self, req: ChatRequest) -> Result<Self::Stream, ModelError> {
+        self.start_stream(req, StreamProtocol::ChatCompletions)
+            .await
     }
 }
 
@@ -732,19 +743,14 @@ impl EmbeddingProvider for EmbeddingClient {
         self.expected_dimension
     }
 
-    fn embed(
-        &self,
-        batch: &[&str],
-    ) -> impl Future<Output = Result<Vec<Vec<f32>>, ModelError>> + Send {
-        async move {
-            let result = self.embeddings(batch).await.map_err(ModelError::from)?;
-            if result.dimension != self.expected_dimension {
-                return Err(ModelError::Protocol(
-                    "embedding dimension mismatch".to_owned(),
-                ));
-            }
-            Ok(result.vectors)
+    async fn embed(&self, batch: &[&str]) -> Result<Vec<Vec<f32>>, ModelError> {
+        let result = self.embeddings(batch).await.map_err(ModelError::from)?;
+        if result.dimension != self.expected_dimension {
+            return Err(ModelError::Protocol(
+                "embedding dimension mismatch".to_owned(),
+            ));
         }
+        Ok(result.vectors)
     }
 }
 
@@ -776,63 +782,61 @@ enum StreamProtocol {
 }
 
 impl ChatChunkSource for ProviderStream {
-    fn next_chunk(&mut self) -> impl Future<Output = Option<Result<ChatChunk, ModelError>>> + Send {
-        async move {
-            loop {
-                if let Some(chunk) = self.pending.pop_front() {
-                    return Some(chunk);
+    async fn next_chunk(&mut self) -> Option<Result<ChatChunk, ModelError>> {
+        loop {
+            if let Some(chunk) = self.pending.pop_front() {
+                return Some(chunk);
+            }
+            if self.terminal {
+                return None;
+            }
+            let remaining = self
+                .stream_deadline
+                .saturating_duration_since(tokio::time::Instant::now());
+            if remaining.is_zero() {
+                return self.fail(TfError::Timeout);
+            }
+            let next = tokio::time::timeout(
+                remaining.min(self.config.stream_idle_timeout),
+                self.body.next(),
+            )
+            .await;
+            match next {
+                Err(_) => return self.fail(TfError::Timeout),
+                Ok(Some(Err(error))) => {
+                    return self.fail(if error.is_timeout() {
+                        TfError::Timeout
+                    } else {
+                        TfError::Transport
+                    });
                 }
-                if self.terminal {
-                    return None;
-                }
-                let remaining = self
-                    .stream_deadline
-                    .saturating_duration_since(tokio::time::Instant::now());
-                if remaining.is_zero() {
-                    return self.fail(TfError::Timeout);
-                }
-                let next = tokio::time::timeout(
-                    remaining.min(self.config.stream_idle_timeout),
-                    self.body.next(),
-                )
-                .await;
-                match next {
-                    Err(_) => return self.fail(TfError::Timeout),
-                    Ok(Some(Err(error))) => {
-                        return self.fail(if error.is_timeout() {
-                            TfError::Timeout
-                        } else {
-                            TfError::Transport
-                        });
+                Ok(Some(Ok(bytes))) => {
+                    self.raw_bytes = match self.raw_bytes.checked_add(bytes.len()) {
+                        Some(total) if total <= self.config.max_chat_stream_bytes => total,
+                        _ => return self.fail(TfError::TooLarge),
+                    };
+                    if let Err(error) = self.route_bytes(&bytes) {
+                        return self.fail(error);
                     }
-                    Ok(Some(Ok(bytes))) => {
-                        self.raw_bytes = match self.raw_bytes.checked_add(bytes.len()) {
-                            Some(total) if total <= self.config.max_chat_stream_bytes => total,
-                            _ => return self.fail(TfError::TooLarge),
-                        };
-                        if let Err(error) = self.route_bytes(&bytes) {
+                }
+                Ok(None) => {
+                    if !self.eof_flushed {
+                        if let Err(error) = self.finish_parser() {
                             return self.fail(error);
                         }
+                        self.eof_flushed = true;
                     }
-                    Ok(None) => {
-                        if !self.eof_flushed {
-                            if let Err(error) = self.finish_parser() {
-                                return self.fail(error);
-                            }
-                            self.eof_flushed = true;
-                        }
-                        if !self.saw_done || self.finish_reason.is_none() {
-                            return self.fail(TfError::StreamTruncated);
-                        }
-                        if let Err(error) = self.validate_tool_calls() {
-                            return self.fail(error);
-                        }
-                        self.terminal = true;
-                        let Some(reason) = self.finish_reason else {
-                            return self.fail(TfError::StreamTruncated);
-                        };
-                        return Some(Ok(ChatChunk::Finished(reason)));
+                    if !self.saw_done || self.finish_reason.is_none() {
+                        return self.fail(TfError::StreamTruncated);
                     }
+                    if let Err(error) = self.validate_tool_calls() {
+                        return self.fail(error);
+                    }
+                    self.terminal = true;
+                    let Some(reason) = self.finish_reason else {
+                        return self.fail(TfError::StreamTruncated);
+                    };
+                    return Some(Ok(ChatChunk::Finished(reason)));
                 }
             }
         }
@@ -877,10 +881,10 @@ impl ProviderStream {
             }
             SseEventRef::Data(data) => {
                 if self.protocol == StreamProtocol::Responses {
-                    return self.consume_responses_event(&data);
+                    return self.consume_responses_event(data);
                 }
                 let chunk: ChatCompletionChunk<'_> =
-                    serde_json::from_str(&data).map_err(|_| TfError::Json)?;
+                    serde_json::from_str(data).map_err(|_| TfError::Json)?;
                 if chunk.choices.len() > 1 {
                     return Err(TfError::Protocol);
                 }
@@ -1270,11 +1274,11 @@ impl From<UsageWire> for Usage {
         let cached = value
             .prompt_tokens_details
             .and_then(|details| details.cached_tokens)
-            .map_or(0, |tokens| tokens);
+            .map_or_else(|| TokenCount::new(0), TokenCount::new);
         Self {
             prompt_tokens: TokenCount::new(value.prompt_tokens),
             completion_tokens: TokenCount::new(value.completion_tokens),
-            cached_tokens: TokenCount::new(cached),
+            cached_tokens: cached,
         }
     }
 }
@@ -1294,17 +1298,14 @@ struct ResponsesInputDetailsWire {
 
 impl From<ResponsesUsageWire> for Usage {
     fn from(value: ResponsesUsageWire) -> Self {
-        let cached = match value.input_tokens_details {
-            Some(details) => match details.cached_tokens {
-                Some(tokens) => tokens,
-                None => 0,
-            },
-            None => 0,
-        };
+        let cached = value
+            .input_tokens_details
+            .and_then(|details| details.cached_tokens)
+            .map_or_else(|| TokenCount::new(0), TokenCount::new);
         Self {
             prompt_tokens: TokenCount::new(value.input_tokens),
             completion_tokens: TokenCount::new(value.output_tokens),
-            cached_tokens: TokenCount::new(cached),
+            cached_tokens: cached,
         }
     }
 }
@@ -1398,10 +1399,10 @@ fn chat_request_json(
                     .collect();
                 wire.insert("tool_calls".to_owned(), Value::Array(calls));
             }
-            if reasoning_replay == ReasoningReplay::ReasoningContent {
-                if let Some(reasoning) = &message.reasoning {
-                    wire.insert("reasoning_content".to_owned(), json!(reasoning));
-                }
+            if reasoning_replay == ReasoningReplay::ReasoningContent
+                && let Some(reasoning) = &message.reasoning
+            {
+                wire.insert("reasoning_content".to_owned(), json!(reasoning));
             }
             Value::Object(wire)
         })
@@ -1670,17 +1671,20 @@ fn retry_delay(
         return delay.min(config.max_retry_delay);
     }
 
-    let multiplier = 1_u32
-        .checked_shl(u32::from(retry))
-        .map_or(u32::MAX, |value| value);
+    let shift = u32::from(retry);
+    let multiplier = if shift < u32::BITS {
+        1_u32 << shift
+    } else {
+        u32::MAX
+    };
     let ceiling = config
         .retry_base_delay
         .saturating_mul(multiplier)
         .min(config.max_retry_delay);
-    let ceiling_ms = match u64::try_from(ceiling.as_millis()) {
-        Ok(value) => value,
-        Err(_) => u64::MAX,
-    };
+    let ceiling_ms = ceiling
+        .as_secs()
+        .saturating_mul(1_000)
+        .saturating_add(u64::from(ceiling.subsec_millis()));
     let jitter_ms = rand::rng().random_range(0..=ceiling_ms);
     Duration::from_millis(jitter_ms)
 }
@@ -1720,10 +1724,9 @@ mod tests {
     use secrecy::SecretString;
 
     type FixtureServer = thread::JoinHandle<io::Result<Vec<Vec<u8>>>>;
+    type FixtureResponse = (u16, Vec<(&'static str, &'static str)>, String);
 
-    fn fixture_server(
-        responses: Vec<(u16, Vec<(&'static str, &'static str)>, String)>,
-    ) -> io::Result<(String, FixtureServer)> {
+    fn fixture_server(responses: Vec<FixtureResponse>) -> io::Result<(String, FixtureServer)> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let address = listener.local_addr()?;
         let server = thread::spawn(move || {
@@ -1766,26 +1769,25 @@ mod tests {
                 break;
             }
             request.extend_from_slice(&buffer[..count]);
-            if expected.is_none() {
-                if let Some(header_end) =
+            if expected.is_none()
+                && let Some(header_end) =
                     request.windows(4).position(|window| window == b"\r\n\r\n")
-                {
-                    let headers = String::from_utf8_lossy(&request[..header_end]);
-                    let content_length = headers.lines().find_map(|line| {
-                        let (name, value) = line.split_once(':')?;
-                        name.eq_ignore_ascii_case("content-length")
-                            .then_some(value.trim())
-                    });
-                    let body_length = match content_length {
-                        Some(value) => value
-                            .parse::<usize>()
-                            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?,
-                        None => 0,
-                    };
-                    expected = header_end
-                        .checked_add(4)
-                        .and_then(|length| length.checked_add(body_length));
-                }
+            {
+                let headers = String::from_utf8_lossy(&request[..header_end]);
+                let content_length = headers.lines().find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("content-length")
+                        .then_some(value.trim())
+                });
+                let body_length = match content_length {
+                    Some(value) => value
+                        .parse::<usize>()
+                        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?,
+                    None => 0,
+                };
+                expected = header_end
+                    .checked_add(4)
+                    .and_then(|length| length.checked_add(body_length));
             }
             if expected.is_some_and(|length| request.len() >= length) {
                 break;
@@ -1838,9 +1840,13 @@ mod tests {
         let cap = config.retry_base_delay.saturating_mul(4);
         for retry in 0..3 {
             let delay = retry_delay(None, retry, config);
-            let attempt_cap = config
-                .retry_base_delay
-                .saturating_mul(1_u32.checked_shl(u32::from(retry)).map_or(u32::MAX, |v| v));
+            let shift = u32::from(retry);
+            let multiplier = if shift < u32::BITS {
+                1_u32 << shift
+            } else {
+                u32::MAX
+            };
+            let attempt_cap = config.retry_base_delay.saturating_mul(multiplier);
             assert!(delay <= attempt_cap.min(config.max_retry_delay));
             assert!(delay <= cap);
         }

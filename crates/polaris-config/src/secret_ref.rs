@@ -1,6 +1,10 @@
 //! Secret references. Configuration never holds secret values, only where to find them.
 
 use crate::error::{ConfigError, invalid};
+use polaris_sdk::{
+    error::ParseError,
+    secrets::{EnvName, KeyringLocation, SecretLocation},
+};
 
 /// Where a secret lives.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -16,19 +20,20 @@ pub enum SecretRef {
     Env(String),
 }
 
-fn is_keyring_part(s: &str) -> bool {
-    !s.is_empty()
-        && s.chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
-}
-
-fn is_env_name(s: &str) -> bool {
-    !s.is_empty()
-        && s.chars()
-            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
-}
-
 impl SecretRef {
+    /// Convert a configuration reference into a validated SDK provider location.
+    ///
+    /// This validates even manually constructed public enum variants; it never retrieves a value.
+    /// # Errors
+    /// Returns a sanitized parse error for malformed or oversized identifiers.
+    pub fn location(&self) -> Result<SecretLocation, ParseError> {
+        match self {
+            Self::Env(name) => EnvName::new(name).map(SecretLocation::Environment),
+            Self::Keyring { service, user } => {
+                KeyringLocation::new(service, user).map(SecretLocation::Keyring)
+            }
+        }
+    }
     /// Parses a reference; the error never contains the value (it may be a leaked secret).
     ///
     /// # Errors
@@ -44,21 +49,24 @@ impl SecretRef {
     /// As [`SecretRef::parse`].
     pub fn parse_for(key: &str, value: &str) -> Result<Self, ConfigError> {
         if let Some(rest) = value.strip_prefix("keyring:") {
-            let mut parts = rest.splitn(2, '/');
-            let (service, user) = (parts.next().unwrap_or(""), parts.next().unwrap_or(""));
-            if is_keyring_part(service) && is_keyring_part(user) {
-                return Ok(Self::Keyring {
+            if let Some((service, user)) = rest.split_once('/') {
+                let reference = Self::Keyring {
                     service: service.to_owned(),
                     user: user.to_owned(),
-                });
+                };
+                reference
+                    .location()
+                    .map_err(|_| invalid(key, "expected bounded keyring:service/user"))?;
+                return Ok(reference);
             }
             return Err(invalid(key, "expected keyring:service/user"));
         }
         if let Some(name) = value.strip_prefix("env:") {
-            if is_env_name(name) {
-                return Ok(Self::Env(name.to_owned()));
-            }
-            return Err(invalid(key, "expected env:NAME with NAME in [A-Z0-9_]"));
+            let reference = Self::Env(name.to_owned());
+            reference
+                .location()
+                .map_err(|_| invalid(key, "expected env:NAME with NAME in [A-Z0-9_]{1,64}"))?;
+            return Ok(reference);
         }
         Err(ConfigError::SecretLiteral(key.to_owned()))
     }

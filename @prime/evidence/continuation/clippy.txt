@@ -1,0 +1,115 @@
+   Compiling syn v2.0.119
+    Checking tokio v1.54.1
+    Checking indexmap v2.14.2
+    Checking futures-util v0.3.34
+    Checking zerofrom v0.1.8
+    Checking insta v1.49.0
+    Checking regex v1.13.1
+    Checking cxx v1.0.205
+    Checking rusqlite v0.40.2
+    Checking yoke v0.8.3
+    Checking zerovec v0.11.8
+    Checking zerotrie v0.2.5
+    Checking usearch v2.26.5
+    Checking tinystr v0.8.4
+    Checking potential_utf v0.1.6
+    Checking icu_collections v2.3.0
+    Checking icu_locale_core v2.3.0
+    Checking icu_provider v2.3.1
+    Checking icu_properties v2.3.0
+    Checking icu_normalizer v2.3.0
+    Checking futures-executor v0.3.34
+    Checking tokio-util v0.7.20
+    Checking tokio-stream v0.1.19
+    Checking futures v0.3.34
+   Compiling prettyplease v0.2.37
+   Compiling tonic-build v0.14.6
+    Checking idna_adapter v1.2.2
+    Checking idna v1.1.0
+    Checking url v2.5.8
+   Compiling zeroize_derive v1.5.0
+   Compiling tracing-attributes v0.1.31
+   Compiling prost-derive v0.14.4
+   Compiling pin-project-internal v1.1.13
+   Compiling thiserror-impl v1.0.69
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling spdlog-macros v0.3.1
+    Checking spdlog-rs v0.5.3
+    Checking zeroize v1.9.1
+    Checking secrecy v0.10.3
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking chacha20 v0.10.2
+    Checking rand v0.10.3
+    Checking generic-array v0.14.9
+    Checking rustls-pki-types v1.15.1
+    Checking aws-lc-rs v1.18.2
+    Checking proptest v1.12.0
+    Checking der v0.7.10
+    Checking rustls-native-certs v0.8.5
+    Checking arrayvec v0.7.8
+    Checking tracing v0.1.44
+    Checking crypto-common v0.1.6
+    Checking block-buffer v0.10.4
+    Checking crypto-bigint v0.5.5
+    Checking digest v0.9.0
+    Checking block-buffer v0.9.0
+    Checking windows-native-keyring-store v1.1.0
+    Checking digest v0.10.7
+    Checking chacha20poly1305 v0.11.0
+    Checking blake3 v1.8.7
+    Checking sha2 v0.9.9
+    Checking pin-project v1.1.13
+    Checking h2 v0.4.20
+    Checking tower v0.5.3
+    Checking tracing-subscriber v0.3.23
+    Checking thiserror v1.0.69
+    Checking signature v2.2.0
+    Checking hmac v0.12.1
+    Checking sha2 v0.10.9
+    Checking ed25519 v2.2.3
+    Checking curve25519-dalek v4.1.3
+    Checking rfc6979 v0.4.0
+    Checking keyring v4.2.0
+    Checking biscuit-parser v0.2.0
+   Compiling prost v0.14.4
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking axum v0.8.9
+    Checking tower-http v0.6.11
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Checking spki v0.7.3
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking prost-types v0.14.4
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking pkcs8 v0.10.2
+    Checking ed25519-dalek v2.2.0
+    Checking rustls-webpki v0.103.16
+    Checking rcgen v0.14.10
+    Checking sec1 v0.7.3
+    Checking elliptic-curve v0.13.8
+    Checking primeorder v0.13.6
+    Checking ecdsa v0.16.9
+    Checking rustls v0.23.46
+   Compiling prost-build v0.14.4
+    Checking p256 v0.13.2
+    Checking biscuit-auth v6.0.0 (C:\mDev\Polaris\vendor\biscuit-auth)
+    Checking hyper v1.12.0
+   Compiling tonic-prost-build v0.14.6
+    Checking hyper-util v0.1.21
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking hyper-timeout v0.5.2
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking tokio-rustls v0.26.6
+    Checking rustls-platform-verifier v0.7.1
+    Checking tonic v0.14.6
+    Checking hyper-rustls v0.27.10
+    Checking reqwest v0.13.5
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking tonic-prost v0.14.6
+    Checking polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Finished `dev` profile [unoptimized] target(s) in 1m 25s

@@ -66,3 +66,35 @@ fn rejects_empty_name() {
         assert!(SecretRef::parse(bad).is_err(), "{bad}");
     }
 }
+
+#[test]
+fn reference_converts_to_validated_sdk_location() -> TestResult {
+    use polaris_sdk::secrets::{EnvName, KeyringLocation, SecretLocation};
+    assert_eq!(
+        SecretRef::parse("env:NEBIUS_API_KEY")?.location()?,
+        SecretLocation::Environment(EnvName::new("NEBIUS_API_KEY")?)
+    );
+    assert_eq!(
+        SecretRef::parse("keyring:polaris/nebius")?.location()?,
+        SecretLocation::Keyring(KeyringLocation::new("polaris", "nebius")?)
+    );
+    assert!(SecretRef::Env("lowercase".into()).location().is_err());
+    assert!(
+        SecretRef::Keyring {
+            service: "../escape".into(),
+            user: "user".into()
+        }
+        .location()
+        .is_err()
+    );
+    Ok(())
+}
+
+#[test]
+fn reference_parser_enforces_provider_identifier_bounds() {
+    assert!(SecretRef::parse(&format!("env:{}", "A".repeat(65))).is_err());
+    assert!(SecretRef::parse(&format!("env:{}", "A".repeat(64))).is_ok());
+    assert!(SecretRef::parse(&format!("keyring:{}/user", "s".repeat(129))).is_err());
+    assert!(SecretRef::parse(&format!("keyring:service/{}", "u".repeat(129))).is_err());
+    assert!(SecretRef::parse(&format!("keyring:{}/{}", "s".repeat(128), "u".repeat(128))).is_ok());
+}

@@ -31,6 +31,6 @@ pub use error::{CapacityResource, SecretsError};
 pub use polaris_sdk::secrets::{EnvName, KeyringLocation, SecretLocation, SecretSource};
 pub use source::SystemSecretSource;
 pub use vault::{
-    SealedBlob, SecretName, SecretVault, SessionSealKey, VaultLimits, MAX_KEYRING_SECRET_BYTES,
-    MAX_SECRET_BYTES,
+    MAX_KEYRING_SECRET_BYTES, MAX_SECRET_BYTES, SealedBlob, SecretName, SecretVault,
+    SessionSealKey, VaultLimits,
 };

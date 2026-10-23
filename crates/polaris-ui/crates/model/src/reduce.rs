@@ -184,6 +184,7 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
         | Event::SandboxSnapshotBranchCreated { .. }
         | Event::SandboxExecutionCompleted { .. }
         | Event::BlastRadiusAlert { .. }
+        | Event::DiffNeedsApproval { .. }
         | Event::FrameStepRecorded { .. } => {}
     }
     state.last_seq = Some(seq);

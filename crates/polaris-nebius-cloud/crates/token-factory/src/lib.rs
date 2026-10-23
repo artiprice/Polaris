@@ -43,5 +43,5 @@ pub use client::{
     ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig, ModelInfo,
     PromptTokenEstimator, ProviderStream, RateLimitPolicy, ReasoningReplay, TokenFactoryClient,
 };
-pub use error::TfError;
+pub use error::{CredentialError, TfError};
 pub use sse::{SseEvent, SseEventRef, SseParser};
