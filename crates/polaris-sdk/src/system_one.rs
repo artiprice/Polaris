@@ -245,3 +245,575 @@ pub struct DecisionInput {
     /// Optional surrounding context.
     pub context: Option<String>,
 }
+
+/// Whether a schema consumer uses a deterministic fallback or refuses an unavailable decision.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecisionSchemaFailMode {
+    /// The consumer may use its documented conservative fallback after timeout or engine error.
+    Open,
+    /// The consumer must return an error when the decision cannot be established.
+    Closed,
+}
+
+/// Schema integrity policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecisionSchemaIntegrity {
+    /// Validate schema and decision structure.
+    Normal,
+    /// Require matching calibration provenance before treating acceptance as authoritative.
+    Strict,
+}
+
+/// Calibration state included with an SDK schema snapshot.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DecisionSchemaCalibrationState {
+    /// No measured fixture calibration is available.
+    Uncalibrated,
+    /// Measured calibration provenance is present.
+    Calibrated,
+}
+
+/// Probability boundaries copied from the canonical System-One schema.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DecisionSchemaThresholds {
+    accept: Probability,
+    reject: Probability,
+    abstain_low: Probability,
+    abstain_high: Probability,
+}
+
+impl DecisionSchemaThresholds {
+    /// Validates a non-overlapping reject, abstain, accept ordering.
+    pub fn new(
+        accept: Probability,
+        reject: Probability,
+        abstain_low: Probability,
+        abstain_high: Probability,
+    ) -> Result<Self, DecisionSchemaError> {
+        if reject > abstain_low || abstain_low > abstain_high || abstain_high > accept {
+            return Err(DecisionSchemaError::InvalidThresholds);
+        }
+        Ok(Self {
+            accept,
+            reject,
+            abstain_low,
+            abstain_high,
+        })
+    }
+
+    /// Acceptance lower bound.
+    #[must_use]
+    pub const fn accept(self) -> Probability {
+        self.accept
+    }
+
+    /// Rejection upper bound.
+    #[must_use]
+    pub const fn reject(self) -> Probability {
+        self.reject
+    }
+
+    /// Lower abstention bound.
+    #[must_use]
+    pub const fn abstain_low(self) -> Probability {
+        self.abstain_low
+    }
+
+    /// Upper abstention bound.
+    #[must_use]
+    pub const fn abstain_high(self) -> Probability {
+        self.abstain_high
+    }
+}
+
+/// Per-consumer failure and deadline policy from the canonical schema.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionSchemaFailPolicy {
+    consumer: String,
+    on_timeout: DecisionSchemaFailMode,
+    deadline_ms: u32,
+    integrity: DecisionSchemaIntegrity,
+}
+
+impl DecisionSchemaFailPolicy {
+    /// Validates and records a consumer's failure policy.
+    pub fn new(
+        consumer: String,
+        on_timeout: DecisionSchemaFailMode,
+        deadline_ms: u32,
+        integrity: DecisionSchemaIntegrity,
+    ) -> Result<Self, DecisionSchemaError> {
+        if consumer.is_empty()
+            || consumer.len() > 64
+            || !consumer
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte == b'_')
+            || deadline_ms == 0
+        {
+            return Err(DecisionSchemaError::InvalidFailurePolicy);
+        }
+        Ok(Self {
+            consumer,
+            on_timeout,
+            deadline_ms,
+            integrity,
+        })
+    }
+
+    /// Consumer id.
+    #[must_use]
+    pub fn consumer(&self) -> &str {
+        &self.consumer
+    }
+
+    /// Timeout behavior.
+    #[must_use]
+    pub const fn on_timeout(&self) -> DecisionSchemaFailMode {
+        self.on_timeout
+    }
+
+    /// Decision deadline in milliseconds.
+    #[must_use]
+    pub const fn deadline_ms(&self) -> u32 {
+        self.deadline_ms
+    }
+
+    /// Integrity mode.
+    #[must_use]
+    pub const fn integrity(&self) -> DecisionSchemaIntegrity {
+        self.integrity
+    }
+}
+
+/// Calibration state and immutable provenance from the canonical schema.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DecisionSchemaCalibration {
+    state: DecisionSchemaCalibrationState,
+    fixture_set: String,
+    fixture_blake3: Option<String>,
+    sample_count: u32,
+    precision_target: Option<f32>,
+    observed_precision: Option<f32>,
+    observed_recall: Option<f32>,
+    expected_calibration_error: Option<f32>,
+    checkpoint_blake3: Option<String>,
+    date: Option<String>,
+}
+
+/// Raw calibration fields consumed by [`DecisionSchemaCalibration::try_new`].
+#[derive(Debug, Clone, PartialEq)]
+pub struct DecisionSchemaCalibrationRecord {
+    /// State.
+    pub state: DecisionSchemaCalibrationState,
+    /// Fixture collection name.
+    pub fixture_set: String,
+    /// Fixture BLAKE3 digest.
+    pub fixture_blake3: Option<String>,
+    /// Number of labelled samples.
+    pub sample_count: u32,
+    /// Target precision.
+    pub precision_target: Option<f32>,
+    /// Measured precision.
+    pub observed_precision: Option<f32>,
+    /// Measured recall.
+    pub observed_recall: Option<f32>,
+    /// Expected calibration error.
+    pub expected_calibration_error: Option<f32>,
+    /// Checkpoint BLAKE3 digest.
+    pub checkpoint_blake3: Option<String>,
+    /// Calibration date.
+    pub date: Option<String>,
+}
+
+impl DecisionSchemaCalibration {
+    /// Validates and records complete calibration provenance.
+    pub fn try_new(record: DecisionSchemaCalibrationRecord) -> Result<Self, DecisionSchemaError> {
+        let DecisionSchemaCalibrationRecord {
+            state,
+            fixture_set,
+            fixture_blake3,
+            sample_count,
+            precision_target,
+            observed_precision,
+            observed_recall,
+            expected_calibration_error,
+            checkpoint_blake3,
+            date,
+        } = record;
+        let probabilities = [
+            precision_target,
+            observed_precision,
+            observed_recall,
+            expected_calibration_error,
+        ];
+        if probabilities
+            .into_iter()
+            .flatten()
+            .any(|value| !value.is_finite() || !(0.0..=1.0).contains(&value))
+        {
+            return Err(DecisionSchemaError::InvalidCalibration);
+        }
+        let value = Self {
+            state,
+            fixture_set,
+            fixture_blake3,
+            sample_count,
+            precision_target,
+            observed_precision,
+            observed_recall,
+            expected_calibration_error,
+            checkpoint_blake3,
+            date,
+        };
+        if !value.is_consistent() {
+            return Err(DecisionSchemaError::InvalidCalibration);
+        }
+        Ok(value)
+    }
+
+    fn is_consistent(&self) -> bool {
+        match self.state {
+            DecisionSchemaCalibrationState::Uncalibrated => {
+                self.sample_count == 0
+                    && self.fixture_blake3.is_none()
+                    && self.checkpoint_blake3.is_none()
+                    && self.observed_precision.is_none()
+                    && self.observed_recall.is_none()
+                    && self.expected_calibration_error.is_none()
+                    && self.date.is_none()
+            }
+            DecisionSchemaCalibrationState::Calibrated => {
+                let valid_digest = |digest: &Option<String>| {
+                    digest.as_ref().is_some_and(|value| {
+                        value.len() == 64
+                            && value
+                                .bytes()
+                                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+                    })
+                };
+                let valid_date = self
+                    .date
+                    .as_ref()
+                    .is_some_and(|value| value.parse::<crate::contracts::Timestamp>().is_ok());
+                !self.fixture_set.trim().is_empty()
+                    && self.sample_count > 0
+                    && valid_digest(&self.fixture_blake3)
+                    && valid_digest(&self.checkpoint_blake3)
+                    && self.precision_target.is_some()
+                    && self.observed_precision.is_some()
+                    && self.observed_recall.is_some()
+                    && self.expected_calibration_error.is_some()
+                    && valid_date
+                    && match (self.precision_target, self.observed_precision) {
+                        (Some(target), Some(observed)) => observed >= target,
+                        _ => false,
+                    }
+            }
+        }
+    }
+
+    /// Calibration state.
+    #[must_use]
+    pub const fn state(&self) -> DecisionSchemaCalibrationState {
+        self.state
+    }
+
+    /// Fixture collection name.
+    #[must_use]
+    pub fn fixture_set(&self) -> &str {
+        &self.fixture_set
+    }
+
+    /// Fixture digest.
+    #[must_use]
+    pub fn fixture_blake3(&self) -> Option<&str> {
+        self.fixture_blake3.as_deref()
+    }
+
+    /// Number of labelled calibration samples.
+    #[must_use]
+    pub const fn sample_count(&self) -> u32 {
+        self.sample_count
+    }
+
+    /// Target precision.
+    #[must_use]
+    pub const fn precision_target(&self) -> Option<f32> {
+        self.precision_target
+    }
+
+    /// Measured precision.
+    #[must_use]
+    pub const fn observed_precision(&self) -> Option<f32> {
+        self.observed_precision
+    }
+
+    /// Measured recall.
+    #[must_use]
+    pub const fn observed_recall(&self) -> Option<f32> {
+        self.observed_recall
+    }
+
+    /// Expected calibration error.
+    #[must_use]
+    pub const fn expected_calibration_error(&self) -> Option<f32> {
+        self.expected_calibration_error
+    }
+
+    /// Inference checkpoint digest.
+    #[must_use]
+    pub fn checkpoint_blake3(&self) -> Option<&str> {
+        self.checkpoint_blake3.as_deref()
+    }
+
+    /// Calibration date.
+    #[must_use]
+    pub fn date(&self) -> Option<&str> {
+        self.date.as_deref()
+    }
+}
+
+/// Validated, owned view of a versioned decision schema.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DecisionSchema {
+    id: String,
+    version: u32,
+    max_chars: u32,
+    questions: Vec<Question>,
+    thresholds: DecisionSchemaThresholds,
+    fail: DecisionSchemaFailPolicy,
+    calibration: DecisionSchemaCalibration,
+}
+
+impl DecisionSchema {
+    /// Validates a schema snapshot for use across the SDK boundary.
+    pub fn try_new(
+        id: String,
+        version: u32,
+        max_chars: u32,
+        questions: Vec<Question>,
+        thresholds: DecisionSchemaThresholds,
+        fail: DecisionSchemaFailPolicy,
+        calibration: DecisionSchemaCalibration,
+    ) -> Result<Self, DecisionSchemaError> {
+        if id.trim().is_empty()
+            || id.len() > 128
+            || id.chars().any(char::is_control)
+            || version == 0
+            || max_chars == 0
+            || max_chars > 1_048_576
+            || questions.is_empty()
+            || questions.len() > 64
+        {
+            return Err(DecisionSchemaError::InvalidIdentityOrBounds);
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for question in &questions {
+            if !ids.insert(question.id.as_str()) {
+                return Err(DecisionSchemaError::InvalidQuestion);
+            }
+            let valid = match &question.kind {
+                QuestionKind::Choice { options } => {
+                    !options.is_empty()
+                        && options.len() <= 128
+                        && options
+                            .iter()
+                            .collect::<std::collections::BTreeSet<_>>()
+                            .len()
+                            == options.len()
+                }
+                QuestionKind::Score { min, max } => {
+                    min <= max && i64::from(*max).saturating_sub(i64::from(*min)) <= 256
+                }
+                QuestionKind::Noul { statement } => {
+                    !statement.trim().is_empty() && statement.len() <= 4096
+                }
+            };
+            if !valid {
+                return Err(DecisionSchemaError::InvalidQuestion);
+            }
+        }
+        Ok(Self {
+            id,
+            version,
+            max_chars,
+            questions,
+            thresholds,
+            fail,
+            calibration,
+        })
+    }
+
+    /// Schema id.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Schema version.
+    #[must_use]
+    pub const fn version(&self) -> u32 {
+        self.version
+    }
+
+    /// Maximum input characters.
+    #[must_use]
+    pub const fn max_chars(&self) -> u32 {
+        self.max_chars
+    }
+
+    /// Canonical questions.
+    #[must_use]
+    pub fn questions(&self) -> &[Question] {
+        &self.questions
+    }
+
+    /// Threshold metadata.
+    #[must_use]
+    pub const fn thresholds(&self) -> DecisionSchemaThresholds {
+        self.thresholds
+    }
+
+    /// Failure and deadline policy.
+    #[must_use]
+    pub const fn fail_policy(&self) -> &DecisionSchemaFailPolicy {
+        &self.fail
+    }
+
+    /// Calibration provenance.
+    #[must_use]
+    pub const fn calibration(&self) -> &DecisionSchemaCalibration {
+        &self.calibration
+    }
+}
+
+/// Typed failure while resolving or validating a decision schema.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum DecisionSchemaError {
+    /// Schema identifier or processing bounds are invalid.
+    #[error("decision schema identity or bounds are invalid")]
+    InvalidIdentityOrBounds,
+    /// Question list is invalid or contains duplicate ids.
+    #[error("decision schema questions are invalid")]
+    InvalidQuestion,
+    /// Probability boundaries are not ordered.
+    #[error("decision schema thresholds are invalid")]
+    InvalidThresholds,
+    /// Consumer id or deadline is invalid.
+    #[error("decision schema failure policy is invalid")]
+    InvalidFailurePolicy,
+    /// Calibration provenance is absent, malformed, or inconsistent.
+    #[error("decision schema calibration provenance is invalid")]
+    InvalidCalibration,
+}
+
+/// Read-only lookup for versioned decision schemas.
+///
+/// Values are owned snapshots so L0 callers cannot retain a borrow into an L3 catalog. `Err`
+/// means that a catalog adapter found malformed canonical data; it must not be treated as absence.
+pub trait DecisionSchemaCatalog: Send + Sync {
+    /// Exact schema version.
+    fn get(&self, id: &str, version: u32) -> Result<Option<DecisionSchema>, DecisionSchemaError>;
+
+    /// Highest available version.
+    fn latest(&self, id: &str) -> Result<Option<DecisionSchema>, DecisionSchemaError>;
+}
+
+#[cfg(test)]
+mod decision_schema_tests {
+    use super::*;
+
+    fn uncalibrated() -> DecisionSchemaCalibration {
+        DecisionSchemaCalibration::try_new(DecisionSchemaCalibrationRecord {
+            state: DecisionSchemaCalibrationState::Uncalibrated,
+            fixture_set: String::new(),
+            fixture_blake3: None,
+            sample_count: 0,
+            precision_target: None,
+            observed_precision: None,
+            observed_recall: None,
+            expected_calibration_error: None,
+            checkpoint_blake3: None,
+            date: None,
+        })
+        .expect("valid uncalibrated provenance")
+    }
+
+    fn schema() -> DecisionSchema {
+        DecisionSchema::try_new(
+            "skill.relevance".to_owned(),
+            1,
+            65_536,
+            vec![Question {
+                id: QuestionId::new("relevant").expect("valid id"),
+                kind: QuestionKind::Noul {
+                    statement: "The skill applies to the stated task.".to_owned(),
+                },
+            }],
+            DecisionSchemaThresholds::new(
+                Probability::new(0.9).expect("valid probability"),
+                Probability::new(0.1).expect("valid probability"),
+                Probability::new(0.4).expect("valid probability"),
+                Probability::new(0.6).expect("valid probability"),
+            )
+            .expect("valid thresholds"),
+            DecisionSchemaFailPolicy::new(
+                "skill_select".to_owned(),
+                DecisionSchemaFailMode::Open,
+                750,
+                DecisionSchemaIntegrity::Normal,
+            )
+            .expect("valid fail policy"),
+            uncalibrated(),
+        )
+        .expect("valid schema snapshot")
+    }
+
+    #[test]
+    fn validated_schema_snapshot_preserves_version_policy_and_calibration_state() {
+        let schema = schema();
+        assert_eq!(schema.id(), "skill.relevance");
+        assert_eq!(schema.version(), 1);
+        assert_eq!(schema.questions()[0].id.as_str(), "relevant");
+        assert_eq!(schema.fail_policy().deadline_ms(), 750);
+        assert_eq!(
+            schema.calibration().state(),
+            DecisionSchemaCalibrationState::Uncalibrated
+        );
+        assert_eq!(schema.thresholds().reject().get(), 0.1);
+    }
+
+    #[test]
+    fn schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration() {
+        let mut duplicate = schema();
+        duplicate.questions.push(duplicate.questions[0].clone());
+        assert!(matches!(
+            DecisionSchema::try_new(
+                duplicate.id,
+                duplicate.version,
+                duplicate.max_chars,
+                duplicate.questions,
+                duplicate.thresholds,
+                duplicate.fail,
+                duplicate.calibration,
+            ),
+            Err(DecisionSchemaError::InvalidQuestion)
+        ));
+
+        assert!(matches!(
+            DecisionSchemaCalibration::try_new(DecisionSchemaCalibrationRecord {
+                state: DecisionSchemaCalibrationState::Calibrated,
+                fixture_set: "fixtures".to_owned(),
+                fixture_blake3: Some("bad".to_owned()),
+                sample_count: 10,
+                precision_target: Some(0.9),
+                observed_precision: Some(0.95),
+                observed_recall: Some(0.9),
+                expected_calibration_error: Some(0.05),
+                checkpoint_blake3: Some("a".repeat(64)),
+                date: Some("2026-01-01T00:00:00Z".to_owned()),
+            }),
+            Err(DecisionSchemaError::InvalidCalibration)
+        ));
+    }
+}

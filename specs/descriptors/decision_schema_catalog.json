@@ -1,0 +1,21 @@
+{
+  "type_of": "trait",
+  "name": "DecisionSchemaCatalog",
+  "file_path": "crates/polaris-sdk/src/system_one.rs",
+  "logic_name": "Validated SDK Schema Lookup",
+  "test_list": [
+    { "test_name": "validated_schema_snapshot_preserves_version_policy_and_calibration_state", "description": "Validated SDK snapshots retain the versioned questions, policy, thresholds, and calibration state." },
+    { "test_name": "schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration", "description": "Malformed question ids and calibration provenance are rejected at construction." },
+    { "test_name": "sdk_adapter_returns_the_canonical_versioned_skill_schema", "description": "The L3 adapter maps the canonical skill schema into an SDK snapshot without losing policy metadata." },
+    { "test_name": "sdk_adapter_distinguishes_absence_from_invalid_conversion", "description": "Catalog absence is distinct from adapter validation failure." },
+    { "test_name": "sdk_adapter_preserves_calibration_provenance", "description": "Calibration fixture/checkpoint hashes, sample count, quality values, and date survive adaptation." }
+  ],
+  "dependencies": ["polaris_sdk::system_one::Question", "polaris_system_one_schemas::SchemaSet"],
+  "libraries": [],
+  "inputs": [
+    { "name": "id", "type": "&str", "description": "Stable schema identifier." },
+    { "name": "version", "type": "u32", "description": "Exact schema version for get; latest resolves the highest installed version." }
+  ],
+  "output_type": "Result<Option<DecisionSchema>, DecisionSchemaError>",
+  "output_description": "Owned, validated SDK schema snapshot with questions, input bounds, thresholds, failure policy, and calibration provenance."
+}

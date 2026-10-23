@@ -101,20 +101,18 @@ impl Telemetry {
                 found: record.session(),
             });
         }
-        if replay_guard {
-            if let Some(previous) = self.last_record {
-                if record.seq() == previous.seq() {
-                    if *record == previous {
-                        return Ok(());
-                    }
-                    return Err(TelemetryError::ConflictingSequence(record.seq()));
+        if replay_guard && let Some(previous) = self.last_record {
+            if record.seq() == previous.seq() {
+                if *record == previous {
+                    return Ok(());
                 }
-                if record.seq() < previous.seq() {
-                    return Err(TelemetryError::OutOfOrder {
-                        previous: previous.seq(),
-                        found: record.seq(),
-                    });
-                }
+                return Err(TelemetryError::ConflictingSequence(record.seq()));
+            }
+            if record.seq() < previous.seq() {
+                return Err(TelemetryError::OutOfOrder {
+                    previous: previous.seq(),
+                    found: record.seq(),
+                });
             }
         }
         self.aggregates.record(model, record.event());

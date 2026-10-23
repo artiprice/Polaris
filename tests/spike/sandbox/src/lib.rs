@@ -23,4 +23,6 @@
 //! `tokio`
 
 mod burst;
+mod memory;
 pub use burst::{BurstLimits, BurstReport, CycleFailure, SpikeError, run_sandboxes};
+pub use memory::{MemInfoError, MemoryInfo};

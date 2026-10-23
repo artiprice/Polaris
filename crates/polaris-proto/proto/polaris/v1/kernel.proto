@@ -26,6 +26,9 @@ message SubmitCommandRequest {
 message SubmitCommandResponse {
   // Echo of the accepted command id.
   Uuid command_id = 1;
+  // Durable acceptance position. Presence distinguishes modern receipts from legacy servers
+  // that do not report a log position; clients must never invent this value.
+  optional uint64 accepted_at = 2;
   reserved 100 to 199;
 }
 
@@ -90,7 +93,7 @@ message EventRecord {
   reserved 100 to 199;
 }
 
-// A domain event (sdk `Event`, schema v3). Existing field numbers remain stable.
+// A domain event (sdk `Event`, schema v4). Existing field numbers remain stable.
 message Event {
   oneof kind {
     SessionStarted session_started = 1;
@@ -115,6 +118,8 @@ message Event {
     SessionPaused session_paused = 20;
     SessionResumed session_resumed = 21;
     BlastRadiusAlert blast_radius_alert = 22;
+    FrameStepRecorded frame_step_recorded = 23;
+    DiffNeedsApproval diff_needs_approval = 24;
   }
   reserved 100 to 199;
 
@@ -193,6 +198,22 @@ message Event {
   message SessionPaused {}
   message SessionResumed {}
   message BlastRadiusAlert { Uuid frame = 1; Cid report = 2; }
+  message DiffNeedsApproval { Uuid frame = 1; Cid diff = 2; Cid report = 3; }
+  message FrameStepRecorded {
+    Uuid frame = 1;
+    uint32 step = 2;
+    Cid transcript = 3;
+    FrameStepOutcome outcome = 4;
+  }
+}
+
+enum FrameStepOutcome {
+  FRAME_STEP_OUTCOME_UNSPECIFIED = 0;
+  FRAME_STEP_OUTCOME_ACCEPTED = 1;
+  FRAME_STEP_OUTCOME_CLAIMED_DONE = 2;
+  FRAME_STEP_OUTCOME_REJECTED = 3;
+  FRAME_STEP_OUTCOME_CANCELLED = 4;
+  FRAME_STEP_OUTCOME_FAILED = 5;
 }
 
 // Client-to-kernel frame of a terminal attachment.

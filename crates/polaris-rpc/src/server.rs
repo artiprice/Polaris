@@ -163,6 +163,7 @@ where
         let receipt = self.kernel.submit(command).await.map_err(kernel_status)?;
         Ok(Response::new(pb::SubmitCommandResponse {
             command_id: Some(pb::Uuid::from(&receipt.command)),
+            accepted_at: Some(receipt.accepted_at.get()),
         }))
     }
 
@@ -235,10 +236,10 @@ where
             if frame.encoded_len() > limits::MAX_CHUNK_BYTES {
                 return Err(Status::resource_exhausted("terminal input frame too large"));
             }
-            if let Some(pb::terminal_client_frame::Kind::Input(bytes)) = &frame.kind {
-                if bytes.len() > limits::MAX_CHUNK_BYTES {
-                    return Err(Status::resource_exhausted("terminal input chunk too large"));
-                }
+            if let Some(pb::terminal_client_frame::Kind::Input(bytes)) = &frame.kind
+                && bytes.len() > limits::MAX_CHUNK_BYTES
+            {
+                return Err(Status::resource_exhausted("terminal input chunk too large"));
             }
             Ok(frame)
         });
@@ -301,11 +302,10 @@ where
                                     let _sent = lifecycle.cancellation.send(true);
                                     return Some((Err(Status::resource_exhausted("terminal output frame too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
                                 }
-                                if let Some(pb::terminal_server_frame::Kind::Output(bytes)) = &frame.kind {
-                                    if bytes.len() > limits::MAX_CHUNK_BYTES {
+                                if let Some(pb::terminal_server_frame::Kind::Output(bytes)) = &frame.kind
+                                    && bytes.len() > limits::MAX_CHUNK_BYTES {
                                         let _sent = lifecycle.cancellation.send(true);
                                         return Some((Err(Status::resource_exhausted("terminal output chunk too large")), (output, lease, rechecks, cancellation, lifecycle, true)));
-                                    }
                                 }
                                 return Some((Ok(frame), (output, lease, rechecks, cancellation, lifecycle, false)));
                             }

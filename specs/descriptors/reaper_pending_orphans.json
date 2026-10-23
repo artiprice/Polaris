@@ -1,0 +1,17 @@
+{
+  "type_of": "method",
+  "name": "Reaper::pending_orphans",
+  "file_path": "crates/polaris-kernel/crates/reaper/src/shutdown.rs",
+  "logic_name": "Reaper Pending Orphans",
+  "test_list": [
+    {
+      "test_name": "pending_orphans_excludes_live_registrations_and_returns_restart_records",
+      "description": "Live registrations are excluded; records loaded after a simulated restart are listed until acknowledged."
+    }
+  ],
+  "dependencies": ["Reaper", "LeakEntry", "Locator", "ResourceKind"],
+  "libraries": ["tempfile"],
+  "inputs": [],
+  "output_type": "Vec<LeakEntry>",
+  "output_description": "Only unresolved records whose in-process cleanup owner no longer exists."
+}

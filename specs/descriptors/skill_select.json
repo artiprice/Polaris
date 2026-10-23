@@ -1,0 +1,20 @@
+{
+  "type_of": "async_function",
+  "name": "SkillRegistry::select",
+  "file_path": "crates/polaris-ext/crates/skills/src/select.rs",
+  "logic_name": "Skill Selection",
+  "test_list": [
+    { "test_name": "selection_sends_descriptions_but_never_skill_bodies", "description": "The canonical Noul question is paired with bounded candidate metadata, while bodies are never sent." },
+    { "test_name": "engine_failure_uses_stable_lexical_fallback_and_bounds_k", "description": "An open schema policy uses stable lexical fallback after an engine error." },
+    { "test_name": "closed_schema_policy_never_uses_lexical_fallback", "description": "A closed schema policy returns an error when the decision engine is unavailable." },
+    { "test_name": "selection_rejects_noncanonical_multi_question_schema", "description": "A schema with the expected ID but extra questions is rejected before invoking the decision engine." },
+    { "test_name": "schema_deadline_uses_lexical_fallback_only_when_open", "description": "The schema-specific deadline is enforced and its uncalibrated provenance remains visible on fallback results." },
+    { "test_name": "lexical_and_system_one_candidates_exclude_unapproved_repository_skills", "description": "Unapproved repository skills are excluded from both selection paths." },
+    { "test_name": "required_tools_are_reported_without_being_granted", "description": "Required tools are reported as missing metadata and are never inserted into the available tool set." }
+  ],
+  "dependencies": ["polaris_sdk::registry::DecisionEngine", "polaris_sdk::system_one::DecisionSchemaCatalog"],
+  "libraries": ["tokio", "thiserror"],
+  "inputs": [{ "name": "task", "type": "&str", "description": "Bounded task text already prepared by the caller." }, { "name": "catalog", "type": "&C", "description": "Canonical versioned System One schemas." }, { "name": "engine", "type": "&D", "description": "System One decision engine." }, { "name": "k", "type": "TopK", "description": "Nonzero maximum results." }],
+  "output_type": "Result<Vec<RankedSkill>, SkillError>",
+  "output_description": "Ranked approved skill metadata only; callers explicitly load bodies after selection."
+}

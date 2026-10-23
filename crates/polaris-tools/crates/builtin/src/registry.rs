@@ -20,9 +20,11 @@ use crate::{
     ToolLimits, ToolOutput,
     patch::apply_unified_patch,
     path::{WorkspacePath, resolve_in_workspace},
+    proposal::{EditFileRequest, NoProposalBackend, ProposalToolBackend},
     query::{JsonQueryInput, RegexQueryInput, json_query, regex_query},
     read::{ReadFileInput, read_file},
     search::{GlobInput, GrepInput, ListDirInput, glob, grep, list_dir},
+    shell::{NoShellBackend, ShellInput, ShellToolBackend, output_value},
 };
 
 /// Resolves content references for `polaris_expand` using the application's real reference store.
@@ -82,14 +84,16 @@ impl RefResolver for CasRefResolver {
 
 /// Stable, sorted builtin tool registry. Read-only filesystem access remains bounded by limits.
 #[derive(Debug)]
-pub struct ToolRegistry<R, B> {
+pub struct ToolRegistry<R, B, P = NoProposalBackend, S = NoShellBackend> {
     limits: ToolLimits,
     specs: Vec<ToolSpec>,
     refs: R,
     recall: B,
+    proposals: P,
+    shell: S,
 }
 
-impl<R, B> ToolRegistry<R, B>
+impl<R, B> ToolRegistry<R, B, NoProposalBackend, NoShellBackend>
 where
     R: RefResolver,
     B: RecallBackend,
@@ -105,9 +109,51 @@ where
             specs,
             refs,
             recall,
+            proposals: NoProposalBackend,
+            shell: NoShellBackend,
         })
     }
+}
 
+impl<R, B, P, S> ToolRegistry<R, B, P, S>
+where
+    R: RefResolver,
+    B: RecallBackend,
+    P: ProposalToolBackend,
+    S: ShellToolBackend,
+{
+    /// Create a P2 registry with explicit proposal and runtime-owned sandbox execution services.
+    pub fn new_with_services(
+        limits: ToolLimits,
+        refs: R,
+        recall: B,
+        proposals: P,
+        shell: S,
+    ) -> Result<Self, ToolError> {
+        limits.validate()?;
+        usize::try_from(limits.max_read_bytes)
+            .map_err(|_| ToolError::InvalidInput("read limit exceeds platform size".to_owned()))?;
+        let mut specs = builtin_specs();
+        specs.extend(p2_builtin_specs());
+        specs.sort_by(|left, right| left.name.cmp(&right.name));
+        Ok(Self {
+            limits,
+            specs,
+            refs,
+            recall,
+            proposals,
+            shell,
+        })
+    }
+}
+
+impl<R, B, P, S> ToolRegistry<R, B, P, S>
+where
+    R: RefResolver,
+    B: RecallBackend,
+    P: ProposalToolBackend,
+    S: ShellToolBackend,
+{
     /// Stable tool descriptors sorted lexicographically by name.
     #[must_use]
     pub fn specs(&self) -> &[ToolSpec] {
@@ -130,6 +176,67 @@ where
         arguments: &Value,
         context: &ToolContext<'_>,
     ) -> Result<ToolOutput, ToolError> {
+        if matches!(name, "write_file" | "edit_file" | "apply_patch" | "shell") {
+            if self.get(name).is_none() {
+                return Err(ToolError::NotFound("builtin tool".to_owned()));
+            }
+            let input_bytes = serde_json::to_vec(arguments)
+                .map_err(|_| ToolError::InvalidInput("invalid tool arguments".to_owned()))?;
+            if u64::try_from(input_bytes.len())
+                .map_or(true, |length| length > self.limits.max_input_bytes)
+            {
+                return Err(ToolError::InvalidInput(
+                    "tool arguments exceed configured bound".to_owned(),
+                ));
+            }
+            let limits = effective_limits(self.limits, context.deadline);
+            let value = match name {
+                "write_file" => {
+                    let input: WriteFileInput = parse_args(arguments)?;
+                    let expected_base = parse_cid(&input.expected_base)?;
+                    self.proposals
+                        .write_file(
+                            context,
+                            &input.path,
+                            &input.contents,
+                            expected_base,
+                            &limits,
+                        )
+                        .await?
+                }
+                "edit_file" => {
+                    let input: EditFileInput = parse_args(arguments)?;
+                    let expected_base = parse_cid(&input.expected_base)?;
+                    self.proposals
+                        .edit_file(
+                            context,
+                            EditFileRequest {
+                                path: &input.path,
+                                old_text: &input.old_text,
+                                new_text: &input.new_text,
+                                replace_all: input.replace_all,
+                                expected_base,
+                            },
+                            &limits,
+                        )
+                        .await?
+                }
+                "apply_patch" => {
+                    let input: ApplyPatchInput = parse_args(arguments)?;
+                    let expected_base = parse_cid(&input.expected_base)?;
+                    self.proposals
+                        .apply_patch(context, &input.path, &input.patch, expected_base, &limits)
+                        .await?
+                }
+                "shell" => {
+                    let input: ShellInput = parse_args(arguments)?;
+                    let output = self.shell.execute(&input, limits, context.deadline).await?;
+                    output_value(&output)
+                }
+                _ => return Err(ToolError::NotFound("builtin tool".to_owned())),
+            };
+            return finish_output(value, false, &limits);
+        }
         self.invoke_blocking(name, arguments, context)
     }
 
@@ -144,6 +251,11 @@ where
     ) -> Result<ToolOutput, ToolError> {
         if self.get(name).is_none() {
             return Err(ToolError::NotFound("builtin tool".to_owned()));
+        }
+        if matches!(name, "write_file" | "edit_file" | "apply_patch" | "shell") {
+            return Err(ToolError::InvalidInput(
+                "this builtin requires asynchronous invocation".to_owned(),
+            ));
         }
         let input_bytes = serde_json::to_vec(arguments)
             .map_err(|_| ToolError::InvalidInput("invalid tool arguments".to_owned()))?;
@@ -261,6 +373,11 @@ where
                 })?;
                 (json!({"result": text}), false)
             }
+            "classify_command" => {
+                let input: ClassifyInput = parse_args(arguments)?;
+                let classification = crate::shell::classify_command(&input.argv, input.shell);
+                (json!({"classification": classification}), false)
+            }
             "polaris_expand" => {
                 let input: ExpandInput = parse_args(arguments)?;
                 (
@@ -342,7 +459,10 @@ where
             .map_err(|_| ToolError::Io("workspace root failed".to_owned()))?;
         let start = Instant::now();
         let mut graph = SymbolGraph::new();
-        let mut files = 0_usize;
+        let mut files = 0_u64;
+        let max_files = u64::try_from(limits.max_results).map_err(|_| {
+            ToolError::InvalidInput("file result bound exceeds platform size".to_owned())
+        })?;
         let mut truncated = false;
         let mut builder = WalkBuilder::new(&canonical_root);
         builder
@@ -357,7 +477,7 @@ where
                     continue;
                 }
             };
-            if start.elapsed() >= limits.timeout || files >= limits.max_results {
+            if start.elapsed() >= limits.timeout || files >= max_files {
                 truncated = true;
                 break;
             }
@@ -408,10 +528,10 @@ where
             {
                 continue;
             }
-            if let Ok(parsed) = parser.parse_file(&resolved, &bytes) {
-                if graph.add_file(relative, &parsed).is_ok() {
-                    files = files.saturating_add(1);
-                }
+            if let Ok(parsed) = parser.parse_file(&resolved, &bytes)
+                && graph.add_file(relative, &parsed).is_ok()
+            {
+                files = files.saturating_add(1);
             }
         }
         let max_tokens = TokenCount::new(input.max_tokens);
@@ -445,10 +565,7 @@ where
                         outline: entry.outline,
                     })
                     .collect(),
-                files_indexed: match u64::try_from(files) {
-                    Ok(files) => files,
-                    Err(_) => u64::MAX,
-                },
+                files_indexed: files,
             },
             truncated,
         ))
@@ -477,6 +594,40 @@ struct RecallInput {
 struct DiffApplyInput {
     base: String,
     patch: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WriteFileInput {
+    path: String,
+    contents: String,
+    expected_base: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EditFileInput {
+    path: String,
+    old_text: String,
+    new_text: String,
+    #[serde(default)]
+    replace_all: bool,
+    expected_base: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ApplyPatchInput {
+    path: String,
+    patch: String,
+    expected_base: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClassifyInput {
+    argv: Vec<String>,
+    shell: crate::shell::ShellFlavor,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -508,6 +659,11 @@ struct RepoMapRow {
 fn parse_args<T: for<'de> Deserialize<'de>>(value: &Value) -> Result<T, ToolError> {
     serde_json::from_value(value.clone())
         .map_err(|_| ToolError::InvalidInput("tool arguments do not match schema".to_owned()))
+}
+
+fn parse_cid(value: &str) -> Result<Cid, ToolError> {
+    Cid::from_hex(value)
+        .map_err(|_| ToolError::InvalidInput("expected_base must be a full content id".to_owned()))
 }
 
 fn effective_limits(mut limits: ToolLimits, deadline: Option<std::time::Duration>) -> ToolLimits {
@@ -609,6 +765,58 @@ pub fn builtin_specs() -> Vec<ToolSpec> {
             "Retrieve persisted relevant context through the configured recall backend.",
             r#"{"type":"object","properties":{"query":{"type":"string","minLength":1}},"required":["query"],"additionalProperties":false}"#,
             pure,
+        ),
+    ];
+    specs.sort_by(|left, right| left.name.cmp(&right.name));
+    specs
+}
+
+/// P2 schemas that are advertised only when proposal and sandbox services are explicitly bound.
+#[must_use]
+pub fn p2_builtin_specs() -> Vec<ToolSpec> {
+    let writes = Effects {
+        reads_workspace: true,
+        writes_workspace: true,
+        network: false,
+        executes: false,
+    };
+    let executes = Effects {
+        reads_workspace: false,
+        writes_workspace: false,
+        network: false,
+        executes: true,
+    };
+    let pure = Effects::PURE;
+    let mut specs = vec![
+        spec(
+            "write_file",
+            "Propose a complete replacement for an existing UTF-8 workspace file; include its current full base CID. This submits for verification and never writes the file directly.",
+            r#"{"type":"object","properties":{"path":{"type":"string","minLength":1},"contents":{"type":"string"},"expected_base":{"type":"string","pattern":"^[0-9a-f]{64}$"}},"required":["path","contents","expected_base"],"additionalProperties":false}"#,
+            writes,
+        ),
+        spec(
+            "edit_file",
+            "Propose an exact text replacement in a workspace file. One match is required unless replace_all is true; include the current full base CID.",
+            r#"{"type":"object","properties":{"path":{"type":"string","minLength":1},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean","default":false},"expected_base":{"type":"string","pattern":"^[0-9a-f]{64}$"}},"required":["path","old_text","new_text","expected_base"],"additionalProperties":false}"#,
+            writes,
+        ),
+        spec(
+            "apply_patch",
+            "Validate and propose a single-file unified patch against the current workspace file; include its full base CID. No host file is written.",
+            r#"{"type":"object","properties":{"path":{"type":"string","minLength":1},"patch":{"type":"string","minLength":1},"expected_base":{"type":"string","pattern":"^[0-9a-f]{64}$"}},"required":["path","patch","expected_base"],"additionalProperties":false}"#,
+            writes,
+        ),
+        spec(
+            "classify_command",
+            "Classify an explicit argv command as heavy, destructive, or unknown without executing it.",
+            r#"{"type":"object","properties":{"argv":{"type":"array","minItems":1,"items":{"type":"string"}},"shell":{"type":"string","enum":["posix","power_shell","cmd"]}},"required":["argv","shell"],"additionalProperties":false}"#,
+            pure,
+        ),
+        spec(
+            "shell",
+            "Run explicit argv in the runtime-owned sandbox only. Output is returned in full within the configured capture bound; it is not run on the host.",
+            r#"{"type":"object","properties":{"argv":{"type":"array","minItems":1,"items":{"type":"string"}},"workdir":{"type":["string","null"]},"shell":{"type":"string","enum":["posix","power_shell","cmd"]},"timeout_ms":{"type":["integer","null"],"minimum":1,"maximum":900000}},"required":["argv","shell"],"additionalProperties":false}"#,
+            executes,
         ),
     ];
     specs.sort_by(|left, right| left.name.cmp(&right.name));

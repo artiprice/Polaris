@@ -52,10 +52,7 @@ impl Manifest {
         hasher.update(b"polaris-sync-manifest-v1\0");
         for (path, entry) in &self.entries {
             let path_bytes = path.as_str().as_bytes();
-            let path_len = match u64::try_from(path_bytes.len()) {
-                Ok(length) => length,
-                Err(_) => u64::MAX,
-            };
+            let path_len = manifest_length(path_bytes.len());
             hasher.update(&path_len.to_be_bytes());
             hasher.update(path_bytes);
             hasher.update(&entry.size.to_be_bytes());
@@ -66,10 +63,7 @@ impl Manifest {
                 EntryKind::Link { target } => {
                     hasher.update(&[1]);
                     let target_bytes = target.as_bytes();
-                    let target_len = match u64::try_from(target_bytes.len()) {
-                        Ok(length) => length,
-                        Err(_) => u64::MAX,
-                    };
+                    let target_len = manifest_length(target_bytes.len());
                     hasher.update(&target_len.to_be_bytes());
                     hasher.update(target_bytes)
                 }
@@ -77,6 +71,14 @@ impl Manifest {
         }
         Cid::from_bytes(*hasher.finalize().as_bytes())
     }
+}
+
+// Keep the manifest's fixed-width length encoding deterministic even on a wider host.
+fn manifest_length(length: usize) -> u64 {
+    let Ok(length) = u64::try_from(length) else {
+        return u64::MAX;
+    };
+    length
 }
 
 /// How unchanged files are detected.

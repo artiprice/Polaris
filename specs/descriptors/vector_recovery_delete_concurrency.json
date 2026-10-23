@@ -1,0 +1,53 @@
+{
+  "type_of": "method",
+  "name": "HnswStore::delete / reopen / concurrent access",
+  "file_path": "crates/polaris-storage/crates/vector/src/store.rs",
+  "logic_name": "Vector Mutation Recovery And Lifecycle",
+  "test_list": [
+    {
+      "test_name": "delete_only_removes_ids_in_the_bound_scope",
+      "description": "Deleting an id removes that row from the current table and scope without affecting another partition."
+    },
+    {
+      "test_name": "reopen_rebuilds_a_missing_index_from_sqlite_authority",
+      "description": "Removing the persisted HNSW cache file does not lose rows and reopening reconstructs searchable results from SQLite."
+    },
+    {
+      "test_name": "reopen_recovers_from_corrupt_index_file",
+      "description": "A truncated or invalid HNSW artifact is discarded and rebuilt from committed SQLite vectors."
+    },
+    {
+      "test_name": "failed_transaction_leaves_existing_rows_and_index_usable",
+      "description": "A failed SQLite commit leaves the last committed data searchable and does not publish an index generation."
+    },
+    {
+      "test_name": "concurrent_upserts_and_searches_are_serialized_safely",
+      "description": "Shared-handle concurrent readers and writers return valid results and preserve every committed row."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{VectorChunk, VectorStore}",
+    "polaris_storage_vector::HnswStore"
+  ],
+  "libraries": [
+    "rusqlite",
+    "usearch",
+    "tempfile (dev)",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "ids",
+      "type": "&[Cid]",
+      "description": "Chunk identities to delete from the handle's fixed table and scope."
+    },
+    {
+      "name": "root",
+      "type": "&Path",
+      "description": "Persistent store directory reused after closing the handle or simulating a missing/corrupt index cache."
+    }
+  ],
+  "output_type": "Result<usize, VectorStoreError>",
+  "output_description": "Transactional deletion count with SQLite as durable authority and an atomically published HNSW cache."
+}

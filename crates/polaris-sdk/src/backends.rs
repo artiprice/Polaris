@@ -128,6 +128,14 @@ macro_rules! forward_all {
         }
 
         impl<$($p: SandboxBackend),+> SandboxBackend for $wrapper<$($p),+> {
+            fn recovery_domain(&self) -> Option<Cid> {
+                $each!(self, v => v.recovery_domain())
+            }
+
+            fn confirm_absence(&self, sandbox: &SandboxHandle) -> impl Future<Output = Result<bool, SandboxError>> + Send {
+                async move { $each!(self, v => v.confirm_absence(sandbox).await) }
+            }
+
             fn create(&self, spec: &SandboxSpec) -> impl Future<Output = Result<SandboxHandle, SandboxError>> + Send {
                 async move { $each!(self, v => v.create(spec).await) }
             }
@@ -248,6 +256,10 @@ macro_rules! forward_all {
                 $each!(self, v => v.get(key))
             }
 
+            fn get_bounded(&self, key: &[u8; 32], max_bytes: usize) -> Result<Option<Vec<u8>>, CacheStoreError> {
+                $each!(self, v => v.get_bounded(key, max_bytes))
+            }
+
             fn put(&self, key: [u8; 32], value: &[u8], scope: CacheScope) -> Result<(), CacheStoreError> {
                 $each!(self, v => v.put(key, value, scope))
             }
@@ -271,8 +283,8 @@ where
     type Out = A::Out;
     type Err = A::Err;
 
-    fn apply(&self, input: Self::In) -> impl Future<Output = Result<Self::Out, Self::Err>> + Send {
-        async move { each2!(self, v => v.apply(input).await) }
+    async fn apply(&self, input: Self::In) -> Result<Self::Out, Self::Err> {
+        each2!(self, v => v.apply(input).await)
     }
 }
 
@@ -286,8 +298,8 @@ where
     type Out = A::Out;
     type Err = A::Err;
 
-    fn apply(&self, input: Self::In) -> impl Future<Output = Result<Self::Out, Self::Err>> + Send {
-        async move { each3!(self, v => v.apply(input).await) }
+    async fn apply(&self, input: Self::In) -> Result<Self::Out, Self::Err> {
+        each3!(self, v => v.apply(input).await)
     }
 }
 
@@ -298,9 +310,12 @@ mod shared {
 
     use super::{
         CacheScope, CacheStoreError, Cid, DocParser, DocSource, Document, EventRecord, EventStore,
-        EventStoreError, ExactCacheStore, IngestError, RedactStats, Redactor, Seq, VectorChunk,
+        EventStoreError, ExactCacheStore, ExecOutput, ExecRequest, IngestError, RedactStats,
+        Redactor, SandboxBackend, SandboxError, SandboxHandle, SandboxSpec, Seq, VectorChunk,
         VectorError, VectorHit, VectorStore,
     };
+    use crate::registry::SandboxSnapshotPage;
+    use bytes::Bytes;
 
     impl<T: EventStore + ?Sized> EventStore for Arc<T> {
         fn append(&self, record: &EventRecord) -> Result<Seq, EventStoreError> {
@@ -335,6 +350,14 @@ mod shared {
             (**self).get(key)
         }
 
+        fn get_bounded(
+            &self,
+            key: &[u8; 32],
+            max_bytes: usize,
+        ) -> Result<Option<Vec<u8>>, CacheStoreError> {
+            (**self).get_bounded(key, max_bytes)
+        }
+
         fn put(
             &self,
             key: [u8; 32],
@@ -358,6 +381,70 @@ mod shared {
     impl<T: DocParser + ?Sized> DocParser for Arc<T> {
         fn parse(&self, src: DocSource<'_>) -> Result<Document, IngestError> {
             (**self).parse(src)
+        }
+    }
+
+    impl<T: SandboxBackend + ?Sized> SandboxBackend for Arc<T> {
+        fn recovery_domain(&self) -> Option<Cid> {
+            (**self).recovery_domain()
+        }
+
+        async fn confirm_absence(&self, sandbox: &SandboxHandle) -> Result<bool, SandboxError> {
+            (**self).confirm_absence(sandbox).await
+        }
+
+        async fn create(&self, spec: &SandboxSpec) -> Result<SandboxHandle, SandboxError> {
+            (**self).create(spec).await
+        }
+
+        async fn exec(
+            &self,
+            sandbox: &SandboxHandle,
+            req: &ExecRequest,
+        ) -> Result<ExecOutput, SandboxError> {
+            (**self).exec(sandbox, req).await
+        }
+
+        async fn upload(
+            &self,
+            sandbox: &SandboxHandle,
+            path: &str,
+            bytes: Bytes,
+        ) -> Result<(), SandboxError> {
+            (**self).upload(sandbox, path, bytes).await
+        }
+
+        async fn download(
+            &self,
+            sandbox: &SandboxHandle,
+            path: &str,
+        ) -> Result<Bytes, SandboxError> {
+            (**self).download(sandbox, path).await
+        }
+
+        async fn list_files(
+            &self,
+            sandbox: &SandboxHandle,
+            dir: &str,
+        ) -> Result<Vec<String>, SandboxError> {
+            (**self).list_files(sandbox, dir).await
+        }
+
+        async fn destroy(&self, sandbox: &SandboxHandle) -> Result<(), SandboxError> {
+            (**self).destroy(sandbox).await
+        }
+
+        async fn snapshot_page(
+            &self,
+            sandbox: &SandboxHandle,
+            root: &str,
+            generation: Option<&str>,
+            offset: u64,
+            limit: u32,
+        ) -> Result<SandboxSnapshotPage, SandboxError> {
+            (**self)
+                .snapshot_page(sandbox, root, generation, offset, limit)
+                .await
         }
     }
 }

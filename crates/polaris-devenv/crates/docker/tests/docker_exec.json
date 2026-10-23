@@ -1,0 +1,26 @@
+{
+  "type_of": "function",
+  "name": "Docker::exec_once and warm pool",
+  "file_path": "crates/polaris-devenv/crates/docker/src/lib.rs",
+  "logic_name": "Docker Hardened Execution",
+  "test_list": [
+    { "test_name": "hardened_spec_requires_memory_and_cpu_limits", "description": "Reject a container configuration below the minimum memory or CPU ceiling." },
+    { "test_name": "hardened_spec_rejects_secret_environment_entries", "description": "Reject secret-like environment names before the Engine API call." },
+    { "test_name": "exec_request_rejects_empty_argv_before_engine_use", "description": "Require explicit argv rather than implicit shell execution." },
+    { "test_name": "endpoint_selection_is_platform_specific", "description": "Choose a named pipe on Windows and Unix socket on Unix." },
+    { "test_name": "build_context_requires_root_dockerfile_and_rejects_traversal", "description": "Require a regular UTF-8 root Dockerfile and reject symlinks and unsafe paths in the tar archive." },
+    { "test_name": "buildkit_cache_mounts_require_supported_local_frontend_and_exact_run_mount", "description": "Require a stable matching RUN cache mount and a Dockerfile frontend version 1.2 or newer." },
+    { "test_name": "buildkit_preflight_checks_external_copy_images_are_preloaded", "description": "Collect literal external COPY --from images for local-only preflight and reject variable references." },
+    { "test_name": "bounded_build_rejects_missing_mount_and_remote_sources", "description": "Reject undeclared mounts and remote ADD sources before Engine requests." },
+    { "test_name": "warm_pool_budget_is_enforced_before_engine_calls", "description": "Reject pool size and aggregate memory budgets outside configured limits." },
+    { "test_name": "orphan_ownership_requires_both_exact_ids_and_managed_label", "description": "Only match containers bearing the exact pool, owner, and managed labels." },
+    { "test_name": "live_owned_exec_pool_failure_and_persisted_identity_recovery_are_confined", "description": "Opt-in WSL live contract; only the approved immutable image and exact UUID-labelled resources, checking exec output, timeout cleanup, persisted identity recovery, and final daemon absence." },
+    { "test_name": "live_buildkit_cache_mount_uses_local_frontend_and_base_only", "description": "Opt-in WSL BuildKit contract; pinned Docker Hub frontend manifest sha256:b5f3b260a9678e1d83d2fce86eeddf79420b79147eaba2a25986f47133d73720, approved immutable local base only, no build-step network, unique test image tag removed and checked absent." }
+  ],
+  "dependencies": ["DockerEndpoint", "ContainerSpec", "ExecRequest", "BuildContext", "BuildOptions", "BuildCacheMount", "WarmPoolConfig", "WarmContainerPool"],
+  "libraries": ["bollard", "tokio", "futures", "tar", "uuid", "thiserror"],
+  "inputs": [{ "name": "request", "type": "&ExecRequest", "description": "Validated argv, deadline, environment, and bounded output policy." }],
+  "output_type": "Result<ExecOutput, DockerError>",
+  "output_description": "Captured bounded command output and engine-reported exit status, after container cleanup."
+}
+

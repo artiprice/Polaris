@@ -4,8 +4,10 @@ use crate::{
     bus::{BusError, EventStream},
     context::blocking,
     reaper::ShutdownReport,
+    sandbox_recovery::SandboxRecovery,
     verifier::LocalDirectiveVerifier,
 };
+use polaris_devenv::docker::{Docker, DockerEndpoint};
 use polaris_sdk::{
     contracts::{Command, CommandBody, EventRecord, Unverified},
     ids::{Cid, CommandId, FrameId, Seq, SessionId},
@@ -74,7 +76,19 @@ impl Kernel {
     /// # Errors
     /// Store, journal, replay, configuration or authority failure. No handle escapes failed startup.
     pub async fn start(config: LocalKernelConfig) -> Result<KernelHandle, KernelError> {
-        Self::start_inner(config, None).await
+        Self::start_inner(config, None, None, None).await
+    }
+    /// Start with an explicit Docker endpoint, recovering Docker pool orphans before session admission.
+    ///
+    /// # Errors
+    /// Docker connection or cleanup failure, unresolved non-Docker resources, store, replay,
+    /// configuration, or authority failure. No handle escapes failed startup.
+    pub async fn start_with_docker(
+        config: LocalKernelConfig,
+        endpoint: DockerEndpoint,
+    ) -> Result<KernelHandle, KernelError> {
+        let docker = Docker::connect(&endpoint).await?;
+        Self::start_inner(config, None, Some(docker), None).await
     }
     /// Start the P2 execution profile with an explicit live OpenShell backend and image policy.
     /// # Errors
@@ -84,26 +98,33 @@ impl Kernel {
         backend: Arc<polaris_openshell::client::OpenShellBackend>,
         spec: polaris_sdk::registry::SandboxSpec,
     ) -> Result<KernelHandle, KernelError> {
+        let recovery: Arc<dyn SandboxRecovery> = Arc::clone(&backend) as Arc<dyn SandboxRecovery>;
         let execution = Arc::new(crate::SandboxExecution::new(
             backend,
             spec,
             config.session,
             config.frame,
         )?);
-        Self::start_inner(config, Some(execution)).await
+        Self::start_inner(config, Some(execution), None, Some(recovery)).await
     }
     async fn start_inner(
         config: LocalKernelConfig,
         execution: Option<
             Arc<crate::SandboxExecution<polaris_openshell::client::OpenShellBackend>>,
         >,
+        docker: Option<Docker>,
+        sandbox_recovery: Option<Arc<dyn SandboxRecovery>>,
     ) -> Result<KernelHandle, KernelError> {
         let control = Arc::new(
             LocalDirectiveVerifier::new(config.session, config.frame)
                 .map_err(|_| KernelError::Configuration("local authority unavailable"))?,
         );
         let platform = Arc::new(polaris_platform::process::ProcessPlatform::new());
-        let ctx = KernelCtx::open(&config.root).await?;
+        let ctx = match (docker.as_ref(), sandbox_recovery.as_deref()) {
+            (Some(docker), _) => KernelCtx::open_with_docker(&config.root, docker).await?,
+            (None, Some(backend)) => KernelCtx::open_with_sandbox(&config.root, backend).await?,
+            (None, None) => KernelCtx::open(&config.root).await?,
+        };
         let existing = {
             let ctx = Arc::clone(&ctx);
             let id = config.session;

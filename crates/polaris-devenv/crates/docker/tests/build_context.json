@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "BuildContext::from_tar",
+  "file_path": "crates/polaris-devenv/crates/docker/src/lib.rs",
+  "logic_name": "Docker Build Context Validation",
+  "test_list": [
+    { "test_name": "build_context_requires_root_dockerfile_and_rejects_traversal", "description": "Require a regular UTF-8 root Dockerfile and reject symlink entries." },
+    { "test_name": "buildkit_cache_mounts_require_supported_local_frontend_and_exact_run_mount", "description": "Check cache mount ID/target against a RUN directive and require a supported frontend." },
+    { "test_name": "bounded_build_rejects_missing_mount_and_remote_sources", "description": "Reject missing cache declarations and external ADD URLs." }
+  ],
+  "dependencies": [],
+  "libraries": ["tar", "bytes"],
+  "inputs": [{ "name": "bytes", "type": "Bytes", "description": "A bounded tar archive to pass to the Docker Engine build API." }],
+  "output_type": "Result<BuildContext, DockerError>",
+  "output_description": "A bounded archive with safe entries and captured UTF-8 Dockerfile content used for offline image/frontend/cache validation."
+}

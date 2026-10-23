@@ -183,7 +183,8 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
         | Event::FileLeaseRevoked { .. }
         | Event::SandboxSnapshotBranchCreated { .. }
         | Event::SandboxExecutionCompleted { .. }
-        | Event::BlastRadiusAlert { .. } => {}
+        | Event::BlastRadiusAlert { .. }
+        | Event::FrameStepRecorded { .. } => {}
     }
     state.last_seq = Some(seq);
     Ok(())

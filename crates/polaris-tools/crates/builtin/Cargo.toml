@@ -13,6 +13,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+bytes = { workspace = true }
 thiserror = { workspace = true }
 ignore = { workspace = true }
 globset = { workspace = true }
@@ -20,6 +21,8 @@ regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 encoding_rs = { workspace = true }
+cap-std = { workspace = true }
+cap-primitives = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-code-intel = { workspace = true }

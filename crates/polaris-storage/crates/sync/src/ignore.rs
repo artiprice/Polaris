@@ -37,6 +37,8 @@ pub const DEFAULT_DENY: &[&str] = &[
     "**/.netrc",
     "**/.npmrc",
     "**/.pypirc",
+    "**/.aws",
+    "**/.aws/**",
 ];
 
 /// Outcome of classifying one path.
@@ -64,14 +66,12 @@ impl IgnoreRules {
     /// [`SyncError::Rule`] for an invalid pattern.
     pub fn new(root: &Path, polarisignore: Option<&str>) -> Result<Self, SyncError> {
         let mut builder = GitignoreBuilder::new(root);
-        let text = match polarisignore {
-            Some(text) => text,
-            None => "",
-        };
-        for line in text.lines() {
-            builder
-                .add_line(None, line)
-                .map_err(|e| SyncError::Rule(e.to_string()))?;
+        if let Some(text) = polarisignore {
+            for line in text.lines() {
+                builder
+                    .add_line(None, line)
+                    .map_err(|e| SyncError::Rule(e.to_string()))?;
+            }
         }
         let gitignore = builder
             .build()

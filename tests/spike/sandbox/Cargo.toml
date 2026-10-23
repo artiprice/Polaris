@@ -17,6 +17,8 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-kernel-reaper = { workspace = true }
+polaris-platform = { workspace = true }
+polaris-storage-sync = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-openshell = { workspace = true }
 
@@ -24,3 +26,4 @@ polaris-openshell = { workspace = true }
 tempfile = { workspace = true }
 bytes = { workspace = true }
 rustls = { workspace = true }
+serde_json = { workspace = true }

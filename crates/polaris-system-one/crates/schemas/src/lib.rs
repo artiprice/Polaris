@@ -1,5 +1,11 @@
 //! Versioned System-One schemas and deterministic threshold application.
-use polaris_sdk::system_one::{Answer, Decision, Probability, Question, QuestionId, QuestionKind};
+use polaris_sdk::system_one::{
+    Answer, Decision, DecisionSchema, DecisionSchemaCalibration, DecisionSchemaCalibrationRecord,
+    DecisionSchemaCalibrationState, DecisionSchemaCatalog as SdkDecisionSchemaCatalog,
+    DecisionSchemaError as SdkDecisionSchemaError, DecisionSchemaFailMode,
+    DecisionSchemaFailPolicy, DecisionSchemaIntegrity, DecisionSchemaThresholds, Probability,
+    Question, QuestionId, QuestionKind,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
@@ -373,6 +379,97 @@ impl SchemaCatalog for SchemaSet {
         SchemaSet::latest(self, id)
     }
 }
+
+/// L0 SDK view over the canonical validated L3 schema set.
+#[derive(Debug, Clone, Copy)]
+pub struct SdkSchemaCatalog<'a> {
+    schemas: &'a SchemaSet,
+}
+
+impl<'a> SdkSchemaCatalog<'a> {
+    /// Wrap a canonical schema set without copying or adding a layer dependency.
+    #[must_use]
+    pub const fn new(schemas: &'a SchemaSet) -> Self {
+        Self { schemas }
+    }
+}
+
+impl SdkDecisionSchemaCatalog for SdkSchemaCatalog<'_> {
+    fn get(
+        &self,
+        id: &str,
+        version: u32,
+    ) -> Result<Option<DecisionSchema>, SdkDecisionSchemaError> {
+        self.schemas.get(id, version).map(to_sdk_schema).transpose()
+    }
+
+    fn latest(&self, id: &str) -> Result<Option<DecisionSchema>, SdkDecisionSchemaError> {
+        self.schemas.latest(id).map(to_sdk_schema).transpose()
+    }
+}
+
+fn to_sdk_schema(schema: &Schema) -> Result<DecisionSchema, SdkDecisionSchemaError> {
+    let thresholds = DecisionSchemaThresholds::new(
+        schema.thresholds.accept,
+        schema.thresholds.reject,
+        schema.thresholds.abstain_band.0,
+        schema.thresholds.abstain_band.1,
+    )?;
+    let fail = DecisionSchemaFailPolicy::new(
+        consumer_id(schema.fail.consumer).to_owned(),
+        match schema.fail.on_timeout {
+            FailMode::Open => DecisionSchemaFailMode::Open,
+            FailMode::Closed => DecisionSchemaFailMode::Closed,
+        },
+        schema.fail.deadline_ms,
+        match schema.fail.integrity {
+            Integrity::Normal => DecisionSchemaIntegrity::Normal,
+            Integrity::Strict => DecisionSchemaIntegrity::Strict,
+        },
+    )?;
+    let calibration = DecisionSchemaCalibration::try_new(DecisionSchemaCalibrationRecord {
+        state: match schema.calibration.status {
+            CalibrationStatus::Uncalibrated => DecisionSchemaCalibrationState::Uncalibrated,
+            CalibrationStatus::Calibrated => DecisionSchemaCalibrationState::Calibrated,
+        },
+        fixture_set: schema.calibration.fixture_set.clone(),
+        fixture_blake3: schema.calibration.fixture_blake3.clone(),
+        sample_count: schema.calibration.n,
+        precision_target: schema.calibration.precision_target,
+        observed_precision: schema.calibration.observed_precision,
+        observed_recall: schema.calibration.observed_recall,
+        expected_calibration_error: schema.calibration.ece,
+        checkpoint_blake3: schema.calibration.checkpoint_blake3.clone(),
+        date: schema.calibration.date.clone(),
+    })?;
+    DecisionSchema::try_new(
+        schema.id.clone(),
+        schema.version,
+        schema.max_chars,
+        schema.questions.clone(),
+        thresholds,
+        fail,
+        calibration,
+    )
+}
+
+fn consumer_id(consumer: Consumer) -> &'static str {
+    match consumer {
+        Consumer::SafetyGate => "safety_gate",
+        Consumer::PiiMask => "pii_mask",
+        Consumer::Triage => "triage",
+        Consumer::ToolPrune => "tool_prune",
+        Consumer::Watchdog => "watchdog",
+        Consumer::Sifter => "sifter",
+        Consumer::EffortRouter => "effort_router",
+        Consumer::Postflight => "postflight",
+        Consumer::DiffArbiter => "diff_arbiter",
+        Consumer::SandboxRoute => "sandbox_route",
+        Consumer::EnvMatch => "env_match",
+        Consumer::NvidiaProfile => "nvidia_profile",
+        Consumer::SkillSelect => "skill_select",
+    }
+}
 /// Apply thresholds without active calibration context.
 ///
 /// Strict schemas cannot Accept without digest matching.
@@ -641,10 +738,10 @@ fn calibration(s: &Schema) -> Result<(), SchemaError> {
     {
         return Err(SchemaError::CalibrationStale { id: s.id.clone() });
     }
-    if let (Some(target), Some(observed)) = (r.precision_target, r.observed_precision) {
-        if observed < target {
-            return Err(SchemaError::CalibrationStale { id: s.id.clone() });
-        }
+    if let (Some(target), Some(observed)) = (r.precision_target, r.observed_precision)
+        && observed < target
+    {
+        return Err(SchemaError::CalibrationStale { id: s.id.clone() });
     }
     Ok(())
 }

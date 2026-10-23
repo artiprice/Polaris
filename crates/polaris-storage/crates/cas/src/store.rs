@@ -185,6 +185,16 @@ impl Cas {
     /// [`CasError::NotFound`], [`CasError::Corrupt`] (verification), [`CasError::TooLarge`],
     /// [`CasError::Decompress`] / [`CasError::Format`] for damaged blobs, [`CasError::Io`].
     pub fn get(&self, cid: &Cid) -> Result<Bytes, CasError> {
+        self.get_bounded(cid, self.cfg.max_blob_bytes)
+    }
+
+    /// Reads a blob whose decoded size is bounded by both the store limit and `max_bytes`.
+    ///
+    /// # Errors
+    /// [`CasError::NotFound`], [`CasError::Corrupt`], [`CasError::TooLarge`],
+    /// [`CasError::Decompress`] / [`CasError::Format`] for damaged blobs, or [`CasError::Io`].
+    pub fn get_bounded(&self, cid: &Cid, max_bytes: u64) -> Result<Bytes, CasError> {
+        let max_bytes = self.cfg.max_blob_bytes.min(max_bytes);
         let file = match fs::File::open(self.blob_path(cid)) {
             Ok(file) => file,
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(CasError::NotFound(*cid)),
@@ -192,7 +202,7 @@ impl Cas {
         };
         // Every format-v1 blob produced by encode_blob is at most raw bytes + its two-byte
         // header. Bound the encoded read too, including growth after the metadata check.
-        let encoded_limit = self.cfg.max_blob_bytes.saturating_add(2);
+        let encoded_limit = max_bytes.saturating_add(2);
         let size = file.metadata()?.len();
         if size > encoded_limit {
             return Err(CasError::TooLarge {
@@ -210,7 +220,7 @@ impl Cas {
                 size,
             });
         }
-        let bytes = decode_blob(&blob, self.cfg.max_blob_bytes)?;
+        let bytes = decode_blob(&blob, max_bytes)?;
         if self.cfg.verify_on_get && content_id(&bytes) != *cid {
             return Err(CasError::Corrupt { cid: *cid });
         }
@@ -240,10 +250,10 @@ impl Cas {
         let mut found = Vec::new();
         for entry in entries {
             let entry = entry?;
-            if let Ok(cid) = Cid::from_hex(&entry.file_name().to_string_lossy()) {
-                if ShortRef::of(&cid) == *short {
-                    found.push(cid);
-                }
+            if let Ok(cid) = Cid::from_hex(&entry.file_name().to_string_lossy())
+                && ShortRef::of(&cid) == *short
+            {
+                found.push(cid);
             }
         }
         Ok(found)
@@ -332,5 +342,37 @@ impl Cas {
             }
         }
         Ok(report)
+    }
+}
+
+impl polaris_sdk::content::ContentStore for Cas {
+    fn put(&self, content: &[u8]) -> Result<Cid, polaris_sdk::content::ContentStoreError> {
+        Cas::put(self, content).map_err(map_content_error)
+    }
+
+    fn get(
+        &self,
+        cid: &Cid,
+        max_bytes: u64,
+    ) -> Result<Bytes, polaris_sdk::content::ContentStoreError> {
+        self.get_bounded(cid, max_bytes).map_err(map_content_error)
+    }
+
+    fn contains(&self, cid: &Cid) -> Result<bool, polaris_sdk::content::ContentStoreError> {
+        Cas::contains(self, cid).map_err(map_content_error)
+    }
+}
+
+fn map_content_error(error: CasError) -> polaris_sdk::content::ContentStoreError {
+    use polaris_sdk::content::ContentStoreError;
+    match error {
+        CasError::Io(_) => ContentStoreError::Unavailable,
+        CasError::NotFound(cid) => ContentStoreError::NotFound(cid),
+        CasError::Corrupt { cid } => ContentStoreError::Corrupt(cid),
+        CasError::TooLarge { limit, size } => ContentStoreError::TooLarge { limit, size },
+        CasError::UnknownShortRef(_) | CasError::Ambiguous(_) | CasError::ShortRefCollision(_) => {
+            ContentStoreError::InvalidEncoding
+        }
+        CasError::Decompress(_) | CasError::Format(_) => ContentStoreError::InvalidEncoding,
     }
 }

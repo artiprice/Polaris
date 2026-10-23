@@ -13,6 +13,18 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+exmex = { workspace = true }
+rust_decimal = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+splines = { workspace = true }
+statrs = { workspace = true }
+toml = { workspace = true }
 thiserror = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true, features = ["json"] }
+proptest = { workspace = true }

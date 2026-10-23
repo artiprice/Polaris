@@ -1,0 +1,56 @@
+{
+  "type_of": "method",
+  "name": "HnswStore::open",
+  "file_path": "crates/polaris-storage/crates/vector/src/store.rs",
+  "logic_name": "Vector Table Metadata And Scope",
+  "test_list": [
+    {
+      "test_name": "creates_table_with_dimension_embedder_and_metric",
+      "description": "Opening a new table persists its dimension, embedder identity, and metric in SQLite."
+    },
+    {
+      "test_name": "reopen_preserves_table_and_scope_metadata",
+      "description": "Reopening the same table and explicit global or session scope recovers its rows and index."
+    },
+    {
+      "test_name": "rejects_dimension_embedder_and_metric_mismatch",
+      "description": "A table cannot be reopened with a different dimension, embedder, or metric."
+    },
+    {
+      "test_name": "session_scope_never_reads_global_or_other_session_rows",
+      "description": "A handle is permanently bounded to its configured global or session partition."
+    },
+    {
+      "test_name": "rejects_invalid_table_names_and_dimensions",
+      "description": "Empty or unsafe table identities and zero or oversized dimensions fail before storage mutation."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::{ModelId, SessionId}",
+    "polaris_storage_vector::{HnswStore, Metric, TableSpec, VectorScope}"
+  ],
+  "libraries": [
+    "rusqlite",
+    "usearch",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "root",
+      "type": "&Path",
+      "description": "Directory containing the authoritative SQLite database and recoverable HNSW cache files."
+    },
+    {
+      "name": "table",
+      "type": "&TableSpec",
+      "description": "Validated table identity, dimension, embedder, and metric."
+    },
+    {
+      "name": "scope",
+      "type": "VectorScope",
+      "description": "Fixed global or session partition bound to the returned handle."
+    }
+  ],
+  "output_type": "Result<HnswStore, VectorStoreError>",
+  "output_description": "A durable table handle that cannot cross its configured table or session scope."
+}

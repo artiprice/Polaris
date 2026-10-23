@@ -305,10 +305,10 @@ async fn lifecycle<B: SandboxBackend + 'static>(
             Err(_) => result.failed(cycle, "destroy", SpikeError::Deadline),
         }
     }
-    if result.destroyed || collision {
-        if let Err(error) = reaper.release(registration) {
-            result.failed(cycle, "release", error);
-        }
+    if (result.destroyed || collision)
+        && let Err(error) = reaper.release(registration)
+    {
+        result.failed(cycle, "release", error);
     }
     result
 }

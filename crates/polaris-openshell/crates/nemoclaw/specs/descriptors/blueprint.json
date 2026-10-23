@@ -6,16 +6,18 @@
   "test_list": [
     { "test_name": "default_digest_round_trips_and_tampering_fails", "description": "Create a digest-pinned blueprint, serialize and parse it, then reject content tampering." },
     { "test_name": "mutable_image_and_bad_cid_are_rejected", "description": "Reject mutable image tags and malformed policy references." },
-    { "test_name": "onboarding_and_doctor_keep_unknown_state_explicit", "description": "Produce ordered onboarding actions and preserve unprobed facts as UNKNOWN." },
-    { "test_name": "dockerfile_places_guest_in_policy_visible_usr_bin", "description": "Build the guest and install it under /usr/bin where the verified default sandbox policy permits execution." }
+    { "test_name": "blueprint_driver_is_exact_and_must_match_authenticated_backend", "description": "Reject unknown/non-canonical driver values and refuse Docker/VM backend mismatches before creation." },
+    { "test_name": "onboarding_steps_follow_the_selected_driver_and_have_checks", "description": "Require KVM only for VM plans, choose matching driver actions and provide a postcondition for every step." },
+    { "test_name": "onboarding_and_doctor_keep_unknown_state_explicit", "description": "Preserve unknown host probes while treating KVM as optional for Docker and required for VM." },
+    { "test_name": "dockerfile_places_guest_in_policy_visible_usr_bin", "description": "Build the guest from the allowlisted context and install it under /usr/bin where the sandbox policy permits execution." }
   ],
   "dependencies": ["polaris-sdk::SandboxBackend", "polaris-openshell-client", "polaris-openshell-policy"],
   "libraries": ["serde", "serde-saphyr", "blake3", "bytes", "tokio"],
   "inputs": [
     { "name": "blueprint", "type": "&Blueprint", "description": "Versioned image and policy blueprint with a canonical BLAKE3 digest." },
-    { "name": "backend", "type": "impl BlueprintBackend", "description": "OpenShell backend that can attach named provider profile references." },
+    { "name": "backend", "type": "impl BlueprintBackend", "description": "OpenShell backend exposing the driver identity authenticated from its gateway connection." },
     { "name": "probes", "type": "&ProbeResults", "description": "Observed host facts from the platform probe layer." }
   ],
   "output_type": "Result<AppliedBlueprint, NemoclawError>",
-  "output_description": "An applied sandbox only after digest verification and guest protocol handshake."
+  "output_description": "An applied sandbox only after digest verification, selected-driver match, and guest protocol handshake."
 }

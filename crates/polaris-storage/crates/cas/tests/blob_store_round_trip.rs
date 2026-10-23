@@ -45,6 +45,24 @@ fn put_get_roundtrip_byte_exact() -> TestResult {
 }
 
 #[test]
+fn sdk_content_store_enforces_per_read_bound() -> TestResult {
+    use polaris_sdk::content::{ContentStore, ContentStoreError};
+
+    let (_dir, cas) = store()?;
+    let content = vec![5_u8; 1024];
+    let cid = ContentStore::put(&cas, &content)?;
+    assert!(matches!(
+        ContentStore::get(&cas, &cid, 64),
+        Err(ContentStoreError::TooLarge {
+            limit: 64,
+            size: 1024
+        })
+    ));
+    assert_eq!(ContentStore::get(&cas, &cid, 1024)?.as_ref(), content);
+    Ok(())
+}
+
+#[test]
 fn put_is_idempotent() -> TestResult {
     let (_dir, cas) = store()?;
     let cid = cas.put(b"same bytes")?;

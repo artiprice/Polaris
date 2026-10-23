@@ -176,8 +176,8 @@ impl Repo {
     /// # Errors
     /// Returns [`VcsError::NotARepo`] for paths outside a worktree and propagates storage errors.
     pub fn open(root: &Path) -> Result<Self, VcsError> {
-        let repository = gix::discover(root.to_path_buf())
-            .map_err(|error| VcsError::NotARepo(error.to_string()))?;
+        let repository =
+            gix::discover(root).map_err(|error| VcsError::NotARepo(error.to_string()))?;
         let root = repository
             .workdir()
             .ok_or_else(|| VcsError::NotARepo(root.display().to_string()))?
@@ -483,7 +483,7 @@ async fn run_git_with_exit(
 }
 
 fn verify_git_config(root: &Path) -> Result<(), VcsError> {
-    let git_dir = gix::discover(root.to_path_buf())
+    let git_dir = gix::discover(root)
         .map_err(|error| VcsError::Gix(error.to_string()))?
         .git_dir()
         .to_path_buf();

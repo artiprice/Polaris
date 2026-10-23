@@ -85,3 +85,59 @@ fn reports_automata_compile_scan_and_4k_tail_latency() {
         "10-rule scanner throughput below 500 MiB/s: {mib_per_second:.2} MiB/s"
     );
 }
+
+#[test]
+fn zero_full_dfa_budget_keeps_scanner_results_and_bounds_memory() {
+    let mut builder = RuleSetBuilder::default();
+    for index in 0..10_u32 {
+        let pattern = format!("POLARIS_SECRET_{index:04}");
+        let name = format!("rule_{index:04}");
+        let added = builder.add(&name, &pattern, Category::Secret);
+        assert!(added.is_ok(), "fixture pattern must be accepted");
+    }
+
+    let mut default_limits = CompileLimits::default();
+    let default_start = Instant::now();
+    let default_scanner = builder
+        .build(&default_limits)
+        .expect("default limits must compile fixture");
+    let default_build = default_start.elapsed();
+
+    default_limits.dfa_size_bytes = 0;
+    let constrained_start = Instant::now();
+    let constrained_scanner = builder
+        .build(&default_limits)
+        .expect("zero full-DFA budget should select bounded fallback");
+    let constrained_build = constrained_start.elapsed();
+
+    let haystacks: [&[u8]; 4] = [
+        b"no secret here",
+        b"POLARIS_SECRET_0003",
+        b"prefix POLARIS_SECRET_0009 suffix",
+        b"POLARIS_SECRET_0000 POLARIS_SECRET_0001",
+    ];
+    for haystack in haystacks {
+        let mut default_matches = polaris_security_automata::ScanBuf::with_capacity(8);
+        let mut constrained_matches = polaris_security_automata::ScanBuf::with_capacity(8);
+        let default_count = default_scanner
+            .scan(haystack, &mut default_matches)
+            .expect("default scan must fit output buffer");
+        let constrained_count = constrained_scanner
+            .scan(haystack, &mut constrained_matches)
+            .expect("fallback scan must fit output buffer");
+        assert_eq!(
+            default_count, constrained_count,
+            "full-DFA budget must not change findings"
+        );
+        assert_eq!(default_matches.matches(), constrained_matches.matches());
+    }
+
+    eprintln!(
+        "strategy_comparison=default_vs_zero_full_dfa_budget;default_memory_bytes={};zero_budget_memory_bytes={};default_build_us={:.3};zero_budget_build_us={:.3};haystacks_compared={}",
+        default_scanner.engine_memory_bytes(),
+        constrained_scanner.engine_memory_bytes(),
+        default_build.as_secs_f64() * 1_000_000.0,
+        constrained_build.as_secs_f64() * 1_000_000.0,
+        haystacks.len(),
+    );
+}

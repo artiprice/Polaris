@@ -24,6 +24,8 @@ const SAFE_INHERITED_ENV: &[&str] = &[
     "TMP",
     "HOME",
     "USERPROFILE",
+    "APPDATA",
+    "ProgramData",
     "LANG",
     "LC_ALL",
 ];

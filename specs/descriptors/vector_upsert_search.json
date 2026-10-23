@@ -1,0 +1,66 @@
+{
+  "type_of": "method",
+  "name": "HnswStore::upsert / search",
+  "file_path": "crates/polaris-storage/crates/vector/src/store.rs",
+  "logic_name": "Vector Upsert And Filtered Search",
+  "test_list": [
+    {
+      "test_name": "rejects_dimension_mismatch_and_non_finite_vectors_atomically",
+      "description": "A malformed vector rejects the whole batch without changing SQLite, index count, or search results."
+    },
+    {
+      "test_name": "upsert_same_id_replaces_vector_and_payload",
+      "description": "Upsert is idempotent by chunk id and a replacement moves the nearest-neighbor result and payload."
+    },
+    {
+      "test_name": "filters_before_k_limit",
+      "description": "Payload-filtered search returns k eligible neighbors even when closer ineligible rows exist."
+    },
+    {
+      "test_name": "empty_table_and_k_zero_return_empty",
+      "description": "Searching an empty table or requesting zero results yields an empty list."
+    },
+    {
+      "test_name": "scores_are_finite_and_higher_is_closer",
+      "description": "Returned scores are finite and sorted from the closest eligible vector down."
+    },
+    {
+      "test_name": "prop_inserted_vector_is_exact_top_hit",
+      "description": "For deterministic arbitrary finite vectors, querying an inserted vector returns that id first."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid",
+    "polaris_sdk::registry::{VectorChunk, VectorHit, VectorStore}",
+    "polaris_storage_vector::{HnswStore, PayloadFilter}"
+  ],
+  "libraries": [
+    "rusqlite",
+    "usearch",
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "chunks",
+      "type": "&[VectorChunk]",
+      "description": "A batch of finite, dimension-matched vectors and CAS payload references."
+    },
+    {
+      "name": "query",
+      "type": "&[f32]",
+      "description": "Finite query vector with the table dimension."
+    },
+    {
+      "name": "k",
+      "type": "usize",
+      "description": "Maximum number of eligible nearest neighbors."
+    },
+    {
+      "name": "filter",
+      "type": "Option<&PayloadFilter>",
+      "description": "Optional allowed payload set applied before the result limit."
+    }
+  ],
+  "output_type": "Result<Vec<VectorHit>, VectorStoreError>",
+  "output_description": "Nearest eligible vectors with normalized higher-is-closer scores."
+}

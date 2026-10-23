@@ -153,12 +153,12 @@ impl<R: TrustedFactsResolver> RpcAuthenticator<R> {
             return Err(Status::resource_exhausted("metadata too large"));
         }
         let bearer = bearer_bytes(metadata)?;
-        if let Some(command_token) = embedded_command_token {
-            if command_token != bearer.as_slice() {
-                return Err(Status::unauthenticated(
-                    "command and bearer capabilities do not match",
-                ));
-            }
+        if let Some(command_token) = embedded_command_token
+            && command_token != bearer.as_slice()
+        {
+            return Err(Status::unauthenticated(
+                "command and bearer capabilities do not match",
+            ));
         }
         let token = Token::from_bytes(&bearer, &self.root).map_err(map_capability_error)?;
         let trusted = self.resolver.resolve(right, subject)?;

@@ -1,0 +1,43 @@
+{
+  "type_of": "module",
+  "name": "ReaperPoolJournal",
+  "file_path": "crates/polaris-kernel/src/docker_pool.rs",
+  "logic_name": "Docker Pool Reaper Journal",
+  "test_list": [
+    {
+      "test_name": "live_pool_is_not_reported_as_orphan_and_release_removes_registration",
+      "description": "A live journal registration is excluded from orphan recovery and can be released after cleanup."
+    },
+    {
+      "test_name": "restart_recovers_only_orphaned_docker_pool_locators",
+      "description": "After reopening the journal, the fake exact-label backend sees only Docker pool orphan identities and the unrelated backend record remains."
+    },
+    {
+      "test_name": "active_pool_registration_cannot_be_acknowledged_as_an_orphan",
+      "description": "Reject orphan acknowledgement while the registration still has a live cleanup owner."
+    },
+    {
+      "test_name": "failed_backend_cleanup_keeps_the_orphan_journaled",
+      "description": "A failed exact-label cleanup does not acknowledge or remove the persisted orphan registration."
+    },
+    {
+      "test_name": "startup_recovers_docker_orphans_before_the_generic_reaper_sweep",
+      "description": "Kernel startup invokes exact-label pool recovery on the same Reaper before the generic sweep evaluates unresolved backend locators."
+    }
+  ],
+  "dependencies": [
+    "polaris_devenv::docker::{PoolJournal, PoolCleanup, PoolIdentity}",
+    "polaris_kernel::reaper::{Reaper, Teardown, Locator, ResourceKind}",
+    "KernelCtx::open_with_docker"
+  ],
+  "libraries": ["polaris-devenv", "polaris-kernel-reaper", "tempfile"],
+  "inputs": [
+    {
+      "name": "reaper",
+      "type": "Reaper",
+      "description": "Kernel-owned durable cleanup journal."
+    }
+  ],
+  "output_type": "ReaperPoolJournal",
+  "output_description": "A Docker-owned journal implementation that durably registers cleanup and exposes only orphan Docker pool identities for exact-label recovery."
+}

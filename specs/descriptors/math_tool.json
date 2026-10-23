@@ -1,0 +1,9 @@
+{
+  "type_of":"trait","name":"MathTool","file_path":"crates/polaris-tools/crates/math/src/tool.rs","logic_name":"math_typed_tool",
+  "test_list":[
+    {"test_name":"tool_spec_is_pure_and_has_a_real_operation_schema","description":"The SDK tool advertises a serializable tagged input schema and pure effects."},
+    {"test_name":"typed_dispatch_preserves_decimal_output","description":"Tool dispatch returns the exact decimal as a string."},
+    {"test_name":"invalid_decimal_string_returns_typed_error","description":"Invalid decimal text becomes the SDK invalid-input error."}
+  ],"dependencies":["polaris-sdk::registry::Tool"],"libraries":["schemars","serde","serde_json"],
+  "inputs":[{"name":"input","type":"MathInput","description":"A tagged bounded math operation."},{"name":"context","type":"ToolContext","description":"SDK call context; unused by this pure tool."}],"output_type":"Result<MathOutput, ToolError>","output_description":"Typed, serializable math result or validation error."
+}

@@ -252,6 +252,16 @@ impl Reaper {
                 .collect(),
         }
     }
+    /// List only unresolved registrations whose in-process cleanup owner no longer exists.
+    #[must_use]
+    pub fn pending_orphans(&self) -> Vec<LeakEntry> {
+        lock(&self.state)
+            .entries
+            .values()
+            .filter(|entry| entry.resource.is_none())
+            .map(|entry| entry.meta.clone())
+            .collect()
+    }
     /// Remove an orphan only after an external operator/backend has resolved it.
     ///
     /// # Errors
@@ -281,18 +291,8 @@ impl Reaper {
     /// # Errors
     /// Journal commit failed or a blocking filesystem worker could not be joined.
     pub async fn sweep_orphans(&self) -> Result<SweepReport, ReaperError> {
-        let (orphans, ignored): (Vec<_>, _) = {
-            let state = lock(&self.state);
-            (
-                state
-                    .entries
-                    .values()
-                    .filter(|entry| entry.resource.is_none())
-                    .map(|entry| entry.meta.clone())
-                    .collect(),
-                state.ignored,
-            )
-        };
+        let ignored = lock(&self.state).ignored;
+        let orphans = self.pending_orphans();
         let mut reports = Vec::new();
         for orphan in orphans {
             let action = match (&orphan.kind, &orphan.locator) {

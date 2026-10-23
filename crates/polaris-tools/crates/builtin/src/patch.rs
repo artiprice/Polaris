@@ -176,7 +176,11 @@ pub fn apply_unified_patch(base: &[u8], patch: &str) -> Result<Vec<u8>, PatchErr
                         deleted_ending = None;
                         deleted_without_newline = false;
                     } else {
-                        deleted_ending = Some(source_line.ending.clone());
+                        deleted_ending = if source_line.ending.is_empty() {
+                            None
+                        } else {
+                            Some(source_line.ending.clone())
+                        };
                         no_newline_target = None;
                         deleted_without_newline = source_line.ending.is_empty();
                     }

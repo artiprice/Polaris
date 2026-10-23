@@ -156,13 +156,18 @@ fn append_member<W: std::io::Write>(
 }
 
 fn valid_remote_root(root: &str) -> bool {
-    root.starts_with('/')
-        && !root.starts_with("//")
-        && !root.contains(['\\', '\0'])
-        && root
-            .split('/')
-            .skip(1)
-            .all(|part| part != "." && part != "..")
+    if !root.starts_with('/') || root.starts_with("//") || root.contains(['\\', '\0']) {
+        return false;
+    }
+    let mut components = root.split('/').skip(1);
+    let mut has_component = false;
+    for component in &mut components {
+        if component.is_empty() || component == "." || component == ".." {
+            return false;
+        }
+        has_component = true;
+    }
+    has_component
 }
 
 fn valid_payload_name(name: &str) -> bool {
@@ -270,5 +275,25 @@ mod tests {
             .map(|index| (format!("payload/{index:06}"), Bytes::from_static(b"x")))
             .collect();
         assert!(encode_batch_archive(&huge, &payloads).is_err());
+    }
+
+    #[test]
+    fn rejects_noncanonical_remote_roots() {
+        for root in [
+            "",
+            "/",
+            "//sandbox/workspace",
+            "/sandbox/",
+            "/sandbox//workspace",
+            "/sandbox/../workspace",
+        ] {
+            let batch = SandboxSyncBatch {
+                version: 1,
+                root: root.into(),
+                mutations: vec![file_mutation("safe.txt", "payload/000000", b"x")],
+            };
+            let payloads = BTreeMap::from([("payload/000000".into(), Bytes::from_static(b"x"))]);
+            assert!(encode_batch_archive(&batch, &payloads).is_err(), "{root:?}");
+        }
     }
 }

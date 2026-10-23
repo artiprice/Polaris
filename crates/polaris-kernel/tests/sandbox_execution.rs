@@ -31,6 +31,7 @@ struct FakeBackend {
     no_tests: AtomicBool,
     tamper: AtomicBool,
     destroy_failure: AtomicBool,
+    release_failure: Mutex<Option<std::path::PathBuf>>,
     wait: AtomicBool,
     started: tokio::sync::Notify,
 }
@@ -344,6 +345,11 @@ impl SandboxBackend for FakeBackend {
             return Err(SandboxError::Unavailable("injected destroy failure".into()));
         }
         self.files.lock().expect("files").clear();
+        if let Some(journal) = self.release_failure.lock().expect("release fault").take() {
+            std::fs::rename(&journal, journal.with_extension("release-backup"))
+                .expect("retain original fake recovery journal");
+            std::fs::create_dir(&journal).expect("inject journal removal failure");
+        }
         Ok(())
     }
 }
@@ -577,6 +583,14 @@ async fn failed_run_does_not_publish_proof() {
             .iter()
             .any(|record| matches!(record.event(), Event::ProofOfDoneBlocked { .. }))
     );
+    assert_eq!(
+        records
+            .iter()
+            .filter(|record| matches!(record.event(), Event::ProofOfDoneBlocked { .. }))
+            .count(),
+        1,
+        "one execution must publish exactly one terminal blocked proof"
+    );
     assert_eq!(backend.destroys.load(Ordering::SeqCst), 1);
     shutdown_without_leaks(&kernel).await;
 }
@@ -589,6 +603,7 @@ async fn zero_tests_tampered_source_and_name_collision_never_complete() {
         "collision",
         "secret",
         "destroy_failure",
+        "release_failure",
     ] {
         let dir = tempfile::tempdir().expect("temp");
         let workspace = dir.path().join("workspace");
@@ -610,6 +625,10 @@ async fn zero_tests_tampered_source_and_name_collision_never_complete() {
         .await
         .expect("kernel");
         let backend = Arc::new(FakeBackend::default());
+        let journal = kernel.context().root().join("run/reaper.journal");
+        if scenario == "release_failure" {
+            *backend.release_failure.lock().expect("release fault") = Some(journal.clone());
+        }
         backend
             .no_tests
             .store(scenario == "zero_tests", Ordering::SeqCst);
@@ -645,6 +664,16 @@ async fn zero_tests_tampered_source_and_name_collision_never_complete() {
             )
             .await;
         assert!(result.is_err(), "{scenario} must be blocked");
+        if scenario == "release_failure" {
+            assert!(
+                result
+                    .as_ref()
+                    .err()
+                    .expect("release must fail")
+                    .to_string()
+                    .contains("reaper journal")
+            );
+        }
         let records = kernel
             .context()
             .records(Seq::ZERO, Seq::new(u64::MAX))
@@ -662,13 +691,84 @@ async fn zero_tests_tampered_source_and_name_collision_never_complete() {
             "{scenario} must publish a durable blocker"
         );
         assert_eq!(
+            records
+                .iter()
+                .filter(|record| matches!(record.event(), Event::ProofOfDoneBlocked { .. }))
+                .count(),
+            1,
+            "{scenario} must publish exactly one terminal blocked proof"
+        );
+        assert_eq!(
             backend.destroys.load(Ordering::SeqCst),
             if scenario == "collision" { 0 } else { 1 },
             "{scenario} cleanup ownership"
         );
         backend.destroy_failure.store(false, Ordering::SeqCst);
+        if scenario == "release_failure" {
+            std::fs::remove_dir(&journal).expect("remove empty injected fault directory");
+            std::fs::rename(journal.with_extension("release-backup"), &journal)
+                .expect("restore retained recovery journal");
+        }
         shutdown_without_leaks(&kernel).await;
     }
+}
+
+#[tokio::test]
+async fn changed_review_environment_and_remote_root_are_rejected_before_create() {
+    let directory = tempfile::tempdir().expect("temp");
+    let workspace = directory.path().join("workspace");
+    std::fs::create_dir(&workspace).expect("workspace");
+    std::fs::write(workspace.join("source.rs"), b"fn source() {}\n").expect("source");
+    let session = SessionId::new_v7();
+    let frame = FrameId::new_v7();
+    let kernel = Kernel::start(LocalKernelConfig::new(
+        directory.path().join("state"),
+        &workspace,
+        session,
+        frame,
+    ))
+    .await
+    .expect("kernel");
+    let backend = Arc::new(FakeBackend::default());
+    let engine =
+        SandboxExecution::new(Arc::clone(&backend), spec(), session, frame).expect("engine");
+    let review = engine
+        .prepare(Arc::clone(kernel.context()), workspace.clone(), request())
+        .await
+        .expect("review");
+    for field in ["environment", "remote_root", "version"] {
+        let mut changed = review.details.clone();
+        match field {
+            "environment" => changed["environment"]["PATH"] = serde_json::json!("/sandbox/ws"),
+            "remote_root" => changed["remote_root"] = serde_json::json!("/sandbox/other"),
+            _ => changed["version"] = serde_json::json!(1),
+        }
+        use polaris_kernel::verifier::EvidenceStore;
+        let cid = polaris_kernel::KernelEvidence::new(Arc::clone(kernel.context()))
+            .put(&serde_json::to_vec(&changed).expect("json"))
+            .expect("CAS");
+        let token = engine.credential(cid, cid).expect("credential");
+        let result = engine
+            .execute(
+                Arc::clone(kernel.context()),
+                workspace.clone(),
+                Command::new(
+                    CommandId::new_v7(),
+                    frame,
+                    token,
+                    CommandBody::ExecuteTool { call: cid },
+                ),
+                CancellationToken::new(),
+            )
+            .await;
+        assert!(result.is_err(), "{field} changed without runtime agreement");
+    }
+    assert_eq!(
+        backend.creates.load(Ordering::SeqCst),
+        0,
+        "context mismatch never creates sandbox"
+    );
+    shutdown_without_leaks(&kernel).await;
 }
 
 #[tokio::test]

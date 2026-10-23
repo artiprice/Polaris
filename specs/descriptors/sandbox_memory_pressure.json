@@ -1,0 +1,14 @@
+{
+  "type_of": "async_function",
+  "name": "actual_memory_pressure_is_contained_and_recoverable",
+  "file_path": "tests/spike/sandbox/tests/memory_pressure.rs",
+  "logic_name": "Real confined sandbox memory exhaustion",
+  "test_list": [
+    {"test_name": "actual_memory_pressure_is_contained_and_recoverable", "description": "Observe cgroup memory and swap bounds before touching a bounded allocator, require a real oom_kill counter increment, subsequent command recovery, and authoritative owned-container absence after Reaper cleanup."}
+  ],
+  "dependencies": ["SandboxBackend", "Reaper"],
+  "libraries": ["tokio", "bytes"],
+  "inputs": [{"name": "private_gateway", "type": "environment", "description": "Explicitly supplied isolated gateway state, mTLS directory and immutable image digest."}],
+  "output_type": "Result<(), Failure>",
+  "output_description": "Real bounded cgroup OOM evidence and zero retained ownership, or failure preserving an unresolved cleanup journal."
+}

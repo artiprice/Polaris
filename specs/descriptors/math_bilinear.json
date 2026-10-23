@@ -1,0 +1,9 @@
+{
+  "type_of":"function","name":"bilinear","file_path":"crates/polaris-tools/crates/math/src/interp.rs","logic_name":"math_bilinear",
+  "test_list":[
+    {"test_name":"bilinear_reproduces_grid_corners","description":"Validated bilinear interpolation reproduces all four corners."},
+    {"test_name":"bilinear_rejects_degenerate_or_outside_grid","description":"Degenerate axes and out-of-range queries fail with a typed error."},
+    {"test_name":"bilinear_is_finite_for_bounded_finite_grid","description":"Finite in-domain values produce finite outputs or an explicit overflow error."}
+  ],"dependencies":[],"libraries":["proptest"],
+  "inputs":[{"name":"grid","type":"&Grid2","description":"Increasing x/y axes and row-major finite corner values."},{"name":"x","type":"Finite","description":"In-domain x coordinate."},{"name":"y","type":"Finite","description":"In-domain y coordinate."}],"output_type":"Result<Finite, MathError>","output_description":"A finite bilinear interpolation value or typed error."
+}

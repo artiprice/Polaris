@@ -1,0 +1,17 @@
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `DockerError`
+ --> crates\polaris-kernel\src\docker_pool.rs:7:13
+  |
+7 |     Docker, DockerError, PoolCleanup, PoolCleanupError, PoolIdentity, PoolJournal,
+  |             ^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: `polaris-kernel` (lib) generated 1 warning (run `cargo fix --lib -p polaris-kernel` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized] target(s) in 24.20s
+     Running `target\debug\polaris.exe --workspace . --state-dir @prime/tmp/p2/doctor-state-final doctor --json`

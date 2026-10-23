@@ -1,0 +1,11 @@
+{
+  "type_of":"function","name":"summarize","file_path":"crates/polaris-tools/crates/math/src/stats.rs","logic_name":"math_statistics",
+  "test_list":[
+    {"test_name":"empty_input_is_error","description":"Empty data is rejected."},
+    {"test_name":"percentiles_are_ordered","description":"Type-7 p50/p95/p99 are ordered and finite."},
+    {"test_name":"nan_input_rejected","description":"Non-finite observations cannot be accepted."},
+    {"test_name":"single_value_has_zero_std_dev","description":"A singleton reports zero sample and population standard deviation."},
+    {"test_name":"summary_matches_known_sample","description":"Mean, sample standard deviation, extrema, and percentiles match a checked sample."}
+  ],"dependencies":[],"libraries":["statrs","proptest"],
+  "inputs":[{"name":"xs","type":"&[Finite]","description":"Non-empty finite observations."}],"output_type":"Result<Summary, MathError>","output_description":"Finite summary statistics with type-7 percentiles."
+}

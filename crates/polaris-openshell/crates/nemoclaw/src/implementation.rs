@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use polaris_openshell_client::{OpenShellBackend, PolicySource};
+use polaris_openshell_client::{DriverKind, OpenShellBackend, PolicySource};
 use polaris_sdk::ids::Cid;
 use polaris_sdk::registry::{
     ExecRequest, SandboxBackend, SandboxError, SandboxHandle, SandboxSpec,
@@ -158,13 +158,13 @@ pub fn parse_blueprint(yaml: &str) -> Result<Blueprint, NemoclawError> {
 pub fn to_yaml(blueprint: &Blueprint) -> Result<String, NemoclawError> {
     validate_blueprint(blueprint)?;
     let digest = blueprint_digest(blueprint)?.to_hex();
-    if let Some(supplied) = &blueprint.digest {
-        if supplied != &digest {
-            return Err(NemoclawError::DigestMismatch {
-                expected: digest,
-                found: supplied.clone(),
-            });
-        }
+    if let Some(supplied) = &blueprint.digest
+        && supplied != &digest
+    {
+        return Err(NemoclawError::DigestMismatch {
+            expected: digest,
+            found: supplied.clone(),
+        });
     }
     let mut output = blueprint.clone();
     output.digest = Some(digest);
@@ -203,6 +203,10 @@ pub struct HostFacts {
     pub wsl2_installed: bool,
     /// Docker Engine is active in WSL2.
     pub docker_active: bool,
+    /// KVM is available for a VM-driver gateway.
+    pub kvm_available: bool,
+    /// OpenShell gateway is running with the VM driver.
+    pub vm_driver_active: bool,
     /// OpenShell gateway is installed at the pinned version.
     pub openshell_installed: bool,
     /// Polaris sandbox image is locally available.
@@ -214,6 +218,8 @@ pub struct HostFacts {
 pub struct OnboardStep {
     /// Action identifier consumed by the host composition layer.
     pub action: OnboardAction,
+    /// Observable postcondition for the composition layer to verify.
+    pub check: OnboardCheck,
     /// Maximum time the host action may run.
     pub timeout: Duration,
     /// Recovery instruction if execution fails.
@@ -224,56 +230,109 @@ pub struct OnboardStep {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OnboardAction {
     CheckWsl2,
+    CheckKvm,
     InstallOpenShell,
     ConfigureDockerDriver,
+    ConfigureVmDriver,
     BuildSandboxImage,
     StartGateway,
 }
 
+/// Machine predicate that must hold after an onboarding action.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OnboardCheck {
+    Wsl2Available,
+    KvmAvailable,
+    OpenShellInstalled,
+    DockerDriverConfigured,
+    VmDriverConfigured,
+    SandboxImageAvailable,
+    GatewayReady,
+}
+
 /// Produce ordered idempotent onboarding actions from observed host facts.
-pub fn plan_onboard(_blueprint: &Blueprint, facts: HostFacts) -> Vec<OnboardStep> {
+pub fn plan_onboard(
+    blueprint: &Blueprint,
+    facts: HostFacts,
+) -> Result<Vec<OnboardStep>, NemoclawError> {
+    verify(blueprint)?;
+    let driver = parse_driver(&blueprint.components.sandbox.driver)?;
     let mut steps = Vec::new();
     if !facts.wsl2_installed {
         steps.push(step(
             OnboardAction::CheckWsl2,
+            OnboardCheck::Wsl2Available,
             30,
             "Install Ubuntu 24.04 with the workspace setup script.",
+        ));
+    }
+    if driver == DriverKind::Vm && !facts.kvm_available {
+        steps.push(step(
+            OnboardAction::CheckKvm,
+            OnboardCheck::KvmAvailable,
+            30,
+            "Enable WSL2 virtualization support, then confirm /dev/kvm is available before selecting the VM driver.",
         ));
     }
     if !facts.openshell_installed {
         steps.push(step(
             OnboardAction::InstallOpenShell,
+            OnboardCheck::OpenShellInstalled,
             180,
             "Rerun the pinned OpenShell installer after correcting network or package errors.",
         ));
     }
-    if !facts.docker_active {
-        steps.push(step(
-            OnboardAction::ConfigureDockerDriver,
-            90,
-            "Start Docker Engine and confirm the openshell service environment pins driver=docker.",
-        ));
-    }
-    if !_blueprint.components.sandbox.image.is_empty() && !facts.image_available {
+    let driver_ready_after_plan = match driver {
+        DriverKind::Docker => {
+            if !facts.docker_active {
+                steps.push(step(
+                    OnboardAction::ConfigureDockerDriver,
+                    OnboardCheck::DockerDriverConfigured,
+                    90,
+                    "Start Docker Engine and confirm the openshell service environment pins driver=docker.",
+                ));
+            }
+            true
+        }
+        DriverKind::Vm => {
+            if facts.kvm_available && !facts.vm_driver_active {
+                steps.push(step(
+                    OnboardAction::ConfigureVmDriver,
+                    OnboardCheck::VmDriverConfigured,
+                    90,
+                    "Configure this gateway instance with driver=vm and confirm its reported driver identity.",
+                ));
+            }
+            facts.kvm_available
+        }
+    };
+    if !blueprint.components.sandbox.image.is_empty() && !facts.image_available {
         steps.push(step(
             OnboardAction::BuildSandboxImage,
+            OnboardCheck::SandboxImageAvailable,
             1_800,
             "Inspect the image build log, then rebuild the digest-pinned image.",
         ));
     }
-    if !facts.openshell_installed || !facts.docker_active {
+    let driver_active = match driver {
+        DriverKind::Docker => facts.docker_active,
+        DriverKind::Vm => facts.vm_driver_active,
+    };
+    if driver_ready_after_plan && (!facts.openshell_installed || !driver_active) {
         steps.push(step(
             OnboardAction::StartGateway,
+            OnboardCheck::GatewayReady,
             30,
-            "Fix the OpenShell/Docker prerequisite before retrying gateway startup.",
+            "Fix the OpenShell and selected-driver prerequisite before retrying gateway startup.",
         ));
     }
-    steps
+    Ok(steps)
 }
 
-fn step(action: OnboardAction, seconds: u64, undo: &str) -> OnboardStep {
+fn step(action: OnboardAction, check: OnboardCheck, seconds: u64, undo: &str) -> OnboardStep {
     OnboardStep {
         action,
+        check,
         timeout: Duration::from_secs(seconds),
         undo: undo.to_owned(),
     }
@@ -329,6 +388,17 @@ pub fn evaluate_doctor(blueprint: &Blueprint, probes: &ProbeResults) -> DoctorRe
         .image_digest
         .as_deref()
         .is_some_and(|digest| blueprint.components.sandbox.image.ends_with(digest));
+    let (kvm_status, kvm_detail) = match parse_driver(&blueprint.components.sandbox.driver) {
+        Ok(DriverKind::Docker) => (
+            Some(ProbeStatus::Pass),
+            "KVM is not required for the docker driver",
+        ),
+        Ok(DriverKind::Vm) => (
+            probes.kvm_available.map(status),
+            "KVM is required for the vm driver",
+        ),
+        Err(_) => (Some(ProbeStatus::Fail), "unsupported blueprint driver"),
+    };
     DoctorReport {
         items: vec![
             item("wsl2", probes.wsl2.map(status), "WSL2 Ubuntu 24.04"),
@@ -348,11 +418,7 @@ pub fn evaluate_doctor(blueprint: &Blueprint, probes: &ProbeResults) -> DoctorRe
                 probes.docker_active.map(status),
                 "Docker Engine service",
             ),
-            item(
-                "kvm",
-                probes.kvm_available.map(status),
-                "KVM is optional for the docker driver and required for vm",
-            ),
+            item("kvm", kvm_status, kvm_detail),
             item(
                 "sandbox_image",
                 probes.image_digest.as_ref().map(|_| {
@@ -412,6 +478,9 @@ fn item(name: &str, status: Option<ProbeStatus>, detail: &str) -> DoctorItem {
 
 /// Apply a blueprint and confirm the baked guest protocol before returning a sandbox handle.
 pub trait BlueprintBackend: SandboxBackend {
+    /// Driver selected and authenticated when the gateway connection was established.
+    fn driver_kind(&self) -> DriverKind;
+
     /// Create a sandbox with explicit OpenShell provider profile names.
     fn create_with_profiles(
         &self,
@@ -421,6 +490,10 @@ pub trait BlueprintBackend: SandboxBackend {
 }
 
 impl<P: PolicySource> BlueprintBackend for OpenShellBackend<P> {
+    fn driver_kind(&self) -> DriverKind {
+        self.driver()
+    }
+
     fn create_with_profiles(
         &self,
         spec: &SandboxSpec,
@@ -436,6 +509,7 @@ pub async fn apply<B: BlueprintBackend>(
     blueprint: &Blueprint,
 ) -> Result<AppliedBlueprint, NemoclawError> {
     let digest = verify(blueprint)?;
+    validate_backend_driver(blueprint, backend.driver_kind())?;
     if blueprint.components.policies.len() != 1 {
         return Err(NemoclawError::PolicyCount(
             blueprint.components.policies.len(),
@@ -530,18 +604,27 @@ pub fn dockerfile_for(blueprint: &Blueprint) -> Result<String, NemoclawError> {
         "ARG BASE_IMAGE=nvcr.io/nvidia/base/ubuntu:24.04".to_owned(),
         "FROM rust:1.99.0-bookworm AS polaris-guest-build".to_owned(),
         "WORKDIR /workspace".to_owned(),
+        "# The build context must come from @prime/tools/sandbox/build-context.py".to_owned(),
         "COPY . /workspace".to_owned(),
-        "RUN cargo build --locked --release -p polaris-guest".to_owned(),
+        "RUN cargo build --locked --release -p polaris-guest --bin polaris-guest".to_owned(),
         "ARG BASE_IMAGE".to_owned(),
         "FROM ${BASE_IMAGE}".to_owned(),
         "USER root".to_owned(),
         "ENV DEBIAN_FRONTEND=noninteractive".to_owned(),
         "RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates coreutils build-essential pkg-config git curl && rm -rf /var/lib/apt/lists/* && useradd --create-home --uid 10001 sandbox && install -d -o sandbox -g sandbox /sandbox".to_owned(),
-        "COPY --from=polaris-guest-build /usr/local/cargo /usr/local/cargo".to_owned(),
+        "COPY --from=polaris-guest-build /usr/local/cargo/bin /usr/local/cargo/bin".to_owned(),
+        "COPY --from=polaris-guest-build /usr/local/cargo/registry /sandbox/cargo/registry".to_owned(),
+        "COPY --from=polaris-guest-build /usr/local/cargo/git /sandbox/cargo/git".to_owned(),
         "COPY --from=polaris-guest-build /usr/local/rustup /usr/local/rustup".to_owned(),
         "ENV PATH=\"/usr/local/cargo/bin:${PATH}\"".to_owned(),
+        "ENV CARGO_HOME=/sandbox/cargo".to_owned(),
+        "ENV CARGO_TARGET_DIR=/sandbox/build".to_owned(),
+        "ENV CARGO_NET_OFFLINE=true".to_owned(),
+        "ENV RUSTUP_HOME=/usr/local/rustup".to_owned(),
+        "ENV RUSTUP_TOOLCHAIN=1.99.0".to_owned(),
+        "ENV RUSTUP_AUTO_INSTALL=0".to_owned(),
         "COPY --from=polaris-guest-build /workspace/target/release/polaris-guest /usr/bin/polaris-guest".to_owned(),
-        "RUN chmod 0755 /usr/bin/polaris-guest && useradd --create-home --uid 1000 sandbox".to_owned(),
+        "RUN test \"$(id -u sandbox)\" = 10001 && chmod 0755 /usr/bin/polaris-guest && install -d -o sandbox -g sandbox /sandbox/cargo && chown -R sandbox:sandbox /sandbox/cargo && test -x /usr/local/rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu/bin/rustc && test -x /usr/local/rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu/bin/cargo".to_owned(),
         format!("WORKDIR {}", blueprint.components.sandbox.workdir),
         "USER sandbox".to_owned(),
         "ENTRYPOINT [\"sleep\", \"infinity\"]".to_owned(),
@@ -563,6 +646,7 @@ fn validate_blueprint(blueprint: &Blueprint) -> Result<(), NemoclawError> {
         return Err(NemoclawError::UnsupportedOpenShellVersion);
     }
     validate_image(&blueprint.components.sandbox.image)?;
+    parse_driver(&blueprint.components.sandbox.driver)?;
     validate_workdir(&blueprint.components.sandbox.workdir)?;
     if blueprint.guest_protocol_version == 0 {
         return Err(NemoclawError::InvalidGuestProtocol);
@@ -579,6 +663,32 @@ fn validate_blueprint(blueprint: &Blueprint) -> Result<(), NemoclawError> {
         }
     }
     Ok(())
+}
+
+fn parse_driver(driver: &str) -> Result<DriverKind, NemoclawError> {
+    match driver {
+        "docker" => Ok(DriverKind::Docker),
+        "vm" => Ok(DriverKind::Vm),
+        _ => Err(NemoclawError::UnsupportedDriver(driver.to_owned())),
+    }
+}
+
+fn validate_backend_driver(blueprint: &Blueprint, actual: DriverKind) -> Result<(), NemoclawError> {
+    let requested = parse_driver(&blueprint.components.sandbox.driver)?;
+    if requested != actual {
+        return Err(NemoclawError::DriverMismatch {
+            requested: driver_name(requested).to_owned(),
+            actual: driver_name(actual).to_owned(),
+        });
+    }
+    Ok(())
+}
+
+const fn driver_name(driver: DriverKind) -> &'static str {
+    match driver {
+        DriverKind::Docker => "docker",
+        DriverKind::Vm => "vm",
+    }
 }
 
 fn validate_image(image: &str) -> Result<(), NemoclawError> {
@@ -620,6 +730,12 @@ pub enum NemoclawError {
     /// OpenShell target version is not the pinned P2 version.
     #[error("blueprint must pin OpenShell {OPEN_SHELL_VERSION}")]
     UnsupportedOpenShellVersion,
+    /// Blueprint names an unsupported or non-canonical execution driver.
+    #[error("unsupported sandbox driver {0:?}; expected exactly `docker` or `vm`")]
+    UnsupportedDriver(String),
+    /// Authenticated OpenShell gateway driver differs from the blueprint's selection.
+    #[error("sandbox driver mismatch: blueprint requested {requested}, gateway uses {actual}")]
+    DriverMismatch { requested: String, actual: String },
     /// Image reference must be a local sha256 image ID or OCI sha256 digest reference.
     #[error("sandbox image must use @sha256:<64 hex digits>")]
     ImageNotPinned,
@@ -662,33 +778,29 @@ pub enum NemoclawError {
 mod tests {
     use super::*;
 
-    fn blueprint() -> Option<Blueprint> {
+    fn blueprint() -> Result<Blueprint, NemoclawError> {
         blueprint_default(&BlueprintConfig {
             image: format!("ghcr.io/polaris/sandbox@sha256:{}", "a".repeat(64)),
             policy_cid: Cid::from_bytes([9; 32]),
             workdir: "/sandbox".to_owned(),
             guest_protocol_version: 1,
         })
-        .ok()
     }
 
     #[test]
-    fn default_digest_round_trips_and_tampering_fails() {
-        let Some(blueprint) = blueprint() else {
-            panic!("valid blueprint expected")
-        };
-        let yaml = to_yaml(&blueprint);
-        assert!(yaml.is_ok());
-        let Some(yaml) = yaml.ok() else { return };
-        let parsed = parse_blueprint(&yaml);
-        assert_eq!(parsed.ok(), Some(blueprint.clone()));
+    fn default_digest_round_trips_and_tampering_fails() -> Result<(), Box<dyn std::error::Error>> {
+        let blueprint = blueprint()?;
+        let yaml = to_yaml(&blueprint)?;
+        let parsed = parse_blueprint(&yaml)?;
+        assert_eq!(parsed, blueprint);
         let mut tampered = blueprint;
         tampered.components.sandbox.workdir = "/tmp".to_owned();
         assert!(verify(&tampered).is_err());
+        Ok(())
     }
 
     #[test]
-    fn mutable_image_and_bad_cid_are_rejected() {
+    fn mutable_image_and_bad_cid_are_rejected() -> Result<(), Box<dyn std::error::Error>> {
         let result = blueprint_default(&BlueprintConfig {
             image: "ubuntu:latest".to_owned(),
             policy_cid: Cid::from_bytes([1; 32]),
@@ -696,23 +808,166 @@ mod tests {
             guest_protocol_version: 1,
         });
         assert!(matches!(result, Err(NemoclawError::ImageNotPinned)));
-        let mut blueprint = blueprint();
-        if let Some(value) = &mut blueprint {
-            value.components.policies[0].cid = "bad".to_owned();
-        }
-        assert!(
-            blueprint
-                .as_ref()
-                .is_some_and(|value| validate_blueprint(value).is_err())
-        );
+        let mut blueprint = blueprint()?;
+        let policy = blueprint
+            .components
+            .policies
+            .first_mut()
+            .ok_or("default blueprint must contain its policy")?;
+        policy.cid = "bad".to_owned();
+        assert!(validate_blueprint(&blueprint).is_err());
+        Ok(())
     }
 
     #[test]
-    fn onboarding_and_doctor_keep_unknown_state_explicit() {
-        let Some(blueprint) = blueprint() else {
-            panic!("valid blueprint expected")
+    fn blueprint_driver_is_exact_and_must_match_authenticated_backend()
+    -> Result<(), Box<dyn std::error::Error>> {
+        for driver in ["Docker", "DOCKER", "docker ", "containerd", ""] {
+            let mut blueprint = blueprint()?;
+            blueprint.components.sandbox.driver = driver.to_owned();
+            assert!(matches!(
+                validate_blueprint(&blueprint),
+                Err(NemoclawError::UnsupportedDriver(found)) if found == driver
+            ));
+        }
+
+        let blueprint = blueprint()?;
+        assert!(matches!(
+            validate_backend_driver(&blueprint, DriverKind::Vm),
+            Err(NemoclawError::DriverMismatch { requested, actual })
+                if requested == "docker" && actual == "vm"
+        ));
+        assert!(validate_backend_driver(&blueprint, DriverKind::Docker).is_ok());
+        let docker_doctor = evaluate_doctor(
+            &blueprint,
+            &ProbeResults {
+                kvm_available: Some(false),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            docker_doctor
+                .items
+                .iter()
+                .find(|entry| entry.name == "kvm")
+                .map(|entry| entry.status),
+            Some(ProbeStatus::Pass)
+        );
+
+        let mut vm_blueprint = blueprint;
+        vm_blueprint.components.sandbox.driver = "vm".to_owned();
+        vm_blueprint.digest = Some(blueprint_digest(&vm_blueprint)?.to_hex());
+        assert!(validate_backend_driver(&vm_blueprint, DriverKind::Vm).is_ok());
+        assert!(matches!(
+            validate_backend_driver(&vm_blueprint, DriverKind::Docker),
+            Err(NemoclawError::DriverMismatch { requested, actual })
+                if requested == "vm" && actual == "docker"
+        ));
+        let vm_doctor = evaluate_doctor(
+            &vm_blueprint,
+            &ProbeResults {
+                kvm_available: Some(false),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            vm_doctor
+                .items
+                .iter()
+                .find(|entry| entry.name == "kvm")
+                .map(|entry| entry.status),
+            Some(ProbeStatus::Fail)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn onboarding_steps_follow_the_selected_driver_and_have_checks()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut vm_blueprint = blueprint()?;
+        vm_blueprint.components.sandbox.driver = "vm".to_owned();
+        vm_blueprint.digest = Some(blueprint_digest(&vm_blueprint)?.to_hex());
+
+        let blocked_vm = plan_onboard(&vm_blueprint, HostFacts::default())?;
+        assert!(
+            blocked_vm
+                .iter()
+                .any(|step| step.action == OnboardAction::CheckKvm)
+        );
+        assert!(
+            !blocked_vm
+                .iter()
+                .any(|step| step.action == OnboardAction::ConfigureDockerDriver)
+        );
+        assert!(
+            !blocked_vm
+                .iter()
+                .any(|step| step.action == OnboardAction::StartGateway)
+        );
+
+        let ready_vm_facts = HostFacts {
+            wsl2_installed: true,
+            docker_active: false,
+            kvm_available: true,
+            vm_driver_active: false,
+            openshell_installed: true,
+            image_available: true,
         };
-        let steps = plan_onboard(&blueprint, HostFacts::default());
+        let vm_steps = plan_onboard(&vm_blueprint, ready_vm_facts)?;
+        assert!(
+            vm_steps
+                .iter()
+                .any(|step| step.action == OnboardAction::ConfigureVmDriver)
+        );
+        assert!(
+            vm_steps
+                .iter()
+                .any(|step| step.action == OnboardAction::StartGateway)
+        );
+        assert!(
+            !vm_steps
+                .iter()
+                .any(|step| step.action == OnboardAction::ConfigureDockerDriver)
+        );
+        assert!(vm_steps.iter().all(|step| step.timeout > Duration::ZERO));
+
+        let docker_facts = HostFacts {
+            wsl2_installed: true,
+            docker_active: false,
+            kvm_available: false,
+            vm_driver_active: false,
+            openshell_installed: true,
+            image_available: true,
+        };
+        let docker_steps = plan_onboard(&blueprint()?, docker_facts)?;
+        assert!(
+            docker_steps
+                .iter()
+                .any(|step| step.action == OnboardAction::ConfigureDockerDriver)
+        );
+        assert!(
+            !docker_steps
+                .iter()
+                .any(|step| step.action == OnboardAction::CheckKvm)
+        );
+        assert!(docker_steps.iter().all(|step| match step.action {
+            OnboardAction::CheckWsl2 => step.check == OnboardCheck::Wsl2Available,
+            OnboardAction::CheckKvm => step.check == OnboardCheck::KvmAvailable,
+            OnboardAction::InstallOpenShell => step.check == OnboardCheck::OpenShellInstalled,
+            OnboardAction::ConfigureDockerDriver =>
+                step.check == OnboardCheck::DockerDriverConfigured,
+            OnboardAction::ConfigureVmDriver => step.check == OnboardCheck::VmDriverConfigured,
+            OnboardAction::BuildSandboxImage => step.check == OnboardCheck::SandboxImageAvailable,
+            OnboardAction::StartGateway => step.check == OnboardCheck::GatewayReady,
+        }));
+        Ok(())
+    }
+
+    #[test]
+    fn onboarding_and_doctor_keep_unknown_state_explicit() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let blueprint = blueprint()?;
+        let steps = plan_onboard(&blueprint, HostFacts::default())?;
         assert!(
             steps
                 .iter()
@@ -727,26 +982,33 @@ mod tests {
                     "wsl2",
                     "openshell",
                     "docker",
-                    "kvm",
                     "sandbox_image",
                     "token_factory_key"
                 ]
                 .contains(&entry.name.as_str()))
                 .all(|entry| entry.status == ProbeStatus::Unknown)
         );
+        assert_eq!(
+            report
+                .items
+                .iter()
+                .find(|entry| entry.name == "kvm")
+                .map(|entry| entry.status),
+            Some(ProbeStatus::Pass)
+        );
+        Ok(())
     }
 
     #[test]
-    fn dockerfile_places_guest_in_policy_visible_usr_bin() {
-        let Some(blueprint) = blueprint() else {
-            panic!("valid blueprint expected")
-        };
-        let recipe = dockerfile_for(&blueprint);
-        assert!(recipe.is_ok());
-        assert!(
-            recipe
-                .map(|value| value.contains("/usr/bin/polaris-guest"))
-                .unwrap_or(false)
-        );
+    fn dockerfile_places_guest_in_policy_visible_usr_bin() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let blueprint = blueprint()?;
+        let recipe = dockerfile_for(&blueprint)?;
+        assert!(recipe.contains("/usr/bin/polaris-guest"));
+        assert_eq!(recipe.matches("useradd --create-home --uid").count(), 1);
+        assert!(recipe.contains("test \"$(id -u sandbox)\" = 10001"));
+        assert!(recipe.lines().any(|line| line == "COPY . /workspace"));
+        assert!(recipe.contains("build-context.py"));
+        Ok(())
     }
 }

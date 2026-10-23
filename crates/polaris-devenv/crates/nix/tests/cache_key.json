@@ -1,0 +1,17 @@
+{
+  "type_of": "function",
+  "name": "cache_key",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Environment Cache",
+  "test_list": [
+    { "test_name": "cache_key_changes_with_lock_system_and_version", "description": "Change each semantic input and verify the key changes." },
+    { "test_name": "cache_key_rejects_empty_system_and_version", "description": "Reject invalid cache dimensions." },
+    { "test_name": "exact_cache_round_trip_revalidates_sanitized_environment", "description": "Use the injected SDK exact-cache store to round-trip a sanitized environment." },
+    { "test_name": "exact_cache_rejects_unsanitized_environment_values", "description": "Reject cache content that does not satisfy sanitization." }
+  ],
+  "dependencies": ["ExactCacheStore"],
+  "libraries": ["blake3", "serde_json"],
+  "inputs": [{ "name": "flake_lock", "type": "&[u8]", "description": "Lock file bytes plus target system and Nix version." }],
+  "output_type": "Result<CacheKey, NixError>",
+  "output_description": "Domain-separated BLAKE3 key with length-prefixed inputs."
+}

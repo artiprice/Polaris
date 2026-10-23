@@ -1,0 +1,12 @@
+{
+  "type_of": "integration_test",
+  "name": "sandbox_lifecycle_survives_bounded_wsl_resident_pressure",
+  "file_path": "tests/spike/sandbox/tests/resident_pressure.rs",
+  "logic_name": "Sandbox lifecycle under real WSL resident-memory pressure",
+  "test_list": [{"test_name": "sandbox_lifecycle_survives_bounded_wsl_resident_pressure", "description": "On the six-GiB reference VM, independently verify a two-GiB cgroup before allocating 1.5 GiB, require at least 1.4 GiB of anonymous resident memory throughout four concurrent sandbox lifecycles, join the allocator, and confirm no cgroup OOM or namespace resources remain."}],
+  "dependencies": ["SandboxBackend", "Reaper", "run_sandboxes", "MemoryInfo"],
+  "libraries": ["tokio", "bytes", "tempfile"],
+  "inputs": [{"name": "private_gateway", "type": "environment", "description": "Explicit private gateway namespace, mTLS and immutable image; preflight refuses insufficient free VM memory or an unexpected cgroup limit."}],
+  "output_type": "Result<(), Failure>",
+  "output_description": "Measured resident-memory pressure and concurrent lifecycle progress with authoritative cleanup. This does not claim global VM OOM or a kernel PSI stall."
+}

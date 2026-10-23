@@ -78,9 +78,9 @@ impl<C: Clock> Permit<C> {
     /// Conservative retry duration implied by the shared penalty at the current monotonic time.
     #[must_use]
     pub fn retry_after(&self) -> Duration {
-        let now = match gcra::duration_ns(self.shared.clock.now()) {
-            Some(value) => value,
-            None => u64::MAX,
+        let Some(now) = gcra::duration_ns(self.shared.clock.now()) else {
+            // An unrepresentably distant clock is beyond every stored penalty.
+            return Duration::ZERO;
         };
         let until = self
             .shared

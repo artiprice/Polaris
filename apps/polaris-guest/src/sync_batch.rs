@@ -67,8 +67,46 @@ mod linux {
             .map_err(|_| BatchError::Invalid)?;
         let staging = root.join(".polaris/sync/staging");
         let archive = checked_stage(&staging, archive_path)?;
-        let owner = fs::symlink_metadata(&root)?.uid();
+        let staging_meta = fs::symlink_metadata(&staging)?;
         let root_meta = fs::symlink_metadata(&root)?;
+        if !staging_meta.is_dir()
+            || staging_meta.file_type().is_symlink()
+            || staging_meta.uid() != root_meta.uid()
+            || staging_meta.permissions().mode() & 0o077 != 0
+            || staging_meta.dev() != root_meta.dev()
+        {
+            return Err(BatchError::Invalid);
+        }
+
+        run_with_stage_cleanup(&archive, || {
+            run_checked_archive(&root, &staging, &archive, &root_meta)
+        })
+    }
+
+    fn run_with_stage_cleanup<T>(
+        archive: &Path,
+        process: impl FnOnce() -> Result<T, BatchError>,
+    ) -> Result<T, BatchError> {
+        let result = process();
+        let cleanup = match fs::remove_file(archive) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(BatchError::Io(error)),
+        };
+        match (result, cleanup) {
+            (Ok(result), Ok(())) => Ok(result),
+            (Err(error), Ok(())) => Err(error),
+            (_, Err(error)) => Err(error),
+        }
+    }
+
+    fn run_checked_archive(
+        root: &Path,
+        staging: &Path,
+        archive: &Path,
+        root_meta: &fs::Metadata,
+    ) -> Result<SandboxBatchResult, BatchError> {
+        let owner = fs::symlink_metadata(&root)?.uid();
         let staging_meta = fs::symlink_metadata(&staging)?;
         let archive_meta = fs::symlink_metadata(&archive)?;
         if !staging_meta.is_dir()
@@ -90,15 +128,8 @@ mod linux {
         if batch.root != root.to_string_lossy() {
             return Err(BatchError::Invalid);
         }
-        let result = super::super::sync_cas::commit_batch(&root, &batch, &payloads)
+        let result = super::super::sync_cas::commit_batch(root, &batch, &payloads)
             .map_err(|_| BatchError::Invalid)?;
-        // A failed archive cleanup means the host cannot know whether the commit completed. The
-        // host must discard its snapshot and rescan on every nonzero helper exit.
-        if let Err(error) = fs::remove_file(&archive) {
-            if error.kind() != io::ErrorKind::NotFound {
-                return Err(BatchError::Io(error));
-            }
-        }
         Ok(result)
     }
 
@@ -426,6 +457,22 @@ mod linux {
             let traversal = bad_hash_path.path().join("traversal.tar");
             fs::write(&traversal, archive(&invalid, b"different")).expect("archive");
             assert!(decode_archive(&traversal).is_err());
+        }
+
+        #[test]
+        fn staged_archive_is_removed_after_invalid_archive_error() {
+            let temp = TempDir::new();
+            let path = temp.path().join("invalid.tar");
+            fs::write(&path, b"not a tar archive").expect("write invalid archive");
+            let result = run_with_stage_cleanup(&path, || {
+                decode_archive(&path).map(|_| SandboxBatchResult {
+                    applied: Vec::new(),
+                    conflicts: Vec::new(),
+                    failed: Vec::new(),
+                })
+            });
+            assert!(result.is_err());
+            assert!(!path.exists());
         }
     }
 

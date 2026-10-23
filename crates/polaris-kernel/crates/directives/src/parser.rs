@@ -189,14 +189,14 @@ pub fn parse_segments(
     if total.fold(0usize, usize::saturating_add) > limits.max_input_bytes {
         return Err(DirectiveError::TooLong);
     }
-    if let [Segment::Typed(only)] = segments {
-        if let Some((name, rest, at)) = slash::recognise(only) {
-            let command = slash::parse_command(name, rest, at)?;
-            return Ok(ParsedInput {
-                command: Some(command),
-                ..ParsedInput::default()
-            });
-        }
+    if let [Segment::Typed(only)] = segments
+        && let Some((name, rest, at)) = slash::recognise(only)
+    {
+        let command = slash::parse_command(name, rest, at)?;
+        return Ok(ParsedInput {
+            command: Some(command),
+            ..ParsedInput::default()
+        });
     }
     let mut scanner = Scanner {
         limits,

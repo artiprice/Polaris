@@ -1,6 +1,6 @@
 //! # polaris-tools-builtin
 //!
-//! Bounded read-only and pure built-in tools for workspace inspection and patch validation.
+//! Bounded workspace inspection, diff proposal, and sandboxed execution tools.
 //!
 //! | Property | Value |
 //! |---|---|
@@ -8,15 +8,16 @@
 //! | Kind | lib |
 //! | Phase | P1 |
 //! | Parent facade | `polaris-tools` |
-//! | Status | P1 read/pure subset implemented; workspace containment has a documented TOCTOU limitation |
+//! | Status | P1 inspection and opt-in P2 proposal/sandbox routes implemented; services must be explicitly injected |
 //!
 //! ## Responsibilities
 //!
 //! - Resolve existing workspace paths with lexical checks, reparse-point rejection, and canonical containment.
 //! - Read, list, glob, grep, summarize and query workspace content under explicit limits.
-//! - Parse and validate unified patches as pure data; never write workspace files directly.
+//! - Route workspace changes through unverified `ProposeDiff` commands; never write workspace files directly.
+//! - Execute explicit argv only through a caller-owned SDK sandbox backend and handle.
 //! - Expand and recall use the composition root's durable CAS and session-scoped registry.
-//! - Shell, Git, Fetch and workspace mutation execution belong to later phases.
+//! - Git, Fetch, and remote MCP tools belong to later phases.
 //!
 //! ## API
 //!
@@ -38,6 +39,7 @@ mod query;
 mod read;
 mod registry;
 mod search;
+mod shell;
 
 use std::time::Duration;
 
@@ -92,12 +94,21 @@ pub struct ToolOutput {
 
 pub use patch::{PatchError, apply_unified_patch};
 pub use path::{PathError, WorkspacePath, resolve_in_workspace};
-pub use proposal::{CasKernelProposalBackend, DiffProposal, ProposalTokenSource};
+pub use proposal::{
+    CasKernelProposalBackend, DiffProposal, EditFileRequest, NoProposalBackend, PreparedDiff,
+    ProposalTokenSource, ProposalToolBackend, prepare_workspace_diff,
+};
 pub use query::{
     JsonQueryInput, JsonQueryOutput, RegexQueryInput, RegexQueryOutput, json_query, regex_query,
 };
 pub use read::{ReadFileInput, ReadFileOutput, read_file};
-pub use registry::{CasRefResolver, RecallBackend, RefResolver, ToolRegistry, builtin_specs};
+pub use registry::{
+    CasRefResolver, RecallBackend, RefResolver, ToolRegistry, builtin_specs, p2_builtin_specs,
+};
 pub use search::{
     GlobInput, GrepInput, ListDirInput, SearchOutput, SearchRow, glob, grep, list_dir,
+};
+pub use shell::{
+    CommandClass, NoShellBackend, SandboxShellBackend, ShellFlavor, ShellInput, ShellOutput,
+    ShellToolBackend, classify_command,
 };

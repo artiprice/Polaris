@@ -1,5 +1,6 @@
 //! One bounded model step with cancellation, tool authorization, and independent verification.
 use crate::{Active, AgentContextFrame, FrameError, FrameView};
+use crate::{FrameJournal, FrameStepRecord};
 use polaris_sdk::{
     error::HasKind,
     ids::{AgentRole, Cid, FastFingerprint, FrameId, TokenCount},
@@ -22,6 +23,9 @@ pub struct AssembleRequest {
     pub frame: FrameView,
     /// The caller's current task text.
     pub goal: String,
+    /// Exact prior model/tool transcript, in protocol order. The assembler places this after its
+    /// current policy and stable system prefix before returning the next prompt.
+    pub prior_messages: Vec<ChatMessage>,
 }
 
 /// Prompt components assembled by the caller's real context and directive pipeline.
@@ -49,17 +53,19 @@ pub struct ToolCall {
 }
 
 /// A tool result returned by the real tool runner. `content` is model-visible data, not proof.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ToolResultRef {
     /// CAS reference to the persisted result, created by the tool runner.
     pub cid: Cid,
+    /// CAS reference to the exact bounded text supplied to the model.
+    pub content_cid: Cid,
     /// Bounded model-visible result text.
     pub content: String,
 }
 
 /// A tool result linked to the call identifier issued by the model. The frame creates this
 /// binding from the streamed assistant call; tool backends cannot choose or replace the ID.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct ExecutedToolResult {
     /// Exact provider call ID that must be used when replaying this result.
     pub tool_call_id: String,
@@ -132,7 +138,7 @@ pub trait StepVerifier: Send + Sync {
 }
 
 /// Step result. ClaimedDone deliberately leaves the frame active and creates no proof.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub enum StepOutcome {
     /// The model returned an ordinary turn without tools.
     Continue {
@@ -164,6 +170,10 @@ pub struct StepInput<'a> {
     pub frame: &'a mut AgentContextFrame<Active>,
     /// User/agent goal for the assembly operator.
     pub goal: &'a str,
+    /// Prior assistant/tool transcript accumulated by `run_frame`.
+    pub prior_messages: Vec<ChatMessage>,
+    /// Captures the exact request before provider dispatch so interrupted attempts can be journaled.
+    pub request_capture: &'a mut Option<ChatRequest>,
     /// Cancellation shared by the frame and stream owner.
     pub cancellation: &'a Cancellation,
     /// Maximum caller-supplied goal bytes.
@@ -182,6 +192,15 @@ pub struct StepInput<'a> {
     pub max_stream_chunks: usize,
 }
 
+/// One completed step with the exact request sent to the provider.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StepExecution {
+    /// Exact assembled request passed to the chat backend.
+    pub request: ChatRequest,
+    /// Verified result of that request.
+    pub outcome: StepOutcome,
+}
+
 /// Assemble, reserve prompt/output quota, stream, validate finish and usage, authorize tools,
 /// execute permits, and independently verify one step. Full token reservations remain charged even
 /// if provider usage is absent or below the reserved upper bound; cancellation never refunds them.
@@ -191,7 +210,7 @@ pub async fn run_step<A, M, T, V>(
     chat: &M,
     tools: &T,
     verify: &V,
-) -> Result<StepOutcome, FrameError>
+) -> Result<StepExecution, FrameError>
 where
     A: FunctionalOperator<In = AssembleRequest, Out = FramePrompt>,
     M: ChatModel,
@@ -201,6 +220,8 @@ where
     let StepInput {
         frame,
         goal,
+        prior_messages,
+        request_capture,
         cancellation,
         max_goal_bytes,
         max_prompt_bytes,
@@ -218,7 +239,7 @@ where
     let prompt = tokio::select! {
         biased;
         _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
-        result = assemble.apply(AssembleRequest { frame: frame.view(), goal: goal.to_owned() }) => result.map_err(|error| FrameError::Backend(error.kind(), "assembly"))?,
+        result = assemble.apply(AssembleRequest { frame: frame.view(), goal: goal.to_owned(), prior_messages }) => result.map_err(|error| FrameError::Backend(error.kind(), "assembly"))?,
     };
     check_cancel(cancellation)?;
     let model = frame.model.clone().ok_or(FrameError::Accounting)?;
@@ -258,6 +279,8 @@ where
         max_output_tokens: Some(output_limit),
         effort: frame.effort,
     };
+    *request_capture = Some(request.clone());
+    let durable_request = request.clone();
     let mut stream = tokio::select! {
         biased;
         _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
@@ -351,7 +374,13 @@ where
         frame.validate_reported_usage(prompt.input_token_upper_bound, output_limit, report)?;
     }
     if !matches!(finish_reason, FinishReason::Stop | FinishReason::ToolCalls) {
-        return Ok(StepOutcome::Aborted);
+        return Ok(StepExecution {
+            request: durable_request,
+            outcome: StepOutcome::Aborted,
+        });
+    }
+    if (finish_reason == FinishReason::ToolCalls) != !calls.is_empty() {
+        return Err(FrameError::InvalidToolCall);
     }
 
     let mut validated_calls = Vec::with_capacity(calls.len());
@@ -407,6 +436,10 @@ where
         if result.content.len() > max_tool_result_bytes {
             return Err(FrameError::OutputLimit);
         }
+        let content_digest = blake3::hash(result.content.as_bytes());
+        if content_digest.as_bytes() != result.content_cid.as_bytes() {
+            return Err(FrameError::ToolResultReferenceMismatch);
+        }
         results.push(ExecutedToolResult {
             tool_call_id: call_id,
             result,
@@ -433,7 +466,10 @@ where
         } => {
             frame.complete_step(step, fingerprint, verified_diffs);
             if results.is_empty() {
-                Ok(StepOutcome::Continue { text: output.text })
+                Ok(StepExecution {
+                    request: durable_request,
+                    outcome: StepOutcome::Continue { text: output.text },
+                })
             } else {
                 let reasoning = if output.reasoning.is_empty() {
                     None
@@ -442,14 +478,244 @@ where
                 };
                 let assistant_message =
                     ChatMessage::assistant_calls(output.text, replay_calls, reasoning);
-                Ok(StepOutcome::ToolResults {
-                    assistant_message,
-                    results,
+                Ok(StepExecution {
+                    request: durable_request,
+                    outcome: StepOutcome::ToolResults {
+                        assistant_message,
+                        results,
+                    },
                 })
             }
         }
-        Verification::ClaimedDone => Ok(StepOutcome::ClaimedDone { claim: output.text }),
-        Verification::Rejected => Ok(StepOutcome::Aborted),
+        Verification::ClaimedDone => Ok(StepExecution {
+            request: durable_request,
+            outcome: StepOutcome::ClaimedDone { claim: output.text },
+        }),
+        Verification::Rejected => Ok(StepExecution {
+            request: durable_request,
+            outcome: StepOutcome::Aborted,
+        }),
+    }
+}
+
+/// Hard bounds and byte limits used by every attempt in a frame run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FrameRunLimits {
+    /// Maximum model/tool/verifier attempts in this invocation.
+    pub maximum_attempts: u32,
+    /// Maximum retries after verifier rejection.
+    pub maximum_retries: u32,
+    /// Maximum tool-bearing turns before stopping.
+    pub maximum_tool_rounds: u32,
+    /// Maximum caller-supplied goal bytes.
+    pub max_goal_bytes: usize,
+    /// Maximum assembled messages and tool-schema bytes per attempt.
+    pub max_prompt_bytes: usize,
+    /// Maximum accumulated assistant and reasoning bytes per attempt.
+    pub max_output_bytes: usize,
+    /// Maximum number of streamed tool calls per attempt.
+    pub max_tool_calls: usize,
+    /// Maximum argument bytes per tool call.
+    pub max_tool_argument_bytes: usize,
+    /// Maximum returned tool text bytes.
+    pub max_tool_result_bytes: usize,
+    /// Maximum chunks per model stream, including empty/usage chunks.
+    pub max_stream_chunks: usize,
+}
+
+/// Terminal reason for a bounded multi-step frame run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FrameRunStop {
+    /// The model returned an ordinary response without tool calls.
+    ModelTurnComplete,
+    /// The independent verifier observed a claim; proof-of-done remains external.
+    ClaimedDone,
+    /// The verifier rejected the final permitted attempt.
+    Rejected,
+    /// The configured retry allowance ended after rejection.
+    RetryLimit,
+    /// The configured total attempt allowance ended after a tool response.
+    AttemptLimit,
+    /// The configured tool-round allowance ended after a tool response.
+    ToolRoundLimit,
+}
+
+/// Result and accounting for a completed bounded frame run.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FrameRunOutcome {
+    /// Last verified step outcome.
+    pub last_step: StepOutcome,
+    /// Why no further model attempt was made.
+    pub stop: FrameRunStop,
+    /// Attempts reserved by the frame during this invocation.
+    pub attempts: u32,
+    /// Verifier rejections retried within the configured bound.
+    pub retries: u32,
+    /// Tool-bearing turns executed within the configured bound.
+    pub tool_rounds: u32,
+}
+
+/// Run bounded model/tool/verifier turns until an ordinary response, completion claim, rejection,
+/// retry limit, attempt limit, or tool-round limit. Tool results retain their durable CAS ids and
+/// are replayed under the exact call ids supplied by the model. Every attempt goes through
+/// `run_step`, so steps and full token reservations remain charged on failure and cancellation.
+pub async fn run_frame<A, M, T, V, J>(
+    frame: &mut AgentContextFrame<Active>,
+    goal: &str,
+    cancellation: &Cancellation,
+    limits: FrameRunLimits,
+    assemble: &A,
+    chat: &M,
+    tools: &T,
+    verify: &V,
+    journal: &J,
+) -> Result<FrameRunOutcome, FrameError>
+where
+    A: FunctionalOperator<In = AssembleRequest, Out = FramePrompt>,
+    M: ChatModel,
+    T: ToolRunner,
+    V: StepVerifier,
+    J: FrameJournal,
+{
+    if limits.maximum_attempts == 0 {
+        return Err(FrameError::StepLimit);
+    }
+    let mut prior_messages = Vec::new();
+    let mut attempts = 0_u32;
+    let mut retries = 0_u32;
+    let mut tool_rounds = 0_u32;
+    loop {
+        if attempts >= limits.maximum_attempts {
+            return Err(FrameError::StepLimit);
+        }
+        let starting_step = frame.steps();
+        let mut request_capture = None;
+        let execution = run_step(
+            StepInput {
+                frame,
+                goal,
+                prior_messages: prior_messages.clone(),
+                request_capture: &mut request_capture,
+                cancellation,
+                max_goal_bytes: limits.max_goal_bytes,
+                max_prompt_bytes: limits.max_prompt_bytes,
+                max_output_bytes: limits.max_output_bytes,
+                max_tool_calls: if limits.maximum_tool_rounds == 0 {
+                    0
+                } else {
+                    limits.max_tool_calls
+                },
+                max_tool_argument_bytes: limits.max_tool_argument_bytes,
+                max_tool_result_bytes: limits.max_tool_result_bytes,
+                max_stream_chunks: limits.max_stream_chunks,
+            },
+            assemble,
+            chat,
+            tools,
+            verify,
+        )
+        .await;
+        let execution = match execution {
+            Ok(execution) => execution,
+            Err(error) => {
+                if frame.steps() > starting_step {
+                    let outcome = if matches!(&error, FrameError::Cancelled) {
+                        polaris_sdk::contracts::FrameStepOutcome::Cancelled
+                    } else {
+                        polaris_sdk::contracts::FrameStepOutcome::Failed
+                    };
+                    let record = FrameStepRecord {
+                        frame: frame.view().id,
+                        step: frame.steps(),
+                        goal: goal.to_owned(),
+                        request: request_capture,
+                        result: None,
+                        outcome,
+                    };
+                    let _transcript = journal.record(&record).await.map_err(|journal_error| {
+                        FrameError::Backend(journal_error.kind(), "frame journal")
+                    })?;
+                }
+                return Err(error);
+            }
+        };
+        attempts = attempts.checked_add(1).ok_or(FrameError::Accounting)?;
+        let outcome = execution.outcome;
+        let journal_outcome = match &outcome {
+            StepOutcome::Continue { .. } | StepOutcome::ToolResults { .. } => {
+                polaris_sdk::contracts::FrameStepOutcome::Accepted
+            }
+            StepOutcome::ClaimedDone { .. } => {
+                polaris_sdk::contracts::FrameStepOutcome::ClaimedDone
+            }
+            StepOutcome::Aborted => polaris_sdk::contracts::FrameStepOutcome::Rejected,
+        };
+        let record = FrameStepRecord {
+            frame: frame.view().id,
+            step: frame.steps(),
+            goal: goal.to_owned(),
+            request: Some(execution.request),
+            result: Some(outcome.clone()),
+            outcome: journal_outcome,
+        };
+        let _transcript = journal
+            .record(&record)
+            .await
+            .map_err(|journal_error| FrameError::Backend(journal_error.kind(), "frame journal"))?;
+        let stop = match &outcome {
+            StepOutcome::Continue { text } => {
+                prior_messages.push(ChatMessage::text(
+                    polaris_sdk::registry::ChatRole::Assistant,
+                    text.clone(),
+                ));
+                return Ok(FrameRunOutcome {
+                    last_step: outcome,
+                    stop: FrameRunStop::ModelTurnComplete,
+                    attempts,
+                    retries,
+                    tool_rounds,
+                });
+            }
+            StepOutcome::ToolResults {
+                assistant_message,
+                results,
+            } => {
+                prior_messages.push(assistant_message.clone());
+                for entry in results {
+                    prior_messages.push(ChatMessage::tool_result(
+                        entry.tool_call_id.clone(),
+                        entry.result.content.clone(),
+                    ));
+                }
+                tool_rounds = tool_rounds.checked_add(1).ok_or(FrameError::Accounting)?;
+                if tool_rounds >= limits.maximum_tool_rounds {
+                    FrameRunStop::ToolRoundLimit
+                } else if attempts >= limits.maximum_attempts {
+                    FrameRunStop::AttemptLimit
+                } else {
+                    continue;
+                }
+            }
+            StepOutcome::ClaimedDone { .. } => FrameRunStop::ClaimedDone,
+            StepOutcome::Aborted => {
+                if retries < limits.maximum_retries && attempts < limits.maximum_attempts {
+                    retries = retries.checked_add(1).ok_or(FrameError::Accounting)?;
+                    continue;
+                }
+                if retries >= limits.maximum_retries {
+                    FrameRunStop::RetryLimit
+                } else {
+                    FrameRunStop::Rejected
+                }
+            }
+        };
+        return Ok(FrameRunOutcome {
+            last_step: outcome,
+            stop,
+            attempts,
+            retries,
+            tool_rounds,
+        });
     }
 }
 

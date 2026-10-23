@@ -272,7 +272,9 @@ impl Aggregates {
             | Event::SessionConfigured { .. }
             | Event::SessionPaused
             | Event::SessionResumed
-            | Event::BlastRadiusAlert { .. } => {}
+            | Event::BlastRadiusAlert { .. }
+            | Event::DiffNeedsApproval { .. }
+            | Event::FrameStepRecorded { .. } => {}
         }
     }
 

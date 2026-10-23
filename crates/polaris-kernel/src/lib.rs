@@ -57,11 +57,14 @@ pub use polaris_kernel_verifier as verifier;
 pub use polaris_storage as storage;
 
 mod context;
+pub mod docker_pool;
 mod error;
 mod evidence;
 mod execution;
 mod runtime;
+mod sandbox_recovery;
 pub mod session;
+mod skill_status;
 mod tools;
 
 pub use context::KernelCtx;
@@ -70,4 +73,8 @@ pub use evidence::KernelEvidence;
 pub use execution::{ExecutionRequest, ExecutionReview, SandboxExecution};
 pub use runtime::{Kernel, KernelEvents, KernelHandle, LocalBackends, LocalKernelConfig};
 pub use session::{Archived, Configured, Created, Paused, Running, Session, SessionConfig};
+pub use skill_status::{
+    SkillDiscoveryStatus, SkillEnablementStatus, SkillRequirementStatus, SkillStatusSnapshot,
+    SkillToolRegistryScope, inspect_skill_status,
+};
 pub use tools::{KernelRecall, LocalTools};

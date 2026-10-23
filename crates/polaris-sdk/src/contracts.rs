@@ -20,7 +20,7 @@ use crate::hex;
 use crate::ids::{AgentRole, Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 
 /// Current [`EventRecord`] schema version.
-pub const EVENT_SCHEMA_VERSION: u16 = 3;
+pub const EVENT_SCHEMA_VERSION: u16 = 4;
 
 /// Opaque capability token (a serialized Biscuit). The sdk never interprets it and never prints it:
 /// `Debug` shows only the length.
@@ -429,8 +429,25 @@ pub enum WorkerKind {
     Nano,
 }
 
-/// A domain event (schema v3, backwards-readable v1/v2). Fixed-size and `Copy`: text and blobs
-/// are [`Cid`] references. Schema 2 adds configuration, pause and resume records.
+/// Final disposition of one model/tool/verifier step, persisted with its CAS transcript.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FrameStepOutcome {
+    /// Independent verifier accepted the step.
+    Accepted,
+    /// The model claimed completion; proof-of-done remains a separate gate.
+    ClaimedDone,
+    /// Independent verifier rejected the step.
+    Rejected,
+    /// Cooperative cancellation stopped the step.
+    Cancelled,
+    /// A backend, provider, or protocol error stopped the step.
+    Failed,
+}
+
+/// A domain event (schema v4, backwards-readable v1-v3). Fixed-size and `Copy`: text and blobs
+/// are [`Cid`] references. Schema 2 adds configuration/pause/resume, schema 3 adds blast alerts,
+/// and schema 4 adds durable frame-step records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -513,6 +530,15 @@ pub enum Event {
         /// Rejection report.
         reason: Cid,
     },
+    /// The verifier could not establish safety without a human decision.
+    DiffNeedsApproval {
+        /// Proposing frame.
+        frame: FrameId,
+        /// The diff.
+        diff: Cid,
+        /// Durable verifier report describing why review is required.
+        report: Cid,
+    },
     /// A file/AST lease was granted.
     FileLeaseGranted {
         /// Holder frame.
@@ -589,6 +615,17 @@ pub enum Event {
         /// Exact immutable review artifact, including blast facts, commands and policy.
         report: Cid,
     },
+    /// A complete or interrupted frame-step transcript was stored in CAS before this event.
+    FrameStepRecorded {
+        /// Owning frame.
+        frame: FrameId,
+        /// One-based frame step.
+        step: u32,
+        /// Durable transcript with prompt, prior messages, result, and verified references.
+        transcript: Cid,
+        /// Final disposition of the attempt.
+        outcome: FrameStepOutcome,
+    },
 }
 
 /// Versioned envelope appended to the event store.
@@ -606,7 +643,7 @@ impl EventRecord {
     /// Construct an explicitly versioned envelope without silently upgrading older records.
     ///
     /// # Errors
-    /// Rejects zero/future schemas and schema-2 lifecycle variants mislabeled as schema 1.
+    /// Rejects zero/future schemas and lifecycle events mislabeled below their minimum schema.
     pub fn from_versioned(
         schema: u16,
         seq: Seq,
@@ -616,6 +653,7 @@ impl EventRecord {
     ) -> Result<Self, ParseError> {
         let minimum = match event {
             Event::BlastRadiusAlert { .. } => 3,
+            Event::DiffNeedsApproval { .. } | Event::FrameStepRecorded { .. } => 4,
             Event::SessionConfigured { .. } | Event::SessionPaused | Event::SessionResumed => 2,
             Event::SessionStarted { .. }
             | Event::DirectiveApplied { .. }

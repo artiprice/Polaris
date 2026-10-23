@@ -1,0 +1,15 @@
+{
+  "type_of": "struct",
+  "name": "WarmContainerPool",
+  "file_path": "crates/polaris-devenv/crates/docker/src/lib.rs",
+  "logic_name": "Bounded Single-Use Docker Warm Pool",
+  "test_list": [
+    { "test_name": "warm_pool_budget_is_enforced_before_engine_calls", "description": "Reject a pool whose requested container memory exceeds its aggregate budget." },
+    { "test_name": "orphan_ownership_requires_both_exact_ids_and_managed_label", "description": "Match only the exact pool owner label tuple created by Polaris." }
+  ],
+  "dependencies": ["Docker", "ContainerSpec", "WarmPoolConfig"],
+  "libraries": ["bollard", "tokio", "uuid"],
+  "inputs": [{ "name": "config", "type": "WarmPoolConfig", "description": "Persisted pool and owner UUIDs with size and aggregate memory limits." }],
+  "output_type": "Result<WarmContainerPool, DockerError>",
+  "output_description": "Pre-started containers; each consumed container is removed and replaced with a fresh one."
+}

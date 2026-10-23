@@ -29,6 +29,9 @@ pub enum TfError {
     /// The HTTP body ended before a complete protocol stream was received.
     #[error("Token Factory stream ended before completion")]
     StreamTruncated,
+    /// Local rate-limit accounting failed closed.
+    #[error("Token Factory local rate-limit accounting failed")]
+    RateLimit,
     /// The response did not match the supported OpenAI-compatible contract.
     #[error("invalid Token Factory response protocol")]
     Protocol,
@@ -51,6 +54,7 @@ impl From<TfError> for ModelError {
             TfError::Timeout => Self::Timeout,
             TfError::BadRequest => Self::BadRequest("provider rejected request".to_owned()),
             TfError::Transport => Self::Transport("provider transport failed".to_owned()),
+            TfError::RateLimit => Self::Protocol("local rate-limit accounting failed".to_owned()),
             TfError::Http { status, .. } => Self::Upstream { status },
             other => Self::Protocol(other.to_string()),
         }

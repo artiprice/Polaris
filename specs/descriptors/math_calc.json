@@ -1,0 +1,21 @@
+{
+  "type_of": "function",
+  "name": "calc",
+  "file_path": "crates/polaris-tools/crates/math/src/calc.rs",
+  "logic_name": "math_calc",
+  "test_list": [
+    {"test_name":"point_one_plus_point_two_is_exact","description":"Decimal addition retains exact decimal equality."},
+    {"test_name":"divide_by_zero_is_error","description":"Division or remainder by zero returns a typed error."},
+    {"test_name":"overflow_is_error_not_wrap","description":"Out-of-range decimal arithmetic fails explicitly."},
+    {"test_name":"deep_nesting_rejected","description":"Expression depth is bounded."},
+    {"test_name":"unknown_identifier_rejected","description":"Variables and unknown function identifiers are rejected."},
+    {"test_name":"huge_exponent_rejected","description":"Integer exponent magnitude is bounded."},
+    {"test_name":"negative_power_and_precedence_are_correct","description":"Unary minus, exponentiation, and parentheses follow documented precedence."},
+    {"test_name":"decimal_parser_is_deterministic_for_bounded_inputs","description":"Generated bounded decimal expressions either evaluate or return typed errors without panicking."}
+  ],
+  "dependencies": [],
+  "libraries": ["rust_decimal","exmex","proptest"],
+  "inputs": [{"name":"expr","type":"&str","description":"Bounded expression using the documented grammar."},{"name":"limits","type":"&CalcLimits","description":"Length, nesting, and exponent limits."}],
+  "output_type": "Result<Decimal, MathError>",
+  "output_description": "The exact fixed-scale decimal result or a typed error."
+}

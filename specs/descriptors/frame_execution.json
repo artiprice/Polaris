@@ -1,0 +1,72 @@
+{
+  "type_of": "pipeline",
+  "name": "run_frame",
+  "file_path": "crates/polaris-runtime/crates/frames/src/step.rs",
+  "logic_name": "Bounded Frame Execution",
+  "test_list": [
+    {
+      "test_name": "tool_round_trip_is_replayed_with_call_identity",
+      "description": "A real model stream requesting tools is authorized before execution; the returned CAS-backed result is replayed on the next model request with the exact provider call id."
+    },
+    {
+      "test_name": "aborted_steps_retry_only_within_configured_bound",
+      "description": "Verifier rejection consumes a step and retries no more than the configured retry count, with total attempts also bounded by frame quota."
+    },
+    {
+      "test_name": "tool_loop_stops_at_configured_round_bound",
+      "description": "Repeated tool-call turns stop before a model invocation beyond the configured tool-round limit."
+    },
+    {
+      "test_name": "cancellation_keeps_reserved_step_and_tokens_charged",
+      "description": "Cancellation during a provider stream returns Cancelled and does not refund reserved model tokens or the step attempt."
+    },
+    {
+      "test_name": "provider_finish_reason_must_match_tool_call_presence",
+      "description": "Malformed streams that finish as Stop with tool calls, or ToolCalls without any calls, fail before authorization or execution."
+    },
+    {
+      "test_name": "only_verified_diff_references_enter_frame_history",
+      "description": "Accepted verifier CIDs are recorded against the reserved step; rejected and claimed-done outcomes do not add diff history."
+    },
+    {
+      "test_name": "frame_execution_preserves_tool_result_cas_references",
+      "description": "Tool result CIDs remain attached to the exact model-issued call identity as the transcript is carried across bounded steps."
+    },
+    {
+      "test_name": "tool_model_visible_content_must_match_durable_cid",
+      "description": "A tool result whose model-visible content does not hash to its declared content CID is rejected before verifier acceptance or replay."
+    }
+  ],
+  "dependencies": [
+    "AgentContextFrame",
+    "ChatModel",
+    "FunctionalOperator",
+    "ToolRunner",
+    "StepVerifier"
+  ],
+  "libraries": ["tokio", "tokio-util"],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "&mut AgentContextFrame<Active>",
+      "description": "Active frame owning capability, step and token quota ledgers."
+    },
+    {
+      "name": "maximum_attempts",
+      "type": "u32",
+      "description": "Hard ceiling on model/tool/verifier attempts for this run."
+    },
+    {
+      "name": "maximum_retries",
+      "type": "u32",
+      "description": "Hard ceiling on retries after verifier rejection."
+    },
+    {
+      "name": "maximum_tool_rounds",
+      "type": "u32",
+      "description": "Hard ceiling on tool-bearing model turns."
+    }
+  ],
+  "output_type": "Result<FrameRunOutcome, FrameError>",
+  "output_description": "The terminal or bounded continuation outcome, attempt counts, and tool results, or the first typed policy/backend/protocol/cancellation error."
+}

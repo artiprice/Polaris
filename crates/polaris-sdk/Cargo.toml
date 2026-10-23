@@ -21,6 +21,7 @@ serde = { workspace = true }
 bytes = { workspace = true, features = ["serde"] }
 uuid = { workspace = true }
 jiff = { workspace = true, features = ["serde"] }
+secrecy = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

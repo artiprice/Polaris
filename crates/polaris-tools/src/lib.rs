@@ -1,7 +1,7 @@
 //! Tool facade. Children never depend on this facade.
 //!
 //! P1 exposes E0 workspace inspection and pure queries. P2 owns proposal-producing writes and
-//! sandboxed execution; P5 owns network tools. The math child is tracked with its P3 phase.
+//! sandboxed execution; P5 owns network tools. The P3 math child provides a pure typed dispatcher.
 //!
 //! ```
 //! use polaris_tools::{builtin, rtk};
@@ -15,23 +15,45 @@ pub use polaris_tools_builtin as builtin;
 pub use polaris_tools_math as math;
 pub use polaris_tools_rtk as rtk;
 
-/// Render the registered P1 schemas as documentation. Regenerate with the `catalog` example.
+/// Render the registered P1 and P2 builtin schemas as documentation. Regenerate with the `catalog` example.
 #[must_use]
 pub fn tool_catalog() -> String {
     let mut out = String::from(
-        "# Registered P1 tools\n\nGenerated from `builtin_specs()`; checked by the facade's catalog test.\n\n| Name | Effects | Tier | Phase | Description |\n|---|---|---|---|---|\n",
+        "# Registered tools\n\nGenerated from P1 and P2 builtin schemas plus typed tool specs; checked by the facade's catalog test.\n\n| Name | Effects | Tier | Phase | Description |\n|---|---|---|---|---|\n",
     );
-    for spec in builtin::builtin_specs() {
+    let mut builtins = builtin::builtin_specs();
+    builtins.extend(builtin::p2_builtin_specs());
+    builtins.sort_by(|left, right| left.name.cmp(&right.name));
+    for spec in builtins {
         let effects = if spec.effects.reads_workspace {
-            "workspace read"
+            if spec.effects.writes_workspace {
+                "workspace proposal"
+            } else {
+                "workspace read"
+            }
+        } else if spec.effects.executes {
+            "sandbox execution"
         } else {
             "pure / persisted context read"
         };
+        let phase = if spec.effects.writes_workspace
+            || spec.effects.executes
+            || spec.name.as_ref() == "classify_command"
+        {
+            "P2"
+        } else {
+            "P1"
+        };
         out.push_str(&format!(
-            "| `{}` | {} | E0 | P1 | {} |\n",
-            spec.name, effects, spec.description
+            "| `{}` | {} | E0 | {} | {} |\n",
+            spec.name, effects, phase, spec.description
         ));
     }
-    out.push_str("\nProposal-producing writes and sandboxed process execution are P2. Network tools are P5. These later tools are absent from the P1 registry.\n");
+    let math = math::MathTool.tool_spec();
+    out.push_str(&format!(
+        "| `{}` | pure | E0 | P3 | {} |\n",
+        math.name, math.description
+    ));
+    out.push_str("\nNetwork tools and remote MCP integration are future-phase work. The math dispatcher is a pure P3 tool.\n");
     out
 }

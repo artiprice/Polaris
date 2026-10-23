@@ -3321,7 +3321,7 @@ pub enum LeaseError { Busy { holder: FrameId }, StaleBase { expected: Blake3Hash
 |---|---|
 | unit | two sibling symbols granted together; nested symbols conflict; exclusive waiter blocks later requests (FIFO); stale base rejected |
 | proptest | model-based: random acquire/release sequences against a sequential reference model never hold two conflicting leases; no waiter starves under bounded releases; `LeaseKey` is idempotent and maps `A.rs` / `a.rs` / `.\a.rs` to one key |
-| loom | 2 to 3 threads acquiring and releasing overlapping scopes: no lost wake-up, FIFO preserved, no double grant |
+| loom | Bounded Loom unit models exercise the production state-mutex transitions: conflicting ticket order, no double grant, disjoint key progress (including remaining-capacity progress around a blocked multi-key waiter), and atomic multi-key admission. Tokio notification delivery and `ArcSwap` publication are outside this model and remain unverified by Loom. |
 | kani | `scopes_conflict` predicate is symmetric and reflexive for bounded symbol paths |
 | fuzz | `fuzz_lease_ops` (random op streams), `fuzz_lease_key` (arbitrary path strings; never panics, never escapes the root) |
 | load | `holder_of`: 10 M lookups/s single thread and p99 under 1 microsecond with zero allocations after warm-up (targets) |
@@ -3334,6 +3334,7 @@ pub enum LeaseError { Busy { holder: FrameId }, StaleBase { expected: Blake3Hash
 |---|---|---|---|---|
 | Scope conflict rules | function | `scopes_conflict` | `crates/polaris-runtime/crates/leases/src/scope.rs` | `sibling_symbols_do_not_conflict`, `nested_symbol_conflicts_with_parent`, `entire_file_conflicts_with_any_scope`, `unknown_language_falls_back_to_entire_file` |
 | FIFO acquisition | async_function | `LeaseManager::acquire` | `crates/polaris-runtime/crates/leases/src/manager.rs` | `waiters_are_granted_in_order`, `exclusive_waiter_blocks_later_symbol_requests`, `guard_drop_wakes_next_waiter`, `acquire_times_out`, `acquire_many_is_all_or_nothing` |
+| Bounded Loom lease admission | module | `LeaseManager` | `crates/polaris-runtime/crates/leases/src/manager.rs` | `overlapping_waiters_keep_ticket_order_and_are_granted_once`, `disjoint_waiter_progresses_while_conflicting_waiters_preserve_fifo`, `disjoint_single_key_uses_remaining_capacity_ahead_of_blocked_multi_key_waiter` |
 | Optimistic concurrency | method | `LeaseManager::check_write` | `crates/polaris-runtime/crates/leases/src/occ.rs` | `matching_base_issues_ticket`, `stale_base_rejected_with_both_hashes`, `stale_write_notifies_waiters` |
 | Lease key canonicalisation | function | `LeaseKey::from_path` | `crates/polaris-runtime/crates/leases/src/key.rs` | `case_variants_map_to_one_key`, `traversal_is_rejected`, `reserved_device_name_is_rejected`, `alternate_data_stream_is_rejected`, `backslashes_are_normalised` |
 | Churn cycle breaker | method | `LeaseManager::note_edit` | `crates/polaris-runtime/crates/leases/src/churn.rs` | `fourth_edit_in_subtask_revokes_rights`, `different_subtask_resets_counter`, `revocation_escalates_to_s2` |
@@ -4987,8 +4988,8 @@ pub enum DockerError { EngineUnavailable, ApiVersion(String), ImageNotFound(Stri
 - [ ] Implement hardened defaults: no network, read-only rootfs plus tmpfs, `no-new-privileges`, all capabilities dropped, memory/CPU/pids limits, non-root user, never mount the Docker socket, no bind mount of the Windows workspace by default (use a volume plus the sync protocol; Windows bind mounts are slow and change line endings semantics).
 - [ ] Implement `WarmPool` with single-use containers: pre-create/start N containers, hand one out, remove it after use, refill asynchronously within a memory budget aware of the WSL cap (about 6 GB planned). No unpause-reset assumption anywhere.
 - [ ] Implement `exec` with streamed output, exit code, caps and cancellation (kills the exec process and verifies it is gone).
-- [ ] Investigate BuildKit through `bollard` (cache mounts need BuildKit; bollard's BuildKit support is likely behind a non-default feature that the pinned feature set does not enable). Decide between enabling that feature, or building through the engine CLI via `PlatformOps`. Record as an ADR. UNVERIFIED.
-- [ ] Register pool containers with the Reaper; detect and remove orphaned labelled containers on startup.
+- [x] Verify the Bollard BuildKit Engine API path with the pinned local Dockerfile frontend and a cache-mount sentinel that is written in one `RUN` and read in a later `RUN`; opt-in live test passed against WSL Docker 29.9.1 / BuildKit v0.34.0.
+- [x] Register pool containers with the Reaper; recover only exact-label Docker orphans before `Kernel::start_with_docker`'s generic sweep. Fake-backend restart and opt-in live WSL Docker restart recovery are tested; live recovery removed one unique UUID-owned container, confirmed exact-label absence, and cleared the journal entry.
 - [ ] Measure cold vs warm start latency on this machine (Docker Desktop) and record; do not assume the chatlog's near-instant figures.
 - [ ] Rootless Podman path is Linux-only; keep behind the Linux leg and do not claim it on Windows.
 
@@ -5017,7 +5018,6 @@ pub enum DockerError { EngineUnavailable, ApiVersion(String), ImageNotFound(Stri
 | Exec Streaming | async_function | `Container::exec` | `.../docker/src/exec.rs` | `streams_stdout_stderr`; `reports_exit_code`; `cancel_kills_exec_process`; `output_cap_truncates` |
 
 **Risks & open questions.**
-- UNVERIFIED: BuildKit and cache-mount support through `bollard` 0.21.1 with the pinned feature set.
 - UNVERIFIED: Docker Desktop named-pipe behavior under the LTSC build and when the engine is stopped (error shape); Podman on Windows connectivity.
 - VERIFIED correction: a paused container keeps its writable layer; "reset CoW on unpause" is false. Single-use containers are the only reset we trust.
 - Security: weaker than OpenShell (no Landlock/policy engine); `$env(docker)` must not be presented as an equivalent isolation tier. The default for untrusted code remains E1/E2.

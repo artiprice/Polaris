@@ -1,0 +1,76 @@
+# Curated per-compute-capability resource limits transcribed from the cited NVIDIA table.
+# Source: https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html
+# Retrieved: 2026-10-23
+version = 1
+
+[[specs]]
+capability = { major = 7, minor = 5 }
+max_blocks_per_sm = 16
+max_threads_per_sm = 1024
+max_threads_per_block = 1024
+max_warps_per_sm = 32
+registers_per_sm = 65536
+shared_bytes_per_sm = 65536
+max_shared_bytes_per_block = 65536
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"
+
+[[specs]]
+capability = { major = 8, minor = 0 }
+max_blocks_per_sm = 32
+max_threads_per_sm = 2048
+max_threads_per_block = 1024
+max_warps_per_sm = 64
+registers_per_sm = 65536
+shared_bytes_per_sm = 167936
+max_shared_bytes_per_block = 166912
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"
+
+[[specs]]
+capability = { major = 8, minor = 6 }
+max_blocks_per_sm = 16
+max_threads_per_sm = 1536
+max_threads_per_block = 1024
+max_warps_per_sm = 48
+registers_per_sm = 65536
+shared_bytes_per_sm = 102400
+max_shared_bytes_per_block = 101376
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"
+
+[[specs]]
+capability = { major = 8, minor = 7 }
+max_blocks_per_sm = 24
+max_threads_per_sm = 2048
+max_threads_per_block = 1024
+max_warps_per_sm = 64
+registers_per_sm = 65536
+shared_bytes_per_sm = 167936
+max_shared_bytes_per_block = 166912
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"
+
+[[specs]]
+capability = { major = 8, minor = 9 }
+max_blocks_per_sm = 32
+max_threads_per_sm = 1024
+max_threads_per_block = 1024
+max_warps_per_sm = 32
+registers_per_sm = 65536
+shared_bytes_per_sm = 102400
+max_shared_bytes_per_block = 101376
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"
+
+[[specs]]
+capability = { major = 9, minor = 0 }
+max_blocks_per_sm = 16
+max_threads_per_sm = 1536
+max_threads_per_block = 1024
+max_warps_per_sm = 48
+registers_per_sm = 65536
+shared_bytes_per_sm = 233472
+max_shared_bytes_per_block = 232448
+source_url = "https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html"
+retrieved = "2026-10-23"

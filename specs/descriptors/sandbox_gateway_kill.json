@@ -1,0 +1,14 @@
+{
+  "type_of": "async_function",
+  "name": "real_gateway_kill_retains_ownership_and_recovers_without_leaks",
+  "file_path": "tests/spike/sandbox/tests/gateway_kill.rs",
+  "logic_name": "Private gateway interruption recovery",
+  "test_list": [
+    {"test_name": "real_gateway_kill_retains_ownership_and_recovers_without_leaks", "description": "Positively observe owned live Docker containers, kill only the process matching private configuration and start time, retain typed lifecycle failures, resume the same database and CA, and require authoritative sandbox and Docker absence before clearing recovery ownership."}
+  ],
+  "dependencies": ["run_sandboxes", "Reaper", "OpenShellBackend::inspect"],
+  "libraries": ["tokio"],
+  "inputs": [{"name": "private_gateway", "type": "environment", "description": "A test-only state directory whose exact gateway process is verified before interruption."}],
+  "output_type": "Result<(), Failure>",
+  "output_description": "Bounded, observed interruption and recovery evidence, or a failed test retaining its recovery journal."
+}

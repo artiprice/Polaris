@@ -2,7 +2,8 @@
 use crate::{
     KernelCtx, KernelError, KernelEvidence,
     context::blocking,
-    reaper::{Disposition, Locator, ResourceKind, Teardown, TeardownContext, TeardownError},
+    reaper::{Disposition, ResourceKind, Teardown, TeardownContext, TeardownError},
+    sandbox_recovery::locator_for,
     storage::sync::{self, Manifest},
     verifier::LocalExecutionVerifier,
 };
@@ -32,6 +33,10 @@ use tokio_util::sync::CancellationToken;
 const REMOTE_ROOT: &str = "/sandbox/ws";
 const MAX_REVIEW_BYTES: usize = 1024 * 1024;
 const EXECUTION_ENV: &[(&str, &str)] = &[
+    (
+        "PATH",
+        "/usr/local/cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    ),
     ("CARGO_HOME", "/sandbox/cargo"),
     ("CARGO_TARGET_DIR", "/sandbox/build"),
     ("CARGO_NET_OFFLINE", "true"),
@@ -102,6 +107,8 @@ struct StoredReview {
     tree: Cid,
     sandbox: SandboxSpec,
     request: ExecutionRequest,
+    environment: std::collections::BTreeMap<String, String>,
+    remote_root: String,
     blast: serde_json::Value,
 }
 
@@ -198,7 +205,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             }
             let tree = snapshot.content_id();
             let environment: std::collections::BTreeMap<_, _> = EXECUTION_ENV.iter().copied().collect();
-            let stored = StoredReview {version:1,session,frame,nonce:CommandId::new_v7(),workspace,tree,sandbox:spec,request,blast:serde_json::json!({"commands":reports,"approval":"explicit_digest_required","source":"paranoid_scan_and_git_status","execution_environment":environment,"remote_workdir":REMOTE_ROOT})};
+            let stored = StoredReview {version:2,session,frame,nonce:CommandId::new_v7(),workspace,tree,sandbox:spec,request,environment:EXECUTION_ENV.iter().map(|(key,value)|((*key).to_owned(),(*value).to_owned())).collect(),remote_root:REMOTE_ROOT.to_owned(),blast:serde_json::json!({"commands":reports,"approval":"explicit_digest_required","source":"paranoid_scan_and_git_status","execution_environment":environment,"remote_workdir":REMOTE_ROOT})};
             let bytes = serde_json::to_vec(&stored)?;
             if bytes.len() > MAX_REVIEW_BYTES { return Err(KernelError::Configuration("review exceeds size bound")); }
             let digest = ctx.cas.put(&bytes)?;
@@ -249,7 +256,8 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             let review: StoredReview = serde_json::from_slice(&bytes)?;
             review.request.validate()?;
             let workspace = std::fs::canonicalize(workspace)?;
-            if review.version != 1 || review.session != session || review.frame != owner || review.workspace != workspace || review.sandbox != expected_spec { return Err(KernelError::Configuration("review context mismatch")); }
+            let environment = EXECUTION_ENV.iter().map(|(key,value)|((*key).to_owned(),(*value).to_owned())).collect();
+            if review.version != 2 || review.session != session || review.frame != owner || review.workspace != workspace || review.sandbox != expected_spec || review.environment != environment || review.remote_root != REMOTE_ROOT { return Err(KernelError::Configuration("review context mismatch")); }
             let manifest = snapshot(&workspace)?;
             if manifest.content_id() != review.tree { return Err(KernelError::Configuration("reviewed source tree changed")); }
             let _writer = context.lock_writer()?;
@@ -289,10 +297,11 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let context = Arc::clone(&ctx);
         let backend = Arc::clone(&self.backend);
         let registered = sandbox.clone();
+        let locator = locator_for(self.backend.as_ref(), &registered);
         let registration = blocking(move || {
             Ok(context.reaper.register_journaled(
                 ResourceKind::Sandbox,
-                Locator::Label(registered.as_str().to_owned()),
+                locator,
                 OwnedSandbox {
                     backend,
                     handle: registered,
@@ -313,10 +322,11 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
                 let context = Arc::clone(&ctx);
                 let backend = Arc::clone(&self.backend);
                 let actual = created.clone();
+                let locator = locator_for(self.backend.as_ref(), &actual);
                 let unexpected_registration = blocking(move || {
                     Ok(context.reaper.register_journaled(
                         ResourceKind::Sandbox,
-                        Locator::Label(actual.as_str().to_owned()),
+                        locator,
                         OwnedSandbox {
                             backend,
                             handle: actual,
@@ -345,21 +355,9 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             .await
         }
         .await;
-        let failure_report = if let Err(error) = &operation {
-            let context = Arc::clone(&ctx);
-            let reason = error.to_string();
-            let frame = self.frame;
-            let sandbox_name = sandbox.as_str().to_owned();
-            blocking(move || {
-                let report=context.cas.put(&serde_json::to_vec(&serde_json::json!({"stage":"sandbox_execution","review":call,"sandbox":sandbox_name,"command":command_id,"reason":reason}))?)?;
-                context.publish(session,Event::ProofOfDoneBlocked {frame,report})?;Ok(())
-            }).await
-        } else {
-            Ok(())
-        };
         // A journaled intent precedes create, so cancellation during readiness cannot lose the
         // cleanup identity. Destruction failure retains recovery metadata for reaper retry.
-        let cleanup = if matches!(
+        let mut cleanup = if matches!(
             &operation,
             Err(KernelError::Sandbox(
                 polaris_sdk::registry::SandboxError::AlreadyExists(_)
@@ -376,12 +374,19 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         };
         if cleanup.is_ok() {
             let context = Arc::clone(&ctx);
-            blocking(move || Ok(context.reaper.release(registration)?)).await?;
+            // A physical deletion does not complete cleanup while its durable ownership
+            // record cannot be released. Include that failure in the one terminal proof.
+            cleanup = blocking(move || Ok(context.reaper.release(registration)?)).await;
         }
         let context = Arc::clone(&ctx);
         let ok = operation.is_ok() && cleanup.is_ok();
-        let proof_report = operation.as_ref().ok().copied();
+        let proof_report = match &operation {
+            Ok(report) | Err(KernelError::ProofBlocked { report }) => Some(*report),
+            Err(_) => None,
+        };
+        let execution_error = operation.as_ref().err().map(ToString::to_string);
         let cleanup_error = cleanup.as_ref().err().map(ToString::to_string);
+        let sandbox_name = sandbox.as_str().to_owned();
         let frame = self.frame;
         let latency_us = u64::try_from(started.elapsed().as_micros())
             .map_err(|_| KernelError::Integrity("execution duration overflow"))?;
@@ -389,8 +394,15 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             if ok {
                 let report = proof_report.ok_or(KernelError::Integrity("proof report missing"))?;
                 context.publish(session, Event::ProofOfDonePassed {frame, report})?;
-            } else if let Some(reason) = cleanup_error {
-                let report = context.cas.put(&serde_json::to_vec(&serde_json::json!({"stage":"sandbox_cleanup","review":call,"command":command_id,"reason":reason,"pending_proof_report":proof_report}))?)?;
+            } else {
+                let report = if cleanup_error.is_none() {
+                    match proof_report {
+                        Some(report) => report,
+                        None => context.cas.put(&serde_json::to_vec(&serde_json::json!({"stage":"sandbox_execution","review":call,"sandbox":sandbox_name,"command":command_id,"reason":execution_error}))?)?,
+                    }
+                } else {
+                    context.cas.put(&serde_json::to_vec(&serde_json::json!({"stage":"sandbox_cleanup","review":call,"sandbox":sandbox_name,"command":command_id,"reason":cleanup_error,"execution_error":execution_error,"pending_proof_report":proof_report}))?)?
+                };
                 context.publish(session, Event::ProofOfDoneBlocked {frame, report})?;
             }
             context.publish(
@@ -406,7 +418,6 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         })
         .await?;
         cleanup?;
-        failure_report?;
         let _proof_report = operation?;
         Ok(CommandReceipt {
             command: command_id,
@@ -621,16 +632,13 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let context = Arc::clone(&ctx);
         let passed = verdict.is_ok();
         let reason = verdict.as_ref().err().map(ToString::to_string);
-        let session = self.session;
-        let frame = self.frame;
         let report = blocking(move || {
             let report=context.cas.put(&serde_json::to_vec(&serde_json::json!({"command":command,"tree":current_tree,"stdout":stdout,"stderr":stderr,"independent_report":independent_report,"passed":passed,"reason":reason}))?)?;
-            if !passed { context.publish(session,Event::ProofOfDoneBlocked{frame,report})?; }
             Ok(report)
         }).await?;
-        verdict.map(|_| report).map_err(|_| {
-            KernelError::Configuration("Proof-of-Done blocked; inspect durable report and stderr")
-        })
+        verdict
+            .map(|_| report)
+            .map_err(|_| KernelError::ProofBlocked { report })
     }
 
     async fn exec(

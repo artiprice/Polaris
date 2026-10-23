@@ -501,6 +501,7 @@ impl<B: SandboxBackend, R: Redactor, L: CiLogStore> SandboxEngine<B, R, L> {
                 stdin: None,
                 env,
                 timeout: Some(step.timeout),
+                output_limit_bytes: None,
             };
             let started = Instant::now();
             let result =

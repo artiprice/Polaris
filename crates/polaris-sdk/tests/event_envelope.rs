@@ -2,7 +2,9 @@
 
 use std::error::Error;
 
-use polaris_sdk::contracts::{EVENT_SCHEMA_VERSION, Event, EventRecord, Timestamp, WorkerKind};
+use polaris_sdk::contracts::{
+    EVENT_SCHEMA_VERSION, Event, EventRecord, FrameStepOutcome, Timestamp, WorkerKind,
+};
 use polaris_sdk::ids::{Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -49,6 +51,11 @@ fn all_events() -> Vec<Event> {
             diff: cid(6),
             reason: cid(7),
         },
+        Event::DiffNeedsApproval {
+            frame,
+            diff: cid(6),
+            report: cid(19),
+        },
         Event::FileLeaseGranted {
             frame,
             path: cid(8),
@@ -90,6 +97,12 @@ fn all_events() -> Vec<Event> {
             frame,
             report: cid(17),
         },
+        Event::FrameStepRecorded {
+            frame,
+            step: 5,
+            transcript: cid(18),
+            outcome: FrameStepOutcome::Accepted,
+        },
     ]
 }
 
@@ -116,8 +129,8 @@ fn event_record_json_roundtrip() -> TestResult {
 
 #[test]
 fn schema_version_is_current() -> TestResult {
-    assert_eq!(EVENT_SCHEMA_VERSION, 3);
-    assert_eq!(record(Event::SessionClosed)?.schema(), 3);
+    assert_eq!(EVENT_SCHEMA_VERSION, 4);
+    assert_eq!(record(Event::SessionClosed)?.schema(), 4);
     Ok(())
 }
 

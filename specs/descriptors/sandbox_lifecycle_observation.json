@@ -1,0 +1,14 @@
+{
+  "type_of": "async_function",
+  "name": "OpenShellBackend::inspect",
+  "file_path": "crates/polaris-openshell/crates/client/src/implementation.rs",
+  "logic_name": "Authoritative sandbox lifecycle observation",
+  "test_list": [
+    {"test_name": "real_gateway_kill_retains_ownership_and_recovers_without_leaks", "description": "A retained resource cannot be acknowledged while inspection still returns a present sandbox; only a not-found response proves absence."}
+  ],
+  "dependencies": ["SandboxHandle"],
+  "libraries": ["openshell-sdk", "tokio", "uuid"],
+  "inputs": [{"name": "sandbox", "type": "SandboxHandle", "description": "Validated requested sandbox name."}],
+  "output_type": "Result<Option<SandboxObservation>, SandboxError>",
+  "output_description": "Validated UUID, name, lifecycle phase and revision; None only for authoritative not-found. Timeout, transport and malformed identity remain errors."
+}

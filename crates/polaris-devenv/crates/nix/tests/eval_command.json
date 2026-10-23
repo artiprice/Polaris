@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "eval_command",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Evaluation Argument Construction",
+  "test_list": [
+    { "test_name": "builds_argv_without_shell_interpolation", "description": "Build a Nix print-dev-env argv with the flake installable as one argument." },
+    { "test_name": "rejects_control_characters_in_flake_reference", "description": "Reject control characters in the installable." },
+    { "test_name": "rejects_leading_option_in_flake_reference", "description": "Reject leading-option input before constructing argv." }
+  ],
+  "dependencies": [],
+  "libraries": ["thiserror"],
+  "inputs": [{ "name": "flake_ref", "type": "&str", "description": "A Nix installable reference passed as one argv item." }],
+  "output_type": "Result<NixCommand, NixError>",
+  "output_description": "Argv for nix print-dev-env --json with nix-command and flakes enabled."
+}

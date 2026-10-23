@@ -2,9 +2,14 @@
 
 use std::{
     collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, MutexGuard, Weak},
+    sync::{Arc, Weak},
     time::{Duration, Instant},
 };
+
+#[cfg(all(feature = "loom", test))]
+use loom::sync::{Mutex as StateMutex, MutexGuard as StateMutexGuard};
+#[cfg(not(all(feature = "loom", test)))]
+use std::sync::{Mutex as StateMutex, MutexGuard as StateMutexGuard};
 
 use arc_swap::ArcSwap;
 use polaris_sdk::{
@@ -228,7 +233,7 @@ struct State {
 
 struct Inner {
     config: LeaseConfig,
-    state: Mutex<State>,
+    state: StateMutex<State>,
     changed: watch::Sender<u64>,
     holders: ArcSwap<HolderSnapshot>,
     invalidations: broadcast::Sender<Invalidation>,
@@ -264,7 +269,7 @@ impl LeaseManager {
         Self {
             inner: Arc::new(Inner {
                 config,
-                state: Mutex::new(State::default()),
+                state: StateMutex::new(State::default()),
                 changed,
                 holders: ArcSwap::from_pointee(HolderSnapshot::default()),
                 invalidations,
@@ -346,16 +351,16 @@ impl LeaseManager {
             .collect())
     }
 
-    /// Attempts immediate admission without bypassing existing FIFO waiters.
+    /// Attempts immediate admission without bypassing an earlier conflicting waiter.
     ///
     /// # Errors
-    /// Returns [`LeaseError::Busy`] if queued or active work has priority.
+    /// Returns [`LeaseError::Busy`] if a conflicting queued or active request has priority.
     pub fn try_acquire(&self, request: LeaseRequest) -> Result<LeaseGuard, LeaseError> {
         let mut requests = vec![request];
         validate_requests(&mut requests)?;
         let mut state = lock_state(&self.inner.state);
         reap_locked(&self.inner, &mut state, Instant::now());
-        if !state.order.is_empty() {
+        if queue_blocks(&state, &requests) {
             return Err(busy_holder(&state, &requests));
         }
         let ids = grant_locked(&self.inner, &mut state, requests)?;
@@ -367,6 +372,14 @@ impl LeaseManager {
             inner: Arc::clone(&self.inner),
             id,
         })
+    }
+
+    /// Returns the number of retained lease records for diagnostics. This cold-path query
+    /// takes the state lock. Expired records are included until the next cleanup operation;
+    /// use `holder_of` when checking current write authority.
+    #[must_use]
+    pub fn active_count(&self) -> usize {
+        lock_state(&self.inner.state).active.len()
     }
 
     /// Lock-free snapshot lookup for the current conflicting holder.
@@ -638,12 +651,12 @@ impl Drop for QueueCleanup {
     fn drop(&mut self) {
         let mut state = lock_state(&self.inner.state);
         state.order.retain(|id| *id != self.ticket);
-        if let Some(waiter) = state.waiters.remove(&self.ticket) {
-            if let Some(ids) = waiter.granted {
-                state
-                    .active
-                    .retain(|record| !ids.contains(&record.holder.id));
-            }
+        if let Some(waiter) = state.waiters.remove(&self.ticket)
+            && let Some(ids) = waiter.granted
+        {
+            state
+                .active
+                .retain(|record| !ids.contains(&record.holder.id));
         }
         service_queue(&self.inner, &mut state);
         publish_holders(&self.inner, &state);
@@ -652,16 +665,16 @@ impl Drop for QueueCleanup {
     }
 }
 
-fn validate_requests(requests: &mut Vec<LeaseRequest>) -> Result<(), LeaseError> {
+fn validate_requests(requests: &mut [LeaseRequest]) -> Result<(), LeaseError> {
     if requests.is_empty() || requests.len() > MAX_REQUESTS_PER_ACQUIRE {
         return Err(LeaseError::LimitExceeded);
     }
     requests.sort_by(|a, b| a.key.cmp(&b.key));
     for req in requests.iter() {
-        if let LeaseScope::AstNode(path) = &req.scope {
-            if path.len() > MAX_COMPONENTS_PER_REQUEST {
-                return Err(LeaseError::LimitExceeded);
-            }
+        if let LeaseScope::AstNode(path) = &req.scope
+            && path.len() > MAX_COMPONENTS_PER_REQUEST
+        {
+            return Err(LeaseError::LimitExceeded);
         }
     }
     for (index, left) in requests.iter().enumerate() {
@@ -686,35 +699,71 @@ fn take_grant(inner: &Arc<Inner>, ticket: u64) -> Result<Option<Vec<LeaseId>>, L
 }
 
 fn service_queue(inner: &Arc<Inner>, state: &mut State) {
-    loop {
-        let Some(ticket) = state.order.front().copied() else {
+    let mut index = 0;
+    while index < state.order.len() {
+        let Some(ticket) = state.order.get(index).copied() else {
             break;
         };
         let Some(waiter) = state.waiters.get(&ticket) else {
-            state.order.pop_front();
+            let Some(_removed_ticket) = state.order.remove(index) else {
+                break;
+            };
             continue;
         };
         if waiter.granted.is_some() {
-            state.order.pop_front();
+            let Some(_removed_ticket) = state.order.remove(index) else {
+                break;
+            };
             continue;
         }
-        if !can_grant(state, &waiter.requests)
-            || state.active.len().saturating_add(waiter.requests.len())
-                > inner.config.max_active_leases
-        {
-            break;
-        }
         let requests = waiter.requests.clone();
+        let blocked_by_earlier_conflict = state
+            .order
+            .iter()
+            .take(index)
+            .filter_map(|earlier| state.waiters.get(earlier))
+            .any(|earlier| {
+                earlier.granted.is_none() && requests_conflict(&requests, &earlier.requests)
+            });
+        if blocked_by_earlier_conflict || !can_grant(state, &requests) {
+            index = index.saturating_add(1);
+            continue;
+        }
+        // Capacity exhaustion can block a multi-key waiter without blocking unrelated keys.
+        // Fairness is per conflicting request; keep scanning so disjoint work can use any
+        // remaining slots. The normal bounded queue and acquire timeout cap waiter lifetime.
+        if state.active.len().saturating_add(requests.len()) > inner.config.max_active_leases {
+            index = index.saturating_add(1);
+            continue;
+        }
         match grant_locked(inner, state, requests) {
             Ok(ids) => {
                 if let Some(waiter) = state.waiters.get_mut(&ticket) {
                     waiter.granted = Some(ids);
                 }
-                state.order.pop_front();
+                let Some(_removed_ticket) = state.order.remove(index) else {
+                    break;
+                };
             }
             Err(_) => break,
         }
     }
+}
+
+fn queue_blocks(state: &State, requests: &[LeaseRequest]) -> bool {
+    state.order.iter().any(|ticket| {
+        state.waiters.get(ticket).is_some_and(|waiter| {
+            waiter.granted.is_none() && requests_conflict(requests, &waiter.requests)
+        })
+    })
+}
+
+fn requests_conflict(left: &[LeaseRequest], right: &[LeaseRequest]) -> bool {
+    left.iter().any(|left| {
+        right
+            .iter()
+            .any(|right| scopes_conflict(&left.key, &left.scope, &right.key, &right.scope))
+    })
 }
 
 fn can_grant(state: &State, requests: &[LeaseRequest]) -> bool {
@@ -838,7 +887,7 @@ fn publish_holders(inner: &Inner, state: &State) {
     }));
 }
 
-fn lock_state(mutex: &Mutex<State>) -> MutexGuard<'_, State> {
+fn lock_state(mutex: &StateMutex<State>) -> StateMutexGuard<'_, State> {
     match mutex.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
@@ -848,4 +897,211 @@ fn signal(inner: &Inner) {
     inner
         .changed
         .send_modify(|version| *version = version.saturating_add(1));
+}
+
+#[cfg(all(test, feature = "loom"))]
+mod loom_tests {
+    use super::*;
+    use crate::SymbolPath;
+    use loom::thread;
+
+    fn manager() -> LeaseManager {
+        LeaseManager::new(LeaseConfig {
+            max_active_leases: 8,
+            max_waiters: 8,
+            acquire_timeout: Duration::from_secs(5),
+            lease_ttl: Duration::from_secs(60),
+            edits_before_revoke: 3,
+        })
+    }
+
+    fn request(agent: u128, path: &str, scope: LeaseScope) -> LeaseRequest {
+        LeaseRequest {
+            agent: FrameId::from_u128(agent),
+            key: LeaseKey::from_resolved_relative(path).expect("valid model path"),
+            scope,
+            base: None,
+        }
+    }
+
+    fn symbol_scope() -> LeaseScope {
+        LeaseScope::AstNode(SymbolPath::new(["module", "function"]).expect("valid symbol"))
+    }
+
+    fn enqueue(manager: &LeaseManager, request: LeaseRequest) -> u64 {
+        let mut requests = vec![request];
+        validate_requests(&mut requests).expect("valid non-overlapping acquire request");
+        manager
+            .enqueue(requests)
+            .expect("bounded queue accepts request")
+    }
+
+    fn enqueue_many(manager: &LeaseManager, requests: Vec<LeaseRequest>) -> u64 {
+        let mut requests = requests;
+        validate_requests(&mut requests).expect("valid non-overlapping acquire request set");
+        manager
+            .enqueue(requests)
+            .expect("bounded queue accepts request set")
+    }
+
+    fn take_guard(manager: &LeaseManager, ticket: u64) -> Option<LeaseGuard> {
+        let ids = take_grant(&manager.inner, ticket).expect("grant lookup succeeds")?;
+        assert_eq!(ids.len(), 1, "each modeled waiter owns one lease");
+        Some(LeaseGuard {
+            inner: Arc::clone(&manager.inner),
+            id: ids[0],
+        })
+    }
+
+    #[test]
+    fn overlapping_waiters_keep_ticket_order_and_are_granted_once() {
+        loom::model(|| {
+            let manager = manager();
+            let blocker = manager
+                .try_acquire(request(1, "src/lib.rs", LeaseScope::EntireFile))
+                .expect("initial whole-file lease");
+
+            let first_manager = manager.clone();
+            let first = thread::spawn(move || {
+                enqueue(
+                    &first_manager,
+                    request(2, "src/lib.rs", LeaseScope::EntireFile),
+                )
+            });
+            let second_manager = manager.clone();
+            let second = thread::spawn(move || {
+                enqueue(&second_manager, request(3, "src/lib.rs", symbol_scope()))
+            });
+            let first_ticket = first.join().expect("first waiter enqueued");
+            let second_ticket = second.join().expect("second waiter enqueued");
+            let (head, tail) = if first_ticket < second_ticket {
+                (first_ticket, second_ticket)
+            } else {
+                (second_ticket, first_ticket)
+            };
+
+            drop(blocker);
+            let head_guard = take_guard(&manager, head).expect("FIFO head is granted");
+            assert_eq!(manager.active_count(), 1, "head produces one active grant");
+            assert!(
+                take_guard(&manager, head).is_none(),
+                "a consumed ticket cannot yield a second grant"
+            );
+            assert!(
+                take_guard(&manager, tail).is_none(),
+                "tail must wait for head"
+            );
+            drop(head_guard);
+            let tail_guard = take_guard(&manager, tail).expect("tail follows released head");
+            drop(tail_guard);
+            assert_eq!(manager.active_count(), 0, "all leases are released once");
+        });
+    }
+
+    #[test]
+    fn disjoint_waiter_progresses_while_conflicting_waiters_preserve_fifo() {
+        loom::model(|| {
+            let manager = manager();
+            let blocker = manager
+                .try_acquire(request(1, "src/lib.rs", LeaseScope::EntireFile))
+                .expect("initial whole-file lease");
+
+            let first_manager = manager.clone();
+            let first = thread::spawn(move || {
+                enqueue(
+                    &first_manager,
+                    request(2, "src/lib.rs", LeaseScope::EntireFile),
+                )
+            });
+            let second_manager = manager.clone();
+            let second = thread::spawn(move || {
+                enqueue(&second_manager, request(3, "src/lib.rs", symbol_scope()))
+            });
+            let first_ticket = first.join().expect("first waiter enqueued");
+            let second_ticket = second.join().expect("second waiter enqueued");
+            let (head, tail) = if first_ticket < second_ticket {
+                (first_ticket, second_ticket)
+            } else {
+                (second_ticket, first_ticket)
+            };
+
+            let disjoint_ticket =
+                enqueue(&manager, request(4, "src/other.rs", LeaseScope::EntireFile));
+            let disjoint_guard = take_guard(&manager, disjoint_ticket)
+                .expect("unrelated key progresses past blocked queue head");
+            assert!(take_guard(&manager, head).is_none());
+            assert!(take_guard(&manager, tail).is_none());
+
+            let bypass = manager
+                .try_acquire(request(5, "src/third.rs", LeaseScope::EntireFile))
+                .expect("immediate admission may bypass only non-conflicting waiters");
+            assert!(matches!(
+                manager.try_acquire(request(6, "src/lib.rs", symbol_scope())),
+                Err(LeaseError::Busy { .. })
+            ));
+
+            drop(blocker);
+            let head_guard = take_guard(&manager, head).expect("FIFO head follows blocker");
+            assert!(take_guard(&manager, tail).is_none());
+            drop(head_guard);
+            let tail_guard = take_guard(&manager, tail).expect("conflicting tail follows head");
+            drop(tail_guard);
+            drop(disjoint_guard);
+            drop(bypass);
+            assert_eq!(
+                manager.active_count(),
+                0,
+                "all independent grants are released"
+            );
+        });
+    }
+
+    #[test]
+    fn disjoint_single_key_uses_remaining_capacity_ahead_of_blocked_multi_key_waiter() {
+        loom::model(|| {
+            let manager = LeaseManager::new(LeaseConfig {
+                max_active_leases: 2,
+                max_waiters: 8,
+                acquire_timeout: Duration::from_secs(5),
+                lease_ttl: Duration::from_secs(60),
+                edits_before_revoke: 3,
+            });
+            let blocker = manager
+                .try_acquire(request(1, "src/lib.rs", LeaseScope::EntireFile))
+                .expect("initial whole-file lease");
+            let multi_ticket = enqueue_many(
+                &manager,
+                vec![
+                    request(2, "src/one.rs", LeaseScope::EntireFile),
+                    request(2, "src/two.rs", LeaseScope::EntireFile),
+                ],
+            );
+            assert!(take_guard(&manager, multi_ticket).is_none());
+
+            let disjoint = manager
+                .try_acquire(request(3, "src/three.rs", LeaseScope::EntireFile))
+                .expect("immediate disjoint work uses remaining capacity");
+            assert!(matches!(
+                manager.try_acquire(request(4, "src/one.rs", LeaseScope::EntireFile)),
+                Err(LeaseError::Busy { holder: None })
+            ));
+            assert!(take_guard(&manager, multi_ticket).is_none());
+
+            drop(blocker);
+            assert!(take_guard(&manager, multi_ticket).is_none());
+            drop(disjoint);
+            let multi = take_grant(&manager.inner, multi_ticket)
+                .expect("grant lookup succeeds")
+                .expect("multi-key waiter is granted when enough capacity is free");
+            assert_eq!(multi.len(), 2, "multi-key admission remains atomic");
+            assert_eq!(manager.active_count(), 2);
+            for id in multi {
+                drop(LeaseGuard {
+                    inner: Arc::clone(&manager.inner),
+                    id,
+                });
+            }
+            assert_eq!(manager.active_count(), 0, "all leases are released");
+        });
+    }
 }

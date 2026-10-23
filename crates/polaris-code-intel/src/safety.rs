@@ -200,14 +200,14 @@ pub fn analyze_safety(parsed: &Parsed) -> Result<SafetyAnalysis, CodeIntelError>
                 identity: callee.clone(),
             });
         }
-        if is_assertion_node(*node, lang) {
-            if let Some(assertion_name) = assertion_name(*node, lang, source) {
-                assertions.push(AssertionObservation {
-                    canonical_form: assertion_name,
-                    span: span(*node),
-                    test_identity: None,
-                });
-            }
+        if is_assertion_node(*node, lang)
+            && let Some(assertion_name) = assertion_name(*node, lang, source)
+        {
+            assertions.push(AssertionObservation {
+                canonical_form: assertion_name,
+                span: span(*node),
+                test_identity: None,
+            });
         }
         if is_unsafe_node(*node, lang, source) {
             unsafe_constructs.push(AstObservation {
@@ -338,14 +338,13 @@ fn assign_test_identities(
                 value.test_identity =
                     owner.and_then(|index| tests.get(index).map(|test| test.identity.clone()));
             }
-        } else if let Some(value) = assertions.get_mut(observation_index) {
-            if let Some((index, identity)) =
+        } else if let Some(value) = assertions.get_mut(observation_index)
+            && let Some((index, identity)) =
                 owner.and_then(|index| tests.get(index).map(|test| (index, test.identity.clone())))
-            {
-                value.test_identity = Some(identity);
-                if let Some(spans) = assertion_spans_by_test.get_mut(index) {
-                    spans.push(value.span);
-                }
+        {
+            value.test_identity = Some(identity);
+            if let Some(spans) = assertion_spans_by_test.get_mut(index) {
+                spans.push(value.span);
             }
         }
     }
@@ -506,10 +505,10 @@ fn rust_macro_tautology(node: Node<'_>, name: &str, source: &[u8]) -> Option<Tau
         .find(|child| child.kind() == "token_tree")?;
     let mut token_cursor = token_tree.walk();
     let arguments: Vec<Node<'_>> = token_tree.named_children(&mut token_cursor).collect();
-    if let Some(first) = arguments.first().copied() {
-        if is_true_literal(first, Lang::Rust, source) {
-            return Some(TautologyKind::LiteralTrueAssertion);
-        }
+    if let Some(first) = arguments.first().copied()
+        && is_true_literal(first, Lang::Rust, source)
+    {
+        return Some(TautologyKind::LiteralTrueAssertion);
     }
     let is_equality_macro = matches!(
         name.rsplit([':', '>']).next(),
@@ -651,15 +650,11 @@ fn qualified_identity(node: Node<'_>, own_name: String, lang: Lang, source: &[u8
         if lang == Lang::TypeScript && parent.kind() == "call_expression" {
             scope_name = call_name(parent, source)
                 .is_some_and(|name| matches!(name.as_str(), "describe" | "suite"));
-            if scope_name {
-                if let Some(label) = first_string_argument(parent, source) {
-                    parents.push(label);
-                }
+            if scope_name && let Some(label) = first_string_argument(parent, source) {
+                parents.push(label);
             }
-        } else if scope_name {
-            if let Some(name_node) = parent.child_by_field_name("name") {
-                parents.push(text(name_node, source).into_owned());
-            }
+        } else if scope_name && let Some(name_node) = parent.child_by_field_name("name") {
+            parents.push(text(name_node, source).into_owned());
         }
         current = parent.parent();
     }
@@ -693,18 +688,17 @@ fn markers_for(test: Node<'_>, lang: Lang, source: &[u8]) -> Vec<TestMarker> {
         test.named_children(&mut cursor)
             .filter(|child| child.kind() == "attribute_item" || child.kind() == "decorator"),
     );
-    if lang == Lang::Python {
-        if let Some(parent) = test
+    if lang == Lang::Python
+        && let Some(parent) = test
             .parent()
             .filter(|parent| parent.kind() == "decorated_definition")
-        {
-            let mut parent_cursor = parent.walk();
-            marker_nodes.extend(
-                parent
-                    .named_children(&mut parent_cursor)
-                    .filter(|child| child.kind() == "decorator"),
-            );
-        }
+    {
+        let mut parent_cursor = parent.walk();
+        marker_nodes.extend(
+            parent
+                .named_children(&mut parent_cursor)
+                .filter(|child| child.kind() == "decorator"),
+        );
     }
     for child in marker_nodes {
         if child.kind() == "attribute_item" || child.kind() == "decorator" {
@@ -765,11 +759,11 @@ fn assign_marker_tests(tests: &mut [TestObservation], markers: Vec<TestMarker>) 
             if test_start > marker.span.start {
                 break;
             }
-            if let Some(test) = tests.get(test_index) {
-                if test.span.end == test_end {
-                    active.insert((test.span.len(), test_index));
-                    expirations.push(Reverse((test.span.end, test_index)));
-                }
+            if let Some(test) = tests.get(test_index)
+                && test.span.end == test_end
+            {
+                active.insert((test.span.len(), test_index));
+                expirations.push(Reverse((test.span.end, test_index)));
             }
             next_test = next_test.saturating_add(1);
         }
@@ -777,16 +771,16 @@ fn assign_marker_tests(tests: &mut [TestObservation], markers: Vec<TestMarker>) 
             if end >= marker.span.end {
                 break;
             }
-            if expirations.pop().is_some() {
-                if let Some(test) = tests.get(test_index) {
-                    active.remove(&(test.span.len(), test_index));
-                }
+            if expirations.pop().is_some()
+                && let Some(test) = tests.get(test_index)
+            {
+                active.remove(&(test.span.len(), test_index));
             }
         }
-        if let Some((_, index)) = active.iter().next() {
-            if let Some(test) = tests.get_mut(*index) {
-                test.markers.push(marker);
-            }
+        if let Some((_, index)) = active.iter().next()
+            && let Some(test) = tests.get_mut(*index)
+        {
+            test.markers.push(marker);
         }
     }
 }

@@ -26,6 +26,7 @@ fn outside_root_symlink_and_short_alias_are_rejected() -> Result<(), Box<dyn std
     std::fs::write(outside.path().join("target.rs"), b"outside")?;
     assert!(LeaseKey::from_path(root.path(), &outside.path().join("target.rs")).is_err());
     for hostile in [
+        "C:relative.rs",
         "../escape",
         "file:stream",
         "CON.rs",

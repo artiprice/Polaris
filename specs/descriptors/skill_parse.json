@@ -1,0 +1,18 @@
+{
+  "type_of": "function",
+  "name": "parse_skill",
+  "file_path": "crates/polaris-ext/crates/skills/src/parse.rs",
+  "logic_name": "Skill Parsing",
+  "test_list": [
+    { "test_name": "parses_yaml_and_preserves_body_bytes", "description": "Parse bounded YAML front matter and preserve body bytes including CRLF." },
+    { "test_name": "rejects_bad_metadata_and_unsafe_resource_paths", "description": "Reject schema drift, unsafe identifiers, duplicate tools, and path traversal." },
+    { "test_name": "rejects_missing_front_matter_and_oversized_source", "description": "Enforce required front matter and source size bounds before context loading." },
+    { "test_name": "markdown_external_links_are_not_treated_as_local_paths", "description": "Allow external URL references without treating them as local files." },
+    { "test_name": "bundled_fixtures_have_valid_front_matter", "description": "Keep the bundled skill fixtures parseable." }
+  ],
+  "dependencies": ["polaris_sdk::ids::Cid"],
+  "libraries": ["serde", "serde-saphyr", "blake3", "pulldown-cmark", "thiserror"],
+  "inputs": [{ "name": "src", "type": "&str", "description": "UTF-8 SKILL.md bytes with YAML front matter." }],
+  "output_type": "Result<ParsedSkill, SkillError>",
+  "output_description": "Validated metadata, exact body text, and bounded content digests."
+}

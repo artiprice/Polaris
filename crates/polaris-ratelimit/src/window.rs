@@ -115,10 +115,10 @@ impl WindowTracker {
 }
 
 fn bucket_index(minute: u64) -> usize {
-    match usize::try_from(minute % 15) {
-        Ok(index) => index,
-        Err(_) => 0,
-    }
+    let Ok(index) = usize::try_from(minute % 15) else {
+        return 0;
+    };
+    index
 }
 
 fn add_saturating(saturated: &mut bool, left: u64, right: u64) -> u64 {

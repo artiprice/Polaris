@@ -1,9 +1,9 @@
 ARG BASE_IMAGE=nvcr.io/nvidia/base/ubuntu:24.04
 FROM rust:1.99.0-bookworm AS polaris-guest-build
 WORKDIR /workspace
+# build-wsl.sh passes only the allowlisted context produced by build-context.py.
 COPY . /workspace
-RUN cargo fetch --locked \
-    && cargo build --locked --release -p polaris-guest --bin polaris-guest
+RUN cargo build --locked --release -p polaris-guest --bin polaris-guest
 
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}

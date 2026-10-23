@@ -64,6 +64,9 @@ fn assemble(mut probes: BTreeMap<String, Value>) -> Result<Value, CliError> {
 fn observation(status: &str, detail: &str) -> Value {
     json!({"status":status,"detail":detail})
 }
+pub(crate) fn is_ready(report: &Value) -> bool {
+    report.get("ready").and_then(Value::as_bool) == Some(true)
+}
 fn native(cwd: &Path, program: &str, args: &[&str], contains: Option<&str>) -> Value {
     let resolved = match resolve_program(std::ffi::OsStr::new(program), cwd) {
         Ok(resolved) => resolved,
@@ -238,6 +241,7 @@ fn native_probes(
                     cwd,
                     &path.to_string_lossy(),
                     &[
+                        "-prerelease",
                         "-latest",
                         "-products",
                         "*",
@@ -585,6 +589,43 @@ mod tests {
             report["ready"], false,
             "unknown required item prevents readiness"
         );
+        assert!(
+            !is_ready(&report),
+            "unknown required item blocks CLI readiness"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn optional_missing_item_does_not_block_readiness() -> Result<(), CliError> {
+        let inventory: toml::Value =
+            toml::from_str(INVENTORY).map_err(|_| CliError::Unavailable("inventory"))?;
+        let entries = inventory["member_setup"]
+            .as_array()
+            .ok_or(CliError::Unavailable("items"))?;
+        let mut probes = BTreeMap::new();
+        for entry in entries {
+            let id = entry["id"]
+                .as_str()
+                .ok_or(CliError::Unavailable("setup item has no id"))?;
+            probes.insert(
+                id.to_owned(),
+                observation("PASS", "synthetic contract fixture"),
+            );
+        }
+        probes.insert(
+            "win-keyring".to_owned(),
+            observation("MISSING", "optional credentials are not configured"),
+        );
+
+        let report = assemble(probes)?;
+
+        assert_eq!(
+            report["ready"], true,
+            "optional absence does not block setup"
+        );
+        assert_eq!(report["required_missing"], 0);
+        assert!(is_ready(&report));
         Ok(())
     }
 

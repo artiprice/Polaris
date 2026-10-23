@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "flake_draft_prompt",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Flake Draft Prompt",
+  "test_list": [
+    { "test_name": "builds_flake_prompt_from_bounded_manifest_data", "description": "Produce an S2 prompt without making a model call." },
+    { "test_name": "rejects_escape_paths_in_flake_prompt_sources", "description": "Reject source paths escaping the project root." },
+    { "test_name": "draft_prompt_bounds_and_encodes_untrusted_project_data", "description": "JSON encode source content and enforce input bounds." }
+  ],
+  "dependencies": [],
+  "libraries": ["serde_json"],
+  "inputs": [{ "name": "manifests", "type": "&ProjectManifests", "description": "Bounded Cargo, Python requirements, and CUDA source text." }],
+  "output_type": "Result<String, NixError>",
+  "output_description": "Prompt text for an external S2 caller; this function does not invoke a model."
+}

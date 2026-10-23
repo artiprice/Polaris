@@ -32,11 +32,12 @@ fn nibble(c: u8, expected: usize, found: usize) -> Result<u8, ParseError> {
 
 fn decode_pairs(text: &str, out: &mut [u8], expected: usize) -> Result<(), ParseError> {
     let found = text.len();
-    for (slot, pair) in out.iter_mut().zip(text.as_bytes().chunks_exact(2)) {
-        let (hi, lo) = match pair {
-            [hi, lo] => (nibble(*hi, expected, found)?, nibble(*lo, expected, found)?),
-            _ => return Err(ParseError::InvalidHex { expected, found }),
-        };
+    let (pairs, remainder) = text.as_bytes().as_chunks::<2>();
+    if !remainder.is_empty() || pairs.len() != out.len() {
+        return Err(ParseError::InvalidHex { expected, found });
+    }
+    for (slot, [hi, lo]) in out.iter_mut().zip(pairs) {
+        let (hi, lo) = (nibble(*hi, expected, found)?, nibble(*lo, expected, found)?);
         *slot = (hi << 4) | lo;
     }
     Ok(())
@@ -59,7 +60,7 @@ pub(crate) fn decode_array<const N: usize>(text: &str) -> Result<[u8; N], ParseE
 /// Decodes an even-length hex string of any size.
 pub(crate) fn decode_vec(text: &str) -> Result<Vec<u8>, ParseError> {
     let found = text.len();
-    if found % 2 != 0 {
+    if !found.is_multiple_of(2) {
         return Err(ParseError::InvalidHex {
             expected: found.saturating_add(1),
             found,

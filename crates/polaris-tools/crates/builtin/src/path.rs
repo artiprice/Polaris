@@ -139,17 +139,24 @@ fn component_eq(left: Component<'_>, right: Component<'_>) -> bool {
     left == right
 }
 
-fn is_secret_path(path: &WorkspacePath) -> bool {
+pub(crate) fn is_secret_path(path: &WorkspacePath) -> bool {
     let components: Vec<String> = path
         .as_str()
         .split('/')
         .map(|component| component.to_ascii_lowercase())
         .collect();
     components.iter().any(|component| {
-        component == ".env"
+        matches!(component.as_str(), ".aws" | ".ssh" | ".gnupg" | ".polaris")
+            || matches!(
+                component.as_str(),
+                "credentials" | ".netrc" | ".npmrc" | ".pypirc" | "id_rsa" | "id_ed25519"
+            )
+            || component == ".env"
             || component.starts_with(".env.")
             || component.ends_with(".pem")
             || component.ends_with(".key")
+            || component.ends_with(".p12")
+            || component.ends_with(".pfx")
     }) || components.windows(2).any(|pair| {
         pair.first().is_some_and(|first| first == ".git")
             && pair.get(1).is_some_and(|second| second == "config")

@@ -1,10 +1,19 @@
 use proptest::prelude::*;
-use std::time::Duration;
+use std::{
+    future::Future,
+    task::{Context, Poll, Waker},
+    time::Duration,
+};
 
+use polaris_sdk::{
+    ids::{FrameId, SessionId},
+    registry::ToolContext,
+};
 use polaris_tools_builtin::{
-    GlobInput, GrepInput, JsonQueryInput, PathError, ReadFileInput, RecallBackend, RefResolver,
-    RegexQueryInput, ToolLimits, ToolRegistry, apply_unified_patch, glob, grep, json_query,
-    read_file, regex_query, resolve_in_workspace,
+    GlobInput, GrepInput, JsonQueryInput, NoProposalBackend, NoShellBackend, PathError,
+    ReadFileInput, RecallBackend, RefResolver, RegexQueryInput, ToolLimits, ToolRegistry,
+    apply_unified_patch, glob, grep, json_query, p2_builtin_specs, read_file, regex_query,
+    resolve_in_workspace,
 };
 
 struct NoRefs;
@@ -68,6 +77,25 @@ fn rejects_windows_ads_and_reserved_names() -> Result<(), Box<dyn std::error::Er
         resolve_in_workspace(root.path(), "folder./file"),
         Err(PathError::Invalid(_))
     ));
+    Ok(())
+}
+
+#[test]
+fn secret_directories_and_credential_files_are_denied() -> Result<(), Box<dyn std::error::Error>> {
+    let root = tempfile::tempdir()?;
+    for path in [
+        ".aws/credentials",
+        ".ssh/id_ed25519",
+        ".gnupg/private-keys-v1.d/key",
+        ".polaris/approvals.json",
+        "config/.npmrc",
+        "certs/client.p12",
+    ] {
+        assert!(matches!(
+            resolve_in_workspace(root.path(), path),
+            Err(PathError::SecretDenied)
+        ));
+    }
     Ok(())
 }
 
@@ -238,7 +266,82 @@ fn registry_specs_are_stable_and_schema_backed() -> Result<(), Box<dyn std::erro
             Some(&serde_json::Value::Bool(false))
         );
     }
+    assert!(registry.get("write_file").is_none());
     Ok(())
+}
+
+#[test]
+fn p2_registry_advertises_only_explicitly_bound_proposal_and_sandbox_services()
+-> Result<(), Box<dyn std::error::Error>> {
+    let registry = ToolRegistry::new_with_services(
+        test_limits(),
+        NoRefs,
+        NoRecall,
+        NoProposalBackend,
+        NoShellBackend,
+    )?;
+    let names: Vec<&str> = registry
+        .specs()
+        .iter()
+        .map(|spec| spec.name.as_ref())
+        .collect();
+    let mut sorted = names.clone();
+    sorted.sort_unstable();
+    assert_eq!(names, sorted);
+    for required in [
+        "write_file",
+        "edit_file",
+        "apply_patch",
+        "shell",
+        "classify_command",
+    ] {
+        assert!(
+            registry.get(required).is_some(),
+            "missing P2 spec {required}"
+        );
+    }
+    let proposals = p2_builtin_specs()
+        .into_iter()
+        .filter(|spec| spec.effects.writes_workspace)
+        .count();
+    assert_eq!(proposals, 3);
+    for spec in registry.specs() {
+        let schema: serde_json::Value = serde_json::from_str(spec.input_schema_json.as_ref())?;
+        assert_eq!(
+            schema["additionalProperties"],
+            serde_json::Value::Bool(false)
+        );
+    }
+    let root = tempfile::tempdir()?;
+    let context = ToolContext {
+        session: SessionId::from_u128(1),
+        frame: FrameId::from_u128(2),
+        workspace_root: root.path(),
+        deadline: None,
+    };
+    let shell_error = block_on(registry.invoke(
+        "shell",
+        &serde_json::json!({"argv":["echo","no host"],"shell":"posix"}),
+        &context,
+    ))
+    .err()
+    .ok_or("disabled shell unexpectedly returned output")?;
+    assert!(matches!(
+        shell_error,
+        polaris_sdk::registry::ToolError::Forbidden(_)
+    ));
+    Ok(())
+}
+
+fn block_on<F: Future>(future: F) -> F::Output {
+    let mut context = Context::from_waker(Waker::noop());
+    let mut future = Box::pin(future);
+    loop {
+        match future.as_mut().poll(&mut context) {
+            Poll::Ready(value) => return value,
+            Poll::Pending => std::thread::yield_now(),
+        }
+    }
 }
 
 proptest! {

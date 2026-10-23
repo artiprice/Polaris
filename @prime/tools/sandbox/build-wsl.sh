@@ -21,35 +21,19 @@ cleanup_context() {
 }
 trap cleanup_context EXIT
 
+python3 "$ROOT/@prime/tools/sandbox/build-context.py" "$ROOT" "$CONTEXT_DIR"
 cp "$ROOT/@prime/tools/sandbox/Dockerfile" "$CONTEXT_DIR/Dockerfile"
-tar \
-  --directory "$ROOT" \
-  --exclude=target \
-  --exclude=*/target \
-  --exclude=node_modules \
-  --exclude=*/node_modules \
-  --exclude=dist \
-  --exclude=*/dist \
-  --exclude=tests/fuzz \
-  --exclude=tests/fixtures \
-  --exclude=tests/spike/*/tests \
-  --exclude=tests/tests \
-  --create --file - \
-  Cargo.toml Cargo.lock rust-toolchain.toml .cargo apps crates tests xtask vendor/biscuit-auth \
-  | tar --directory "$CONTEXT_DIR" --extract --file -
 
-if find "$CONTEXT_DIR" -type f \
-  \( -name '.env' -o -name '.env.*' -o -name 'credentials' -o -name 'credentials.toml' \
-     -o -name '.netrc' -o -name '*.pem' -o -name '*.key' \) \
-  -print -quit | grep -q .; then
-  printf 'refusing Docker build context containing credentials or private keys\n' >&2
-  exit 1
-fi
-
-if [[ -e "$CONTEXT_DIR/.aws" || -e "$CONTEXT_DIR/.ssh" || -e "$CONTEXT_DIR/.codex" ]]; then
-  printf 'refusing Docker build context containing machine credential directories\n' >&2
-  exit 1
-fi
+BUILD_CONTEXT_HASH="$(
+  tar \
+    --directory "$CONTEXT_DIR" \
+    --sort=name \
+    --mtime='UTC 1970-01-01' \
+    --owner=0 --group=0 --numeric-owner \
+    --create --file - . \
+    | sha256sum | cut -d' ' -f1
+)"
+printf 'build_context_sha256=%s\n' "$BUILD_CONTEXT_HASH"
 
 docker build \
   --file "$CONTEXT_DIR/Dockerfile" \

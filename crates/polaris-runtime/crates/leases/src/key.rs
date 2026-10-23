@@ -39,6 +39,9 @@ impl LeaseKey {
     pub fn from_path(root: &std::path::Path, path: &std::path::Path) -> Result<Self, LeaseError> {
         use std::path::Component;
         let text = path.to_str().ok_or(LeaseError::InvalidPath)?;
+        if text.as_bytes().get(1) == Some(&b':') && !path.is_absolute() {
+            return Err(LeaseError::InvalidPath);
+        }
         if text.starts_with(r"\\")
             || text.contains('~')
             || path

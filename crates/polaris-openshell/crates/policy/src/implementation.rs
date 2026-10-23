@@ -190,7 +190,7 @@ pub fn provider_profile_token_factory(
     model_binary: &str,
 ) -> Result<ProviderProfile, PolicyError> {
     let host = host.trim();
-    if host.is_empty() || host.contains(['*', '/', ':']) || host.chars().any(char::is_whitespace) {
+    if !is_exact_dns_name(host) {
         return Err(PolicyError::InvalidHost(host.to_owned()));
     }
     if !model_binary.starts_with('/') || model_binary.split('/').any(|part| part == "..") {
@@ -223,7 +223,27 @@ pub fn provider_profile_token_factory(
 
 /// Serialize a provider profile as YAML for `openshell provider profile import`.
 pub fn provider_profile_yaml(profile: &ProviderProfile) -> Result<String, PolicyError> {
+    for endpoint in &profile.endpoints {
+        if !is_exact_dns_name(&endpoint.host) {
+            return Err(PolicyError::InvalidHost(endpoint.host.clone()));
+        }
+    }
     serde_saphyr::to_string(profile).map_err(|error| PolicyError::Yaml(error.to_string()))
+}
+
+fn is_exact_dns_name(host: &str) -> bool {
+    if host.is_empty() || host.len() > 253 || !host.is_ascii() {
+        return false;
+    }
+    host.split('.').all(|label| {
+        !label.is_empty()
+            && label.len() <= 63
+            && label
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+            && label.as_bytes()[0].is_ascii_alphanumeric()
+            && label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+    })
 }
 
 /// Validate a policy update as a network-only hot-reload delta.
@@ -319,36 +339,49 @@ mod tests {
     }
 
     #[test]
-    fn canonical_yaml_round_trips_and_network_delta_rejects_other_sections() {
-        let Some(policy) = policy_for(AgentRole::Builder, ExecTier::Docker).ok() else {
-            panic!("valid policy expected")
-        };
-        let Some(yaml) = policy.canonical_yaml().ok() else {
-            panic!("canonical serialization expected")
-        };
-        let Some(round_trip) = Policy::parse_yaml(&yaml).ok() else {
-            panic!("canonical policy must parse")
-        };
+    fn canonical_yaml_round_trips_and_network_delta_rejects_other_sections()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let policy = policy_for(AgentRole::Builder, ExecTier::Docker)?;
+        let yaml = policy.canonical_yaml()?;
+        let round_trip = Policy::parse_yaml(&yaml)?;
         assert_eq!(round_trip, policy);
         assert!(network_only_delta("version: 1\nnetwork_policies: {}\n").is_ok());
         assert_eq!(
             network_only_delta("version: 1\nprocess: {}\n").err(),
             Some(PolicyError::NonNetworkDelta)
         );
+        Ok(())
     }
 
     #[test]
-    fn provider_profile_is_exact_host_and_secret_free() {
-        let profile =
-            provider_profile_token_factory("api.tokenfactory.nebius.com", "/usr/bin/polaris-guest");
-        assert!(profile.is_ok());
-        let Some(profile) = profile.ok() else { return };
-        let yaml = provider_profile_yaml(&profile);
-        assert!(yaml.is_ok());
-        assert!(
-            yaml.map(|value| value.contains("api.tokenfactory.nebius.com"))
-                .unwrap_or(false)
-        );
+    fn provider_profile_is_exact_host_and_secret_free() -> Result<(), Box<dyn std::error::Error>> {
+        let profile = provider_profile_token_factory(
+            "api.tokenfactory.nebius.com",
+            "/usr/bin/polaris-guest",
+        )?;
+        let yaml = provider_profile_yaml(&profile)?;
+        assert!(yaml.contains("api.tokenfactory.nebius.com"));
         assert!(provider_profile_token_factory("*.nebius.com", "/usr/bin/polaris-guest").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn provider_profile_serializer_rejects_publicly_constructed_wildcard_hosts()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let profile = provider_profile_token_factory(
+            "api.tokenfactory.nebius.com",
+            "/usr/bin/polaris-guest",
+        )?;
+        let mut profile = profile;
+        let endpoint = profile
+            .endpoints
+            .first_mut()
+            .ok_or("provider profile should contain an endpoint")?;
+        endpoint.host = "*.nebius.com".to_owned();
+        assert!(matches!(
+            provider_profile_yaml(&profile),
+            Err(PolicyError::InvalidHost(_))
+        ));
+        Ok(())
     }
 }

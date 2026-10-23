@@ -16,12 +16,12 @@
 <!-- generated: status summary -->
 | Status | Rows |
 |---|---|
-| PASS | 44 |
+| PASS | 45 |
 | FAIL | 3 |
-| IN PROGRESS | 45 |
+| IN PROGRESS | 52 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 57 |
-| **total** | 164 |
+| NOT STARTED | 48 |
+| **total** | 163 |
 
 **P1 non-UI logic: PASS. UI remains deferred by the user.** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
@@ -82,8 +82,8 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P1-X-1 composition-root wiring v0 | PASS (§E30: actual LocalBackends, signed directive dispatch, read tools, durable stores, session typestate and shutdown) |
 | P1-X-2 TUI shell | NOT STARTED (user-deferred UI) |
 | P1-X-3 rustls aws-lc-rs provider in `main` | PASS (§E30: real main and subprocess provider smoke) |
-| P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final guest image and live fidelity gate pending; [P2 audit](P2_LOGIC_STATUS.md) |
-| P2-X-2 `/onboarding` + `polaris doctor` | IN PROGRESS — headless inventory probes implemented; current machine report and coverage audit pending |
+| P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final toolchain/guest image and live gateway/sync passed; remaining full audit in [P2 audit](P2_LOGIC_STATUS.md) |
+| P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
 | P3-X-1 walking skeleton (local endpoint) | NOT STARTED |
 | P3-X-2 same loop on Nemotron | BLOCKED-ON-ACCESS |
 | P3-X-3 Contree sidecar + E3 run | BLOCKED-ON-ACCESS |
@@ -116,7 +116,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 |---|---|
 | M0 skeleton compiles, layers enforced, versions audited, probe green | PASS (§E3–§E6, §E9) |
 | M1 TUI shell with sessions + directives | NOT STARTED |
-| M2 first sandboxed `cargo test` from the TUI | NOT STARTED |
+| M2 first sandboxed `cargo test` from the TUI | Headless acceptance PASS: real 3 ordinary + 2 independent tests, exact review and zero unresolved resources; TUI explicitly deferred by user. Full P2 remains IN PROGRESS. |
 | M3 walking skeleton (local endpoint) | NOT STARTED |
 | M4 same loop on Nemotron + Contree | BLOCKED-ON-ACCESS |
 | M5 MVP demo | NOT STARTED |
@@ -149,7 +149,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P0 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-tests` | `polaris-tests` | P0 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-tests` | `polaris-tests` | P0 | IN PROGRESS | Cross-crate suites include actual EventLog-backed skill approval reopen on Windows and Linux; full system acceptance remains open. |
 | `crate:xtask` | `xtask` | P0 | PASS | P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9) |
 
 ### P1
@@ -198,10 +198,10 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | P2 | IN PROGRESS | Native versioned blueprint validation, canonical digest, actual backend apply and protocol handshake implemented; image/live evidence pending. |
 | `crate:polaris-openshell` | `polaris-openshell` | P2 | IN PROGRESS | Actual client/policy/blueprint facades compile; child live gates remain open. |
 | `crate:polaris-security` | `polaris-security` | P2 | IN PROGRESS | Facade reexports implemented children; child completion tracked separately. |
-| `crate:polaris-runtime-leases` | `polaris-runtime-leases` | P2 | IN PROGRESS | P2 authority tests: 6 passed, including immediate overlap, AST conflict, FIFO cancellation, TTL wake-up, OCC/churn and 64-frame/20-file contention. Full phase proof/allocation audit pending; see @prime/P2_LOGIC_STATUS.md. |
+| `crate:polaris-runtime-leases` | `polaris-runtime-leases` | P2 | IN PROGRESS | 2026-10-23: authority, diagnostics, allocation and path contracts pass. Admission now preserves FIFO among conflicting scopes while allowing independent work; three Loom models exercise actual state transitions. Tokio wake delivery, ArcSwap publication and Kani remain separate open gates. |
 | `crate:polaris-runtime-guards` | `polaris-runtime-guards` | P2 | IN PROGRESS | P2 proof regressions: 7 passed, including all Cargo groups, stderr binding, hidden earlier failures and malformed/overflow counts. Blast/AST and live/performance gates remain open; see @prime/P2_LOGIC_STATUS.md. |
 | `crate:polaris-runtime` | `polaris-runtime` | P2 | IN PROGRESS | Runtime child facade exports written; guards and DAG logic UNVERIFIED, full frame/context/lease/research assembly remains pending. |
-| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | P2 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | P2 | IN PROGRESS | doc-only skeleton (see P0-SKEL-6) |
 
 ### P3
 
@@ -215,7 +215,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-models` | `polaris-models` | P3 | IN PROGRESS | Production model catalog, effort policy and cancellable local slot lifecycle in progress; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-tools-math` | `polaris-tools-math` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-tools-math` | `polaris-tools-math` | P3 | IN PROGRESS | 2026-10-23: 25 math contracts cover expression evaluation, interpolation, statistics and sourced GPU specifications; full P3 audit remains open. |
 | `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | Production frame typestate, bounded quotas, attenuation and streamed step execution in progress; UNVERIFIED, full root assembly remains pending. |
 | `crate:polaris-runtime-context` | `polaris-runtime-context` | P3 | IN PROGRESS | Production deterministic prompt assembly and byte-exact CAS context folding in progress; UNVERIFIED, validation deferred. |
 | `crate:polaris-kernel-operators` | `polaris-kernel-operators` | P3 | IN PROGRESS | Production typed operator combinators, cancellation, bounded retries and stage-order contracts in progress; UNVERIFIED, full composition remains open. |
@@ -266,20 +266,20 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-guest` | `polaris-guest` | P7 | IN PROGRESS | P2 protocol-version and locked conditional sync-cas helper implemented; Linux filesystem tests 6 passed plus host/Linux checks. Final image/live sync gate pending. Full structured exec/browser remains P7. |
 | `crate:polaris-ext-mcp` | `polaris-ext-mcp` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-ext` | `polaris-ext` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | IN PROGRESS | 2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open. |
+| `crate:polaris-ext` | `polaris-ext` | P7 | IN PROGRESS | Skills exports and catalog are implemented. MCP child and full P7 integration remain open. |
 | `crate:polaris-browser` | `polaris-browser` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-hacker` | `polaris-hacker` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | Production bounded DAG scheduler, named pools, speculative races and cancellation written; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | Deterministic research core and bounded versioned checkpoint codec: seven contracts and warning-denied scoped clippy PASS. Program parsing, durable store integration, runner/workspace adapters and real research loop remain pending. |
 
 ### P8
 
 <!-- generated: P8 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-devenv-nix` | `polaris-devenv-nix` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-devenv-nix` | `polaris-devenv-nix` | P8 | IN PROGRESS | Nix JSON evaluation, filtered store paths, injected bounded sandbox execution/cache and prompt/static validation implemented. Full live Nix/store/policy/cache integration gates remain pending. |
+| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | IN PROGRESS | 2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open. |
 | `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | Production typed CI pipelines, matrix reporting and sandbox engine in progress; UNVERIFIED, Dagger and validation deferred. |
 | `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written; CI implementation UNVERIFIED, Nix/Docker adapters remain pending. |
 | `crate:polaris-system-one-nano` | `polaris-system-one-nano` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
@@ -1212,3 +1212,21 @@ and zero-test future skeletons; they do not imply UI or later-phase feature comp
 All six mandatory WSL ASan targets passed for 61–65 seconds each on the updated graph. Member/layer/witness checks report 93 packages / 258 edges / zero witness violations; generated documents, 136 descriptor JSON files and root/fuzz formatting are checked. The linked P1 verdict records exact counts and limits.
 Historical §E29's unverified-source description and older dependency-deny result are superseded for
 this P1 checkpoint; unresolved P0 audits/access/licensing are retained.
+
+## E31 — P2-X-2 headless doctor/onboarding (2026-10-23)
+
+`@prime/evidence/p2/doctor-headless-current.json` is the current `polaris doctor --json` output.
+The command exited 0 with all 26 authoritative `member_setup` entries represented, all 26 concrete
+onboarding actions present, `ready=true`, and `required_missing=0`. Required Windows MSVC, Python uv,
+and WSL OpenShell checks pass. The report checks credential presence only; Token Factory and Tavily
+references are missing and no secret payload is emitted. Seven unresolved observations are optional
+later-phase items and do not block P0 setup readiness. The readiness contract tests and bounded process
+probe tests are recorded in `@prime/evidence/p2/doctor-cli-tests.txt` and
+`@prime/evidence/p2/process-probe-tests.txt`.
+
+The first current-CLI report captured an OpenShell `BadSignature` peer-certificate error. Two following
+strict-path `openshell status` calls and the final doctor report passed with authenticated mTLS and
+version 0.1.4; the cause of the initial transient failure is unknown. The retained reports and repeated
+status output are in `@prime/evidence/p2/doctor-headless-transient-badsig.json`,
+`@prime/evidence/p2/doctor-headless-intermediate-probe-fixes.json`, and
+`@prime/evidence/p2/openshell-status-repeat-current.txt`.

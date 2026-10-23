@@ -26,6 +26,27 @@ impl ExactCacheStore for MemL2 {
         Ok(rows.get(key).cloned())
     }
 
+    fn get_bounded(
+        &self,
+        key: &[u8; 32],
+        max_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, CacheStoreError> {
+        let rows = self
+            .rows
+            .lock()
+            .map_err(|_| CacheStoreError::Io("poisoned".into()))?;
+        let Some(value) = rows.get(key) else {
+            return Ok(None);
+        };
+        if value.len() > max_bytes {
+            return Err(CacheStoreError::TooLarge {
+                bytes: u64::try_from(value.len()).unwrap_or(u64::MAX),
+                limit: u64::try_from(max_bytes).unwrap_or(u64::MAX),
+            });
+        }
+        Ok(Some(value.clone()))
+    }
+
     fn put(&self, key: [u8; 32], value: &[u8], _scope: CacheScope) -> Result<(), CacheStoreError> {
         let mut rows = self
             .rows

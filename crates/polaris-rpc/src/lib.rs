@@ -13,12 +13,24 @@
 //! monotonic and duplicate/older records are discarded. Stream leases reauthorize on each event
 //! or terminal frame and at one-second idle intervals. The resolver's default revocation check
 //! allows no revocations; an external revocation source must be supplied by the composition root.
-//! Named-pipe, Unix-domain, TCP+mTLS listener
-//! and client construction remain transport work and are deliberately not represented as a
-//! successful `serve` stub here.
+//! [`BoundServer`] owns actual named-pipe/UDS/TCP listeners, including bounded connection admission
+//! and cancellation after graceful shutdown. [`KernelClient`] uses these real transports and pins
+//! its session and bearer credential; remote TCP requires mutual TLS. The published four-RPC
+//! protocol is supported. Later research/audit/session RPC additions retain their own phase gates.
 
 mod auth;
+mod client;
 mod server;
+mod transport;
+
+pub use client::{
+    ClientError, ClientTransport, KernelClient, RpcEvents, RpcStreamError, TlsClientConfig,
+};
+
+pub use transport::{
+    BoundAddress, BoundServer, LocalEndpoint, TlsServerConfig, Transport, TransportError,
+    TransportLimits,
+};
 
 pub use auth::{
     AuthorizationLease, MAX_BEARER_HEADER_BYTES, MAX_METADATA_BYTES, MAX_METADATA_ENTRIES,

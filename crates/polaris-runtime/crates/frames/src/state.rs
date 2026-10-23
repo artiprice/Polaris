@@ -136,6 +136,9 @@ pub enum FrameError {
     /// Model output exceeded a configured byte or call limit.
     #[error("model or tool output exceeded its configured limit")]
     OutputLimit,
+    /// Tool result text did not match its declared durable content identifier.
+    #[error("tool result content reference mismatch")]
+    ToolResultReferenceMismatch,
     /// Stream ended without a terminal finish chunk.
     #[error("model stream ended before a finish chunk")]
     IncompleteStream,
@@ -160,7 +163,9 @@ impl HasKind for FrameError {
             | Self::EffortDenied
             | Self::RoleToolDenied
             | Self::TokenBudget => ErrorKind::Policy,
-            Self::UsageExceeded { .. } | Self::InvalidUsage => ErrorKind::Fatal,
+            Self::UsageExceeded { .. } | Self::InvalidUsage | Self::ToolResultReferenceMismatch => {
+                ErrorKind::Fatal
+            }
             Self::Capability(error) => error.kind(),
 
             Self::Model(error) => error.kind(),
@@ -432,6 +437,12 @@ impl AgentContextFrame<Active> {
     #[must_use]
     pub const fn steps(&self) -> u32 {
         self.steps
+    }
+
+    /// Remaining frame-local resources after reservations and measurements.
+    #[must_use]
+    pub fn remaining_quota(&self) -> ResourceQuota {
+        lock_recover(&self.remaining).clone()
     }
 
     /// Ordered, verifier-supplied diff timeline.

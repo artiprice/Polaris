@@ -7,6 +7,10 @@
     {
       "test_name": "reports_automata_compile_scan_and_4k_tail_latency",
       "description": "Measures compile time, meta-engine memory usage, scanner throughput at 10/100/1,000 patterns, 4 KiB any_match p99, and a 512 MiB scan."
+    },
+    {
+      "test_name": "zero_full_dfa_budget_keeps_scanner_results_and_bounds_memory",
+      "description": "Compares default and zero-full-DFA-budget scanner memory/build cost and verifies identical matches over no-match, single-match, and multi-match inputs; regex-automata may use its lazy fallback."
     }
   ],
   "dependencies": [

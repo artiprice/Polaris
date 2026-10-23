@@ -257,6 +257,8 @@ similar = "3.2.0"
 ignore = "0.4.33"
 globset = "0.4.20"
 walkdir = "2.5.0"
+cap-std = "=4.0.3"
+cap-primitives = "=4.0.3"
 tar = { version = "0.4.46", default-features = false }
 notify = "8.2.0"
 notify-debouncer-full = "0.7.0"
@@ -296,7 +298,7 @@ wasm-bindgen = "0.2.129"
 chromiumoxide = { version = "0.9.1", default-features = false, features = ["bytes"] }
 rmcp = { version = "3.5.1", default-features = false, features = ["client", "macros", "transport-child-process", "transport-streamable-http-client-reqwest", "reqwest-tls-no-provider"] }
 # Default features (http, pipe): Docker Desktop over the Windows named pipe; no TLS (avoids ring).
-bollard = "0.21.1"
+bollard = { version = "0.21.1", features = ["buildkit_providerless", "aws-lc-rs", "chrono"] }
 # Pulls reqwest 0.11; members must depend on it as an optional feature.
 dagger-sdk = "0.21.10"
 

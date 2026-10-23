@@ -1,0 +1,12 @@
+{
+  "type_of":"function","name":"occupancy","file_path":"crates/polaris-tools/crates/math/src/gpu.rs","logic_name":"math_gpu_occupancy",
+  "test_list":[
+    {"test_name":"register_limited_launch_reports_registers","description":"Registers can be identified as the occupancy limiter."},
+    {"test_name":"shared_memory_limited_launch_reports_shared","description":"Shared memory can be identified as the occupancy limiter."},
+    {"test_name":"unknown_capability_is_error","description":"Capabilities absent from the supplied versioned table are rejected."},
+    {"test_name":"row_without_source_url_rejected","description":"Every row requires an HTTPS provenance URL and retrieval date."},
+    {"test_name":"invalid_launch_dimensions_rejected","description":"Zero or over-limit block dimensions are rejected."},
+    {"test_name":"table_rejects_invalid_limits_and_version","description":"Table version, duplicate rows, and impossible resource limits are validated."}
+  ],"dependencies":[],"libraries":["toml","serde"],
+  "inputs":[{"name":"capability","type":"ComputeCapability","description":"GPU compute capability key present in the bundled curated NVIDIA table."},{"name":"launch","type":"&LaunchConfig","description":"Block dimensions and per-thread/per-block resource use."}],"output_type":"Result<Occupancy, MathError>","output_description":"Estimated resident blocks/warps and limiting resource; estimate excludes compiler allocation granularity."
+}

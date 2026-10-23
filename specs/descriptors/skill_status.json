@@ -1,0 +1,31 @@
+{
+  "type_of": "function",
+  "name": "inspect_skill_status",
+  "file_path": "crates/polaris-kernel/src/skill_status.rs",
+  "logic_name": "Headless Skill Tool Status",
+  "test_list": [
+    {
+      "test_name": "status_compares_requirements_to_the_real_local_builtin_catalog",
+      "description": "Compare each discovered skill requirement against the builtin catalog used by the local kernel registry."
+    },
+    {
+      "test_name": "invalid_skill_root_is_reported_unavailable_without_fabricated_entries",
+      "description": "Invalid configured roots report unavailable discovery and no synthetic skill rows."
+    }
+  ],
+  "dependencies": [
+    "polaris_config::Dirs",
+    "polaris_ext::skills::SkillRegistry",
+    "polaris_tools::builtin::builtin_specs"
+  ],
+  "libraries": ["serde"],
+  "inputs": [
+    {
+      "name": "dirs",
+      "type": "&Dirs",
+      "description": "Resolved user-global and repository Polaris configuration directories."
+    }
+  ],
+  "output_type": "SkillStatusSnapshot",
+  "output_description": "Serializable discovery, enablement support, local builtin tool scope, and per-skill missing tool requirements."
+}

@@ -22,9 +22,16 @@ bytes = { workspace = true }
 tokio = { workspace = true }
 secrecy = { workspace = true }
 url = { workspace = true }
+rand = { workspace = true }
+jiff = { workspace = true }
+
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-config = { workspace = true }
 polaris-log = { workspace = true }
 polaris-ratelimit = { workspace = true }
 polaris-telemetry = { workspace = true }
+
+[dev-dependencies]
+eventsource-stream = { workspace = true }
+proptest = { workspace = true }

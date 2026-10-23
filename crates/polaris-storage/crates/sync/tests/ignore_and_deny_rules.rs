@@ -32,6 +32,8 @@ fn deny_list_defaults_present() -> TestResult {
         "tls.key",
         ".git/config",
         "home/.ssh/known_hosts",
+        ".aws/credentials",
+        ".aws/config",
         "id_rsa",
         "cert.pfx",
     ] {
@@ -78,6 +80,27 @@ fn git_and_polaris_metadata_are_denied_even_with_negation() -> TestResult {
         (".POLARIS/vcs-undo.json", false),
         (".polaris/vcs-undo.json", false),
         ("work/.polaris/cas/file", false),
+    ] {
+        assert_eq!(
+            rules.classify(&RelPath::new(path)?, is_dir),
+            Exclusion::Denied,
+            "{path}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn aws_credential_tree_is_non_overridable_and_case_insensitive() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    let rules = IgnoreRules::new(tmp.path(), Some("!.aws\n!.aws/**\n!**/.aws/**\n"))?;
+    for (path, is_dir) in [
+        (".aws", true),
+        (".aws/credentials", false),
+        (".aws/config", false),
+        ("home/.aws", true),
+        ("home/.aws/credentials", false),
+        ("HOME/.AWS/CONFIG", false),
     ] {
         assert_eq!(
             rules.classify(&RelPath::new(path)?, is_dir),

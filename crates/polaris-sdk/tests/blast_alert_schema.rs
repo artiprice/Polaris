@@ -6,7 +6,7 @@ use polaris_sdk::{
 
 #[test]
 fn blast_alert_requires_schema_three() {
-    for schema in 0_u16..=4 {
+    for schema in 0_u16..=5 {
         let record = EventRecord::from_versioned(
             schema,
             Seq::ZERO,

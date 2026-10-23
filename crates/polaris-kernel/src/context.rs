@@ -3,13 +3,17 @@
 use crate::{
     KernelError,
     bus::{Bus, BusConfig, CommandReceiver, EventStream},
+    docker_pool::ReaperPoolJournal,
     reaper::{OrphanAction, Reaper, ShutdownConfig, ShutdownReport},
+    sandbox_recovery::{SandboxRecovery, recover_absent_sandboxes},
     storage::{
         cas::{Cas, CasConfig},
         eventlog::{EventLog, EventLogConfig},
         registry::{Registry, SessionMeta},
     },
 };
+use polaris_devenv::docker::Docker;
+use polaris_devenv::docker::PoolCleanup;
 use polaris_sdk::contracts::{Event, EventRecord, Timestamp};
 use polaris_sdk::ids::{Seq, SessionId};
 use std::collections::BTreeSet;
@@ -23,7 +27,7 @@ pub struct KernelCtx {
     pub(crate) cas: Cas,
     pub(crate) bus: Arc<Bus<Arc<EventLog>>>,
     pub(crate) registry: Registry,
-    pub(crate) reaper: Reaper,
+    pub(crate) reaper: Arc<Reaper>,
     pub(crate) writer: Mutex<()>,
     active: Mutex<BTreeSet<SessionId>>,
     closed: AtomicBool,
@@ -45,6 +49,44 @@ impl KernelCtx {
     /// # Errors
     /// Database/filesystem failures, journal errors, or `RecoveryRequired` for unsafe orphans.
     pub async fn open(root: impl AsRef<Path>) -> Result<Arc<Self>, KernelError> {
+        Self::open_inner(root, None, None, None).await
+    }
+
+    /// Open local state after recovering Docker pool orphans through the same durable Reaper.
+    ///
+    /// # Errors
+    /// Database/filesystem failures, Docker cleanup failures, journal errors, or unresolved
+    /// non-Docker resources that still require operator reconciliation.
+    pub(crate) async fn open_with_docker(
+        root: impl AsRef<Path>,
+        docker: &Docker,
+    ) -> Result<Arc<Self>, KernelError> {
+        Self::open_inner(root, Some(docker), None, None).await
+    }
+
+    /// Open local state after absence-only recovery through the exact configured sandbox backend.
+    /// Present, unknown, legacy and differently scoped sandbox records remain unresolved.
+    pub(crate) async fn open_with_sandbox(
+        root: impl AsRef<Path>,
+        backend: &dyn SandboxRecovery,
+    ) -> Result<Arc<Self>, KernelError> {
+        Self::open_inner(root, None, None, Some(backend)).await
+    }
+
+    #[cfg(test)]
+    async fn open_with_pool_cleanup(
+        root: impl AsRef<Path>,
+        cleanup: &dyn PoolCleanup,
+    ) -> Result<Arc<Self>, KernelError> {
+        Self::open_inner(root, None, Some(cleanup), None).await
+    }
+
+    async fn open_inner(
+        root: impl AsRef<Path>,
+        docker: Option<&Docker>,
+        cleanup: Option<&dyn PoolCleanup>,
+        sandbox: Option<&dyn SandboxRecovery>,
+    ) -> Result<Arc<Self>, KernelError> {
         let root = root.as_ref().to_owned();
         let (root, cas, log, registry, reaper) = blocking(move || {
             std::fs::create_dir_all(&root)?;
@@ -54,10 +96,19 @@ impl KernelCtx {
                 root.join("events.redb"),
             ))?);
             let registry = Registry::open(&root)?;
-            let reaper = Reaper::new(root.join("run"))?;
+            let reaper = Arc::new(Reaper::new(root.join("run"))?);
             Ok((root, cas, log, registry, reaper))
         })
         .await?;
+        let journal = ReaperPoolJournal::new(Arc::clone(&reaper));
+        if let Some(docker) = docker {
+            journal.recover_pending(docker).await?;
+        } else if let Some(cleanup) = cleanup {
+            journal.recover_pending_with(cleanup).await?;
+        }
+        if let Some(backend) = sandbox {
+            recover_absent_sandboxes(&reaper, backend).await?;
+        }
         let sweep = reaper.sweep_orphans().await?;
         let unresolved = sweep
             .orphans
@@ -79,6 +130,12 @@ impl KernelCtx {
             commands: Mutex::new(Some(commands)),
             root,
         }))
+    }
+
+    /// Obtain the durable Docker warm-pool journal for trusted local composition code.
+    #[must_use]
+    pub fn docker_pool_journal(&self) -> ReaperPoolJournal {
+        ReaperPoolJournal::new(Arc::clone(&self.reaper))
     }
     /// Root holding `events.redb`, `registry.db`, `cas/`, and `run/reaper.journal`.
     #[must_use]
@@ -173,5 +230,77 @@ impl Drop for SessionLease {
             Err(poisoned) => poisoned.into_inner(),
         };
         let _removed = active.remove(&self.id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use polaris_devenv::docker::{PoolCleanupError, PoolIdentity};
+    use std::future::Future;
+    use std::pin::Pin;
+
+    type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+
+    #[derive(Debug)]
+    struct RecordingCleanup(Mutex<Vec<PoolIdentity>>);
+
+    impl PoolCleanup for RecordingCleanup {
+        fn cleanup<'a>(
+            &'a self,
+            identity: &'a PoolIdentity,
+        ) -> BoxFuture<'a, Result<(), PoolCleanupError>> {
+            Box::pin(async move {
+                let Ok(mut identities) = self.0.lock() else {
+                    return Err(PoolCleanupError("recording lock poisoned".to_owned()));
+                };
+                identities.push(*identity);
+                Ok(())
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn startup_recovers_docker_orphans_before_the_generic_reaper_sweep()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let root = tempfile::tempdir()?;
+        let identity = PoolIdentity::parse(
+            "018f0000-0000-7000-8000-000000000001",
+            "018f0000-0000-7000-8000-000000000002",
+        )?;
+        {
+            let reaper = Reaper::new(root.path().join("run"))?;
+            let _registration = reaper.register_journaled(
+                crate::reaper::ResourceKind::Sandbox,
+                crate::reaper::Locator::Label(format!(
+                    "docker-pool-v1/{}/{}",
+                    identity.pool_id, identity.owner_id
+                )),
+                StartupCleanup,
+            )?;
+        }
+
+        let cleanup = RecordingCleanup(Mutex::new(Vec::new()));
+        let context = KernelCtx::open_with_pool_cleanup(root.path(), &cleanup).await?;
+        let cleaned = cleanup
+            .0
+            .lock()
+            .map_err(|_| "recording lock poisoned")?
+            .clone();
+        assert_eq!(cleaned, [identity]);
+        assert!(context.reaper.pending_orphans().is_empty());
+        Ok(())
+    }
+
+    #[derive(Debug)]
+    struct StartupCleanup;
+
+    impl crate::reaper::Teardown for StartupCleanup {
+        async fn graceful(
+            &mut self,
+            _ctx: crate::reaper::TeardownContext,
+        ) -> Result<crate::reaper::Disposition, crate::reaper::TeardownError> {
+            Ok(crate::reaper::Disposition::Clean)
+        }
     }
 }

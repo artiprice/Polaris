@@ -1,0 +1,15 @@
+{
+  "type_of": "function",
+  "name": "validate_flake_text",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Flake Static Checks",
+  "test_list": [
+    { "test_name": "rejects_unhashed_fetchurl_and_host_paths", "description": "Reject unhashed fetchurl and common host-absolute paths." },
+    { "test_name": "accepts_pinned_fetchurl_and_simple_flake_text", "description": "Accept a simple hashed fetchurl expression." }
+  ],
+  "dependencies": [],
+  "libraries": ["thiserror"],
+  "inputs": [{ "name": "text", "type": "&str", "description": "Flake source to inspect with conservative bounded text checks." }],
+  "output_type": "Result<FlakeLint, NixError>",
+  "output_description": "Static findings only; the checks are not a parser or security boundary."
+}

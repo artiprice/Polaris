@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 use std::error::Error;
 
 use polaris_proto::{ProtoError, pb};
-use polaris_sdk::contracts::{Event, EventRecord, Timestamp, WorkerKind};
+use polaris_sdk::contracts::{Event, EventRecord, FrameStepOutcome, Timestamp, WorkerKind};
 use polaris_sdk::error::ParseError;
 use polaris_sdk::ids::{Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 use proptest::collection::vec;
@@ -47,13 +47,15 @@ const fn variant_index(event: &Event) -> usize {
         Event::SessionPaused => 19,
         Event::SessionResumed => 20,
         Event::BlastRadiusAlert { .. } => 21,
+        Event::DiffNeedsApproval { .. } => 22,
+        Event::FrameStepRecorded { .. } => 23,
     }
 }
 
-const VARIANT_COUNT: usize = 22;
+const VARIANT_COUNT: usize = 24;
 
 #[test]
-fn old_envelope_version_is_preserved_and_new_variants_require_v2() -> TestResult {
+fn old_envelope_version_is_preserved_and_new_variants_require_v4() -> TestResult {
     let old = EventRecord::from_versioned(
         1,
         Seq::new(5),
@@ -66,16 +68,39 @@ fn old_envelope_version_is_preserved_and_new_variants_require_v2() -> TestResult
         decoded, old,
         "wire decode must retain v1, not silently upgrade it"
     );
-    for event in [
-        Event::SessionConfigured {
-            configuration: cid(1),
-        },
-        Event::SessionPaused,
-        Event::SessionResumed,
-        Event::BlastRadiusAlert {
-            frame: frame(14),
-            report: cid(19),
-        },
+    for (event, invalid_schema) in [
+        (
+            Event::SessionConfigured {
+                configuration: cid(1),
+            },
+            1,
+        ),
+        (Event::SessionPaused, 1),
+        (Event::SessionResumed, 1),
+        (
+            Event::BlastRadiusAlert {
+                frame: frame(14),
+                report: cid(19),
+            },
+            2,
+        ),
+        (
+            Event::FrameStepRecorded {
+                frame: frame(15),
+                step: u32::MAX,
+                transcript: cid(20),
+                outcome: FrameStepOutcome::Failed,
+            },
+            3,
+        ),
+        (
+            Event::DiffNeedsApproval {
+                frame: frame(16),
+                diff: cid(21),
+                report: cid(22),
+            },
+            3,
+        ),
     ] {
         let record = EventRecord::new(
             Seq::new(5),
@@ -84,7 +109,7 @@ fn old_envelope_version_is_preserved_and_new_variants_require_v2() -> TestResult
             event,
         );
         let mut wire = pb::EventRecord::from(&record);
-        wire.schema = 1;
+        wire.schema = invalid_schema;
         assert!(
             EventRecord::try_from(wire).is_err(),
             "new lifecycle payload mislabeled v1 must be refused"
@@ -193,6 +218,17 @@ fn samples() -> Vec<Event> {
         Event::BlastRadiusAlert {
             frame: frame(14),
             report: cid(19),
+        },
+        Event::DiffNeedsApproval {
+            frame: frame(16),
+            diff: cid(21),
+            report: cid(22),
+        },
+        Event::FrameStepRecorded {
+            frame: frame(15),
+            step: 3,
+            transcript: cid(20),
+            outcome: FrameStepOutcome::Cancelled,
         },
     ]
 }
@@ -343,10 +379,10 @@ fn malformed_cid_and_schema_are_errors() -> TestResult {
         Err(ProtoError::Invalid(ParseError::UnsupportedSchema(0)))
     );
     let mut future = pb::EventRecord::from(&record);
-    future.schema = 4;
+    future.schema = 5;
     assert_eq!(
         EventRecord::try_from(future),
-        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(4)))
+        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(5)))
     );
     let mut huge = pb::EventRecord::from(&record);
     huge.schema = u32::from(u16::MAX) + 1;
@@ -508,6 +544,30 @@ fn arb_event() -> impl Strategy<Value = Event> {
         Just(Event::SessionResumed).boxed(),
         (arb_frame(), arb_cid())
             .prop_map(|(frame, report)| Event::BlastRadiusAlert { frame, report })
+            .boxed(),
+        (arb_frame(), arb_cid(), arb_cid())
+            .prop_map(|(frame, diff, report)| Event::DiffNeedsApproval {
+                frame,
+                diff,
+                report,
+            })
+            .boxed(),
+        (arb_frame(), any::<u32>(), arb_cid(), any::<u8>())
+            .prop_map(|(frame, step, transcript, selector)| {
+                let outcome = match selector % 5 {
+                    0 => FrameStepOutcome::Accepted,
+                    1 => FrameStepOutcome::ClaimedDone,
+                    2 => FrameStepOutcome::Rejected,
+                    3 => FrameStepOutcome::Cancelled,
+                    _ => FrameStepOutcome::Failed,
+                };
+                Event::FrameStepRecorded {
+                    frame,
+                    step,
+                    transcript,
+                    outcome,
+                }
+            })
             .boxed(),
     ];
     assert_eq!(arms.len(), VARIANT_COUNT);

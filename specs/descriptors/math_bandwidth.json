@@ -1,0 +1,10 @@
+{
+  "type_of":"function","name":"effective_bandwidth","file_path":"crates/polaris-tools/crates/math/src/bandwidth.rs","logic_name":"math_bandwidth",
+  "test_list":[
+    {"test_name":"returns_gigabytes_per_second","description":"Effective bandwidth uses decimal GB/s (10^9 bytes), not GiB/s or TB/s."},
+    {"test_name":"zero_elapsed_is_error","description":"Zero or negative elapsed seconds are rejected."},
+    {"test_name":"gib_and_gb_are_distinct_types","description":"Reported units are explicit and peak bandwidth uses data rate times bus width divided by eight."},
+    {"test_name":"overflow_returns_error","description":"Unrepresentable checked decimal results fail explicitly."}
+  ],"dependencies":[],"libraries":["rust_decimal"],
+  "inputs":[{"name":"bytes","type":"u64","description":"Transferred byte count."},{"name":"elapsed_s","type":"Decimal","description":"Positive elapsed seconds."}],"output_type":"Result<GbPerSec, MathError>","output_description":"Decimal gigabytes per second (GB/s, 10^9 bytes)."
+}

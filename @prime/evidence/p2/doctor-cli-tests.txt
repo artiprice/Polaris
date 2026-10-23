@@ -1,0 +1,17 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 12.65s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-1e1b140dbda09ddb.exe)
+
+running 3 tests
+test doctor::tests::credential_metadata_probe_never_renders_secret_values ... ok
+test doctor::tests::every_setup_item_has_a_probe ... ok
+test doctor::tests::optional_missing_item_does_not_block_readiness ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+EXIT_CODE=0

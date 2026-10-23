@@ -1,0 +1,10 @@
+{
+  "type_of":"method","name":"GpuSpecTable::from_toml","file_path":"crates/polaris-tools/crates/math/src/gpu.rs","logic_name":"math_gpu_table_provenance",
+  "test_list":[
+    {"test_name":"row_without_source_url_rejected","description":"Every hardware row requires an HTTPS source URL and retrieval date."},
+    {"test_name":"table_rejects_invalid_limits_and_version","description":"Unsupported versions, duplicate capabilities, invalid dates, and impossible resource limits fail."},
+    {"test_name":"table_accepts_sourced_documented_row","description":"A schema-valid sourced row is retrievable by capability."},
+    {"test_name":"curated_nvidia_reference_has_sourced_rows_for_supported_capabilities","description":"The embedded reference table contains cited entries for CC 7.5, 8.0, 8.6, 8.7, 8.9, and 9.0."}
+  ],"dependencies":[],"libraries":["serde","toml"],
+  "inputs":[{"name":"source","type":"&str","description":"At most 1 MB TOML containing version 1 and sourced GPU rows."}],"output_type":"Result<GpuSpecTable, MathError>","output_description":"A validated table keyed by compute capability."
+}

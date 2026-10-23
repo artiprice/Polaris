@@ -8,8 +8,8 @@
 //! Blobs never appear here: the sdk already holds them as `Cid` references.
 
 use polaris_sdk::contracts::{
-    Command, CommandBody, CommandId, EVENT_SCHEMA_VERSION, Event, EventRecord, Timestamp,
-    TokenBytes, Unverified, VerificationState, WorkerKind,
+    Command, CommandBody, CommandId, EVENT_SCHEMA_VERSION, Event, EventRecord, FrameStepOutcome,
+    Timestamp, TokenBytes, Unverified, VerificationState, WorkerKind,
 };
 use polaris_sdk::effort::Effort;
 use polaris_sdk::error::ParseError;
@@ -159,6 +159,30 @@ fn worker_from_pb(field: &'static str, value: i32) -> Result<WorkerKind, ProtoEr
     }
 }
 
+fn frame_step_outcome_to_pb(outcome: FrameStepOutcome) -> i32 {
+    i32::from(match outcome {
+        FrameStepOutcome::Accepted => pb::FrameStepOutcome::Accepted,
+        FrameStepOutcome::ClaimedDone => pb::FrameStepOutcome::ClaimedDone,
+        FrameStepOutcome::Rejected => pb::FrameStepOutcome::Rejected,
+        FrameStepOutcome::Cancelled => pb::FrameStepOutcome::Cancelled,
+        FrameStepOutcome::Failed => pb::FrameStepOutcome::Failed,
+    })
+}
+
+fn frame_step_outcome_from_pb(value: i32) -> Result<FrameStepOutcome, ProtoError> {
+    match pb::FrameStepOutcome::try_from(value) {
+        Ok(pb::FrameStepOutcome::Accepted) => Ok(FrameStepOutcome::Accepted),
+        Ok(pb::FrameStepOutcome::ClaimedDone) => Ok(FrameStepOutcome::ClaimedDone),
+        Ok(pb::FrameStepOutcome::Rejected) => Ok(FrameStepOutcome::Rejected),
+        Ok(pb::FrameStepOutcome::Cancelled) => Ok(FrameStepOutcome::Cancelled),
+        Ok(pb::FrameStepOutcome::Failed) => Ok(FrameStepOutcome::Failed),
+        Ok(pb::FrameStepOutcome::Unspecified) | Err(_) => Err(ProtoError::UnknownVariant {
+            field: "event.frame_step_recorded.outcome",
+            value,
+        }),
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Timestamp
 // ---------------------------------------------------------------------------------------------
@@ -262,6 +286,15 @@ impl From<&Event> for pb::Event {
                 diff: cid_to_pb(diff),
                 reason: cid_to_pb(reason),
             }),
+            Event::DiffNeedsApproval {
+                frame,
+                diff,
+                report,
+            } => Kind::DiffNeedsApproval(m::DiffNeedsApproval {
+                frame: frame_to_pb(frame),
+                diff: cid_to_pb(diff),
+                report: cid_to_pb(report),
+            }),
             Event::FileLeaseGranted { frame, path, lease } => {
                 Kind::FileLeaseGranted(m::FileLeaseGranted {
                     frame: frame_to_pb(frame),
@@ -307,6 +340,17 @@ impl From<&Event> for pb::Event {
                     report: cid_to_pb(report),
                 })
             }
+            Event::FrameStepRecorded {
+                frame,
+                step,
+                transcript,
+                outcome,
+            } => Kind::FrameStepRecorded(m::FrameStepRecorded {
+                frame: frame_to_pb(frame),
+                step,
+                transcript: cid_to_pb(transcript),
+                outcome: frame_step_outcome_to_pb(outcome),
+            }),
             Event::ProofOfDoneBlocked { frame, report } => {
                 Kind::ProofOfDoneBlocked(m::ProofOfDoneBlocked {
                     frame: frame_to_pb(frame),
@@ -384,6 +428,11 @@ impl TryFrom<pb::Event> for Event {
                 diff: cid_from_pb("event.diff_rejected.diff", m.diff)?,
                 reason: cid_from_pb("event.diff_rejected.reason", m.reason)?,
             },
+            Kind::DiffNeedsApproval(m) => Self::DiffNeedsApproval {
+                frame: frame_from_pb("event.diff_needs_approval.frame", m.frame)?,
+                diff: cid_from_pb("event.diff_needs_approval.diff", m.diff)?,
+                report: cid_from_pb("event.diff_needs_approval.report", m.report)?,
+            },
             Kind::FileLeaseGranted(m) => Self::FileLeaseGranted {
                 frame: frame_from_pb("event.file_lease_granted.frame", m.frame)?,
                 path: cid_from_pb("event.file_lease_granted.path", m.path)?,
@@ -411,6 +460,12 @@ impl TryFrom<pb::Event> for Event {
             Kind::BlastRadiusAlert(m) => Self::BlastRadiusAlert {
                 frame: frame_from_pb("event.blast_radius_alert.frame", m.frame)?,
                 report: cid_from_pb("event.blast_radius_alert.report", m.report)?,
+            },
+            Kind::FrameStepRecorded(m) => Self::FrameStepRecorded {
+                frame: frame_from_pb("event.frame_step_recorded.frame", m.frame)?,
+                step: m.step,
+                transcript: cid_from_pb("event.frame_step_recorded.transcript", m.transcript)?,
+                outcome: frame_step_outcome_from_pb(m.outcome)?,
             },
             Kind::ProofOfDoneBlocked(m) => Self::ProofOfDoneBlocked {
                 frame: frame_from_pb("event.proof_of_done_blocked.frame", m.frame)?,

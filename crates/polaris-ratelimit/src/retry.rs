@@ -11,11 +11,8 @@ use std::{
 #[must_use]
 pub fn jittered_backoff(attempt: u32, retry_after: Option<Duration>) -> Duration {
     let shifts = attempt.min(8);
-    let base_ns = match 100_000_000_u64.checked_shl(shifts) {
-        Some(value) => value,
-        None => 25_600_000_000,
-    }
-    .min(30_000_000_000);
+    // At most eight shifts: the largest base is 25.6 billion, well within u64.
+    let base_ns = 100_000_000_u64 << shifts;
     let mut hasher = RandomState::new().build_hasher();
     attempt.hash(&mut hasher);
     retry_after.hash(&mut hasher);

@@ -58,3 +58,20 @@ fn oversized_value_is_rejected() -> TestResult {
     assert!(log.put([1; 32], &[0u8; 16], CacheScope::Global).is_ok());
     Ok(())
 }
+
+#[test]
+fn bounded_get_rejects_before_copying_oversized_payload() -> TestResult {
+    let dir = tempfile::tempdir()?;
+    let log = EventLog::open(EventLogConfig::new(dir.path().join("events.redb")))?;
+    log.put([9; 32], &[7; 32], CacheScope::Global)?;
+    assert!(matches!(
+        log.get_bounded(&[9; 32], 31),
+        Err(CacheStoreError::TooLarge {
+            bytes: 32,
+            limit: 31
+        })
+    ));
+    assert_eq!(log.get_bounded(&[9; 32], 32)?, Some(vec![7; 32]));
+    assert_eq!(log.get_bounded(&[8; 32], 32)?, None);
+    Ok(())
+}

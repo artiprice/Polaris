@@ -571,6 +571,7 @@ fn fold(
         | Event::ToolExecutionCompleted { .. }
         | Event::DiffApproved { .. }
         | Event::DiffRejected { .. }
+        | Event::DiffNeedsApproval { .. }
         | Event::FileLeaseGranted { .. }
         | Event::FileLeaseRevoked { .. }
         | Event::SandboxSnapshotBranchCreated { .. }
@@ -580,7 +581,8 @@ fn fold(
         | Event::WorkerRestarted { .. }
         | Event::CircuitTripped { .. }
         | Event::DeadLettered { .. }
-        | Event::BlastRadiusAlert { .. } => {}
+        | Event::BlastRadiusAlert { .. }
+        | Event::FrameStepRecorded { .. } => {}
     }
     Ok(())
 }

@@ -1,9 +1,11 @@
 //! Apply a plan through the sdk `SandboxBackend` transport.
 //!
-//! Backend contract: `upload` stages one bounded deterministic tar in a prepared private
-//! namespace, then fixed-argv `polaris-guest sync-batch` revalidates every expected state under
-//! the workspace lock before any mutation. Unknown helper outcomes require a full remote rescan.
-//! The backend chunks each archive below the gateway's 1 MiB request limit (spike S0-7).
+//! Backend contract: small mutations are uploaded as bounded deterministic tar batches in a
+//! prepared private namespace, then fixed-argv `polaris-guest sync-batch` revalidates every
+//! expected state under the workspace lock before mutation. Files larger than the tar-file
+//! limit use a single staged file and typed conditional commit, still checking the expected state
+//! and file digest. Unknown helper outcomes require a full remote rescan. The backend chunks
+//! transfers below the gateway's 1 MiB request limit (spike S0-7).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -13,8 +15,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use bytes::Bytes;
 use polaris_sdk::ids::Cid;
 use polaris_sdk::registry::{
-    ExecRequest, SandboxBackend, SandboxBatchAction, SandboxBatchMutation, SandboxBatchResult,
-    SandboxFileState, SandboxHandle, SandboxSyncBatch,
+    CommitOutcome, ExecRequest, SandboxBackend, SandboxBatchAction, SandboxBatchMutation,
+    SandboxBatchResult, SandboxCommitAction, SandboxCommitRequest, SandboxFileState, SandboxHandle,
+    SandboxSyncBatch,
 };
 
 use crate::path::{RelPath, SyncError};
@@ -23,7 +26,15 @@ use crate::scan::{EntryKind, Manifest};
 
 const MAX_BATCH_ARCHIVE_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_BATCH_FILE_BYTES: u64 = 24 * 1024 * 1024;
+const MAX_SYNC_FILE_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_BATCH_MUTATIONS: usize = 512;
+
+struct LargeFile<'a> {
+    rel: &'a RelPath,
+    entry: &'a crate::scan::FileEntry,
+    expected: Option<SandboxFileState>,
+    bytes: Vec<u8>,
+}
 
 /// Transfer options.
 #[derive(Debug, Clone)]
@@ -93,7 +104,24 @@ fn exec_req(argv: Vec<String>) -> ExecRequest {
         stdin: None,
         env: Vec::new(),
         timeout: None,
+        output_limit_bytes: Some(8 * 1024 * 1024),
     }
+}
+
+async fn cleanup_stage<B: SandboxBackend>(
+    backend: &B,
+    sandbox: &SandboxHandle,
+    stage: &str,
+) -> bool {
+    matches!(
+        backend
+            .exec(
+                sandbox,
+                &exec_req(vec!["rm".into(), "-f".into(), "--".into(), stage.into()]),
+            )
+            .await,
+        Ok(ref output) if output.exit_code == 0
+    )
 }
 
 fn expected_state(entry: &crate::scan::FileEntry) -> SandboxFileState {
@@ -109,10 +137,10 @@ fn expected_state(entry: &crate::scan::FileEntry) -> SandboxFileState {
 
 fn read_local_bounded(path: &Path, size: u64) -> std::io::Result<Vec<u8>> {
     use std::io::Read;
-    if size > MAX_BATCH_FILE_BYTES {
+    if size > MAX_SYNC_FILE_BYTES {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            "source exceeds batch file bound",
+            "source exceeds sync file bound",
         ));
     }
     let mut bytes = Vec::new();
@@ -126,6 +154,79 @@ fn read_local_bounded(path: &Path, size: u64) -> std::io::Result<Vec<u8>> {
         ));
     }
     Ok(bytes)
+}
+
+async fn commit_large_file<B: SandboxBackend>(
+    backend: &B,
+    sandbox: &SandboxHandle,
+    opts: &ApplyOpts,
+    large: LargeFile<'_>,
+    report: &mut SyncReport,
+) {
+    let LargeFile {
+        rel,
+        entry,
+        expected,
+        bytes,
+    } = large;
+    let stage = format!(
+        "{}/.polaris/sync/staging/{}",
+        opts.remote_root.trim_end_matches('/'),
+        uuid::Uuid::now_v7()
+    );
+    if let Err(error) = backend.upload(sandbox, &stage, Bytes::from(bytes)).await {
+        let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+        let reason = if cleanup_failed {
+            format!("{error}; staged file cleanup failed")
+        } else {
+            error.to_string()
+        };
+        report.failed.push((rel.clone(), reason));
+        return;
+    }
+    if cancelled(opts) {
+        if cleanup_stage(backend, sandbox, &stage).await {
+            report.cancelled.push(rel.clone());
+        } else {
+            report
+                .failed
+                .push((rel.clone(), "cancelled staged file cleanup failed".into()));
+        }
+        return;
+    }
+    let request = SandboxCommitRequest {
+        root: opts.remote_root.clone(),
+        relative_path: rel.as_str().to_owned(),
+        expected,
+        action: SandboxCommitAction::File {
+            staged_path: stage.clone(),
+            hash: entry.hash,
+            executable: entry.executable,
+        },
+    };
+    match backend.conditional_commit(sandbox, &request).await {
+        Ok(CommitOutcome::Applied) => report.uploaded.push(rel.clone()),
+        Ok(CommitOutcome::Conflict) => {
+            report.conflicts.push(rel.clone());
+            report.rescan_required = true;
+            if !cleanup_stage(backend, sandbox, &stage).await {
+                report.failed.push((
+                    rel.clone(),
+                    "CAS conflict; staged file cleanup failed".into(),
+                ));
+            }
+        }
+        Err(error) => {
+            report.rescan_required = true;
+            let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+            let reason = if cleanup_failed {
+                format!("conditional commit outcome unknown: {error}; staged file cleanup failed")
+            } else {
+                format!("conditional commit outcome unknown: {error}")
+            };
+            report.failed.push((rel.clone(), reason));
+        }
+    }
 }
 
 fn parse_batch_result(
@@ -199,11 +300,15 @@ async fn flush_batch<B: SandboxBackend>(
         uuid::Uuid::now_v7()
     );
     if let Err(error) = backend.upload(sandbox, &stage, archive).await {
-        report.failed.extend(
-            slice
-                .iter()
-                .map(|(rel, _, _)| (rel.clone(), error.to_string())),
-        );
+        let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+        report.failed.extend(slice.iter().map(|(rel, _, _)| {
+            let reason = if cleanup_failed {
+                format!("{error}; staged archive cleanup failed")
+            } else {
+                error.to_string()
+            };
+            (rel.clone(), reason)
+        }));
         return;
     }
     if cancelled(opts) {
@@ -230,58 +335,73 @@ async fn flush_batch<B: SandboxBackend>(
         "/usr/bin/polaris-guest".into(),
         "sync-batch".into(),
         opts.remote_root.clone(),
-        stage,
+        stage.clone(),
     ]);
     match backend.exec(sandbox, &request).await {
-        Ok(output) if output.exit_code == 0 => {
-            match parse_batch_result(&output.stdout, &paths) {
-                Ok(result) => {
-                    if !result.conflicts.is_empty() || !result.failed.is_empty() {
-                        report.rescan_required = true;
-                    }
-                    for value in result.applied {
-                        if let Some((rel, mutation, _)) =
-                            slice.iter().find(|(rel, _, _)| rel.as_str() == value)
-                        {
-                            if matches!(mutation.action, SandboxBatchAction::Delete) {
-                                report.deleted.push(rel.clone());
-                            } else {
-                                report.uploaded.push(rel.clone());
-                            }
+        Ok(output) if output.exit_code == 0 => match parse_batch_result(&output.stdout, &paths) {
+            Ok(result) => {
+                if !result.conflicts.is_empty() || !result.failed.is_empty() {
+                    report.rescan_required = true;
+                }
+                for value in result.applied {
+                    if let Some((rel, mutation, _)) =
+                        slice.iter().find(|(rel, _, _)| rel.as_str() == value)
+                    {
+                        if matches!(mutation.action, SandboxBatchAction::Delete) {
+                            report.deleted.push(rel.clone());
+                        } else {
+                            report.uploaded.push(rel.clone());
                         }
                     }
-                    report
-                        .conflicts
-                        .extend(result.conflicts.into_iter().filter_map(|path| {
-                            slice
-                                .iter()
-                                .find(|(rel, _, _)| rel.as_str() == path)
-                                .map(|(rel, _, _)| rel.clone())
-                        }));
-                    report
-                        .failed
-                        .extend(result.failed.into_iter().filter_map(|path| {
-                            slice.iter().find(|(rel, _, _)| rel.as_str() == path).map(
-                                |(rel, _, _)| {
-                                    (
-                                        rel.clone(),
-                                        "guest batch apply failed after preflight".into(),
-                                    )
-                                },
-                            )
-                        }));
                 }
-                Err(reason) => {
-                    report.rescan_required = true;
-                    report.failed.extend(slice.iter().map(|(rel, _, _)| {
-                        (rel.clone(), format!("untrusted batch result: {reason}"))
+                report
+                    .conflicts
+                    .extend(result.conflicts.into_iter().filter_map(|path| {
+                        slice
+                            .iter()
+                            .find(|(rel, _, _)| rel.as_str() == path)
+                            .map(|(rel, _, _)| rel.clone())
                     }));
-                }
+                report
+                    .failed
+                    .extend(result.failed.into_iter().filter_map(|path| {
+                        slice
+                            .iter()
+                            .find(|(rel, _, _)| rel.as_str() == path)
+                            .map(|(rel, _, _)| {
+                                (
+                                    rel.clone(),
+                                    "guest batch apply failed after preflight".into(),
+                                )
+                            })
+                    }));
             }
-        }
+            Err(reason) => {
+                report.rescan_required = true;
+                let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+                let detail = if cleanup_failed {
+                    format!("untrusted batch result: {reason}; staged archive cleanup failed")
+                } else {
+                    format!("untrusted batch result: {reason}")
+                };
+                report.failed.extend(
+                    slice
+                        .iter()
+                        .map(|(rel, _, _)| (rel.clone(), detail.clone())),
+                );
+            }
+        },
         Ok(output) => {
             report.rescan_required = true;
-            let reason = format!("sync-batch exited with status {}", output.exit_code);
+            let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+            let reason = if cleanup_failed {
+                format!(
+                    "sync-batch exited with status {}; staged archive cleanup failed",
+                    output.exit_code
+                )
+            } else {
+                format!("sync-batch exited with status {}", output.exit_code)
+            };
             report.failed.extend(
                 slice
                     .iter()
@@ -290,7 +410,12 @@ async fn flush_batch<B: SandboxBackend>(
         }
         Err(error) => {
             report.rescan_required = true;
-            let reason = format!("sync-batch outcome unknown: {error}");
+            let cleanup_failed = !cleanup_stage(backend, sandbox, &stage).await;
+            let reason = if cleanup_failed {
+                format!("sync-batch outcome unknown: {error}; staged archive cleanup failed")
+            } else {
+                format!("sync-batch outcome unknown: {error}")
+            };
             report.failed.extend(
                 slice
                     .iter()
@@ -300,9 +425,10 @@ async fn flush_batch<B: SandboxBackend>(
     }
 }
 
-/// Applies `plan` using private staging, bounded archive memory and locked batch compare-and-swap
-/// that installs bytes and mode together. Per-path failures are reported, not fatal, so a
-/// second `plan` against [`SyncReport::applied_to`] resumes.
+/// Applies `plan` using private staging and compare-and-swap that installs bytes and mode
+/// together. Batches bound aggregate archive memory; larger individual files (up to the scanner's
+/// 256 MiB file limit) use a separately bounded single-file CAS transfer. Per-path failures are
+/// reported, not fatal, so a second `plan` against [`SyncReport::applied_to`] resumes.
 ///
 /// # Errors
 /// [`SyncError::InvalidPath`] when `opts.remote_root` is not an absolute sandbox path.
@@ -389,10 +515,58 @@ pub async fn apply_with_precheck<B: SandboxBackend>(
                     hash: entry.hash,
                 },
                 EntryKind::File => {
-                    if entry.size > MAX_BATCH_FILE_BYTES {
+                    if entry.size > MAX_SYNC_FILE_BYTES {
                         report
                             .failed
-                            .push((rel.clone(), "source file exceeds batch file bound".into()));
+                            .push((rel.clone(), "source file exceeds sync file bound".into()));
+                        continue;
+                    }
+                    let path = rel
+                        .components()
+                        .fold(root.to_path_buf(), |base, component| base.join(component));
+                    if entry.size > MAX_BATCH_FILE_BYTES {
+                        if !pending.is_empty() {
+                            flush_batch(backend, sandbox, opts, &pending, &mut report).await;
+                            pending.clear();
+                            payload_bytes = 0;
+                        }
+                        let bytes = match read_local_bounded(&path, entry.size) {
+                            Ok(bytes) => bytes,
+                            Err(_) => {
+                                report.changed.push(rel.clone());
+                                continue;
+                            }
+                        };
+                        if Cid::from_bytes(*blake3::hash(&bytes).as_bytes()) != entry.hash {
+                            report.changed.push(rel.clone());
+                            continue;
+                        }
+                        if let Some(check) = secret_precheck {
+                            match check(rel, &bytes) {
+                                Ok(true) => {
+                                    report.secret_blocked.push(rel.clone());
+                                    continue;
+                                }
+                                Ok(false) => {}
+                                Err(reason) => {
+                                    report.failed.push((rel.clone(), reason));
+                                    continue;
+                                }
+                            }
+                        }
+                        commit_large_file(
+                            backend,
+                            sandbox,
+                            opts,
+                            LargeFile {
+                                rel,
+                                entry,
+                                expected,
+                                bytes,
+                            },
+                            &mut report,
+                        )
+                        .await;
                         continue;
                     }
                     if !pending.is_empty()
@@ -404,9 +578,6 @@ pub async fn apply_with_precheck<B: SandboxBackend>(
                         pending.clear();
                         payload_bytes = 0;
                     }
-                    let path = rel
-                        .components()
-                        .fold(root.to_path_buf(), |base, component| base.join(component));
                     let bytes = match read_local_bounded(&path, entry.size) {
                         Ok(bytes) => bytes,
                         Err(_) => {

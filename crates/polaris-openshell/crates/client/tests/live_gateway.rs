@@ -58,7 +58,6 @@ async fn live_gateway_create_exec_sync_destroy() -> Result<(), Box<dyn Error>> {
         policy: Some(cid),
         cpu_millis: Some(1_000),
         memory_mib: Some(512),
-        ..Default::default()
     };
     let sandbox = backend.create(&spec).await?;
     match backend.create(&spec).await {

@@ -1,0 +1,15 @@
+{
+  "type_of": "function",
+  "name": "sanitize",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Environment Sanitization",
+  "test_list": [
+    { "test_name": "removes_unsafe_and_secret_named_environment_variables", "description": "Drop shell setup, host PATH entries, and secret-like names or values." },
+    { "test_name": "exact_cache_rejects_unsanitized_environment_values", "description": "Revalidate cached values with the same sanitizer before use." }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [{ "name": "raw", "type": "RawDevEnv", "description": "Exported scalar values parsed from print-dev-env output." }],
+  "output_type": "EnvMap",
+  "output_description": "Environment values accepted by the current conservative filters."
+}

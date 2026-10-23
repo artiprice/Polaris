@@ -7,7 +7,7 @@ use std::error::Error;
 #[test]
 fn lifecycle_records_use_current_schema() -> Result<(), Box<dyn Error>> {
     assert_eq!(
-        EVENT_SCHEMA_VERSION, 3,
+        EVENT_SCHEMA_VERSION, 4,
         "blast alert extension requires a schema revision"
     );
     for event in [
@@ -23,7 +23,7 @@ fn lifecycle_records_use_current_schema() -> Result<(), Box<dyn Error>> {
             SessionId::from_u128(1),
             event,
         );
-        assert_eq!(record.schema(), 3, "new records use the current schema");
+        assert_eq!(record.schema(), 4, "new records use the current schema");
         assert_eq!(
             serde_json::from_str::<EventRecord>(&serde_json::to_string(&record)?)?,
             record,

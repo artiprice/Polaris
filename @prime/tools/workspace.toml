@@ -602,6 +602,9 @@ api = ["struct TieredCache", "fn get_or_compute(key, f)"]
 [[crate]]
 name = "polaris-storage-vector"
 path = "crates/polaris-storage/crates/vector"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-24: scoped usearch/SQLite implementation underway; acceptance remains unverified."
 parent = "polaris-storage"
 layer = 1
 kind = "lib"
@@ -609,7 +612,7 @@ phase = "P5"
 member_setup = ["win-protoc", "win-cmake-nasm"]
 summary = "Embedded vector store for RAG, NVIDIA docs, session memory and the L3 semantic cache: usearch (HNSW) + SQLite metadata by default (S0-9); LanceDB behind the opt-in `lancedb` feature."
 deps = ["polaris-sdk"]
-ext = ["usearch", "rusqlite", "lancedb"]
+ext = ["usearch", "rusqlite", "lancedb", "blake3", "rayon", "proptest", "tempfile"]
 responsibilities = [
   "Implement the sdk `VectorStore` trait over a usearch HNSW index + SQLite metadata under ~/.polaris/vectors and .polaris/vectors (S0-9: 1 min 41 s build, 4.3 MB exe, kNN p50 0.475 ms at 10k x 384).",
   "Persist the index with save-to-temp + atomic rename; parallel insert (single-threaded insert measured at ~1 ms/vector).",
@@ -630,7 +633,7 @@ evidence = "main session, test-first; evidence pending"
 member_setup = ["wsl-openshell"]
 summary = "Byte-exact, blake3-incremental workspace mirroring into sandboxes, governed by .polarisignore (secrets never mirrored)."
 deps = ["polaris-sdk"]
-ext = ["ignore", "globset", "blake3", "walkdir", "futures", "bytes", "uuid", "tar"]
+ext = ["ignore", "globset", "blake3", "walkdir", "futures", "bytes", "uuid", "tar", "serde_json"]
 responsibilities = [
   "Compute a manifest (path, size, blake3) and send only changed blobs through the sdk SandboxBackend transport.",
   "Apply the .polarisignore deny-list (.env, *.pem, *.key, .git/config by default).",
@@ -696,6 +699,9 @@ api = ["struct DfaScanner", "fn scan(&[u8]) -> Matches", "fn validate_user_regex
 [[crate]]
 name = "polaris-security-secrets"
 path = "crates/polaris-security/crates/secrets"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-24: real keyring/environment source and sealed RAM vault implementation underway; acceptance remains unverified."
 parent = "polaris-security"
 layer = 1
 kind = "lib"
@@ -703,7 +709,7 @@ phase = "P3"
 member_setup = ["win-keyring"]
 summary = "Secret vault: keyring storage (Windows Credential Manager), secrecy/zeroize handling, ChaCha20-Poly1305 RAM sealing."
 deps = ["polaris-sdk"]
-ext = ["keyring", "secrecy", "zeroize", "chacha20poly1305", "getrandom"]
+ext = ["keyring", "secrecy", "zeroize", "chacha20poly1305", "getrandom", "proptest"]
 responsibilities = [
   "Load NEBIUS_API_KEY / TAVILY_API_KEY from keyring or env into `SecretBox` values.",
   "Seal secrets at rest in RAM; decrypt only for the duration of a call; zeroize on drop.",
@@ -883,7 +889,7 @@ phase = "P3"
 member_setup = ["win-ollama", "win-keyring"]
 summary = "OpenAI-compatible Token Factory client: SSE chat streaming, tool calls, Responses API, embeddings, model list, usage accounting."
 deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-ratelimit", "polaris-telemetry"]
-ext = ["reqwest", "futures", "serde", "serde_json", "bytes", "tokio", "secrecy", "url"]
+ext = ["reqwest", "futures", "serde", "serde_json", "bytes", "tokio", "secrecy", "url", "rand", "jiff", "proptest", "eventsource-stream"]
 responsibilities = [
   "Implement ChatModel and EmbeddingProvider for https://api.tokenfactory.nebius.com/v1/ (also any OpenAI-compatible base, e.g. local Ollama for the P3 walking skeleton).",
   "Parse SSE frames without per-frame allocation (hot path); surface reasoning/tool-call deltas.",
@@ -1090,13 +1096,16 @@ api = ["struct McpHub", "fn tools() -> Vec<ToolSpec>"]
 [[crate]]
 name = "polaris-ext-skills"
 path = "crates/polaris-ext/crates/skills"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open."
 parent = "polaris-ext"
 layer = 2
 kind = "lib"
 phase = "P7"
 summary = "$skills loader: SKILL.md-format procedural skills mounted into frame context on demand."
 deps = ["polaris-sdk"]
-ext = ["pulldown-cmark", "serde"]
+ext = ["pulldown-cmark", "serde", "serde-saphyr", "blake3", "cap-std", "tokio", "proptest"]
 responsibilities = [
   "Discover skills (repo .polaris/skills, global ~/.polaris/skills); parse front matter.",
   "Let S1 select relevant skills per task; inject only selected skill bodies.",
@@ -1106,6 +1115,9 @@ api = ["struct SkillRegistry", "fn select(task) -> Vec<Skill>"]
 [[crate]]
 name = "polaris-ext"
 path = "crates/polaris-ext"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Skills exports and catalog are implemented. MCP child and full P7 integration remain open."
 layer = 2
 kind = "facade"
 phase = "P7"
@@ -1135,6 +1147,9 @@ api = ["struct BrowserSession", "fn a11y_outline()", "fn visual_diff(a, b)"]
 [[crate]]
 name = "polaris-devenv-nix"
 path = "crates/polaris-devenv/crates/nix"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Nix JSON evaluation, filtered store paths, injected bounded sandbox execution/cache and prompt/static validation implemented. Full live Nix/store/policy/cache integration gates remain pending."
 parent = "polaris-devenv"
 layer = 2
 kind = "lib"
@@ -1142,7 +1157,7 @@ phase = "P8"
 member_setup = ["wsl-nix"]
 summary = "Nix integration in WSL2/sandboxes: `nix print-dev-env --json`, hermetic env for $env(nix), /nix-flake generation via S2."
 deps = ["polaris-sdk"]
-ext = ["serde_json", "tokio"]
+ext = ["serde_json", "tokio", "blake3"]
 responsibilities = [
   "Evaluate flake dev shells and inject env vars into sandbox commands.",
   "Draft flake.nix with S2 (not S1) and validate it by evaluation.",
@@ -1152,6 +1167,9 @@ api = ["fn dev_env(workspace) -> EnvMap"]
 [[crate]]
 name = "polaris-devenv-docker"
 path = "crates/polaris-devenv/crates/docker"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open."
 parent = "polaris-devenv"
 layer = 2
 kind = "lib"
@@ -1159,7 +1177,7 @@ phase = "P8"
 member_setup = ["wsl-docker"]
 summary = "Docker/Podman via bollard (named pipe on Windows): image builds with BuildKit cache mounts, warm container pool, exec."
 deps = ["polaris-sdk"]
-ext = ["bollard", "tokio", "futures"]
+ext = ["bollard", "tokio", "futures", "bytes", "uuid", "tar"]
 responsibilities = [
   "Talk to Docker Desktop over the Windows named pipe (no CLI parsing).",
   "Maintain a warm container pool; never claim CoW reset on unpause (chatlog correction).",
@@ -1465,7 +1483,7 @@ kind = "lib"
 phase = "P1"
 summary = "Built-in agent tools: read/write/edit/apply-patch, grep, glob, sandboxed shell, git, fetch, json/regex query, polaris_expand/polaris_recall."
 deps = ["polaris-sdk", "polaris-code-intel", "polaris-security-automata", "polaris-storage-cas"]
-ext = ["ignore", "globset", "regex", "serde", "serde_json", "schemars", "encoding_rs"]
+ext = ["ignore", "globset", "regex", "serde", "serde_json", "schemars", "encoding_rs", "cap-std", "cap-primitives"]
 responsibilities = [
   "Define tool schemas (JSON Schema) and typed handlers; read-only tools first (E0), writes through leases.",
   "Validate user regexes via the HIR guard; never execute shell outside a sandbox backend.",
@@ -1475,13 +1493,16 @@ api = ["struct ToolRegistry", "trait Tool"]
 [[crate]]
 name = "polaris-tools-math"
 path = "crates/polaris-tools/crates/math"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-23: 25 math contracts cover expression evaluation, interpolation, statistics and sourced GPU specifications; full P3 audit remains open."
 parent = "polaris-tools"
 layer = 3
 kind = "lib"
 phase = "P3"
 summary = "Deterministic math tools: exact decimal calculator, expression evaluation, interpolation (linear/bilinear/cubic/Catmull-Rom/Bezier), statistics, GPU calculus."
 deps = ["polaris-sdk"]
-ext = ["exmex", "rust_decimal", "splines", "statrs"]
+ext = ["exmex", "rust_decimal", "splines", "statrs", "serde", "serde_json", "toml", "schemars", "proptest", "insta"]
 responsibilities = [
   "Give agents exact arithmetic (rust_decimal) instead of model guesses.",
   "Provide interpolation and statistics with checked arithmetic.",
@@ -1573,7 +1594,7 @@ kind = "lib"
 phase = "P3"
 summary = "Agents as context frames over one S2 client and one S1 engine: roles, frame stack, attenuated capabilities, resource quotas."
 deps = ["polaris-sdk", "polaris-security-capability", "polaris-models"]
-ext = ["tokio", "tokio-util", "serde"]
+ext = ["tokio", "tokio-util", "serde", "blake3", "serde_json", "bytes"]
 responsibilities = [
   "Create child frames with attenuated Biscuit tokens and sandbox quotas; track step counts and history CIDs.",
   "Implement the agent loop step (assemble -> S2 -> tools -> verify) per frame.",
@@ -1625,14 +1646,14 @@ name = "polaris-runtime-leases"
 path = "crates/polaris-runtime/crates/leases"
 implemented = true
 status = "IN PROGRESS"
-evidence = "P2 authority tests: 6 passed, including immediate overlap, AST conflict, FIFO cancellation, TTL wake-up, OCC/churn and 64-frame/20-file contention. Full phase proof/allocation audit pending; see @prime/P2_LOGIC_STATUS.md."
+evidence = "2026-10-23: authority, diagnostics, allocation and path contracts pass. Admission now preserves FIFO among conflicting scopes while allowing independent work; three Loom models exercise actual state transitions. Tokio wake delivery, ArcSwap publication and Kani remain separate open gates."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
 phase = "P2"
 summary = "Anti-thrashing file and AST-scope leases with FIFO queues, OCC on base blake3, invalidation notices and a cycle breaker."
 deps = ["polaris-sdk", "polaris-code-intel"]
-ext = ["tokio", "arc-swap"]
+ext = ["tokio", "arc-swap", "loom"]
 responsibilities = [
   "Grant exclusive-file or AST-scope leases; queue waiters; notify on fresh diffs.",
   "Reject writes whose base hash changed (optimistic concurrency).",
@@ -1663,6 +1684,9 @@ api = ["fn blast_radius(view, input) -> Result<BlastReport, GuardError>", "fn as
 [[crate]]
 name = "polaris-runtime-research"
 path = "crates/polaris-runtime/crates/research"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Deterministic research core and bounded versioned checkpoint codec: seven contracts and warning-denied scoped clippy PASS. Program parsing, durable store integration, runner/workspace adapters and real research loop remain pending."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
@@ -1675,7 +1699,7 @@ responsibilities = [
   "Maintain an evidence ledger (every claim cites URL/PDF line/AST symbol/test run); checkpoint for /research resume.",
   "Produce /research status and /research report.",
 ]
-api = ["struct ResearchLoop", "fn step()", "fn report() -> Markdown"]
+api = ["struct ResearchState", "fn begin(reservation) -> Result<ExperimentId, ResearchError>", "fn measure(id, observation) -> Result<Decision, ResearchError>", "fn settle(id, decision, receipt) -> Result<(), ResearchError>", "fn resume(program, checkpoint) -> Result<ResearchState, ResearchError>", "fn report() -> String"]
 
 [[crate]]
 name = "polaris-runtime"
@@ -1776,7 +1800,7 @@ kind = "lib"
 phase = "P9"
 summary = "tonic server/client for the kernel service over Windows named pipes (token-authenticated) and TCP+mTLS for remote daemons."
 deps = ["polaris-sdk", "polaris-proto", "polaris-security-capability"]
-ext = ["tonic", "tokio", "futures", "prost", "tokio-stream"]
+ext = ["tonic", "tokio", "tokio-util", "futures", "prost", "tokio-stream", "hyper-util", "tower", "secrecy", "rustls", "rcgen", "tempfile", "tracing"]
 responsibilities = [
   "Implement named-pipe connector/acceptor (pre-create next instance) and mTLS transport.",
   "Authenticate clients with Biscuit tokens on every transport (default pipe DACL is too broad).",
@@ -1876,12 +1900,15 @@ api = ["pub use polaris_ui_*"]
 [[crate]]
 name = "polaris-tests"
 path = "tests"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Cross-crate suites include actual EventLog-backed skill approval reopen on Windows and Linux; full system acceptance remains open."
 layer = 8
 kind = "test"
 phase = "P0"
 member_setup = ["wsl-rust", "wsl-kani"]
 summary = "Cross-crate test package: common helpers (lib), fixtures/ data, suites in tests/tests/ (smoke, e2e, contract, security, load, scalability, stress)."
-deps = ["polaris-sdk", "polaris-config", "polaris-storage", "polaris-kernel", "polaris-ui-model"]
+deps = ["polaris-sdk", "polaris-config", "polaris-storage", "polaris-kernel", "polaris-ui-model", "polaris-ext-skills"]
 ext = ["tokio", "tempfile", "wiremock", "proptest", "insta", "rstest", "assert_cmd", "predicates", "hdrhistogram", "dhat", "portable-pty", "tonic", "serde", "jsonschema", "reqwest"]
 responsibilities = [
   "Provide temp workspaces, fake clock, wiremock Token Factory (synthetic SSE until recorded live), tracing capture, dhat-based zero-allocation helpers (ADR-003).",
@@ -1938,8 +1965,8 @@ layer = 8
 kind = "spike"
 phase = "P2"
 summary = "Spike tests for sandboxes: concurrent create/exec/destroy bursts, git-checkout file-event floods during sync."
-deps = ["polaris-openshell", "polaris-sdk", "polaris-kernel-reaper"]
-ext = ["tokio"]
+deps = ["polaris-openshell", "polaris-sdk", "polaris-kernel-reaper", "polaris-platform", "polaris-storage-sync"]
+ext = ["tokio", "serde_json"]
 responsibilities = ["Assert semaphore limits, reaper cleanup and sync consistency under bursts (requires WSL2 gateway)."]
 api = []
 
@@ -2430,6 +2457,15 @@ name = "walkdir"
 version = "2.5.0"
 group = "os"
 [[ext]]
+name = "cap-std"
+version = "=4.0.3"
+group = "os"
+
+[[ext]]
+name = "cap-primitives"
+version = "=4.0.3"
+group = "os"
+[[ext]]
 name = "notify"
 version = "8.2.0"
 group = "os"
@@ -2571,7 +2607,8 @@ group = "agents"
 name = "bollard"
 version = "0.21.1"
 group = "agents"
-note = "Default features (http, pipe): Docker Desktop over the Windows named pipe; no TLS (avoids ring)."
+features = ["buildkit_providerless", "aws-lc-rs", "chrono"]
+note = "Docker Desktop pipe/http plus BuildKit; explicit aws-lc-rs TLS provider avoids the ring-enabled ssl/buildkit feature."
 [[ext]]
 name = "dagger-sdk"
 version = "0.21.10"

@@ -1,0 +1,29 @@
+{
+  "type_of": "function",
+  "name": "parse_dev_env",
+  "file_path": "crates/polaris-devenv/crates/nix/src/lib.rs",
+  "logic_name": "Nix Dev Env Parsing and Safety",
+  "test_list": [
+    { "test_name": "parses_only_exported_string_values", "description": "Keep only exported scalar strings from the official JSON variables object shape." },
+    { "test_name": "rejects_oversized_json_before_parsing", "description": "Return a typed size error before decoding over-limit input." },
+    { "test_name": "rejects_missing_variables_object", "description": "Reject JSON without a variables object." },
+    { "test_name": "removes_unsafe_and_secret_named_environment_variables", "description": "Drop shell setup and secret-like names while preserving PATH." },
+    { "test_name": "builds_argv_without_shell_interpolation", "description": "Represent the flake installable as one positional argument." },
+    { "test_name": "rejects_control_characters_in_flake_reference", "description": "Reject control characters in an installable reference." },
+    { "test_name": "rejects_leading_option_in_flake_reference", "description": "Reject leading option syntax from the installable input." },
+    { "test_name": "cache_key_changes_with_lock_system_and_version", "description": "Include all three cache key inputs using unambiguous field encoding." },
+    { "test_name": "cache_key_rejects_empty_system_and_version", "description": "Reject malformed cache key dimensions." },
+    { "test_name": "exact_cache_round_trip_revalidates_sanitized_environment", "description": "Store and load a sanitized environment through the injected exact cache contract." },
+    { "test_name": "exact_cache_rejects_unsanitized_environment_values", "description": "Reject a cached host HOME variable on read." },
+    { "test_name": "rejects_unhashed_fetchurl_and_host_paths", "description": "Reject unhashed fetchurl and common host-absolute paths." },
+    { "test_name": "accepts_pinned_fetchurl_and_simple_flake_text", "description": "Accept a hashed fetchurl in a simple flake expression." },
+    { "test_name": "builds_flake_prompt_from_bounded_manifest_data", "description": "Build the S2 input prompt from bounded manifest content without invoking a model." },
+    { "test_name": "rejects_escape_paths_in_flake_prompt_sources", "description": "Reject source paths that escape the project root." },
+    { "test_name": "draft_prompt_bounds_and_encodes_untrusted_project_data", "description": "JSON encode manifest content and reject source path traversal." }
+  ],
+  "dependencies": ["SandboxBackend", "ExactCacheStore"],
+  "libraries": ["serde_json", "blake3", "tokio", "thiserror"],
+  "inputs": [{ "name": "json", "type": "&[u8]", "description": "Captured print-dev-env output from an injected sandbox process boundary." }],
+  "output_type": "Result<RawDevEnv, NixError>",
+  "output_description": "Bounded exported scalar environment data or a typed parse/security error."
+}

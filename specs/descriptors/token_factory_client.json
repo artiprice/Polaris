@@ -1,0 +1,105 @@
+{
+  "type_of": "module",
+  "name": "Token Factory OpenAI-compatible client",
+  "file_path": "crates/polaris-nebius-cloud/crates/token-factory/src/client.rs",
+  "logic_name": "Token Factory bounded HTTP and SSE adapter",
+  "test_list": [
+    {
+      "test_name": "synthetic_chat_fixture_streams_reasoning_tool_deltas_and_usage",
+      "description": "A local loopback HTTP fixture exercises ChatModel request serialization, authenticated headers, separated reasoning, fragmented tool arguments, finish reason, cached usage, credential-safe Debug output, and exact local reservation-to-usage reconciliation."
+    },
+    {
+      "test_name": "synthetic_models_and_embeddings_fixture_orders_vectors_and_retries_429",
+      "description": "A local loopback fixture verifies bounded Retry-After retry, models response parsing, embedding batch submission, dimension checks, and ordering by response index."
+    },
+    {
+      "test_name": "retry_fallback_jitter_stays_within_exponential_and_global_caps",
+      "description": "Fallback retry jitter remains within the per-attempt exponential ceiling and configured global cap."
+    },
+    {
+      "test_name": "retry_after_is_honored_but_capped",
+      "description": "Retry-After delta seconds take precedence over jitter and are bounded by the configured maximum."
+    },
+    {
+      "test_name": "retry_after_accepts_http_date_form",
+      "description": "HTTP-date Retry-After values parse with jiff and remain bounded by the configured maximum."
+    },
+    {
+      "test_name": "synthetic_503_retries_within_configured_attempt_budget",
+      "description": "A local service-unavailable response is retried exactly within the configured 5xx attempt budget."
+    },
+    {
+      "test_name": "slow_loris_stream_is_stopped_by_total_request_deadline",
+      "description": "A loopback server that trickles SSE comment bytes inside the idle timeout is still stopped by the absolute request deadline."
+    },
+    {
+      "test_name": "retry_after_penalty_blocks_later_admission_within_request_deadline",
+      "description": "A parsed 429 Retry-After updates the shared limiter; the next request waits only within the configured request deadline and is not dispatched when admission times out."
+    },
+    {
+      "test_name": "synthetic_unauthorized_fixture_maps_without_echoing_response_body",
+      "description": "A synthetic 401 maps to a typed authentication failure without retaining or returning a response body that contains credential-like text."
+    },
+    {
+      "test_name": "base_url_requires_tls_for_non_loopback_and_rejects_embedded_credentials",
+      "description": "HTTP is accepted only for loopback endpoints; remote plaintext and credential-bearing URLs are rejected."
+    },
+    {
+      "test_name": "synthetic_redirect_is_not_followed_with_bearer_credentials",
+      "description": "The client reports redirect status and does not follow a cross-origin Location with configured bearer credentials."
+    },
+    {
+      "test_name": "streamed_tool_call_state_respects_configured_count_bound",
+      "description": "The client rejects a provider stream that creates more distinct tool-call states than the configured cap before accepting the completion."
+    },
+    {
+      "test_name": "synthetic_responses_fixture_streams_text_tool_call_and_usage",
+      "description": "The opt-in Responses endpoint converts documented output-text, function-call, completion, and usage events into SDK chunks, ending on response.completed without requiring Chat Completions [DONE]."
+    },
+    {
+      "test_name": "responses_request_replays_linked_function_call_and_result",
+      "description": "Validated assistant tool calls and their tool-role results serialize into the Responses API function_call/function_call_output item pair with the same call id."
+    },
+    {
+      "test_name": "empty_chat_history_is_rejected_by_both_endpoints",
+      "description": "Both OpenAI-compatible streaming endpoints fail closed when the SDK request contains no messages."
+    },
+    {
+      "test_name": "local_ollama_chat_model_smoke",
+      "description": "Ignored opt-in local smoke test sends one tool-capable chat request to 127.0.0.1:11434 and verifies a real streamed lookup tool call; it never contacts Token Factory."
+    },
+    {
+      "test_name": "parses_comment_multiline_data_and_done_with_crlf",
+      "description": "SSE comments are ignored, multiple data lines are joined, CRLF is handled, and [DONE] is emitted as a distinct sentinel."
+    },
+    {
+      "test_name": "arbitrary_chunk_split_inside_multibyte_utf8_preserves_event",
+      "description": "Every split point in a UTF-8 SSE fixture yields the same decoded event."
+    },
+    {
+      "test_name": "arbitrary_chunk_partition_preserves_multibyte_sse_data",
+      "description": "Generated Unicode SSE payloads retain the same event under randomized transport chunk partitions and match the eventsource-stream 0.2.3 differential oracle."
+    },
+    {
+      "test_name": "rejects_oversized_frame_and_excess_events_before_unbounded_buffering",
+      "description": "Frame and per-feed event limits reject input before parser buffers or output grow beyond configured bounds."
+    },
+    {
+      "test_name": "rejects_invalid_utf8_and_feed_after_finish",
+      "description": "Malformed UTF-8 and use after parser finalization fail closed."
+    },
+    {
+      "test_name": "borrowed_frame_routing_allocates_nothing_after_parser_initialization",
+      "description": "A dedicated counting-allocator integration test observes no allocations during warmed borrowed frame parsing and routing across CRLF, LF, and split-capable UTF-8 data."
+    }
+  ],
+  "dependencies": ["polaris-sdk::registry::{ChatModel, EmbeddingProvider}"],
+  "libraries": ["reqwest", "tokio", "futures", "serde", "serde_json", "bytes", "secrecy", "url", "rand", "jiff", "eventsource-stream (dev oracle)", "proptest (dev)"],
+  "inputs": [
+    {"name": "chat_request", "type": "ChatRequest", "description": "Validated model id, conversation, optional tools and output-token bound."},
+    {"name": "sse_body", "type": "bounded byte stream", "description": "OpenAI-compatible SSE frames, bounded by client configuration."},
+    {"name": "api_key", "type": "ApiKey", "description": "Explicit secret reference value injected by the composition root; never loaded from the environment by this crate."}
+  ],
+  "output_type": "ChatChunk stream / embeddings / model identifiers",
+  "output_description": "Typed model events and provider-reported data; malformed, truncated, oversized, or unauthorized responses return typed failures without echoing response bodies or credentials."
+}

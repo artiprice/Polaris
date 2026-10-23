@@ -2,12 +2,15 @@
 //!
 //! The resolver at the workspace boundary must establish that an input path is inside its
 //! workspace before constructing [`LeaseKey`]. This crate performs conservative lexical Windows
-//! alias checks; it does not resolve symlinks, junctions, or filesystem identities.
+//! alias checks; [`LeaseKey::from_path`] resolves existing filesystem identities and contained
+//! parents for missing final filenames. Containment must be checked again at the write boundary.
 //!
 //! Lease acquisition is FIFO and multi-key acquisition is atomic. Dropping a guard releases its
 //! leases synchronously. Expired records are removed when the manager is used or when
 //! [`LeaseManager::reap_expired`] is called.
 
+#[cfg(feature = "kani")]
+mod kani_proofs;
 mod key;
 mod manager;
 mod scope;

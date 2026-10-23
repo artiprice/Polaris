@@ -1,0 +1,23 @@
+P2-X-2 /onboarding + polaris doctor evidence (2026-10-23)
+
+COMMAND
+cargo run -p polaris-cli -- --workspace . --state-dir @prime/tmp/p2/doctor-state-final doctor --json
+EXIT_CODE=0
+
+CURRENT REPORT
+Raw JSON: doctor-headless-current.json
+26 inventory rows; 26 nonempty onboarding actions; ready=true; required_missing=0.
+Required probes: win-msvc PASS; win-uv PASS; wsl-openshell PASS.
+Credential references: token_factory=MISSING, tavily=MISSING; report declares presence-only/no-secret-payloads.
+Seven unresolved optional later-phase observations are recorded in the raw JSON; they do not block P0 setup readiness.
+
+CONTRACT TESTS
+See doctor-cli-tests.txt (3 passed, 0 failed) and process-probe-tests.txt (4 passed, 0 failed).
+
+OPEN SHELL CHECK
+See openshell-status-repeat-current.txt: two sequential calls to /usr/bin/openshell status both returned Connected, Authenticated (mTLS transport), version 0.1.4, exit 0.
+The earlier current-CLI report doctor-headless-transient-badsig.json recorded `invalid peer certificate: BadSignature`; the immediate later report is doctor-headless-intermediate-probe-fixes.json and the final report passes. Cause of that initial transient failure is unknown; no causal attribution is made.
+
+PROBE FIXES
+win-msvc uses vswhere -prerelease and inherited ProgramData because the installed VS 18.11 prerelease instance was otherwise invisible in the sanitized probe environment.
+win-uv inherits APPDATA so Python can discover the user's installed uv 0.13.3 package under Roaming Python site-packages.

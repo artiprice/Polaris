@@ -132,9 +132,11 @@ mod linux {
 
     use fs4::FileExt;
     use polaris_sdk::ids::Cid;
+    #[cfg(test)]
+    use polaris_sdk::registry::SandboxBatchMutation;
     use polaris_sdk::registry::{
-        CommitOutcome, SandboxBatchAction, SandboxBatchMutation, SandboxBatchResult,
-        SandboxCommitAction, SandboxCommitRequest, SandboxFileState, SandboxSyncBatch,
+        CommitOutcome, SandboxBatchAction, SandboxBatchResult, SandboxCommitAction,
+        SandboxCommitRequest, SandboxFileState, SandboxSyncBatch,
     };
 
     use super::CommitError;

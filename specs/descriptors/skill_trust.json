@@ -1,0 +1,17 @@
+{
+  "type_of": "method",
+  "name": "SkillRegistry::approve_repo_skill",
+  "file_path": "crates/polaris-ext/crates/skills/src/discover.rs",
+  "logic_name": "Skill Trust Gating",
+  "test_list": [
+    { "test_name": "discovery_keeps_repo_skills_unapproved_and_global_skill_wins", "description": "Repository skills remain unapproved and cannot replace a user-global skill by name." },
+    { "test_name": "repository_approval_persists_by_source_digest_and_stales_after_edit", "description": "A witness restores approval for the exact source digest and a changed source becomes stale." },
+    { "test_name": "changed_skill_body_requires_rediscovery_and_repo_approval_again", "description": "Changed skill content invalidates the index and requires rediscovery." },
+    { "test_name": "duplicate_names_within_a_trust_tier_are_rejected", "description": "Ambiguous same-trust-tier definitions fail closed." }
+  ],
+  "dependencies": ["polaris_sdk::contracts::ApprovalWitness"],
+  "libraries": ["serde", "blake3", "thiserror"],
+  "inputs": [{ "name": "name", "type": "&SkillName", "description": "Repository skill identifier." }, { "name": "approval", "type": "&ApprovalWitness", "description": "Trusted approval whose evidence digest equals the indexed skill source digest." }],
+  "output_type": "Result<(), SkillError>",
+  "output_description": "Marks only the approved repository source digest trusted."
+}

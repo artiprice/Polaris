@@ -13,6 +13,12 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+cap-std = { workspace = true }
+blake3 = { workspace = true }
+pulldown-cmark = { workspace = true }
+serde = { workspace = true }
+serde-saphyr = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }

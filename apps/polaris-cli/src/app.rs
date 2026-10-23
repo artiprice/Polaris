@@ -39,6 +39,12 @@ pub enum Action {
         #[arg(long)]
         json: bool,
     },
+    /// Inspect configured skills against the current local builtin tool catalog.
+    Status {
+        /// Emit compact machine-readable JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Review and explicitly approve actual sandbox test execution.
     Sandbox(crate::SandboxArgs),
     /// Filter piped compiler diagnostics and reconcile the real issue ledger.
@@ -143,6 +149,7 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         Action::Doctor { json } | Action::Onboarding { json } => {
             doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
         }
+        Action::Status { json } => status(&dirs, json),
         Action::Run { task } => {
             headless(&args.state_dir, &args.workspace, args.session, &task).await
         }
@@ -158,6 +165,18 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         return Err(CliError::Unavailable("log sink reported an I/O failure"));
     }
     result
+}
+fn status(dirs: &polaris_config::Dirs, json: bool) -> Result<(), CliError> {
+    let report = polaris_kernel::inspect_skill_status(dirs);
+    let mut out = std::io::stdout().lock();
+    if json {
+        serde_json::to_writer(&mut out, &report)?;
+        writeln!(out)?;
+    } else {
+        writeln!(out, "{}", serde_json::to_string_pretty(&report)?)?;
+    }
+    out.flush()?;
+    Ok(())
 }
 async fn doctor(
     root: &Path,
@@ -190,6 +209,11 @@ async fn doctor(
     if !leaks.entries.is_empty() {
         return Err(CliError::Unavailable(
             "recovery journal contains unresolved resources",
+        ));
+    }
+    if !crate::doctor::is_ready(&setup) {
+        return Err(CliError::Unavailable(
+            "required setup prerequisites are missing; follow the reported onboarding actions",
         ));
     }
     Ok(())
@@ -259,4 +283,20 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
     let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
     tokio::select! { result = tokio::signal::ctrl_c() => result?, _ = terminate.recv() => {} }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Action, Args};
+    use clap::Parser;
+
+    #[test]
+    fn status_json_is_a_headless_cli_action() -> Result<(), clap::Error> {
+        let args = Args::try_parse_from(["polaris", "status", "--json"])?;
+        assert!(
+            matches!(args.command, Action::Status { json: true }),
+            "status --json must route to the headless status action"
+        );
+        Ok(())
+    }
 }

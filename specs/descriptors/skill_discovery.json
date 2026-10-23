@@ -1,0 +1,24 @@
+{
+  "type_of": "function",
+  "name": "SkillRegistry::discover",
+  "file_path": "crates/polaris-ext/crates/skills/src/discover.rs",
+  "logic_name": "Skill Discovery",
+  "test_list": [
+    { "test_name": "discovery_keeps_repo_skills_unapproved_and_global_skill_wins", "description": "Index user-global and repository metadata while keeping repository skills unapproved." },
+    { "test_name": "changed_skill_body_requires_rediscovery_and_repo_approval_again", "description": "Changed content invalidates the lazy-load index." },
+    { "test_name": "duplicate_names_within_a_trust_tier_are_rejected", "description": "Ambiguous skills within one trust tier fail deterministically." },
+    { "test_name": "repository_approval_persists_by_source_digest_and_stales_after_edit", "description": "Restore approval only for the exact source digest and reject changed content." },
+    { "test_name": "missing_roots_are_empty_and_file_roots_fail_closed", "description": "Missing optional roots are empty and file paths cannot be used as roots." },
+    { "test_name": "discovery_rejects_oversized_skill_files_before_parsing", "description": "The directory handle reader rejects files larger than the source limit before parsing their contents." },
+    { "test_name": "discovery_never_follows_symlinked_skill_directories_or_files", "description": "Symlinked directories and skill files are ignored." },
+    { "test_name": "lazy_load_rejects_file_replaced_by_symlink_escape", "description": "A post-index file symlink to an outside target is rejected, including at the capability-relative open boundary." },
+    { "test_name": "lazy_load_stays_confined_when_configured_root_path_is_replaced", "description": "A root path replaced after indexing cannot redirect lazy reads away from the pinned skill directory." },
+    { "test_name": "pinned_skill_directory_blocks_rename_until_registry_is_dropped", "description": "On Windows, the pinned skill directory remains readable while rename is denied; rename succeeds after releasing the registry handle." },
+    { "test_name": "discovery_scales_through_the_two_thousand_skill_limit", "description": "Index the configured maximum skill count with bounded discovery." }
+  ],
+  "dependencies": ["std::fs", "cap_std::fs::Dir", "polaris_sdk::ids::Cid"],
+  "libraries": ["cap-std", "blake3", "thiserror"],
+  "inputs": [{ "name": "roots", "type": "&[SkillRoot]", "description": "Caller-selected user-global and repository roots." }],
+  "output_type": "Result<SkillRegistry, SkillError>",
+  "output_description": "Bounded metadata index with lazy body loading and explicit trust state."
+}

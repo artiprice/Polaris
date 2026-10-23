@@ -1,0 +1,14 @@
+    Finished `test` profile [unoptimized] target(s) in 0.60s
+     Running tests\probes.rs (target\debug\deps\probes-842b10f4d298cb80.exe)
+
+running 4 tests
+RUSTUP_AUTO_INSTALL=
+CARGO_NET_OFFLINE=
+test probe_worker_fixture ... ok
+test run_probe_captures_version_without_a_shell ... ok
+test probe_output_is_capped_while_pipes_continue_draining ... ok
+test probe_deadline_kills_the_owned_child ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+EXIT_CODE=0

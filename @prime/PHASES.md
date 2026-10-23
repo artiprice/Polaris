@@ -196,7 +196,7 @@ spike decided (PASS or named fallback chosen); P0-ACC requests submitted.
 <!-- generated: P0 crate tasks -->
 | Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
 |---|---|---|---|---|---|
-| `crate:polaris-tests` | `polaris-tests` | L8 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage`, `crate:polaris-kernel`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-rust`, `wsl-kani` |
+| `crate:polaris-tests` | `polaris-tests` | L8 | `crate:polaris-sdk`, `crate:polaris-config`, `crate:polaris-storage`, `crate:polaris-kernel`, `crate:polaris-ui-model`, `crate:polaris-ext-skills` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-rust`, `wsl-kani` |
 | `crate:xtask` | `xtask` | L8 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-python` |
 
 
@@ -284,7 +284,7 @@ blast-radius approvals and Proof-of-Done gate demonstrated; reaper leaves no san
 | `crate:polaris-runtime-leases` | `polaris-runtime-leases` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-runtime-guards` | `polaris-runtime-guards` | L4 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-tools-rtk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-runtime` | `polaris-runtime` | L4 | `crate:polaris-runtime-frames`, `crate:polaris-runtime-context`, `crate:polaris-runtime-dag`, `crate:polaris-runtime-leases`, `crate:polaris-runtime-guards`, `crate:polaris-runtime-research` | re-exports compile; children's tasks PASS | — |
-| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | L8 | `crate:polaris-openshell` | burst scenarios run; pass criteria met with evidence | — |
+| `crate:polaris-spike-sandbox` | `polaris-spike-sandbox` | L8 | `crate:polaris-openshell`, `crate:polaris-sdk`, `crate:polaris-kernel-reaper`, `crate:polaris-platform`, `crate:polaris-storage-sync` | burst scenarios run; pass criteria met with evidence | — |
 
 
 ---

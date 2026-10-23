@@ -56,11 +56,12 @@ pub fn shannon_entropy_milli(bytes: &[u8]) -> u32 {
         return 0;
     }
     // H = log2(n) - (1/n) * sum(c * log2(c)).
-    let sum: u128 = counts
-        .iter()
-        .filter(|c| **c > 0)
-        .map(|c| u128::from(*c) * log2_q32(*c))
-        .sum();
+    let mut sum = 0_u128;
+    for count in &counts {
+        if *count > 0 {
+            sum += u128::from(*count) * log2_q32(*count);
+        }
+    }
     let h_q32 = log2_q32(n).saturating_sub(sum / u128::from(n));
     let milli = (h_q32 * 1000 + (1 << (FRAC_BITS - 1))) >> FRAC_BITS;
     match u32::try_from(milli) {

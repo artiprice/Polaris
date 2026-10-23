@@ -50,6 +50,26 @@ impl ExactCacheStore for EventLog {
         Ok(Some(payload.to_vec()))
     }
 
+    fn get_bounded(
+        &self,
+        key: &[u8; 32],
+        max_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, CacheStoreError> {
+        let txn = self.db.begin_read().map_err(EventLogError::from)?;
+        let table = txn.open_table(L2_CACHE).map_err(EventLogError::from)?;
+        let Some(guard) = table.get(key.as_slice()).map_err(EventLogError::from)? else {
+            return Ok(None);
+        };
+        let (_, payload) = split(guard.value())?;
+        if payload.len() > max_bytes {
+            return Err(CacheStoreError::TooLarge {
+                bytes: u64::try_from(payload.len()).unwrap_or(u64::MAX),
+                limit: u64::try_from(max_bytes).unwrap_or(u64::MAX),
+            });
+        }
+        Ok(Some(payload.to_vec()))
+    }
+
     fn put(&self, key: [u8; 32], value: &[u8], scope: CacheScope) -> Result<(), CacheStoreError> {
         if value.len() > self.max_cache_value_bytes {
             let as_u64 = |n: usize| u64::try_from(n).unwrap_or(u64::MAX);

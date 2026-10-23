@@ -1,0 +1,39 @@
+{
+  "type_of": "module",
+  "name": "LeaseManager",
+  "file_path": "crates/polaris-runtime/crates/leases/src/manager.rs",
+  "logic_name": "P2 Lease Admission Loom Model",
+  "test_list": [
+    {
+      "test_name": "overlapping_waiters_keep_ticket_order_and_are_granted_once",
+      "description": "Under the production state mutex, overlapping waiters follow assigned ticket order; each receives one grant only after the preceding conflicting lease is released."
+    },
+    {
+      "test_name": "disjoint_waiter_progresses_while_conflicting_waiters_preserve_fifo",
+      "description": "A blocked conflicting queue head does not prevent disjoint queued work, and try_acquire reports Busy rather than bypassing a conflicting active scope."
+    },
+    {
+      "test_name": "disjoint_single_key_uses_remaining_capacity_ahead_of_blocked_multi_key_waiter",
+      "description": "A blocked atomic multi-key waiter does not reserve unused active capacity from a disjoint immediate single-key request; try_acquire reports Busy with no active holder for the queued conflict, and the multi-key request is granted atomically when capacity becomes available."
+    }
+  ],
+  "dependencies": [
+    "LeaseManager",
+    "LeaseRequest",
+    "LeaseScope",
+    "LeaseGuard"
+  ],
+  "libraries": [
+    "loom",
+    "arc-swap"
+  ],
+  "inputs": [
+    {
+      "name": "bounded concurrent queue operations",
+      "type": "Loom thread interleavings",
+      "description": "Concurrent enqueue operations and actual production state-lock transitions using the feature-selected Loom mutex."
+    }
+  ],
+  "output_type": "assertions over production state transitions",
+  "output_description": "Checks conflicting FIFO, disjoint progress, atomic multi-key admission, and exactly-once release/grant accounting. Tokio notification delivery and ArcSwap behavior are outside this model."
+}

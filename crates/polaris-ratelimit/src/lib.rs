@@ -269,19 +269,22 @@ impl<C: Clock> DualLimiter<C> {
         status: u16,
         retry_after: Option<Duration>,
     ) -> Result<(), RateLimitError> {
-        if status == 429 {
-            if let Some(delay) = retry_after {
-                self.on_retry_after(delay)?;
-            }
+        if status == 429
+            && let Some(delay) = retry_after
+        {
+            self.on_retry_after(delay)?;
         }
         Ok(())
     }
 
     /// Current local RPM/TPM GCRA pressure; this is not a provider quota hint.
     pub fn utilization(&self) -> Utilization {
-        let now = match gcra::duration_ns(self.shared.clock.now()) {
-            Some(value) => value,
-            None => u64::MAX,
+        let Some(now) = gcra::duration_ns(self.shared.clock.now()) else {
+            // An unrepresentably distant clock is beyond every stored arrival.
+            return Utilization {
+                rpm_pct: 0,
+                tpm_pct: 0,
+            };
         };
         Utilization {
             rpm_pct: self.shared.rpm.utilization_pct(now),

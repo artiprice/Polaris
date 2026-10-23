@@ -631,15 +631,15 @@ fn gap_between<'a>(a: &Emit<'_>, b: &Emit<'_>, t: &Triple<'_, 'a>) -> Option<&'a
     if a.side == b.side && b.idx == a.idx + 1 {
         return before(b);
     }
-    if a.side != Side::Base {
-        if let Some(g) = after(a) {
-            return Some(g);
-        }
+    if a.side != Side::Base
+        && let Some(g) = after(a)
+    {
+        return Some(g);
     }
-    if b.side != Side::Base {
-        if let Some(g) = before(b) {
-            return Some(g);
-        }
+    if b.side != Side::Base
+        && let Some(g) = before(b)
+    {
+        return Some(g);
     }
     after(a).or_else(|| before(b))
 }

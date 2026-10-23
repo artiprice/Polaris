@@ -14,6 +14,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4.13"
+blake3 = "1.8.7"
 polaris-config = { path = "../../crates/polaris-config" }
 polaris-kernel-directives = { path = "../../crates/polaris-kernel/crates/directives" }
 polaris-storage-cas = { path = "../../crates/polaris-storage/crates/cas" }
@@ -31,6 +32,10 @@ polaris-code-intel = { path = "../../crates/polaris-code-intel" }
 polaris-storage-registry = { path = "../../crates/polaris-storage/crates/registry" }
 polaris-kernel-bus = { path = "../../crates/polaris-kernel/crates/bus" }
 polaris-security-automata = { path = "../../crates/polaris-security/crates/automata" }
+polaris-storage-sync = { path = "../../crates/polaris-storage/crates/sync" }
+polaris-runtime-leases = { path = "../../crates/polaris-runtime/crates/leases" }
+polaris-ext-skills = { path = "../../crates/polaris-ext/crates/skills" }
+polaris-tools-math = { path = "../../crates/polaris-tools/crates/math" }
 
 [[bin]]
 name = "bus_ops"
@@ -154,6 +159,55 @@ bench = false
 [[bin]]
 name = "fuzz_automata_user_regex"
 path = "fuzz_targets/fuzz_automata_user_regex.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sync_ignore_patterns"
+path = "fuzz_targets/sync_ignore_patterns.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sync_manifest_decode"
+path = "fuzz_targets/sync_manifest_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_lease_key"
+path = "fuzz_targets/fuzz_lease_key.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_lease_ops"
+path = "fuzz_targets/fuzz_lease_ops.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "skill_parser"
+path = "fuzz_targets/skill_parser.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_calc_expr"
+path = "fuzz_targets/fuzz_calc_expr.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_gpu_table_toml"
+path = "fuzz_targets/fuzz_gpu_table_toml.rs"
 test = false
 doc = false
 bench = false

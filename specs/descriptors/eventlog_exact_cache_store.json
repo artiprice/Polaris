@@ -15,6 +15,10 @@
     {
       "test_name": "oversized_value_is_rejected",
       "description": "A value over the per-entry limit is TooLarge."
+    },
+    {
+      "test_name": "bounded_get_rejects_before_copying_oversized_payload",
+      "description": "A bounded read checks the stored payload size before allocating a returned copy."
     }
   ],
   "dependencies": [

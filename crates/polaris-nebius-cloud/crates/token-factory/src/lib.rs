@@ -17,7 +17,8 @@
 //! - Keep credentials opaque and redact transport diagnostics; bound requests, responses, retries, and deadlines.
 //! - Return only provider-reported model identifiers and embedding dimensions; this crate does not assert
 //!   model capabilities or telemetry/rate-limit reconciliation that the endpoint has not verified.
-//! - Keep stream allocations bounded by configured limits; zero-allocation performance is not claimed and is unmeasured.
+//! - Route borrowed SSE frames without allocations after parser initialization; JSON decoding and
+//!   owned SDK output can allocate, and those costs are not claimed allocation-free.
 //!
 //! ## API
 //!
@@ -31,7 +32,8 @@
 //!
 //! ## External dependencies
 //!
-//! `reqwest`, `futures`, `serde`, `serde_json`, `bytes`, `tokio`, `secrecy`, `url`
+//! Runtime: `reqwest`, `futures`, `serde`, `serde_json`, `bytes`, `tokio`, `secrecy`, `url`, `rand`, `jiff`.
+//! Tests: `proptest` and `eventsource-stream` (differential SSE oracle only).
 
 mod client;
 mod error;
@@ -39,7 +41,7 @@ mod sse;
 
 pub use client::{
     ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig, ModelInfo,
-    ProviderStream, ReasoningReplay, TokenFactoryClient,
+    PromptTokenEstimator, ProviderStream, RateLimitPolicy, ReasoningReplay, TokenFactoryClient,
 };
 pub use error::TfError;
-pub use sse::{SseEvent, SseParser};
+pub use sse::{SseEvent, SseEventRef, SseParser};

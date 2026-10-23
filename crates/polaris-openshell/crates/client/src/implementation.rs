@@ -39,6 +39,42 @@ const GATEWAY_VERSION: &str = "0.1.4";
 const CONNECT_STARTUP_DEADLINE: Duration = Duration::from_secs(10);
 const CONNECT_RETRY_BACKOFF: Duration = Duration::from_millis(150);
 
+/// Gateway-observed lifecycle state. Unknown values never imply successful cleanup.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SandboxPhase {
+    /// The gateway is preparing the sandbox.
+    Provisioning,
+    /// Commands can be admitted.
+    Ready,
+    /// Creation or execution failed.
+    Error,
+    /// Deletion is pending; the resource is still present.
+    Deleting,
+    /// Stop is pending.
+    Stopping,
+    /// Runtime is stopped but the resource still exists.
+    Stopped,
+    /// Restart is pending.
+    Starting,
+    /// Main process completed; the sandbox record still exists.
+    Completed,
+    /// Unspecified or unrecognized gateway state.
+    Unknown,
+}
+
+/// Nonsecret authoritative gateway identity for lifecycle diagnostics and recovery.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SandboxObservation {
+    /// Immutable gateway resource UUID, distinct from its reusable name.
+    pub id: Uuid,
+    /// Validated gateway name.
+    pub name: SandboxHandle,
+    /// Current durable lifecycle phase.
+    pub phase: SandboxPhase,
+    /// Gateway optimistic concurrency revision.
+    pub resource_version: u64,
+}
+
 /// TLS materials read from a per-machine OpenShell gateway certificate directory.
 #[derive(Clone)]
 pub struct GatewayTls {
@@ -96,6 +132,71 @@ pub enum DriverKind {
     Docker,
     /// OpenShell libkrun driver. Experimental and requires KVM on the gateway host.
     Vm,
+}
+
+/// Bounded ephemeral storage at a fixed guest path; never a host filesystem bind mount.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScratchQuota(u32);
+
+impl ScratchQuota {
+    /// The sole scratch mount target, inside the sandbox's existing policy boundary.
+    pub const PATH: &str = "/sandbox/scratch";
+
+    /// Validate a 1–64 MiB ephemeral scratch quota.
+    /// # Errors
+    /// Returns [`SandboxError::LimitExceeded`] outside the bounded capacity range.
+    pub fn new(bytes: u32) -> Result<Self, SandboxError> {
+        if !(1024 * 1024..=64 * 1024 * 1024).contains(&bytes) {
+            return Err(SandboxError::LimitExceeded(
+                "scratch quota must be 1–64 MiB".to_owned(),
+            ));
+        }
+        Ok(Self(bytes))
+    }
+
+    /// Maximum guest tmpfs bytes.
+    #[must_use]
+    pub const fn bytes(self) -> u32 {
+        self.0
+    }
+
+    fn driver_config(self) -> prost_types::Struct {
+        use prost_types::{ListValue, Struct, Value, value::Kind};
+        let field = |kind| Value { kind: Some(kind) };
+        let mount = Struct {
+            fields: BTreeMap::from([
+                (
+                    "type".to_owned(),
+                    field(Kind::StringValue("tmpfs".to_owned())),
+                ),
+                (
+                    "target".to_owned(),
+                    field(Kind::StringValue(Self::PATH.to_owned())),
+                ),
+                (
+                    "size_bytes".to_owned(),
+                    field(Kind::NumberValue(f64::from(self.0))),
+                ),
+                // OpenShell exec uses the sandbox UID; the mount starts root-owned.
+                // The existing sandbox policy continues to confine every guest access.
+                (
+                    "mode".to_owned(),
+                    field(Kind::NumberValue(f64::from(0o777_u32))),
+                ),
+            ]),
+        };
+        let docker = Struct {
+            fields: BTreeMap::from([(
+                "mounts".to_owned(),
+                field(Kind::ListValue(ListValue {
+                    values: vec![field(Kind::StructValue(mount))],
+                })),
+            )]),
+        };
+        Struct {
+            fields: BTreeMap::from([("docker".to_owned(), field(Kind::StructValue(docker)))]),
+        }
+    }
 }
 
 /// Nonsecret driver identity reported by the authenticated OpenShell gateway.
@@ -197,6 +298,53 @@ impl OpenShellBackend<PolicyCatalog> {
 }
 
 impl<P: PolicySource> OpenShellBackend<P> {
+    /// Read lifecycle identity without exposing upstream SDK types or credentials.
+    /// Only an authoritative not-found response returns `None`; transport failures propagate.
+    ///
+    /// # Errors
+    /// A timeout, unavailable gateway, invalid UUID, or unexpected returned name.
+    pub async fn inspect(
+        &self,
+        sandbox: &SandboxHandle,
+    ) -> Result<Option<SandboxObservation>, SandboxError> {
+        let snapshot = match tokio::time::timeout(
+            Duration::from_secs(10),
+            self.client.get_sandbox(sandbox.as_str()),
+        )
+        .await
+        {
+            Err(_) => return Err(SandboxError::Timeout),
+            Ok(Err(SdkError::NotFound { .. })) => return Ok(None),
+            Ok(Err(error)) => return Err(SandboxError::Unavailable(error.to_string())),
+            Ok(Ok(snapshot)) => snapshot,
+        };
+        if snapshot.name != sandbox.as_str() {
+            return Err(SandboxError::Protocol(
+                "gateway returned a different sandbox name".into(),
+            ));
+        }
+        let phase = match snapshot.phase {
+            openshell_sdk::SandboxPhase::Provisioning => SandboxPhase::Provisioning,
+            openshell_sdk::SandboxPhase::Ready => SandboxPhase::Ready,
+            openshell_sdk::SandboxPhase::Error => SandboxPhase::Error,
+            openshell_sdk::SandboxPhase::Deleting => SandboxPhase::Deleting,
+            openshell_sdk::SandboxPhase::Stopping => SandboxPhase::Stopping,
+            openshell_sdk::SandboxPhase::Stopped => SandboxPhase::Stopped,
+            openshell_sdk::SandboxPhase::Starting => SandboxPhase::Starting,
+            openshell_sdk::SandboxPhase::Completed => SandboxPhase::Completed,
+            _ => SandboxPhase::Unknown,
+        };
+        let id = Uuid::parse_str(&snapshot.id).map_err(|_| {
+            SandboxError::Protocol("gateway returned an invalid resource UUID".into())
+        })?;
+        Ok(Some(SandboxObservation {
+            id,
+            name: sandbox.clone(),
+            phase,
+            resource_version: snapshot.resource_version,
+        }))
+    }
+
     /// Connect and fail closed unless the gateway reports the configured version.
     pub async fn connect_with_policies(
         config: OpenShellConfig,
@@ -291,6 +439,7 @@ impl<P: PolicySource> OpenShellBackend<P> {
         bytes: Bytes,
         policy: Policy,
         providers: &[String],
+        scratch: Option<ScratchQuota>,
     ) -> Result<SandboxHandle, SandboxError> {
         if let Some(name) = spec.name.as_deref() {
             validate_gateway_name(name)?;
@@ -312,6 +461,7 @@ impl<P: PolicySource> OpenShellBackend<P> {
         let template = Some(proto::SandboxTemplate {
             image: image.to_owned(),
             resources,
+            driver_config: scratch.map(ScratchQuota::driver_config),
             ..Default::default()
         });
         let request = raw::CreateSandboxRequest {
@@ -395,7 +545,40 @@ impl<P: PolicySource> OpenShellBackend<P> {
             .map_err(|error| SandboxError::Protocol(error.to_string()))?;
         let policy = Policy::parse_yaml(text)
             .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
-        self.create_raw(spec, bytes, policy, providers).await
+        self.create_raw(spec, bytes, policy, providers, None).await
+    }
+
+    /// Create an explicitly requested sandbox with bounded ephemeral scratch capacity.
+    ///
+    /// Accepts no host source or arbitrary mount path. Image, CPU/memory limits, exact policy,
+    /// readiness checks and cleanup ownership are identical to ordinary creation.
+    /// # Errors
+    /// Rejects non-Docker drivers, missing/invalid policy, or normal create/readiness failures.
+    pub async fn create_with_scratch(
+        &self,
+        spec: &SandboxSpec,
+        scratch: ScratchQuota,
+    ) -> Result<SandboxHandle, SandboxError> {
+        if self.config.driver != DriverKind::Docker {
+            return Err(SandboxError::PolicyDenied(
+                "bounded scratch currently requires the Docker driver".to_owned(),
+            ));
+        }
+        let cid = spec.policy.ok_or_else(|| {
+            SandboxError::PolicyDenied("SandboxSpec.policy is required".to_owned())
+        })?;
+        let bytes = self.policies.resolve(&cid)?;
+        if Cid::from_bytes(*blake3::hash(&bytes).as_bytes()) != cid {
+            return Err(SandboxError::PolicyDenied(
+                "resolved policy content does not match its CID".to_owned(),
+            ));
+        }
+        let text = std::str::from_utf8(&bytes)
+            .map_err(|error| SandboxError::Protocol(error.to_string()))?;
+        let policy = Policy::parse_yaml(text)
+            .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
+        self.create_raw(spec, bytes, policy, &[], Some(scratch))
+            .await
     }
 
     async fn exec_bounded(
@@ -403,6 +586,11 @@ impl<P: PolicySource> OpenShellBackend<P> {
         sandbox: &SandboxHandle,
         request: &ExecRequest,
     ) -> Result<ExecOutput, SandboxError> {
+        if request.output_limit_bytes == Some(0) {
+            return Err(SandboxError::LimitExceeded(
+                "exec output limit must be positive".to_owned(),
+            ));
+        }
         if request.argv.is_empty() {
             return Err(SandboxError::Protocol(
                 "exec argv must not be empty".to_owned(),
@@ -473,9 +661,21 @@ impl<P: PolicySource> OpenShellBackend<P> {
                 let event = event.map_err(|error| SandboxError::Unavailable(error.to_string()))?;
                 match event.payload {
                     Some(proto::exec_sandbox_event::Payload::Stdout(chunk)) => {
+                        check_combined_output(
+                            stdout.len(),
+                            stderr.len(),
+                            chunk.data.len(),
+                            request.output_limit_bytes,
+                        )?;
                         extend_bounded(&mut stdout, &chunk.data)?
                     }
                     Some(proto::exec_sandbox_event::Payload::Stderr(chunk)) => {
+                        check_combined_output(
+                            stdout.len(),
+                            stderr.len(),
+                            chunk.data.len(),
+                            request.output_limit_bytes,
+                        )?;
                         extend_bounded(&mut stderr, &chunk.data)?
                     }
                     Some(proto::exec_sandbox_event::Payload::Exit(exit)) => {
@@ -552,6 +752,14 @@ impl CatalogAccess for PolicyCatalog {
 }
 
 impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
+    fn recovery_domain(&self) -> Option<Cid> {
+        openshell_recovery_domain(&self.config, &self.gateway_driver)
+    }
+
+    async fn confirm_absence(&self, sandbox: &SandboxHandle) -> Result<bool, SandboxError> {
+        Ok(self.inspect(sandbox).await?.is_none())
+    }
+
     async fn create(&self, spec: &SandboxSpec) -> Result<SandboxHandle, SandboxError> {
         let Some(cid) = spec.policy else {
             return Err(SandboxError::PolicyDenied(
@@ -568,7 +776,7 @@ impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
             .map_err(|error| SandboxError::Protocol(error.to_string()))?;
         let policy = Policy::parse_yaml(text)
             .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
-        self.create_raw(spec, bytes, policy, &[]).await
+        self.create_raw(spec, bytes, policy, &[], None).await
     }
 
     async fn exec(
@@ -1011,6 +1219,26 @@ fn validate_delete_ack(
     }
 }
 
+fn check_combined_output(
+    stdout: usize,
+    stderr: usize,
+    incoming: usize,
+    limit: Option<usize>,
+) -> Result<(), SandboxError> {
+    let total = stdout
+        .checked_add(stderr)
+        .and_then(|bytes| bytes.checked_add(incoming))
+        .ok_or_else(|| {
+            SandboxError::LimitExceeded("combined exec output length overflow".to_owned())
+        })?;
+    if limit.is_some_and(|cap| total > cap) {
+        return Err(SandboxError::LimitExceeded(
+            "combined exec output exceeds requested limit".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 fn extend_bounded(target: &mut Vec<u8>, chunk: &[u8]) -> Result<(), SandboxError> {
     let new_len = target
         .len()
@@ -1323,12 +1551,12 @@ fn encode_commit_request(request: &SandboxCommitRequest) -> Result<Vec<u8>, Sand
             "sync-cas staged path exceeds the path bound".to_owned(),
         ));
     }
-    if let polaris_sdk::registry::SandboxCommitAction::Link { target, .. } = &request.action {
-        if target.len() > MAX_LIST_PATH_BYTES {
-            return Err(SandboxError::LimitExceeded(
-                "sync-cas link target exceeds the path bound".to_owned(),
-            ));
-        }
+    if let polaris_sdk::registry::SandboxCommitAction::Link { target, .. } = &request.action
+        && target.len() > MAX_LIST_PATH_BYTES
+    {
+        return Err(SandboxError::LimitExceeded(
+            "sync-cas link target exceeds the path bound".to_owned(),
+        ));
     }
     let encoded =
         serde_json::to_vec(request).map_err(|error| SandboxError::Protocol(error.to_string()))?;
@@ -1467,6 +1695,37 @@ fn to_wire_policy(
     })
 }
 
+fn openshell_recovery_domain(config: &OpenShellConfig, driver: &GatewayDriverInfo) -> Option<Cid> {
+    let mut endpoint = url::Url::parse(&config.endpoint).ok()?;
+    if endpoint.scheme() != "https" {
+        return None;
+    }
+    let _username_cleared = endpoint.set_username("");
+    let _password_cleared = endpoint.set_password(None);
+    endpoint.set_query(None);
+    endpoint.set_fragment(None);
+    let normalized_endpoint = format!(
+        "{}{}",
+        endpoint.origin().ascii_serialization(),
+        endpoint.path().trim_end_matches('/')
+    );
+    let ca_fingerprint = blake3::hash(&config.tls.ca_certificate);
+    let mut hasher = blake3::Hasher::new_derive_key("Polaris OpenShell sandbox recovery domain v1");
+    for value in [
+        normalized_endpoint.as_bytes(),
+        config.tls.server_name.as_bytes(),
+        ca_fingerprint.as_bytes(),
+        driver.configured_name.as_bytes(),
+        driver.driver_name.as_bytes(),
+        driver.driver_version.as_bytes(),
+    ] {
+        let length = u64::try_from(value.len()).ok()?;
+        hasher.update(&length.to_le_bytes());
+        hasher.update(value);
+    }
+    Some(Cid::from_bytes(*hasher.finalize().as_bytes()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1474,16 +1733,84 @@ mod tests {
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     #[test]
-    fn quota_limits_use_the_gateway_struct_shape_and_units() {
-        let Some(resources) = sandbox_resource_limits(Some(1_000), Some(512)) else {
-            panic!("requested limits should be present")
-        };
+    fn requested_output_limit_counts_both_streams() {
+        assert!(check_combined_output(5, 4, 1, Some(10)).is_ok());
+        assert!(check_combined_output(5, 4, 2, Some(10)).is_err());
+        assert!(check_combined_output(0, 0, 1, Some(0)).is_err());
+        assert!(check_combined_output(usize::MAX, 0, 1, None).is_err());
+        assert!(check_combined_output(0, usize::MAX, 1, None).is_err());
+    }
+
+    #[test]
+    fn scratch_quota_is_bounded_and_has_no_host_source() -> Result<(), Box<dyn std::error::Error>> {
+        use prost_types::value::Kind;
+        for bytes in [0, 1, 1024 * 1024 - 1, 64 * 1024 * 1024 + 1, u32::MAX] {
+            assert!(ScratchQuota::new(bytes).is_err());
+        }
+        for bytes in [1024 * 1024, 64 * 1024 * 1024] {
+            let quota = ScratchQuota::new(bytes)?;
+            assert_eq!(quota.bytes(), bytes);
+            let config = quota.driver_config();
+            assert_eq!(config.fields.len(), 1);
+            let Some(Kind::StructValue(docker)) = config
+                .fields
+                .get("docker")
+                .and_then(|value| value.kind.as_ref())
+            else {
+                return Err("missing Docker configuration".into());
+            };
+            assert_eq!(docker.fields.len(), 1);
+            let Some(Kind::ListValue(mounts)) = docker
+                .fields
+                .get("mounts")
+                .and_then(|value| value.kind.as_ref())
+            else {
+                return Err("missing mount list".into());
+            };
+            assert_eq!(mounts.values.len(), 1);
+            let Some(Kind::StructValue(mount)) =
+                mounts.values.first().and_then(|value| value.kind.as_ref())
+            else {
+                return Err("missing mount object".into());
+            };
+            assert_eq!(mount.fields.len(), 4);
+            assert!(!mount.fields.contains_key("source"));
+            assert_eq!(
+                mount
+                    .fields
+                    .get("target")
+                    .and_then(|value| value.kind.as_ref()),
+                Some(&Kind::StringValue(ScratchQuota::PATH.to_owned()))
+            );
+            assert_eq!(
+                mount
+                    .fields
+                    .get("type")
+                    .and_then(|value| value.kind.as_ref()),
+                Some(&Kind::StringValue("tmpfs".to_owned()))
+            );
+            assert_eq!(
+                mount
+                    .fields
+                    .get("size_bytes")
+                    .and_then(|value| value.kind.as_ref()),
+                Some(&Kind::NumberValue(f64::from(bytes)))
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn quota_limits_use_the_gateway_struct_shape_and_units()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let resources = sandbox_resource_limits(Some(1_000), Some(512))
+            .ok_or("requested limits should be present")?;
         let Some(prost_types::value::Kind::StructValue(limits)) = resources
             .fields
             .get("limits")
             .and_then(|value| value.kind.as_ref())
         else {
-            panic!("limits object should be present")
+            return Err("limits object should be present".into());
         };
         assert_eq!(
             limits
@@ -1500,6 +1827,7 @@ mod tests {
             Some(&prost_types::value::Kind::StringValue("512Mi".to_owned()))
         );
         assert!(sandbox_resource_limits(None, None).is_none());
+        Ok(())
     }
 
     #[derive(Clone, Copy, PartialEq, Eq)]
@@ -1509,19 +1837,16 @@ mod tests {
     }
 
     #[test]
-    fn catalog_resolves_exact_content_and_missing_cids_fail() {
+    fn catalog_resolves_exact_content_and_missing_cids_fail()
+    -> Result<(), Box<dyn std::error::Error>> {
         let catalog = PolicyCatalog::default();
-        let Some(policy) = policy_for(AgentRole::Builder, ExecTier::Docker).ok() else {
-            panic!("policy expected")
-        };
-        let Some(cid) = catalog.register(&policy).ok() else {
-            panic!("catalog registration expected")
-        };
-        let Some(bytes) = catalog.resolve(&cid).ok() else {
-            panic!("CID must resolve")
-        };
+        let policy = policy_for(AgentRole::Builder, ExecTier::Docker)
+            .map_err(|error| SandboxError::PolicyDenied(error.to_string()))?;
+        let cid = catalog.register(&policy)?;
+        let bytes = catalog.resolve(&cid)?;
         assert_eq!(Cid::from_bytes(*blake3::hash(&bytes).as_bytes()), cid);
         assert!(catalog.resolve(&Cid::from_bytes([7; 32])).is_err());
+        Ok(())
     }
 
     #[tokio::test]
@@ -1559,7 +1884,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dropping_connection_retry_cancels_the_inflight_attempt() {
+    async fn dropping_connection_retry_cancels_the_inflight_attempt()
+    -> Result<(), Box<dyn std::error::Error>> {
         struct DropMarker(Arc<AtomicBool>);
         impl Drop for DropMarker {
             fn drop(&mut self) {
@@ -1582,11 +1908,12 @@ mod tests {
             |_| true,
         ));
         tokio::select! {
-            _ = &mut retry => panic!("in-flight connection attempt unexpectedly completed"),
+            _ = &mut retry => return Err("in-flight connection attempt unexpectedly completed".into()),
             _ = tokio::time::sleep(Duration::from_millis(10)) => {}
         }
         drop(retry);
         assert!(dropped.load(Ordering::SeqCst));
+        Ok(())
     }
 
     #[test]
@@ -1621,6 +1948,70 @@ mod tests {
         };
         assert!(validate_gateway_driver_kind(&docker, DriverKind::Docker).is_ok());
         assert!(validate_gateway_driver_kind(&docker, DriverKind::Vm).is_err());
+    }
+
+    #[test]
+    fn recovery_domain_normalizes_and_binds_the_trusted_backend_identity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let config = OpenShellConfig::wsl2(GatewayTls {
+            ca_certificate: b"ca-one".to_vec(),
+            client_certificate: Vec::new(),
+            client_key: Vec::new(),
+            server_name: "gateway.local".to_owned(),
+        });
+        let driver = GatewayDriverInfo {
+            configured_name: "default".to_owned(),
+            driver_name: "docker".to_owned(),
+            driver_version: "1".to_owned(),
+        };
+        let domain = openshell_recovery_domain(&config, &driver)
+            .ok_or("valid TLS endpoint must have a recovery domain")?;
+        let mut normalized = config.clone();
+        normalized.endpoint =
+            "https://user:secret@LOCALHOST:17670/?token=ignored#fragment".to_owned();
+        assert_eq!(
+            openshell_recovery_domain(&normalized, &driver),
+            Some(domain)
+        );
+
+        let mut implicit_https_port = config.clone();
+        implicit_https_port.endpoint = "https://localhost/".to_owned();
+        let mut explicit_https_port = implicit_https_port.clone();
+        explicit_https_port.endpoint = "HTTPS://user:secret@LOCALHOST:443".to_owned();
+        let implicit_port_domain = openshell_recovery_domain(&implicit_https_port, &driver)
+            .ok_or("valid HTTPS endpoint must have a recovery domain")?;
+        assert_eq!(
+            openshell_recovery_domain(&explicit_https_port, &driver),
+            Some(implicit_port_domain)
+        );
+        assert_eq!(implicit_port_domain.to_hex().len(), 64);
+        assert!(!implicit_port_domain.to_hex().contains("secret"));
+
+        let mut other_endpoint = config.clone();
+        other_endpoint.endpoint = "https://localhost:17671".to_owned();
+        assert_ne!(
+            openshell_recovery_domain(&other_endpoint, &driver),
+            Some(domain)
+        );
+        let mut other_ca = config.clone();
+        other_ca.tls.ca_certificate = b"ca-two".to_vec();
+        assert_ne!(openshell_recovery_domain(&other_ca, &driver), Some(domain));
+        let mut other_server_name = config.clone();
+        other_server_name.tls.server_name = "other.local".to_owned();
+        assert_ne!(
+            openshell_recovery_domain(&other_server_name, &driver),
+            Some(domain)
+        );
+        let mut other_driver = driver.clone();
+        other_driver.driver_version = "2".to_owned();
+        assert_ne!(
+            openshell_recovery_domain(&config, &other_driver),
+            Some(domain)
+        );
+        let mut insecure = config;
+        insecure.endpoint = "http://localhost:17670".to_owned();
+        assert!(openshell_recovery_domain(&insecure, &driver).is_none());
+        Ok(())
     }
 
     #[test]
@@ -1664,7 +2055,7 @@ mod tests {
         assert!(validate_path("/sandbox/../etc/passwd").is_err());
         assert!(validate_path("relative").is_err());
         assert!(validate_path("/sandbox/file").is_ok());
-        assert!(MAX_REQUEST_CHUNK_BYTES < 1_048_576);
+        const { assert!(MAX_REQUEST_CHUNK_BYTES < 1_048_576) };
     }
 
     #[test]
@@ -1679,7 +2070,7 @@ mod tests {
     }
 
     #[test]
-    fn sync_snapshot_response_is_bounded_and_validated() {
+    fn sync_snapshot_response_is_bounded_and_validated() -> Result<(), Box<dyn std::error::Error>> {
         let page = SandboxSnapshotPage {
             generation: "a".repeat(64),
             manifest_id: Cid::from_bytes([3; 32]),
@@ -1694,11 +2085,12 @@ mod tests {
             }],
             next_offset: Some(1),
         };
-        let encoded = serde_json::to_vec(&page).expect("snapshot serialization");
+        let encoded = serde_json::to_vec(&page)?;
         assert!(parse_snapshot_page(&encoded, None, 0, 1).is_ok());
         assert!(parse_snapshot_page(&encoded, Some(&"b".repeat(64)), 0, 1).is_err());
         assert!(parse_snapshot_page(&encoded, None, 0, 0).is_err());
         assert!(parse_snapshot_page(&vec![b' '; MAX_EXEC_OUTPUT_BYTES + 1], None, 0, 1).is_err());
+        Ok(())
     }
 
     #[test]

@@ -6,8 +6,9 @@
 //!    (`.polarisignore`, gitignore syntax, then a **non-overridable** secret deny-list
 //!    [`DEFAULT_DENY`]) and hashes files with blake3, reusing a [`ScanCache`] for unchanged files;
 //! 2. [`plan`] diffs the local manifest against the last known remote one;
-//! 3. [`apply`] re-hashes each file at transfer time and sends bounded tar batches through the
-//!    sdk `SandboxBackend`; the guest revalidates remote state under a workspace lock.
+//! 3. [`apply`] re-hashes each file at transfer time and uses bounded tar batches for ordinary
+//!    files plus a typed single-file CAS path for larger files (up to the 256 MiB scanner limit);
+//!    the guest revalidates remote state under a workspace lock.
 //!
 //! [`detect_conflicts`] reports paths that cannot round-trip between Windows and Linux (case-only
 //! pairs, device names, trailing dots, ADS syntax, invalid characters, over-long names).

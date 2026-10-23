@@ -11,6 +11,26 @@ pub const TEMP_DIR_PREFIX: &str = "polaris-reaper-";
 /// Resource id, monotonically increasing within a run journal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ReapId(pub(crate) u64);
+impl ReapId {
+    /// Construct a persisted registration identity.
+    ///
+    /// # Errors
+    /// Returns [`ReaperError::JournalFormat`] when the value is zero, which is never allocated.
+    pub fn from_raw(value: u64) -> Result<Self, ReaperError> {
+        if value == 0 {
+            return Err(ReaperError::JournalFormat(
+                "resource id must be nonzero".to_owned(),
+            ));
+        }
+        Ok(Self(value))
+    }
+
+    /// Return the stable numeric identity written in the reaper journal.
+    #[must_use]
+    pub const fn as_raw(self) -> u64 {
+        self.0
+    }
+}
 /// Teardown priority, lowest first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResourceKind {

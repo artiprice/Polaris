@@ -173,10 +173,10 @@ impl GcraCell {
         let debt = tat.saturating_sub(now_ns);
         let horizon = self.tolerance_ns.saturating_add(self.period_ns).max(1);
         let ratio = debt.saturating_mul(100) / horizon;
-        match u8::try_from(ratio.min(100)) {
-            Ok(value) => value,
-            Err(_) => 100,
-        }
+        let Ok(value) = u8::try_from(ratio.min(100)) else {
+            return 100;
+        };
+        value
     }
 
     pub(crate) fn retry_after_pct(&self, now_ns: u64, threshold_pct: u8) -> Duration {

@@ -596,6 +596,161 @@ async fn more_than_one_bounded_batch_is_applied_and_reported_exactly() -> TestRe
 }
 
 #[tokio::test]
+async fn file_above_tar_batch_limit_uses_single_file_cas_with_precheck() -> TestResult {
+    const FILE_BYTES: usize = 25 * 1024 * 1024;
+    let tmp = tempfile::tempdir()?;
+    let payload = vec![0x6d; FILE_BYTES];
+    fs::write(tmp.path().join("large.bin"), &payload)?;
+    let local = scan(
+        tmp.path(),
+        &IgnoreRules::new(tmp.path(), None)?,
+        None,
+        HashMode::Paranoid,
+    )?
+    .manifest;
+    let fake = FakeSandbox::default();
+    let check: &polaris_storage_sync::SecretPrecheck = &|_path, bytes| {
+        if bytes.len() != FILE_BYTES || bytes.first() != Some(&0x6d) {
+            return Err("large-file precheck did not receive exact bytes".into());
+        }
+        Ok(false)
+    };
+    let report = apply_with_precheck(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &local,
+        &plan(&local, &Manifest::default()),
+        &opts(1),
+        Some(check),
+    )
+    .await?;
+    assert_eq!(report.uploaded, vec![RelPath::new("large.bin")?]);
+    assert!(report.failed.is_empty(), "{report:?}");
+    assert!(!report.rescan_required);
+    assert_eq!(fake.batch_count.load(Ordering::SeqCst), 0);
+    let files = lock(&fake.files)?;
+    assert_eq!(files.len(), 1);
+    assert_eq!(files.get("/sandbox/ws/large.bin"), Some(&payload));
+    Ok(())
+}
+
+#[tokio::test]
+async fn large_file_cas_preserves_intervening_remote_edit() -> TestResult {
+    const FILE_BYTES: usize = 25 * 1024 * 1024;
+    let tmp = tempfile::tempdir()?;
+    fs::write(tmp.path().join("large.bin"), b"base")?;
+    let rules = IgnoreRules::new(tmp.path(), None)?;
+    let base = scan(tmp.path(), &rules, None, HashMode::Paranoid)?.manifest;
+    let payload = vec![0x37; FILE_BYTES];
+    fs::write(tmp.path().join("large.bin"), &payload)?;
+    let local = scan(tmp.path(), &rules, None, HashMode::Paranoid)?.manifest;
+    let fake = FakeSandbox::default();
+    lock(&fake.files)?.insert("/sandbox/ws/large.bin".into(), b"base".to_vec());
+    *lock(&fake.intervene)? = Some((
+        "/sandbox/ws/large.bin".into(),
+        b"independent remote edit".to_vec(),
+    ));
+    let report = apply(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &local,
+        &plan(&local, &base),
+        &opts(1),
+    )
+    .await?;
+    assert_eq!(report.conflicts, vec![RelPath::new("large.bin")?]);
+    assert!(report.rescan_required);
+    assert!(report.uploaded.is_empty() && report.failed.is_empty());
+    let files = lock(&fake.files)?;
+    assert_eq!(files.len(), 1, "staged large file was cleaned up");
+    assert_eq!(
+        files.get("/sandbox/ws/large.bin").map(Vec::as_slice),
+        Some(b"independent remote edit".as_slice())
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn file_larger_than_manifest_limit_is_rejected_before_read_or_upload() -> TestResult {
+    let tmp = tempfile::tempdir()?;
+    fs::write(tmp.path().join("large.bin"), b"small actual file")?;
+    let mut local = scan(
+        tmp.path(),
+        &IgnoreRules::new(tmp.path(), None)?,
+        None,
+        HashMode::Fast,
+    )?
+    .manifest;
+    let entry = local
+        .entries
+        .get_mut(&RelPath::new("large.bin")?)
+        .ok_or("missing local fixture")?;
+    entry.size = 256 * 1024 * 1024 + 1;
+    let fake = FakeSandbox::default();
+    let report = apply(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &local,
+        &plan(&local, &Manifest::default()),
+        &opts(1),
+    )
+    .await?;
+    assert_eq!(report.failed.len(), 1);
+    assert!(report.failed[0].1.contains("sync file bound"));
+    assert!(report.uploaded.is_empty());
+    assert!(lock(&fake.files)?.is_empty());
+    Ok(())
+}
+
+#[tokio::test]
+async fn one_hundred_mb_across_one_thousand_files_uses_bounded_batches() -> TestResult {
+    const FILE_COUNT: usize = 1_000;
+    const FILE_BYTES: usize = 100_000;
+    let tmp = tempfile::tempdir()?;
+    let mut payload = vec![0x5a; FILE_BYTES];
+    for index in 0..FILE_COUNT {
+        let prefix = u32::try_from(index)?.to_le_bytes();
+        if let Some(target) = payload.get_mut(..prefix.len()) {
+            target.copy_from_slice(&prefix);
+        }
+        fs::write(tmp.path().join(format!("large-{index:04}.bin")), &payload)?;
+    }
+    let fake = FakeSandbox::default();
+    let local = scan(
+        tmp.path(),
+        &IgnoreRules::new(tmp.path(), None)?,
+        None,
+        HashMode::Fast,
+    )?
+    .manifest;
+    assert_eq!(local.entries.len(), FILE_COUNT);
+    assert_eq!(
+        local.entries.values().map(|entry| entry.size).sum::<u64>(),
+        100_000_000
+    );
+    let report = apply(
+        &fake,
+        &handle()?,
+        tmp.path(),
+        &local,
+        &plan(&local, &Manifest::default()),
+        &opts(8),
+    )
+    .await?;
+    assert_eq!(report.uploaded.len(), FILE_COUNT);
+    assert!(report.failed.is_empty(), "{report:?}");
+    assert!(!report.rescan_required);
+    assert!(fake.batch_count.load(Ordering::SeqCst) >= 4);
+    let files = lock(&fake.files)?;
+    assert_eq!(files.len(), FILE_COUNT);
+    assert!(files.values().all(|bytes| bytes.len() == FILE_BYTES));
+    Ok(())
+}
+
+#[tokio::test]
 async fn remote_change_during_transfer_is_preserved_for_replace_and_delete() -> TestResult {
     for deleting in [false, true] {
         let tmp = tempfile::tempdir()?;

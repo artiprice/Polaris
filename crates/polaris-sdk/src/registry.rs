@@ -13,11 +13,16 @@ use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+pub use crate::content::{ContentStore, ContentStoreError};
 use crate::contracts::{Command, CommandId, EventRecord, Unverified};
 use crate::effort::Effort;
 use crate::error::{ErrorKind, HasKind, ParseError};
 use crate::ids::{Cid, FrameId, ModelId, Seq, SessionId, TokenCount};
 use crate::system_one::{Decision, DecisionInput, Question};
+
+pub use crate::secrets::{
+    EnvName, KeyringLocation, SecretLocation, SecretSource, SecretSourceError,
+};
 
 // ----------------------------------------------------------------------------------------- tools
 
@@ -494,6 +499,10 @@ pub struct ExecRequest {
     pub env: Vec<(String, String)>,
     /// Timeout for the command.
     pub timeout: Option<Duration>,
+    /// Maximum combined stdout/stderr bytes retained while receiving output. Zero is invalid.
+    /// Adapters may apply a stricter documented transport or per-stream bound; `None` uses those
+    /// adapter limits. Exceeding this cap must abort capture and clean up the owned execution.
+    pub output_limit_bytes: Option<usize>,
 }
 
 /// Result of a sandboxed command.
@@ -514,12 +523,31 @@ pub struct ExecOutput {
 /// Adapters must bound download bytes and list entries while receiving the transport response,
 /// before allocating an unbounded result. Transport-specific limits must be documented.
 pub trait SandboxBackend: Send + Sync {
+    /// Stable, credential-free identity for the backend authority used by durable recovery.
+    /// Backends without a trustworthy endpoint identity return `None` and cannot automatically
+    /// resolve persisted sandbox intents.
+    fn recovery_domain(&self) -> Option<Cid> {
+        None
+    }
+    /// Confirm that a named resource is authoritatively absent from this backend.
+    /// This operation must return `true` only for a definitive not-found response; a present
+    /// resource returns `false`, and transport or protocol uncertainty returns an error.
+    fn confirm_absence(
+        &self,
+        _sandbox: &SandboxHandle,
+    ) -> impl Future<Output = Result<bool, SandboxError>> + Send {
+        async {
+            Err(SandboxError::PolicyDenied(
+                "backend does not support authoritative absence checks".into(),
+            ))
+        }
+    }
     /// Creates a sandbox and waits until it is ready.
     fn create(
         &self,
         spec: &SandboxSpec,
     ) -> impl Future<Output = Result<SandboxHandle, SandboxError>> + Send;
-    /// Runs a command.
+    /// Runs a command, enforcing any requested output cap before extending capture buffers.
     fn exec(
         &self,
         sandbox: &SandboxHandle,
@@ -1339,6 +1367,17 @@ pub trait ExactCacheStore: Send + Sync {
     /// # Errors
     /// [`CacheStoreError`] on storage failure.
     fn get(&self, key: &[u8; 32]) -> Result<Option<Vec<u8>>, CacheStoreError>;
+    /// Reads a value only when the backing store can enforce `max_bytes` before copying it.
+    /// Implementations must not implement this by calling [`Self::get`] and checking afterward.
+    ///
+    /// # Errors
+    /// [`CacheStoreError`] on storage failure, corrupt data, or when the stored value exceeds the
+    /// caller's bound.
+    fn get_bounded(
+        &self,
+        key: &[u8; 32],
+        max_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, CacheStoreError>;
     /// Stores a value under `key` in `scope`.
     ///
     /// # Errors

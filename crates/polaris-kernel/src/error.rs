@@ -6,7 +6,7 @@ use crate::{
     storage::{cas::CasError, eventlog::EventLogError, registry::RegistryError},
 };
 use polaris_sdk::error::{ErrorKind, HasKind};
-use polaris_sdk::ids::{Seq, SessionId};
+use polaris_sdk::ids::{Cid, Seq, SessionId};
 
 /// Kernel/session failures. Never log configuration documents or tokens through these errors.
 #[derive(Debug, thiserror::Error)]
@@ -35,6 +35,12 @@ pub enum KernelError {
     /// Invalid configuration, refused before event append.
     #[error("invalid session configuration: {0}")]
     Configuration(&'static str),
+    /// Actual proof gate rejected completion; the content-addressed report retains run evidence.
+    #[error("Proof-of-Done blocked; inspect report {report}")]
+    ProofBlocked {
+        /// Immutable failure report, published once by the execution owner after cleanup.
+        report: Cid,
+    },
     /// Actual typed sandbox backend failure.
     #[error(transparent)]
     Sandbox(#[from] polaris_sdk::registry::SandboxError),
@@ -70,6 +76,12 @@ pub enum KernelError {
     /// Resource recovery failure.
     #[error(transparent)]
     Reaper(#[from] ReaperError),
+    /// Docker pool orphan recovery failed before normal startup.
+    #[error("Docker pool startup recovery failed: {0}")]
+    DockerPoolRecovery(#[from] polaris_devenv::docker::PoolJournalError),
+    /// Docker Engine could not be connected for explicit startup recovery.
+    #[error(transparent)]
+    Docker(#[from] polaris_devenv::docker::DockerError),
     /// Configuration encoding failed.
     #[error(transparent)]
     Codec(#[from] serde_json::Error),
@@ -91,8 +103,11 @@ impl HasKind for KernelError {
             | Self::UnknownSession(_)
             | Self::NotStarted(_)
             | Self::Configuration(_) => ErrorKind::Permanent,
-            Self::SessionAlreadyOpen(_) | Self::Io(_) => ErrorKind::Transient,
-            Self::RecoveryRequired { .. } => ErrorKind::Policy,
+            Self::SessionAlreadyOpen(_)
+            | Self::Io(_)
+            | Self::DockerPoolRecovery(_)
+            | Self::Docker(_) => ErrorKind::Transient,
+            Self::RecoveryRequired { .. } | Self::ProofBlocked { .. } => ErrorKind::Policy,
             Self::Cas(error) => error.kind(),
             Self::Bus(error) => error.kind(),
             Self::Directive(error) => error.kind(),
