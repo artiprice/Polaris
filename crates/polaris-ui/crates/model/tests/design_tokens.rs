@@ -28,16 +28,13 @@ const PLAN_TABLE: &[(&str, &str)] = &[
     ("goal-line", "#89B4FA"),
     ("error", "#AC4242"),
     ("warning", "#E5B454"),
-    ("prompt-surface", "#373737"),
+    ("prompt-surface", "#141414"),
     ("to-latest-bg", "#262626"),
     ("to-latest-hover", "#373737"),
     ("placeholder", "#525252"),
-    ("logo-star", "#24D046"),
+    ("logo-star", "#C0E58C"),
     ("logo-trace", "#76B900"),
-    ("logo-mint", "#96D6AC"),
-    ("logo-frame-light", "#B8B8B8"),
-    ("logo-frame-dark", "#6B6B6B"),
-    ("logo-package", "#1C1C1C"),
+    ("logo-tips", "#6B6B6B"),
     ("surface", "#141414"),
     ("raised", "#1C1C1C"),
     ("text", "#E8E8E8"),
@@ -134,7 +131,7 @@ fn selection_tints_match_blend_formula() -> TestResult {
         ("mode-plan", "canvas", "#4B4435"),
         ("accent", "canvas", "#233800"),
         ("directive", "canvas", "#29364B"),
-        ("text", "prompt-surface", "#6C6C6C"),
+        ("text", "prompt-surface", "#545454"),
     ];
     assert_eq!(SELECTION_TINTS.len(), expected.len());
     for (source, background, tint) in expected {

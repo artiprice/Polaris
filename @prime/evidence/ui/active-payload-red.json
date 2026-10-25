@@ -1,0 +1,16 @@
+{
+  "name": "active-payload-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "session::tests::unrelated_session"
+  ],
+  "stdout": "\nrunning 1 test\ntest session::tests::unrelated_session_payload_is_not_materialized ... FAILED\n\nfailures:\n\n---- session::tests::unrelated_session_payload_is_not_materialized stdout ----\nError: Ui(\"committed directive payload unavailable: blob 12754c686b1d02b03a1bad734e97c308bdcc71f5b61ac774e22c00819b4cc0e9 not found\")\n\n\nfailures:\n    session::tests::unrelated_session_payload_is_not_materialized\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.11s\n\n",
+  "stderr": "   Compiling polaris-cli v0.1.0-alpha (C:\\mDev\\Polaris\\apps\\polaris-cli)\n    Finished `test` profile [unoptimized] target(s) in 8.64s\n     Running unittests src\\lib.rs (target\\debug\\deps\\polaris_cli-08fd469deb879fd8.exe)\nerror: test failed, to rerun pass `-p polaris-cli --lib`\n",
+  "done": true,
+  "code": 101
+}

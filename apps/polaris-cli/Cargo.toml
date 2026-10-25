@@ -13,6 +13,9 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+polaris-ui-model = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 clap = { workspace = true }
@@ -42,3 +45,4 @@ path = "src/main.rs"
 
 [dev-dependencies]
 tempfile = { workspace = true }
+portable-pty = { workspace = true }

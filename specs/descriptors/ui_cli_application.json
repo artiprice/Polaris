@@ -1,0 +1,110 @@
+{
+  "type_of": "module",
+  "name": "cli_ui_application",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "CLI UI application",
+  "test_list": [
+    {
+      "test_name": "default_arguments_select_interactive_mode",
+      "description": "No subcommand selects TUI"
+    },
+    {
+      "test_name": "dump_is_deterministic_and_has_no_state_side_effects",
+      "description": "Same render dump stable, no escapes or state creation"
+    },
+    {
+      "test_name": "non_tty_default_fails_without_terminal_controls",
+      "description": "Piped default rejects without escapes"
+    },
+    {
+      "test_name": "invalid_dump_and_scenario_are_rejected",
+      "description": "Reject size/scenario errors"
+    },
+    {
+      "test_name": "rejected_directive_preserves_draft",
+      "description": "Real rejection preserves exact prepared draft"
+    },
+    {
+      "test_name": "offline_directive_survives_restart",
+      "description": "Durable committed directive visible after restart"
+    },
+    {
+      "test_name": "control_backpressure_preserves_draft_without_closing_ui",
+      "description": "Controller boundary regression: real admission acknowledgement, bounded backpressure, literal input and staged Ratatui diff."
+    },
+    {
+      "test_name": "accepted_directive_clears_only_after_acknowledgement",
+      "description": "Controller boundary regression: real admission acknowledgement, bounded backpressure, literal input and staged Ratatui diff."
+    },
+    {
+      "test_name": "rejection_and_unsupported_model_input_keep_exact_draft",
+      "description": "Controller boundary regression: real admission acknowledgement, bounded backpressure, literal input and staged Ratatui diff."
+    },
+    {
+      "test_name": "repeated_frame_and_caret_move_do_not_clear_terminal",
+      "description": "Controller boundary regression: real admission acknowledgement, bounded backpressure, literal input and staged Ratatui diff."
+    },
+    {
+      "test_name": "release_is_idle_and_paste_remains_literal",
+      "description": "Controller boundary regression: real admission acknowledgement, bounded backpressure, literal input and staged Ratatui diff."
+    },
+    {
+      "test_name": "pending_resume_prevents_directive_from_crossing_sessions",
+      "description": "No command may be admitted against a different session during resume acknowledgement."
+    },
+    {
+      "test_name": "help_only_advertises_available_local_controls",
+      "description": "Generated keymap help must filter human/provider/native clipboard features absent from this execution profile."
+    },
+    {
+      "test_name": "draft_text_chip_submits_its_expanded_directive",
+      "description": "Text chips expand only on explicit submit; editor capacity rejection is recoverable with unchanged draft."
+    },
+    {
+      "test_name": "draft_limit_rejection_keeps_editor_alive",
+      "description": "Text chips expand only on explicit submit; editor capacity rejection is recoverable with unchanged draft."
+    },
+    {
+      "test_name": "cancelled_payload_poll_retains_record_and_joins_one_cas_job",
+      "description": "Cancelling record polling retains the original durable event and one owned payload task."
+    },
+    {
+      "test_name": "failed_payload_owner_is_consumed_once_before_close",
+      "description": "A failed CAS JoinHandle must be removed before reporting the error so cleanup never polls it twice."
+    },
+    {
+      "test_name": "query_failure_cannot_cancel_an_inflight_directive",
+      "description": "A failed session-list query changes its notice only; it cannot consume an unrelated pending directive or its durable acknowledgement."
+    },
+    {
+      "test_name": "completion_wheel_clamps_without_scrolling_transcript",
+      "description": "Wheel input owns the open completion menu and clamps to its first/last candidate without changing conversation offset."
+    },
+    {
+      "test_name": "unrelated_session_payload_is_not_materialized",
+      "description": "Global sequence envelopes from another session pass through without reading their CAS text; a missing unrelated payload cannot block the active display."
+    }
+  ],
+  "dependencies": [
+    "KernelHandle",
+    "Composer",
+    "ScreenState",
+    "InputScheduler",
+    "TerminalGuard"
+  ],
+  "libraries": [
+    "tokio",
+    "clap",
+    "ratatui",
+    "crossterm"
+  ],
+  "inputs": [
+    {
+      "name": "args",
+      "type": "Args",
+      "description": "Validated options and isolated state/workspace"
+    }
+  ],
+  "output_type": "Result<(), CliError>",
+  "output_description": "Real offline session or deterministic dump with cleanup"
+}

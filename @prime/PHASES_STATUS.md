@@ -1,6 +1,6 @@
 # Polaris — Phase status
 
-> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-24 (non-UI P3/P5/P9 continuation; historical P1 acceptance retained) · **Branch:** `main`
+> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-25 (CLI UI continuation; historical P1 non-UI acceptance retained) · **Branch:** `main`
 > (the team's periodic commits picked up part of the P0 work; this session committed nothing) ·
 > **Reference PC:** Windows 11 LTSC 2024, Ryzen 7 2700, 16 GB RAM, GTX 1650 4 GB, rustc/cargo 1.99.0,
 > WSL2 Ubuntu 24.04.5.
@@ -18,16 +18,16 @@
 |---|---|
 | PASS | 45 |
 | FAIL | 3 |
-| IN PROGRESS | 54 |
+| IN PROGRESS | 56 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 46 |
+| NOT STARTED | 44 |
 | **total** | 163 |
 
-**P1 non-UI logic: PASS. UI remains deferred by the user.** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
+**Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
 P1 now composes actual CAS/redb/SQLite, a signed directive verifier, bounded receipts/replay, native process ownership, workspace read tools and a real headless CLI. Windows hard-kill and Linux journal-throughput failures were fixed against failing regressions; earlier outputs remain retained. Tokio 1.54.0 was yanked during verification and was replaced with 1.54.1 in all resolution graphs. No advisory exemption was introduced.
 
-**Full M1/P1 UI acceptance remains open:** TUI, terminal composer/completion and dump snapshots are excluded by the user's direction. Facades remain IN PROGRESS where later-phase children or the full execution bundle are open; their P1 exports and local profile are checked separately. P2–P9 source compiles in the workspace, but this does not mark those feature phases complete.
+**Full M1/P1 UI acceptance remains open:** CLI UI implementation was subsequently authorized; tested foundation slices and remaining gates are recorded in §E33 and UI_PHASES. Facades remain IN PROGRESS where later-phase children or the full execution bundle are open; their P1 exports and local profile are checked separately. P2–P9 source compiles in the workspace, but this does not mark those feature phases complete.
 
 P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account requests, the Slint licence decision and dependency vetting open. PID-only orphan identities remain fail-closed for operator review. Full model/sandbox/S1 assembly, remote transports, live credentials and UI retain their own phase gates.
 
@@ -80,7 +80,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | Task | Status |
 |---|---|
 | P1-X-1 composition-root wiring v0 | PASS (§E30: actual LocalBackends, signed directive dispatch, read tools, durable stores, session typestate and shutdown) |
-| P1-X-2 TUI shell | NOT STARTED (user-deferred UI) |
+| P1-X-2 TUI shell | IN PROGRESS (§E33: real offline TUI, deterministic dump, focused model/renderer/controller/ConPTY evidence; complete UI gates remain open) |
 | P1-X-3 rustls aws-lc-rs provider in `main` | PASS (§E30: real main and subprocess provider smoke) |
 | P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final toolchain/guest image and live gateway/sync passed; remaining full audit in [P2 audit](P2_LOGIC_STATUS.md) |
 | P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
@@ -157,7 +157,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P1 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-cli` | `polaris-cli` | P1 | IN PROGRESS | P1 non-UI main/run/doctor/RTK, aws-lc provider, logging/signals and real local kernel smoke pass (§E30). TUI/dump/terminal UI remain user-deferred; full CLI gate remains open. |
+| `crate:polaris-cli` | `polaris-cli` | P1 | IN PROGRESS | UI foundation implementation 2026-10-24: real offline default TUI/dump, bounded signed directive admission/replay and session resume; focused controller/binary suites. See evidence/ui/verification.txt and UI_PHASES.md for open gates and doctor setup failure. Historical P1 non-UI evidence remains in E30. |
 | `crate:polaris-sdk` | `polaris-sdk` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: validated contracts and enum forwarding; SDK Miri supported tests and Kani 3/3. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-proto` | `polaris-proto` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded generated protocol, SDK conversions and frozen descriptor contract; native Windows suite, Linux warning-denied check/docs and proto_decode fuzz. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-config` | `polaris-config` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded layered config, trust/provenance/secret refs and real Windows sharing-lock retry. Final consistency/fuzz checkpoint recorded there. |
@@ -177,8 +177,8 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-tools-rtk` | `polaris-tools-rtk` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded JSON/text streams, real recorded cargo fixtures, actual CAS preservation, subprocess ledger contention and release throughput workloads. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-tools` | `polaris-tools` | P1 | IN PROGRESS | P1 builtin/RTK exports and generated catalog consistency pass (§E30). Math child is P3; full child gate stays open. |
 | `crate:polaris-kernel` | `polaris-kernel` | P1 | IN PROGRESS | P1 LocalBackends, signed directive dispatcher, actual read tools/stores/platform, durable session typestate and cancellation-safe shutdown pass (§E30). Full model/sandbox/S1 execution bundle and later child gates retain P2/P3/P4 scope. |
-| `crate:polaris-ui-model` | `polaris-ui-model` | P1 | IN PROGRESS | 111 Windows tests incl. 1,000-case properties, 5 initial snapshots reviewed, Unicode chip regression saved; Linux check; ui_completion fuzz 207,648 runs/61 s (§E21). UI deferred by user: remaining settings/provenance, full HUD, metadata arity, Quick Chips, fixtures/Miri and TUI integration. |
-| `crate:polaris-ui-cli` | `polaris-ui-cli` | P1 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ui-model` | `polaris-ui-model` | P1 | IN PROGRESS | 2026-10-24 UI foundation: North Star/palette migration, transactional bounded composer, global session projection, cockpit and pure questionnaire state; native tests. See UI_PHASES.md and evidence/ui/verification.txt. Human backend protocol, native/formal/performance acceptance remain open; historical E21 retained. |
+| `crate:polaris-ui-cli` | `polaris-ui-cli` | P1 | IN PROGRESS | 2026-10-24 UI foundation: pure responsive renderer plus bounded input scheduler, staged Ratatui presenter and fallible terminal guard; 37 native tests. See UI_PHASES.md and evidence/ui/verification.txt; phase gates remain open. |
 | `crate:polaris-ui` | `polaris-ui` | P1 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-spike-bus` | `polaris-spike-bus` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: 1M events with 1/8/64 readers, stalled subscriber, churn, bounded command accounting and RSS; Windows and WSL native suites. Final consistency/fuzz checkpoint recorded there. |
 
@@ -1278,3 +1278,12 @@ UI-model changes are explicit neutral event-match arms needed to keep the expand
 no rendering or interactive UI implementation was added. Phase 2 remains paused.
 
 Additional VERIFIED open gate at the final checkpoint: `cargo xtask check-witness` reports one violation at `crates/polaris-ext/crates/skills/src/approval_cache.rs:197`, where an existing unit-test fixture calls `ApprovalWitness::new` outside SDK/verifier. The checker and fixture were not weakened or bypassed. Raw output: [consistency.txt](evidence/continuation/consistency.txt). This is not a clean whole-system source-policy verdict.
+
+
+## E33 — CLI UI foundation (2026-10-24 to 2026-10-25)
+
+Implementation of UI_PLAN is authorized and in progress. The CLI model, responsive renderer, bounded terminal runtime and real offline application are present. Pure questionnaire state includes explicit None of the above, but the P3 human service/protocol is not implemented. No complete UI phase or M1 PASS is claimed.
+
+Evidence and scope: [verification index](evidence/ui/verification.txt), [contract and resource audit](evidence/ui/contract-audit.md), [UI gates](UI_PHASES.md), [module inventory](UI_MODULES.csv). Historical §E21/§E30 results are retained. Current doctor readiness and advisory-cache failures are recorded separately; earlier acceptance is not a claim that this managed environment satisfies setup today.
+
+E33 final checkpoint: the four-package offline command reported 266 passed, 1 failed and 1 ignored. The only failure is the current doctor readiness assertion for missing environment prerequisites. Selected owned-target safety Clippy, all-target UI/application API check and formatting passed. Configured advisory audit could not lock its read-only cache; the separately identified licence/bans/sources subset passed. Exact commands and raw files are in the linked verification index. Full UI gates remain open.

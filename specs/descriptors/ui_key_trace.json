@@ -1,0 +1,35 @@
+{
+  "type_of": "module",
+  "name": "key_trace",
+  "file_path": "apps/polaris-cli/src/key_trace.rs",
+  "logic_name": "Private content-free key trace",
+  "test_list": [
+    {
+      "test_name": "trace_never_overwrites_existing_file",
+      "description": "Create-new rejects existing data"
+    },
+    {
+      "test_name": "trace_excludes_draft_paste_and_printable_keys",
+      "description": "Canary values absent in trace despite key/paste records"
+    },
+    {
+      "test_name": "trace_refuses_symbolic_link_target",
+      "description": "Existing symlink targets cannot be overwritten (Unix test, Windows transport policy separately verified)"
+    }
+  ],
+  "dependencies": [
+    "NormalizedInput"
+  ],
+  "libraries": [
+    "crossterm"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "&NormalizedInput",
+      "description": "Normalized terminal event containing possibly private text"
+    }
+  ],
+  "output_type": "io::Result<()>",
+  "output_description": "Only bounded nontext event categories written into a newly created diagnostic file"
+}

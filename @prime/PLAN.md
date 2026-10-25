@@ -2,6 +2,7 @@
 
 > **Document:** `@prime/PLAN.md` · **Version:** 1.0 · **Date:** 2026-10-20 · **Branch:** `mvp`
 > **Companions:** `@prime/PHASES.md` (tasks) · `@prime/PHASES_STATUS.md` (evidence-backed status)
+> **CLI UI companions:** [UI_PLAN.md](UI_PLAN.md) (design/contracts), [UI_PHASES.md](UI_PHASES.md) (gates), [UI_MODULES.csv](UI_MODULES.csv) (logical modules); CLI implementation in progress; see UI_PHASES for remaining acceptance gates.
 > **Single source of truth for packages:** `@prime/tools/workspace.toml` (regenerate with `python -I @prime/tools/workspace.py gen`)
 > **Binding rules:** `@prime/prompt.md` (engineering) · `AGENTS.md` (truth kernel + completion contract) | IF ALL OF IT EXISTS IN WORKSPACE.
 
@@ -509,14 +510,30 @@ An offline seed is built by `xtask` as a local artifact (not committed; licensin
 
 ### 6.16 Interfaces & design system
 
-TUI first (`polaris-ui-cli`): demo **design** reused (not code): canvas `#000000`, text `#E8E8E8`,
-accent NVIDIA green `#76B900`, gold `#F9E2AF` (mentions/tools/plan), blue `#89B4FA` (settings/goal),
-pink `#F5C2E7` (auto mode), diff `#91CD66/#07230C` and `#F59696/#320709`, error `#AC4242`, warning
-`#E5B454`; chip logo with `✦`; composer (paste chips, history recall, Shift+Enter/Alt+Enter/Ctrl+J
-newline, Shift+Up/Down effort, Shift+Tab plan/auto), completion menus for `$ / @`, `--dump WxH` snapshots.
-Web (`polaris-ui-web`): approved welcome page (Space Grotesk / Inter / JetBrains Mono; aurora/stars
-atmosphere; composer pill; model popover). Desktop: Slint (femtovg/software renderers). RPC:
-`polaris-rpc` (named pipe + token auth; TCP + mTLS).
+The CLI-first specification is [UI_PLAN.md](UI_PLAN.md); execution gates are
+[UI_PHASES.md](UI_PHASES.md), with ownership/dependencies in [UI_MODULES.csv](UI_MODULES.csv).
+Implementation is now authorized and in progress; code presence alone is not acceptance evidence.
+These companions extend P1-X-2/M1 through P2–P4 and
+individually gated P5–P8 capabilities; desktop and full web planning remain deferred.
+
+TUI design reuses the demo's **behavior/style, not code**: black canvas, minimal North Star
+(9×5 welcome, 5×3 compact, one-cell app-bar star), #141414 prompt surface, restrained green/gold/blue/
+pink roles, growing open-sided composer, completion and semantic selection. UI_PLAN §§2/4/5 supersede
+the earlier chip artwork and unconditional keyboard claims. Use safe terminal capability fallbacks;
+no authored unsafe console exception is selected. Ratatui supplies the sole cell diff, with bounded
+staged output/cursor handling, demand-driven repaint and independently responsive kernel control.
+
+Conversation stays primary. Optional panels (34 columns including divider at ≥120×28; sheets below)
+expose tasks, agents, questions, review, proof, context and system facts without inventing progress.
+Human ask/answer uses a separate durable P3-X-5 protocol, not S1 classification: Tab notes, Enter
+submits all, Left/Right questions outside notes, Up/Down highlight, Space selects and Esc interrupts
+only the requester. Choice questions include explicit None of the above, exclusive in multi-select;
+no defaults, optional notes, and security approvals remain separate. UI_PLAN §3.4 defines the contract.
+
+Web welcome reference only: Space Grotesk / Inter / JetBrains Mono, green aurora/stars and black
+composer. WEB-WELCOME and the separately gated WEB-OPT follow-on remain deferred; optimization is
+welcome-only and requires a measured baseline. Slint desktop and full Leptos SSR/PWA/RPC interface
+design remain later P9 work under ADR-012/014; no GUI/web implementation is authorized here.
 
 ### 6.17 Platform seam
 
@@ -743,6 +760,9 @@ Canonical spelling follows initial.md (`$subagent-models(model(lo-hi), …)`); t
 | `/ci` `/ci-run` | built-in CI pipeline | devenv-cicd | P8 | msg 41 |
 | `/nix-flake` | draft + evaluate flake.nix | devenv-nix | P8 | msg 41 |
 | `/proof-of-done` | run the completion gate explicitly | runtime-guards | P2 | msg 37 |
+| `/panel [VIEW]` | open/close optional inspection panel or narrow sheet; navigation only | ui | P1 shell; data at owner phase | UI_PLAN §2.4 |
+| `/agents` | real frame roster/thread inspection; F3 alias | ui, runtime-frames | P3 | UI_PLAN §2.4 |
+| `/questions` | inspect pending human requests; answering/interruption uses P3-X-5 domain API | ui, kernel, runtime-frames | P3 | UI_PLAN §3.4 |
 
 ### 9.3 Mentions and model tools
 
@@ -952,6 +972,8 @@ Cross-cutting conventions used by every crate in this group:
 ---
 
 ### `polaris-sdk` — Domain newtypes, error kinds, API-registry traits, Backends bundle, PlatformOps, command/event contracts
+
+**CLI follow-on (planned):** UI_PLAN §§3.1–3.4 and P3-X-5 add separate human request ids, CAS payload contracts, atomic answer command semantics and durable requested/answered/interrupted events. Preserve small Copy events, old schema readability and command/event conversion coverage. Existing S1 Question types are not human forms; no SDK→UI dependency.
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -2371,6 +2393,8 @@ pub enum RulesError { Yaml(String), BadPattern { rule: RuleId, reason: String },
 
 ### `polaris-kernel` — facade over the kernel children and the composition root (L5)
 
+**CLI follow-on (planned):** UI4/UI5 application adapters consume real session/event/CAS contracts; P3-X-5 adds validated atomic human answers and targeted CancelFrame dispatch. An enum variant is not implementation evidence. Missing domain APIs stay owned here/SDK/runtime, never fabricated by the renderer; UI_PLAN §3 defines receipt/replay rules.
+
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-kernel` | L5 | facade | (top-level) | P1 |
@@ -3032,6 +3056,8 @@ pub enum VerifierError { Token(CapabilityError), Metrics(CodeIntelError), Decisi
 ---
 
 ### `polaris-runtime-frames` — agents as context frames over one S2 client and one S1 engine
+
+**CLI follow-on (planned):** P3-X-5/UI5-10 add real ask_user host/tool routing, durable request wait/resume and per-frame cancellation ownership. Only the requesting frame waits; siblings continue without a dependency on the P7 DAG. Answer/cancel races serialize one terminal outcome. See UI_PLAN §3.4.
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -6695,6 +6721,8 @@ pub use polaris_ui_web as web;
 
 ### `polaris-ui-model` — shared view models, event reducers, composer/completion logic and design tokens for every frontend
 
+**CLI follow-on (planned):** UI_PLAN §§2–4 governs current design, session-aware bounded projection, availability, transactional submission, cockpit state and the separate P3 human-question model. The older API sketch below is conceptual; actual event folding accepts EventRecord, not a bare Event. No terminal/backend I/O belongs in this crate.
+
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-ui/crates/model` | L6 | lib | `polaris-ui` | P1 |
@@ -6709,7 +6737,7 @@ pub struct ViewState {
     pub model: ModelId, pub effort: Effort,                                     // Low..Max (parser also accepts 1-5)
     pub settings: SessionSettings, pub status: StatusSnapshot, pub dag: Option<DagView>,
 }
-pub fn reduce(state: &mut ViewState, event: &Event) -> Result<(), ReduceError>;  // seq gaps are an error, not a panic
+pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceError>;  // seq gaps are an error, not a panic
 
 pub struct Composer { /* text, cursor, selection, undo, attachments, history cursor */ }
 impl Composer {
@@ -6732,7 +6760,7 @@ pub mod tokens { /* colour roles, see table */ }
 pub mod logo   { pub const WELCOME: LogoGrid; pub const COMPACT: LogoGrid; pub const EMBLEM: LogoGrid; }
 ```
 
-Design tokens extracted from the demo (VERIFIED, read from `docs/ui-design.md`, `docs/color-policy.md`, `docs/branding/hybrid-palette.json`, `webui/styles.css`). Every colour is a role; frontends choose truecolor, ANSI or inherit.
+Planned active CLI tokens follow UI_PLAN §2.2 and the source-inspected current demo `docs/header-logo.md`, `docs/branding/north-star-palette.json` and `docs/color-policy.md`. Existing model code still needs the explicit UI1-1 requirement/assertion migration. Web welcome tokens remain a separate deferred surface.
 
 | Role | Hex | Source |
 |---|---|---|
@@ -6745,34 +6773,37 @@ Design tokens extracted from the demo (VERIFIED, read from `docs/ui-design.md`, 
 | dollar settings, goal line | `#89B4FA` (hover `#B4D2FF`) | prompt-settings.md |
 | error title/body, regular weight | `#AC4242` (ANSI fallback Red) | ui-design.md |
 | warning amber | `#E5B454` (web `--p-warning`; TUI value not stated in docs) | styles.css |
-| sent-prompt surface | `#373737` | ui-design.md |
+| sent-prompt surface | `#141414` | UI_PLAN §2.2 / current demo |
 | "To latest" | bg `#262626`, hover `#373737` | ui-design.md |
 | empty-editor placeholder | `#525252`, text "What's on your mind for Polaris?" | prompt-settings.md |
 | chart series | green, cyan, gold | ui-design.md |
-| selection | 30% source-colour tint blended over the current background (white on black = `#464646`; gold `#4B4435`; green `#233800`; blue `#29364B`; on `#373737` white = `#6C6C6C`); ANSI/terminal: neutral index 237; no-color: bold | composer.md |
-| logo | star `#24D046`, traces `#76B900`, mint highlight `#96D6AC`, upper/left frame `#B8B8B8`, lower/right + pins `#6B6B6B`, package surface `#1C1C1C` | header-logo.md |
+| selection | 30% source tint over actual background; white on `#141414` = `#545454`; preserve source foreground/emphasis; ANSI/terminal index 237; no-color bold | UI_PLAN §2.2 |
+| logo | center `#C0E58C`, rays `#76B900`, tips `#6B6B6B`; no filled package | current header-logo.md; UI_PLAN §2.2 |
 | web surfaces | surface `#141414`, raised `#1C1C1C`, text `#E8E8E8`, green-light `#C0E58C`, line `#FFFFFF12`, radius 14px, speed 160ms | styles.css |
 | fonts (web) | Space Grotesk (display), Inter (body), JetBrains Mono (mono); OFL-licensed files bundled in the demo | styles.css, assets/fonts |
 
-Logo cell art (`·` = ordinary space; mint highlight at local (7,2) welcome / (5,0) compact; package occupies x=2..12,y=1..5 welcome and x=1..9,y=1..3 compact; ASCII fallback maps frame to `+ - |` and star to `*`). Welcome 15×7:
+Active CLI cell art (ordinary spaces pad each row to its declared width). Welcome 9×5:
+
+```text
+    ╷
+    │
+╶───✦───╴
+    │
+    ╵
 ```
-····│··│··│····
-··┌─┴──┴──┴─┐··
-··│····╷····│··
-──┤··╶─✦─╴··├──
-··│····╵····│··
-··└─┬──┬──┬─┘··
-····│··│··│····
+
+Compact 5×3:
+
+```text
+  ╷
+╶─✦─╴
+  ╵
 ```
-Compact 11×5:
-```
-···│·│·│···
-·┌─┴─┴─┴─┐·
-─┤··─✦─··├─
-·└─┬─┬─┬─┘·
-···│·│·│···
-```
-Emblem fallback (below seven body rows): 11×1, a centered `─✦─` with four ordinary spaces on each side.
+
+The app bar uses one-cell ✦. ASCII preserves each grid's dimensions with *, - and |. On an empty,
+inactive transcript, at least nine body rows show the welcome grid; five through eight show compact;
+otherwise only the app-bar mark remains. Typing alone does not hide the hero. Earlier chip artwork
+is historical reference, not the implementation requirement. See UI_PLAN §2.2 for migration tests.
 
 **Dependencies.** Internal: `polaris-sdk`. External: `serde = 1.0.229`. Likely additions to propose in `workspace.toml` (not yet there): `unicode-width = 0.2.2` and `unicode-segmentation = 1.13.3` for grapheme-correct cursor and wrap logic (both already pinned in the TOML for the TUI crate); decide whether text-width logic lives here or in `polaris-ui-cli`.
 
@@ -6821,11 +6852,21 @@ Emblem fallback (below seven body rows): 11×1, a centered `─✦─` with four
 
 ### `polaris-ui-cli` — ratatui widgets and screens: header/logo, conversation, composer, completion, bottom sheets, HUD, stats; Windows input handling
 
+**CLI follow-on (implementation in progress):** follow UI_PLAN §§2/4/5/8 and UI_PHASES UI2/UI3. The app owns the terminal and loop; any older run_tui suggestion in generated skeleton documentation is not a library ownership contract. Rendering, shared geometry and generic adapters remain independently testable; native clipboard/index work belongs to app adapters. P3 question widgets are not an M1 dependency.
+
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-ui/crates/cli` | L6 | lib | `polaris-ui` | P1 |
 
-**Purpose.** Renders `polaris-ui-model` state into a terminal and turns terminal events into model `Action`s. It rebuilds the demo UX (design only): two-row top margin, microchip header, borderless composer with a plain `>` pointer, opaque full-width completion menus, bottom-sheet popups that keep the conversation and draft underneath, a one-row footer, tool activity with collapsed gold titles, numbered code gutters, full-row diffs, selection with copy-on-release, and a deterministic `--dump WxH` text render for snapshot tests. It contains no I/O loop of its own (the loop lives in `polaris-cli`), so every screen can be rendered into a `ratatui` buffer in tests.
+**Purpose.** Renders `polaris-ui-model` state into a terminal and turns terminal events into model `Action`s. It rebuilds the demo UX (design only): two-row top margin, minimal North Star header, borderless composer with a plain `>` pointer, opaque full-width completion menus, bottom-sheet popups that keep the conversation and draft underneath, a one-row footer, tool activity with collapsed gold titles, numbered code gutters, full-row diffs, selection with copy-on-release, and a deterministic `--dump WxH` text render for snapshot tests. It contains no I/O loop of its own (the loop lives in `polaris-cli`), so every screen can be rendered into a `ratatui` buffer in tests.
+
+**Implemented foundation (2026-10-24):** `screen::render(Frame, &ScreenState, &RenderOptions)`,
+`screen::dump_text` / `dump_cells`, shared composer geometry, bounded `InputScheduler`,
+`BufferedPresenter` and fallible `TerminalGuard` are present. The app owns the actual loop.
+The API sketch and unchecked TODO items below describe the remaining target, not completed APIs.
+Native selection/clipboard, complete sheets, lexical syntax highlighting, full source paging and
+performance/formal/manual acceptance remain open. See [UI_PHASES.md](UI_PHASES.md) and
+[evidence/ui/verification.txt](evidence/ui/verification.txt).
 
 **API sketch.**
 ```rust
@@ -6845,14 +6886,14 @@ pub struct SemanticTextMap { /* source text <-> wrapped rows, same wrap code as 
 pub enum Screen { Welcome, Conversation, Model, Provider, Status, Usage, Stats, Diff, Help, Sessions, ContextMap, ParallelDag, Hud }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-ui-model`. External: `ratatui = 0.30.2`, `crossterm = 0.29.0` (feature event-stream), `ratatui-textarea = 0.9.3`, `syntect = 5.3.0` (default-fancy), `two-face = 0.5.2`, `ansi-to-tui = 8.0.1`, `arboard = 3.7.0`, `unicode-width = 0.2.2`, `unicode-segmentation = 1.13.3`. All crate APIs are to be confirmed at implementation; none was exercised in this session.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-ui-model`. External: `ratatui = 0.30.2`, `crossterm = 0.29.0` (feature event-stream), `ratatui-textarea = 0.9.3`, `syntect = 5.3.0` (default-fancy), `two-face = 0.5.2`, `ansi-to-tui = 8.0.1`, `arboard = 3.7.0`, `unicode-width = 0.2.2`, `unicode-segmentation = 1.13.3`. The implemented renderer/runtime use ratatui, crossterm, Unicode geometry and tracing directly; the other listed libraries remain planned and are not claimed as integrated. Current source/tests and open gates are recorded in UI_PHASES and evidence/ui/verification.txt.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: theme/colour resolution, header layout + logo renderer, conversation wrapping + semantic text map, input decoding, completion menu, diff/code renderer.
 - [ ] Implement colour policy: `--color auto|always|never`, `--color-depth auto|truecolor|ansi`, `--theme dark|terminal`, `NO_COLOR` respected only in auto, `TERM=dumb`, dumps always plain; invalid values rejected with a typed error.
-- [ ] Implement the shared layout: header (welcome 15x7 / compact 11x5 / emblem 11x1 by body rows), history, goal line right-aligned above the composer, composer, exactly one blank row, one-row footer.
+- [ ] Implement UI_PLAN §2 shared layout: header (9×5 / 5×3 / one-cell mark), history, goal/status, growing composer, blank row and context footer; optional 34-column panel at ≥120×28 and sheet below.
 - [ ] Implement the logo renderer from `polaris-ui-model::logo` with per-cell colour roles and ASCII mapping; test every glyph is one cell wide by the same width library as the renderer.
-- [ ] Implement conversation rendering: no role headings, sent prompts on `#373737`, assistant text neutral, `To latest` control, Worked-for summary line, Warning/Error labels visible without colour, URL underline.
+- [ ] Implement conversation rendering: no role headings, sent prompts on `#141414`, assistant text neutral, `To latest` control, Worked-for summary line, Warning/Error labels visible without colour, URL underline.
 - [ ] Implement code blocks (numbered muted gutter, lexical colours via syntect/two-face for Rust, Python, JS/TS, JSON, TOML, shell) and diffs (full-row green/red, +/- markers, old/new line numbers).
 - [ ] Implement the composer widget over `ratatui-textarea` (API to confirm) or a model-backed custom widget; plain `>` on the first visible editor row even when scrolled; placeholder is outside the source map.
 - [ ] Implement completion menus: opaque full width, one blank top margin row, clear covered cells and mouse targets, wheel navigation clamps, hover differs from keyboard focus.
@@ -6867,22 +6908,22 @@ pub enum Screen { Welcome, Conversation, Model, Provider, Status, Usage, Stats, 
 |---|---|
 | unit | theme resolution matrix (color x depth x NO_COLOR x TERM=dumb x dump); `layout()` invariants (one blank row, no overlap at 60x20, 80x24, 120x40); logo cell widths |
 | proptest | wrapped-row count equals semantic-map row count for arbitrary Unicode text (the demo's drift bug class); selection copy returns a substring of the source |
-| insta snapshot (--dump WxH) | scenarios welcome, conversation, error/warning, models, provider, status, usage, stats, diff, help, sessions, context-map, parallel-dag; sizes 60x20, 80x24, 120x40; ASCII variant; plus `dump_styles` JSON snapshots for colour roles (black canvas, `#1C1C1C` package, `#24D046` star, `#373737` prompt, `#F9E2AF` tool title, `#F5C2E7` auto) |
+| insta snapshot (--dump WxH) | scenarios welcome, conversation, error/warning, models, provider, status, usage, stats, diff, help, sessions, context-map, parallel-dag; sizes 60x20, 80x24, 120x40; ASCII variant; plus `dump_styles` JSON snapshots for colour roles (black canvas, `#C0E58C` star center, `#76B900` rays, `#141414` prompt, `#F9E2AF` tool title, `#F5C2E7` auto) |
 | fuzz | WSL2 nightly: input decoder on arbitrary bytes; completion renderer on arbitrary labels (width overflow) |
 | smoke | ConPTY transport tests live in `polaris-tests` (spawned binary through `portable-pty`): CSI-u Shift+Enter, bracketed paste, Shift+Tab, Esc/Return in popups, Ctrl+C twice |
 | security | terminal-escape injection: model output containing ESC/OSC sequences is rendered inert (stripped or escaped) in conversation and tool bodies |
-| load/stress | render 10k-entry history at 120x40: frame time measured (target to measure, e.g. < 16 ms) with virtualised rows |
+| load/stress | render 10k-entry history at 120x40: paged-history/cold-reflow and warm-frame measurements under UI_PLAN §8; binding <8 ms render target at 200×60, not the older illustrative 16 ms |
 
 **Test-first descriptors.**
 | logic_name | type_of | name | file_path | test names |
 |---|---|---|---|---|
 | Colour Policy | function | `resolve_theme` | `crates/polaris-ui/crates/cli/src/theme.rs` | `auto_respects_no_color`, `always_overrides_no_color`, `never_disables_all_color`, `invalid_depth_rejected`, `dump_is_plain_regardless_of_depth`, `terminal_theme_inherits_colors` |
-| Shared Layout | function | `layout` | `crates/polaris-ui/crates/cli/src/layout.rs` | `one_blank_row_between_composer_and_footer`, `header_switches_to_compact_when_draft_unsent`, `emblem_below_seven_body_rows`, `no_overlap_at_60x20` |
+| Shared Layout | function | `layout` | `crates/polaris-ui/crates/cli/src/layout.rs` | `one_blank_row_between_composer_and_footer`, `typing_keeps_empty_welcome`, `compact_at_five_to_eight_body_rows`, `appbar_only_below_five_body_rows`, `no_overlap_at_60x20` |
 | Semantic Text Map | struct | `SemanticTextMap` | `crates/polaris-ui/crates/cli/src/text_map.rs` | `row_count_matches_renderer`, `selection_crosses_message_boundaries`, `wide_and_combining_chars_keep_alignment`, `chip_copies_expanded_payload` |
 | Input Decoding | function | `decode_input` | `crates/polaris-ui/crates/cli/src/input.rs` | `paste_never_submits`, `csi_u_shift_enter_is_newline`, `legacy_reverse_tab_is_shift_tab`, `release_events_ignored`, `unknown_sequence_is_error_not_panic` |
 
 **Risks & open questions.**
-- UNVERIFIED (spike S0-10): crossterm 0.29 on Windows may drop the ESC of a CSI-u Shift+Enter, or ConPTY may consume it. The demo's docs report exactly this with an older crossterm and fixed it with unsafe `ReadConsoleInputW`; that is the DEMO's evidence, not ours. Fallback order from the plan: Alt+Enter / Ctrl+J, then a declared unsafe exception only if those fail.
+- UNVERIFIED (spike S0-10): crossterm 0.29 on Windows may drop the ESC of a CSI-u Shift+Enter, or ConPTY may consume it. The demo's docs report exactly this with an older crossterm and fixed it with unsafe `ReadConsoleInputW`; that is the DEMO's evidence, not ours. Use only verified safe fallback chords; no authored unsafe console exception is selected for this CLI. If the safe transport cannot report a chord, expose its limitation instead of fabricating modifiers.
 - UNVERIFIED: `ratatui-textarea` 0.9.3 feature set versus the demo's custom editor behaviour (undo, visual-row history, chips). May need a model-backed widget instead.
 - VERIFIED (demo docs): physical Alacritty key emission, live resize and font rendering were never automated in the demo; ours will not be either. Manual checklist item for P10.
 - LIKELY: `ratatui`'s test backend is enough for `--dump`; confirm its exact name and API on 0.30.2.
@@ -7033,6 +7074,8 @@ Web design contract extracted from the demo (VERIFIED from `webui/index.html`, `
 
 ### `polaris-cli` — terminal client `polaris`: ratatui TUI (default), headless `polaris run`, `doctor`, `--dump WxH`
 
+**VERIFIED implementation (2026-10-24):** no subcommand selects the real local offline TUI; `--dump WxH` renders without services or a TTY. The optional prompt is unsent prefill. Existing onboarding/status/sandbox/rtk/run/doctor routes are retained. Real signed directives, registry queries, session resume and CAS replay are integrated; provider/model execution and P9 attachment remain unavailable. Focused tests, ConPTY smoke and current limitations are recorded in UI_PHASES and evidence/ui/verification.txt. The full CLI test command still fails the doctor readiness assertion in this environment; no check was weakened.
+
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `apps/polaris-cli` | L7 | app | none | P1 |
@@ -7061,7 +7104,7 @@ pub enum CliError { /* thiserror: Config, Terminal, Kernel, Rpc, UsageError */ }
 ```
 `--scenario` is allowed with `--dump` (and tests) only, and loads event scripts from fixtures; there is no simulated "preview mode" in the product.
 
-**Full keymap (design from the demo, VERIFIED in README/composer.md; implemented by `polaris-ui-model::keymap` + `polaris-ui-cli::input`).**
+**Keymap target (shared metadata; implemented/capability-filtered local subset in UI_PHASES).** UI_PLAN §§2.4/3.4/4.1 defines context precedence and capability-filtered hints; human questions override generic popup Esc/Enter behavior.
 
 | Key | Action |
 |---|---|
@@ -7072,8 +7115,8 @@ pub enum CliError { /* thiserror: Config, Terminal, Kernel, Rpc, UsageError */ }
 | Shift+Tab | Toggle auto / plan mode |
 | Shift+Up / Shift+Down | Raise / lower active model effort (low, medium, high, xhigh, max) immediately |
 | Esc during work | Interrupt after dismissing any popup, menu, preview or selection; draft preserved |
-| Esc in any popup | Back to previous view, no selection applied |
-| Enter in info popups | Close status, usage, stats, diff, transcript, help |
+| Esc in ordinary popup | Back to previous view, no selection applied; human-question popup instead interrupts its requester (UI_PLAN §3.4) |
+| Enter in info popups | Close status, usage, stats, diff, transcript, help; human-question Enter validates/submits all answers |
 | Enter in selection menus | Confirm (model menu applies model and closes) |
 | `?` with empty draft | Open shortcuts |
 | PageUp / PageDown | Scroll conversation or popup |

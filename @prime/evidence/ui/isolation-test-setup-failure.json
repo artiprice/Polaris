@@ -1,0 +1,16 @@
+{
+  "name": "unrelated-cas-red-recovered",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "session::tests::unrelated_session"
+  ],
+  "stdout": "\nrunning 1 test\ntest session::tests::unrelated_session_payload_is_not_materialized ... FAILED\n\nfailures:\n\n---- session::tests::unrelated_session_payload_is_not_materialized stdout ----\nError: Kernel(EventLog(Locked))\n\n\nfailures:\n    session::tests::unrelated_session_payload_is_not_materialized\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.10s\n\n",
+  "stderr": "    Finished `test` profile [unoptimized] target(s) in 31.48s\n     Running unittests src\\lib.rs (target\\debug\\deps\\polaris_cli-08fd469deb879fd8.exe)\nerror: test failed, to rerun pass `-p polaris-cli --lib`\n",
+  "done": true,
+  "code": 101
+}

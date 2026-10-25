@@ -99,6 +99,46 @@
     {
       "test_name": "prop_error_leaves_state_unchanged",
       "description": "Any rejected record leaves the state unchanged."
+    },
+    {
+      "test_name": "session_views_validate_one_global_sequence_without_false_local_gaps",
+      "description": "One global sequence is checked once while interleaved events fold into independent session views without false local gaps."
+    },
+    {
+      "test_name": "conversation_capacity_errors_leave_entries_unchanged",
+      "description": "Conversation entry and byte caps return typed ViewError values without changing retained entries."
+    },
+    {
+      "test_name": "tool_title_capacity_errors_leave_projection_unchanged",
+      "description": "A resolved tool title that exceeds the metadata budget is rejected without changing the projection."
+    },
+    {
+      "test_name": "session_row_capacity_rejects_before_mutation",
+      "description": "A new session row beyond the per-view cap returns a typed capacity error and leaves state and sequence unchanged."
+    },
+    {
+      "test_name": "session_view_capacity_rejects_before_mutation",
+      "description": "A new session beyond the SessionViews cap returns a typed capacity error without advancing the global sequence."
+    },
+    {
+      "test_name": "tool_activity_capacity_rejects_before_mutation",
+      "description": "A tool event beyond the per-view activity cap returns a typed capacity error without changing state or sequence."
+    },
+    {
+      "test_name": "selected_projection_skips_unrelated_session_growth_but_folds_target",
+      "description": "Global sequence validation continues across more than 1024 unrelated session IDs while only the selected view is retained and folded."
+    },
+    {
+      "test_name": "selected_projection_rejects_global_gap_in_unrelated_record",
+      "description": "A sequence gap on an unrelated session returns SeqGap and leaves both selected facts and the global cursor unchanged."
+    },
+    {
+      "test_name": "selected_projection_never_folds_wrong_session_facts",
+      "description": "A valid unrelated record advances the global sequence but does not create or mutate selected-session facts."
+    },
+    {
+      "test_name": "user_capacity_preflight_matches_append_invariant",
+      "description": "check_user_capacity and push_user return identical results for the same String including entry-count and allocation-capacity byte limits."
     }
   ],
   "dependencies": [
@@ -118,7 +158,7 @@
     {
       "name": "state",
       "type": "&mut ViewState",
-      "description": "View state to fold into."
+      "description": "Either one ViewState folded contiguously by reduce(), or SessionViews enforcing the shared global bus sequence."
     },
     {
       "name": "record",
@@ -127,5 +167,5 @@
     }
   ],
   "output_type": "Result<(), ReduceError>",
-  "output_description": "Updated view state, or a typed error with the state unchanged."
+  "output_description": "Updated bounded state/projection, or a typed sequence/capacity error with no mutation."
 }

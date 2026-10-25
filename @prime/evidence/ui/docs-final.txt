@@ -1,0 +1,17 @@
+Document validation evidence — 2026-10-25 (continuation of 2026-10-24 UI planning)
+Files edited: @prime/UI_PLAN.md; @prime/UI_PHASES.md; @prime/evidence/ui/docs-final.txt. UI_MODULES.csv was read-only validated and left unchanged.
+No Cargo commands were run.
+
+COMMAND: python -I @prime/tools/workspace.py check-docs
+EXIT: 0
+OUTPUT: check-docs: 93 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK
+
+COMMAND: python -I @prime/tools/workspace.py render-docs --check
+EXIT: 0
+OUTPUT: PHASES.md: up to date (11 generated blocks)
+OUTPUT: PHASES_STATUS.md: up to date (10 generated blocks)
+
+UI_MODULES.csv validation (read-only Node fs parser): 56 module IDs; 0 duplicate IDs; 0 missing paths for EXISTING rows; 0 PROPOSED paths already present.
+UI_MODULES.csv headers: module_id,surface,module,owner,path,path_state,ui_tasks,main_phases,depends_on_modules,plan_anchor,demo_sources,disposition,safety_contract,acceptance,status
+
+Coverage/documentation boundary (superseded by final captures on 2026-10-25): active-only CAS materialization and requester cancellation/failure checks passed in the final package run. The full run exited 101 solely because doctor_installs_aws_lc_provider requires setup missing in the environment; all other targets passed. See final-tests.json/stdout/stderr and final-safety.json/stdout/stderr. No UI phase or M1 acceptance is claimed. The docs checks recorded above predate the final wording refresh; root will rerun them.

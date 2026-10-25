@@ -1,0 +1,100 @@
+{
+  "type_of": "module",
+  "name": "polaris_ui_cli::screen",
+  "file_path": "crates/polaris-ui/crates/cli/src/screen.rs",
+  "logic_name": "Polaris CLI screen renderer",
+  "test_list": [
+    {
+      "test_name": "dump_rejects_zero_and_oversized_viewports",
+      "description": "Reject zero dimensions and dimensions over 400x200 or 80000 cells before rendering or allocation."
+    },
+    {
+      "test_name": "tiny_live_viewport_shows_resize_notice_without_panicking",
+      "description": "Live render at dimensions below 60x20 paints bounded resize guidance and returns bounded geometry."
+    },
+    {
+      "test_name": "wide_grapheme_caret_geometry_matches_composer",
+      "description": "A composer cursor after CJK and combining graphemes maps to a visible cell within the returned composer rectangle."
+    },
+    {
+      "test_name": "untrusted_controls_and_bidi_are_inert_in_dump",
+      "description": "ANSI/OSC control bytes and bidi overrides in transcript text are rendered inert while ordinary text remains visible."
+    },
+    {
+      "test_name": "optional_panel_uses_side_rail_only_at_threshold",
+      "description": "Open panel is a 34-column side rail at >=120x28, otherwise a bottom sheet; closed is absent and Main composer remains singular."
+    },
+    {
+      "test_name": "default_canvas_uses_north_star_background",
+      "description": "Styled dump uses a black #000000 canvas and distinct #141414 truecolor composer and submitted-prompt surfaces."
+    },
+    {
+      "test_name": "opaque_overlays_remove_covered_source_spans",
+      "description": "Responsive panel sheets and opaque information sheets omit covered transcript source spans from returned metadata."
+    },
+    {
+      "test_name": "ansi_palette_preserves_canvas_and_prompt_roles",
+      "description": "ANSI color mode maps the canvas and prompt surface to distinct indexed 16-color values."
+    },
+    {
+      "test_name": "history_scroll_and_workspace_are_source_driven",
+      "description": "Caller-provided wrapped-row scroll changes the visible source interval and optional workspace label appears in the header."
+    },
+    {
+      "test_name": "completion_overlay_paints_selection_and_hides_underlying_sources",
+      "description": "Resolved completion candidates and selected style render while the opaque menu removes covered source spans."
+    },
+    {
+      "test_name": "caller_selected_panel_content_renders_in_both_responsive_modes",
+      "description": "Caller-resolved title, lines, scroll and footer appear in both the wide side rail and narrow opaque sheet."
+    },
+    {
+      "test_name": "composer_mouse_vertical_and_guard_helpers_share_wrap_rows",
+      "description": "Mouse selection, vertical cursor movement and true first/last row guards use the renderer’s wrapped visual geometry even when the composer viewport is scrolled."
+    },
+    {
+      "test_name": "composer_mouse_targets_chip_boundaries_only",
+      "description": "Mouse targeting never returns a byte cursor inside an atomic paste chip."
+    },
+    {
+      "test_name": "long_composer_window_tracks_cursor_and_renders_recent_rows",
+      "description": "Long draft viewport follows the cursor and renders bounded wrapped rows from the active window."
+    }
+  ],
+  "dependencies": [
+    "polaris-ui-model::ViewState",
+    "polaris-ui-model::Composer",
+    "polaris-ui-model::Suggestion",
+    "ratatui::Frame",
+    "ratatui::TestBackend"
+  ],
+  "libraries": [
+    "ratatui",
+    "unicode-width",
+    "unicode-segmentation"
+  ],
+  "inputs": [
+    {
+      "name": "state",
+      "type": "&ScreenState",
+      "description": "Borrowed real model view/composer with caller-owned scroll, workspace label, selected panel content, transient overlays, notice, key hints, and panel presentation state."
+    },
+    {
+      "name": "options",
+      "type": "&RenderOptions",
+      "description": "Truecolor, named-terminal, indexed-ANSI, or no-color palette plus glyph policy; no I/O or session effects."
+    },
+    {
+      "name": "width",
+      "type": "u16",
+      "description": "Requested dump width validated before buffer creation."
+    },
+    {
+      "name": "height",
+      "type": "u16",
+      "description": "Requested dump height validated before buffer creation."
+    }
+  ],
+  "output_type": "RenderMetadata / Result<CellDump, RenderError> / Result<String, RenderError>",
+  "output_description": "Bounded painter metadata with visible semantic source spans and Unicode composer caret geometry, or deterministic styled/plain dumps from the same Ratatui render path. Public caret, mouse, vertical-navigation and row-guard helpers share the same composer wrapping geometry."
+}

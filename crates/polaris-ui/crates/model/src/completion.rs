@@ -164,6 +164,9 @@ pub const SLASH_HELP: &[HelpEntry] = help! {
     "ci-run" => "Run the sandbox CI pipeline",
     "nix-flake" => "Manage a Nix development environment",
     "proof-of-done" => "Inspect completion evidence",
+    "panel" => "Open or pin the cockpit panel",
+    "agents" => "Inspect active agents",
+    "questions" => "Review pending human questions",
 };
 
 /// Help for every typed directive; drift tests compare this with the parser.

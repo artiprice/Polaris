@@ -1,0 +1,60 @@
+{
+  "type_of": "module",
+  "name": "scheduler",
+  "file_path": "src/scheduler.rs",
+  "logic_name": "Terminal Scheduler",
+  "test_list": [
+    {
+      "test_name": "preserves_sequence_across_reserved_cancel_lane",
+      "description": "Merge ordinary and reserved cancellation queues by sequence."
+    },
+    {
+      "test_name": "enforces_record_payload_and_batch_limits",
+      "description": "Enforce 1024 records, 2 MiB payload, 256 events and 4 ms deadline."
+    },
+    {
+      "test_name": "schedules_dirty_frames_at_sixty_fps_without_idle_wakeups",
+      "description": "Do not schedule clean frames; cap dirty frames to 60 fps."
+    },
+    {
+      "test_name": "reserved_cancel_queue_preserves_cross_lane_order_and_works_when_regular_queue_full",
+      "description": "Accept cancellation beyond ordinary queue capacity, reject additional ordinary records, and retain cross-lane sequence."
+    },
+    {
+      "test_name": "payload_budget_and_batch_deadline_are_enforced",
+      "description": "Reject retained paste payload above 2 MiB and stop a batch at the 4 ms deadline."
+    },
+    {
+      "test_name": "coalesces_adjacent_resize_events_to_latest_dimensions",
+      "description": "Replace only adjacent Resize events with the latest dimensions."
+    },
+    {
+      "test_name": "coalesces_only_adjacent_mouse_moves_without_crossing_semantic_barriers",
+      "description": "Coalesce adjacent Moved events while preserving mouse drag and other semantic barriers."
+    },
+    {
+      "test_name": "every_semantic_and_cancel_kind_breaks_mouse_move_coalescing",
+      "description": "Ensure keys, paste, wheel, drag, resize, and reserved cancellation events prevent mouse-move coalescing across them."
+    }
+  ],
+  "dependencies": [
+    "NormalizedInput"
+  ],
+  "libraries": [
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "NormalizedInput",
+      "description": "Normalized terminal event."
+    },
+    {
+      "name": "now",
+      "type": "Duration",
+      "description": "Monotonic caller-supplied time."
+    }
+  ],
+  "output_type": "Result<EventBatch, SchedulerError>",
+  "output_description": "Bounded ordered event batch and demand-frame scheduling."
+}

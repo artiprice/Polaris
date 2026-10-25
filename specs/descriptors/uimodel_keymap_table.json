@@ -51,6 +51,10 @@
     {
       "test_name": "prop_lookup_never_panics",
       "description": "Any chord in any context and guard state resolves to Some or None without panicking."
+    },
+    {
+      "test_name": "questionnaire_contexts_bind_atomic_answer_and_requester_controls",
+      "description": "Questionnaire contexts isolate the specified answer navigation, notes, atomic submit, interrupt requester and defer controls from global shortcuts."
     }
   ],
   "dependencies": [

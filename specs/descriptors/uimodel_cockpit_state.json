@@ -1,0 +1,48 @@
+{
+  "type_of": "struct",
+  "name": "CockpitState",
+  "file_path": "crates/polaris-ui/crates/model/src/cockpit.rs",
+  "logic_name": "Cockpit State",
+  "test_list": [
+    {
+      "test_name": "default_is_main_focused_with_panel_closed",
+      "description": "A fresh CLI opens on the conversation with no panel open or pinned."
+    },
+    {
+      "test_name": "toggle_selected_panel_and_focus_cycle",
+      "description": "Panel toggle and focus cycle preserve the main composer submission target."
+    },
+    {
+      "test_name": "resize_collapses_and_restores_without_focus_theft",
+      "description": "Viewport changes represent a sheet, indicator or resize notice without taking main focus."
+    },
+    {
+      "test_name": "focused_panel_becomes_sheet_and_small_viewport_notice",
+      "description": "A focused narrow panel becomes a sheet; too-small layouts request a resize."
+    },
+    {
+      "test_name": "panel_focus_never_changes_main_target",
+      "description": "Selecting or focusing a child panel never changes the submission target."
+    }
+  ],
+  "dependencies": [
+    "none"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "state",
+      "type": "&mut CockpitState",
+      "description": "Pure transient panel, focus, pin and geometry state."
+    },
+    {
+      "name": "viewport",
+      "type": "ViewportClass",
+      "description": "Viewport width/height class from shared layout."
+    }
+  ],
+  "output_type": "CockpitState / PanelPresentation",
+  "output_description": "Pure transient panel selection, viewport, pin and focus state; no backend calls or execution ownership."
+}

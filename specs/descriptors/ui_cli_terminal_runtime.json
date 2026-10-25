@@ -1,0 +1,117 @@
+{
+  "type_of": "module",
+  "name": "cli_terminal_runtime",
+  "file_path": "crates/polaris-ui/crates/cli/src/terminal.rs",
+  "logic_name": "CLI terminal runtime boundaries",
+  "test_list": [
+    {
+      "test_name": "normalizes_supported_crossterm_events",
+      "description": "Terminal runtime boundary regression in terminal_input: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "rejects_paste_over_one_mibibyte",
+      "description": "Terminal runtime boundary regression in terminal_input: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "only_pressed_escape_and_control_c_are_cancel_priority",
+      "description": "Terminal runtime boundary regression in terminal_input: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "preserves_sequence_across_reserved_cancel_lane",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "enforces_record_payload_and_batch_limits",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "schedules_dirty_frames_at_sixty_fps_without_idle_wakeups",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "reserved_cancel_queue_preserves_cross_lane_order_and_works_when_regular_queue_full",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "payload_budget_and_batch_deadline_are_enforced",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "coalesces_adjacent_resize_events_to_latest_dimensions",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "coalesces_only_adjacent_mouse_moves_without_crossing_semantic_barriers",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "every_semantic_and_cancel_kind_breaks_mouse_move_coalescing",
+      "description": "Terminal runtime boundary regression in terminal_scheduler: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "commits_only_explicit_nonempty_frames",
+      "description": "Terminal runtime boundary regression in terminal_presenter: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "bounds_staged_frame_and_marks_resync_after_partial_write",
+      "description": "Terminal runtime boundary regression in terminal_presenter: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "stages_and_deduplicates_cursor_intents",
+      "description": "Terminal runtime boundary regression in terminal_presenter: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "extracted_presenter_closes_live_writer_handles",
+      "description": "Terminal runtime boundary regression in terminal_presenter: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "ratatui_identical_grid_emits_zero_and_cursor_change_emits_only_position",
+      "description": "Terminal runtime boundary regression in terminal_presenter: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "rolls_back_acquired_modes_in_reverse_order",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "close_attempts_every_restore_step_and_reports_errors",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "drop_attempts_best_effort_cleanup",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "drop_attempts_remaining_modes_after_restore_error",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "presenter_partial_write_resync_then_guard_close_attempts_cursor_reveal",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    },
+    {
+      "test_name": "failed_mode_attempt_is_restored_even_when_enable_reports_error",
+      "description": "Terminal runtime boundary regression in terminal_lifecycle: bounded input, ordered scheduling, exact staged output or complete fallible restoration."
+    }
+  ],
+  "dependencies": [
+    "InputScheduler",
+    "NormalizedInput",
+    "BufferedPresenter",
+    "TerminalGuard"
+  ],
+  "libraries": [
+    "crossterm",
+    "ratatui",
+    "thiserror",
+    "tracing"
+  ],
+  "inputs": [
+    {
+      "name": "operations",
+      "type": "TerminalOps<W>",
+      "description": "Fallible terminal mode operations and bounded output writer."
+    }
+  ],
+  "output_type": "Result<(), TerminalError>",
+  "output_description": "Acquisition restores all possibly attempted modes; runtime preserves semantic ordering and reports partial output failure."
+}

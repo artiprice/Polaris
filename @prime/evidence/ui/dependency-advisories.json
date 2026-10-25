@@ -1,0 +1,15 @@
+{
+  "name": "dependency-advisories",
+  "command": [
+    "cargo",
+    "deny",
+    "--offline",
+    "check"
+  ],
+  "cwd": "C:/mDev/Polaris",
+  "status": "COMPLETE",
+  "started": "2026-10-24T23:48:48.564Z",
+  "pid": 6696,
+  "code": 1,
+  "finished": "2026-10-24T23:48:55.477Z"
+}

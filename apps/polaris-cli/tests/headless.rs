@@ -18,7 +18,12 @@ fn doctor_installs_aws_lc_provider() -> Result<(), Box<dyn std::error::Error>> {
         String::from_utf8_lossy(&output.stderr)
     );
     let report: serde_json::Value = serde_json::from_slice(&output.stdout)?;
-    assert_eq!(report["crypto_provider"], "aws-lc-rs");
+    assert_eq!(
+        report
+            .get("crypto_provider")
+            .and_then(serde_json::Value::as_str),
+        Some("aws-lc-rs")
+    );
     Ok(())
 }
 

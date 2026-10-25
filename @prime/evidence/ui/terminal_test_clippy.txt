@@ -1,0 +1,148 @@
+$ cargo clippy --offline --no-deps -p polaris-ui-cli --test terminal_input --test terminal_scheduler --test terminal_presenter -- -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Checking polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\screen.rs:358:5
+    |
+358 | /     if layout.panel_placement == PanelPlacement::BottomSheet {
+359 | |         if let Some(panel) = layout.panel {
+360 | |             remove_occluded_spans(
+361 | |                 &mut metadata.source_spans,
+...   |
+365 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `#[warn(clippy::collapsible_if)]` on by default
+help: collapse nested if block
+    |
+358 ~     if layout.panel_placement == PanelPlacement::BottomSheet
+359 ~         && let Some(panel) = layout.panel {
+360 |             remove_occluded_spans(
+...
+363 |             );
+364 ~         }
+    |
+
+warning: this pattern reimplements `Result::unwrap_or`
+   --> crates\polaris-ui\crates\cli\src\screen.rs:588:5
+    |
+588 | /     match u16::try_from(rows) {
+589 | |         Ok(value) => value,
+590 | |         Err(_) => 6,
+591 | |     }
+    | |_____^ help: replace with: `u16::try_from(rows).unwrap_or(6)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `#[warn(clippy::manual_unwrap_or)]` on by default
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\cli\src\screen.rs:709:5
+    |
+709 | /     match input.get(..end) {
+710 | |         Some(prefix) => prefix,
+711 | |         None => "",
+712 | |     }
+    | |_____^ help: ascribe the type &str and replace your expression with: `input.get(..end).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+    = note: `#[warn(clippy::manual_unwrap_or_default)]` on by default
+
+warning: used consecutive `str::replace` call
+   --> crates\polaris-ui\crates\cli\src\screen.rs:808:18
+    |
+808 |                   .replace('╶', "-")
+    |  __________________^
+809 | |                 .replace('╴', "-")
+810 | |                 .replace('─', "-")
+    | |__________________________________^ help: replace with: `replace(['╶', '╴', '─'], "-")`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_str_replace
+    = note: `#[warn(clippy::collapsible_str_replace)]` on by default
+
+warning: used consecutive `str::replace` call
+   --> crates\polaris-ui\crates\cli\src\screen.rs:806:17
+    |
+806 |               raw.replace('╷', "|")
+    |  _________________^
+807 | |                 .replace('│', "|")
+    | |__________________________________^ help: replace with: `replace(['╷', '│'], "|")`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_str_replace
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\cli\src\text.rs:128:5
+    |
+128 | /     match input.get(..end) {
+129 | |         Some(prefix) => prefix,
+130 | |         None => "",
+131 | |     }
+    | |_____^ help: ascribe the type &str and replace your expression with: `input.get(..end).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: this `if` has identical blocks
+   --> crates\polaris-ui\crates\cli\src\text.rs:139:28
+    |
+139 |       if is_bidi_control(ch) {
+    |  ____________________________^
+140 | |         None
+141 | |     } else if ch == '\n' {
+    | |_____^
+    |
+note: same as this
+   --> crates\polaris-ui\crates\cli\src\text.rs:141:26
+    |
+141 |       } else if ch == '\n' {
+    |  __________________________^
+142 | |         None
+143 | |     } else if ch == '\t' {
+    | |_____^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#if_same_then_else
+    = note: `#[warn(clippy::if_same_then_else)]` on by default
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\presenter.rs:157:12
+    |
+157 |       } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some() {
+    |  ____________^
+158 | |         if let Some(start) = shown_at {
+159 | |             bytes.drain(start..esc);
+160 | |         }
+161 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+157 ~     } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some()
+158 ~         && let Some(start) = shown_at {
+159 |             bytes.drain(start..esc);
+160 ~         }
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\presenter.rs:266:20
+    |
+266 |               } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes) {
+    |  ____________________^
+267 | |                 if bytes.get(reset_len..).is_some_and(is_cursor_suffix) {
+268 | |                     bytes.drain(..reset_len);
+269 | |                 }
+270 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+266 ~             } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes)
+267 ~                 && bytes.get(reset_len..).is_some_and(is_cursor_suffix) {
+268 |                     bytes.drain(..reset_len);
+269 ~                 }
+    |
+
+warning: `polaris-ui-cli` (lib) generated 9 warnings (run `cargo clippy --fix --lib -p polaris-ui-cli -- --no-deps -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing` to apply 6 suggestions)
+    Finished `dev` profile [unoptimized] target(s) in 5.63s
+EXIT_CODE: 0

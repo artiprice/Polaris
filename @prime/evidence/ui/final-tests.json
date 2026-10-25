@@ -1,0 +1,23 @@
+{
+  "name": "final-tests",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli",
+    "-p",
+    "polaris-kernel-directives",
+    "-p",
+    "polaris-cli",
+    "--no-fail-fast"
+  ],
+  "cwd": "C:/mDev/Polaris",
+  "status": "COMPLETE",
+  "started": "2026-10-24T23:48:38.478Z",
+  "pid": 6440,
+  "code": 101,
+  "finished": "2026-10-24T23:49:14.969Z"
+}

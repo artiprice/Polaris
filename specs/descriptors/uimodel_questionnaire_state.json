@@ -1,0 +1,80 @@
+{
+  "type_of": "struct",
+  "name": "QuestionnaireState",
+  "file_path": "crates/polaris-ui/crates/model/src/questionnaire.rs",
+  "logic_name": "Questionnaire State",
+  "test_list": [
+    {
+      "test_name": "questions_start_with_no_selection",
+      "description": "No named option, NoneOfTheAbove or text answer is preselected."
+    },
+    {
+      "test_name": "none_of_the_above_is_explicit_and_exclusive",
+      "description": "Every choice question offers explicit NoneOfTheAbove; selecting it clears named options and selecting a named option clears None."
+    },
+    {
+      "test_name": "multi_choice_toggles_named_options",
+      "description": "Space toggles a named option while preserving other selected options."
+    },
+    {
+      "test_name": "required_answers_block_atomic_submit_and_optional_is_unanswered",
+      "description": "Batch preparation validates all required questions and encodes optional missing answers as Unanswered."
+    },
+    {
+      "test_name": "required_free_text_needs_nonblank_answer_and_notes_are_optional",
+      "description": "Required free text must be nonblank; notes remain optional."
+    },
+    {
+      "test_name": "navigation_preserves_per_question_answers_and_notes",
+      "description": "Navigation retains each question’s answer and notes, with explicit notes focus."
+    },
+    {
+      "test_name": "oversized_field_rejects_without_truncating",
+      "description": "Per-field byte overflow rejects and preserves the editable field."
+    },
+    {
+      "test_name": "invalid_choice_kind_cannot_be_toggled",
+      "description": "Free-text questions reject choice toggles."
+    },
+    {
+      "test_name": "single_choice_and_none_are_mutually_exclusive",
+      "description": "A single choice has at most one named option and None is mutually exclusive."
+    },
+    {
+      "test_name": "answer_budget_rejects_without_truncating_notes_or_answer",
+      "description": "Aggregate answer bytes are capped and overflow does not truncate or mutate the field."
+    },
+    {
+      "test_name": "questionnaire_plan_caps_reject_excess_questions_and_options",
+      "description": "Reject more than eight questions or sixteen named options per question."
+    },
+    {
+      "test_name": "request_payload_cap_counts_aggregate_metadata",
+      "description": "Count metadata across the entire request against the bounded request estimate."
+    },
+    {
+      "test_name": "oversized_selected_option_ids_block_batch_without_losing_selections",
+      "description": "Oversized selected IDs reject batch preparation while preserving selections and reporting exhausted answer budget."
+    }
+  ],
+  "dependencies": [
+    "none; pure presentation state; no SDK/kernel human-request protocol"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "request",
+      "type": "QuestionnaireSpec",
+      "description": "Immutable request identity/revision and question availability snapshot."
+    },
+    {
+      "name": "action",
+      "type": "QuestionnaireAction",
+      "description": "UI-local key semantic or text edit."
+    }
+  ],
+  "output_type": "Result<QuestionnaireState, QuestionnaireError> / Result<QuestionnaireBatch, AnswerSubmitError>",
+  "output_description": "Pure questionnaire draft plus an atomically validated answer batch; no domain dispatch, cancellation, or authorization."
+}

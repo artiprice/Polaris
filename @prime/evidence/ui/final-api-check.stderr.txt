@@ -1,0 +1,7 @@
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Checking polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Checking polaris-ui-web v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\web)
+    Checking polaris-ui-gui v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\gui)
+    Checking polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Checking polaris-ui v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui)
+    Finished `dev` profile [unoptimized] target(s) in 7.08s

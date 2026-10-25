@@ -1,0 +1,1 @@
+2026-10-24 23:48:49 [ERROR] failed to acquire advisory database lock: failed to obtain lock file 'C:\Users\Admin\.cargo\advisory-dbs\db.lock': attempted to take an exclusive lock on a read-only path

@@ -1,0 +1,19 @@
+{
+  "name": "final-api-check",
+  "command": [
+    "cargo",
+    "check",
+    "--offline",
+    "-p",
+    "polaris-ui",
+    "-p",
+    "polaris-cli",
+    "--all-targets"
+  ],
+  "cwd": "C:/mDev/Polaris",
+  "status": "COMPLETE",
+  "started": "2026-10-24T23:52:08.039Z",
+  "pid": 5280,
+  "code": 0,
+  "finished": "2026-10-24T23:52:15.332Z"
+}

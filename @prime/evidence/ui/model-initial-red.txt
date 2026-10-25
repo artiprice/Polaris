@@ -1,0 +1,62 @@
+COMMAND: cargo test --offline -p polaris-ui-model --test view_reducer selected_projection
+EXIT_CODE: 101
+STDOUT:
+
+STDERR:
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1089:15
+     |
+1089 |         views.apply_selected(
+     |         ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1101:11
+     |
+1101 |     views.apply_selected(
+     |     ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1124:11
+     |
+1124 |     views.apply_selected(
+     |     ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1135:24
+     |
+1135 |     let result = views.apply_selected(
+     |                  ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1161:11
+     |
+1161 |     views.apply_selected(
+     |     ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `apply_selected` found for struct `polaris_ui_model::session::SessionViews` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1171:11
+     |
+1171 |     views.apply_selected(
+     |     ------^^^^^^^^^^^^^^ method not found in `polaris_ui_model::session::SessionViews`
+
+error[E0599]: no method named `check_user_capacity` found for struct `ViewState` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1193:22
+     |
+1193 |     assert_eq!(state.check_user_capacity(&accepted), Ok(()));
+     |                      ^^^^^^^^^^^^^^^^^^^ method not found in `ViewState`
+
+error[E0599]: no method named `check_user_capacity` found for struct `ViewState` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1197:25
+     |
+1197 |     let checked = state.check_user_capacity(&too_large);
+     |                         ^^^^^^^^^^^^^^^^^^^ method not found in `ViewState`
+
+error[E0599]: no method named `check_user_capacity` found for struct `ViewState` in the current scope
+    --> crates\polaris-ui\crates\model\tests\view_reducer.rs:1214:24
+     |
+1214 |     let checked = full.check_user_capacity(&final_text);
+     |                        ^^^^^^^^^^^^^^^^^^^ method not found in `ViewState`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-ui-model` (test "view_reducer") due to 9 previous errors

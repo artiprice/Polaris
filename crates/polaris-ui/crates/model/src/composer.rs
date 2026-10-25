@@ -2,6 +2,7 @@
 
 use crate::error::ComposerError;
 use core::ops::Range;
+use std::sync::Arc;
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Maximum expanded draft text, in bytes.
@@ -10,6 +11,9 @@ pub const MAX_TEXT_BYTES: usize = 1 << 20;
 pub const MAX_IMAGE_RGBA: usize = 64 << 20;
 /// Maximum image bytes attached to a draft.
 pub const MAX_ATTACHMENTS_TOTAL: usize = 128 << 20;
+pub const MAX_UNDO_ENTRIES: usize = 256;
+pub const MAX_HISTORY_ENTRIES: usize = 256;
+pub const MAX_RETAINED_BYTES: usize = 8 << 20;
 
 /// The payload hidden behind an atomic editor chip.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,7 +23,7 @@ pub enum Attachment {
         /// Unicode scalar count, used in the chip label.
         chars: usize,
         /// Text expanded on submission.
-        payload: String,
+        payload: Arc<str>,
     },
     /// An image whose pixel storage is owned by the application.
     Image {
@@ -59,6 +63,19 @@ pub struct Submission {
     pub images: Vec<ImageRef>,
 }
 
+/// An immutable send candidate tied to the composer revision it was prepared from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PreparedSubmission {
+    revision: u64,
+    submission: Submission,
+}
+impl PreparedSubmission {
+    #[must_use]
+    pub fn submission(&self) -> &Submission {
+        &self.submission
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct OwnedChip {
     id: u64,
@@ -79,6 +96,7 @@ struct Draft {
 #[derive(Debug, Clone, Default)]
 pub struct Composer {
     draft: Draft,
+    revision: u64,
     undo: Vec<Draft>,
     redo: Vec<Draft>,
     history: Vec<String>,
@@ -175,6 +193,39 @@ impl Composer {
             self.undo.push(self.draft.clone());
         }
         self.redo.clear();
+        self.trim_undo();
+        self.revision = self.revision.saturating_add(1);
+    }
+    fn trim_undo(&mut self) {
+        while self.undo.len().saturating_add(self.redo.len()) > MAX_UNDO_ENTRIES
+            || self.undo_bytes() > MAX_RETAINED_BYTES
+        {
+            if !self.undo.is_empty() {
+                self.undo.remove(0);
+            } else if !self.redo.is_empty() {
+                self.redo.remove(0);
+            } else {
+                break;
+            }
+        }
+    }
+    fn undo_bytes(&self) -> usize {
+        self.undo
+            .iter()
+            .chain(self.redo.iter())
+            .fold(0usize, |total, draft| {
+                let chips = draft.chips.iter().fold(0usize, |sum, chip| {
+                    sum.saturating_add(core::mem::size_of::<OwnedChip>())
+                        .saturating_add(match &chip.attachment {
+                            Attachment::Text { payload, .. } => payload.len(),
+                            Attachment::Image { .. } => 0,
+                        })
+                });
+                total
+                    .saturating_add(core::mem::size_of::<Draft>())
+                    .saturating_add(draft.text.len())
+                    .saturating_add(chips)
+            })
     }
 
     fn validate_range(&self, range: &Range<usize>) -> Result<(), ComposerError> {
@@ -241,7 +292,7 @@ impl Composer {
         let attachment = if payload.lines().count() > 5 || chars > 500 {
             Some(Attachment::Text {
                 chars,
-                payload: payload.clone(),
+                payload: Arc::<str>::from(payload.clone()),
             })
         } else {
             None
@@ -361,10 +412,12 @@ impl Composer {
     pub fn set_cursor(&mut self, at: usize) {
         self.draft.cursor = at.min(self.draft.text.len());
         self.snap_cursor();
+        self.revision = self.revision.saturating_add(1);
         self.group_space = false;
     }
     /// Move over one grapheme or chip to the left.
     pub fn move_left(&mut self) {
+        let before = self.draft.cursor;
         if let Some(at) = self
             .boundaries()
             .into_iter()
@@ -373,16 +426,23 @@ impl Composer {
         {
             self.draft.cursor = at;
         }
+        if before != self.draft.cursor {
+            self.revision = self.revision.saturating_add(1);
+        }
         self.group_space = false;
     }
     /// Move over one grapheme or chip to the right.
     pub fn move_right(&mut self) {
+        let before = self.draft.cursor;
         if let Some(at) = self
             .boundaries()
             .into_iter()
             .find(|at| *at > self.draft.cursor)
         {
             self.draft.cursor = at;
+        }
+        if before != self.draft.cursor {
+            self.revision = self.revision.saturating_add(1);
         }
         self.group_space = false;
     }
@@ -428,6 +488,8 @@ impl Composer {
             return false;
         };
         self.redo.push(core::mem::replace(&mut self.draft, draft));
+        self.trim_undo();
+        self.revision = self.revision.saturating_add(1);
         self.group_space = false;
         true
     }
@@ -437,6 +499,8 @@ impl Composer {
             return false;
         };
         self.undo.push(core::mem::replace(&mut self.draft, draft));
+        self.trim_undo();
+        self.revision = self.revision.saturating_add(1);
         self.group_space = false;
         true
     }
@@ -474,7 +538,7 @@ impl Composer {
                 return None;
             }
             match &chip.attachment {
-                Attachment::Text { payload, .. } => Some((chip.range.clone(), payload.clone())),
+                Attachment::Text { payload, .. } => Some((chip.range.clone(), payload.to_string())),
                 Attachment::Image { .. } => None,
             }
         }) else {
@@ -516,7 +580,7 @@ impl Composer {
     ///
     /// # Errors
     /// Returns `EmptySubmission` without mutation for blank drafts with no images.
-    pub fn submit(&mut self) -> Result<Submission, ComposerError> {
+    pub fn prepare_submit(&self) -> Result<PreparedSubmission, ComposerError> {
         let text = trim_blank_rows(&self.expanded(0..self.draft.text.len(), true));
         let images: Vec<_> = self
             .draft
@@ -530,12 +594,34 @@ impl Composer {
         if text.trim().is_empty() && images.is_empty() {
             return Err(ComposerError::EmptySubmission);
         }
+        Ok(PreparedSubmission {
+            revision: self.revision,
+            submission: Submission { text, images },
+        })
+    }
+
+    /// Commit only when no intervening edit or cursor move changed the composer revision.
+    pub fn commit_submit(
+        &mut self,
+        prepared: PreparedSubmission,
+    ) -> Result<Submission, ComposerError> {
+        if prepared.revision != self.revision {
+            return Err(ComposerError::StalePreparedSubmission);
+        }
         let history_text = self
             .expanded(0..self.draft.text.len(), false)
             .trim_end()
             .to_owned();
         if !history_text.trim().is_empty() && self.history.last() != Some(&history_text) {
             self.history.push(history_text);
+            while self.history.len() > MAX_HISTORY_ENTRIES
+                || self.history_bytes() > MAX_RETAINED_BYTES
+            {
+                if self.history.is_empty() {
+                    break;
+                }
+                self.history.remove(0);
+            }
         }
         self.draft = Draft::default();
         self.undo.clear();
@@ -543,7 +629,39 @@ impl Composer {
         self.history_cursor = None;
         self.saved_draft = None;
         self.group_space = false;
-        Ok(Submission { text, images })
+        self.revision = self.revision.saturating_add(1);
+        Ok(prepared.submission)
+    }
+
+    /// Discard a prepared send without changing the composer.
+    pub fn cancel_submit(&mut self, _prepared: PreparedSubmission) {}
+
+    /// Compatibility operation for callers that have already accepted responsibility for sending.
+    pub fn submit(&mut self) -> Result<Submission, ComposerError> {
+        let prepared = self.prepare_submit()?;
+        self.commit_submit(prepared)
+    }
+
+    fn history_bytes(&self) -> usize {
+        self.history.iter().fold(0usize, |total, item| {
+            total
+                .saturating_add(core::mem::size_of::<String>())
+                .saturating_add(item.len())
+        })
+    }
+
+    /// Number of undo snapshots retained.
+    #[must_use]
+    pub fn undo_len(&self) -> usize {
+        self.undo.len()
+    }
+    #[must_use]
+    pub fn undo_retained_bytes(&self) -> usize {
+        self.undo_bytes()
+    }
+    #[must_use]
+    pub fn history_retained_bytes(&self) -> usize {
+        self.history_bytes()
     }
 
     /// Number of distinct consecutive text prompts stored in this session.
@@ -562,6 +680,7 @@ impl Composer {
             ..Draft::default()
         };
         self.history_cursor = Some(at);
+        self.revision = self.revision.saturating_add(1);
         self.undo.clear();
         self.redo.clear();
         self.group_space = false;
@@ -601,6 +720,7 @@ impl Composer {
         };
         self.draft = draft;
         self.history_cursor = None;
+        self.revision = self.revision.saturating_add(1);
         self.undo.clear();
         self.redo.clear();
         self.group_space = false;

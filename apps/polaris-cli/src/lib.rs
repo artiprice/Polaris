@@ -35,8 +35,11 @@
 
 mod app;
 mod doctor;
+pub mod key_trace;
 mod rtk;
 mod sandbox;
+pub mod session;
+pub mod tui;
 pub use app::{Action, Args, CliError, install_crypto_provider, run};
 pub use rtk::{RtkArgs, RtkCliError, RtkModeArg};
 pub use sandbox::{SandboxAction, SandboxArgs};

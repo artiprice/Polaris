@@ -39,6 +39,9 @@ pub enum ComposerError {
     /// There is nothing to submit: the draft is blank and has no attachment.
     #[error("nothing to submit")]
     EmptySubmission,
+    /// A prepared send no longer matches the composer revision.
+    #[error("prepared submission is stale")]
+    StalePreparedSubmission,
     /// No text chip with this id exists in the draft.
     #[error("no such paste chip")]
     NoSuchChip,
@@ -53,6 +56,34 @@ impl HasKind for ComposerError {
     }
 }
 
+/// A category of bounded event-derived metadata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectionResource {
+    SessionViews,
+    SessionRows,
+    ToolActivities,
+    ToolMetadataBytes,
+}
+
+/// A resolved text append was refused without changing the conversation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum ViewError {
+    #[error("conversation entry limit reached ({limit})")]
+    ConversationEntries { limit: usize },
+    #[error("conversation byte limit reached ({limit})")]
+    ConversationBytes { limit: usize },
+    #[error("tool metadata byte limit reached ({limit})")]
+    ToolMetadataBytes { limit: usize },
+    #[error("view byte accounting overflowed")]
+    AccountingOverflow,
+    #[error("view storage allocation failed")]
+    AllocationFailed,
+}
+impl HasKind for ViewError {
+    fn kind(&self) -> ErrorKind {
+        ErrorKind::Permanent
+    }
+}
 /// An event record could not be folded into the view state; the state is left unchanged.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum ReduceError {
@@ -73,6 +104,15 @@ pub enum ReduceError {
         /// The sequence number that arrived.
         got: Seq,
     },
+    /// Applying the event would exceed a bounded projection.
+    #[error("{resource:?} capacity exceeded (limit {limit})")]
+    CapacityExceeded {
+        resource: ProjectionResource,
+        limit: usize,
+    },
+    /// A bounded projection allocation could not be reserved.
+    #[error("projection allocation failed")]
+    AllocationFailed,
 }
 
 impl HasKind for ReduceError {

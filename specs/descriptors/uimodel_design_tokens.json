@@ -6,7 +6,7 @@
   "test_list": [
     {
       "test_name": "every_plan_role_present_with_exact_hex",
-      "description": "Every colour role of the PLAN token table is present with exactly the table's hex value."
+      "description": "Every active CLI and retained web token is present with its UI_PLAN/current-demo hex; obsolete CLI palette roles are removed."
     },
     {
       "test_name": "role_names_are_unique_and_hex_well_formed",
@@ -26,7 +26,7 @@
     },
     {
       "test_name": "selection_tints_match_blend_formula",
-      "description": "Blending the source colour at 30% over the background reproduces every selection tint listed in the PLAN table (#464646, #4B4435, #233800, #29364B, #6C6C6C)."
+      "description": "Blending the source colour at 30% over the background reproduces every selection tint listed in the PLAN table (#464646, #4B4435, #233800, #29364B, #545454)."
     },
     {
       "test_name": "rgb_parsing_rejects_malformed_hex",

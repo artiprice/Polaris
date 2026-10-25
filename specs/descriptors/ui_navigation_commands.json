@@ -1,0 +1,30 @@
+{
+  "type_of": "module",
+  "name": "ui_navigation_commands",
+  "file_path": "crates/polaris-kernel/crates/directives/src/slash.rs",
+  "logic_name": "Typed UI navigation commands",
+  "test_list": [
+    {
+      "test_name": "ui_navigation_commands_are_recognized",
+      "description": "Canonical /panel, /agents, /questions parse as commands"
+    },
+    {
+      "test_name": "panel_arguments_are_bounded_and_validated",
+      "description": "Reject unknown views or extra args; ordinary navigation does not become execution authority"
+    }
+  ],
+  "dependencies": [
+    "ParseLimits",
+    "SlashCommand"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "User command input"
+    }
+  ],
+  "output_type": "Result<ParsedInput, DirectiveError>",
+  "output_description": "Typed UI navigation or explicit grammar rejection"
+}

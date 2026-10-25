@@ -1,0 +1,57 @@
+{
+  "type_of": "pipeline",
+  "name": "real_cli_terminal",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "Real CLI terminal integration",
+  "test_list": [
+    {
+      "test_name": "default_terminal_launch_shows_real_welcome_at_80x24",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "initial_prompt_is_visible_but_unsent_until_enter",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "bracketed_paste_is_literal_and_never_submitted",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "valid_directive_commits_and_renders_receipt",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "quit_restores_terminal_modes_and_cursor",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "idle_screen_emits_no_redundant_frames",
+      "description": "Real application through bounded native PTY/ConPTY: observable rendering, no implicit submission, durable directive receipt, idle output or cleanup bytes."
+    },
+    {
+      "test_name": "control_j_inserts_a_visible_newline_without_submitting",
+      "description": "The advertised Ctrl+J fallback is exercised through the actual native PTY and must move subsequent draft text onto the next composer row."
+    }
+  ],
+  "dependencies": [
+    "OfflineSession",
+    "TerminalGuard",
+    "BufferedPresenter",
+    "Composer"
+  ],
+  "libraries": [
+    "portable-pty",
+    "crossterm",
+    "ratatui",
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "pty",
+      "type": "portable_pty::MasterPty",
+      "description": "80x24 native PTY attached to the real CLI binary with isolated state and workspace."
+    }
+  ],
+  "output_type": "Result<(), CliError>",
+  "output_description": "Real profile draws and submits only after input, then shuts down with observable terminal restoration. Windows raw/mouse flags require separate direct/manual verification."
+}

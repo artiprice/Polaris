@@ -6,10 +6,13 @@ use polaris_sdk::contracts::{Event, EventRecord, Timestamp, WorkerKind};
 use polaris_sdk::effort::Effort;
 use polaris_sdk::error::{ErrorKind, HasKind};
 use polaris_sdk::ids::{Cid, FrameId, MicroUsd, ModelId, Seq, SessionId, TokenCount};
-use polaris_ui_model::error::ReduceError;
+use polaris_ui_model::error::{ProjectionResource, ReduceError, ViewError};
 use polaris_ui_model::reduce::reduce;
+use polaris_ui_model::session::SessionViews;
 use polaris_ui_model::view::{
-    EntryKind, GoalState, Mode, ProofOutcome, ToolStatus, ViewState, format_duration_ms,
+    EntryKind, GoalState, MAX_CONVERSATION_BYTES, MAX_CONVERSATION_ENTRIES, MAX_SESSION_ROWS,
+    MAX_SESSION_VIEWS, MAX_TOOL_ACTIVITIES, MAX_TOOL_METADATA_BYTES, Mode, ProofOutcome,
+    ToolStatus, ViewState, format_duration_ms,
 };
 use proptest::prelude::*;
 
@@ -64,11 +67,11 @@ fn model_request(prompt: u32, completion: u32, cached: u32, cost: u64, latency_u
 #[test]
 fn message_events_append_conversation() -> TestResult {
     let mut s = fresh()?;
-    s.push_user("hi");
+    s.push_user("hi")?;
     reduce(&mut s, &rec(0, Event::SessionStarted { workspace: cid(1) }))?;
-    s.push_assistant("hello");
-    s.push_system("model switched");
-    s.push_error("boom");
+    s.push_assistant("hello")?;
+    s.push_system("model switched")?;
+    s.push_error("boom")?;
     let kinds: Vec<_> = s.conversation.iter().map(|e| e.kind).collect();
     assert_eq!(
         kinds,
@@ -184,7 +187,7 @@ fn tool_title_collapsed_until_toggle() -> TestResult {
     // Title falls back to the short ref until the frontend resolves the call record from CAS.
     let fallback = s.tools.first().map(|t| t.title_text()).ok_or("tool 0")?;
     assert!(fallback.starts_with("tool call §ref:"), "{fallback}");
-    s.set_tool_title(cid(1), "Edit src/lib.rs");
+    s.set_tool_title(cid(1), "Edit src/lib.rs")?;
     assert_eq!(
         s.tools.first().map(|t| t.title_text()).as_deref(),
         Some("Edit src/lib.rs")
@@ -628,7 +631,7 @@ fn mode_toggles() -> TestResult {
 
 fn script_state() -> Result<ViewState, Box<dyn Error>> {
     let mut s = fresh()?;
-    s.push_user("fix the failing test");
+    s.push_user("fix the failing test")?;
     fold(
         &mut s,
         0,
@@ -647,8 +650,8 @@ fn script_state() -> Result<ViewState, Box<dyn Error>> {
             model_request(2000, 300, 1500, 12_000, 900_000),
         ],
     )?;
-    s.set_tool_title(cid(2), "Read crates/polaris-config/src/lib.rs");
-    s.push_assistant("Done: the test passes.");
+    s.set_tool_title(cid(2), "Read crates/polaris-config/src/lib.rs")?;
+    s.push_assistant("Done: the test passes.")?;
     Ok(s)
 }
 
@@ -667,7 +670,7 @@ fn snapshot_conversation() -> TestResult {
 #[test]
 fn snapshot_error_and_status() -> TestResult {
     let mut s = script_state()?;
-    s.push_error("provider returned 429");
+    s.push_error("provider returned 429")?;
     fold(
         &mut s,
         4,
@@ -835,11 +838,18 @@ proptest! {
             serde_json::to_string(&a).map_err(|e| TestCaseError::fail(e.to_string()))?,
             serde_json::to_string(&b).map_err(|e| TestCaseError::fail(e.to_string()))?
         );
-        let expected_last = first_seq + events.len() as u64;
+        let event_count = u64::try_from(events.len())
+            .map_err(|error| TestCaseError::fail(error.to_string()))?;
+        let expected_last = first_seq
+            .checked_add(event_count)
+            .ok_or_else(|| TestCaseError::fail("sequence overflow"))?;
         if events.is_empty() {
             prop_assert_eq!(a.last_seq, None);
         } else {
-            prop_assert_eq!(a.last_seq, Some(Seq::new(expected_last - 1)));
+            let expected_last = expected_last
+                .checked_sub(1)
+                .ok_or_else(|| TestCaseError::fail("non-empty events have a last sequence"))?;
+            prop_assert_eq!(a.last_seq, Some(Seq::new(expected_last)));
         }
     }
 
@@ -852,10 +862,384 @@ proptest! {
         let mut s = fresh().map_err(|e| TestCaseError::fail(e.to_string()))?;
         fold(&mut s, 10, &events).map_err(|e| TestCaseError::fail(e.to_string()))?;
         let before = s.clone();
-        let next = 10 + events.len() as u64;
-        let bad = if stale { next - 1 } else { next + bad_offset };
+        let event_count = u64::try_from(events.len())
+            .map_err(|error| TestCaseError::fail(error.to_string()))?;
+        let next = 10_u64
+            .checked_add(event_count)
+            .ok_or_else(|| TestCaseError::fail("sequence overflow"))?;
+        let bad = if stale {
+            next.checked_sub(1)
+                .ok_or_else(|| TestCaseError::fail("stale sequence underflow"))?
+        } else {
+            next.checked_add(bad_offset)
+                .ok_or_else(|| TestCaseError::fail("bad sequence overflow"))?
+        };
         let result = reduce(&mut s, &rec(bad, Event::SessionClosed));
         prop_assert!(result.is_err());
         prop_assert_eq!(s, before);
     }
+}
+
+#[test]
+fn session_views_validate_one_global_sequence_without_false_local_gaps() -> TestResult {
+    let first = SessionId::from_u128(1);
+    let second = SessionId::from_u128(2);
+    let mut views = SessionViews::new(model("nvidia/nemotron-3-super-120b-a12b")?, Effort::High);
+    views.apply(&EventRecord::new(
+        Seq::new(10),
+        Timestamp::UNIX_EPOCH,
+        first,
+        Event::SessionStarted { workspace: cid(1) },
+    ))?;
+    views.apply(&EventRecord::new(
+        Seq::new(11),
+        Timestamp::UNIX_EPOCH,
+        second,
+        Event::SessionStarted { workspace: cid(2) },
+    ))?;
+    views.apply(&EventRecord::new(
+        Seq::new(12),
+        Timestamp::UNIX_EPOCH,
+        first,
+        Event::SessionClosed,
+    ))?;
+    assert_eq!(views.last_seq(), Some(Seq::new(12)));
+    assert_eq!(views.len(), 2);
+    assert_eq!(
+        views
+            .get(first)
+            .and_then(|v| v.sessions.first())
+            .map(|row| row.closed),
+        Some(true)
+    );
+    assert_eq!(
+        views
+            .get(second)
+            .and_then(|v| v.sessions.first())
+            .map(|row| row.closed),
+        Some(false)
+    );
+    let state = views.get_mut(second).ok_or("second session projection")?;
+    state.push_user("resolved by app")?;
+    assert_eq!(
+        state.conversation.first().map(|entry| entry.text.as_str()),
+        Some("resolved by app")
+    );
+    Ok(())
+}
+
+#[test]
+fn conversation_capacity_errors_leave_entries_unchanged() -> TestResult {
+    let mut state = fresh()?;
+    for index in 0..MAX_CONVERSATION_ENTRIES {
+        state.push_user(index.to_string())?;
+    }
+    let before = state.clone();
+    assert_eq!(
+        state.push_user("overflow"),
+        Err(ViewError::ConversationEntries {
+            limit: MAX_CONVERSATION_ENTRIES
+        })
+    );
+    assert_eq!(state, before);
+
+    let mut bytes = fresh()?;
+    let text = "x".repeat(MAX_CONVERSATION_BYTES);
+    let before = bytes.clone();
+    assert_eq!(
+        bytes.push_user(text),
+        Err(ViewError::ConversationBytes {
+            limit: MAX_CONVERSATION_BYTES
+        })
+    );
+    assert_eq!(bytes, before);
+    Ok(())
+}
+
+#[test]
+fn tool_title_capacity_errors_leave_projection_unchanged() -> TestResult {
+    let mut state = fresh()?;
+    reduce(
+        &mut state,
+        &rec(
+            0,
+            Event::ToolExecutionStarted {
+                frame: frame(),
+                call: cid(1),
+            },
+        ),
+    )?;
+    let before = state.clone();
+    let title = "t".repeat(MAX_TOOL_METADATA_BYTES);
+    assert_eq!(
+        state.set_tool_title(cid(1), title),
+        Err(ViewError::ToolMetadataBytes {
+            limit: MAX_TOOL_METADATA_BYTES
+        })
+    );
+    assert_eq!(state, before);
+    Ok(())
+}
+
+#[test]
+fn session_row_capacity_rejects_before_mutation() -> TestResult {
+    let mut state = fresh()?;
+    for index in 0..MAX_SESSION_ROWS {
+        let session = SessionId::from_u128(u128::try_from(index)?);
+        reduce(
+            &mut state,
+            &EventRecord::new(
+                Seq::new(u64::try_from(index)?),
+                Timestamp::UNIX_EPOCH,
+                session,
+                Event::SessionClosed,
+            ),
+        )?;
+    }
+    let before = state.clone();
+    let err = reduce(
+        &mut state,
+        &EventRecord::new(
+            Seq::new(u64::try_from(MAX_SESSION_ROWS)?),
+            Timestamp::UNIX_EPOCH,
+            SessionId::from_u128(u128::try_from(MAX_SESSION_ROWS)?),
+            Event::SessionClosed,
+        ),
+    );
+    assert_eq!(
+        err,
+        Err(ReduceError::CapacityExceeded {
+            resource: ProjectionResource::SessionRows,
+            limit: MAX_SESSION_ROWS
+        })
+    );
+    assert_eq!(state, before);
+    Ok(())
+}
+
+#[test]
+fn session_view_capacity_rejects_before_mutation() -> TestResult {
+    let mut views = SessionViews::new(model("nvidia/nemotron-3-super-120b-a12b")?, Effort::High);
+    for index in 0..MAX_SESSION_VIEWS {
+        views.apply(&EventRecord::new(
+            Seq::new(u64::try_from(index)?),
+            Timestamp::UNIX_EPOCH,
+            SessionId::from_u128(u128::try_from(index)?),
+            Event::SessionStarted { workspace: cid(1) },
+        ))?;
+    }
+    let before = views.clone();
+    let err = views.apply(&EventRecord::new(
+        Seq::new(u64::try_from(MAX_SESSION_VIEWS)?),
+        Timestamp::UNIX_EPOCH,
+        SessionId::from_u128(u128::try_from(MAX_SESSION_VIEWS)?),
+        Event::SessionStarted { workspace: cid(1) },
+    ));
+    assert_eq!(
+        err,
+        Err(ReduceError::CapacityExceeded {
+            resource: ProjectionResource::SessionViews,
+            limit: MAX_SESSION_VIEWS
+        })
+    );
+    assert_eq!(views, before);
+    Ok(())
+}
+
+#[test]
+fn tool_activity_capacity_rejects_before_mutation() -> TestResult {
+    let mut state = fresh()?;
+    for index in 0..MAX_TOOL_ACTIVITIES {
+        let mut bytes = [0_u8; 32];
+        let encoded = u64::try_from(index)?.to_be_bytes();
+        bytes
+            .get_mut(..encoded.len())
+            .ok_or("CID prefix range")?
+            .copy_from_slice(&encoded);
+        reduce(
+            &mut state,
+            &rec(
+                u64::try_from(index)?,
+                Event::ToolExecutionStarted {
+                    frame: frame(),
+                    call: Cid::from_bytes(bytes),
+                },
+            ),
+        )?;
+    }
+    let before = state.clone();
+    let mut bytes = [0_u8; 32];
+    let encoded = u64::try_from(MAX_TOOL_ACTIVITIES)?.to_be_bytes();
+    bytes
+        .get_mut(..encoded.len())
+        .ok_or("CID prefix range")?
+        .copy_from_slice(&encoded);
+    let err = reduce(
+        &mut state,
+        &rec(
+            u64::try_from(MAX_TOOL_ACTIVITIES)?,
+            Event::ToolExecutionStarted {
+                frame: frame(),
+                call: Cid::from_bytes(bytes),
+            },
+        ),
+    );
+    assert_eq!(
+        err,
+        Err(ReduceError::CapacityExceeded {
+            resource: ProjectionResource::ToolActivities,
+            limit: MAX_TOOL_ACTIVITIES
+        })
+    );
+    assert_eq!(state, before);
+    Ok(())
+}
+
+#[test]
+fn selected_projection_skips_unrelated_session_growth_but_folds_target() -> TestResult {
+    let mut views = SessionViews::new(model("nvidia/nemotron-3-super-120b-a12b")?, Effort::High);
+    let selected = SessionId::from_u128(u128::try_from(MAX_SESSION_VIEWS + 100)?);
+    let unrelated_count = MAX_SESSION_VIEWS + 32;
+    for index in 0..unrelated_count {
+        views.apply_selected(
+            &EventRecord::new(
+                Seq::new(u64::try_from(index)?),
+                Timestamp::UNIX_EPOCH,
+                SessionId::from_u128(u128::try_from(index)?),
+                Event::SessionClosed,
+            ),
+            selected,
+        )?;
+    }
+    assert!(
+        views.is_empty(),
+        "unrelated sessions are validated but not retained"
+    );
+    let selected_seq = u64::try_from(unrelated_count)?;
+    views.apply_selected(
+        &EventRecord::new(
+            Seq::new(selected_seq),
+            Timestamp::UNIX_EPOCH,
+            selected,
+            Event::SessionStarted { workspace: cid(9) },
+        ),
+        selected,
+    )?;
+    assert_eq!(views.len(), 1);
+    assert_eq!(views.last_seq(), Some(Seq::new(selected_seq)));
+    assert_eq!(
+        views
+            .get(selected)
+            .and_then(|view| view.sessions.first())
+            .map(|row| row.workspace),
+        Some(Some(cid(9)))
+    );
+    Ok(())
+}
+
+#[test]
+fn selected_projection_rejects_global_gap_in_unrelated_record() -> TestResult {
+    let selected = session();
+    let mut views = SessionViews::new(model("nvidia/nemotron-3-super-120b-a12b")?, Effort::High);
+    views.apply_selected(
+        &EventRecord::new(
+            Seq::new(10),
+            Timestamp::UNIX_EPOCH,
+            selected,
+            Event::SessionStarted { workspace: cid(1) },
+        ),
+        selected,
+    )?;
+    let before = views.clone();
+    let unrelated = SessionId::from_u128(22);
+    let result = views.apply_selected(
+        &EventRecord::new(
+            Seq::new(12),
+            Timestamp::UNIX_EPOCH,
+            unrelated,
+            Event::SessionClosed,
+        ),
+        selected,
+    );
+    assert_eq!(
+        result,
+        Err(ReduceError::SeqGap {
+            expected: Seq::new(11),
+            got: Seq::new(12),
+        })
+    );
+    assert_eq!(views, before);
+    Ok(())
+}
+
+#[test]
+fn selected_projection_never_folds_wrong_session_facts() -> TestResult {
+    let selected = session();
+    let unrelated = SessionId::from_u128(2);
+    let mut views = SessionViews::new(model("nvidia/nemotron-3-super-120b-a12b")?, Effort::High);
+    views.apply_selected(
+        &EventRecord::new(
+            Seq::ZERO,
+            Timestamp::UNIX_EPOCH,
+            selected,
+            Event::SessionStarted { workspace: cid(1) },
+        ),
+        selected,
+    )?;
+    let selected_before = views.get(selected).ok_or("selected view")?.clone();
+    views.apply_selected(
+        &EventRecord::new(
+            Seq::new(1),
+            Timestamp::UNIX_EPOCH,
+            unrelated,
+            Event::WorkerRestarted {
+                worker: WorkerKind::S1,
+                restarts: 99,
+            },
+        ),
+        selected,
+    )?;
+    assert_eq!(views.get(selected), Some(&selected_before));
+    assert_eq!(views.get(unrelated), None);
+    assert_eq!(views.last_seq(), Some(Seq::new(1)));
+    Ok(())
+}
+
+#[test]
+fn user_capacity_preflight_matches_append_invariant() -> TestResult {
+    let mut state = fresh()?;
+    let accepted = String::from("one");
+    assert_eq!(state.check_user_capacity(&accepted), Ok(()));
+    state.push_user(accepted)?;
+
+    let too_large = "x".repeat(MAX_CONVERSATION_BYTES);
+    let before = state.clone();
+    let checked = state.check_user_capacity(&too_large);
+    let appended = state.push_user(too_large);
+    assert_eq!(checked, appended);
+    assert_eq!(
+        checked,
+        Err(ViewError::ConversationBytes {
+            limit: MAX_CONVERSATION_BYTES,
+        })
+    );
+    assert_eq!(state, before);
+
+    let mut full = fresh()?;
+    for index in 0..MAX_CONVERSATION_ENTRIES {
+        full.push_user(index.to_string())?;
+    }
+    let final_text = String::from("last");
+    let before = full.clone();
+    let checked = full.check_user_capacity(&final_text);
+    let appended = full.push_user(final_text);
+    assert_eq!(checked, appended);
+    assert_eq!(
+        checked,
+        Err(ViewError::ConversationEntries {
+            limit: MAX_CONVERSATION_ENTRIES,
+        })
+    );
+    assert_eq!(full, before);
+    Ok(())
 }

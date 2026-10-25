@@ -13,6 +13,11 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+tracing = { workspace = true }
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+unicode-width = { workspace = true }
+unicode-segmentation = { workspace = true }
 thiserror = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }

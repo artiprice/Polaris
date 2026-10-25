@@ -1,0 +1,56 @@
+CLI UI verification checkpoint — 2026-10-25 Europe/Kyiv (continuing 2026-10-24)
+
+VERDICT: PARTIAL IMPLEMENTATION. No complete UI phase or M1 acceptance is claimed.
+
+Implemented: real offline default TUI; deterministic same-renderer dumps; responsive panels and sheets; canonical local command/completion routing; transactional composer; bounded event/input/output handling; signed directive admission and durable replay; cancellation-safe active-session CAS reads; pure questionnaire state with explicit exclusive None of the above.
+
+FINAL COMMANDS / RAW EVIDENCE
+
+1. cargo test --offline -p polaris-ui-model -p polaris-ui-cli -p polaris-kernel-directives -p polaris-cli --no-fail-fast
+   Exit 101. Aggregate: 266 passed, 1 failed, 1 ignored.
+   The sole failure is doctor_installs_aws_lc_provider: doctor reports required setup prerequisites are missing. Its readiness assertion was not relaxed.
+   App: library 18 passed; headless 2 passed/1 failed; RTK 2 passed; key trace 3; sessions 3; startup 5; native ConPTY 7. UI CLI: 37. Model: 143. Directives: 46 passed/1 existing ignored release workload.
+   Raw: final-tests.json, final-tests.stdout.txt, final-tests.stderr.txt, test-totals.json.
+
+2. cargo clippy --offline --no-deps -p polaris-ui-model -p polaris-ui-cli -p polaris-cli --all-targets -- -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing
+   Exit 0. Selected safety rules on owned targets; non-fatal style warnings remain. This is not a claim that every prompt.md/formal/dependency gate passes.
+   Raw: final-safety.json, final-safety.stdout.txt, final-safety.stderr.txt.
+
+3. cargo check --offline -p polaris-ui -p polaris-cli --all-targets
+   Exit 0. Raw: final-api-check.json, final-api-check.stdout.txt, final-api-check.stderr.txt.
+
+4. rustfmt --edition 2024 --check [49 changed/new Rust files]
+   Exit 0. Raw command and output: format-check-final.json. Runtime tests preceded only the final module-declaration formatting; the final API check compiled the formatted source.
+
+5. workspace.py check-members / check-layers / check-docs / render-docs --check; git diff --check
+   See workspace-checks-final.json for final commands/results, including 93 members and 268 layer edges.
+
+6. cargo deny --offline check
+   Exit 1: advisory database lock cannot be obtained on the read-only Cargo cache path. No advisory exemption or configuration change was introduced.
+   Raw: dependency-advisories.json, dependency-advisories.stderr.txt.
+
+7. cargo deny --offline check licenses bans sources
+   Exit 0: bans ok, licenses ok, sources ok. This is explicitly the non-advisory subset; duplicate-version/style allowances generate warnings.
+   Raw: dependency-policy.json, dependency-policy.stdout.txt, dependency-policy.stderr.txt.
+
+8. Read-only inventory and descriptor validation
+   56 unique modules; all existing paths, phase/task/anchor/demo/dependency references resolve; dependency graph acyclic. 16 descriptors / 183 test references resolve.
+   Raw: inventory-validation-final.json. The initial audit found one stale questionnaire test name; the descriptor now names the real test and includes the three existing bound regressions.
+
+SPECIFIC REGRESSIONS
+
+Active-session payload isolation has a real pre-fix missing-blob failure in active-payload-red.json and passes in the final run. isolation-test-setup-failure.json was only a fixture lock failure and is not counted as a behavioral red.
+The final library tests cover record retention across cancelled CAS polling, failed-worker cleanup without re-polling a completed JoinHandle, resume admission isolation, query failures not consuming directive acknowledgements, queue backpressure, literal paste, text chips, edit limits, truthful help, completion wheel routing, identical zero-byte frames and caret-only output.
+The final ConPTY tests cover real startup, unsent initial prompt, literal bracketed paste, real directive receipt, observable quit cleanup, idle zero bytes and the advertised Ctrl+J newline fallback.
+
+REMAINING / NOT VERIFIED
+
+See contract-audit.md and UI_PHASES.md for the complete boundary. Native clipboard/images and semantic selection/copy, workspace path indexing, persisted preferences, complete sheets/charts/syntax highlighting, full source paging/caches and receipt/lag recovery acceptance remain incomplete. Full provider/model/tool workflows and the durable P3 human request/answer/requester-cancellation service are not integrated.
+No direct Windows raw/mouse OS-state restoration proof, physical Windows Terminal/Alacritty matrix, Linux leg, fresh UI Miri/Kani/fuzz run, performance/latency baseline or release acceptance is claimed. The 128 KiB human answer model estimate is conservative, not an authoritative wire codec.
+The complete initial descriptor/red gate was not captured for every model/renderer/terminal slice. Missing-API compile reds are identified separately. Earlier root tool-observed captures were lost with the interrupted in-memory Node session; they were not reconstructed as raw logs. The original misplaced PTY descriptor is retained as initial-terminal-descriptor.json after canonical consolidation.
+Broad dependency Clippy previously exposed unchanged OpenShell/log/sync safety findings; the recorded final owned-target command deliberately reports its scope. Web welcome, separately gated welcome optimization, full web and desktop remain deferred.
+
+CONSISTENCY
+
+Main PLAN.md, PHASES.md, PHASES_STATUS.md (E33), UI_PLAN.md, UI_PHASES.md, UI_MODULES.csv and authoritative workspace.toml metadata are aligned to partial implementation. Generated phase blocks are retained/refreshed. Historical E21/E30 evidence is preserved. UI inventory still has 56 logical modules; it is not a Cargo generation input.
+No code commit, deployment or external publication was performed.

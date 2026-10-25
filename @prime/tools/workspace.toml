@@ -273,13 +273,13 @@ name = "polaris-cli"
 path = "apps/polaris-cli"
 implemented = true
 status = "IN PROGRESS"
-evidence = "P1 non-UI main/run/doctor/RTK, aws-lc provider, logging/signals and real local kernel smoke pass (§E30). TUI/dump/terminal UI remain user-deferred; full CLI gate remains open."
+evidence = "UI foundation implementation 2026-10-24: real offline default TUI/dump, bounded signed directive admission/replay and session resume; focused controller/binary suites. See evidence/ui/verification.txt and UI_PHASES.md for open gates and doctor setup failure. Historical P1 non-UI evidence remains in E30."
 layer = 7
 kind = "app"
 phase = "P1"
 summary = "Terminal client: ratatui TUI (default) and headless `polaris run` mode; binary name `polaris`."
-deps = ["polaris-kernel", "polaris-ui-cli", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform"]
-ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde_json", "tracing", "jiff", "toml", "keyring"]
+deps = ["polaris-kernel", "polaris-ui-cli", "polaris-ui-model", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform"]
+ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde_json", "tracing", "jiff", "toml", "keyring", "portable-pty"]
 responsibilities = [
   "Parse CLI arguments (clap) and resolve config layers.",
   "Embed the kernel in-process by default, or attach to `polarisd` with `--connect`.",
@@ -1821,7 +1821,7 @@ kind = "lib"
 phase = "P1"
 implemented = true
 status = "IN PROGRESS"
-evidence = "111 Windows tests incl. 1,000-case properties, 5 initial snapshots reviewed, Unicode chip regression saved; Linux check; ui_completion fuzz 207,648 runs/61 s (§E21). UI deferred by user: remaining settings/provenance, full HUD, metadata arity, Quick Chips, fixtures/Miri and TUI integration."
+evidence = "2026-10-24 UI foundation: North Star/palette migration, transactional bounded composer, global session projection, cockpit and pure questionnaire state; native tests. See UI_PHASES.md and evidence/ui/verification.txt. Human backend protocol, native/formal/performance acceptance remain open; historical E21 retained."
 summary = "Shared UI view models and reducers over the event stream, plus design tokens from the demo (#76B900 accent, palette, typography)."
 deps = ["polaris-sdk", "polaris-kernel-directives"]
 ext = ["serde", "unicode-segmentation"]
@@ -1835,18 +1835,21 @@ api = ["struct ViewState", "fn reduce(&mut ViewState, &Event)", "mod tokens"]
 name = "polaris-ui-cli"
 path = "crates/polaris-ui/crates/cli"
 parent = "polaris-ui"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-24 UI foundation: pure responsive renderer plus bounded input scheduler, staged Ratatui presenter and fallible terminal guard; 37 native tests. See UI_PHASES.md and evidence/ui/verification.txt; phase gates remain open."
 layer = 6
 kind = "lib"
 phase = "P1"
 summary = "ratatui widgets and screens: composer, completion, conversation, tools, bottom sheets, HUD, stats; Windows input handling."
 deps = ["polaris-sdk", "polaris-ui-model"]
-ext = ["ratatui", "crossterm", "ratatui-textarea", "syntect", "two-face", "ansi-to-tui", "arboard", "unicode-width", "unicode-segmentation"]
+ext = ["ratatui", "crossterm", "ratatui-textarea", "syntect", "two-face", "ansi-to-tui", "arboard", "unicode-width", "unicode-segmentation", "tracing"]
 responsibilities = [
   "Rebuild the demo UX (design only): composer with paste chips/history, completion wheel, $/ /@ coloring, keymap.",
   "Hide the cursor during repaint; support --dump WxH snapshots for insta tests.",
   "Avoid unsafe Win32 input code (Alt+Enter / Ctrl+J fallbacks first; spike S0-10).",
 ]
-api = ["fn run_tui(ViewState, EventStream)", "struct Composer"]
+api = ["fn screen::render", "fn screen::dump_text", "struct InputScheduler", "struct BufferedPresenter", "struct TerminalGuard"]
 
 [[crate]]
 name = "polaris-ui-gui"

@@ -1,0 +1,36 @@
+{
+  "type_of": "module",
+  "name": "input",
+  "file_path": "src/input.rs",
+  "logic_name": "Terminal Input",
+  "test_list": [
+    {
+      "test_name": "normalizes_supported_crossterm_events",
+      "description": "Preserve key, paste, mouse, resize, and focus events."
+    },
+    {
+      "test_name": "rejects_paste_over_one_mibibyte",
+      "description": "Reject paste payloads above 1 MiB by UTF-8 byte length."
+    },
+    {
+      "test_name": "only_pressed_escape_and_control_c_are_cancel_priority",
+      "description": "Recognize cancellation keys without promoting releases or ordinary keys."
+    }
+  ],
+  "dependencies": [
+    "crossterm::event"
+  ],
+  "libraries": [
+    "crossterm",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "crossterm::event::Event",
+      "description": "Owned terminal event."
+    }
+  ],
+  "output_type": "Result<NormalizedInput, InputError>",
+  "output_description": "Normalized event or typed bounded-input error."
+}

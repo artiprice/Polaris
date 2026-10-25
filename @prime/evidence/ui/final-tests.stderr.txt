@@ -1,0 +1,44 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 15.17s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-92cd21e4a6a842f0.exe)
+     Running unittests src\main.rs (target\debug\deps\polaris-d0ed2d0377801a3a.exe)
+     Running tests\headless.rs (target\debug\deps\headless-bae8457daea4f776.exe)
+error: test failed, to rerun pass `-p polaris-cli --test headless`
+     Running tests\rtk_cli.rs (target\debug\deps\rtk_cli-b75463eb354b5a84.exe)
+     Running tests\ui_key_trace.rs (target\debug\deps\ui_key_trace-be8d126d110e964d.exe)
+     Running tests\ui_session.rs (target\debug\deps\ui_session-81c36aa168706939.exe)
+     Running tests\ui_startup.rs (target\debug\deps\ui_startup-a25440e9800a7af4.exe)
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-d1ea474d74c48a99.exe)
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel_directives-d7ec8c0e55331fde.exe)
+     Running tests\directive_persistence.rs (target\debug\deps\directive_persistence-3b8340aec2d6fbc0.exe)
+     Running tests\directive_rendering.rs (target\debug\deps\directive_rendering-cf7c5344ec7e76f4.exe)
+     Running tests\input_parser.rs (target\debug\deps\input_parser-2dda2e880a824ba6.exe)
+     Running tests\load.rs (target\debug\deps\load-d9289437542b52c2.exe)
+     Running tests\mention_parser.rs (target\debug\deps\mention_parser-52ec34b676193c5d.exe)
+     Running tests\slash_command_table.rs (target\debug\deps\slash_command_table-7e8be5b9118c5fc0.exe)
+     Running tests\subagent_model_ranges.rs (target\debug\deps\subagent_model_ranges-ec91e468e327cf10.exe)
+     Running tests\ui_navigation.rs (target\debug\deps\ui_navigation-26856d367e17f686.exe)
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-8549bdb31a712f93.exe)
+     Running tests\public_exports.rs (target\debug\deps\public_exports-ce337f43f5414a2e.exe)
+     Running tests\render_contract.rs (target\debug\deps\render_contract-aa2bfe676f046aa6.exe)
+     Running tests\terminal_input.rs (target\debug\deps\terminal_input-d1302487ca70c605.exe)
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-34eea4397c3d7fb1.exe)
+     Running tests\terminal_presenter.rs (target\debug\deps\terminal_presenter-a451670fdbc28384.exe)
+     Running tests\terminal_scheduler.rs (target\debug\deps\terminal_scheduler-d12264a8beec38e2.exe)
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_model-a9f7e8027e9631fa.exe)
+     Running tests\cockpit_state.rs (target\debug\deps\cockpit_state-0e7c2a7e12e8bbc7.exe)
+     Running tests\completion_ranking.rs (target\debug\deps\completion_ranking-64f2c00766bae615.exe)
+     Running tests\composer_buffer.rs (target\debug\deps\composer_buffer-50566a1c952068c5.exe)
+     Running tests\design_tokens.rs (target\debug\deps\design_tokens-1960c6cb04dd62eb.exe)
+     Running tests\keymap_table.rs (target\debug\deps\keymap_table-34d872c41de743dd.exe)
+     Running tests\logo_grids.rs (target\debug\deps\logo_grids-0e315306339cae4f.exe)
+     Running tests\prompt_history.rs (target\debug\deps\prompt_history-22393f6e86fd35a2.exe)
+     Running tests\questionnaire_state.rs (target\debug\deps\questionnaire_state-f1758774c10749b5.exe)
+     Running tests\token_classification.rs (target\debug\deps\token_classification-fb903ae23635dd03.exe)
+     Running tests\view_reducer.rs (target\debug\deps\view_reducer-d5989cff938e86d8.exe)
+   Doc-tests polaris_cli
+   Doc-tests polaris_kernel_directives
+   Doc-tests polaris_ui_cli
+   Doc-tests polaris_ui_model
+error: 1 target failed:
+    `-p polaris-cli --test headless`

@@ -1,0 +1,6 @@
+{
+  "command": "cargo test --offline -p polaris-cli --test ui_terminal -- --test-threads=1",
+  "status": 0,
+  "stdout": "\nrunning 6 tests\ntest bracketed_paste_is_literal_and_never_submitted ... ok\ntest default_terminal_launch_shows_real_welcome_at_80x24 ... ok\ntest idle_screen_emits_no_redundant_frames ... ok\ntest initial_prompt_is_visible_but_unsent_until_enter ... ok\ntest quit_restores_terminal_modes_and_cursor ... ok\ntest valid_directive_commits_and_renders_receipt ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.94s\n\n",
+  "stderr": "    Finished `test` profile [unoptimized] target(s) in 1.87s\n     Running tests\\ui_terminal.rs (target\\debug\\deps\\ui_terminal-d602048b43a42723.exe)\n"
+}

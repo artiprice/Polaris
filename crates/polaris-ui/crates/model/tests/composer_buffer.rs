@@ -4,7 +4,8 @@ use std::error::Error;
 
 use polaris_sdk::error::{ErrorKind, HasKind};
 use polaris_ui_model::composer::{
-    Attachment, Composer, ImageRef, MAX_ATTACHMENTS_TOTAL, MAX_IMAGE_RGBA, MAX_TEXT_BYTES,
+    Attachment, Composer, ImageRef, MAX_ATTACHMENTS_TOTAL, MAX_HISTORY_ENTRIES, MAX_IMAGE_RGBA,
+    MAX_RETAINED_BYTES, MAX_TEXT_BYTES, MAX_UNDO_ENTRIES,
 };
 use polaris_ui_model::error::ComposerError;
 use proptest::prelude::*;
@@ -29,7 +30,7 @@ fn long_paste_becomes_chip() -> TestResult {
         chip.attachment,
         &Attachment::Text {
             chars: 11,
-            payload: six_lines()
+            payload: six_lines().into()
         }
     );
 
@@ -350,7 +351,7 @@ fn undo_redo_restores_text_cursor_and_chips() -> TestResult {
         chips.first().map(|chip| chip.attachment),
         Some(&Attachment::Text {
             chars: 11,
-            payload: six_lines()
+            payload: six_lines().into()
         })
     );
     assert!(c.redo());
@@ -584,7 +585,7 @@ proptest! {
             .chips()
             .iter()
             .filter_map(|chip| match chip.attachment {
-                Attachment::Text { payload, .. } => Some(payload.clone()),
+                Attachment::Text { payload, .. } => Some(payload.to_string()),
                 Attachment::Image { .. } => None,
             })
             .collect();
@@ -594,4 +595,118 @@ proptest! {
             prop_assert!(submission.text.contains(&payload));
         }
     }
+}
+
+#[test]
+fn prepare_cancel_and_rejection_preserve_complete_draft() -> TestResult {
+    let mut c = Composer::new();
+    c.insert("before ")?;
+    c.insert(&six_lines())?;
+    let chips_before: Vec<_> = c
+        .chips()
+        .into_iter()
+        .map(|chip| (chip.id, chip.range))
+        .collect();
+    let text_before = c.text().to_owned();
+    c.move_left();
+    let cursor_before = c.cursor();
+    let prepared = c.prepare_submit()?;
+    assert_eq!(
+        prepared.submission().text,
+        format!("before {}", six_lines())
+    );
+    c.cancel_submit(prepared);
+    assert_eq!(c.text(), text_before);
+    assert_eq!(c.cursor(), cursor_before);
+    assert_eq!(
+        c.chips()
+            .into_iter()
+            .map(|chip| (chip.id, chip.range))
+            .collect::<Vec<_>>(),
+        chips_before
+    );
+    let prepared = c.prepare_submit()?;
+    assert_eq!(
+        c.text(),
+        text_before,
+        "backend rejection drops prepared value without commit"
+    );
+    let committed = c.commit_submit(prepared)?;
+    assert_eq!(committed.text, format!("before {}", six_lines()));
+    assert!(c.is_empty());
+    Ok(())
+}
+
+#[test]
+fn stale_prepared_submission_cannot_clear_new_edits() -> TestResult {
+    let mut c = Composer::new();
+    c.insert("first")?;
+    let prepared = c.prepare_submit()?;
+    c.insert(" second")?;
+    assert_eq!(
+        c.commit_submit(prepared),
+        Err(ComposerError::StalePreparedSubmission)
+    );
+    assert_eq!(c.text(), "first second");
+    Ok(())
+}
+
+#[test]
+fn undo_and_history_respect_retention_bounds() -> TestResult {
+    let mut c = Composer::new();
+    for index in 0..(MAX_HISTORY_ENTRIES + 5) {
+        c.insert(&format!("entry-{index}"))?;
+        c.submit()?;
+    }
+    assert_eq!(c.history_len(), MAX_HISTORY_ENTRIES);
+    assert!(c.history_retained_bytes() <= MAX_RETAINED_BYTES);
+    assert!(c.history_prev(true));
+    assert!(c.text().starts_with("entry-"));
+    let mut edits = Composer::new();
+    for _ in 0..(MAX_UNDO_ENTRIES + 5) {
+        edits.insert("x")?;
+    }
+    assert_eq!(edits.undo_len(), MAX_UNDO_ENTRIES);
+    assert!(edits.undo_retained_bytes() <= MAX_RETAINED_BYTES);
+    for _ in 0..MAX_UNDO_ENTRIES {
+        assert!(edits.undo());
+    }
+    assert!(!edits.undo());
+    Ok(())
+}
+
+#[test]
+fn cloned_undo_snapshot_shares_paste_payload_storage() -> TestResult {
+    use std::sync::Arc;
+    let mut composer = Composer::new();
+    composer.insert(&six_lines())?;
+    let original_chips = composer.chips();
+    let retained = match original_chips.first().map(|chip| chip.attachment) {
+        Some(Attachment::Text { payload, .. }) => Arc::clone(payload),
+        _ => return Err("paste chip missing".into()),
+    };
+    composer.insert("tail")?;
+    assert!(composer.undo());
+    let restored = composer.chips();
+    let shared = match restored.first().map(|chip| chip.attachment) {
+        Some(Attachment::Text { payload, .. }) => Arc::ptr_eq(&retained, payload),
+        _ => false,
+    };
+    assert!(shared);
+    Ok(())
+}
+
+#[test]
+fn stale_prepared_submission_cannot_clear_cursor_change() -> TestResult {
+    let mut composer = Composer::new();
+    composer.insert("draft")?;
+    let prepared = composer.prepare_submit()?;
+    composer.move_left();
+    assert_eq!(
+        composer.commit_submit(prepared),
+        Err(ComposerError::StalePreparedSubmission)
+    );
+    assert_eq!(composer.text(), "draft");
+    assert_eq!(composer.cursor(), 4);
+    Ok(())
 }

@@ -6,6 +6,9 @@
 
 /// Every `/command` name the parser recognises, aliases included (`exit` = `quit`).
 pub const SLASH_COMMANDS: &[&str] = &[
+    "panel",
+    "agents",
+    "questions",
     "model",
     "usage",
     "stats",

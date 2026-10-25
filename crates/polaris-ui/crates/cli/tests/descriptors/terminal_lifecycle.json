@@ -1,0 +1,46 @@
+{
+  "type_of": "module",
+  "name": "terminal",
+  "file_path": "src/terminal.rs",
+  "logic_name": "Terminal Lifecycle",
+  "test_list": [
+    {
+      "test_name": "rolls_back_acquired_modes_in_reverse_order",
+      "description": "Acquisition failure cleans up prior modes in reverse order."
+    },
+    {
+      "test_name": "close_attempts_every_restore_step_and_reports_errors",
+      "description": "Try every teardown step and return aggregated failures."
+    },
+    {
+      "test_name": "drop_attempts_best_effort_cleanup",
+      "description": "Best effort cleanup occurs during drop."
+    },
+    {
+      "test_name": "drop_attempts_remaining_modes_after_restore_error",
+      "description": "Best-effort drop logs restoration failure while attempting every remaining mode."
+    }
+  ],
+  "dependencies": [
+    "std::io::Write"
+  ],
+  "libraries": [
+    "crossterm",
+    "thiserror",
+    "tracing"
+  ],
+  "inputs": [
+    {
+      "name": "operations",
+      "type": "TerminalOps",
+      "description": "Safe testable terminal mode operations."
+    },
+    {
+      "name": "writer",
+      "type": "Write",
+      "description": "Terminal output writer."
+    }
+  ],
+  "output_type": "Result<TerminalGuard, TerminalError>",
+  "output_description": "Guarded terminal session or aggregate lifecycle failure."
+}

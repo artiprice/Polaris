@@ -29,9 +29,36 @@ pub enum BrowserCmd {
     Tree,
 }
 
+/// A cockpit panel target for /panel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PanelTarget {
+    /// The task list.
+    Tasks,
+    /// Active agents.
+    Agents,
+    /// Pending human questions.
+    Questions,
+    /// Review items.
+    Review,
+    /// Proof of completion.
+    Proof,
+    /// Context map.
+    Context,
+    /// System status.
+    System,
+    /// Close the cockpit panel.
+    Off,
+}
+
 /// A slash command (PLAN command catalog).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SlashCommand {
+    /// /panel [tasks|agents|questions|review|proof|context|system|off].
+    Panel(Option<PanelTarget>),
+    /// /agents.
+    Agents,
+    /// /questions.
+    Questions,
     /// `/model [id]`.
     Model(Option<String>),
     /// `/usage`.
@@ -218,6 +245,30 @@ pub(crate) fn parse_command(
         _ => Err(bad("takes at most one argument")),
     };
     match name {
+        "panel" => match args.words.as_slice() {
+            [] => Ok(SlashCommand::Panel(None)),
+            [w] if !w.quoted => {
+                let target = match w.text.as_str() {
+                    "tasks" => PanelTarget::Tasks,
+                    "agents" => PanelTarget::Agents,
+                    "questions" => PanelTarget::Questions,
+                    "review" => PanelTarget::Review,
+                    "proof" => PanelTarget::Proof,
+                    "context" => PanelTarget::Context,
+                    "system" => PanelTarget::System,
+                    "off" => PanelTarget::Off,
+                    _ => {
+                        return Err(bad(
+                            "expected tasks|agents|questions|review|proof|context|system|off",
+                        ));
+                    }
+                };
+                Ok(SlashCommand::Panel(Some(target)))
+            }
+            _ => Err(bad("takes at most one unquoted panel target")),
+        },
+        "agents" => no_args(SlashCommand::Agents),
+        "questions" => no_args(SlashCommand::Questions),
         "model" => single().map(SlashCommand::Model),
         "usage" => no_args(SlashCommand::Usage),
         "stats" => no_args(SlashCommand::Stats),

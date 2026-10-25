@@ -97,6 +97,26 @@ actions! {
     Undo,
     /// Redo the last undone composer edit.
     Redo,
+    /// Move to the preceding human question.
+    QuestionnairePrevious,
+    /// Move to the next human question.
+    QuestionnaireNext,
+    /// Move the highlighted answer choice upward.
+    QuestionnaireChoiceUp,
+    /// Move the highlighted answer choice downward.
+    QuestionnaireChoiceDown,
+    /// Toggle the highlighted choice.
+    QuestionnaireToggleChoice,
+    /// Focus the optional notes field.
+    QuestionnaireFocusNotes,
+    /// Return focus to answer choices.
+    QuestionnaireFocusChoices,
+    /// Validate and submit all questionnaire answers atomically.
+    SubmitQuestionnaireAnswers,
+    /// Interrupt the requester while preserving the main composer draft.
+    InterruptQuestionnaireRequester,
+    /// Defer the waiting questionnaire without cancelling its requester.
+    DeferQuestionnaire,
     /// Leave the application.
     Quit,
 }
@@ -364,6 +384,10 @@ contexts! {
     ModelSheet,
     /// The `/stats` sheet.
     StatsSheet,
+    /// The human-question prompt, with no generic/global key fallthrough.
+    Questionnaire,
+    /// Optional notes field of the human-question prompt.
+    QuestionnaireNotes,
     /// The text-attachment preview.
     AttachmentPreview,
 }
@@ -395,6 +419,8 @@ impl Context {
                 Self::Global,
             ],
             Self::StatsSheet => &[Self::StatsSheet, Self::InfoPopup, Self::Popup, Self::Global],
+            Self::Questionnaire => &[Self::Questionnaire],
+            Self::QuestionnaireNotes => &[Self::QuestionnaireNotes],
             Self::AttachmentPreview => &[Self::AttachmentPreview, Self::Popup, Self::Global],
         }
     }
@@ -413,6 +439,8 @@ impl Context {
             Self::ProviderForm => "Provider form",
             Self::ModelSheet => "/model",
             Self::StatsSheet => "/stats",
+            Self::Questionnaire => "Human questions",
+            Self::QuestionnaireNotes => "Question notes",
             Self::AttachmentPreview => "Text attachment",
         }
     }
@@ -771,6 +799,111 @@ const BINDINGS: &[KeyBinding] = &[
         A::CycleStatsRange,
         "Cycle All time, 7 days, 30 days",
         Some("range"),
+    ),
+    // Human-question prompt: deliberately no Popup/Global fallthrough.
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Left),
+        Always,
+        A::QuestionnairePrevious,
+        "Previous question",
+        None,
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Right),
+        Always,
+        A::QuestionnaireNext,
+        "Next question",
+        None,
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Up),
+        Always,
+        A::QuestionnaireChoiceUp,
+        "Previous answer choice",
+        None,
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Down),
+        Always,
+        A::QuestionnaireChoiceDown,
+        "Next answer choice",
+        None,
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Char(' ')),
+        Always,
+        A::QuestionnaireToggleChoice,
+        "Toggle answer choice",
+        None,
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Tab),
+        Always,
+        A::QuestionnaireFocusNotes,
+        "Focus optional notes",
+        Some("notes"),
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Enter),
+        Always,
+        A::SubmitQuestionnaireAnswers,
+        "Validate and submit answers",
+        Some("submit answers"),
+    ),
+    key(
+        C::Questionnaire,
+        KeyChord::plain(Key::Esc),
+        Always,
+        A::InterruptQuestionnaireRequester,
+        "Interrupt the requesting frame",
+        Some("interrupt requester"),
+    ),
+    key(
+        C::Questionnaire,
+        ctrl_ch('b'),
+        Always,
+        A::DeferQuestionnaire,
+        "Defer this request; it remains waiting",
+        Some("defer"),
+    ),
+    key(
+        C::QuestionnaireNotes,
+        KeyChord::shift(Key::Tab),
+        Always,
+        A::QuestionnaireFocusChoices,
+        "Return to answer choices",
+        Some("choices"),
+    ),
+    key(
+        C::QuestionnaireNotes,
+        KeyChord::plain(Key::Enter),
+        Always,
+        A::SubmitQuestionnaireAnswers,
+        "Validate and submit answers",
+        Some("submit answers"),
+    ),
+    key(
+        C::QuestionnaireNotes,
+        KeyChord::plain(Key::Esc),
+        Always,
+        A::InterruptQuestionnaireRequester,
+        "Interrupt the requesting frame",
+        Some("interrupt requester"),
+    ),
+    key(
+        C::QuestionnaireNotes,
+        ctrl_ch('b'),
+        Always,
+        A::DeferQuestionnaire,
+        "Defer this request; it remains waiting",
+        Some("defer"),
     ),
     // Text-attachment preview
     key(

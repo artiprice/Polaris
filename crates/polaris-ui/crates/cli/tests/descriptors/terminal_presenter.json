@@ -1,0 +1,44 @@
+{
+  "type_of": "module",
+  "name": "presenter",
+  "file_path": "src/presenter.rs",
+  "logic_name": "Terminal Presenter",
+  "test_list": [
+    {
+      "test_name": "commits_only_explicit_nonempty_frames",
+      "description": "Keep output staged until commit and never flush an empty frame."
+    },
+    {
+      "test_name": "bounds_staged_frame_and_marks_resync_after_partial_write",
+      "description": "Reject over 8 MiB before output and request resync after uncertain partial output."
+    },
+    {
+      "test_name": "stages_and_deduplicates_cursor_intents",
+      "description": "Stage cursor commands with the frame, suppress repeated visibility and position commands, and emit only changed position."
+    },
+    {
+      "test_name": "extracted_presenter_closes_live_writer_handles",
+      "description": "Prevent cloned staging writers from appending after presenter extraction."
+    },
+    {
+      "test_name": "ratatui_identical_grid_emits_zero_and_cursor_change_emits_only_position",
+      "description": "Exercise real Ratatui Terminal/CrosstermBackend draws: identical grid and cursor produce zero second-frame bytes, cursor-only movement emits only its position."
+    }
+  ],
+  "dependencies": [
+    "std::io::Write"
+  ],
+  "libraries": [
+    "crossterm",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "output",
+      "type": "Write",
+      "description": "Sole terminal output writer."
+    }
+  ],
+  "output_type": "Result<usize, PresenterError>",
+  "output_description": "Bytes committed or typed staging/write failure."
+}

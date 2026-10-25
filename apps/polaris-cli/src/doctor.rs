@@ -50,9 +50,11 @@ fn assemble(mut probes: BTreeMap<String, Value>) -> Result<Value, CliError> {
     let required_missing = items
         .iter()
         .filter(|item| {
-            item["required"] == true
+            item.get("required").and_then(serde_json::Value::as_bool) == Some(true)
                 && !matches!(
-                    item["observation"]["status"].as_str(),
+                    item.get("observation")
+                        .and_then(|value| value.get("status"))
+                        .and_then(serde_json::Value::as_str),
                     Some("PASS" | "NOT_APPLICABLE")
                 )
         })
@@ -557,11 +559,13 @@ mod tests {
         let report = assemble(BTreeMap::new())?;
         let inventory: toml::Value =
             toml::from_str(INVENTORY).map_err(|_| CliError::Unavailable("inventory"))?;
-        let entries = inventory["member_setup"]
-            .as_array()
+        let entries = inventory
+            .get("member_setup")
+            .and_then(toml::Value::as_array)
             .ok_or(CliError::Unavailable("items"))?;
-        let items = report["items"]
-            .as_array()
+        let items = report
+            .get("items")
+            .and_then(serde_json::Value::as_array)
             .ok_or(CliError::Unavailable("report"))?;
         assert_eq!(
             items.len(),
@@ -570,23 +574,32 @@ mod tests {
         );
         for (item, source) in items.iter().zip(entries) {
             assert_eq!(
-                item["id"].as_str(),
-                source["id"].as_str(),
+                item.get("id")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or(CliError::Unavailable("report id missing"))?,
+                source
+                    .get("id")
+                    .and_then(toml::Value::as_str)
+                    .ok_or(CliError::Unavailable("inventory id missing"))?,
                 "every authoritative id retained"
             );
             assert_eq!(
-                item["observation"]["status"], "UNKNOWN",
+                item.get("observation")
+                    .and_then(|value| value.get("status"))
+                    .and_then(serde_json::Value::as_str),
+                Some("UNKNOWN"),
                 "absent probe is not success"
             );
             assert!(
-                item["onboarding"]
-                    .as_str()
+                item.get("onboarding")
+                    .and_then(serde_json::Value::as_str)
                     .is_some_and(|text| !text.is_empty()),
                 "concrete action retained"
             );
         }
         assert_eq!(
-            report["ready"], false,
+            report.get("ready").and_then(serde_json::Value::as_bool),
+            Some(false),
             "unknown required item prevents readiness"
         );
         assert!(
@@ -600,13 +613,15 @@ mod tests {
     fn optional_missing_item_does_not_block_readiness() -> Result<(), CliError> {
         let inventory: toml::Value =
             toml::from_str(INVENTORY).map_err(|_| CliError::Unavailable("inventory"))?;
-        let entries = inventory["member_setup"]
-            .as_array()
+        let entries = inventory
+            .get("member_setup")
+            .and_then(toml::Value::as_array)
             .ok_or(CliError::Unavailable("items"))?;
         let mut probes = BTreeMap::new();
         for entry in entries {
-            let id = entry["id"]
-                .as_str()
+            let id = entry
+                .get("id")
+                .and_then(toml::Value::as_str)
                 .ok_or(CliError::Unavailable("setup item has no id"))?;
             probes.insert(
                 id.to_owned(),
@@ -621,10 +636,16 @@ mod tests {
         let report = assemble(probes)?;
 
         assert_eq!(
-            report["ready"], true,
+            report.get("ready").and_then(serde_json::Value::as_bool),
+            Some(true),
             "optional absence does not block setup"
         );
-        assert_eq!(report["required_missing"], 0);
+        assert_eq!(
+            report
+                .get("required_missing")
+                .and_then(serde_json::Value::as_u64),
+            Some(0)
+        );
         assert!(is_ready(&report));
         Ok(())
     }
@@ -633,19 +654,27 @@ mod tests {
     fn credential_metadata_probe_never_renders_secret_values() {
         let secret = std::ffi::OsStr::new("sensitive-value-do-not-render-4950");
         let present = environment_presence(Some(secret));
-        assert_eq!(present["status"], "PASS", "nonempty is present");
+        assert_eq!(
+            present.get("status").and_then(serde_json::Value::as_str),
+            Some("PASS"),
+            "nonempty is present"
+        );
         assert!(
             !present.to_string().contains("4950"),
             "secret payload must never render"
         );
         assert_eq!(
-            environment_presence(None)["status"],
-            "MISSING",
+            environment_presence(None)
+                .get("status")
+                .and_then(serde_json::Value::as_str),
+            Some("MISSING"),
             "absent is missing"
         );
         assert_eq!(
-            environment_presence(Some(std::ffi::OsStr::new("")))["status"],
-            "MISSING",
+            environment_presence(Some(std::ffi::OsStr::new("")))
+                .get("status")
+                .and_then(serde_json::Value::as_str),
+            Some("MISSING"),
             "empty is missing"
         );
     }

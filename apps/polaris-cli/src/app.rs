@@ -1,4 +1,4 @@
-//! Non-UI P1 application behavior.
+//! CLI dispatch, preserving headless controls alongside the interactive UI.
 use clap::{Parser, Subcommand};
 use polaris_kernel::{Kernel, LocalKernelConfig};
 use polaris_sdk::{
@@ -27,7 +27,33 @@ pub struct Args {
     pub session: Option<SessionId>,
     /// Operation to perform.
     #[command(subcommand)]
-    pub command: Action,
+    pub command: Option<Action>,
+    /// Render a deterministic plain-text screen without starting services.
+    #[arg(long)]
+    pub dump: Option<crate::tui::DumpSize>,
+    /// Explicit synthetic render fixture; allowed only with --dump.
+    #[arg(long, requires = "dump")]
+    pub scenario: Option<String>,
+    /// Initial unsent draft.
+    pub prompt: Option<String>,
+    /// Color policy.
+    #[arg(long, value_enum, default_value = "auto")]
+    pub color: crate::tui::ColorPolicy,
+    /// Color depth; terminal support must be verified independently.
+    #[arg(long, value_enum, default_value = "auto")]
+    pub color_depth: crate::tui::ColorDepth,
+    /// Use inherited terminal colors rather than the dark application palette.
+    #[arg(long, value_enum, default_value = "dark")]
+    pub theme: crate::tui::ThemeMode,
+    /// Use ASCII application decoration; preserve user Unicode text.
+    #[arg(long)]
+    pub ascii: bool,
+    /// Disable cosmetic motion.
+    #[arg(long)]
+    pub reduce_motion: bool,
+    /// Create a new diagnostic trace containing categories only, never text.
+    #[arg(long)]
+    pub key_trace: Option<PathBuf>,
 }
 /// Non-UI operations available in the local profile.
 #[derive(Debug, Subcommand)]
@@ -64,6 +90,9 @@ pub enum Action {
 /// Application errors never contain bearer credentials.
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
+    /// A validated UI, rendering or adapter operation failed.
+    #[error("{0}")]
+    Ui(String),
     /// Compiler diagnostic pipeline failure.
     #[error(transparent)]
     Rtk(#[from] crate::RtkCliError),
@@ -106,6 +135,10 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             "install the TLS provider before startup",
         ));
     }
+    crate::tui::validate_invocation(&args)?;
+    if args.dump.is_some() {
+        return crate::tui::dump(&args);
+    }
     let dirs = polaris_config::discover(&args.workspace)?;
     let layers = polaris_config::read_layers(
         &dirs,
@@ -134,24 +167,29 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             let _flushed = log.flush(Duration::from_secs(2));
         }
     }));
-    let result = match args.command {
-        Action::Sandbox(sandbox) => {
-            crate::sandbox::run(sandbox, &args.state_dir, &args.workspace, args.session).await
-        }
-        Action::Rtk(mut rtk) => {
-            rtk.state_dir = args.state_dir;
-            rtk.workspace = args.workspace;
-            tokio::task::spawn_blocking(move || crate::rtk::run(rtk))
-                .await
-                .map_err(|_| CliError::Unavailable("RTK owner failed"))?
-                .map_err(CliError::from)
-        }
-        Action::Doctor { json } | Action::Onboarding { json } => {
-            doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
-        }
-        Action::Status { json } => status(&dirs, json),
-        Action::Run { task } => {
-            headless(&args.state_dir, &args.workspace, args.session, &task).await
+    let result = if args.command.is_none() {
+        crate::tui::run(&args, &loaded, &dirs).await
+    } else {
+        match args.command {
+            None => Err(CliError::Unavailable("missing command branch")),
+            Some(Action::Sandbox(sandbox)) => {
+                crate::sandbox::run(sandbox, &args.state_dir, &args.workspace, args.session).await
+            }
+            Some(Action::Rtk(mut rtk)) => {
+                rtk.state_dir = args.state_dir;
+                rtk.workspace = args.workspace;
+                tokio::task::spawn_blocking(move || crate::rtk::run(rtk))
+                    .await
+                    .map_err(|_| CliError::Unavailable("RTK owner failed"))?
+                    .map_err(CliError::from)
+            }
+            Some(Action::Doctor { json }) | Some(Action::Onboarding { json }) => {
+                doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
+            }
+            Some(Action::Status { json }) => status(&dirs, json),
+            Some(Action::Run { task }) => {
+                headless(&args.state_dir, &args.workspace, args.session, &task).await
+            }
         }
     };
     let log = Arc::clone(&guard);
@@ -193,10 +231,15 @@ async fn doctor(
     .map_err(|_| CliError::Unavailable("recovery journal cannot be inspected"))?;
     let unresolved: Vec<_> = leaks.entries.iter().map(|entry| serde_json::json!({"kind":format!("{:?}",entry.kind),"locator":format!("{:?}",entry.locator)})).collect();
     let setup = crate::doctor::collect(workspace, config).await?;
-    let credential_presence = setup["items"]
-        .as_array()
-        .and_then(|items| items.iter().find(|item| item["id"] == "win-keyring"))
-        .map(|item| item["observation"].clone());
+    let credential_presence = setup
+        .get("items")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|items| {
+            items.iter().find(|item| {
+                item.get("id").and_then(serde_json::Value::as_str) == Some("win-keyring")
+            })
+        })
+        .and_then(|item| item.get("observation").cloned());
     let report = serde_json::json!({"crypto_provider":"aws-lc-rs","configuration":"PASS","state_root":root,"recovery_orphans":unresolved,"credential_presence":credential_presence,"model_execution":"P3 execution profile required","setup":setup});
     let mut out = std::io::stdout().lock();
     if json {
@@ -269,7 +312,7 @@ async fn headless(
     Ok(())
 }
 #[cfg(windows)]
-async fn shutdown_signal() -> Result<(), std::io::Error> {
+pub(crate) async fn shutdown_signal() -> Result<(), std::io::Error> {
     let mut ctrl_c = tokio::signal::windows::ctrl_c()?;
     let mut ctrl_break = tokio::signal::windows::ctrl_break()?;
     let mut close = tokio::signal::windows::ctrl_close()?;
@@ -279,7 +322,7 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
     Ok(())
 }
 #[cfg(unix)]
-async fn shutdown_signal() -> Result<(), std::io::Error> {
+pub(crate) async fn shutdown_signal() -> Result<(), std::io::Error> {
     let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
     tokio::select! { result = tokio::signal::ctrl_c() => result?, _ = terminate.recv() => {} }
     Ok(())
@@ -294,7 +337,7 @@ mod tests {
     fn status_json_is_a_headless_cli_action() -> Result<(), clap::Error> {
         let args = Args::try_parse_from(["polaris", "status", "--json"])?;
         assert!(
-            matches!(args.command, Action::Status { json: true }),
+            matches!(args.command, Some(Action::Status { json: true })),
             "status --json must route to the headless status action"
         );
         Ok(())

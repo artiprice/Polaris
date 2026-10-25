@@ -6,6 +6,8 @@
 > `@prime/tools/workspace.toml` and are refreshed in place by `python -I @prime/tools/workspace.py render-docs`
 > (`render-docs --check` fails when they are stale; `check-docs` verifies every package and setup id appears).
 
+> **CLI UI companions:** [UI_PLAN.md](UI_PLAN.md), [UI_PHASES.md](UI_PHASES.md), [UI_MODULES.csv](UI_MODULES.csv). UI modules are logical work packages, not generated Cargo members.
+
 ## 0. Rules
 
 - **Statuses** (PHASES_STATUS.md): `PASS` (command + raw output + conditions pasted), `FAIL`, `BLOCKED`,
@@ -142,6 +144,22 @@ P0 (skeleton ✔, WSL2, OpenShell, S0-1, S0-4, S0-7, keys requested)
 
 ---
 
+## 2.2 CLI UI gates inside the system phases
+
+[UI_PHASES.md](UI_PHASES.md) refines the existing schedule, not a parallel replacement. Planning does
+not close M1 or change historical non-UI evidence. All proposed UI implementation tasks remain NOT
+STARTED; existing code and synthetic dumps do not supply runtime acceptance.
+
+| Main anchor | UI contribution / independent acceptance |
+|---|---|
+| P1-X-2 / M1 | UI0–UI4 including shared cockpit state/panel shell; real offline sessions/directives, safe terminal and deterministic dump. No P3 question dependency. |
+| P2 / M2 | UI5-1 actual sandbox execution, diff/approval/blast/proof integration. |
+| P3 / M3–M4 | UI5-2/3/4 streaming, task/goal/replay, agents and usage; UI5-10 human requests depends on P3-X-5. Keyless and keyed evidence separate. |
+| P4 / M5 | UI5-5 S1/PII and proof-backed MVP; include actual question interaction as required by the script. |
+| P5 / P6 / P7 / P8 | UI5-6 / UI5-7 / UI5-8 / UI5-9, each capability with its own real owner/access gate. |
+| P9-X-1 | WEB-WELCOME deferred, followed by independently evidenced WEB-OPT; desktop/full web design deferred. |
+| P10 / M6 | UI6 scoped security/performance/manual/packaging evidence; full submission still needs main gates. |
+
 ## P0 — Foundations & de-risking
 
 **Entry:** repo at INITIAL COMMIT. **Exit gate:** every P0-SKEL task PASS; P0-ENV-1..6 PASS; every keyless
@@ -209,7 +227,7 @@ enqueue + fuzz targets `directives_grammar`, `rtk_stream`, `cas_short_ref_roundt
 `proto_decode`, `diff_apply` running in WSL2.
 
 **Current user scope (2026-10-22): complete P1 logic and defer UI.** The non-UI verdict is tracked in
-[P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md). Full M1/TUI acceptance remains open. P1 composition uses
+[P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md). Full M1/TUI acceptance remains open. The 2026-10-24 CLI implementation follow-on is in progress; UI_PHASES and evidence/ui/verification.txt record the tested slices and open gates. P1 composition uses
 `LocalBackends` for real offline stores, controls, read tools and native ownership; complete
 model/sandbox/S1 execution bundles retain their P2/P3/P4 gates. Facade export verification is separate
 from later-phase child completion; no future child is marked PASS by a P1 facade doctest.
@@ -219,7 +237,7 @@ Cross-cutting tasks:
 | Task | Description | Depends on | Exit criteria |
 |---|---|---|---|
 | P1-X-1 | Composition-root wiring v0 (`LocalBackends` offline profile) | `crate:polaris-kernel` | session typestate tests PASS |
-| P1-X-2 | TUI shell (composer, completion, `$`/`/`/`@`, sessions, `/status` `/help` `/stats` `/quit`) | `crate:polaris-ui-cli`, `crate:polaris-cli` | insta `--dump` snapshots + smoke |
+| P1-X-2 | TUI shell: UI0–UI4 in [UI_PHASES.md](UI_PHASES.md), composer/completion, sessions/directives, status/help/settings/stats, optional panel shell | `crate:polaris-ui-cli`, `crate:polaris-cli` | real offline interaction + same-path plain/styled dump, safe terminal/failure evidence, compatibility and Linux leg; no P3 dependency |
 | P1-X-3 | rustls aws-lc-rs provider installed in `main` (ADR-005) | `crate:polaris-cli` | smoke asserts provider |
 
 ### P1 crate tasks (generated from workspace.toml)
@@ -227,7 +245,7 @@ Cross-cutting tasks:
 <!-- generated: P1 crate tasks -->
 | Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
 |---|---|---|---|---|---|
-| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas`, `crate:polaris-openshell`, `crate:polaris-platform` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-ui-model`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas`, `crate:polaris-openshell`, `crate:polaris-platform` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
 | `crate:polaris-sdk` | `polaris-sdk` | L0 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-proto` | `polaris-proto` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-config` | `polaris-config` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
@@ -300,6 +318,7 @@ Keyed items stay `BLOCKED-ON-ACCESS` until P0-ACC-1/2 are done.
 | P3-X-2 | Same loop on Nemotron 3 (effort tiers) | P3-X-1 | transcript + usage | **Token Factory key** |
 | P3-X-3 | Contree sidecar + E3 run of a SWE-bench task — [per-PC] `contree-mcp`, `win-keyring` | `crate:polaris-nebius-cloud-sandboxes` | transcript | **Contree** |
 | P3-X-4 | Re-record synthetic SSE fixtures live; contract tests PASS against real service | P3-X-2 | contract suite output | **Token Factory key** |
+| P3-X-5 | Human ask/answer and targeted frame cancellation: [UI_PLAN §3.4](UI_PLAN.md#34-human-askanswer-protocol-and-popup-p3-not-an-m1-dependency); SDK/kernel/runtime-frame owner follow-on, UI5-10 consumer | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-kernel`, `crate:polaris-runtime-frames`; P2 exit | real ask_user → durable request → atomic answer → requester continuation; sibling progress, scoped cancel, None/no-default validation, stale/duplicate/race/restart evidence; append NOT STARTED status only when execution tracking begins | — |
 
 ### P3 crate tasks (generated from workspace.toml)
 
@@ -444,7 +463,7 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 
 | Task | Description | Depends on | Exit criteria |
 |---|---|---|---|
-| P9-X-1 | Static welcome page (approved demo design) — may be pulled forward for the Design criterion — [per-PC] `win-wasm32` | `crate:polaris-ui-web` | visual comparison to demo |
+| P9-X-1 | Deferred welcome-only design, UI_PLAN §10; WEB-WELCOME then separately gated WEB-OPT; full web/desktop planning later — [per-PC] `win-wasm32` | `crate:polaris-ui-web` | welcome visual/a11y evidence separate from measured welcome-only optimization; no other web pages imported |
 | P9-X-2 | Named-pipe transport with token auth; mTLS remote | `crate:polaris-rpc` | security tests |
 
 ### P9 crate tasks (generated from workspace.toml)

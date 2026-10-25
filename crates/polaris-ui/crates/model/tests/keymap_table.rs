@@ -365,3 +365,100 @@ proptest! {
         let _ = footer_text(keymap(), context, state);
     }
 }
+
+#[test]
+fn questionnaire_contexts_bind_atomic_answer_and_requester_controls() -> TestResult {
+    use Action as A;
+    use Context as C;
+    assert_eq!(C::Questionnaire.chain(), &[C::Questionnaire]);
+    assert_eq!(C::QuestionnaireNotes.chain(), &[C::QuestionnaireNotes]);
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Left),
+        NONE,
+        A::QuestionnairePrevious,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Right),
+        NONE,
+        A::QuestionnaireNext,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Up),
+        NONE,
+        A::QuestionnaireChoiceUp,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Down),
+        NONE,
+        A::QuestionnaireChoiceDown,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Char(' ')),
+        NONE,
+        A::QuestionnaireToggleChoice,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Tab),
+        NONE,
+        A::QuestionnaireFocusNotes,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Enter),
+        NONE,
+        A::SubmitQuestionnaireAnswers,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::plain(Key::Esc),
+        NONE,
+        A::InterruptQuestionnaireRequester,
+    )?;
+    resolves(
+        C::Questionnaire,
+        KeyChord::ctrl(Key::Char('B')),
+        NONE,
+        A::DeferQuestionnaire,
+    )?;
+    resolves(
+        C::QuestionnaireNotes,
+        KeyChord::shift(Key::Tab),
+        NONE,
+        A::QuestionnaireFocusChoices,
+    )?;
+    resolves(
+        C::QuestionnaireNotes,
+        KeyChord::plain(Key::Enter),
+        NONE,
+        A::SubmitQuestionnaireAnswers,
+    )?;
+    resolves(
+        C::QuestionnaireNotes,
+        KeyChord::plain(Key::Esc),
+        NONE,
+        A::InterruptQuestionnaireRequester,
+    )?;
+    resolves(
+        C::QuestionnaireNotes,
+        KeyChord::ctrl(Key::Char('B')),
+        NONE,
+        A::DeferQuestionnaire,
+    )?;
+    assert_eq!(
+        lookup(C::QuestionnaireNotes, KeyChord::plain(Key::Left), NONE).map(|b| b.action),
+        None,
+        "notes keep horizontal arrows for text cursor movement"
+    );
+    assert_eq!(
+        lookup(C::Questionnaire, KeyChord::ctrl(Key::Char('C')), NONE).map(|b| b.action),
+        None,
+        "questionnaire Esc is explicit requester interruption; no global cancel fallback"
+    );
+    Ok(())
+}

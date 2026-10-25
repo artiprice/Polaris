@@ -72,8 +72,8 @@ pub const ROLES: &[ColorRole] = &[
     ),
     role_of(
         "prompt-surface",
-        "#373737",
-        "ui-design.md (sent-prompt surface)",
+        "#141414",
+        "UI_PLAN current-demo composer surface",
     ),
     role_of("to-latest-bg", "#262626", "ui-design.md (To latest)"),
     role_of(
@@ -86,24 +86,9 @@ pub const ROLES: &[ColorRole] = &[
         "#525252",
         "prompt-settings.md (empty-editor placeholder)",
     ),
-    role_of("logo-star", "#24D046", "header-logo.md"),
-    role_of("logo-trace", "#76B900", "header-logo.md"),
-    role_of("logo-mint", "#96D6AC", "header-logo.md (mint highlight)"),
-    role_of(
-        "logo-frame-light",
-        "#B8B8B8",
-        "header-logo.md (upper and left frame)",
-    ),
-    role_of(
-        "logo-frame-dark",
-        "#6B6B6B",
-        "header-logo.md (lower and right frame, pins)",
-    ),
-    role_of(
-        "logo-package",
-        "#1C1C1C",
-        "header-logo.md (package surface)",
-    ),
+    role_of("logo-star", "#C0E58C", "UI_PLAN current-demo North Star"),
+    role_of("logo-trace", "#76B900", "UI_PLAN current-demo rays"),
+    role_of("logo-tips", "#6B6B6B", "UI_PLAN current-demo gray tips"),
     role_of("surface", "#141414", "styles.css (web surface)"),
     role_of("raised", "#1C1C1C", "styles.css (web raised surface)"),
     role_of("text", "#E8E8E8", "styles.css (web text)"),
@@ -239,7 +224,7 @@ pub const SELECTION_TINTS: &[SelectionTint] = &[
     SelectionTint {
         source: "text",
         background: "prompt-surface",
-        tint: "#6C6C6C",
+        tint: "#545454",
     },
 ];
 

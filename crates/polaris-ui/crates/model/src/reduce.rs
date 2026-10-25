@@ -10,13 +10,14 @@ fn update_tool(
     frame: FrameId,
     call: Cid,
     update: impl FnOnce(&mut ToolActivity),
-) {
+) -> Result<(), ReduceError> {
     if let Some(activity) = state
         .tools
         .iter_mut()
         .find(|tool| tool.frame == frame && tool.call == call)
     {
         update(activity);
+        return Ok(());
     } else {
         let mut activity = ToolActivity {
             frame,
@@ -27,8 +28,9 @@ fn update_tool(
             expanded: None,
         };
         update(&mut activity);
-        state.tools.push(activity);
+        state.add_tool_activity(activity)?;
     }
+    Ok(())
 }
 
 /// Fold a single record into frontend state.
@@ -49,6 +51,14 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
             return Err(ReduceError::OutOfOrder { last, got: seq });
         }
     }
+    fold_unsequenced(state, record)
+}
+
+pub(crate) fn fold_unsequenced(
+    state: &mut ViewState,
+    record: &EventRecord,
+) -> Result<(), ReduceError> {
+    let seq = record.seq();
     match *record.event() {
         Event::SessionStarted { workspace } => {
             if let Some(row) = state
@@ -61,13 +71,13 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
                 row.started_at_ms = record.at().as_millisecond();
                 row.started_seq = seq;
             } else {
-                state.sessions.push(SessionRow {
+                state.add_session_row(SessionRow {
                     session: record.session(),
                     workspace: Some(workspace),
                     started_at_ms: record.at().as_millisecond(),
                     started_seq: seq,
                     closed: false,
-                });
+                })?;
             }
             state.status.session_open = true;
         }
@@ -82,13 +92,13 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
             } else {
                 // Partial replay may begin at a lifecycle transition. Unknown workspace/start
                 // remain explicit, using the same first-observed-row convention as close events.
-                state.sessions.push(SessionRow {
+                state.add_session_row(SessionRow {
                     session: record.session(),
                     workspace: None,
                     started_at_ms: record.at().as_millisecond(),
                     started_seq: seq,
                     closed: false,
-                });
+                })?;
             }
             state.status.session_open = true;
         }
@@ -100,18 +110,18 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
             {
                 row.closed = true;
             } else {
-                state.sessions.push(SessionRow {
+                state.add_session_row(SessionRow {
                     session: record.session(),
                     workspace: None,
                     started_at_ms: record.at().as_millisecond(),
                     started_seq: seq,
                     closed: true,
-                });
+                })?;
             }
             state.status.session_open = false;
         }
         Event::ToolExecutionStarted { frame, call } => {
-            update_tool(state, frame, call, |_| {});
+            update_tool(state, frame, call, |_| {})?;
         }
         Event::ToolExecutionCompleted {
             frame,
@@ -126,7 +136,7 @@ pub fn reduce(state: &mut ViewState, record: &EventRecord) -> Result<(), ReduceE
                     ToolStatus::Failed
                 };
                 activity.latency_us = Some(latency_us);
-            });
+            })?;
         }
         Event::ModelRequestCompleted {
             prompt_tokens,

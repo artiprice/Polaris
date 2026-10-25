@@ -201,9 +201,14 @@ async fn run_owned(
     }
     match outcome {
         Ok(mut value) => {
-            value["events"] = serde_json::to_value(records)?;
-            value["cleanup"] =
-                serde_json::json!({"deadline_exceeded":false,"unresolved_resources":0});
+            let fields = value
+                .as_object_mut()
+                .ok_or(CliError::Unavailable("sandbox report was not an object"))?;
+            let _prior_events = fields.insert("events".to_owned(), serde_json::to_value(records)?);
+            let _prior_cleanup = fields.insert(
+                "cleanup".to_owned(),
+                serde_json::json!({"deadline_exceeded":false,"unresolved_resources":0}),
+            );
             write_json(&value)
         }
         Err(error) => {

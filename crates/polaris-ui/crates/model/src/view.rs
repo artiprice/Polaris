@@ -1,9 +1,17 @@
 //! Serializable frontend state. Event payload text is resolved separately from CAS by the caller.
 
+use crate::error::{ProjectionResource, ReduceError, ViewError};
 use polaris_sdk::effort::Effort;
 use polaris_sdk::ids::{Cid, FrameId, ModelId, Seq, SessionId, ShortRef};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+pub const MAX_CONVERSATION_ENTRIES: usize = 1024;
+pub const MAX_CONVERSATION_BYTES: usize = 16 << 20;
+pub const MAX_TOOL_ACTIVITIES: usize = 4096;
+pub const MAX_TOOL_METADATA_BYTES: usize = 16 << 20;
+pub const MAX_SESSION_ROWS: usize = 1024;
+pub const MAX_SESSION_VIEWS: usize = 1024;
 
 /// Current conversation mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -287,27 +295,123 @@ impl ViewState {
             effort_preferences,
         }
     }
-    fn push(&mut self, kind: EntryKind, text: impl Into<String>) {
-        self.conversation.push(Entry {
-            kind,
-            text: text.into(),
-        });
+    fn conversation_bytes(&self) -> Result<usize, ViewError> {
+        let base = self
+            .conversation
+            .len()
+            .checked_mul(core::mem::size_of::<Entry>())
+            .ok_or(ViewError::AccountingOverflow)?;
+        self.conversation.iter().try_fold(base, |total, entry| {
+            total
+                .checked_add(entry.text.capacity())
+                .ok_or(ViewError::AccountingOverflow)
+        })
     }
-    /// Append resolved user text.
-    pub fn push_user(&mut self, text: impl Into<String>) {
-        self.push(EntryKind::User, text);
+    fn check_conversation_capacity(&self, text: &String) -> Result<(), ViewError> {
+        if self.conversation.len() >= MAX_CONVERSATION_ENTRIES {
+            return Err(ViewError::ConversationEntries {
+                limit: MAX_CONVERSATION_ENTRIES,
+            });
+        }
+        let current = self.conversation_bytes()?;
+        let attempted = current
+            .checked_add(core::mem::size_of::<Entry>())
+            .and_then(|bytes| bytes.checked_add(text.capacity()))
+            .ok_or(ViewError::AccountingOverflow)?;
+        if attempted > MAX_CONVERSATION_BYTES {
+            return Err(ViewError::ConversationBytes {
+                limit: MAX_CONVERSATION_BYTES,
+            });
+        }
+        Ok(())
     }
-    /// Append resolved model text.
-    pub fn push_assistant(&mut self, text: impl Into<String>) {
-        self.push(EntryKind::Assistant, text);
+    /// Check whether this exact resolved user-text allocation can be retained as one entry.
+    ///
+    /// Pass the same String to push_user after this check; capacity is included so the preflight
+    /// and append enforce the same memory bound.
+    ///
+    /// # Errors
+    /// Returns the exact capacity or accounting error that push_user would return.
+    pub fn check_user_capacity(&self, text: &String) -> Result<(), ViewError> {
+        self.check_conversation_capacity(text)
     }
-    /// Append an application notice.
-    pub fn push_system(&mut self, text: impl Into<String>) {
-        self.push(EntryKind::System, text);
+    fn push(&mut self, kind: EntryKind, text: impl Into<String>) -> Result<(), ViewError> {
+        let text = text.into();
+        self.check_conversation_capacity(&text)?;
+        self.conversation
+            .try_reserve(1)
+            .map_err(|_| ViewError::AllocationFailed)?;
+        self.conversation.push(Entry { kind, text });
+        Ok(())
     }
-    /// Append a visible error.
-    pub fn push_error(&mut self, text: impl Into<String>) {
-        self.push(EntryKind::Error, text);
+    pub fn push_user(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
+        self.push(EntryKind::User, text)
+    }
+    pub fn push_assistant(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
+        self.push(EntryKind::Assistant, text)
+    }
+    pub fn push_system(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
+        self.push(EntryKind::System, text)
+    }
+    pub fn push_error(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
+        self.push(EntryKind::Error, text)
+    }
+    pub(crate) fn tool_metadata_bytes(&self) -> Result<usize, ViewError> {
+        let base = self
+            .tools
+            .len()
+            .checked_mul(core::mem::size_of::<ToolActivity>())
+            .ok_or(ViewError::AccountingOverflow)?;
+        self.tools.iter().try_fold(base, |total, tool| {
+            let title = tool.title.as_ref().map_or(0, String::capacity);
+            total
+                .checked_add(title)
+                .ok_or(ViewError::AccountingOverflow)
+        })
+    }
+    pub(crate) fn add_tool_activity(&mut self, activity: ToolActivity) -> Result<(), ReduceError> {
+        if self.tools.len() >= MAX_TOOL_ACTIVITIES {
+            return Err(ReduceError::CapacityExceeded {
+                resource: ProjectionResource::ToolActivities,
+                limit: MAX_TOOL_ACTIVITIES,
+            });
+        }
+        let current = self
+            .tool_metadata_bytes()
+            .map_err(|_| ReduceError::CapacityExceeded {
+                resource: ProjectionResource::ToolMetadataBytes,
+                limit: MAX_TOOL_METADATA_BYTES,
+            })?;
+        let attempted = current
+            .checked_add(core::mem::size_of::<ToolActivity>())
+            .ok_or(ReduceError::CapacityExceeded {
+                resource: ProjectionResource::ToolMetadataBytes,
+                limit: MAX_TOOL_METADATA_BYTES,
+            })?;
+        if attempted > MAX_TOOL_METADATA_BYTES {
+            return Err(ReduceError::CapacityExceeded {
+                resource: ProjectionResource::ToolMetadataBytes,
+                limit: MAX_TOOL_METADATA_BYTES,
+            });
+        }
+        self.tools
+            .try_reserve(1)
+            .map_err(|_| ReduceError::AllocationFailed)?;
+        self.tools.push(activity);
+        Ok(())
+    }
+    pub(crate) fn add_session_row(&mut self, row: SessionRow) -> Result<(), ReduceError> {
+        if self.sessions.len() >= MAX_SESSION_ROWS {
+            return Err(ReduceError::CapacityExceeded {
+                resource: ProjectionResource::SessionRows,
+                limit: MAX_SESSION_ROWS,
+            });
+        }
+        self.sessions
+            .try_reserve(1)
+            .map_err(|_| ReduceError::AllocationFailed)?;
+        self.sessions.push(row);
+        Ok(())
     }
     /// Change conversation mode.
     pub const fn set_mode(&mut self, mode: Mode) {
@@ -357,10 +461,33 @@ impl ViewState {
         true
     }
     /// Resolve the title of a known call.
-    pub fn set_tool_title(&mut self, call: Cid, title: impl Into<String>) {
-        if let Some(tool) = self.tools.iter_mut().find(|tool| tool.call == call) {
-            tool.title = Some(title.into());
+    /// Resolve the title of a known call, rejecting titles that exceed the tool metadata budget.
+    pub fn set_tool_title(&mut self, call: Cid, title: impl Into<String>) -> Result<(), ViewError> {
+        let Some(index) = self.tools.iter().position(|tool| tool.call == call) else {
+            return Ok(());
+        };
+        let title = title.into();
+        let current = self.tool_metadata_bytes()?;
+        let old = self
+            .tools
+            .get(index)
+            .and_then(|tool| tool.title.as_ref())
+            .map_or(0, String::capacity);
+        let attempted = current
+            .checked_sub(old)
+            .and_then(|bytes| bytes.checked_add(title.capacity()))
+            .ok_or(ViewError::AccountingOverflow)?;
+        if attempted > MAX_TOOL_METADATA_BYTES {
+            return Err(ViewError::ToolMetadataBytes {
+                limit: MAX_TOOL_METADATA_BYTES,
+            });
         }
+        let tool = self
+            .tools
+            .get_mut(index)
+            .ok_or(ViewError::AccountingOverflow)?;
+        tool.title = Some(title);
+        Ok(())
     }
     /// Whether the tool at `index` is expanded. Unknown entries return false.
     #[must_use]
