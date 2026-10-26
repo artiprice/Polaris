@@ -1,0 +1,5 @@
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 2.76s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)
+     Running tests\terminal_input.rs (target\debug\deps\terminal_input-45e415545446b123.exe)
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-d1cd67acad6a3e7c.exe)

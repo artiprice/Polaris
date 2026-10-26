@@ -1,0 +1,22 @@
+{
+  "type_of": "async_function",
+  "name": "audit",
+  "file_path": "crates/polaris-hacker/src/pipeline.rs",
+  "logic_name": "Zero-Token Adversarial Audit Pipeline",
+  "test_list": [
+    { "test_name": "static_pipeline_runs_without_creating_sandbox", "description": "When no stress plan is supplied, audit only uses deterministic AST and DFA checks." },
+    { "test_name": "dynamic_pipeline_uses_supplied_sdk_backend", "description": "When a stress plan is supplied, each bounded input is sent through SandboxBackend::exec." },
+    { "test_name": "tokens_used_is_zero_and_not_caller_mutable", "description": "No model dependency exists and report token usage is private with a zero-only constructor." },
+    { "test_name": "runtime_exit_is_observation_not_reproduction", "description": "A nonzero exit status remains runtime evidence and is not promoted to a diagnosed bug." }
+  ],
+  "dependencies": ["polaris-code-intel", "polaris-security-automata", "polaris-sdk"],
+  "libraries": [],
+  "inputs": [
+    { "name": "files", "type": "&[SourceFile]", "description": "Caller-owned source snapshots." },
+    { "name": "rules", "type": "&DfaScanner", "description": "Caller-configured deterministic rules." },
+    { "name": "stress", "type": "Option<&StressPlan>", "description": "Optional bounded command and boundary corpus." },
+    { "name": "backend", "type": "&B", "description": "SDK SandboxBackend selected by the composition root." }
+  ],
+  "output_type": "Result<AuditReport, HackerError>",
+  "output_description": "Static findings and optional bounded dynamic observations with honest zero model-token usage."
+}

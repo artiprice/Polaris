@@ -143,7 +143,10 @@ fn plan_keymap_rows_present() -> TestResult {
     resolves(Composer, KeyChord::plain(Key::Enter), NONE, Submit)?;
     resolves(Composer, KeyChord::shift(Key::Enter), NONE, Newline)?;
     resolves(Composer, KeyChord::alt(Key::Enter), NONE, Newline)?;
-    resolves(Composer, KeyChord::ctrl(Key::Enter), NONE, Newline)?;
+    assert!(
+        lookup(Composer, KeyChord::ctrl(Key::Enter), NONE).is_none(),
+        "Ctrl+Enter is intentionally unbound; Shift+Enter is the newline shortcut"
+    );
     resolves(Composer, KeyChord::ctrl(Key::Char('j')), NONE, Newline)?;
     resolves(Composer, KeyChord::plain(Key::Up), FIRST_ROW, HistoryPrev)?;
     resolves(Composer, KeyChord::plain(Key::Down), LAST_ROW, HistoryNext)?;

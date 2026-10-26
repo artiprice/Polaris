@@ -1,0 +1,16 @@
+
+running 4 tests
+test windows_input::tests::native_mouse_motion_with_pressed_button_is_drag ... ok
+test windows_input::tests::native_middle_button_down_and_release_keep_identity ... FAILED
+test windows_input::tests::native_button_changes_keep_left_drag_and_other_button_transitions ... FAILED
+test windows_input::tests::native_right_button_down_and_release_keep_identity ... FAILED
+
+failures:
+
+failures:
+    windows_input::tests::native_button_changes_keep_left_drag_and_other_button_transitions
+    windows_input::tests::native_middle_button_down_and_release_keep_identity
+    windows_input::tests::native_right_button_down_and_release_keep_identity
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+

@@ -1,0 +1,11 @@
+
+running 6 tests
+test source_grapheme_range_covers_combining_zwj_and_clamped_offsets ... ok
+test source_line_range_includes_present_lf_and_crlf_and_handles_eof ... ok
+test full_selection_deletes_unicode_and_chip_atomically_and_undo_restores_it ... ok
+test source_word_range_groups_unicode_words_and_actual_whitespace_runs ... ok
+test questionnaire_set_selection_edits_notes_and_undo_restores_selected_range ... ok
+test source_unit_ranges_remain_legal_for_arbitrary_unicode ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

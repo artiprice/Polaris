@@ -1,8 +1,8 @@
 //! # polaris-proto
 //!
 //! Protobuf contracts and generated tonic/prost code for the kernel, worker and guest services
-//! (layer L1, phase P1). This crate contains **definitions only**: transports (named pipe, TCP with
-//! mTLS) belong to `polaris-rpc` and the apps.
+//! (layer L1, phase P1), plus shared bounded wire validation and worker credential contracts.
+//! Transport ownership (named pipe, TCP with mTLS) belongs to `polaris-rpc` and the apps.
 //!
 //! | Item | Contents |
 //! |---|---|
@@ -33,6 +33,7 @@ mod convert;
 mod error;
 pub mod limits;
 mod version;
+pub mod worker_auth;
 
 pub use error::ProtoError;
 pub use version::{PROTOCOL_VERSION, ProtocolVersion, negotiate};

@@ -1,0 +1,14 @@
+command: cargo test -p polaris-ui-model --test mouse_selection_model\nexit code: 0\n--- stdout ---\n
+running 5 tests
+test source_line_range_includes_present_lf_and_crlf_and_handles_eof ... ok
+test source_grapheme_range_covers_combining_zwj_and_clamped_offsets ... ok
+test source_word_range_groups_unicode_words_and_actual_whitespace_runs ... ok
+test questionnaire_set_selection_edits_notes_and_undo_restores_selected_range ... ok
+test full_selection_deletes_unicode_and_chip_atomically_and_undo_restores_it ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+\n--- stderr ---\n    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Finished `test` profile [unoptimized] target(s) in 2.88s
+     Running tests\mouse_selection_model.rs (target\debug\deps\mouse_selection_model-5758d8e25115d160.exe)

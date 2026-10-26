@@ -1,0 +1,16 @@
+cargo test --offline -p polaris-cli --test ui_terminal offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste -- --exact --nocapture
+EXIT 101
+
+running 1 test
+test offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste ... FAILED
+
+failures:
+
+failures:
+    offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.07s
+
+STDERR
+Error: Custom { kind: Other, error: \"Backspace/Delete/middle-paste edit did not leave only BC: [screen ends with composer > AéBC]\" }
+error: test failed, to rerun pass -p polaris-cli --test ui_terminal

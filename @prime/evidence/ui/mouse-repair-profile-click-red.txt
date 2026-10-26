@@ -1,0 +1,61 @@
+COMMAND: cargo test -p polaris-cli --test ui_terminal native_conpty_mouse_click_selects_demo_profile -- --exact --nocapture
+EXIT: 101
+
+STDOUT:
+
+running 1 test
+test native_conpty_mouse_click_selects_demo_profile ... FAILED
+
+failures:
+
+failures:
+    native_conpty_mouse_click_selects_demo_profile
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 6.16s
+
+
+STDERR:
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: method `is_consumed` is never used
+   --> apps\polaris-cli\src\demo_gallery.rs:316:18
+    |
+315 | impl GalleryEffect {
+    | ------------------ method in this implementation
+316 |     pub const fn is_consumed(&self) -> bool {
+    |                  ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple methods are never used
+    --> apps\polaris-cli\src\demo_gallery.rs:1332:12
+     |
+1164 | impl DemoGallery {
+     | ---------------- methods in this implementation
+...
+1332 |     pub fn stats_tab_label(&self) -> &'static str {
+     |            ^^^^^^^^^^^^^^^
+...
+1350 |     pub fn stats_summary(&self) -> StatsSummary {
+     |            ^^^^^^^^^^^^^
+...
+1359 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+     |            ^^^^^^^^^^^^^^^^^^^
+...
+1368 |     pub const fn stats_details_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+1371 |     pub const fn stats_bucket(&self) -> Option<usize> {
+     |                  ^^^^^^^^^^^^
+...
+1374 |     pub const fn usage_demo_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^
+...
+1440 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+     |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 13.45s
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-97e39ee21424c315.exe)
+Error: Custom { kind: TimedOut, error: "PTY did not render \"DEMO\"; captured 3479 bytes; first bytes: [1b, 5b, 36, 6e, 1b, 5b, 3f, 39, 30, 30, 31, 68, 1b, 5b, 3f, 31, 30, 30, 34, 68, 1b, 5b, 6d, 1b, 5d, 30, 3b, 43, 3a, 5c, 6d, 44, 65, 76, 5c, 50, 6f, 6c, 61, 72, 69, 73, 5c, 74, 61, 72, 67, 65, 74, 5c, 64, 65, 62, 75, 67, 5c, 70, 6f, 6c, 61, 72, 69, 73, 2e, 65, 78, 65, 07, 1b, 5b, 3f, 32, 35, 68, 1b, 5b, 3f, 31, 30, 34, 39, 68, 1b, 5b, 3f, 32, 35, 6c, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a]; raw websearch context: []; visible output: \n\n    ✦ Polaris v0.1.0alpha      C:\\Users\\Admin\\AppData\\Local\\Temp\\.tmp8dNh3e\n\n    ┌─────────────────────────────────────────────────────────────────────┐\n    │ Profile                                                             │\n    │─────────────────────────────────────────────────────────────────────│\n    │   Offline · signed local directives; model execution unavailable    │\n    │ > Demo · scripted UI, isolated drafts; no session writes            │\n    │                                                                     │\n    │ Up/Down choose · Enter switch · Esc close                           │\n    │                                                                     │\n    │                                                                     │\n    │                                                                     │\n    │                                                                     │\n    │                                                                     │\n    │ Up/Down choose · Enter switch · Esc close                           │\n    └─────────────────────────────────────────────────────────────────────┘\n  ───────────────────────────────────────────────────────────────────────────\n    > What's on your mind for Polaris?\n  ───────────────────────────────────────────────────────────────────────────\n\n    ? for shortcuts     [ auto mode on ] [ offline ] [ offline ] [ medium ]\n" }
+error: test failed, to rerun pass `-p polaris-cli --test ui_terminal`

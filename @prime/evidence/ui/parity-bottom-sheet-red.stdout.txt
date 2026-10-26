@@ -1,0 +1,20 @@
+
+running 1 test
+test tui::controller_tests::parity::model_gallery_is_anchored_above_global_footer ... FAILED
+
+failures:
+
+---- tui::controller_tests::parity::model_gallery_is_anchored_above_global_footer stdout ----
+
+thread 'tui::controller_tests::parity::model_gallery_is_anchored_above_global_footer' (7204) panicked at apps\polaris-cli\src\..\tests\controller\parity.rs:166:2:
+assertion `left == right` failed: reference model sheet uses 14 rows above the two global footer rows
+  left: Some(4)
+ right: Some(24)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tui::controller_tests::parity::model_gallery_is_anchored_above_global_footer
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 92 filtered out; finished in 0.01s
+

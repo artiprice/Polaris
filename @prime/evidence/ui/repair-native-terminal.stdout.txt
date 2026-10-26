@@ -1,0 +1,26 @@
+
+running 8 tests
+test default_terminal_launch_shows_real_welcome_at_80x24 ... ok
+test quit_restores_terminal_modes_and_cursor ... ok
+test control_j_inserts_a_visible_newline_without_submitting ... ok
+test initial_prompt_is_visible_but_unsent_until_enter ... ok
+test bracketed_paste_is_literal_and_never_submitted ... ok
+test idle_screen_emits_no_redundant_frames ... ok
+test valid_directive_commits_and_renders_receipt ... FAILED
+test windows_auto_color_uses_rgb_without_colorterm ... FAILED
+
+failures:
+
+---- valid_directive_commits_and_renders_receipt stdout ----
+Error: Custom { kind: TimedOut, error: "PTY did not render \"Directive committed by the kernel\"; captured 2764 bytes; first bytes: [1b, 5b, 36, 6e, 1b, 5b, 3f, 39, 30, 30, 31, 68, 1b, 5b, 3f, 31, 30, 30, 34, 68, 1b, 5b, 6d, 1b, 5d, 30, 3b, 43, 3a, 5c, 6d, 44, 65, 76, 5c, 50, 6f, 6c, 61, 72, 69, 73, 5c, 74, 61, 72, 67, 65, 74, 5c, 64, 65, 62, 75, 67, 5c, 70, 6f, 6c, 61, 72, 69, 73, 2e, 65, 78, 65, 07, 1b, 5b, 3f, 32, 35, 68, 1b, 5b, 3f, 31, 30, 34, 39, 68, 1b, 5b, 3f, 32, 35, 6c, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a]; visible output: \n\n    ✦ Polaris v0.1.0alpha       C:\\Users\\Admin\\AppData\\Local\\Temp\\.tmpspd6KF\n\n     You\n     $websearch\n\n\n    $websearch\n\n                          Configure╶───✦───╴nvironment\n    $concurrency              concurren y\n                                     de elopment environment\n                          Configure\n                              i  r\n    $nebius-branching     Configure         branching\n    $nebius-datalab       Configure\n    $nebius-sandbox                  execution\n    Directivepcommitted byCtheikernelpeculative execution\n  ────────────────────────────────────────────────────────────────────────────\n    > What's on your mind for Polaris?\n  ────────────────────────────────────────────────────────────────────────────\n\n    ? for shortcuts                  [ auto mode on ] [ offline ] [ medium ]" }
+
+---- windows_auto_color_uses_rgb_without_colorterm stdout ----
+Error: Custom { kind: TimedOut, error: "PTY did not render \"[ offline ]\"; captured 3039 bytes; first bytes: [1b, 5b, 36, 6e, 1b, 5b, 3f, 39, 30, 30, 31, 68, 1b, 5b, 3f, 31, 30, 30, 34, 68, 1b, 5b, 6d, 1b, 5d, 30, 3b, 43, 3a, 5c, 6d, 44, 65, 76, 5c, 50, 6f, 6c, 61, 72, 69, 73, 5c, 74, 61, 72, 67, 65, 74, 5c, 64, 65, 62, 75, 67, 5c, 70, 6f, 6c, 61, 72, 69, 73, 2e, 65, 78, 65, 07, 1b, 5b, 3f, 32, 35, 68, 1b, 5b, 3f, 31, 30, 34, 39, 68, 1b, 5b, 3f, 32, 35, 6c, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a]; visible output: \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" }
+
+
+failures:
+    valid_directive_commits_and_renders_receipt
+    windows_auto_color_uses_rgb_without_colorterm
+
+test result: FAILED. 6 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.03s
+

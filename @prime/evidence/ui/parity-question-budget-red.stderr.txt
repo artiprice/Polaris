@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Finished `test` profile [unoptimized] target(s) in 50.56s
+     Running tests\questionnaire_editor.rs (target\debug\deps\questionnaire_editor-243ec5a73e3497c7.exe)
+error: test failed, to rerun pass `-p polaris-ui-model --test questionnaire_editor`

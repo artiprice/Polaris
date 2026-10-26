@@ -1,0 +1,13 @@
+{
+  "name": "mouse-repair-diff-check",
+  "command": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:35:06.616Z",
+  "pid": 17836,
+  "code": 0,
+  "finished": "2026-10-25T12:35:06.817Z"
+}

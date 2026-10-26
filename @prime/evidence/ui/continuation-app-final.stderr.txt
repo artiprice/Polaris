@@ -1,0 +1,6 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 12.37s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)
+     Running tests\ui_key_trace.rs (target\debug\deps\ui_key_trace-85786ca3b770418b.exe)
+     Running tests\ui_session.rs (target\debug\deps\ui_session-001382f92b433545.exe)
+     Running tests\ui_startup.rs (target\debug\deps\ui_startup-4f34445c204916c2.exe)

@@ -1,0 +1,20 @@
+{
+  "type_of": "function",
+  "name": "static_scan",
+  "file_path": "crates/polaris-hacker/src/static_scan.rs",
+  "logic_name": "Deterministic Static Audit",
+  "test_list": [
+    { "test_name": "finds_seeded_async_blocking_call_with_metadata_evidence", "description": "A known blocking call in an async Rust function yields a source-located advisory finding with non-source metadata evidence." },
+    { "test_name": "ignores_blocking_call_in_sync_function", "description": "The same call in a synchronous function is not mislabeled as async blocking." },
+    { "test_name": "comments_and_strings_do_not_create_ast_findings", "description": "Words in comments or literals cannot create a parser-derived finding." },
+    { "test_name": "dfa_matches_have_source_spans_and_rule_names", "description": "Configured automata matches retain rule identity and byte spans." },
+    { "test_name": "unsupported_or_invalid_syntax_is_reported_as_incomplete", "description": "Missing parser coverage never becomes a clean bill of health." },
+    { "test_name": "inline_secrets_are_absent_from_ast_and_dfa_evidence", "description": "Secrets embedded in unsafe syntax are never copied into finding evidence, even when DFA rules do not identify them." },
+    { "test_name": "source_and_finding_budgets_fail_closed", "description": "File count, per-file/aggregate bytes, paths and finding accumulation are hard bounded and return an error without a partial report." }
+  ],
+  "dependencies": ["polaris-code-intel", "polaris-security-automata"],
+  "libraries": [],
+  "inputs": [{ "name": "files", "type": "&[SourceFile]", "description": "Caller-owned bounded source byte slices with relative paths and explicit languages." }],
+  "output_type": "Result<StaticReport, HackerError>",
+  "output_description": "Deterministic, zero-model-token AST and DFA observations. Source bytes are not copied into evidence; findings carry metadata and source locations. Inputs and finding accumulation are hard bounded. Heuristics remain advisory."
+}

@@ -1,0 +1,20 @@
+
+running 1 test
+test notes_backspace_removes_one_grapheme_not_one_scalar ... FAILED
+
+failures:
+
+---- notes_backspace_removes_one_grapheme_not_one_scalar stdout ----
+
+thread 'notes_backspace_removes_one_grapheme_not_one_scalar' (5572) panicked at crates\polaris-ui\crates\model\tests\questionnaire_editor.rs:18:5:
+assertion `left == right` failed: combining sequence must be deleted atomically
+  left: "a e"
+ right: "a "
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    notes_backspace_removes_one_grapheme_not_one_scalar
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

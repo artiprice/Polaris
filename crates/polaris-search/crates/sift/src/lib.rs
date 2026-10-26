@@ -7,6 +7,17 @@ use polaris_sdk::system_one::{
 use std::{collections::BTreeSet, time::Duration};
 use thiserror::Error;
 
+mod dropped;
+mod race;
+pub use dropped::{
+    DropManifestError, DroppedManifest, MAX_DROPPED_CHUNK_BYTES, MAX_DROPPED_CHUNKS,
+    MAX_DROPPED_MANIFEST_BYTES, MAX_DROPPED_RECOVERY_BYTES, recover_dropped,
+};
+pub use race::{
+    KnowledgeSource, RaceMode, RaceOutcome, RacePolicy, RaceSource, SemaphoreSet, SiftQuery,
+    SourcePool, SourceReport, SourceStatus, WebSearchSource,
+};
+
 /// Stable adapter-provided source identifier.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SourceId(String);
@@ -157,6 +168,9 @@ pub struct Distilled {
 /// Sifting failures for invalid caller configuration and malformed metadata.
 #[derive(Debug, Error)]
 pub enum SiftError {
+    /// The caller cancelled the entire retrieval operation.
+    #[error("search cancelled")]
+    Cancelled,
     /// Source id is empty or contains control characters.
     #[error("invalid source id")]
     InvalidSourceId,
@@ -298,14 +312,8 @@ impl<D: DecisionEngine> Sifter<D> {
             .iter()
             .map(|chunk| estimate_tokens(&chunk.text))
             .fold(0_usize, usize::saturating_add);
-        let dropped_count = match u32::try_from(dropped.len()) {
-            Ok(value) => value,
-            Err(_) => u32::MAX,
-        };
-        let saved_count = match u32::try_from(saved) {
-            Ok(value) => value,
-            Err(_) => u32::MAX,
-        };
+        let dropped_count = saturating_count(dropped.len());
+        let saved_count = saturating_count(saved);
         let budget_exceeded = fallback
             && deduped
                 .iter()
@@ -480,6 +488,12 @@ fn truncate_chars(text: &str, max: usize) -> String {
 }
 fn estimate_tokens(text: &str) -> usize {
     text.split_whitespace().count()
+}
+fn saturating_count(value: usize) -> u32 {
+    let Ok(count) = u32::try_from(value) else {
+        return u32::MAX;
+    };
+    count
 }
 fn contains_identity(
     kept: &[RankedChunk],

@@ -1,0 +1,33 @@
+{
+  "red": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_cache --no-run",
+    "exit_code": 101,
+    "output": "RED before implementation: unresolved imports `RenderCache`, `prepare_metadata_with_cache`, and `render_with_cache` in tests/render_cache.rs."
+  },
+  "focused": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_cache",
+    "exit_code": 0,
+    "output": "running 5 tests; cache_hits_for_identical_bounded_transcript_entries ... ok; cache_invalidates_on_content_width_and_tool_expansion_changes ... ok; cache_evicts_within_configured_byte_budget ... ok; cached_renderer_matches_uncached_render_output ... ok; source_snapshot_validation_stays_below_its_separate_limit ... ok; 5 passed, 0 failed."
+  },
+  "renderer_contract": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_contract",
+    "exit_code": 0,
+    "output": "29 passed, 0 failed."
+  },
+  "full_package": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml",
+    "exit_code": 0,
+    "output": "All CLI crate unit, integration, and doc-test targets passed; includes 5 render_cache tests and 29 render_contract tests."
+  },
+  "owned_format": {
+    "command": "rustfmt --check --edition 2024 crates/polaris-ui/crates/cli/src/screen.rs crates/polaris-ui/crates/cli/tests/render_cache.rs crates/polaris-ui/crates/cli/tests/render_cache_benchmark.rs",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "package_format": {
+    "command": "cargo fmt --manifest-path crates/polaris-ui/crates/cli/Cargo.toml -- --check",
+    "exit_code": 1,
+    "output": "Only reported diff is import ordering in src/windows_input.rs: use super::{mouse_kind, MouseButtons} -> use super::{MouseButtons, mouse_kind}; this file is outside the assigned scope."
+  }
+}

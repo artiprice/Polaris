@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    Statistics                                                                                           Unavailable
+    [ Overview ] [ Models ]                                                                              [ Details ]
+    [ All time ] [ Last 7 days ] [ Last 30 days ]
+    Statistics unavailable
+
+    No activity source is connected. Real sessions, tokens and model history are unavailable.
+
+    Press D or click Sample to explore labeled demo data.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Tab views / R dates / C chart / Ctrl+O details / [ ] inspect / Esc/Enter close                        [ Sample ]
+
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

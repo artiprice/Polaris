@@ -1,0 +1,34 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+error[E0061]: this function takes 7 arguments but 6 arguments were supplied
+    --> crates\polaris-ui\crates\cli\src\screen.rs:745:5
+     |
+ 745 |       draw_body(
+     |  _____^^^^^^^^^-
+ 746 | |         buffer,
+ 747 | |         layout.body,
+ 748 | |         &rows,
+...    |
+ 751 | |         &mut metadata.source_spans,
+ 752 | |     );
+     | |_____- argument #7 of type `&mut Vec<SourceCellSpan>` is missing
+     |
+note: function defined here
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1270:4
+     |
+1270 | fn draw_body(
+     |    ^^^^^^^^^
+...
+1277 |     source_cells: &mut Vec<SourceCellSpan>,
+     |     --------------------------------------
+help: provide the argument
+     |
+ 745 |     draw_body(
+ ...
+ 751 |         &mut metadata.source_spans,
+ 752 ~         /* &mut Vec<SourceCellSpan> */,
+ 753 ~     );
+     |
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `polaris-ui-cli` (lib) due to 1 previous error

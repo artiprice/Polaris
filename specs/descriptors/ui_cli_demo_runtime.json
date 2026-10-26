@@ -1,0 +1,34 @@
+{
+  "name": "ui_cli_demo_runtime",
+  "owner": "polaris-cli",
+  "scope": "Explicit, bounded presentation-only demo; never a kernel substitute",
+  "invariants": [
+    "--demo starts without durable session, log or provider state",
+    "Demo is visibly labelled and profile drafts are isolated",
+    "Streaming is bounded and cancellable; reset and replay are deterministic",
+    "Questions have no default answer, explicit exclusive None of the above and atomic submission",
+    "Demo records never enter KernelApi, signed envelopes, receipts, CAS or eventlog"
+  ],
+  "tests": [
+    "ui_startup::demo_dump_is_explicit_deterministic_and_isolated",
+    "demo_runtime"
+  ],
+  "type_of": "module",
+  "file_path": "apps/polaris-cli/src/demo.rs",
+  "logic_name": "ui_cli_demo_runtime",
+  "output_type": "Result",
+  "dependencies": [],
+  "libraries": [
+    "std"
+  ],
+  "test_list": [
+    {
+      "test_name": "ui_startup::demo_dump_is_explicit_deterministic_and_isolated",
+      "description": "Regression for ui_startup::demo_dump_is_explicit_deterministic_and_isolated"
+    },
+    {
+      "test_name": "demo_runtime",
+      "description": "Regression for demo_runtime"
+    }
+  ]
+}

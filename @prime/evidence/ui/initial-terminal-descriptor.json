@@ -1,1 +1,50 @@
-{"type_of":"pipeline","name":"interactive-terminal","file_path":"apps/polaris-cli/src/tui.rs","logic_name":"P1 actual terminal lifecycle","test_list":[{"test_name":"default_terminal_launch_shows_real_welcome_at_80x24","description":"Run the actual binary in a ConPTY at 80x24 and assert the empty offline welcome; initial draft is not submitted."},{"test_name":"initial_prompt_is_visible_but_unsent_until_enter","description":"Launch with a valid initial draft, assert its visible and uncommitted state, clear it and exit without a commit."},{"test_name":"bracketed_paste_is_literal_and_never_submitted","description":"Send a bracketed paste containing a valid directive and prove it appears as draft text without a commit receipt."},{"test_name":"valid_directive_commits_and_renders_receipt","description":"Type a valid standalone $websearch(on), submit it, and observe the kernel commit receipt in the real TUI."},{"test_name":"quit_restores_terminal_modes_and_cursor","description":"Exit through /quit and observe bracketed-paste, mouse, alternate-screen, raw-input and cursor restoration output."},{"test_name":"idle_screen_emits_no_redundant_frames","description":"After initial frame settles, capture an idle window and assert no extra terminal bytes."}],"dependencies":["polaris-cli","polaris-kernel","portable-pty"],"libraries":["portable-pty","tempfile"],"inputs":[{"name":"pty session","type":"ConPTY process and byte stream","description":"Actual polaris executable launched with isolated state/workspace directories and finite terminal size."}],"output_type":"Observed terminal bytes and process exit status","output_description":"Real welcome, literal draft/commit behavior, and bounded terminal cleanup; capture capped at 2 MiB with deadlines."}
+{
+  "type_of": "pipeline",
+  "name": "interactive-terminal",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "P1 actual terminal lifecycle",
+  "test_list": [
+    {
+      "test_name": "default_terminal_launch_shows_real_welcome_at_80x24",
+      "description": "Run the actual binary in a ConPTY at 80x24 and assert the empty offline welcome; initial draft is not submitted."
+    },
+    {
+      "test_name": "initial_prompt_is_visible_but_unsent_until_enter",
+      "description": "Launch with a valid initial draft, assert its visible and uncommitted state, clear it and exit without a commit."
+    },
+    {
+      "test_name": "bracketed_paste_is_literal_and_never_submitted",
+      "description": "Send a bracketed paste containing a valid directive and prove it appears as draft text without a commit receipt."
+    },
+    {
+      "test_name": "valid_directive_commits_and_renders_receipt",
+      "description": "Type a valid standalone $websearch(on), submit it, and observe the kernel commit receipt in the real TUI."
+    },
+    {
+      "test_name": "quit_restores_terminal_modes_and_cursor",
+      "description": "Exit through /quit and observe bracketed-paste, alternate-screen, CSI-u keyboard and cursor bytes in ConPTY; Windows mouse mode bytes are checked by the direct CrosstermOps lifecycle test because ConPTY filters DECSET 100x."
+    },
+    {
+      "test_name": "idle_screen_emits_no_redundant_frames",
+      "description": "After initial frame settles, capture an idle window and assert no extra terminal bytes."
+    }
+  ],
+  "dependencies": [
+    "polaris-cli",
+    "polaris-kernel",
+    "portable-pty"
+  ],
+  "libraries": [
+    "portable-pty",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "pty session",
+      "type": "ConPTY process and byte stream",
+      "description": "Actual polaris executable launched with isolated state/workspace directories and finite terminal size."
+    }
+  ],
+  "output_type": "Observed terminal bytes and process exit status",
+  "output_description": "Real welcome, literal draft/commit behavior, and bounded terminal cleanup; capture capped at 2 MiB with deadlines."
+}

@@ -1,0 +1,8 @@
+
+running 3 tests
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... ok
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... ok
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.00s
+

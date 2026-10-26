@@ -1,0 +1,27 @@
+{
+  "name": "parity-final-raster",
+  "command": [
+    "C:/mDev/Polaris/target/ui-repair/raster/target/debug/ui-buffer-raster.exe",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/welcome-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/welcome-120x40.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-120x40.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-review.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-review.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-free-text.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-free-text.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/usage-demo-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/usage-demo-120x40.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/stats-demo-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/stats-demo-120x40.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/models-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/models-120x40.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/agents-mixed-120x40.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after/agents-mixed-120x40.png"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:44:59.481Z",
+  "pid": 12608,
+  "code": 0,
+  "finished": "2026-10-25T11:45:17.945Z"
+}

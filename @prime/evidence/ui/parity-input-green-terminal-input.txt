@@ -1,0 +1,15 @@
+cargo test --offline -p polaris-ui-cli --test terminal_input
+EXIT 0
+
+running 3 tests
+test normalizes_supported_crossterm_events ... ok
+test only_pressed_escape_and_control_c_are_cancel_priority ... ok
+test rejects_paste_over_one_mibibyte ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.09s
+     Running tests\terminal_input.rs (target\debug\deps\terminal_input-45e415545446b123.exe)

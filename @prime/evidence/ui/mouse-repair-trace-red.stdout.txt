@@ -1,0 +1,24 @@
+
+running 1 test
+test mouse_trace_reports_events_coordinates_and_modifiers_without_text ... FAILED
+
+failures:
+
+---- mouse_trace_reports_events_coordinates_and_modifiers_without_text stdout ----
+
+thread 'mouse_trace_reports_events_coordinates_and_modifiers_without_text' (16680) panicked at apps\polaris-cli\tests\ui_key_trace.rs:122:173:
+missing mouse metadata: mouse down left 12 7 shift: mouse
+mouse
+mouse
+mouse
+mouse
+paste
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    mouse_trace_reports_events_coordinates_and_modifiers_without_text
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s
+

@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                           ╷
+                                                           │
+                                                       ╶───✦───╴
+                                                           │
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Welcome to polaris                                                                                               │
+  │                                                                                                                  │
+  │ Step 1 of 3 · preview setup                                                                                      │
+  │                                                                                                                  │
+  │ Polaris v0.1.0alpha                                                                                              │
+  │ C:\mDev\Polaris                                                                                                  │
+  │ A coding conversation, with room to think.                                                                       │
+  │ Appearance: Dark · T toggles dark / terminal native                                                              │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │ Enter next · Left back · T theme · P providers · Esc back                                                        │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

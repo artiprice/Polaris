@@ -1,0 +1,9 @@
+
+running 4 tests
+test trace_never_overwrites_existing_file ... ok
+test trace_excludes_draft_paste_and_printable_keys ... ok
+test trace_distinguishes_enter_modifiers_edit_keys_and_phases ... ok
+test trace_enforces_the_byte_limit_without_partial_followup ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+

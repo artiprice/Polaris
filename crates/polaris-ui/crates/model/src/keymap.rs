@@ -575,14 +575,6 @@ const BINDINGS: &[KeyBinding] = &[
     ),
     key(
         C::Composer,
-        KeyChord::ctrl(Key::Enter),
-        Always,
-        A::Newline,
-        "Insert a line break",
-        None,
-    ),
-    key(
-        C::Composer,
         ctrl_ch('j'),
         Always,
         A::Newline,

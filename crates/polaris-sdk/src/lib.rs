@@ -29,6 +29,7 @@ pub mod effort;
 pub mod error;
 mod hex;
 pub mod ids;
+pub mod interactive;
 #[cfg(feature = "kani")]
 mod kani_proofs;
 pub mod registry;

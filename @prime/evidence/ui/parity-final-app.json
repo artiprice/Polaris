@@ -1,0 +1,27 @@
+{
+  "name": "parity-final-app",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "--test",
+    "ui_startup",
+    "--test",
+    "ui_session",
+    "--test",
+    "ui_key_trace",
+    "--test",
+    "rtk_cli",
+    "--test",
+    "ui_terminal"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:41:37.351Z",
+  "pid": 17232,
+  "code": 101,
+  "finished": "2026-10-25T11:42:05.762Z"
+}

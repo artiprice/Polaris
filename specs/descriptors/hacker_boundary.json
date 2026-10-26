@@ -1,0 +1,18 @@
+{
+  "type_of": "struct",
+  "name": "BoundaryGen",
+  "file_path": "crates/polaris-hacker/src/boundary.rs",
+  "logic_name": "Bounded Deterministic Boundary Inputs",
+  "test_list": [
+    { "test_name": "integer_edges_are_included", "description": "Corpus includes signed and unsigned boundary text values, zero and minus one." },
+    { "test_name": "float_edges_are_included", "description": "Corpus includes NaN, positive and negative infinity, signed zero, and finite extremes." },
+    { "test_name": "string_edges_are_included", "description": "Corpus includes empty, traversal, unicode, deeply nested and bounded long inputs." },
+    { "test_name": "same_seed_produces_same_ordered_corpus", "description": "Seed affects deterministic ordering without introducing randomness from the host." },
+    { "test_name": "corpus_respects_configured_count_and_byte_limits", "description": "No generated input exceeds caller-selected item and byte caps." }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [{ "name": "limits", "type": "BoundaryLimits", "description": "Maximum input count and per-input byte length." }, { "name": "seed", "type": "u64", "description": "Reproducibility seed." }],
+  "output_type": "Vec<Vec<u8>>",
+  "output_description": "Fixed boundary corpus with deterministic seed-based rotation and explicit limits."
+}

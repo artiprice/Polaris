@@ -1,0 +1,293 @@
+{
+  "checkpoint": "E37",
+  "date": "2026-10-25",
+  "verdict": "PARTIAL; full UI/M1 acceptance open",
+  "scoped_test_totals": {
+    "core": {
+      "passed": 297,
+      "failed": 0,
+      "ignored": 1
+    },
+    "app": {
+      "passed": 129,
+      "failed": 0,
+      "ignored": 0
+    },
+    "total_passed": 426
+  },
+  "independent_failure": "headless doctor readiness: 2 passed, 1 failed; missing setup prerequisites",
+  "physical_terminal": "Alacritty 0.16.1 installed; physical keyboard/mouse UNVERIFIED",
+  "commands": {
+    "parity-final-core": {
+      "name": "parity-final-core",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-config",
+        "-p",
+        "polaris-ui-model",
+        "-p",
+        "polaris-ui-cli"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:41:37.361Z",
+      "pid": 17388,
+      "code": 0,
+      "finished": "2026-10-25T11:41:55.030Z"
+    },
+    "parity-final-app-checked": {
+      "name": "parity-final-app-checked",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-cli",
+        "--lib",
+        "--test",
+        "ui_startup",
+        "--test",
+        "ui_session",
+        "--test",
+        "ui_key_trace",
+        "--test",
+        "rtk_cli",
+        "--test",
+        "ui_terminal"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:42:44.559Z",
+      "pid": 15680,
+      "code": 0,
+      "finished": "2026-10-25T11:43:03.051Z"
+    },
+    "parity-final-safety-checked": {
+      "name": "parity-final-safety-checked",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "--no-deps",
+        "-p",
+        "polaris-config",
+        "-p",
+        "polaris-ui-model",
+        "-p",
+        "polaris-ui-cli",
+        "-p",
+        "polaris-cli",
+        "--all-targets",
+        "--",
+        "-D",
+        "clippy::unwrap_used",
+        "-D",
+        "clippy::expect_used",
+        "-D",
+        "clippy::panic",
+        "-D",
+        "clippy::as_conversions",
+        "-D",
+        "clippy::indexing_slicing"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:42:44.568Z",
+      "pid": 18260,
+      "code": 0,
+      "finished": "2026-10-25T11:43:22.517Z"
+    },
+    "parity-final-format": {
+      "name": "parity-final-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check",
+        "-p",
+        "polaris-config",
+        "-p",
+        "polaris-ui-model",
+        "-p",
+        "polaris-ui-cli",
+        "-p",
+        "polaris-cli"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:43:47.802Z",
+      "pid": 15988,
+      "code": 0,
+      "finished": "2026-10-25T11:43:48.968Z"
+    },
+    "parity-headless-current": {
+      "name": "parity-headless-current",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-cli",
+        "--test",
+        "headless"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:43:47.816Z",
+      "pid": 15232,
+      "code": 101,
+      "finished": "2026-10-25T11:43:55.215Z"
+    },
+    "parity-docs-check": {
+      "name": "parity-docs-check",
+      "command": [
+        "python",
+        "-I",
+        "@prime/tools/workspace.py",
+        "check-docs"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.551Z",
+      "pid": 15616,
+      "code": 0,
+      "finished": "2026-10-25T11:47:03.632Z"
+    },
+    "parity-generated-check": {
+      "name": "parity-generated-check",
+      "command": [
+        "python",
+        "-I",
+        "@prime/tools/workspace.py",
+        "render-docs",
+        "--check"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.563Z",
+      "pid": 15924,
+      "code": 0,
+      "finished": "2026-10-25T11:47:03.684Z"
+    },
+    "parity-members-check": {
+      "name": "parity-members-check",
+      "command": [
+        "cargo",
+        "xtask",
+        "check-members"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.578Z",
+      "pid": 15804,
+      "code": 0,
+      "finished": "2026-10-25T11:47:02.716Z"
+    },
+    "parity-layers-check": {
+      "name": "parity-layers-check",
+      "command": [
+        "cargo",
+        "xtask",
+        "check-layers"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.590Z",
+      "pid": 18012,
+      "code": 0,
+      "finished": "2026-10-25T11:47:02.840Z"
+    },
+    "parity-inventory-check": {
+      "name": "parity-inventory-check",
+      "command": [
+        "python",
+        "-c",
+        "import csv,pathlib,re\nrows=list(csv.DictReader(pathlib.Path('@prime/UI_MODULES.csv').open(encoding='utf8')))\nids={r['module_id'] for r in rows}\nassert len(ids)==len(rows)==60\nvalid_tasks=set(re.findall(r'\\b(?:UI\\d+-\\d+|WEB-WELCOME|WEB-OPT|DESKTOP-LATER)\\b',pathlib.Path('@prime/UI_PHASES.md').read_text(encoding='utf8')))\ncovered=set();graph={}\nfor r in rows:\n deps=[v.strip() for v in r['depends_on_modules'].split(';') if v.strip()]\n assert set(deps)<=ids,(r['module_id'],deps)\n graph[r['module_id']]=deps\n tasks={v.strip() for v in r['ui_tasks'].split(';') if v.strip()};assert tasks<=valid_tasks,(r['module_id'],tasks);covered|=tasks\n if r['path_state']=='EXISTING':\n  for path in r['path'].split(';'):assert pathlib.Path(path.strip()).exists(),path\n assert set(r['main_phases'].split(';'))<=set('P'+str(i) for i in range(11))\nseen=set();visiting=set()\ndef visit(x):\n assert x not in visiting,('cycle',x)\n if x in seen:return\n visiting.add(x)\n for dep in graph[x]:visit(dep)\n visiting.remove(x);seen.add(x)\nfor x in ids:visit(x)\nassert valid_tasks<=covered,valid_tasks-covered\nprint(f'UI inventory: {len(ids)} unique modules, {len(covered)} tasks, dependencies acyclic, EXISTING paths and phase maps OK')\n"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.603Z",
+      "pid": 6240,
+      "code": 0,
+      "finished": "2026-10-25T11:47:01.733Z"
+    },
+    "parity-diff-check": {
+      "name": "parity-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:47:01.618Z",
+      "pid": 16340,
+      "code": 0,
+      "finished": "2026-10-25T11:47:01.824Z"
+    },
+    "parity-capture-checked": {
+      "name": "parity-capture-checked",
+      "command": [
+        "python",
+        "-c",
+        "import os,subprocess,sys; e=dict(os.environ);e[\"POLARIS_UI_CAPTURE_DIR\"]=sys.argv[1];raise SystemExit(subprocess.call(sys.argv[2:],env=e))",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after",
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-cli",
+        "--lib",
+        "tui::controller_tests"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:44:05.872Z",
+      "pid": 16848,
+      "code": 0,
+      "finished": "2026-10-25T11:44:14.988Z"
+    },
+    "parity-reference-binary": {
+      "name": "parity-reference-binary",
+      "command": [
+        "python",
+        "-c",
+        "import os,sys,subprocess,json,pathlib\nbase=pathlib.Path(sys.argv[1]);base.mkdir(parents=True,exist_ok=True)\ne=dict(os.environ);e[\"POLARIS_CONFIG_DIR\"]=str(base/\"config-must-not-be-created\")\nrecords=[]\nfor name in json.loads(sys.argv[3]):\n r=subprocess.run([sys.argv[2],\"--scenario\",name,\"--theme\",\"dark\",\"--color\",\"always\",\"--dump\",\"120x40\"],env=e,capture_output=True,timeout=15)\n (base/(name+\".txt\")).write_bytes(r.stdout)\n records.append({\"scenario\":name,\"exit\":r.returncode,\"bytes\":len(r.stdout),\"stderr\":r.stderr.decode(\"utf8\",\"replace\")})\nprint(json.dumps({\"records\":records,\"config_created\":(base/\"config-must-not-be-created\").exists()},indent=2))\nraise SystemExit(0 if all(x[\"exit\"]==0 for x in records) else 1)",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-reference",
+        "C:/mDev/Polaris/dist/demo-design-preview-slop/dist/polaris.exe",
+        "[\"welcome\",\"conversation\",\"working\",\"agents-working\",\"agents-mixed\",\"agents-completed\",\"agents-many\",\"messages\",\"approval\",\"diff\",\"error\",\"onboarding\",\"models\",\"providers\",\"settings\",\"sessions\",\"status\",\"usage\",\"usage-demo\",\"stats\",\"stats-stacked\",\"stats-lines\",\"stats-trends\",\"stats-details\",\"stats-demo\",\"transcript\",\"help\"]"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:38:03.958Z",
+      "pid": 17664,
+      "code": 0,
+      "finished": "2026-10-25T11:38:04.756Z"
+    },
+    "parity-final-raster": {
+      "name": "parity-final-raster",
+      "command": [
+        "C:/mDev/Polaris/target/ui-repair/raster/target/debug/ui-buffer-raster.exe",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/welcome-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/welcome-120x40.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-120x40.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-review.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-review.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-free-text.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/questions-free-text.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/usage-demo-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/usage-demo-120x40.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/stats-demo-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/stats-demo-120x40.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/models-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/models-120x40.png",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/agents-mixed-120x40.svg",
+        "C:/mDev/Polaris/@prime/evidence/ui/parity-after/agents-mixed-120x40.png"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T11:44:59.481Z",
+      "pid": 12608,
+      "code": 0,
+      "finished": "2026-10-25T11:45:17.945Z"
+    }
+  },
+  "benchmark_debug": "renderer-cache-benchmark-debug.json",
+  "benchmark_release": "renderer-cache-benchmark-release.json",
+  "visual_directory": "parity-after",
+  "reference_directory": "parity-reference"
+}

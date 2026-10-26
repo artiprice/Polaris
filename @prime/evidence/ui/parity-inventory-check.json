@@ -1,0 +1,13 @@
+{
+  "name": "parity-inventory-check",
+  "command": [
+    "python",
+    "-c",
+    "import csv,pathlib,re\nrows=list(csv.DictReader(pathlib.Path('@prime/UI_MODULES.csv').open(encoding='utf8')))\nids={r['module_id'] for r in rows}\nassert len(ids)==len(rows)==60\nvalid_tasks=set(re.findall(r'\\b(?:UI\\d+-\\d+|WEB-WELCOME|WEB-OPT|DESKTOP-LATER)\\b',pathlib.Path('@prime/UI_PHASES.md').read_text(encoding='utf8')))\ncovered=set();graph={}\nfor r in rows:\n deps=[v.strip() for v in r['depends_on_modules'].split(';') if v.strip()]\n assert set(deps)<=ids,(r['module_id'],deps)\n graph[r['module_id']]=deps\n tasks={v.strip() for v in r['ui_tasks'].split(';') if v.strip()};assert tasks<=valid_tasks,(r['module_id'],tasks);covered|=tasks\n if r['path_state']=='EXISTING':\n  for path in r['path'].split(';'):assert pathlib.Path(path.strip()).exists(),path\n assert set(r['main_phases'].split(';'))<=set('P'+str(i) for i in range(11))\nseen=set();visiting=set()\ndef visit(x):\n assert x not in visiting,('cycle',x)\n if x in seen:return\n visiting.add(x)\n for dep in graph[x]:visit(dep)\n visiting.remove(x);seen.add(x)\nfor x in ids:visit(x)\nassert valid_tasks<=covered,valid_tasks-covered\nprint(f'UI inventory: {len(ids)} unique modules, {len(covered)} tasks, dependencies acyclic, EXISTING paths and phase maps OK')\n"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:47:01.603Z",
+  "pid": 6240,
+  "code": 0,
+  "finished": "2026-10-25T11:47:01.733Z"
+}

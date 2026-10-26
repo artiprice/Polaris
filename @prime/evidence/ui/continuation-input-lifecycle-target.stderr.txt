@@ -1,0 +1,66 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: method `is_consumed` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:67:18
+   |
+66 | impl GalleryEffect {
+   | ------------------ method in this implementation
+67 |     pub const fn is_consumed(&self) -> bool {
+   |                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `append_sanitized` is never used
+   --> apps\polaris-cli\src\demo_gallery.rs:121:4
+    |
+121 | fn append_sanitized(target: &mut String, input: &str, max_chars: usize) {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+   --> apps\polaris-cli\src\demo_gallery.rs:556:12
+    |
+501 | impl DemoGallery {
+    | ---------------- methods in this implementation
+...
+556 |     pub fn load_scenario(&mut self, name: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+...
+639 |     pub fn selected_effort(&self) -> Option<Effort> {
+    |            ^^^^^^^^^^^^^^^
+...
+642 |     pub fn stats_tab_label(&self) -> &'static str {
+    |            ^^^^^^^^^^^^^^^
+...
+660 |     pub fn stats_summary(&self) -> StatsSummary {
+    |            ^^^^^^^^^^^^^
+...
+669 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+678 |     pub const fn stats_details_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+681 |     pub const fn stats_bucket(&self) -> Option<usize> {
+    |                  ^^^^^^^^^^^^
+...
+684 |     pub const fn usage_demo_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^
+...
+687 |     pub const fn usage_details_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+690 |     pub const fn stats_demo_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^
+...
+694 |     pub fn handle_paste(&mut self, pasted: &str) -> GalleryEffect {
+    |            ^^^^^^^^^^^^
+...
+739 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+    |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 3 warnings
+    Finished `test` profile [unoptimized] target(s) in 48.16s
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-97e39ee21424c315.exe)
+Error: Custom { kind: Other, error: "Alacritty SGR mouse reporting was not enabled on Windows" }
+error: test failed, to rerun pass `-p polaris-cli --test ui_terminal`

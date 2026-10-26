@@ -1,0 +1,6 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 10.99s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-08fd469deb879fd8.exe)
+error: test failed, to rerun pass `-p polaris-cli --lib`

@@ -1,0 +1,236 @@
+[
+  {
+    "name": "members",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "started_utc": "2026-10-26T02:47:15.099202+00:00",
+    "elapsed_seconds": 0.306,
+    "exit_code": 0,
+    "raw": "members.txt"
+  },
+  {
+    "name": "layers",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "started_utc": "2026-10-26T02:47:15.405636+00:00",
+    "elapsed_seconds": 0.408,
+    "exit_code": 0,
+    "raw": "layers.txt"
+  },
+  {
+    "name": "witness",
+    "argv": [
+      "cargo",
+      "xtask",
+      "check-witness"
+    ],
+    "started_utc": "2026-10-26T02:47:15.814124+00:00",
+    "elapsed_seconds": 0.753,
+    "exit_code": 0,
+    "raw": "witness.txt"
+  },
+  {
+    "name": "workspace-check",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-26T02:47:16.567415+00:00",
+    "elapsed_seconds": 26.924,
+    "exit_code": 0,
+    "raw": "workspace-check.txt"
+  },
+  {
+    "name": "scoped-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--no-fail-fast",
+      "-p",
+      "polaris-openshell-client",
+      "-p",
+      "polaris-search-providers",
+      "-p",
+      "polaris-search-sift",
+      "-p",
+      "polaris-search",
+      "-p",
+      "polaris-ext-mcp",
+      "-p",
+      "polaris-ext-skills",
+      "-p",
+      "polaris-ext",
+      "-p",
+      "polaris-runtime-research",
+      "-p",
+      "polaris-kernel-verifier",
+      "-p",
+      "polaris-daemon"
+    ],
+    "started_utc": "2026-10-26T02:47:43.492976+00:00",
+    "elapsed_seconds": 92.983,
+    "exit_code": 0,
+    "raw": "scoped-tests.txt",
+    "test_result_totals": {
+      "passed": 157,
+      "failed": 0,
+      "ignored": 1
+    }
+  },
+  {
+    "name": "sdk-full-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "-p",
+      "polaris-sdk",
+      "--no-fail-fast"
+    ],
+    "started_utc": "2026-10-26T02:49:16.477636+00:00",
+    "elapsed_seconds": 4.661,
+    "exit_code": 101,
+    "raw": "sdk-full-tests.txt",
+    "test_result_totals": {
+      "passed": 53,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "scoped-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "-p",
+      "polaris-openshell-client",
+      "-p",
+      "polaris-search-providers",
+      "-p",
+      "polaris-search-sift",
+      "-p",
+      "polaris-search",
+      "-p",
+      "polaris-ext-mcp",
+      "-p",
+      "polaris-ext-skills",
+      "-p",
+      "polaris-ext",
+      "-p",
+      "polaris-runtime-research",
+      "-p",
+      "polaris-kernel-verifier",
+      "-p",
+      "polaris-daemon",
+      "-p",
+      "polaris-sdk",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-26T02:49:21.139121+00:00",
+    "elapsed_seconds": 41.908,
+    "exit_code": 0,
+    "raw": "scoped-clippy.txt"
+  },
+  {
+    "name": "scoped-format",
+    "argv": [
+      "cargo",
+      "fmt",
+      "-p",
+      "polaris-openshell-client",
+      "-p",
+      "polaris-search-providers",
+      "-p",
+      "polaris-search-sift",
+      "-p",
+      "polaris-search",
+      "-p",
+      "polaris-ext-mcp",
+      "-p",
+      "polaris-ext-skills",
+      "-p",
+      "polaris-ext",
+      "-p",
+      "polaris-runtime-research",
+      "-p",
+      "polaris-kernel-verifier",
+      "-p",
+      "polaris-daemon",
+      "-p",
+      "polaris-sdk",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T02:50:03.048323+00:00",
+    "elapsed_seconds": 0.733,
+    "exit_code": 0,
+    "raw": "scoped-format.txt"
+  },
+  {
+    "name": "owned-diff-check",
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "crates/polaris-sdk",
+      "crates/polaris-openshell/crates/client",
+      "crates/polaris-search",
+      "crates/polaris-ext/crates/mcp",
+      "crates/polaris-ext/crates/skills/src/approval_cache.rs",
+      "crates/polaris-runtime/crates/research",
+      "crates/polaris-kernel/crates/verifier",
+      "apps/polaris-daemon",
+      "Cargo.toml",
+      "Cargo.lock",
+      "@prime/tools/workspace.toml"
+    ],
+    "started_utc": "2026-10-26T02:50:03.782018+00:00",
+    "elapsed_seconds": 0.099,
+    "exit_code": 0,
+    "raw": "owned-diff-check.txt"
+  },
+  {
+    "name": "advisories",
+    "argv": [
+      "cargo",
+      "deny",
+      "--offline",
+      "check",
+      "advisories"
+    ],
+    "started_utc": "2026-10-26T02:50:03.881835+00:00",
+    "elapsed_seconds": 3.757,
+    "exit_code": 1,
+    "raw": "advisories.txt"
+  },
+  {
+    "name": "vet",
+    "argv": [
+      "cargo",
+      "vet",
+      "--locked"
+    ],
+    "started_utc": "2026-10-26T02:50:07.639990+00:00",
+    "elapsed_seconds": 1.408,
+    "exit_code": 4294967295,
+    "raw": "vet.txt"
+  }
+]

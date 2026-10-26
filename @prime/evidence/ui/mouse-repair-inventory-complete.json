@@ -1,0 +1,14 @@
+{
+  "name": "mouse-repair-inventory-complete",
+  "command": [
+    "python",
+    "-I",
+    "-c",
+    "import csv,json,pathlib,re\nroot=pathlib.Path.cwd()\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8',newline='')))\nby_id={r['module_id']:r for r in rows}\nassert len(rows)==len(by_id)==60, 'module identity/count changed'\nphases=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\ntasks=set(re.findall(r'^\\| (UI\\d+-\\d+|WEB-WELCOME|WEB-OPT|DESKTOP-LATER) \\|',phases,re.M))\ncovered={t for r in rows for t in r['ui_tasks'].split(';')}\nassert covered==tasks, ('task coverage',tasks-covered,covered-tasks)\nfor r in rows:\n    if r['path_state']=='EXISTING':\n        for item in r['path'].split(';'):\n            path=root/item.strip()\n            assert path.exists(),item  # Inventory paths may name files, package directories or test directories.\n    for dep in filter(None,r['depends_on_modules'].split(';')): assert dep in by_id, (r['module_id'],dep)\n    for source in filter(None,r['demo_sources'].split(';')): assert (root/source).exists(),source\n    doc,anchor=r['plan_anchor'].split('#',1)\n    text=(root/'@prime'/doc).read_text(encoding='utf-8')\n    headings=re.findall(r'^#+ (.+)$',text,re.M)\n    def slug(s): return re.sub(r'[^\\w\\- ]','',s.lower()).replace(' ','-')\n    assert anchor in {slug(h) for h in headings},r['plan_anchor']\nvisiting=set();visited=set()\ndef visit(mid):\n    assert mid not in visiting, ('cycle',mid)\n    if mid in visited: return\n    visiting.add(mid)\n    for dep in filter(None,by_id[mid]['depends_on_modules'].split(';')): visit(dep)\n    visiting.remove(mid);visited.add(mid)\nfor mid in by_id: visit(mid)\nfor name in ['mouse-repair-verification.md']:\n    doc=root/'@prime/evidence/ui'/name\n    for target in re.findall(r'\\]\\(([^)]+)\\)',doc.read_text(encoding='utf-8')):\n        if '://' not in target and not target.startswith('#'):\n            assert (doc.parent/target.split('#')[0]).exists(),target\nprint(json.dumps({'modules':len(rows),'tasks_including_deferred':len(tasks),'dependencies':'acyclic','existing_paths':'resolved','demo_sources':'resolved','plan_anchors':'resolved','current_evidence_links':'resolved'}))\n"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:37:54.158Z",
+  "pid": 14072,
+  "code": 0,
+  "finished": "2026-10-25T12:37:54.319Z"
+}

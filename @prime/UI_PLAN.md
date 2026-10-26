@@ -13,8 +13,7 @@ main-phase dependencies, acceptance criteria, failure handling and deferred work
 three UI artifacts and the two main planning documents. Implementation completion will require the
 gates in UI_PHASES; writing this plan satisfies none of them.
 
-**Evidence vocabulary:** `VERIFIED` below means inspected source/document state in this planning
-session, not executed product behavior. `LIKELY` is an inference; `UNVERIFIED` names missing evidence.
+**Evidence vocabulary:** the original design-analysis sections use `VERIFIED` for inspected source/document state. Runtime claims are confined to dated implementation evidence with exact commands/output. `LIKELY` is an inference; `UNVERIFIED` names missing evidence.
 All prescriptions, module paths not present today, resource limits and budgets are **proposed
 requirements**, not claims of implementation or measured performance. The CSV status records observed UI implementation coverage; acceptance remains open until its full criteria pass. Existing source is a reuse candidate, not an automatic PASS.
 
@@ -76,10 +75,10 @@ Paths in this table are repository-relative; the demo remains read-only referenc
 | Demo `docs/{agents,settings,usage,stats}.md` | Roster routing, candidate-versus-applied settings, missing-data semantics, responsive sheets and exact-value inspection. Demo evidence reports are historical assertions, not evidence for Polaris. |
 | Demo `webui/index.html`, welcome-related rules in `webui/styles.css`, referenced local assets | Welcome composition, font families, black composer, green atmosphere and star layers. No other web page is a design requirement for this plan. |
 
-The demo itself was not launched. ConPTY implementation smoke tests are now recorded in §1.1; no physical-terminal appearance, direct Windows raw/mouse OS-state restoration, manual keyboard matrix or Linux terminal leg is verified. Do not inherit the demo's claimed test counts, provider list, clocks or quota values.
+The design reference was inspected from source and saved buffers. Current native ConPTY evidence is recorded in §1.3, including observable output cleanup; pure guard tests check restoration calls. Direct Windows raw/mouse OS-mode inspection, physical-terminal appearance, a manual keyboard matrix and the Linux terminal leg remain unverified. Do not inherit the demo's claimed test counts, provider list, clocks or quota values.
 
 
-### 1.1 Implementation coverage snapshot (updated 2026-10-25; work began 2026-10-24)
+### 1.1 Historical foundation snapshot (2026-10-24 to 2026-10-25; superseded by §1.3)
 
 **VERIFIED tests and source:** the final offline package run covered the UI model, UI CLI, kernel directives and app. It exited 101 because `doctor_installs_aws_lc_provider` requires setup that is missing in this environment; every other target passed. The app library had 18 passing tests, key trace 3, sessions 3, startup 5, ConPTY 7, RTK 2, and headless 2 passed with the one doctor test failing. UI CLI had 37 passing tests; model had 143; directives had 46 passed and one ignored throughput workload. The active-only CAS materialization regression now passes; its pre-fix behavioral failure is preserved in [active-payload-red.json](evidence/ui/active-payload-red.json). The CAS payload-poll cancellation and failed-owner cleanup cases also passed. Raw full-run evidence: [final-tests.json](evidence/ui/final-tests.json), [stdout](evidence/ui/final-tests.stdout.txt), [stderr](evidence/ui/final-tests.stderr.txt). No UI phase or M1 acceptance is implied by these focused package results.
 
@@ -89,7 +88,25 @@ The demo itself was not launched. ConPTY implementation smoke tests are now reco
 
 **Test-first evidence and remaining gaps:** meaningful reds were observed for controller frame clear (4,923 emitted bytes), queue pressure, resume race, help capability filtering, text-chip submission and edit overflow; terminal input coalescing and Ratatui style-reset output also had observed reds before fixes. The active-only CAS test’s observed failure is recorded above. These do not fill the missing initial broad red gate for model/renderer/terminal work. [model-initial-red.txt](evidence/ui/model-initial-red.txt) is a missing-API compile failure, not a behavioral assertion red. Keep that limitation explicit.
 
-**Not verified or not implemented:** the doctor readiness failure remains an environment prerequisite failure. Windows ConPTY does not directly inspect native raw-mode/mouse-capture state; manual keyboard matrix and Linux terminal leg remain absent. No performance baseline/benchmark exists. P3 has only pure questionnaire state: no human-request SDK/kernel/frame backend, durable answer/cancel transition or requester-interruption integration. Native clipboard/selection and provider/model execution remain incomplete. WEB-WELCOME, separately deferred WEB-OPT and desktop remain outside CLI scope; WEB-OPT has no measured baseline.
+**Not verified or not implemented:** the doctor readiness failure remains an environment prerequisite failure. Windows ConPTY does not directly inspect native raw-mode/mouse-capture state; manual keyboard matrix and Linux terminal leg remain absent. No performance baseline/benchmark or measured cold-service allocation profile exists. P3 has only pure questionnaire state: no human-request SDK/kernel/frame backend, durable answer/cancel transition or requester-interruption integration. The text clipboard process adapter, bounded workspace snapshot worker and per-field global preference owner now exist; their focused tests avoid native clipboard access. Real OS clipboard success/timeout/unsupported behavior, selection, complete settings restart/corrupt-config screen handling and visual integration remain unverified. Provider/model execution remains incomplete. WEB-WELCOME, separately deferred WEB-OPT and desktop remain outside CLI scope; WEB-OPT has no measured baseline.
+
+### 1.2 Cold-service continuation (2026-10-25)
+
+**VERIFIED scoped implementation:** app-owned workers provide text-only clipboard read/write requests capped at 1 MiB, bounded ignore-aware workspace snapshots using `polaris-tools-builtin`, and a settings helper with runtime overrides plus explicit one-field persistence to the global config owner. Clipboard and index results are generation-scoped; queue submission is nonblocking, stale work/results are retired, index shutdown is bounded, and settings saves run on an owned worker with a bounded queue. Demo/render fixtures use `MemoryOnly` settings and cannot call through to global persistence.
+
+Focused evidence: [continuation-services-verification.md](evidence/ui/continuation-services-verification.md), [service descriptor](evidence/ui/continuation-services-descriptor.json), [config preference descriptor](../specs/descriptors/config_cli_preferences.json), [demo runtime descriptor](../specs/descriptors/ui_cli_demo_runtime.json), [editor controller descriptor](../specs/descriptors/ui_cli_editor_controller.json), and [cursor repaint descriptor](../specs/descriptors/ui_cursor_repaint_integrity.json). The tests cover config key preservation/atomic failure, memory-only settings, background settings results, bounded index output and ignore/secret-path behavior; they do not mutate the user's clipboard. The service-specific pre-implementation red transcript was not retained, so no red claim is made for this continuation.
+
+**Still partial:** the full UI4 integration gate is open. Native Windows/Linux/macOS clipboard operations and their failure/timeout paths need platform evidence; path-junction/native filesystem edges need focused verification; settings screen save-failure/retry, restart and malformed-config behavior need integrated tests. The subsequent integrated visual exports and controller evidence are recorded in §1.3. No phase status changes follow from this scoped work.
+
+### 1.3 Current interactive continuation checkpoint (2026-10-25)
+
+**VERIFIED scoped behavior:** the composer now shares Unicode row/source geometry for painting, caret, selection, click/drag and vertical navigation. Shift+Enter inserts a newline; Ctrl+Enter is intentionally unbound. Word/line movement, selection replacement, chip preview and sticky vertical column have controller regressions. The presenter restores the physical editor caret after repaint, including Shift+Up/Down effort changes. Typed hit maps support footer/completion/tool hover, click, editor drag and canonical single-entry transcript selection, with overlay clipping and current-state geometry.
+
+The explicit `--demo` profile (also selected through the footer or F5) owns isolated drafts, transcript and scripted streaming/cancel/replay state. It does not open durable offline state, call KernelApi/providers or save preferences. Entries are labelled `[DEMO]`. Its three-question form exercises single/multiple/free-text answers, exclusive **None of the above**, no defaults, Tab notes and atomic Enter submission. This is display/controller evidence, not P3 human-request backend acceptance.
+
+**VERIFIED evidence:** [current checkpoint](evidence/ui/continuation-verification.md) and [machine-readable index](evidence/ui/continuation-verification.json) record **350 passing scoped tests** (263 config/model/renderer plus 87 selected app tests). The final self-contained native test target passed **15/15**, including key modifiers, `$` Alt-code delivery, literal paste, idle output, observable terminal cleanup and demo isolation. Safety Clippy, formatting and dependency-policy subset commands are recorded separately. [Actual interactive buffer exports](evidence/ui/continuation-after/) cover welcome, questionnaire, settings and selected multiline input. Meaningful behavioral red evidence is retained for cursor staging, editor/controller, pointer handling and preference override persistence; the earlier broad/service red gaps remain historical limitations.
+
+**Open gates:** headless doctor still fails on missing setup prerequisites; advisory audit cannot lock its read-only cache. Native OS clipboard success, physical-terminal/Linux matrix, cross-entry transcript selection/word drag, interactive demo tool/diff cards, full settings error/restart flows, production human-request/model integration, transcript/layout caches and measured allocation/performance/release budgets remain open. Text clipboard/index/settings workers are implemented but do not close those acceptance gates. Web welcome, separate WEB-OPT and desktop stay deferred. No UI phase or M1 completion is claimed.
 
 ## 2. Design extraction and intentional differences
 
@@ -108,15 +125,14 @@ The demo itself was not launched. ConPTY implementation smoke tests are now reco
 | Enter-to-apply settings (`settings.md`) | Candidate is separate from applied state; Enter persists only that field via project config owner. Failure remains visible and retryable. | UI4-4 |
 | Usage Strip/Ticks/Segments; Stats Stacked/Lines/Trends | Same source/denominator across styles, exact-value inspector, accessible text fallbacks. Defer unsupported data categories rather than synthesize them. | UI4-5 / UI5-4 |
 | Demand-driven updates (`rendering.md`) | Preserve dirty scheduling, bounded semantic batches, layout caches, staged cursor and zero bytes for identical frames (§5). | UI3-2 / UI3-3 / UI6-2 |
-| Demo provider/model names, simulated activity, sample stats, D toggle, `/preview`, `--preview` | Exclude from the product. Test scenarios only under explicit deterministic `--dump --scenario`; fixtures labelled SYNTHETIC. | UI0-2 / UI4-5 |
+| Demo provider/model names, simulated activity, sample stats, D toggle, `/preview`, `--preview` | No implicit sample data in offline/live profiles. The user-authorized explicit `--demo` profile is isolated, bounded and labelled DEMO; deterministic dump fixtures remain labelled SYNTHETIC. | UI0-2 / UI4-5 |
 | Web welcome's green atmosphere and pill composer | Record as future web welcome reference; CLI keeps static cell artwork, no background animation or raster emulation. | WEB-WELCOME / WEB-OPT |
+
+**VERIFIED reference repair (2026-10-25):** welcome glyphs and foreground colors outside the footer match the saved demo buffers at 60×20, 80×24, 100×30, 120×40 and 160×60; see [comparison](evidence/ui/repair-reference-comparison.json) and [repaired buffer preview](evidence/ui/repair-after/welcome-80x24.png). Footer model/effort values remain actual local state. Black rule-bounded editor, wrapped growth, per-glyph North Star colors, neutral conversation, opaque selection-following completion and black sheets are covered by the new reference suite. The final repair command passed 92 selected tests (46 UI CLI, 46 app), including nine native PTY scenarios and one VT-parser regression; this is separate from the older full-package doctor failure. See [repair verification](evidence/ui/repair-verification.md). No complete UI phase is claimed.
 
 ### 2.2 Resolve visual drift before implementation
 
-**VERIFIED:** main PLAN §13 and current `model/src/{tokens,logo}.rs` describe the previous chip mark
-and `#373737` prompt background. The inspected active demo specifies the minimal North Star and
-`#141414`. This plan intentionally chooses the **current demo** for the future CLI. Existing code
-is not changed by this planning task.
+**VERIFIED correction (2026-10-25):** the active demo specifies a minimal North Star, a black live editor and `#141414` submitted-message surfaces. The initial plan incorrectly assigned the submitted-message surface to the composer. This error propagated into renderer assertions and is corrected with an explicit [source-to-assertion migration](evidence/ui/repair-assertion-migration.md). The current reference takes precedence over historical PLAN sketches.
 
 UI1-1 must migrate the relevant model tokens/logo grids, their provenance and assertions together;
 UI2 must regenerate reviewed product snapshots. Preserve older assertions until their requirement
@@ -130,7 +146,8 @@ gates continue to govern.
 | North Star center / rays / tips | `#C0E58C` / `#76B900` / `#6B6B6B`; no filled package |
 | Welcome / compact / app-bar mark | 9×5 / 5×3 / one-cell `✦`; same-size ASCII alternatives |
 | Hero visibility | Empty transcript, no active work: 9+ body rows → 9×5; 5–8 → 5×3; otherwise app bar only. Typing alone does not hide it. |
-| Prompt / composer rule / control hover / focus | `#141414` / `#343434` / `#181818` / `#191919` |
+| Live editor / submitted prompt / composer rule | `#000000` / `#141414` / `#343434`; open sides, complete top/bottom rules |
+| Control hover / focus | `#181818` / `#191919` |
 | Plan/tools/mentions / auto / directives/goals | `#F9E2AF` / `#F5C2E7` / `#89B4FA` |
 | Command focus / hover; file hover | `#B6E35B` / `#DBF5B0`; `#FFFDE6` |
 | Warning / error | `#E5B454` / regular-weight `#AC4242`; always text labels |
@@ -392,7 +409,7 @@ by the demo. Normalize available BackTab/Shift+Tab, Return/Escape/control charac
 and supported mouse/resize events. Ignore key releases as actions; preserve intentional repeat.
 
 Enter submits; Shift+Enter is a newline only where verified. Alt+Enter / Ctrl+J are first fallback
-candidates and need real terminal checks too. Ctrl+Enter is optional. Never sample Shift using unsafe
+candidates and need real terminal checks too. Ctrl+Enter is intentionally unbound for newline. Never sample Shift using unsafe
 Win32 calls or claim a decoder can recover modifiers the OS discarded. Capability reply parsing, if
 needed, is bounded, timeout-driven and separate from text; bracketed paste is always literal text.
 
@@ -428,9 +445,14 @@ access. Earlier scan generations cannot replace newer ones.
 
 One wrapping/width policy powers paint, byte↔grapheme↔cell mapping, caret, history row guards,
 hit tests, selection and scrolling. Test tabs, combining marks, ZWJ emoji, wide glyphs, empty rows,
-CRLF normalization and terminal-dependent width fallback. Chips are atomic. Double-click/held drag
-uses Unicode word boundaries and a proposed 450 ms interval; typing immediately before a click
-refreshes geometry **in memory**, without a pre-click frame. Overlay occlusion removes hidden targets.
+CRLF normalization and terminal-dependent width fallback. Chips are atomic. Ordinary drag selects
+source graphemes and real spaces; double-click selects a word using the composer’s shared token
+classification, with held drag extending by complete words. Triple-click selects a logical source
+line, including its existing newline, across soft wraps. The click sequence uses a 450 ms interval
+and one-cell tolerance. Decorative padding cannot start a word/line selection; drag boundaries
+clamp to visible source rows. Exactly one editor/transcript surface owns the active gesture;
+release preserves the editable range for Delete/Backspace, replacement and Undo. Typing immediately
+before a click refreshes geometry **in memory**, without a pre-click frame. Overlay occlusion removes hidden targets.
 
 Escape untrusted C0/C1/ESC/OSC/DCS sequences and make bidi/control spoofing visible at the display
 boundary. Never feed tool ANSI directly to stdout or trust ansi-to-tui as a sandbox; if color parsing
@@ -446,7 +468,7 @@ application selection; show success only after the clipboard adapter confirms it
 
 The optional --key-trace adapter creates a new private file with create-new/no-overwrite semantics,
 rejecting existing files/symlink targets. Record only bounded event categories, approved modifier/
-nontext-key metadata and counts; never printable key values, raw input bytes, paste, paths, drafts,
+nontext-key metadata and counts, plus mouse kind/button/coordinates/modifiers; never printable key values, raw input bytes, paste, paths, drafts,
 answers/notes, image data or secrets. Trace I/O failures are explicit. Verify privacy with canaries
 across success and error paths; traces are diagnostics, never transcript capture.
 
@@ -721,4 +743,19 @@ Existing P9 backend progress neither authorizes this work nor removes its future
 Check this document and companions for valid links, CSV parsing, unique module/task IDs, dependency
 resolution/acyclicity, complete task coverage, main-phase mapping, source path existence and explicit
 deferred status. Run existing `check-docs` and `render-docs --check`; preserve all generated blocks.
-This documentation refresh updates only UI_PLAN.md, UI_PHASES.md and UI_MODULES.csv; it adds no runtime evidence. Runtime safety, end-to-end rendering, keyboard support, performance and full feature completion require the separate UI_PHASES gates; current partial implementation does not satisfy them.
+The original planning refresh updated only UI_PLAN.md, UI_PHASES.md and UI_MODULES.csv; it added no runtime evidence. Subsequent authorized CLI implementation is recorded in the dated checkpoints below. Runtime safety, end-to-end rendering, keyboard support, performance and full feature completion require the separate UI_PHASES gates; current partial implementation does not satisfy them.
+
+
+## 12. Reference parity implementation checkpoint (2026-10-25)
+
+The current authorized CLI repair is described in [reference parity evidence](evidence/ui/parity-verification.md) and PHASES_STATUS §E37. It adds typed local command screens, all 27 reference preview names plus questions/editor, a composer-replacing form and explicit Submit review, local approval controls, safe native input repairs, semantic multi-entry selection, rich source-mapped transcript styling and a persistent bounded row cache. Demo data is visibly labelled and has no provider/kernel approval authority.
+
+The reference binary was dumped for all 27 original scenarios with isolated configuration; the config directory was not created. Actual app frames are captured at five viewport sizes through the same function used by the terminal. This is coverage evidence, not an assertion of pixel-perfect parity or physical Alacritty behavior. Questions are a new requirement, not a screen found in dist.
+
+A frozen CPU-only 200×60/56-entry/64-sample microbenchmark records uncached, cold-cache and warm-cache distributions for debug and release separately. Cold reflow, full paging, representative 1k/10k/100k transcripts, allocation/RSS/slow-write and physical display budgets remain open. The renderer retains its existing bounded visible-source window; the cache does not establish complete 16 MiB transcript paging. Real P3 human/provider protocols, OS clipboard images, full settings error/restart flows and manual terminal/Linux acceptance remain independent gates. Web welcome, WEB-OPT and desktop are still deferred.
+
+### 12.1 Mouse and selection repair checkpoint (2026-10-25; E38)
+
+[Current repair evidence](evidence/ui/mouse-repair-verification.md) extends E37 with native mouse/window/extended/VT mode acquisition, Quick Edit suppression and exact fallible mode restoration. A successful input close is idempotent and cannot reapply raw mode after terminal cleanup; a failed close retains its snapshot for retry. The profile picker applies a clicked visible row through the same guarded action as Enter, so switching into Demo does not require a second confirmation key.
+
+The app uses one gesture contract for composer, transcript and question answer/notes selection, with grapheme/word/logical-line granularity and source-only hit/paint geometry. Padding has no selectable source; it may position/clamp the caret without selecting the last word. Mouse-up preserves editor ranges for selected deletion, replacement and Undo. Tests cover direction reversal, Unicode, soft wrap, chips and late copy completion. Four actual app buffer exports were inspected; they are not physical Alacritty screenshots. The 422 scoped passing tests and native OS-mode readback are explicitly separate from physical terminal, OS clipboard, full strict lint/formal/performance and UI/M1 acceptance.

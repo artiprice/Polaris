@@ -1,0 +1,45 @@
+
+running 40 tests
+test tui::controller_tests::color_depth_auto_uses_windows_vt_and_respects_explicit_overrides ... ok
+test tui::controller_tests::continuation::late_clipboard_read_cannot_paste_into_a_changed_draft_or_cursor ... ok
+test tui::controller_tests::clear_command_clears_notice_and_visible_conversation ... ok
+test tui::controller_tests::continuation::profiles_keep_drafts_separate_and_demo_never_dispatches_kernel_controls ... ok
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... ok
+test tui::controller_tests::continuation::effort_picker_applies_explicitly_and_keeps_the_draft_cursor ... ok
+test tui::controller_tests::continuation::pointer_hover_and_click_use_current_completion_geometry ... ok
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... ok
+test tui::controller_tests::accepted_directive_clears_only_after_acknowledgement ... ok
+test tui::controller_tests::continuation::transcript_drag_copies_canonical_unicode_bytes_without_repainting_for_hit_test ... ok
+test tui::controller_tests::continuation::pasted_text_preview_expands_the_exact_chip_payload ... ok
+test tui::controller_tests::continuation::arriving_demo_questions_do_not_overwrite_an_active_picker ... ok
+test tui::controller_tests::control_backpressure_preserves_draft_without_closing_ui ... ok
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... ok
+test tui::controller_tests::continuation::demo_question_notes_none_and_atomic_submit_are_connected ... ok
+test tui::controller_tests::draft_text_chip_submits_its_expanded_directive ... ok
+test tui::controller_tests::help_only_advertises_available_local_controls ... ok
+test tui::controller_tests::continuation::interactive_projection_keeps_dollar_in_prefill_and_literal_paste ... ok
+test tui::controller_tests::new_session_starts_without_a_persistent_notice ... ok
+test tui::controller_tests::parity::cross_entry_selection_keeps_direction_and_semantic_newlines ... ok
+test tui::controller_tests::completion_wheel_clamps_without_scrolling_transcript ... ok
+test tui::controller_tests::parity::demo_commands_open_views_without_starting_response ... ok
+test tui::controller_tests::parity::gallery_paste_cannot_edit_the_hidden_main_draft ... ok
+test tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions ... ok
+test tui::controller_tests::parity::plain_delete_keys_edit_draft_and_selected_range ... ok
+test tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt ... ok
+test tui::controller_tests::query_failure_cannot_cancel_an_inflight_directive ... ok
+test tui::controller_tests::pending_resume_prevents_directive_from_crossing_sessions ... ok
+test tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice ... ok
+test tui::controller_tests::rejection_and_unsupported_model_input_keep_exact_draft ... ok
+test tui::controller_tests::release_is_idle_and_paste_remains_literal ... ok
+test tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit ... ok
+test tui::controller_tests::repeated_frame_and_caret_move_do_not_clear_terminal ... ok
+test tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command ... ok
+test tui::controller_tests::continuation::settings_enter_persists_one_field_off_thread_and_demo_cannot_save ... ok
+test tui::controller_tests::parity::question_review_preserves_answers_notes_and_requires_final_submit ... ok
+test tui::controller_tests::draft_limit_rejection_keeps_editor_alive ... ok
+test tui::controller_tests::footer_controls_dispatch_to_help_mode_and_profile_sheets ... ok
+test tui::controller_tests::continuation::continuation_visual_scenarios_use_the_interactive_projection ... ok
+test tui::controller_tests::parity::all_reference_scenarios_use_the_actual_app_frame_path ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 52 filtered out; finished in 8.02s
+

@@ -1,0 +1,17 @@
+{
+  "name": "parity-app-current",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:19:27.588Z",
+  "pid": 6292,
+  "code": 101,
+  "finished": "2026-10-25T11:20:38.010Z"
+}

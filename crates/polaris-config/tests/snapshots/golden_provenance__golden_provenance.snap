@@ -1,6 +1,5 @@
 ---
 source: crates/polaris-config/tests/golden_provenance.rs
-assertion_line: 43
 expression: out
 ---
 budget.usd               Env -
@@ -22,6 +21,12 @@ ratelimit.rpm            Repo .polaris/config.toml
 ratelimit.tpm            Global ~/.polaris/config.toml
 sandbox.tier             Session -
 storage.level            Defaults -
+ui.cli.ascii             Defaults -
+ui.cli.color             Defaults -
+ui.cli.color_depth       Defaults -
+ui.cli.panel             Defaults -
+ui.cli.reduce_motion     Defaults -
+ui.cli.theme             Defaults -
 ui.theme                 Repo .polaris/config.toml
 
 PolarisConfig {
@@ -84,5 +89,13 @@ PolarisConfig {
     },
     ui: UiConfig {
         theme: Light,
+        cli: CliPreferences {
+            theme: Dark,
+            color: Auto,
+            color_depth: Auto,
+            ascii: false,
+            reduce_motion: false,
+            panel: Closed,
+        },
     },
 }

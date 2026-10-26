@@ -1,0 +1,27 @@
+{
+  "type_of": "method",
+  "name": "KeyTrace::record_input",
+  "file_path": "apps/polaris-cli/src/key_trace.rs",
+  "logic_name": "Privacy safe key metadata",
+  "test_list": [
+    {
+      "test_name": "trace_distinguishes_enter_modifiers_edit_keys_and_phases",
+      "description": "Static modifier and phase fields identify Enter and deletion failures without recording printable characters or paste contents."
+    }
+  ],
+  "dependencies": [
+    "NormalizedInput"
+  ],
+  "libraries": [
+    "crossterm"
+  ],
+  "inputs": [
+    {
+      "name": "event",
+      "type": "NormalizedInput",
+      "description": "Normalized key or input category"
+    }
+  ],
+  "output_type": "io::Result<()>",
+  "output_description": "Bounded metadata-only record or explicit write failure"
+}

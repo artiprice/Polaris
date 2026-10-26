@@ -1,0 +1,19 @@
+COMMAND: cargo test --offline --locked -p polaris-ui-cli input_decoder::tests -- --nocapture
+EXIT: 0
+STDOUT: running 7 tests; 7 passed, 0 failed. Includes shifted_dollar_key_preserves_its_unicode_character with unicode_char=$ and SHIFT modifier. This is decoder-unit evidence only, not physical ConPTY proof.
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli bracketed_payload_preserves_leading_dollar_sigils -- --nocapture
+EXIT: 0
+STDOUT: test bracketed_paste::tests::bracketed_payload_preserves_leading_dollar_sigils ... ok
+
+COMMAND: cargo test --offline --locked -p polaris-cli --test ui_terminal valid_directive_commits_and_renders_receipt -- --nocapture
+EXIT: 101
+Observed: visible editor output is > websearch(on), without leading $. Temporary test-only category trace is resize followed by 21 key text entries. Timeout shows no raw contiguous websearch substring due incremental repaint; terminal simulator confirms visible text missing $. Test assertion unchanged.
+
+COMMAND: cargo test --offline --locked -p polaris-cli --test ui_terminal bracketed_paste_is_literal_and_never_submitted -- --nocapture
+EXIT: 101
+Observed: visible editor output is > websearch(on), without leading $. Temporary test-only category trace is resize then paste. Raw emitted ANSI around contiguous websearch bytes: [30,3b,37,48,1b,5b,3f,32,35,68,1b,5b,3f,32,35,6c,77,65,62,73,65,61,72,63,68,28,6f,6e,29,20,1b,5b,31,43,...]; no 0x24 precedes 77. Test assertion unchanged.
+
+COMMAND: cargo test --offline --locked -p polaris-cli --test ui_terminal initial_prompt_is_visible_but_unsent_until_enter -- --nocapture
+EXIT: 101
+Observed: test passes its wait_for_text("$websearch(on)") assertion, then fails during CLI exit with "CLI did not exit before the PTY deadline". Thus the initial argument path visibly preserves $.

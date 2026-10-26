@@ -1,0 +1,23 @@
+{
+  "type_of": "struct",
+  "name": "Tavily",
+  "file_path": "crates/polaris-search/crates/providers/src/tavily.rs",
+  "logic_name": "Search Provider Tavily",
+  "test_list": [
+    { "test_name": "tavily_maps_search_results_to_sdk_hits", "description": "Map the documented Tavily response fields to the SDK contract." },
+    { "test_name": "tavily_maps_unauthorized_and_rate_limited_responses", "description": "Map 401/403 and 429 responses to sanitized SDK errors and apply Retry-After." },
+    { "test_name": "tavily_never_exposes_or_logs_the_api_key", "description": "The key is sent only in the documented authentication header and never included in diagnostics." },
+    { "test_name": "tavily_redacts_query_before_egress", "description": "Only the redactor output is included in the outgoing request." },
+    { "test_name": "tavily_rejects_insecure_base_urls", "description": "Reject non-HTTPS remote bases; permit HTTP only for explicit loopback fixtures." },
+    { "test_name": "tavily_validates_site_filter_before_dispatch", "description": "Reject malformed site filters without recording the HTTP call as dispatched." },
+    { "test_name": "tavily_obeys_result_limit_deadline_and_cancellation", "description": "Bound response count and duration and support cancellation." }
+  ],
+  "dependencies": ["polaris_sdk::registry::WebSearch", "polaris_sdk::registry::Redactor", "secrecy::SecretString", "polaris_ratelimit::DualLimiter"],
+  "libraries": ["reqwest", "serde", "serde_json", "secrecy", "tokio", "url"],
+  "inputs": [
+    { "name": "config", "type": "TavilyConfig", "description": "Configured base URL, injected API key, timeout, and limiter." },
+    { "name": "redactor", "type": "Arc<dyn Redactor>", "description": "SDK redactor applied before query data leaves the process." }
+  ],
+  "output_type": "impl WebSearch",
+  "output_description": "A real Tavily search adapter returning SDK SearchHit values."
+}

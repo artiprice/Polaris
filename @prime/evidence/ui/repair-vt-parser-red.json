@@ -1,0 +1,20 @@
+{
+  "name": "repair-vt-parser-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--test",
+    "ui_terminal",
+    "terminal_parser_observes_autowrap_and_erase_characters",
+    "--",
+    "--exact"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:49:00.448Z",
+  "pid": 1468,
+  "code": 101,
+  "finished": "2026-10-25T00:49:03.091Z"
+}

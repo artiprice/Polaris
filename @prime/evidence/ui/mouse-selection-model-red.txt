@@ -1,0 +1,24 @@
+exit code: 101\n--- stdout ---\n\n--- stderr ---\n   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+error[E0432]: unresolved imports `polaris_ui_model::composer::source_grapheme_range`, `polaris_ui_model::composer::source_line_range`
+ --> crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:4:34
+  |
+4 | use polaris_ui_model::composer::{source_grapheme_range, source_line_range, source_word_range, Composer};
+  |                                  ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^ no `source_line_range` in `composer`
+  |                                  |
+  |                                  no `source_grapheme_range` in `composer`
+  |
+help: a similar name exists in the module
+  |
+4 - use polaris_ui_model::composer::{source_grapheme_range, source_line_range, source_word_range, Composer};
+4 + use polaris_ui_model::composer::{source_grapheme_range, source_word_range, source_word_range, Composer};
+  |
+
+error[E0599]: no variant named `SetSelection` found for enum `QuestionnaireAction`
+  --> crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:81:20
+   |
+81 |     state.apply(A::SetSelection { anchor: 0, head: "e\u{301} 👩💻".len() })?;
+   |                    ^^^^^^^^^^^^ variant not found in `QuestionnaireAction`
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-ui-model` (test "mouse_selection_model") due to 2 previous errors

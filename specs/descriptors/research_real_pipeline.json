@@ -1,0 +1,39 @@
+{
+  "type_of": "integration_test",
+  "name": "research_real_pipeline_acceptance",
+  "file_path": "crates/polaris-runtime/crates/research/tests/real_pipeline.rs",
+  "logic_name": "Run bounded real-process metrics with capability-authorized workspace mutations, durable evidence, keep/revert, and crash recovery",
+  "test_list": [
+    {
+      "test_name": "tool_cannot_write_outside_the_exact_vcs_snapshot_path",
+      "description": "A deliberately mismatched actual tool target is checked against an exact-path attenuated capability and is rejected before its filesystem write."
+    },
+    {
+      "test_name": "twenty_iterations_keep_only_strict_improvements_and_reopen_evidence",
+      "description": "Use actual child metric processes and a concrete temporary Git repository; check 20 decisions, exact final file, capability authorizations, receipts, and ledger reopen. The local process fixture does not prove sandbox isolation."
+    },
+    {
+      "test_name": "abrupt_child_exit_reopens_as_recovery_and_restores_baseline",
+      "description": "A helper process exits after persisting an in-flight checkpoint and changing a tracked file; a fresh parent process reopens the store and VCS adapter and verifies exact baseline recovery before continuing."
+    },
+    {
+      "test_name": "append_only_ledger_rejects_malformed_chain_data",
+      "description": "The checkpoint-store ledger test reopens valid linked evidence and rejects malformed pointers or chain nodes."
+    }
+  ],
+  "dependencies": [
+    "polaris-runtime-research::ResearchLoop",
+    "polaris-runtime-frames::ToolRunner",
+    "polaris-security-capability::authorize",
+    "polaris-sdk::SandboxBackend",
+    "polaris-vcs::Repo",
+    "polaris-storage-cas::Cas"
+  ],
+  "libraries": ["std", "bytes", "polaris-storage-cas"],
+  "inputs": [
+    {"name": "program", "type": "program.md", "description": "Immutable metric command, scopes, and total resource budget."},
+    {"name": "candidate", "type": "authorized ToolCall", "description": "Candidate content written only after signed capability authorization."}
+  ],
+  "output_type": "Result<(), TestError>",
+  "output_description": "A real local-process acceptance result with persisted metric, tool, mutation, and recovery evidence links."
+}

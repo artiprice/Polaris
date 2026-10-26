@@ -1,0 +1,16 @@
+{
+  "name": "repair-render-suite",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-cli",
+    "--tests"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:44:18.706Z",
+  "pid": 7940,
+  "code": 0,
+  "finished": "2026-10-25T00:44:21.628Z"
+}

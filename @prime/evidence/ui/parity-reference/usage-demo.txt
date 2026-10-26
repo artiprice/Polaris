@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Usage                                                                                                  DEMO DATA │
+  │                                                                                                                  │
+  │ [ Ctrl+O Details ]                                                                                               │
+  │                                                                                                                  │
+  │ Session                                                   Models                                                 │
+  │ Total cost   USD 0.42                                     Nemotron Super 49B v1.5                                │
+  │ Tokens       15,580 total / 12,400 in / 3,180 out           10,000 in / 2,500 out / USD 0.35                     │
+  │ Duration     2m 14s wall / 1m 56s API                     Nemotron Nano 9B v2                                    │
+  │ Changes      2 files / +14 -3                               2,400 in / 680 out / USD 0.07                        │
+  │                                                                                                                  │
+  │ Context                                       20% used                                                           │
+  │ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                                                           │
+  │ 25,600 / 128,000 tokens                                                                                          │
+  │                                                                                                                  │
+  │ Limits / sample policy                                                                                           │
+  │ Current window                                42% used                                                           │
+  │ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                                                           │
+  │ 420 / 1,000 units                                                                                                │
+  │ Resets in 2h 30m                                                                                                 │
+  │                                                                                                                  │
+  │ Weekly allowance                              58% used                                                           │
+  │ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                                                           │
+  │ 2,900 / 5,000 units                                                                                              │
+  │ Resets in 4d                                                                                                     │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │ Sample policy / no provider quota claims                                                                         │
+  │ D sample/empty · PgUp/PgDn scroll · Esc/Enter close                                                              │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

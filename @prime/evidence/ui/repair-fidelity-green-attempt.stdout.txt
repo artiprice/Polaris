@@ -1,0 +1,26 @@
+
+running 7 tests
+test export_reference_matrix ... ok
+test composer_has_open_black_interior_and_complete_rules ... ok
+test welcome_matches_reference_composition ... ok
+test composer_grows_from_wrapped_rows_up_to_three_eighths ... FAILED
+test welcome_strokes_keep_reference_center_ray_and_tip_colors ... ok
+test information_sheet_keeps_black_surface_and_pinned_hints ... ok
+test completion_keeps_selected_candidate_visible_on_black_surface ... ok
+
+failures:
+
+---- composer_grows_from_wrapped_rows_up_to_three_eighths stdout ----
+
+thread 'composer_grows_from_wrapped_rows_up_to_three_eighths' (10752) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:53:9:
+assertion `left == right` failed
+  left: 1
+ right: 9
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    composer_grows_from_wrapped_rows_up_to_three_eighths
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,5 @@
+{
+  "command": "cargo test --offline -p polaris-cli --lib cli_settings::tests",
+  "exit_code": 0,
+  "tests": "Settings tests covering untouched override no-op and explicit single-field persistence."
+}

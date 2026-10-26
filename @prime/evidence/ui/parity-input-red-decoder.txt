@@ -1,0 +1,48 @@
+COMMAND: cargo test --offline -p polaris-ui-cli --lib input_decoder::tests:: -- --nocapture
+EXIT: 101
+STDOUT:
+
+running 11 tests
+test input_decoder::tests::adjacent_surrogates_form_one_scalar ... ok
+test input_decoder::tests::c0_control_c_is_inferred_when_native_flags_are_absent ... ok
+test input_decoder::tests::control_j_keeps_its_character_identity ... ok
+test input_decoder::tests::delayed_unicode_on_alt_release_becomes_one_character_press ... ok
+test input_decoder::tests::c0_shift_enter_keeps_shift_and_enter ... ok
+test input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter ... FAILED
+test input_decoder::tests::shifted_dollar_key_preserves_its_unicode_character ... ok
+test input_decoder::tests::c0_control_enter_is_not_shift_enter ... FAILED
+test input_decoder::tests::native_repeat_and_release_phases_are_retained ... ok
+test input_decoder::tests::native_del_character_is_backspace ... FAILED
+test input_decoder::tests::virtual_key_zero_control_character_is_preserved ... ok
+
+failures:
+
+failures:
+    input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter
+    input_decoder::tests::c0_control_enter_is_not_shift_enter
+    input_decoder::tests::native_del_character_is_backspace
+
+test result: FAILED. 8 passed; 3 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+
+STDERR:
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 2.02s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)
+
+thread 'input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter' (17392) panicked at crates\polaris-ui\crates\cli\src\input_decoder.rs:293:9:
+assertion `left == right` failed
+  left: Some((Char('j'), KeyModifiers(CONTROL)))
+ right: Some((Enter, KeyModifiers(CONTROL)))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'input_decoder::tests::c0_control_enter_is_not_shift_enter' (18328) panicked at crates\polaris-ui\crates\cli\src\input_decoder.rs:283:9:
+assertion `left == right` failed
+  left: Some((Char('j'), KeyModifiers(CONTROL)))
+ right: Some((Enter, KeyModifiers(CONTROL)))
+
+thread 'input_decoder::tests::native_del_character_is_backspace' (17480) panicked at crates\polaris-ui\crates\cli\src\input_decoder.rs:313:9:
+assertion `left == right` failed
+  left: Some(Char('\u{7f}'))
+ right: Some(Backspace)
+error: test failed, to rerun pass `-p polaris-ui-cli --lib`

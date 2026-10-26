@@ -14,6 +14,7 @@ use secrecy::SecretString;
 use crate::content::{ContentStore, ContentStoreError};
 use crate::contracts::{Command, EventRecord, Unverified};
 use crate::ids::{Cid, Seq};
+use crate::interactive::{InteractiveSandbox, InteractiveSession, StdioRequest};
 use crate::registry::{
     CacheScope, CacheStoreError, ChatChunk, ChatChunkSource, ChatModel, ChatRequest,
     CommandReceipt, DecisionEngine, DecisionError, DocParser, DocSource, Document,
@@ -269,6 +270,12 @@ macro_rules! forward_all {
 
             fn clear_scope(&self, scope: &CacheScope) -> Result<u64, CacheStoreError> {
                 $each!(self, v => v.clear_scope(scope))
+            }
+        }
+
+        impl<$($p: InteractiveSandbox),+> InteractiveSandbox for $wrapper<$($p),+> {
+            async fn launch_stdio(&self, spec: &SandboxSpec, exec: &StdioRequest) -> Result<InteractiveSession, SandboxError> {
+                $each!(self, v => v.launch_stdio(spec, exec).await)
             }
         }
 

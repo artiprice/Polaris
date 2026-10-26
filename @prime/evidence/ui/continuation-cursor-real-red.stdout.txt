@@ -1,0 +1,18 @@
+
+running 1 test
+test changed_cells_restore_unchanged_editor_cursor_after_paint ... FAILED
+
+failures:
+
+---- changed_cells_restore_unchanged_editor_cursor_after_paint stdout ----
+
+thread 'changed_cells_restore_unchanged_editor_cursor_after_paint' (5876) panicked at crates\polaris-ui\crates\cli\tests\terminal_presenter.rs:30:9:
+paint must end in editor position then reveal: [27, 91, 53, 59, 49, 49, 72, 109, 101, 100, 105, 117, 109, 27, 91, 51, 57, 109, 27, 91, 52, 57, 109, 27, 91, 53, 57, 109, 27, 91, 48, 109, 27, 91, 63, 50, 53, 104, 27, 91, 50, 59, 50, 72]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    changed_cells_restore_unchanged_editor_cursor_after_paint
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+

@@ -1,0 +1,37 @@
+test --offline -p polaris-ui-cli --lib input_decoder::tests:: -- --nocapture
+EXIT 0
+
+running 11 tests
+test input_decoder::tests::adjacent_surrogates_form_one_scalar ... ok
+test input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter ... ok
+test input_decoder::tests::c0_control_enter_is_not_shift_enter ... ok
+test input_decoder::tests::c0_control_c_is_inferred_when_native_flags_are_absent ... ok
+test input_decoder::tests::c0_shift_enter_keeps_shift_and_enter ... ok
+test input_decoder::tests::native_repeat_and_release_phases_are_retained ... ok
+test input_decoder::tests::shifted_dollar_key_preserves_its_unicode_character ... ok
+test input_decoder::tests::native_del_character_is_backspace ... ok
+test input_decoder::tests::delayed_unicode_on_alt_release_becomes_one_character_press ... ok
+test input_decoder::tests::virtual_key_zero_control_character_is_preserved ... ok
+test input_decoder::tests::control_j_keeps_its_character_identity ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+
+STDERR
+warning: constant `GOLD` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:31:7
+   |
+31 | const GOLD: Color = Color::Rgb(249, 226, 175);
+   |       ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `DIRECTIVE` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:33:7
+   |
+33 | const DIRECTIVE: Color = Color::Rgb(137, 180, 250);
+   |       ^^^^^^^^^
+
+warning: `polaris-ui-cli` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.66s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)

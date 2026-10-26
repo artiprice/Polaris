@@ -1,0 +1,28 @@
+{
+  "type_of": "async_function",
+  "name": "Fetcher::fetch",
+  "file_path": "crates/polaris-search/crates/providers/src/fetch.rs",
+  "logic_name": "Search Provider Bounded Fetch",
+  "test_list": [
+    { "test_name": "fetch_aborts_when_stream_exceeds_max_bytes", "description": "Abort streaming immediately after the configured decoded byte limit is exceeded." },
+    { "test_name": "fetch_rejects_disallowed_content_types", "description": "Reject a response whose media type is not explicitly allowed." },
+    { "test_name": "fetch_enforces_redirect_count_and_revalidates_target", "description": "Enforce the redirect cap and apply SSRF checks to each new target." },
+    { "test_name": "fetch_converts_html_and_marks_it_untrusted", "description": "Convert HTML to Markdown, remove non-visible active content, and mark it untrusted." },
+    { "test_name": "fetch_decodes_declared_charset_within_byte_limit", "description": "Decode the already byte-bounded response using its declared charset; unknown labels fall back to UTF-8 replacement decoding." },
+    { "test_name": "fetch_enforces_decoded_and_markdown_byte_limits", "description": "Reject legacy charset expansion and extracted Markdown that exceeds the configured output byte limit." },
+    { "test_name": "fetch_rejects_control_characters_in_user_agent", "description": "Reject user-agent values containing HTTP control characters during fetcher configuration." },
+    { "test_name": "fetch_rejects_excessive_dom_nodes_or_depth", "description": "Reject HTML trees exceeding fixed node-count or nesting-depth limits before recursive Markdown conversion." },
+    { "test_name": "fetch_conversion_runs_off_async_executor_and_holds_concurrency", "description": "Run parser and conversion on a blocking worker and retain the concurrency permit until it completes, including after caller deadline." },
+    { "test_name": "blocking_worker_retains_concurrency_after_call_drop", "description": "Keep the provider semaphore occupied while blocking conversion continues after the async call is cancelled or times out." },
+    { "test_name": "fetch_honors_deadline_and_cancellation", "description": "Enforce the total deadline and stop work when the calling future is cancelled." },
+    { "test_name": "fetch_surfaces_rate_limit_retry_after", "description": "Return a typed rate-limited error and update the shared limiter penalty on HTTP 429." }
+  ],
+  "dependencies": ["validate_target", "polaris_ratelimit::DualLimiter", "htmd::HtmlToMarkdown", "reqwest::Response::chunk"],
+  "libraries": ["encoding_rs", "jiff", "markup5ever_rcdom", "reqwest", "tokio", "htmd", "url"],
+  "inputs": [
+    { "name": "fetcher", "type": "&Fetcher", "description": "Configured transport, concurrency limit, rate limiter, and byte/deadline policy." },
+    { "name": "url", "type": "&Url", "description": "Untrusted page URL to fetch." }
+  ],
+  "output_type": "Result<FetchedPage, SearchProviderError>",
+  "output_description": "A bounded, sanitized Markdown page with the final URL and an Untrusted trust label."
+}

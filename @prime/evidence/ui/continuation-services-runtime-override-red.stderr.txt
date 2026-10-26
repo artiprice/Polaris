@@ -1,0 +1,8 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 10.36s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)
+
+thread 'cli_settings::tests::persisting_one_selection_clears_only_that_runtime_override' (4592) panicked at apps\polaris-cli\src\cli_settings.rs:585:9:
+assertion failed: !directory.path().join("config.toml").exists()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p polaris-cli --lib`

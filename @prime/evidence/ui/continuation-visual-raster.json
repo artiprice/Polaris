@@ -1,0 +1,24 @@
+{
+  "name": "continuation-visual-raster",
+  "command": [
+    "cargo",
+    "run",
+    "--offline",
+    "--manifest-path",
+    "target/ui-repair/raster/Cargo.toml",
+    "--",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-welcome.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-welcome.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-questions.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-questions.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-settings.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/demo-settings.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/textarea-selection.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after/textarea-selection.png"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:42:28.596Z",
+  "pid": 16524,
+  "code": 0,
+  "finished": "2026-10-25T05:42:42.818Z"
+}

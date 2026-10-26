@@ -1,0 +1,81 @@
+{
+  "type_of": "pipeline",
+  "name": "cli_mouse_selection_repair",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "Mouse delivery and source-only selection",
+  "test_list": [
+    {
+      "test_name": "triple_click_selects_the_logical_editor_line",
+      "description": "Three clicks select source line including existing LF."
+    },
+    {
+      "test_name": "double_click_drag_extends_by_words",
+      "description": "Word drag preserves anchor word and extends to complete target word."
+    },
+    {
+      "test_name": "mouse_selection_survives_release_and_delete",
+      "description": "Mouse range is deleted after release and restored with undo."
+    },
+    {
+      "test_name": "blank_transcript_click_clears_selection",
+      "description": "Padding does not retain or start text selection."
+    },
+    {
+      "test_name": "editor_focus_clears_transcript_selection",
+      "description": "Only current surface owns text selection."
+    },
+    {
+      "test_name": "mouse_selects_demo_from_profile_sheet",
+      "description": "Visible footer and picker row click enters Demo."
+    },
+    {
+      "test_name": "question_notes_drag_selects_and_deletes",
+      "description": "Question editors share mouse selection semantics."
+    },
+    {
+      "test_name": "transcript_word_drag_reverses_by_whole_words",
+      "description": "Reverse word drag retains whole source units."
+    },
+    {
+      "test_name": "transcript_triple_click_selects_source_line_across_soft_wrap",
+      "description": "Triple-click spans one logical source line across visual rows."
+    },
+    {
+      "test_name": "double_click_editor_padding_keeps_no_selection",
+      "description": "Padding has no selectable word or line source."
+    },
+    {
+      "test_name": "reverse_unicode_drag_delete_and_late_copy_keep_the_exact_range",
+      "description": "Reverse Unicode selection is deleted exactly and late copy does not alter it."
+    },
+    {
+      "test_name": "selected_word_is_replaced_by_typing_and_paste",
+      "description": "Replacement consumes the selected word and Undo restores it."
+    },
+    {
+      "test_name": "notes_double_and_triple_click_keep_the_main_draft_intact",
+      "description": "Notes and main composer ownership remain isolated."
+    }
+  ],
+  "dependencies": [
+    "TerminalInput",
+    "RenderMetadata",
+    "Composer",
+    "QuestionnaireState"
+  ],
+  "libraries": [
+    "crossterm",
+    "crossterm_winapi",
+    "ratatui",
+    "unicode-segmentation"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "NormalizedInput",
+      "description": "Native/SGR mouse and keyboard events"
+    }
+  ],
+  "output_type": "Result<updated UI state, CliError>",
+  "output_description": "Bounded text selection, local profile and editor mutations or explicit input errors"
+}

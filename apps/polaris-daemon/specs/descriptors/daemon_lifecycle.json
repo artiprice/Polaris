@@ -1,0 +1,31 @@
+{
+  "type_of": "integration",
+  "name": "Authenticated daemon lifecycle",
+  "file_path": "apps/polaris-daemon/src/lib.rs",
+  "logic_name": "Compose the real local kernel with the bounded authenticated RPC transport and ordered teardown",
+  "test_list": [
+    {
+      "test_name": "production_local_daemon_health_and_graceful_shutdown",
+      "description": "Start the production local kernel profile on an isolated private local endpoint, authenticate health, and shut down transport before the kernel."
+    },
+    {
+      "test_name": "authenticated_rpc_p1_event_replay_denial_and_shutdown",
+      "description": "Use the injected SDK kernel API to replay a real event and prove unsupported P1 remote mutation is denied by the actual kernel verifier."
+    }
+  ],
+  "dependencies": [
+    "polaris-kernel::Kernel",
+    "polaris-rpc::RpcService",
+    "polaris-rpc::BoundServer",
+    "polaris-rpc::KernelClient",
+    "polaris-sdk::KernelApi"
+  ],
+  "libraries": ["tokio", "tempfile"],
+  "inputs": [
+    { "name": "kernel", "type": "KernelApi", "description": "One real SDK kernel API instance, owned by the daemon composition root." },
+    { "name": "token_root", "type": "PublicKeyBytes", "description": "Explicit verification-only Biscuit root public key." },
+    { "name": "shutdown", "type": "Future<()>", "description": "Cooperative OS shutdown signal future." }
+  ],
+  "output_type": "Result<(),DaemonError>",
+  "output_description": "Authenticated RPC service drained before the kernel's ordered teardown; unsupported operations fail closed."
+}

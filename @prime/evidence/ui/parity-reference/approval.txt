@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+      Extract the shared validation helper.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Action approval [demo]
+    Proposed edit · src/validation.rs · workspace only
+    Extract the repeated guard into a shared helper.
+    [ Allow once ] [ Decline ] [ View details ]
+    Left/Right select · Enter confirm · Esc decline
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    > What's on your mind for Polaris?
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

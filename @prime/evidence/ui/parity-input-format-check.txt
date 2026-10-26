@@ -1,0 +1,7 @@
+JSON parse: OK; entries=9
+$ rustfmt --edition 2024 --check apps/polaris-cli/tests/ui_terminal.rs
+EXIT 0
+
+$ git diff --check -- apps/polaris-cli/tests/ui_terminal.rs @prime/evidence/ui/parity-input-descriptor.json
+EXIT 0
+

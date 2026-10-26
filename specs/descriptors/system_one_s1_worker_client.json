@@ -1,0 +1,22 @@
+{
+  "type_of": "struct",
+  "name": "S1Client",
+  "file_path": "crates/polaris-system-one/crates/client/src/lib.rs",
+  "logic_name": "Bounded System-One Worker RPC Client",
+  "test_list": [
+    { "test_name": "request_validation_counts_context_separator_and_utf8_bytes", "description": "The input bound includes the UTF-8 bytes of primary text, context, and the inserted separator before any RPC is sent." },
+    { "test_name": "request_validation_rejects_empty_schema_without_transport", "description": "Empty decision schemas fail locally without a worker connection." },
+    { "test_name": "response_validation_rejects_answers_for_another_question", "description": "Worker results must return exactly the requested question IDs." },
+    { "test_name": "response_validation_rejects_unselected_or_unsorted_choice_scores", "description": "Choice results must use the selected top label and descending scores." },
+    { "test_name": "schema_bound_counts_derived_ordinal_labels", "description": "Score labels derived from integer ranges count toward the aggregate schema byte limit." },
+    { "test_name": "client_input_bound_matches_worker_cap", "description": "Client configuration cannot exceed the worker's 262144-byte input limit." }
+  ],
+  "dependencies": ["polaris_sdk::registry::DecisionEngine", "polaris_proto"],
+  "libraries": ["tonic", "tokio"],
+  "inputs": [
+    { "name": "transport", "type": "tonic::transport::Channel", "description": "A bounded configured local named pipe or private Unix-domain socket connection to the worker." },
+    { "name": "request", "type": "DecisionInput", "description": "SDK decision input forwarded to the isolated inference process." }
+  ],
+  "output_type": "impl DecisionEngine",
+  "output_description": "A kernel-side client that communicates only through the worker RPC contract, applies protocol and input bounds, and does not cache answers without model identity on the wire."
+}

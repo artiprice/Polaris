@@ -1,0 +1,22 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+error[E0425]: cannot find function `append_transcript_source_cells` in this scope
+   --> crates\polaris-ui\crates\cli\src\screen.rs:425:5
+    |
+425 |     append_transcript_source_cells(&mut metadata.source_cells, &rows, state, layout.body);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `occlude_source_cells` in this scope
+   --> crates\polaris-ui\crates\cli\src\screen.rs:478:13
+    |
+478 |             occlude_source_cells(&mut metadata.source_cells, rect);
+    |             ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `occlude_source_cells` in this scope
+   --> crates\polaris-ui\crates\cli\src\screen.rs:498:13
+    |
+498 |             occlude_source_cells(&mut metadata.source_cells, rect);
+    |             ^^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `polaris-ui-cli` (lib) due to 3 previous errors

@@ -1,0 +1,21 @@
+{
+  "name": "continuation-final-format-checked",
+  "command": [
+    "cargo",
+    "fmt",
+    "--check",
+    "-p",
+    "polaris-config",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli",
+    "-p",
+    "polaris-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T06:15:14.777Z",
+  "pid": 17632,
+  "code": 0,
+  "finished": "2026-10-25T06:15:15.603Z"
+}

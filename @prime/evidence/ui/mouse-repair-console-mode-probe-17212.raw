@@ -1,0 +1,46 @@
+[6n[?9001h[?1004h[m]0;C:\mDev\Polaris\target\debug\deps\ui_terminal-97e39ee21424c315.exe[?25h
+running 1 test
+test conpty_console_mode_bits_probe ... [?1049h[?2004h[>1u[?1003;1006h[?1003;1006l[<u[?2004l[?25l[H[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K[3;41H[?25h[?1049l[?25l[H[K
+running 1 test[K
+test conpty_console_mode_bits_probe ... CONPTY_MODE_BITS_PROBE_START initial=0x000001f7 raw=0x000001f0 native=0x000003b8 after_input_close=0x000001f0 restored=0x000001f7 CONPTY_MODE_BITS_PROBE_ENDok[K
+[K
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K
+[K[10;1H[?25h

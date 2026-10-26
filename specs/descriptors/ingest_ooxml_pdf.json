@@ -1,0 +1,21 @@
+{
+  "type_of": "function",
+  "name": "parse_ooxml_and_pdf",
+  "file_path": "crates/polaris-ingest/src/parsers.rs",
+  "logic_name": "OOXML And PDF Text Normalization With Provenance",
+  "test_list": [
+    { "test_name": "generated_docx_is_parsed_without_fabricated_line_provenance", "description": "Generated DOCX content becomes paragraphs without claiming XML source lines." },
+    { "test_name": "xlsx_sheet_names_and_rows_are_preserved", "description": "Generated workbook sheets and cell values become tables with sheet provenance." },
+    { "test_name": "pdf_pages_are_separate_and_numbered", "description": "Text pages become blocks with stable page-number provenance." },
+    { "test_name": "scanned_pdf_returns_ocr_unconfigured", "description": "PDF pages with no text layer return an honest typed OCR-unavailable result." },
+    { "test_name": "malformed_pdf_and_ooxml_are_errors", "description": "Malformed container bytes return typed errors." },
+    { "test_name": "generated_xlsx_and_pptx_are_parsed_by_their_real_readers", "description": "Generated workbook and presentation content is parsed through calamine and OOXML readers; a far-away cell dimension is rejected before calamine allocation." }
+  ],
+  "dependencies": ["polaris_sdk::registry::{Document, DocBlock, IngestError}"],
+  "libraries": ["docx-rs", "calamine", "pdf-extract", "zip"],
+  "inputs": [
+    { "name": "bytes", "type": "&[u8]", "description": "Validated, size-bounded input document." }
+  ],
+  "output_type": "Result<Document, IngestError>",
+  "output_description": "Normalized structure with source page/sheet provenance or typed error."
+}

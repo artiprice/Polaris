@@ -1,0 +1,15 @@
+
+running 1 test
+test terminal_parser_observes_autowrap_and_erase_characters ... FAILED
+
+failures:
+
+---- terminal_parser_observes_autowrap_and_erase_characters stdout ----
+Error: Custom { kind: Other, error: "full row changed" }
+
+
+failures:
+    terminal_parser_observes_autowrap_and_erase_characters
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+

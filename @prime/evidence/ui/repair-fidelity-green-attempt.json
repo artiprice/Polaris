@@ -1,0 +1,17 @@
+{
+  "name": "repair-fidelity-green-attempt",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-cli",
+    "--test",
+    "reference_fidelity"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:42:27.362Z",
+  "pid": 3128,
+  "code": 101,
+  "finished": "2026-10-25T00:42:29.578Z"
+}

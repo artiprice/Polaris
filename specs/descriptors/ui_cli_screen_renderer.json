@@ -26,7 +26,7 @@
     },
     {
       "test_name": "default_canvas_uses_north_star_background",
-      "description": "Styled dump uses a black #000000 canvas and distinct #141414 truecolor composer and submitted-prompt surfaces."
+      "description": "Black #000000 canvas and live editor; separate #141414 submitted-prompt surface. Source correction recorded in repair-assertion-migration.md."
     },
     {
       "test_name": "opaque_overlays_remove_covered_source_spans",
@@ -34,7 +34,7 @@
     },
     {
       "test_name": "ansi_palette_preserves_canvas_and_prompt_roles",
-      "description": "ANSI color mode maps the canvas and prompt surface to distinct indexed 16-color values."
+      "description": "ANSI canvas and live editor inherit black index0; submitted prompts retain their separate surface role."
     },
     {
       "test_name": "history_scroll_and_workspace_are_source_driven",

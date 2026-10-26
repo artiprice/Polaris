@@ -1,0 +1,21 @@
+{
+  "focused_contract": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_contract",
+    "exit_code": 0,
+    "output": "running 32 tests; 32 passed, 0 failed."
+  },
+  "format": {
+    "command": "rustfmt --check --edition 2024 crates/polaris-ui/crates/cli/src/questions.rs crates/polaris-ui/crates/cli/src/screen.rs crates/polaris-ui/crates/cli/tests/render_contract.rs",
+    "exit_code": 0,
+    "output": ""
+  },
+  "coverage": [
+    "FreeText wraps to five logical rows; visible geometry scrolls to rows 1..5 in four rows; caret is visible; selection paints; QuestionAnswer hit rectangle equals geometry.rect.",
+    "FreeText answer and Notes content remain independent; Notes retains QuestionNotes target and answer focus exposes QuestionAnswer.",
+    "Review tabs are inactive and Submit uses the accent color."
+  ],
+  "limitations": [
+    "QuestionAnswer click routing in tui.rs is owned by root and remains to be verified in its full batch.",
+    "No full CLI package test was run after adding QuestionAnswer."
+  ]
+}

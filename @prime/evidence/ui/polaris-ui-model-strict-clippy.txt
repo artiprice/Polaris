@@ -1,0 +1,173 @@
+$ cargo clippy --offline -p polaris-ui-model --all-targets -- -D warnings
+exit=101
+
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\composer.rs:416:29
+    |
+416 |           self.draft.cursor = match self
+    |  _____________________________^
+417 | |             .boundaries()
+418 | |             .into_iter()
+419 | |             .take_while(|at| *at <= self.draft.cursor)
+...   |
+423 | |             None => 0,
+424 | |         };
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+    = note: `-D clippy::manual-unwrap-or-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or_default)]`
+help: ascribe the type usize and replace your expression with
+    |
+416 ~         self.draft.cursor = self
+417 +             .boundaries()
+418 +             .into_iter()
+419 +             .take_while(|at| *at <= self.draft.cursor)
+420 ~             .last().unwrap_or_default();
+    |
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\composer.rs:428:9
+    |
+428 | /         match self
+429 | |             .boundaries()
+430 | |             .into_iter()
+431 | |             .take_while(|boundary| *boundary <= at.min(self.draft.text.len()))
+...   |
+435 | |             None => 0,
+436 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+help: ascribe the type usize and replace your expression with
+    |
+428 ~         self
+429 +             .boundaries()
+430 +             .into_iter()
+431 +             .take_while(|boundary| *boundary <= at.min(self.draft.text.len()))
+432 +             .last().unwrap_or_default()
+    |
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\tokens.rs:167:25
+    |
+167 |               let value = match numerator.checked_div(100) {
+    |  _________________________^
+168 | |                 Some(value) => value,
+169 | |                 None => 0,
+170 | |             };
+    | |_____________^ help: ascribe the type u32 and replace your expression with: `numerator.checked_div(100).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+error: this pattern reimplements `Result::unwrap_or`
+   --> crates\polaris-ui\crates\model\src\tokens.rs:171:13
+    |
+171 | /             match u8::try_from(value) {
+172 | |                 Ok(channel) => channel,
+173 | |                 Err(_) => u8::MAX,
+174 | |             }
+    | |_____________^ help: replace with: `u8::try_from(value).unwrap_or(u8::MAX)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `-D clippy::manual-unwrap-or` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or)]`
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:139:19
+    |
+139 |       let seconds = match ms.checked_div(1000) {
+    |  ___________________^
+140 | |         Some(value) => value,
+141 | |         None => 0,
+142 | |     };
+    | |_____^ help: replace it with: `ms.checked_div(1000).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:143:17
+    |
+143 |       let hours = match seconds.checked_div(3600) {
+    |  _________________^
+144 | |         Some(value) => value,
+145 | |         None => 0,
+146 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_div(3600).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:147:19
+    |
+147 |       let minutes = match seconds.checked_div(60).and_then(|v| v.checked_rem(60)) {
+    |  ___________________^
+148 | |         Some(value) => value,
+149 | |         None => 0,
+150 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_div(60).and_then(|v| v.checked_rem(60)).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:151:16
+    |
+151 |       let rest = match seconds.checked_rem(60) {
+    |  ________________^
+152 | |         Some(value) => value,
+153 | |         None => 0,
+154 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_rem(60).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\view.rs:529:9
+    |
+529 | /         if let Some(goal) = &mut self.goal {
+530 | |             if goal.state == GoalState::Active {
+531 | |                 goal.accumulated_ms = goal.active_ms(now_ms);
+532 | |                 goal.state = GoalState::Paused;
+533 | |             }
+534 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+529 ~         if let Some(goal) = &mut self.goal
+530 ~             && goal.state == GoalState::Active {
+531 |                 goal.accumulated_ms = goal.active_ms(now_ms);
+532 |                 goal.state = GoalState::Paused;
+533 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\view.rs:538:9
+    |
+538 | /         if let Some(goal) = &mut self.goal {
+539 | |             if goal.state == GoalState::Paused {
+540 | |                 goal.active_since_ms = now_ms;
+541 | |                 goal.state = GoalState::Active;
+542 | |             }
+543 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+538 ~         if let Some(goal) = &mut self.goal
+539 ~             && goal.state == GoalState::Paused {
+540 |                 goal.active_since_ms = now_ms;
+541 |                 goal.state = GoalState::Active;
+542 ~             }
+    |
+
+error: could not compile `polaris-ui-model` (lib) due to 10 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-ui-model` (lib test) due to 10 previous errors

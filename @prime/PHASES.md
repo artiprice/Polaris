@@ -171,12 +171,12 @@ spike decided (PASS or named fallback chosen); P0-ACC requests submitted.
 |---|---|---|---|---|---|
 | P0-SKEL-1 | `.gitignore` root-anchored; Cargo.lock tracked; fixtures logs re-included | — | `git check-ignore` outputs | — | repo |
 | P0-SKEL-2 | `.gitattributes` (LF; CRLF for .ps1/.bat/.cmd; binaries) | — | file present | — | repo |
-| P0-SKEL-3 | `@prime/tools/workspace.toml` (93 packages, 156 external deps, `[[member_setup]]`) | — | `workspace.py summary` | — | repo |
+| P0-SKEL-3 | `@prime/tools/workspace.toml` (93 packages, 164 external deps, `[[member_setup]]`; E39 inventory) | — | `workspace.py summary` | — | repo |
 | P0-SKEL-4 | `@prime/tools/workspace.py` (gen, check-members, check-layers, audit-versions, probe, chatlog-inventory, phase-tables, check-docs, render-docs) | P0-SKEL-3 | commands exit 0 | — | repo |
 | P0-SKEL-5 | Root `Cargo.toml` + `rust-toolchain.toml` generated | P0-SKEL-4 | `cargo metadata` 93 packages | — | repo |
 | P0-SKEL-6 | Doc-only skeleton for all 93 packages | P0-SKEL-5 | `cargo check --workspace --all-targets` (-Dwarnings), `cargo doc` (-Dwarnings), `cargo fmt --check` | — | repo |
 | P0-SKEL-7 | Layer & member checks | P0-SKEL-6 | `check-members`, `check-layers` OK | — | repo |
-| P0-SKEL-8 | Version audit (sparse index) + resolution probe | P0-SKEL-3 | `audit-versions` 156/156; `probe` locks graph | — | repo |
+| P0-SKEL-8 | Version audit (sparse index) + resolution probe | P0-SKEL-3 | Historical `audit-versions` 156/156; expanded graph requires its own version audit; `probe` locks graph | — | repo |
 | P0-SKEL-9 | PLAN.md, PHASES.md, PHASES_STATUS.md; chatlog inventory 100 % covered | P0-SKEL-3 | `chatlog-inventory --check`, `check-docs`, `render-docs --check` OK | — | repo |
 | P0-ACC-1 | Request Nebius Token Factory API key | — | key stored in keyring (never in git) | **requests access** | team account → per-PC keyring |
 | P0-ACC-2 | Request Token Factory Sandboxes (Contree) access | — | `contree-mcp` authenticates | **requests access** | team account → per-PC keyring |
@@ -204,7 +204,7 @@ spike decided (PASS or named fallback chosen); P0-ACC requests submitted.
 | S0-7 | Workspace sync Windows → sandbox: 10k-file repo initial/incremental time; byte-exact EOL/case; `.polarisignore` | incremental > 5 s for no-op, or any byte mismatch | tar-stream snapshot per run (slower, simpler) | — |
 | S0-8 | iceoryx2 0.10 between two Windows processes: latency, robustness, cleanup after crash | crashes/leaks | gRPC over named pipes only | — |
 | S0-9 | LanceDB 0.40 build on Windows (protoc, CMake 4, RAM, time) + query latency | build fails or > 30 min / > 12 GB RAM | usearch + SQLite metadata behind `VectorStore` | — |
-| S0-10 | crossterm 0.29 on Windows Terminal/ConPTY: Shift+Enter (CSI-u), Shift+Tab, bracketed paste, Alt-codes | Shift+Enter unreliable | Alt+Enter / Ctrl+J newline; unsafe exception crate only if rejected | — |
+| S0-10 | crossterm 0.29 on Windows Terminal/ConPTY: Shift+Enter (CSI-u), Shift+Tab, bracketed paste, Alt-codes | Shift+Enter unreliable | Alt+Enter / Ctrl+J newline; report unsupported capability; no authored unsafe fallback | — |
 | S0-11 | OpenShell `mxc` driver (Windows AppContainer) for Windows-native builds | not usable on this Windows edition | WSL2 tiers only | — |
 | S0-12 | `polaris-guest` build in WSL2, packaging into the sandbox image, `protocol_version` handshake, Xvfb + Chromium screenshot | image build or handshake fails | exec-only guest without browser | — |
 | S0-13 | Contree MCP: auth, `run`/`rsync`/`list_images`, branching via `directory_state_id`, SWE-bench image selection | cannot authenticate or branch | CLI wrapper or Python SDK sidecar; local OpenShell for demo | **Contree access** |
@@ -227,10 +227,18 @@ enqueue + fuzz targets `directives_grammar`, `rtk_stream`, `cas_short_ref_roundt
 `proto_decode`, `diff_apply` running in WSL2.
 
 **Current user scope (2026-10-22): complete P1 logic and defer UI.** The non-UI verdict is tracked in
-[P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md). Full M1/TUI acceptance remains open. The 2026-10-24 CLI implementation follow-on is in progress; UI_PHASES and evidence/ui/verification.txt record the tested slices and open gates. P1 composition uses
+[P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md). Full M1/TUI acceptance remains open. The 2026-10-24 CLI implementation follow-on is in progress; UI_PHASES and evidence/ui/verification.txt record the tested slices and open gates. The 2026-10-25 reference-design repair is documented separately in [repair-verification.md](evidence/ui/repair-verification.md); its focused green checks do not close P1-X-2 or the complete UI gates. P1 composition uses
 `LocalBackends` for real offline stores, controls, read tools and native ownership; complete
 model/sandbox/S1 execution bundles retain their P2/P3/P4 gates. Facade export verification is separate
 from later-phase child completion; no future child is marked PASS by a P1 facade doctest.
+
+The 2026-10-25 interactive continuation adds shared Unicode textarea geometry, hover/hit maps,
+selection and physical caret repair, a safe bounded Windows reader, app-owned clipboard/index/settings
+workers and an explicit isolated demo profile. [Current evidence](evidence/ui/continuation-verification.md)
+and PHASES_STATUS §E36 record 350 scoped passing tests, including 15 native ConPTY cases, plus actual
+interactive buffer exports. This remains partial P1-X-2 evidence: native clipboard, cross-entry
+selection, settings error/restart flows, physical/Linux matrix, interactive tool/diff cards and measured
+performance gates remain open. Scripted demo questions do not satisfy P3-X-5's real backend gate.
 
 Cross-cutting tasks:
 
@@ -245,7 +253,7 @@ Cross-cutting tasks:
 <!-- generated: P1 crate tasks -->
 | Task | Crate | Layer | Depends on (crate tasks) | Exit criteria | Per-PC setup (§0.1) |
 |---|---|---|---|---|---|
-| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-ui-model`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas`, `crate:polaris-openshell`, `crate:polaris-platform` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-cli` | `polaris-cli` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-cli`, `crate:polaris-ui-model`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log`, `crate:polaris-sdk`, `crate:polaris-security`, `crate:polaris-tools-rtk`, `crate:polaris-storage-cas`, `crate:polaris-openshell`, `crate:polaris-platform`, `crate:polaris-tools-builtin` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
 | `crate:polaris-sdk` | `polaris-sdk` | L0 | — | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-proto` | `polaris-proto` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-config` | `polaris-config` | L1 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
@@ -438,7 +446,7 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 | `crate:polaris-browser` | `polaris-browser` | L2 | `crate:polaris-sdk`, `crate:polaris-proto` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `wsl-sandbox-image`, `wsl-kvm` |
 | `crate:polaris-hacker` | `polaris-hacker` | L3 | `crate:polaris-sdk`, `crate:polaris-code-intel`, `crate:polaris-security-automata` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-runtime-dag` | `polaris-runtime-dag` | L4 | `crate:polaris-sdk` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
-| `crate:polaris-runtime-research` | `polaris-runtime-research` | L4 | `crate:polaris-sdk`, `crate:polaris-runtime-frames`, `crate:polaris-runtime-context` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
+| `crate:polaris-runtime-research` | `polaris-runtime-research` | L4 | `crate:polaris-sdk`, `crate:polaris-runtime-frames`, `crate:polaris-runtime-context`, `crate:polaris-vcs`, `crate:polaris-storage-cas`, `crate:polaris-security-capability` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 
 
 ---
@@ -473,7 +481,7 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 |---|---|---|---|---|---|
 | `crate:polaris-desktop` | `polaris-desktop` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-gui`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
 | `crate:polaris-web` | `polaris-web` | L7 | `crate:polaris-kernel`, `crate:polaris-ui-web`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | `win-wasm32`, `win-cargo-tools` |
-| `crate:polaris-daemon` | `polaris-daemon` | L7 | `crate:polaris-kernel`, `crate:polaris-rpc`, `crate:polaris-config`, `crate:polaris-log` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
+| `crate:polaris-daemon` | `polaris-daemon` | L7 | `crate:polaris-kernel`, `crate:polaris-rpc`, `crate:polaris-log`, `crate:polaris-security-capability`, `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-security-automata` | real `main`; smoke test PASS; PLAN §13 TODO done | — |
 | `crate:polaris-rpc` | `polaris-rpc` | L5 | `crate:polaris-sdk`, `crate:polaris-proto`, `crate:polaris-security-capability` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-ui-gui` | `polaris-ui-gui` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | — |
 | `crate:polaris-ui-web` | `polaris-ui-web` | L6 | `crate:polaris-sdk`, `crate:polaris-ui-model` | PLAN §13 TODO done; descriptors' tests PASS; no unwrap/panic paths | `win-wasm32`, `win-cargo-tools` |
@@ -499,3 +507,8 @@ matrix tests; PII-egress security tests (nothing PII-like leaves in captured req
 
 Self-hosting, Slint mobile, voice (`polaris-audio`, `polaris-stt`), Telegram bot, WireGuard mesh,
 cellular-resilient sessions, push notifications, macOS/Linux first-class — PLAN.md §16.
+
+
+CLI P1-X-2 follow-on (2026-10-25; PHASES_STATUS §E37): [reference parity evidence](evidence/ui/parity-verification.md) records typed local Demo screens and command routing, source-derived bottom sheets, questionnaire/review editing, safe native input repairs, rich source-mapped transcript selection and bounded retained layout caching. These are scoped UI implementation checks; full UI/M1, P2/P3 integration, physical-terminal and performance/release gates remain open. WEB-WELCOME, WEB-OPT and desktop remain deferred.
+
+CLI P1-X-2 mouse/selection repair (2026-10-25; PHASES_STATUS §E38): [current evidence](evidence/ui/mouse-repair-verification.md) records safe native mouse/Quick Edit modes, exact fallible restoration, direct profile-row activation and shared character/word/logical-line selection in the composer, transcript and question editors. This scoped UI0/UI1/UI2/UI3/UI4 repair does not close physical Alacritty, UI5 backend, U-G or M1 acceptance.

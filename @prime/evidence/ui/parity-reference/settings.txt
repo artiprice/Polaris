@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Settings                                                                                     Defaults / autosave │
+  │                                                                                                                  │
+  │ [ Appearance ]      │  Appearance                                                                                │
+  │                     │  Theme / launch override                                                                   │
+  │ [ Usage ]           │  Black Polaris surface or your terminal palette.                                           │
+  │                     │  [  [x] Dark ] [  [ ] Terminal ]                                                           │
+  │ [ Statistics ]      │                                                                                            │
+  │                     │  Glyphs                                                                                    │
+  │ [ Interaction ]     │  Use ASCII when Unicode renders unevenly.                                                  │
+  │                     │  [  [x] Unicode ] [  [ ] ASCII ]                                                           │
+  │ [ Accessibility ]   │                                                                                            │
+  │                     │                                                                                            │
+  │ [ Providers ]       │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │                                                                                            │
+  │                     │  C:\mDev\Polaris\@prime\evidence\ui\parity-reference\config-must-not-be-created\settings.~ │
+  │ Arrows select · Enter applies · Left at first: categories · Esc close                                            │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

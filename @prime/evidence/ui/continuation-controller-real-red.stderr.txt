@@ -1,0 +1,27 @@
+    Blocking waiting for file lock on build directory
+warning: value assigned to `saw_word` is never read
+   --> crates\polaris-ui\crates\model\src\composer.rs:666:21
+    |
+666 |                     saw_word = true;
+    |                     ^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-ui-model` (lib) generated 1 warning
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: unused imports: `CliSettings`, `ClipboardResult`, `ClipboardService`, `IndexLimits`, `Navigation`, `PersistencePolicy`, and `WorkspaceFileIndex`
+ --> apps\polaris-cli\src\tui.rs:4:20
+  |
+4 |     cli_settings::{CliSettings, Navigation, PersistencePolicy},
+  |                    ^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^
+5 |     ui_services::{ClipboardResult, ClipboardService, IndexLimits, PreferenceOverrides, WorkspaceFileIndex},
+  |                   ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^                       ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-cli` (lib test) generated 1 warning (run `cargo fix --lib -p polaris-cli --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 11.93s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)
+error: test failed, to rerun pass `-p polaris-cli --lib`

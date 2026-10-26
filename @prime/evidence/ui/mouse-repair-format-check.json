@@ -1,0 +1,19 @@
+{
+  "name": "mouse-repair-format-check",
+  "command": [
+    "cargo",
+    "fmt",
+    "--check",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli",
+    "-p",
+    "polaris-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:33:28.636Z",
+  "pid": 12616,
+  "code": 0,
+  "finished": "2026-10-25T12:33:29.623Z"
+}

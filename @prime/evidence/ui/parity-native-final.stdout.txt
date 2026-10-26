@@ -1,0 +1,32 @@
+
+running 18 tests
+test terminal_parser_observes_autowrap_and_erase_characters ... ok
+test conpty_raw_mouse_mode_sequence_probe ... ok
+test native_conpty_vt_sequences_preserve_editor_events ... ok
+test native_conpty_console_records_preserve_dollar_and_ascii_keys ... ok
+test default_terminal_launch_shows_real_welcome_at_80x24 ... ok
+test quit_restores_terminal_modes_and_cursor ... ok
+test enhanced_control_j_inserts_a_visible_newline_without_submitting ... ok
+test offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste ... FAILED
+test valid_directive_commits_and_renders_receipt ... ok
+test slash_menu_opens_help_and_escape_returns_to_editor ... ok
+test profile_picker_switches_between_offline_and_demo_and_ignores_hover_bytes ... ok
+test demo_control_enter_does_not_insert_a_composer_newline ... ok
+test bracketed_paste_is_literal_and_never_submitted ... ok
+test initial_prompt_is_visible_but_unsent_until_enter ... ok
+test demo_shift_enter_and_shift_up_keep_native_cursor_position_in_sync ... ok
+test idle_screen_emits_no_redundant_frames ... ok
+test windows_auto_color_uses_rgb_without_colorterm ... ok
+test demo_prompt_is_scripted_without_creating_session_state ... ok
+
+failures:
+
+---- offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste stdout ----
+Error: Custom { kind: Other, error: "ConPTY did not produce normalized edit categories: \"key navigation none press\\nkey navigation none press\\npaste\\nkey backspace none press\\nkey navigation none press\\nkey delete none press\\nkey delete none press\\n\"" }
+
+
+failures:
+    offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste
+
+test result: FAILED. 17 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.46s
+

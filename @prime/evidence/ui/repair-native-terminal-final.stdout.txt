@@ -1,0 +1,14 @@
+
+running 9 tests
+test terminal_parser_observes_autowrap_and_erase_characters ... ok
+test quit_restores_terminal_modes_and_cursor ... ok
+test default_terminal_launch_shows_real_welcome_at_80x24 ... ok
+test control_j_inserts_a_visible_newline_without_submitting ... ok
+test valid_directive_commits_and_renders_receipt ... ok
+test bracketed_paste_is_literal_and_never_submitted ... ok
+test initial_prompt_is_visible_but_unsent_until_enter ... ok
+test idle_screen_emits_no_redundant_frames ... ok
+test windows_auto_color_uses_rgb_without_colorterm ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+

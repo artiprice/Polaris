@@ -1,0 +1,16 @@
+{
+  "name": "parity-model-first",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-ui-model"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T07:11:13.487Z",
+  "pid": 6464,
+  "code": 0,
+  "finished": "2026-10-25T07:11:21.182Z"
+}

@@ -1,0 +1,3 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 11.19s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)

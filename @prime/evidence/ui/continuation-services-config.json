@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --offline -p polaris-config",
+  "status": 0,
+  "signal": null,
+  "stdout_file": "continuation-services-config.stdout.txt",
+  "stderr_file": "continuation-services-config.stderr.txt"
+}

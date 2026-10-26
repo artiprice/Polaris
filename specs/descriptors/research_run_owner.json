@@ -1,0 +1,40 @@
+{
+  "type_of": "ResearchLoop run ownership and checkpoint lifecycle",
+  "name": "ResearchLoop::new and ResearchLoop::resume",
+  "file_path": "crates/polaris-runtime/crates/research/src/loop.rs",
+  "logic_name": "research_run_owner",
+  "test_list": [
+    {
+      "test_name": "second_loop_owner_is_rejected_while_first_is_alive",
+      "description": "A second ResearchLoop using an independently opened CheckpointStore for the same program and root cannot own the active run."
+    },
+    {
+      "test_name": "fresh_constructor_refuses_existing_checkpoint",
+      "description": "ResearchLoop::new does not overwrite a checkpoint after the original loop has been dropped; callers must use resume."
+    },
+    {
+      "test_name": "resume_can_acquire_owner_after_previous_loop_drops",
+      "description": "Dropping the loop releases its lifetime owner lease and an explicit resume can continue the existing checkpoint."
+    },
+    {
+      "test_name": "abrupt_process_termination_releases_run_owner",
+      "description": "A separate child process that owns the run is killed; the parent can then resume without consulting stale PID metadata."
+    }
+  ],
+  "dependencies": ["CheckpointStore", "ResearchLoop", "ProgramMd"],
+  "libraries": ["std::fs::File::try_lock"],
+  "inputs": [
+    {
+      "name": "program",
+      "type": "ProgramMd",
+      "description": "Immutable validated research program identity."
+    },
+    {
+      "name": "store",
+      "type": "CheckpointStore",
+      "description": "A separately opened store handle for the program's persistent state root."
+    }
+  ],
+  "output_type": "Result<ResearchLoop, LoopError>",
+  "output_description": "A single active loop owner for a root, with new-run creation refused when a checkpoint already exists and resume explicitly supported after lease release."
+}

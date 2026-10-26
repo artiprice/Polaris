@@ -1,0 +1,162 @@
+{
+  "checkpoint": "E38",
+  "date": "2026-10-25",
+  "scope": "Windows native mouse and source-only selection repair",
+  "verdict": "SCOPED CHECKS PASS; FULL UI/M1 OPEN",
+  "tests": {
+    "passed": 422,
+    "failed": 0,
+    "ignored": 1,
+    "commands": [
+      {
+        "name": "mouse-repair-checked-core",
+        "command": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "-p",
+          "polaris-ui-model",
+          "-p",
+          "polaris-ui-cli"
+        ],
+        "status": "COMPLETE",
+        "started": "2026-10-25T12:28:36.429Z",
+        "pid": 16768,
+        "code": 0,
+        "finished": "2026-10-25T12:28:49.029Z",
+        "passed": 277,
+        "failed": 0,
+        "ignored": 1
+      },
+      {
+        "name": "mouse-repair-checked-app",
+        "command": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "-p",
+          "polaris-cli",
+          "--lib",
+          "--test",
+          "ui_startup",
+          "--test",
+          "ui_session",
+          "--test",
+          "ui_key_trace",
+          "--test",
+          "rtk_cli",
+          "--test",
+          "ui_terminal"
+        ],
+        "status": "COMPLETE",
+        "started": "2026-10-25T12:28:36.437Z",
+        "pid": 4364,
+        "code": 0,
+        "finished": "2026-10-25T12:29:01.007Z",
+        "passed": 145,
+        "failed": 0,
+        "ignored": 0
+      }
+    ],
+    "excludes": [
+      "config and broader workspace targets",
+      "repeat/focused/capture runs",
+      "opt-in CPU benchmark"
+    ]
+  },
+  "safety": {
+    "name": "mouse-repair-checked-safety",
+    "command": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "--no-deps",
+      "-p",
+      "polaris-ui-model",
+      "-p",
+      "polaris-ui-cli",
+      "-p",
+      "polaris-cli",
+      "--all-targets",
+      "--",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing"
+    ],
+    "status": "COMPLETE",
+    "started": "2026-10-25T12:28:36.445Z",
+    "pid": 9072,
+    "code": 0,
+    "finished": "2026-10-25T12:28:59.238Z"
+  },
+  "format": {
+    "name": "mouse-repair-format-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--check",
+      "-p",
+      "polaris-ui-model",
+      "-p",
+      "polaris-ui-cli",
+      "-p",
+      "polaris-cli"
+    ],
+    "status": "COMPLETE",
+    "started": "2026-10-25T12:33:28.636Z",
+    "pid": 12616,
+    "code": 0,
+    "finished": "2026-10-25T12:33:29.623Z"
+  },
+  "consistency": "mouse-repair-consistency.json",
+  "red_records": [
+    "mouse-repair-controller-red.stdout.txt",
+    "mouse-repair-trace-red.stdout.txt",
+    "mouse-repair-profile-click-red.txt"
+  ],
+  "visual_review": [
+    "mouse-repair-after/word-drag.png",
+    "mouse-repair-after/unicode-selection.png",
+    "mouse-repair-after/transcript-line.png",
+    "mouse-repair-after/notes-line.png"
+  ],
+  "native_probe": {
+    "raw": "mouse-repair-console-mode-probe-8388.raw",
+    "initial": "0x000001f7",
+    "raw_mode": "0x000001f0",
+    "native": "0x000003b8",
+    "after_input_close": "0x000001f0",
+    "restored": "0x000001f7"
+  },
+  "not_verified": [
+    "physical Alacritty 0.16.1 input and host restoration",
+    "Linux/other physical terminal matrix",
+    "actual OS clipboard success/images",
+    "full strict Clippy",
+    "formal/fuzz/performance/release gates",
+    "complete UI/M1 acceptance",
+    "real human/provider/backend workflow"
+  ],
+  "historical_failures_not_rerun": [
+    "headless doctor prerequisites",
+    "advisory-cache lock"
+  ],
+  "docs": [
+    "@prime/PLAN.md",
+    "@prime/PHASES.md",
+    "@prime/PHASES_STATUS.md",
+    "@prime/UI_PLAN.md",
+    "@prime/UI_PHASES.md",
+    "@prime/UI_MODULES.csv"
+  ]
+}

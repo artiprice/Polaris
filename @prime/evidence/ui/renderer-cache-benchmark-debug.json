@@ -1,0 +1,35 @@
+{
+  "condition": "debug (unoptimized)",
+  "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_cache_benchmark -- --ignored --nocapture",
+  "exit_code": 0,
+  "viewport": "200x60",
+  "entries": 56,
+  "iterations_per_group": 64,
+  "uncached_ns": {
+    "p50": 176923500,
+    "p95": 220319600,
+    "p99": 224896000,
+    "max": 239274000
+  },
+  "cold_ns": {
+    "p50": 179410200,
+    "p95": 227712400,
+    "p99": 230095000,
+    "max": 235351700
+  },
+  "warm_ns": {
+    "p50": 13866800,
+    "p95": 17600500,
+    "p99": 18065100,
+    "max": 18084200
+  },
+  "cache": {
+    "entries": 56,
+    "hits": 4032,
+    "misses": 3584,
+    "evictions": 0,
+    "resident_bytes": 6692782,
+    "source_snapshot_bytes": 143854
+  },
+  "raw_test": "test result: ok. 1 passed, 0 failed; finished in 24.70s"
+}

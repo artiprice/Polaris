@@ -1,0 +1,38 @@
+
+running 3 tests
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... FAILED
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... FAILED
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... FAILED
+
+failures:
+
+---- tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected stdout ----
+
+thread 'tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected' (6620) panicked at apps\polaris-cli\src\..\tests\controller\continuation.rs:26:5:
+assertion `left == right` failed: Home goes to the logical line start
+  left: 0
+ right: 11
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not stdout ----
+
+thread 'tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not' (2772) panicked at apps\polaris-cli\src\..\tests\controller\continuation.rs:17:5:
+assertion `left == right` failed: Ctrl+Enter must not insert another newline
+  left: "first\n\n"
+ right: "first\n"
+
+---- tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret stdout ----
+
+thread 'tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret' (11704) panicked at apps\polaris-cli\src\..\tests\controller\continuation.rs:45:5:
+assertion `left == right` failed: short middle row must retain desired column five
+  left: 10
+ right: 14
+
+
+failures:
+    tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not
+    tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret
+    tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 34 filtered out; finished in 0.00s
+

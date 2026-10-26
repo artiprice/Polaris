@@ -1,0 +1,50 @@
+
+running 45 tests
+test cli_settings::tests::memory_only_settings_reject_persistence ... ok
+test demo::tests::cancel_reset_and_replay_have_bounded_local_lifecycles ... ok
+test demo::tests::long_stream_is_incremental_in_one_bounded_entry ... ok
+test demo::tests::questionnaire_acceptance_is_atomic_and_contains_all_questions ... ok
+test doctor::tests::credential_metadata_probe_never_renders_secret_values ... ok
+test demo::tests::runtime_is_local_bounded_and_runs_scripted_beats ... ok
+test app::tests::status_json_is_a_headless_cli_action ... ok
+test tui::controller_tests::accepted_directive_clears_only_after_acknowledgement ... ok
+test tui::controller_tests::clear_command_clears_notice_and_visible_conversation ... ok
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... ok
+test tui::controller_tests::continuation::pointer_hover_and_click_use_current_completion_geometry ... ok
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... ok
+test tui::controller_tests::color_depth_auto_uses_windows_vt_and_respects_explicit_overrides ... ok
+test cli_settings::tests::navigation_and_rows_are_stable ... ok
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... ok
+test tui::controller_tests::control_backpressure_preserves_draft_without_closing_ui ... ok
+test tui::controller_tests::draft_text_chip_submits_its_expanded_directive ... ok
+test tui::controller_tests::new_session_starts_without_a_persistent_notice ... ok
+test tui::controller_tests::help_only_advertises_available_local_controls ... ok
+test tui::controller_tests::completion_wheel_clamps_without_scrolling_transcript ... ok
+test tui::controller_tests::query_failure_cannot_cancel_an_inflight_directive ... ok
+test tui::controller_tests::pending_resume_prevents_directive_from_crossing_sessions ... ok
+test tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice ... ok
+test tui::controller_tests::release_is_idle_and_paste_remains_literal ... ok
+test tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command ... ok
+test tui::controller_tests::rejection_and_unsupported_model_input_keep_exact_draft ... ok
+test tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit ... ok
+test tui::controller_tests::repeated_frame_and_caret_move_do_not_clear_terminal ... ok
+test cli_settings::tests::memory_only_worker_save_does_not_write_and_cancel_discards_result ... ok
+test doctor::tests::optional_missing_item_does_not_block_readiness ... ok
+test cli_settings::tests::cycle_is_memory_only_until_explicit_apply ... ok
+test ui_services::tests::runtime_preference_override_is_memory_only ... ok
+test ui_services::tests::clipboard_text_limit_is_enforced_without_touching_the_system_clipboard ... ok
+test ui_services::tests::clipboard_generation_can_be_cancelled_without_native_access ... ok
+test cli_settings::tests::settings_worker_cancellation_discards_stale_generation ... ok
+test doctor::tests::every_setup_item_has_a_probe ... ok
+test cli_settings::tests::persisting_one_selection_clears_only_that_runtime_override ... ok
+test cli_settings::tests::worker_persists_on_a_worker_and_returns_updated_settings ... ok
+test ui_services::tests::file_index_enforces_path_count_bound ... ok
+test ui_services::tests::file_index_respects_builtin_ignore_and_secret_path_rules ... ok
+test tui::controller_tests::footer_controls_dispatch_to_help_mode_and_profile_sheets ... ok
+test tui::controller_tests::draft_limit_rejection_keeps_editor_alive ... ok
+test session::tests::cancelled_payload_poll_retains_record_and_joins_one_cas_job ... ok
+test session::tests::failed_payload_owner_is_consumed_once_before_close ... ok
+test session::tests::unrelated_session_payload_is_not_materialized ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+

@@ -1,0 +1,9 @@
+RED attempt before windows_input.rs was registered:
+Command: cargo test -p polaris-ui-cli input_decoder::tests --lib
+Raw output: error[E0433]: cannot find windows_input in the crate root
+  --> crates\polaris-ui\crates\cli\src\input.rs:108:31
+   |
+108 | pub type InputReader = crate::windows_input::WindowsTerminalInput;
+   |                               ^^^^^^^^^^^^^ could not find windows_input in the crate root
+
+This was a compile-level red during staged implementation, not an assertion-level behavior failure. The later attempted locked/offline run was blocked before compilation by Cargo workspace resolution: clipboard-win 5.4.1 is yanked and required transitively by arboard 3.7.0.

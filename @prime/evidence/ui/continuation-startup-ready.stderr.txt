@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 17.77s
+     Running tests\ui_startup.rs (target\debug\deps\ui_startup-4f34445c204916c2.exe)

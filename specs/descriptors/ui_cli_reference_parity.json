@@ -1,0 +1,18 @@
+{
+  "type_of": "pipeline",
+  "name": "cli_reference_parity",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "CLI reference parity and question review",
+  "test_list": [
+    {"test_name":"demo_commands_open_views_without_starting_response","description":"Every local demo command opens its view without sending a backend request or starting a prompt."},
+    {"test_name":"unknown_demo_slash_is_not_a_simulated_prompt","description":"Unknown commands retain the draft and report an error."},
+    {"test_name":"ordinary_demo_prompt_does_not_force_questions","description":"Ordinary scripted responses never steal composer focus."},
+    {"test_name":"plain_delete_keys_edit_draft_and_selected_range","description":"Backspace/Delete act at the Unicode cursor and on selected text."},
+    {"test_name":"notes_backspace_removes_one_grapheme_not_one_scalar","description":"Question notes preserve the shared grapheme boundary contract."}
+  ],
+  "dependencies":["Composer","QuestionnaireState","DemoRuntime","ScreenState"],
+  "libraries":["ratatui","crossterm","thiserror"],
+  "inputs":[{"name":"input","type":"NormalizedInput","description":"Ordered keyboard, paste and mouse events."}],
+  "output_type":"Result<UiTransition, CliError>",
+  "output_description":"Local navigation/edit transition without unintended backend execution."
+}

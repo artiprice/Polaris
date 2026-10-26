@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python",
+    "-I",
+    "-c",
+    "import pathlib,csv,json,re\nroot=pathlib.Path.cwd();errors=[]\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8-sig',newline='')))\nids={r['module_id'] for r in rows}\nif len(ids)!=len(rows):errors.append('duplicate module ID')\nfor r in rows:\n if r['path_state']=='EXISTING' and not (root/r['path']).exists(): errors.append('missing path '+r['path'])\n for d in filter(None,r['depends_on_modules'].split(';')):\n  if d not in ids:errors.append('missing module dependency '+d)\n phase=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\n for task in filter(None,r['ui_tasks'].split(';')):\n  if task not in phase:errors.append('missing task '+task)\n plan,anchor=r['plan_anchor'].split('#',1)\n headings=re.findall(r'^#{1,6} (.+)$',(root/'@prime'/plan).read_text(encoding='utf-8'),re.M)\n if anchor not in {re.sub(r'[^\\w\\- ]','',h.lower()).replace(' ','-') for h in headings}:errors.append('missing plan anchor '+anchor)\nsources='\\n'.join(f.read_text(encoding='utf-8') for base in [root/'apps/polaris-cli',root/'crates/polaris-ui',root/'crates/polaris-kernel/crates/directives'] for f in base.rglob('*.rs'))\nfiles=list((root/'specs/descriptors').glob('ui*.json'))+[root/'apps/polaris-cli/specs/descriptors/headless_cli.json']\ncount=0\nfor file in files:\n data=json.loads(file.read_text(encoding='utf-8'))\n for test in data['test_list']:\n  count+=1\n  if not re.search(r'\\bfn\\s+'+re.escape(test['test_name'])+r'\\b',sources):errors.append(file.name+': missing '+test['test_name'])\nprint(json.dumps({'inventory_modules':len(rows),'unique_ids':len(ids),'descriptors':len(files),'test_references':count,'errors':errors},indent=2))\nraise SystemExit(bool(errors))"
+  ],
+  "code": 0,
+  "stdout": "{\r\n  \"inventory_modules\": 56,\r\n  \"unique_ids\": 56,\r\n  \"descriptors\": 18,\r\n  \"test_references\": 205,\r\n  \"errors\": []\r\n}\r\n",
+  "stderr": ""
+}

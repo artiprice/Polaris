@@ -1,0 +1,19 @@
+{
+  "name": "mouse-repair-trace-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--test",
+    "ui_key_trace",
+    "mouse_trace_reports"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:20:47.094Z",
+  "pid": 16428,
+  "code": 101,
+  "finished": "2026-10-25T12:20:52.650Z"
+}

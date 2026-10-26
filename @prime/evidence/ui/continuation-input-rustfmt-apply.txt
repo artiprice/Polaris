@@ -1,0 +1,6 @@
+{
+  "command": "rustfmt --edition 2021 apps/polaris-cli/tests/ui_terminal.rs",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

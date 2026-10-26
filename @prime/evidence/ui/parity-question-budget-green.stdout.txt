@@ -1,0 +1,27 @@
+
+running 4 tests
+test notes_backspace_removes_one_grapheme_not_one_scalar ... ok
+test notes_support_middle_edit_selection_and_undo ... ok
+test undo_cannot_restore_over_aggregate_budget ... ok
+test replacing_full_notes_uses_resulting_size ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 13 tests
+test invalid_choice_kind_cannot_be_toggled ... ok
+test multi_choice_toggles_named_options ... ok
+test navigation_preserves_per_question_answers_and_notes ... ok
+test none_of_the_above_is_explicit_and_exclusive ... ok
+test questions_start_with_no_selection ... ok
+test required_answers_block_atomic_submit_and_optional_is_unanswered ... ok
+test questionnaire_plan_caps_reject_excess_questions_and_options ... ok
+test single_choice_and_none_are_mutually_exclusive ... ok
+test required_free_text_needs_nonblank_answer_and_notes_are_optional ... ok
+test oversized_field_rejects_without_truncating ... ok
+test request_payload_cap_counts_aggregate_metadata ... ok
+test oversized_selected_option_ids_block_batch_without_losing_selections ... ok
+test answer_budget_rejects_without_truncating_notes_or_answer ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

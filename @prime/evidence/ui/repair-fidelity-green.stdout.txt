@@ -1,0 +1,12 @@
+
+running 7 tests
+test export_reference_matrix ... ok
+test composer_has_open_black_interior_and_complete_rules ... ok
+test welcome_strokes_keep_reference_center_ray_and_tip_colors ... ok
+test welcome_matches_reference_composition ... ok
+test completion_keeps_selected_candidate_visible_on_black_surface ... ok
+test information_sheet_keeps_black_surface_and_pinned_hints ... ok
+test composer_grows_from_wrapped_rows_up_to_three_eighths ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

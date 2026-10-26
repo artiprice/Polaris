@@ -1,0 +1,27 @@
+test --offline -p polaris-ui-cli --lib bracketed_paste::tests::csi_u_control_j_remains_distinct_from_control_enter -- --exact --nocapture
+EXIT 0
+
+running 1 test
+test bracketed_paste::tests::csi_u_control_j_remains_distinct_from_control_enter ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.00s
+
+
+STDERR
+warning: constant `GOLD` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:31:7
+   |
+31 | const GOLD: Color = Color::Rgb(249, 226, 175);
+   |       ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `DIRECTIVE` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:33:7
+   |
+33 | const DIRECTIVE: Color = Color::Rgb(137, 180, 250);
+   |       ^^^^^^^^^
+
+warning: `polaris-ui-cli` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.63s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)

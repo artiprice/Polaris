@@ -1,0 +1,20 @@
+{
+  "name": "repair-color-diagnosis",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--test",
+    "ui_terminal",
+    "windows_auto_color_uses_rgb_without_colorterm",
+    "--",
+    "--exact"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:48:23.159Z",
+  "pid": 15056,
+  "code": 101,
+  "finished": "2026-10-25T00:48:36.551Z"
+}

@@ -1,0 +1,12 @@
+{
+  "free_text_geometry": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_contract free_text_question_uses_wrapped_editor_geometry_and_visible_caret -- --exact",
+    "exit_code": 101,
+    "output": "test free_text_question_uses_wrapped_editor_geometry_and_visible_caret ... FAILED; Error: \"free-text answer editor geometry missing\"; 0 passed, 1 failed."
+  },
+  "review_tabs": {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_contract review_tabs_highlight_submit_and_leave_questions_inactive -- --exact",
+    "exit_code": 101,
+    "output": "assertion `left != right` failed; left: Some((118, 185, 0)); right: Some((118, 185, 0)); question tab remained active green during review."
+  }
+}

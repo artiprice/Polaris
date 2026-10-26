@@ -1,0 +1,35 @@
+cargo test --offline -p polaris-cli --test ui_terminal offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste -- --exact --nocapture
+EXIT 101
+STDOUT
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+error[E0432]: unresolved import `unicode_segmentation`
+    --> apps\polaris-cli\src\tui.rs:2358:9
+     |
+2358 |     use unicode_segmentation::UnicodeSegmentation;
+     |         ^^^^^^^^^^^^^^^^^^^^ use of unresolved module or unlinked crate `unicode_segmentation`
+     |
+     = help: if you wanted to use a crate named `unicode_segmentation`, use `cargo add unicode_segmentation` to add it to your `Cargo.toml`
+
+error[E0599]: no method named `split_word_bound_indices` found for struct `std::string::String` in the current scope
+    --> apps\polaris-cli\src\tui.rs:2359:16
+     |
+2359 |     entry.text.split_word_bound_indices().find_map(|(start, text)| {
+     |                ^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: items from traits can only be used if the trait is in scope
+help: trait `UnicodeSegmentation` which provides `split_word_bound_indices` is implemented but not in scope; perhaps you want to import it
+     |
+   2 + use unicode_segmentation::UnicodeSegmentation;
+     |
+help: there is a method `split_word_bounds` with a similar name
+     |
+2359 -     entry.text.split_word_bound_indices().find_map(|(start, text)| {
+2359 +     entry.text.split_word_bounds().find_map(|(start, text)| {
+     |
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-cli` (lib) due to 2 previous errors

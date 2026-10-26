@@ -1,0 +1,15 @@
+
+running 10 tests
+test tui::controller_tests::continuation::late_clipboard_read_cannot_paste_into_a_changed_draft_or_cursor ... ok
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... ok
+test tui::controller_tests::continuation::profiles_keep_drafts_separate_and_demo_never_dispatches_kernel_controls ... ok
+test tui::controller_tests::continuation::transcript_drag_copies_canonical_unicode_bytes_without_repainting_for_hit_test ... ok
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... ok
+test tui::controller_tests::continuation::pointer_hover_and_click_use_current_completion_geometry ... ok
+test tui::controller_tests::continuation::demo_question_notes_none_and_atomic_submit_are_connected ... ok
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... ok
+test tui::controller_tests::continuation::interactive_projection_keeps_dollar_in_prefill_and_literal_paste ... ok
+test tui::controller_tests::continuation::settings_enter_persists_one_field_off_thread_and_demo_cannot_save ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.02s
+

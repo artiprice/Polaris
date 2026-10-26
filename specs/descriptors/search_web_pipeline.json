@@ -1,0 +1,42 @@
+{
+  "type_of": "integration_pipeline",
+  "name": "web_search_pipeline_redaction_race_fallback_and_recovery",
+  "file_path": "crates/polaris-search/crates/sift/tests/web_pipeline.rs",
+  "logic_name": "Web Search Pipeline Integration",
+  "test_list": [
+    {
+      "test_name": "real_web_providers_redact_race_preserve_provenance_and_recover_dropped_chunks",
+      "description": "Run Tavily and SearXNG adapters through bounded loopback HTTP fixtures and WebSearchSource/Sifter::race; observe SDK redaction at the request boundary, one provider failure with failed-open fallback, URL provenance and Untrusted trust, then persist and recover a dropped chunk through the real CAS."
+    }
+  ],
+  "dependencies": [
+    "Tavily",
+    "Searxng",
+    "OneOf2",
+    "WebSearchSource",
+    "Sifter::race",
+    "Sifter::sift",
+    "CAS persist_dropped/recover_dropped"
+  ],
+  "libraries": [
+    "tokio",
+    "polaris-search-providers",
+    "polaris-sdk",
+    "polaris-storage-cas",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "query",
+      "type": "SiftQuery",
+      "description": "Synthetic query containing a canary masked by an SDK Redactor fixture before provider egress."
+    },
+    {
+      "name": "provider_fixture",
+      "type": "loopback TCP HTTP fixture",
+      "description": "Bounded synthetic server returning one provider failure and one search hit, then shutting down."
+    }
+  ],
+  "output_type": "Result<(), Box<dyn Error>>",
+  "output_description": "Integration evidence for query redaction, real provider dispatch, failure fallback, untrusted URL provenance, CAS persistence and recovery, and fixture server teardown."
+}

@@ -1,0 +1,24 @@
+{
+  "type_of": "pipeline",
+  "name": "IngestWorker",
+  "file_path": "apps/polaris-worker/src/ingest.rs",
+  "logic_name": "CAS backed ingest worker",
+  "test_list": [
+    {"test_name": "ingest_persists_text_and_untrusted_provenance", "description": "Reopen actual returned CAS references and check exact text, source identity, and source locations."},
+    {"test_name": "invalid_or_missing_source_is_rejected", "description": "Malformed, absent, and corrupt source references fail without a success response."},
+    {"test_name": "unsupported_ocr_remains_an_error", "description": "Unconfigured image OCR returns an explicit unsupported error."},
+    {"test_name": "ingest_worker_protocol_and_lifecycle", "description": "Check protocol negotiation, mode separation, eviction, shutdown, and closed admission."},
+    {"test_name": "corrupt_and_oversized_sources_fail_before_parsing", "description": "Verify source integrity and the worker-specific decode cap without reflecting document content in statuses."},
+    {"test_name": "shutdown_waits_for_active_parser_permit_and_closes_admission", "description": "Busy admission rejects work immediately; shutdown cannot claim drain while the parser permit remains owned."},
+    {"test_name": "shutdown_reports_drain_timeout_without_claiming_parser_stopped", "description": "Grace exhaustion reports a timeout and still signals transport shutdown."},
+    {"test_name": "provenance_writer_rejects_growth_and_parser_errors_are_private", "description": "Bound provenance serialization and prevent document-controlled error text from reaching RPC statuses."}
+  ],
+  "dependencies": ["DefaultDocParser", "Cas", "WorkerService"],
+  "libraries": ["tonic", "tokio", "serde", "serde_json"],
+  "inputs": [
+    {"name": "source", "type": "Cid", "description": "Hash-verified source in explicitly configured bounded CAS."},
+    {"name": "media_type", "type": "String", "description": "Bounded declared format checked alongside content signatures."}
+  ],
+  "output_type": "Result<IngestResponse, Status>",
+  "output_description": "CAS references to normalized Markdown and versioned untrusted provenance, or a typed error."
+}

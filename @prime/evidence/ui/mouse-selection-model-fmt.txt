@@ -1,0 +1,113 @@
+command: cargo fmt --package polaris-ui-model -- --check\nexit code: 1\n--- stdout ---\nDiff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:1:
+ //! Source selection helpers and notes selection preserve Unicode and chip boundaries.
+ use std::error::Error;
+ 
+[31m-use polaris_ui_model::composer::{source_grapheme_range, source_line_range, source_word_range, Composer};
+[0m[32m+use polaris_ui_model::composer::{
+[0m[32m+    Composer, source_grapheme_range, source_line_range, source_word_range,
+[0m[32m+};
+[0m use polaris_ui_model::questionnaire::{
+     QuestionKind, QuestionOption, QuestionSpec, QuestionnaireAction as A, QuestionnaireSpec,
+     QuestionnaireState,
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:14:
+     let text = "x e\u{301} 👩‍💻 界";
+     let combining_start = 2;
+     let combining_end = combining_start + "e\u{301}".len();
+[31m-    assert_eq!(source_grapheme_range(text, combining_start + 1), Some(combining_start..combining_end));
+[0m[32m+    assert_eq!(
+[0m[32m+        source_grapheme_range(text, combining_start + 1),
+[0m[32m+        Some(combining_start..combining_end)
+[0m[32m+    );
+[0m     let emoji_start = combining_end + 1;
+[31m-    assert_eq!(source_grapheme_range(text, emoji_start + 2), Some(emoji_start..emoji_start + "👩‍💻".len()));
+[0m[32m+    assert_eq!(
+[0m[32m+        source_grapheme_range(text, emoji_start + 2),
+[0m[32m+        Some(emoji_start..emoji_start + "👩‍💻".len())
+[0m[32m+    );
+[0m     let wide_start = text.len() - "界".len();
+[31m-    assert_eq!(source_grapheme_range(text, usize::MAX), Some(wide_start..text.len()));
+[0m[32m+    assert_eq!(
+[0m[32m+        source_grapheme_range(text, usize::MAX),
+[0m[32m+        Some(wide_start..text.len())
+[0m[32m+    );
+[0m     assert_eq!(source_grapheme_range("", 0), None);
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:26:
+ fn source_word_range_groups_unicode_words_and_actual_whitespace_runs() {
+     let text = "café_界  \t!?";
+     assert_eq!(source_word_range(text, 2), Some(0.."café_界".len()));
+[31m-    assert_eq!(source_word_range(text, "café_界 ".len()), Some("café_界".len().."café_界  \t".len()));
+[0m[31m-    assert_eq!(source_word_range(text, "café_界  \t".len()), Some("café_界  \t".len().."café_界  \t!".len()));
+[0m[32m+    assert_eq!(
+[0m[32m+        source_word_range(text, "café_界 ".len()),
+[0m[32m+        Some("café_界".len().."café_界  \t".len())
+[0m[32m+    );
+[0m[32m+    assert_eq!(
+[0m[32m+        source_word_range(text, "café_界  \t".len()),
+[0m[32m+        Some("café_界  \t".len().."café_界  \t!".len())
+[0m[32m+    );
+[0m     assert_eq!(source_word_range("", 0), None);
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:48:
+     let mut composer = Composer::new();
+     composer.insert("e\u{301} 👩‍💻 ")?;
+     composer.insert("one\ntwo\nthree\nfour\nfive\nsix")?;
+[31m-    let chip = composer.chips().first().ok_or("expected pasted-content chip")?.range.clone();
+[0m[32m+    let chip = composer
+[0m[32m+        .chips()
+[0m[32m+        .first()
+[0m[32m+        .ok_or("expected pasted-content chip")?
+[0m[32m+        .range
+[0m[32m+        .clone();
+[0m     let text = composer.text().to_owned();
+     composer.select_all();
+     assert!(composer.delete());
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:57:
+     assert!(composer.undo());
+     assert_eq!(composer.text(), text);
+     assert_eq!(composer.selection(), Some(0..text.len()));
+[31m-    assert_eq!(composer.chips().first().map(|item| item.range.clone()), Some(chip));
+[0m[32m+    assert_eq!(
+[0m[32m+        composer.chips().first().map(|item| item.range.clone()),
+[0m[32m+        Some(chip)
+[0m[32m+    );
+[0m     Ok(())
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:72:
+             prompt: "Choose".to_owned(),
+             required: true,
+             kind: QuestionKind::SingleChoice {
+[31m-                options: vec![QuestionOption { id: "a".to_owned(), label: "A".to_owned() }],
+[0m[32m+                options: vec![QuestionOption {
+[0m[32m+                    id: "a".to_owned(),
+[0m[32m+                    label: "A".to_owned(),
+[0m[32m+                }],
+[0m             },
+         }],
+     })?;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:79:
+     state.apply(A::FocusNotes)?;
+     state.apply(A::InsertText("e\u{301} 👩‍💻 note".to_owned()))?;
+[31m-    state.apply(A::SetSelection { anchor: 0, head: "e\u{301} 👩‍💻".len() })?;
+[0m[32m+    state.apply(A::SetSelection {
+[0m[32m+        anchor: 0,
+[0m[32m+        head: "e\u{301} 👩‍💻".len(),
+[0m[32m+    })?;
+[0m     state.apply(A::InsertText("selected".to_owned()))?;
+     assert_eq!(state.notes(), "selected note");
+     assert_eq!(state.answer_text(), "");
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\mouse_selection_model.rs:85:
+     state.apply(A::Undo)?;
+     assert_eq!(state.notes(), "e\u{301} 👩‍💻 note");
+[31m-    assert_eq!(state.active_editor().and_then(Composer::selection), Some(0.."e\u{301} 👩‍💻".len()));
+[0m[32m+    assert_eq!(
+[0m[32m+        state.active_editor().and_then(Composer::selection),
+[0m[32m+        Some(0.."e\u{301} 👩‍💻".len())
+[0m[32m+    );
+[0m     Ok(())
+ }
+ 
+\n--- stderr ---\n

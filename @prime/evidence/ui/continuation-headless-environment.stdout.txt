@@ -1,0 +1,21 @@
+
+running 3 tests
+test unsupported_task_is_not_reported_as_done ... ok
+test run_commits_and_replays_directive ... ok
+test doctor_installs_aws_lc_provider ... FAILED
+
+failures:
+
+---- doctor_installs_aws_lc_provider stdout ----
+
+thread 'doctor_installs_aws_lc_provider' (16852) panicked at apps\polaris-cli\tests\headless.rs:15:5:
+doctor failed: polaris: required setup prerequisites are missing; follow the reported onboarding actions
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    doctor_installs_aws_lc_provider
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.40s
+

@@ -1,0 +1,3 @@
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.23s
+     Running tests\reference_fidelity.rs (target\debug\deps\reference_fidelity-a1ed4e3cfd74f097.exe)

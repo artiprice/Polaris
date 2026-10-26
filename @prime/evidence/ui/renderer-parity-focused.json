@@ -1,0 +1,16 @@
+[
+  {
+    "command": "cargo test --manifest-path crates/polaris-ui/crates/cli/Cargo.toml --test render_contract",
+    "exit_code": 0,
+    "stdout": "\nrunning 29 tests\ntest dump_rejects_zero_and_oversized_viewports ... ok\ntest composer_mouse_targets_chip_boundaries_only ... ok\ntest composer_mouse_vertical_and_guard_helpers_share_wrap_rows ... ok\ntest composer_rect_matches_render_metadata_without_transcript_dependency ... ok\ntest ansi_palette_preserves_canvas_and_prompt_roles ... ok\ntest profile_footer_has_a_separate_target_without_removing_model_or_effort ... ok\ntest tiny_live_viewport_shows_resize_notice_without_panicking ... ok\ntest selected_whitespace_uses_neutral_text_tint ... ok\ntest default_canvas_uses_north_star_background ... ok\ntest friendly_model_label_uses_the_same_footer_geometry_as_its_hit_target ... ok\ntest selection_fallbacks_use_ansi_237_and_bold_without_reverse_video ... ok\ntest compact_question_review_scrolls_through_every_answer ... ok\ntest transcript_grapheme_cells_map_to_source_and_selection_styles_them ... ok\ntest transcript_span_selection_crosses_entry_boundaries_and_preserves_source_foreground ... ok\ntest untrusted_controls_and_bidi_are_inert_in_dump ... ok\ntest wide_grapheme_caret_geometry_matches_composer ... ok\ntest transcript_tokens_and_code_lines_keep_source_maps_and_semantic_styles ... ok\ntest caller_selected_panel_content_renders_in_both_responsive_modes ... ok\ntest warning_entries_use_the_observed_warning_role_without_bold_weight ... ok\ntest optional_panel_uses_side_rail_only_at_threshold ... ok\ntest to_latest_uses_exact_base_and_hover_surfaces ... ok\ntest completion_overlay_paints_selection_and_hides_underlying_sources ... ok\ntest compact_questionnaire_overlay_keeps_typed_targets_and_review_rows ... ok\ntest completion_hover_keeps_surface_and_applies_each_semantic_foreground ... ok\ntest history_scroll_and_workspace_are_source_driven ... ok\ntest transcript_presentation_tools_toggle_real_entry_body_and_map_source_offsets ... ok\ntest opaque_overlays_remove_covered_source_spans ... ok\ntest long_composer_window_tracks_cursor_and_renders_recent_rows ... ok\ntest hitmap_uses_painted_regions_and_hover_is_visible ... ok\n\ntest result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\n",
+    "stderr": "    Finished `test` profile [unoptimized] target(s) in 8.23s\n     Running tests\\render_contract.rs (target\\debug\\deps\\render_contract-4b7ea365ba5a6d40.exe)\n",
+    "error": null
+  },
+  {
+    "command": "cargo fmt --manifest-path crates/polaris-ui/crates/cli/Cargo.toml -- --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "error": null
+  }
+]

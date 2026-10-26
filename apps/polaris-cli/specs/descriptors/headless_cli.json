@@ -1,1 +1,69 @@
-{"type_of":"pipeline","name":"run","file_path":"apps/polaris-cli/src/lib.rs","logic_name":"P1 headless CLI","test_list":[{"test_name":"doctor_installs_aws_lc_provider","description":"Real binary reports the provider after successful installation."},{"test_name":"run_commits_and_replays_directive","description":"Real binary persists local session controls and emits real JSONL events."},{"test_name":"unsupported_task_is_not_reported_as_done","description":"Model work outside P1 fails explicitly."}],"dependencies":["Kernel","polaris-config","polaris-log"],"libraries":["clap","tokio","rustls","mimalloc","serde_json"],"inputs":[{"name":"args","type":"Args","description":"Validated CLI options."}],"output_type":"Result<ExitCode,CliError>","output_description":"Actual durable events or a typed failure; no synthetic completion."}
+{
+  "type_of": "pipeline",
+  "name": "run",
+  "file_path": "apps/polaris-cli/src/lib.rs",
+  "logic_name": "P1 headless CLI",
+  "test_list": [
+    {
+      "test_name": "doctor_installs_aws_lc_provider",
+      "description": "Real binary reports the provider after successful installation."
+    },
+    {
+      "test_name": "run_commits_and_replays_directive",
+      "description": "Real binary persists local session controls and emits real JSONL events."
+    },
+    {
+      "test_name": "unsupported_task_is_not_reported_as_done",
+      "description": "Model work outside P1 fails explicitly."
+    },
+    {
+      "test_name": "new_session_starts_without_a_persistent_notice",
+      "description": "Fresh offline CLI state keeps its persistent status out of the notice row."
+    },
+    {
+      "test_name": "rejected_ordinary_task_keeps_draft_with_a_short_notice",
+      "description": "Unsupported model task execution retains the exact draft and gives a concise explanation."
+    },
+    {
+      "test_name": "clear_command_clears_notice_and_visible_conversation",
+      "description": "The /clear command clears visible conversation and dismisses the current notice."
+    },
+    {
+      "test_name": "slash_completion_renders_and_tab_accepts_a_matching_command",
+      "description": "Slash command suggestions reach the rendered frame and Tab accepts a unique prefix."
+    },
+    {
+      "test_name": "color_depth_auto_uses_windows_vt_and_respects_explicit_overrides",
+      "description": "Automatic color depth uses Windows VT capability and preserves ANSI/no-color overrides."
+    },
+    {
+      "test_name": "footer_controls_dispatch_to_help_mode_and_profile_sheets",
+      "description": "Footer Help, mode, model and effort controls respond to mouse clicks with real local behavior."
+    },
+    {
+      "test_name": "unavailable_action_notice_survives_navigation_until_an_edit",
+      "description": "Clipboard-unavailable feedback remains visible after Ctrl+V and cursor navigation; a successful text edit clears it. Mode preference feedback is not erased by shared dispatch cleanup."
+    }
+  ],
+  "dependencies": [
+    "Kernel",
+    "polaris-config",
+    "polaris-log"
+  ],
+  "libraries": [
+    "clap",
+    "tokio",
+    "rustls",
+    "mimalloc",
+    "serde_json"
+  ],
+  "inputs": [
+    {
+      "name": "args",
+      "type": "Args",
+      "description": "Validated CLI options."
+    }
+  ],
+  "output_type": "Result<ExitCode,CliError>",
+  "output_description": "Actual durable events or a typed failure; no synthetic completion."
+}

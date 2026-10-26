@@ -1,0 +1,17 @@
+{
+  "type_of": "module", "name": "interactive", "file_path": "crates/polaris-openshell/crates/client/src/stdio.rs",
+  "logic_name": "Owned sandbox stdio",
+  "test_list": [
+    {"test_name": "stdio_input_and_output_preserve_bounded_bytes", "description": "Split handles preserve exact bytes and apply backpressure."},
+    {"test_name": "stdio_exit_requires_clean_stream_end", "description": "Failed transport trailers after an exit are never success."},
+    {"test_name": "stdio_stop_reaps_only_owned_sandbox", "description": "The same cleanup routine used by the real gateway adapter deletes only a matching name and immutable identity, and awaits deletion."},
+    {"test_name": "stdio_cleanup_rejects_bad_receipt_and_preserves_retry", "description": "Lookup failures, invalid identity and mismatched receipts fail cleanup without acknowledging success."},
+    {"test_name": "stdio_output_splits_frames_and_keeps_terminal_errors", "description": "Read-size limits preserve bytes and repeated reads never turn failed EOF into clean EOF."},
+    {"test_name": "stdio_input_drop_closes_sender_and_stop_is_distinct_from_exit", "description": "Input drop closes the request channel and cleanup acknowledgement remains separate from process completion."}
+  ],
+  "dependencies": ["InteractiveSandbox", "SandboxSpec", "StdioRequest"],
+  "libraries": ["tokio", "bytes", "tonic", "openshell-sdk"],
+  "inputs": [{"name": "spec", "type": "SandboxSpec", "description": "Pinned image, content-bound policy, and explicit quotas."}],
+  "output_type": "Result<InteractiveSession, SandboxError>",
+  "output_description": "Dedicated sandbox process with bounded duplex I/O and confirmed cleanup."
+}

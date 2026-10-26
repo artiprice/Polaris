@@ -1,0 +1,18 @@
+{
+  "type_of": "struct",
+  "name": "S1Mode",
+  "file_path": "apps/polaris-worker/src/lib.rs",
+  "logic_name": "Isolated System-One Worker Mode",
+  "test_list": [
+    { "test_name": "empty_decision_batch_is_rejected_before_model_loading", "description": "An empty Decide batch is rejected at the RPC boundary before explicit model loading." },
+    { "test_name": "ingest_and_embedding_do_not_claim_s1_results", "description": "The S1 worker explicitly rejects service modes it does not implement." },
+    { "test_name": "configured_windows_worker_process_returns_real_decision", "description": "Ignored acceptance test launches a bounded worker subprocess with explicit local artifacts, verifies named-pipe handshake and real probabilities, then shuts it down." }
+  ],
+  "dependencies": ["polaris-system-one-engine", "polaris-proto"],
+  "libraries": ["tonic", "tokio"],
+  "inputs": [
+    { "name": "config", "type": "S1WorkerConfig", "description": "Model directory, precision, intra-op threads, and worker RPC endpoint." }
+  ],
+  "output_type": "WorkerService",
+  "output_description": "An isolated S1 worker RPC service that loads and serves only explicitly configured local model artifacts."
+}

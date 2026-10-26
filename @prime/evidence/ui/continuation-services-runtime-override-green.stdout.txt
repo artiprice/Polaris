@@ -1,0 +1,13 @@
+
+running 8 tests
+test cli_settings::tests::navigation_and_rows_are_stable ... ok
+test cli_settings::tests::memory_only_settings_reject_persistence ... ok
+test cli_settings::tests::untouched_runtime_overrides_are_not_persisted ... ok
+test cli_settings::tests::memory_only_worker_save_does_not_write_and_cancel_discards_result ... ok
+test cli_settings::tests::cycle_is_memory_only_until_explicit_apply ... ok
+test cli_settings::tests::explicit_edit_persists_only_edited_field_and_keeps_other_overrides ... ok
+test cli_settings::tests::worker_persists_on_a_worker_and_returns_updated_settings ... ok
+test cli_settings::tests::settings_worker_cancellation_discards_stale_generation ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.02s
+

@@ -1,0 +1,2 @@
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Finished `dev` profile [unoptimized] target(s) in 2.21s

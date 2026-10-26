@@ -1,0 +1,10 @@
+
+running 5 tests
+test windows_input::tests::native_button_changes_keep_left_drag_and_other_button_transitions ... ok
+test windows_input::tests::native_mouse_motion_with_pressed_button_is_drag ... ok
+test windows_input::tests::native_middle_button_down_and_release_keep_identity ... ok
+test windows_input::tests::simultaneous_mouse_button_changes_do_not_guess_chord_order ... ok
+test windows_input::tests::native_right_button_down_and_release_keep_identity ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+

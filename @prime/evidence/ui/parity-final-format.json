@@ -1,0 +1,21 @@
+{
+  "name": "parity-final-format",
+  "command": [
+    "cargo",
+    "fmt",
+    "--check",
+    "-p",
+    "polaris-config",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli",
+    "-p",
+    "polaris-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:43:47.802Z",
+  "pid": 15988,
+  "code": 0,
+  "finished": "2026-10-25T11:43:48.968Z"
+}

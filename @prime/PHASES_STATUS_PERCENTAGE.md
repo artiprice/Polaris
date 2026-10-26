@@ -1,8 +1,10 @@
 # Phase completion percentages
 
-> Snapshot: 2026-10-23T21:58:17.329060+00:00 · Working tree, including uncommitted implementation.
+> Snapshot: 2026-10-26T02:51:07.593262+00:00 · Scoped P5/P7/P9 update; other requirement estimates retained.
 > **LIKELY — every percentage below is an engineering estimate, not a measured proof of correctness.**
-> **VERIFIED — scope inventory:** 93 workspace packages; 979 first-party source/config/spec files; 603 Rust files read by the inventory pass.
+> **VERIFIED — mechanical inventory:** 93 workspace packages; 1110 first-party source/config/spec files; 691 Rust files opened and hashed.
+
+> **Scope of this refresh:** E39 updates the listed retrieval, extension, research and daemon estimates and live-gate descriptions, and adds the planned P3 human-protocol task. Other estimates retain their earlier audit basis; newer UI work was not reassessed. The refreshed inventory is mechanical, not a new line-by-line audit. [Current scoped evidence](evidence/continuation-20261026/README.md).
 
 ## How to read the percentages
 
@@ -21,27 +23,27 @@
 | P0 — Foundations and de-risking | 78% | **72%** | OPEN — audits/access/manual spike conditions remain. |
 | P1 — Offline kernel core | 100% | **95%** | Historical non-UI PASS (2026-10-22); M1/UI deferred; final expanded-tree gates not re-certified. |
 | P2 — Execution plane | 87% | **75%** | PAUSED by user — prior live evidence retained; composition/final gates remain open. |
-| P3 — S2 loop, providers, models and frames | 43% | **25%** | OPEN — complete phase acceptance not demonstrated. |
+| P3 — S2 loop, providers, models and frames | 40% | **24%** | OPEN — complete phase acceptance not demonstrated. |
 | P4 — System One, inference and safety | 28% | **10%** | OPEN — complete phase acceptance not demonstrated. |
-| P5 — Knowledge, search, vectors and ingest | 17% | **9%** | OPEN — complete phase acceptance not demonstrated. |
+| P5 — Knowledge, search, vectors and ingest | 34% | **26%** | OPEN — complete phase acceptance not demonstrated. |
 | P6 — Nebius depth and remote execution | 18% | **5%** | OPEN — complete phase acceptance not demonstrated. |
-| P7 — Advanced agentics, research and extensions | 23% | **15%** | OPEN — complete phase acceptance not demonstrated. |
+| P7 — Advanced agentics, research and extensions | 44% | **30%** | OPEN — complete phase acceptance not demonstrated. |
 | P8 — DevEnv and Needle | 44% | **26%** | OPEN — complete phase acceptance not demonstrated. |
-| P9 — Daemon, RPC and interfaces | 44% | **36%** | OPEN — complete phase acceptance not demonstrated. |
+| P9 — Daemon, RPC and interfaces | 59% | **45%** | OPEN — complete phase acceptance not demonstrated. |
 | P10 — Hardening and submission | 33% | **18%** | OPEN — complete phase acceptance not demonstrated. |
 
 **Use the bold Verified % as the conservative progress indicator.** No percentage converts the current system into a production-ready release.
 
 ## Current facts that limit readiness
 
-- **VERIFIED failure:** `cargo xtask check-witness` reports one existing skills unit-test fixture constructing `ApprovalWitness` outside SDK/verifier at `approval_cache.rs:197`. The check and fixture remain unchanged; the source-policy gate is RED. [Current gate output](evidence/continuation/consistency.txt).
+- **VERIFIED:** the existing approval-cache fixture now obtains witnesses through the actual LocalDirectiveVerifier. All original cache-isolation/expiry assertions remain in verifier integration tests; `check-witness` reports zero violations. [Current gate evidence](evidence/continuation-20261026/README.md).
 - **VERIFIED:** non-UI P3/P5/P9 continuation adds actual secret custody, bounded frame execution/journaling, scoped SQLite/HNSW storage and authenticated native/network RPC. Current commands, limitations and failures are recorded in [E32](PHASES_STATUS.md#e32--non-ui-p3p5p9-continuation-2026-10-24). Full phase acceptance remains open.
-- **VERIFIED failure:** the existing SDK `blast_alert_requires_schema_three` assertion accepts only schema 3; additive frame events require schema 4, where older event kinds remain legal. That assertion is retained unchanged and the full SDK suite is not green. Focused current-schema contracts pass.
+- **VERIFIED failures:** the full SDK suite still fails `blast_alert_requires_schema_three` and `versioned_constructor_validates_schema`, which hard-code older schema-version boundaries. Both assertions remain unchanged; focused interactive contracts pass. [Current raw output](evidence/continuation-20261026/sdk-full-tests.txt).
 - **VERIFIED:** P1’s scoped 2026-10-22 record contains 1,009 passing Windows tests, Linux checks and separate workload/fuzz/formal evidence. That is a historical scoped acceptance, not a fresh all-phase result: [P1 record](P1_LOGIC_STATUS.md), [raw excerpt](evidence/p1/verification.txt).
 - **VERIFIED:** current P2 evidence includes an immutable image, actual 3 ordinary + 2 independent sandbox tests, signed review/proof, 100 create/exec/destroy cycles on the 6-GiB VM, real gateway interruption recovery and zero final resources: [P2 checkpoint](P2_LOGIC_STATUS.md).
 - **VERIFIED:** corrected 6-GiB S0-7: initial apply 6,333ms, incremental 5,180ms, fresh remote no-op round trip 109ms; real 10k checkout overflow/rescan passed in 325.85s. [S0-7 raw](tmp/p2/sync-s0-7-live-6g-roundtrip.txt), [checkout raw](tmp/p2/checkout-flood-real-6g.txt).
 - **VERIFIED:** new builtin proposal/shell library paths have focused tests, but the current kernel still uses P1 tools and has no working general `ProposeDiff` dispatch. Existing-file replacement is implemented; create-new `write_file` is missing. Library schemas alone do not close this integration gap.
-- **VERIFIED:** current dependency gate failed on one vulnerability and four unmaintained findings. `ctutils` was updated 0.4.3 → 0.4.4; a clean post-update deny result is **not yet established**. `cargo vet --locked` reports **584 unvetted dependencies**. No new exemption was added. [deny raw](tmp/p2/current-dependency-deny.txt), [vet raw](tmp/p2/current-dependency-vet.txt), [update raw](tmp/p2/ctutils-security-update.txt).
+- **VERIFIED:** after the exact ctutils 0.4.4 update, the advisory check still fails on four unmaintained dependencies. The expanded graph has 724 unvetted dependencies. No exemption was added. [Current dependency evidence](evidence/continuation-20261026/README.md).
 - **VERIFIED:** strict workspace Clippy failed; focused condition/conversion fixes were checked afterwards, but there is no final full clean result yet. [full raw](tmp/p2/current-workspace-clippy.txt), [focused raw](tmp/p2/clippy-sync-ratelimit2.txt).
 - **VERIFIED failure / NOT VERIFIED property:** the full arbitrary-32-byte entropy Kani attempt reached its 1,500-second harness timeout: `VERIFICATION:- FAILED`, `CBMC timed out`, 0 successful harnesses. It peaked at 2GiB RAM without a cgroup OOM kill. No final whole-crate automata Miri verdict is captured in this snapshot; P2 is paused. Neither is counted as a successful proof. [Kani raw](tmp/p2/automata-kani-entropy-scoped-20261023-02.txt).
 - **VERIFIED source / NOT VERIFIED execution:** the new resident-pressure scenario compiles and passes focused Clippy but has not run against the real gateway. The generic hardened image context passes locked metadata; its changed full Docker build and production blueprint apply remain unverified.
@@ -179,6 +181,7 @@
 | `P3-X-2` | 0% | 0% | Keyed Nemotron loop unavailable; Token Factory access missing. |
 | `P3-X-3` | 0% | 0% | Contree sidecar/SWE task unavailable and adapter remains skeleton. |
 | `P3-X-4` | 0% | 0% | Live SSE fixture recording unavailable; existing fixtures are offline/synthetic. |
+| `P3-X-5` | 0% | 0% | Durable human ask/answer and targeted frame cancellation is a non-UI backend follow-on. SDK/proto/kernel/frame ownership, atomic answers and restart/race acceptance remain planned; UI question fixtures do not implement this protocol. |
 
 ### P4 — System One, inference and safety
 
@@ -208,15 +211,15 @@
 |---|---:|---:|---|
 | [`polaris-storage-vector`](../crates/polaris-storage/crates/vector/src) | 85% | 60% | Real scoped usearch/SQLite store with immutable embedding identity, atomic mutations, exact pre-limit payload filtering and cache recovery. Focused contracts pass; measured 100k x 768 debug/release throughput misses the target. Broader crash/recall and optional LanceDB gates remain open; E32. |
 | [`polaris-ingest`](../crates/polaris-ingest/src) | 0% | 0% | Documentation-only document/OCR ingestion. |
-| [`polaris-search-providers`](../crates/polaris-search/crates/providers/src) | 0% | 0% | Documentation-only live search providers. |
-| [`polaris-search-sift`](../crates/polaris-search/crates/sift/src) | 60% | 20% | Provenance-preserving sift/fallback logic; integrated source races and validation incomplete. |
-| [`polaris-search`](../crates/polaris-search/src) | 25% | 10% | Partial exports; providers and composed retrieval path absent. |
+| [`polaris-search-providers`](../crates/polaris-search/crates/providers/src) | 75% | 55% | Concrete redacting Tavily/SearXNG, DNS-pinned SSRF policy and bounded fetch/charset/DOM conversion; 18 local contracts pass. Live service/container, broader DNS/fuzz/load and audit gates remain open; E39. |
+| [`polaris-search-sift`](../crates/polaris-search/crates/sift/src) | 85% | 60% | Bounded source race, pools, cancellation/drain, deduplicated S1 budget, SDK web bridge and hash-verified durable drop manifests. Local recovery/race contracts pass; live production composition, calibration and wider workloads remain open; E39. |
+| [`polaris-search`](../crates/polaris-search/src) | 100% | 80% | Both real children exported with provider-to-race/sift flow documented and doctest checked. This facade score does not certify production kernel retrieval composition or live services; E39. |
 | [`polaris-nvidia-docs`](../crates/polaris-nvidia-docs/src) | 0% | 0% | Documentation-only NVIDIA ingestion/index/adviser. |
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P5-X-1` | 0% | 0% | SearXNG provider/container acceptance unavailable. |
-| `P5-X-2` | 0% | 0% | Tavily provider not implemented/live; credential missing. |
+| `P5-X-1` | 0% | 0% | SearXNG adapter and local protocol fixtures exist; the named live container/engine acceptance remains unperformed; E39. |
+| `P5-X-2` | 0% | 0% | Tavily adapter and local protocol fixtures exist; the named keyed live acceptance remains unavailable; E39. |
 | `P5-X-3` | 0% | 0% | No production NVIDIA sync/index/provenance seed run. |
 | `P5-X-4` | 0% | 0% | No masked live embedding/vector-store run; access missing. |
 
@@ -238,17 +241,17 @@
 | Crate / subphase | Code % | Verified % | What exists / what remains |
 |---|---:|---:|---|
 | [`polaris-guest`](../apps/polaris-guest/src) | 40% | 25% | Real confined sync helpers and Linux tests; full structured exec/browser guest service missing. |
-| [`polaris-ext-mcp`](../crates/polaris-ext/crates/mcp/src) | 0% | 0% | Documentation-only MCP client/registry integration. |
-| [`polaris-ext-skills`](../crates/polaris-ext/crates/skills/src) | 80% | 75% | Confined discovery/selection/approval cache, Windows/Linux/redb evidence; runtime enablement/injection incomplete. |
-| [`polaris-ext`](../crates/polaris-ext/src) | 25% | 10% | Skills exports/catalog exist; MCP and complete extension runtime absent. |
+| [`polaris-ext-mcp`](../crates/polaris-ext/crates/mcp/src) | 75% | 50% | Real RMCP stdio/HTTP client, bounded framing, schema-aware normalization, caller authorization and lifecycle checks. Local protocol fixtures pass; live sandbox-backed MCP, production registry/frame assembly and wider lifecycle/adversarial gates remain open; E39. |
+| [`polaris-ext-skills`](../crates/polaris-ext/crates/skills/src) | 80% | 75% | Confined discovery/selection/cache retained; authentic LocalDirectiveVerifier-issued cache witnesses pass and check-witness is green. Skill-specific approval, runtime enablement/injection and full trust integration remain open; E39. |
+| [`polaris-ext`](../crates/polaris-ext/src) | 75% | 55% | Skills and concrete MCP client exported with shared trust documentation; full capability-bound kernel extension assembly remains open; E39. |
 | [`polaris-browser`](../crates/polaris-browser/src) | 0% | 0% | Documentation-only browser/a11y/image adapter. |
 | [`polaris-hacker`](../crates/polaris-hacker/src) | 0% | 0% | Documentation-only zero-token scanner/fuzzer/stress pipeline. |
 | [`polaris-runtime-dag`](../crates/polaris-runtime/crates/dag/src) | 65% | 15% | Bounded scheduler/pool/race/cancel source; composed concurrent runtime/model checks incomplete. |
-| [`polaris-runtime-research`](../crates/polaris-runtime/crates/research/src) | 40% | 35% | Deterministic core/checkpoint codec and tests; research runner/store/parser and 20-iteration resume absent. |
+| [`polaris-runtime-research`](../crates/polaris-runtime/crates/research/src) | 80% | 60% | Strict program parser, locked durable checkpoint/CAS evidence, path-attenuated tools, VCS receipts and bounded runner. Twenty real local-process iterations plus crash/reopen pass; live sandbox/model composition, cross-process contention, broader crash windows and adversarial critique remain open; E39. |
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P7-X-1` | 0% | 0% | No 20-iteration research run and kill/resume acceptance. |
+| `P7-X-1` | 70% | 50% | Twenty capability-checked local process/Git/CAS iterations, all 60 payloads reopened and one abrupt-exit recovery pass. Actual sandbox/model research composition and broader crash matrix remain open; E39. |
 | `P7-X-2` | 0% | 0% | No seeded-bug hacker pipeline run. |
 | `P7-X-3` | 0% | 0% | No composed microVM browser/a11y/pHash loop; individual spikes are separate. |
 
@@ -268,7 +271,7 @@
 |---|---:|---:|---|
 | [`polaris-desktop`](../apps/polaris-desktop/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-web`](../apps/polaris-web/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
-| [`polaris-daemon`](../apps/polaris-daemon/src) | 0% | 0% | Documentation-only daemon; no authenticated running listener. |
+| [`polaris-daemon`](../apps/polaris-daemon/src) | 60% | 35% | Real headless CLI composes local kernel and authenticated RPC listener with bounded configuration and shutdown. P1 profile exposes authenticated health/events; mutation dispatch and terminal attachment require a fuller kernel profile. Live remote deployment and broader lifecycle gates remain open; E39. |
 | [`polaris-rpc`](../crates/polaris-rpc/src) | 85% | 70% | Real pipe/UDS/TCP+mTLS servers and credential-bound SDK client; Windows/Linux network, receipt, replay and shutdown checks pass. Production daemon/full-kernel assembly remains open; E32. |
 | [`polaris-ui-gui`](../crates/polaris-ui/crates/gui/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
 | [`polaris-ui-web`](../crates/polaris-ui/crates/web/src) | 0% | 0% | Documentation-only interface; user-deferred UI. **UI deferred; excluded from aggregate.** |
@@ -340,11 +343,11 @@ These are the retained doctor observations on this reference PC. A successful in
 
 ## Analysis coverage and consistency
 
-**VERIFIED:** the inventory pass opened and hashed every included first-party file, assigned each workspace file to its deepest package, and compared all 93 package entries with the phase table and PLAN responsibilities/TODO sections. Requirement-based source/API review and retained-evidence review supplied the estimates. This is a progress audit; it is **not a line-by-line security proof of every file**.
+**VERIFIED:** the mechanical inventory opened and hashed every included first-party file and assigned workspace files to the deepest owning package. This scoped refresh reassesses the package/task rows listed above against E39 evidence; other requirement estimates retain the earlier audit basis. This is not a line-by-line security proof or a new audit of every package.
 
 Excluded from implementation credit: third-party `vendor/`, generated/build output, `target/`, dependency-probe resolution copies, `@prime/tmp/`, node_modules, fuzz corpora and binaries. Test/fixture source is inventoried but its mere presence does not count as a passing run. Existing PLAN checkbox state and status labels were not treated as sole evidence.
 
-Inventory: [source-inventory.json](evidence/progress/source-inventory.json). Source fingerprint SHA256: `a6b9a1e9da9af93ccc53a048ced57d9b4b31f3d8a80f172f06dc1a139becede5`. The working tree is changing during non-UI P3/P5/P9 implementation; P2 is paused. This snapshot is an evidence checkpoint, not phase acceptance.
+Inventory: [source-inventory.json](evidence/progress/source-inventory.json). Source fingerprint SHA256: `15bf747c1d2a519cf4b1113ff8ff227c7080e954b92eeac541870b61283a4971`. The working tree is changing during non-UI P5/P7/P9 continuation; P2 is paused. This snapshot is an evidence checkpoint, not phase acceptance.
 
 Important status reconciliation: `PHASES_STATUS.md` still has old P2 text such as “doc-only sandbox spike” or “live acceptance pending”; current code and newer raw P2 logs supersede those descriptions. Conversely, its P1 PASS labels certify the P1 slice, not later extensions in those crates. This report does not rewrite historical evidence or mark any open phase PASS.
 
@@ -358,4 +361,4 @@ Sources: [prompt.md](prompt.md), [PLAN.md](PLAN.md), [PHASES.md](PHASES.md), [PH
 4. Implement the S1 worker/engine/client and calibrated runtime path before treating the P4 policy/router code as a working System One.
 5. P2 work is explicitly paused by the user. Its retained write/shell/blueprint composition, formal and adversarial gaps remain open for a later resumption.
 
-No UI work is authorized by this report; UI remains deferred.
+This continuation changes no UI implementation. UI estimates above retain the earlier audit basis; consult E33–E38 for newer UI evidence.

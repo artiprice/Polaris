@@ -1,0 +1,436 @@
+   Compiling schemars v1.2.3
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling rmcp v3.5.1
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-daemon v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-daemon)
+    Finished `test` profile [unoptimized] target(s) in 58.50s
+     Running unittests src\lib.rs (target\debug\deps\polaris_daemon-5cf76adb53502fe6.exe)
+
+running 1 test
+test tests::readiness_closes_when_shutdown_is_requested ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\polarisd-76d664c909226597.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\daemon_config.rs (target\debug\deps\daemon_config-1bec850ba939fbcf.exe)
+
+running 3 tests
+test daemon_limits_accept_only_supported_bounds ... ok
+test public_tcp_requires_mutual_tls_material ... ok
+test local_endpoint_configuration_is_explicit ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\daemon_lifecycle.rs (target\debug\deps\daemon_lifecycle-686c5ff95c2738f6.exe)
+
+running 2 tests
+test production_local_daemon_health_and_graceful_shutdown ... ok
+test authenticated_rpc_p1_event_replay_denial_and_shutdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_ext-e6bb530ea062db91.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\facade.rs (target\debug\deps\facade-4c6857eb93f35ade.exe)
+
+running 1 test
+test facade_reexports_both_extension_mechanisms ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_ext_mcp-3f9f7a333203bcf3.exe)
+
+running 11 tests
+test call::tests::result_byte_limit_applies_across_text_and_structured_content ... ok
+test call::tests::truncates_tool_text_at_utf8_boundary ... ok
+test hub::validation_tests::transport_limits_enforce_documented_inclusive_bounds ... ok
+test hub::validation_tests::loopback_detection_accepts_local_hosts_only ... ok
+test frame::tests::rejects_oversized_frame_before_returning_its_bytes ... ok
+test frame::tests::accepts_multiple_bounded_frames ... ok
+test hub::validation_tests::plaintext_http_is_limited_to_loopback_even_without_headers ... ok
+test http_client::tests::sse_parser_accepts_split_crlf_and_multiline_events ... ok
+test http_client::tests::sse_event_limit_spans_fragmented_chunks ... ok
+test http_client::tests::oversized_http_json_body_is_rejected_before_parsing ... ok
+test http_client::tests::oversized_chunked_http_json_body_is_rejected_without_content_length ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\protocol_contract.rs (target\debug\deps\protocol_contract-1f3e98d1c0a411d3.exe)
+
+running 4 tests
+test mcp_stdio_fixture_server_process ... ok
+test connect_repo_unapproved_is_denied_before_launcher ... ok
+test connect_http_fixture_lists_and_calls_tool ... ok
+test connect_stdio_fixture_lists_and_calls_tool_then_reaps_child ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\schema_contract.rs (target\debug\deps\schema_contract-619dbc050554606d.exe)
+
+running 8 tests
+test namespaced_ids_prevent_server_collisions ... ok
+test ref_cycles_rejected ... ok
+test invalid_schema_rejected ... ok
+test harmless_annotation_keywords_are_dropped_and_recorded ... ok
+test valid_schema_passes ... ok
+test literal_default_enum_and_const_objects_are_not_traversed_as_schemas ... ok
+test property_names_and_nested_schemas_are_preserved ... ok
+test unsupported_assertion_keywords_are_rejected ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\summary_contract.rs (target\debug\deps\summary_contract-c5b313734e0671da.exe)
+
+running 5 tests
+test summary_deterministic ... ok
+test summary_neutralizes_instruction_prefix ... ok
+test summary_strips_control_and_zero_width ... ok
+test summary_strips_markdown_and_html_markup ... ok
+test summary_truncates_to_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_ext_skills-2e552813cfd51216.exe)
+
+running 20 tests
+test parse::tests::rejects_missing_front_matter_and_oversized_source ... ok
+test parse::tests::parses_yaml_and_preserves_body_bytes ... ok
+test parse::tests::markdown_external_links_are_not_treated_as_local_paths ... ok
+test parse::tests::bundled_fixtures_have_valid_front_matter ... ok
+test parse::tests::rejects_bad_metadata_and_unsafe_resource_paths ... ok
+test discover::tests::missing_roots_are_empty_and_file_roots_fail_closed ... ok
+test discover::tests::discovery_rejects_oversized_skill_files_before_parsing ... ok
+test select::tests::lexical_and_system_one_candidates_exclude_unapproved_repository_skills ... ok
+test discover::tests::repository_approval_persists_by_source_digest_and_stales_after_edit ... ok
+test select::tests::required_tools_are_reported_without_being_granted ... ok
+test discover::tests::changed_skill_body_requires_rediscovery_and_repo_approval_again ... ok
+test select::tests::engine_failure_uses_stable_lexical_fallback_and_bounds_k ... ok
+test discover::tests::pinned_skill_directory_blocks_rename_until_registry_is_dropped ... ok
+test discover::tests::duplicate_names_within_a_trust_tier_are_rejected ... ok
+test select::tests::closed_schema_policy_never_uses_lexical_fallback ... ok
+test select::tests::selection_rejects_noncanonical_multi_question_schema ... ok
+test select::tests::selection_sends_descriptions_but_never_skill_bodies ... ok
+test discover::tests::discovery_keeps_repo_skills_unapproved_and_global_skill_wins ... ok
+test select::tests::schema_deadline_uses_lexical_fallback_only_when_open ... ok
+test discover::tests::discovery_scales_through_the_two_thousand_skill_limit ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.34s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel_verifier-32460bb382dd01c2.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\approval_cache.rs (target\debug\deps\approval_cache-6716f5f71e0bd8c3.exe)
+
+running 2 tests
+test approval_cache_roundtrips_by_workspace_and_source_evidence ... ok
+test expired_and_future_approvals_fail_closed ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\execution_approval.rs (target\debug\deps\execution_approval-b4eb1f41475ebf34.exe)
+
+running 2 tests
+test other_frames_commands_and_authorities_are_rejected ... ok
+test execution_approval_is_bound_to_exact_call ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\verified_command_wire.rs (target\debug\deps\verified_command_wire-cab82ab5c41d579b.exe)
+
+running 1 test
+test verified_command_serialises_without_witness ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_openshell_client-2ef404d6c4b37986.exe)
+
+running 28 tests
+test implementation::tests::delete_acknowledgements_require_a_terminal_or_pollable_target ... ok
+test implementation::tests::gateway_names_fail_before_remote_create_when_invalid ... ok
+test implementation::tests::requested_output_limit_counts_both_streams ... ok
+test implementation::tests::image_references_require_immutable_sha256_digests ... ok
+test implementation::tests::duplicate_sandbox_error_is_typed_for_cleanup_ownership ... ok
+test implementation::tests::scratch_quota_is_bounded_and_has_no_host_source ... ok
+test implementation::tests::quota_limits_use_the_gateway_struct_shape_and_units ... ok
+test implementation::tests::file_listing_checks_each_path_before_allocation ... ok
+test implementation::tests::request_and_output_bounds_fail_closed ... ok
+test implementation::tests::gateway_driver_identity_must_match_the_selected_backend ... ok
+test implementation::tests::only_refused_or_disconnected_sockets_are_retryable ... ok
+test implementation::tests::sync_commit_request_is_bounded_before_exec ... ok
+test implementation::tests::sync_snapshot_rejects_unsafe_paths_and_link_hashes ... ok
+test implementation::tests::recovery_domain_normalizes_and_binds_the_trusted_backend_identity ... ok
+test stdio::tests::stdio_cleanup_rejects_bad_receipt_and_preserves_retry ... ok
+test implementation::tests::catalog_resolves_exact_content_and_missing_cids_fail ... ok
+test stdio::tests::stdio_exit_requires_clean_stream_end ... ok
+test stdio::tests::stdio_flood_applies_frame_bound_before_capture ... ok
+test stdio::tests::stdio_input_and_output_preserve_bounded_bytes ... ok
+test stdio::tests::stdio_launch_rejects_invalid_data_before_backend_access ... ok
+test stdio::tests::stdio_rejects_missing_exit_duplicate_exit_and_post_exit_output ... ok
+test stdio::tests::stdio_input_drop_closes_sender_and_stop_is_distinct_from_exit ... ok
+test stdio::tests::stdio_stop_reaps_only_owned_sandbox ... ok
+test stdio::tests::stdio_output_splits_frames_and_keeps_terminal_errors ... ok
+test implementation::tests::sync_snapshot_response_is_bounded_and_validated ... ok
+test stdio::tests::stdio_backpressure_cannot_hide_lifetime_deadline ... ok
+test implementation::tests::dropping_connection_retry_cancels_the_inflight_attempt ... ok
+test implementation::tests::connection_retry_is_bounded_and_skips_permanent_errors ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running tests\live_gateway.rs (target\debug\deps\live_gateway-3bd5b24395cfee88.exe)
+
+running 1 test
+test live_gateway_create_exec_sync_destroy ... ignored, requires an explicitly configured local OpenShell gateway and mTLS certificates
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_research-081df590cb95ec53.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\checkpoint_encoding.rs (target\debug\deps\checkpoint_encoding-9d1a3e353322e68d.exe)
+
+running 3 tests
+test checkpoint_rejects_corrupt_accounting ... ok
+test checkpoint_roundtrip_preserves_recovery_and_accounting ... ok
+test checkpoint_rejects_truncation_and_trailing_bytes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\checkpoint_store.rs (target\debug\deps\checkpoint_store-4c06c26043a7c0fe.exe)
+
+running 7 tests
+test ledger_rejects_missing_evidence_payload ... ok
+test in_flight_work_requires_recovery_after_reopen ... ok
+test malformed_evidence_ledger_pointer_fails_closed ... ok
+test atomic_checkpoint_reopens_after_store_drop ... ok
+test program_identity_is_checked_on_reopen ... ok
+test evidence_ledger_is_content_addressed_and_reopens_in_order ... ok
+test concurrent_handles_serialize_checkpoint_and_ledger_updates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+     Running tests\decision_state.rs (target\debug\deps\decision_state-2ea6f8927eb716cf.exe)
+
+running 4 tests
+test budget_reservation_is_conservative ... ok
+test interrupted_iteration_requires_recovery ... ok
+test confirmation_requires_independent_evidence ... ok
+test strict_improvements_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\metric_output.rs (target\debug\deps\metric_output-5a8108a38b38f421.exe)
+
+running 2 tests
+test named_metric_tolerates_crlf_but_not_duplicates ... ok
+test scalar_requires_one_finite_number ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\program_md.rs (target\debug\deps\program_md-2ce6e9455ad5efdf.exe)
+
+running 5 tests
+test missing_metric_is_rejected ... ok
+test overlapping_editable_and_readonly_rejected ... ok
+test program_digest_binds_exact_source ... ok
+test non_positive_budget_rejected ... ok
+test valid_program_parses ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\real_pipeline.rs (target\debug\deps\real_pipeline-e4b24e951512d2b2.exe)
+
+running 4 tests
+test abrupt_child_exit_helper ... ok
+
+running 1 test
+test abrupt_child_exit_reopens_as_recovery_and_restores_baseline ... ok
+test tool_cannot_write_outside_the_exact_vcs_snapshot_path ... ok
+test twenty_iterations_keep_only_strict_improvements_and_reopen_evidence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.17s
+
+     Running tests\research_owner.rs (target\debug\deps\research_owner-e98bdb3030078801.exe)
+
+running 5 tests
+test abrupt_owner_child_helper ... ok
+test second_loop_owner_is_rejected_while_first_is_alive ... ok
+test resume_can_acquire_owner_after_previous_loop_drops ... ok
+test fresh_constructor_refuses_existing_checkpoint ... ok
+test abrupt_process_termination_releases_run_owner ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\vcs_workspace.rs (target\debug\deps\vcs_workspace-6309fe55a0b46866.exe)
+
+running 1 test
+warning: in the working copy of 'src/value.txt', LF will be replaced by CRLF the next time Git touches it
+test vcs_keep_and_revert_return_distinct_receipts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_search-e03b82bf7bc675ea.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_search_providers-32adbc37423bed56.exe)
+
+running 9 tests
+test fetch::tests::rejects_decoded_expansion_above_configured_byte_limit ... ok
+test ssrf::tests::rejects_non_public_ipv6_and_ipv4_mapped_private ... ok
+test fetch::tests::decodes_declared_legacy_charset_and_falls_back_for_unknown_label ... ok
+test ssrf::tests::rejects_non_public_ipv4_ranges_and_allows_global_unicast ... ok
+test ssrf::tests::rejects_overlong_target_before_dns_lookup ... ok
+test fetch::tests::rejects_markdown_output_above_configured_byte_limit ... ok
+test tavily::tests::invalid_site_filter_is_rejected_before_dispatch ... ok
+test fetch::tests::rejects_dom_depth_and_node_count_before_markdown_walk ... ok
+test runtime::tests::worker_guard_holds_concurrency_after_call_drop ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\provider_contract.rs (target\debug\deps\provider_contract-9357cfcc9177f43b.exe)
+
+running 9 tests
+test search_fails_closed_when_redactor_accounting_is_invalid ... ok
+test fetch_rejects_private_destination_without_explicit_origin ... ok
+test fetch_rejects_control_characters_in_user_agent ... ok
+test searxng_maps_results_and_redacts_query ... ok
+test fetch_revalidates_redirect_target_before_request ... ok
+test tavily_maps_rate_limit_without_exposing_response_body ... ok
+test fetch_enforces_body_byte_limit ... ok
+test tavily_maps_results_and_keeps_key_out_of_debug_output ... ok
+test fetch_converts_html_strips_hidden_text_and_marks_untrusted ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_search_sift-1705969f5cbeccef.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\dropped_manifest.rs (target\debug\deps\dropped_manifest-0e460c33103d2231.exe)
+
+running 10 tests
+test oversized_dropped_chunk_is_rejected ... ok
+test recovery_rejects_unknown_wire_fields ... ok
+test recovery_rejects_content_hash_mismatch ... ok
+test recovery_rejects_unknown_kind_and_version ... ok
+test recovery_enforces_manifest_bounds ... ok
+test dropped_chunks_recoverable_by_ref ... ok
+test drop_stats_count_matches_dropped ... ok
+test dropped_refs_unique ... ok
+test recovery_limits_aggregate_content_bytes ... ok
+test persistence_never_commits_an_unrecoverable_aggregate ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+     Running tests\source_race.rs (target\debug\deps\source_race-d6ef32c5479e4e90.exe)
+
+running 8 tests
+test cancellation_after_permit_acquisition_releases_it ... ok
+test duplicate_evidence_is_validated_only_once ... ok
+test race_failure_preserves_untrusted_fallback ... ok
+test first_accepted_aborts_and_releases_losers ... ok
+test race_cancellation_and_validation_budget_are_enforced ... ok
+test completed_losers_are_retrieved_instead_of_cancelled ... ok
+test deadline_and_closed_source_pool_have_explicit_outcomes ... ok
+test best_mode_waits_for_more_relevant_source ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\web_pipeline.rs (target\debug\deps\web_pipeline-d1e81812c4cf3a97.exe)
+
+running 1 test
+test real_web_providers_redact_race_preserve_provenance_and_recover_dropped_chunks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests polaris_daemon
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_ext
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_ext_mcp
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_ext_skills
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_kernel_verifier
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_openshell_client
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_runtime_research
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_search
+
+running 1 test
+test crates\polaris-search\src\lib.rs - (line 11) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 1.19s; merged doctests compilation took 1.07s
+   Doc-tests polaris_search_providers
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_search_sift
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

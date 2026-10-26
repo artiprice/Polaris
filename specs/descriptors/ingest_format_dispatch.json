@@ -1,0 +1,24 @@
+{
+  "type_of": "function",
+  "name": "DefaultDocParser::parse",
+  "file_path": "crates/polaris-ingest/src/lib.rs",
+  "logic_name": "Ingest Format Dispatch And Honest Unsupported Results",
+  "test_list": [
+    { "test_name": "plain_text_is_normalized_with_line_provenance", "description": "UTF-8 text becomes ordered paragraph blocks with source line markers." },
+    { "test_name": "markdown_headings_tables_and_code_are_preserved", "description": "CommonMark structures are represented as SDK blocks without losing text." },
+    { "test_name": "html_is_parsed_and_script_content_is_excluded", "description": "HTML DOM parsing yields readable text and ignores script/style payloads." },
+    { "test_name": "csv_rows_preserve_quoted_commas_and_newlines", "description": "Quoted fields and embedded newlines are parsed as cells." },
+    { "test_name": "tsv_uses_tabs_as_the_delimiter", "description": "TSV extension selects tab separation instead of silently parsing as comma CSV." },
+    { "test_name": "byte_signature_takes_precedence_over_misleading_pdf_extension", "description": "Recognized PDF magic bytes take precedence over a misleading plain-text payload extension." },
+    { "test_name": "unknown_bytes_return_typed_unsupported", "description": "Unrecognized input does not get guessed from a misleading extension." },
+    { "test_name": "oversize_input_rejected_before_format_parser", "description": "Input over the configured byte cap returns TooLarge before parsing." }
+  ],
+  "dependencies": ["polaris_sdk::registry::{DocParser, DocSource, Document, DocBlock, IngestError}"],
+  "libraries": ["pulldown-cmark", "htmd", "encoding_rs", "infer", "csv"],
+  "inputs": [
+    { "name": "src", "type": "DocSource<'_>", "description": "Untrusted bytes, file name, and optional MIME." },
+    { "name": "max_bytes", "type": "u64", "description": "Hard input byte limit." }
+  ],
+  "output_type": "Result<Document, IngestError>",
+  "output_description": "Bounded normalized document or a typed unsupported/malformed/size error."
+}

@@ -13,6 +13,50 @@ use std::{
 };
 type TestResult = Result<(), Box<dyn Error>>;
 
+#[test]
+fn changed_cells_restore_unchanged_editor_cursor_after_paint() -> TestResult {
+    let mut presenter =
+        BufferedPresenter::new_with_cursor_state(Sink::default(), CursorState::Hidden);
+    let backend = CrosstermBackend::new(presenter.writer());
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Fixed(Rect::new(0, 0, 20, 5)),
+        },
+    )?;
+    for effort in ["medium", "high"] {
+        let before = presenter.output().bytes.len();
+        presenter.begin_frame()?;
+        terminal.draw(|frame| {
+            frame.render_widget(Paragraph::new(effort), Rect::new(10, 4, 10, 1));
+            frame.set_cursor_position(Position::new(1, 1));
+        })?;
+        let _written = presenter.commit()?;
+        let delta = presenter
+            .output()
+            .bytes
+            .get(before..)
+            .ok_or("output moved backwards")?;
+        assert!(
+            delta.ends_with(b"\x1b[2;2H\x1b[?25h"),
+            "paint must end in editor position then reveal: {delta:?}"
+        );
+        if effort == "high" {
+            assert!(
+                delta.starts_with(b"\x1b[?25l"),
+                "visible caret must be hidden while repainting"
+            );
+        }
+    }
+    presenter.begin_frame()?;
+    terminal.draw(|frame| {
+        frame.render_widget(Paragraph::new("high"), Rect::new(10, 4, 10, 1));
+        frame.set_cursor_position(Position::new(1, 1));
+    })?;
+    assert_eq!(presenter.commit()?, 0);
+    Ok(())
+}
+
 #[derive(Default)]
 struct Sink {
     bytes: Vec<u8>,

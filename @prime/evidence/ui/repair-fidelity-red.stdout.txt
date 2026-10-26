@@ -1,0 +1,108 @@
+
+running 7 tests
+test export_reference_matrix ... ok
+test composer_has_open_black_interior_and_complete_rules ... FAILED
+test composer_grows_from_wrapped_rows_up_to_three_eighths ... FAILED
+test welcome_strokes_keep_reference_center_ray_and_tip_colors ... FAILED
+test welcome_matches_reference_composition ... FAILED
+test completion_keeps_selected_candidate_visible_on_black_surface ... FAILED
+test information_sheet_keeps_black_surface_and_pinned_hints ... FAILED
+
+failures:
+
+---- composer_has_open_black_interior_and_complete_rules stdout ----
+
+thread 'composer_has_open_black_interior_and_complete_rules' (800) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:32:5:
+assertion `left == right` failed
+  left: (2, 18, 76, 3)
+ right: (2, 19, 76, 3)
+
+---- composer_grows_from_wrapped_rows_up_to_three_eighths stdout ----
+
+thread 'composer_grows_from_wrapped_rows_up_to_three_eighths' (1856) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:53:9:
+assertion `left == right` failed
+  left: 1
+ right: 9
+
+---- welcome_strokes_keep_reference_center_ray_and_tip_colors stdout ----
+
+thread 'welcome_strokes_keep_reference_center_ray_and_tip_colors' (6692) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:69:5:
+assertion `left == right` failed
+  left: "─"
+ right: "✦"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- welcome_matches_reference_composition stdout ----
+
+thread 'welcome_matches_reference_composition' (3384) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:21:5:
+                                                                                
+                                                                                
+  ✦ Polaris                                                                     
+  offline · medium · AUTO · C:/workspace/polaris                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                        ╷                                       
+                                        │                                       
+                                    ╶───✦───╴                                   
+                                        │                                       
+                                        ╵                                       
+                         What would you like to work on?                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  > What's on your mind for Polaris?                                            
+                                                                                
+  ─                                                                             
+                                                                                
+                                                                                
+                                                                                
+
+---- completion_keeps_selected_candidate_visible_on_black_surface stdout ----
+
+thread 'completion_keeps_selected_candidate_visible_on_black_surface' (4992) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:82:5:
+                                                                                
+                                                                                
+  ✦ Polaris                                                                     
+  offline · medium · AUTO                                                       
+  ┌──────────────────────────────────────────────────────────────────────────┐  
+  │Commands                                                                  │  
+  │  /candidate00  command description                                       │  
+  │  /candidate01  command description                                       │  
+  │  /candidate02  command description  ╷                                    │  
+  │  /candidate03  command description  │                                    │  
+  │  /candidate04  command description──✦───╴                                │  
+  │  /candidate05  command description  │                                    │  
+  │  /candidate06  command description  ╵                                    │  
+  │  /candidate07  command descriptionu like to work on?                     │  
+  │  /candidate08  command description                                       │  
+  └──────────────────────────────────────────────────────────────────────────┘  
+                                                                                
+                                                                                
+  > /                                                                           
+                                                                                
+  ─                                                                             
+                                                                                
+                                                                                
+                                                                                
+
+---- information_sheet_keeps_black_surface_and_pinned_hints stdout ----
+
+thread 'information_sheet_keeps_black_surface_and_pinned_hints' (3020) panicked at crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:96:28:
+assertion `left == right` failed
+  left: Rgb(28, 28, 28)
+ right: Rgb(0, 0, 0)
+
+
+failures:
+    completion_keeps_selected_candidate_visible_on_black_surface
+    composer_grows_from_wrapped_rows_up_to_three_eighths
+    composer_has_open_black_interior_and_complete_rules
+    information_sheet_keeps_black_surface_and_pinned_hints
+    welcome_matches_reference_composition
+    welcome_strokes_keep_reference_center_ray_and_tip_colors
+
+test result: FAILED. 1 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

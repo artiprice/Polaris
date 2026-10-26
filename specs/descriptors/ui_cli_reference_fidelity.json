@@ -1,0 +1,63 @@
+{
+  "type_of": "module",
+  "name": "reference_design_fidelity",
+  "file_path": "crates/polaris-ui/crates/cli/src/screen.rs",
+  "logic_name": "Reference design fidelity repair",
+  "test_list": [
+    {
+      "test_name": "welcome_matches_reference_composition",
+      "description": "Reference header x4/y2, version/path in one line, hero separated from the exact greeting, footer last row."
+    },
+    {
+      "test_name": "composer_has_open_black_interior_and_complete_rules",
+      "description": "Thin full-width top/bottom rules; black editor; muted placeholder; marker/text inset match dist."
+    },
+    {
+      "test_name": "composer_grows_from_wrapped_rows_up_to_three_eighths",
+      "description": "Logical and wrapped rows grow up to floor(height*3/8), preserving draft/caret on resize."
+    },
+    {
+      "test_name": "welcome_strokes_keep_reference_center_ray_and_tip_colors",
+      "description": "North Star uses per-glyph mint center, green adjoining rays and gray tips."
+    },
+    {
+      "test_name": "completion_keeps_selected_candidate_visible_on_black_surface",
+      "description": "Opaque black completion follows selection beyond the first page and uses foreground focus only."
+    },
+    {
+      "test_name": "information_sheet_keeps_black_surface_and_pinned_hints",
+      "description": "Black fine-outline sheet with distinct title separator and footer that does not overwrite its bottom border."
+    },
+    {
+      "test_name": "export_reference_matrix",
+      "description": "Optional exact Ratatui SVG/plain captures at 60x20, 80x24, 100x30, 120x40 and 160x60; no fabricated terminal screenshot."
+    },
+    {
+      "test_name": "ansi_and_terminal_preserve_reference_semantic_colors",
+      "description": "Explicit ANSI and terminal themes preserve visible placeholder, mode and command-focus semantic foregrounds while keeping inherited/black surfaces."
+    },
+    {
+      "test_name": "conversation_omits_role_headings_but_retains_error_labels",
+      "description": "User and assistant messages use neutral text without You/Polaris captions; submitted prompts retain #141414, while errors retain explicit labels."
+    }
+  ],
+  "dependencies": [
+    "ScreenState",
+    "Composer",
+    "ViewState",
+    "ScreenLayout"
+  ],
+  "libraries": [
+    "ratatui",
+    "unicode-width"
+  ],
+  "inputs": [
+    {
+      "name": "screen",
+      "type": "ScreenState",
+      "description": "Actual screen state painted through deterministic test backend at reference matrix sizes."
+    }
+  ],
+  "output_type": "Result<(), Box<dyn Error>>",
+  "output_description": "Reference geometry, semantic color, caret and viewport evidence; not a physical terminal screenshot."
+}

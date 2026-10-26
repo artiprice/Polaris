@@ -1,0 +1,68 @@
+{
+  "type_of": "input protocol and native key decoder repair",
+  "name": "windows_input_protocol_parity",
+  "file_path": "crates/polaris-ui/crates/cli/src/{terminal.rs,windows_input.rs,input_decoder.rs,bracketed_paste.rs,input.rs}",
+  "logic_name": "Windows Alacritty keyboard and editing parity",
+  "test_list": [
+    {
+      "test_name": "windows_vt_mouse_and_keyboard_protocols_are_balanced",
+      "description": "Assert Windows sends balanced CSI-u push/pop and SGR mouse enable/disable bytes through the owned terminal lifecycle."
+    },
+    {
+      "test_name": "native_del_character_is_backspace",
+      "description": "Map native DEL 0x7f to Backspace so editing removes the preceding grapheme."
+    },
+    {
+      "test_name": "native_backspace_and_delete_virtual_keys_remain_distinct",
+      "description": "Verify VK_BACK and VK_DELETE normalize to distinct Backspace and Delete events."
+    },
+    {
+      "test_name": "ambiguous_c0_lf_is_conservatively_control_enter",
+      "description": "Treat VK_RETURN LF and otherwise ambiguous C0 LF conservatively as Ctrl+Enter; only VK_J or enhanced CSI-u identifies Ctrl+J."
+    },
+    {
+      "test_name": "csi_u_control_j_remains_distinct_from_control_enter",
+      "description": "Retain explicit enhanced Ctrl+J as the legacy newline shortcut."
+    },
+    {
+      "test_name": "native_release_records_do_not_break_csi_u_or_bracketed_paste",
+      "description": "Preserve CSI-u and bracketed-paste decoding when Windows console character records include paired key-up events; verified RED then GREEN in parity-input-red-release-sequences.txt and parity-input-green-core.txt."
+    },
+    {
+      "test_name": "offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste",
+      "description": "PASS: Windows ConPTY app-level editor test covers ASCII/Unicode editing, middle paste, Ctrl+Enter remaining on one composer row, and Shift+Enter adding the adjacent row. The test moves the cursor to end before checking newline shortcuts; the initial `secondBC` result was correct insertion at document start, so the fixture was corrected rather than weakening behavior assertions. Raw passing output: parity-input-app-editor-final.txt."
+    },
+    {
+      "test_name": "native_conpty_vt_sequences_preserve_editor_events",
+      "description": "PASS: Windows ConPTY child InputReader fixture observed Shift+Enter, Ctrl+Enter, Backspace, Delete, and middle bracketed paste while consuming paired native key-up records; raw output is parity-input-green-native-sequence-probe.txt. This verifies the input reader seam, not the polaris-cli composer screen."
+    },
+    {
+      "test_name": "quit_restores_vt_keyboard_and_mouse_modes",
+      "description": "Assert every acquired VT reporting mode receives a matching reset on ordinary exit."
+    }
+  ],
+  "dependencies": [
+    "polaris-ui-cli input decoder",
+    "polaris-ui-cli terminal guard",
+    "polaris-cli TUI input reader"
+  ],
+  "libraries": [
+    "crossterm",
+    "crossterm_winapi"
+  ],
+  "inputs": [
+    {
+      "name": "Windows native key record",
+      "type": "NativeKeyRecord",
+      "description": "Virtual key, Unicode unit, modifier state and key phase."
+    },
+    {
+      "name": "terminal writer",
+      "type": "Write",
+      "description": "VT protocol output stream used to acquire and restore reporting modes."
+    }
+  ],
+  "output_type": "normalized KeyEvent plus balanced terminal mode bytes",
+  "output_description": "Modifier-preserving safe keyboard events, reliable DEL editing and balanced CSI-u/SGR mode lifecycle.",
+  "behavior_change": "Ambiguous C0 LF and LF tagged as VK_RETURN are treated as Ctrl+Enter (inert in Composer), not Ctrl+J. Ctrl+J remains a newline shortcut only when the J virtual key or enhanced CSI-u Ctrl+J sequence identifies it. This intentionally removes the accidental Ctrl+Enter newline alias."
+}

@@ -1,0 +1,17 @@
+{
+  "name": "continuation-controller-ready",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:29:29.865Z",
+  "pid": 17108,
+  "code": 0,
+  "finished": "2026-10-25T05:29:59.681Z"
+}

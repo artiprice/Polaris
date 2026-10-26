@@ -1,0 +1,24 @@
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Finished `test` profile [unoptimized] target(s) in 1.83s
+     Running tests\research_owner.rs (target\debug\deps\research_owner-93dd56de643edae3.exe)
+
+running 5 tests
+test abrupt_owner_child_helper ... ok
+test resume_can_acquire_owner_after_previous_loop_drops ... ok
+Error: "second run owner was unexpectedly accepted"
+test second_loop_owner_is_rejected_while_first_is_alive ... FAILED
+Error: "fresh constructor overwrote an existing checkpoint"
+test fresh_constructor_refuses_existing_checkpoint ... FAILED
+Error: "parent acquired ownership while child was active"
+test abrupt_process_termination_releases_run_owner ... FAILED
+
+failures:
+
+failures:
+    abrupt_process_termination_releases_run_owner
+    fresh_constructor_refuses_existing_checkpoint
+    second_loop_owner_is_rejected_while_first_is_alive
+
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p polaris-runtime-research --test research_owner`

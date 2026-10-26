@@ -1,0 +1,129 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+error[E0599]: no method named `set_selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:13:7
+   |
+13 |     c.set_selection(6..11);
+   |       ^^^^^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:14:18
+   |
+14 |     assert_eq!(c.selection(), Some(6..11));
+   |                  ^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:17:18
+   |
+17 |     assert_eq!(c.selection(), None);
+   |                  ^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:20:18
+   |
+20 |     assert_eq!(c.selection(), Some(6..11));
+   |                  ^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `move_word_left` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:28:7
+   |
+28 |     c.move_word_left();
+   |       ^^^^^^^^^^^^^^
+   |
+help: there is a method `move_left` with a similar name
+   |
+28 -     c.move_word_left();
+28 +     c.move_left();
+   |
+
+error[E0599]: no method named `delete_word_backward` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:30:7
+   |
+30 |     c.delete_word_backward();
+   |       ^^^^^^^^^^^^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `move_word_left` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:37:10
+   |
+37 |     chip.move_word_left();
+   |          ^^^^^^^^^^^^^^
+   |
+help: there is a method `move_left` with a similar name
+   |
+37 -     chip.move_word_left();
+37 +     chip.move_left();
+   |
+
+error[E0599]: no method named `move_document_home` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:46:7
+   |
+46 |     c.move_document_home();
+   |       ^^^^^^^^^^^^^^^^^^
+   |
+help: there is a method `move_home` with a similar name
+   |
+46 -     c.move_document_home();
+46 +     c.move_home();
+   |
+
+error[E0599]: no method named `move_line_end` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:47:7
+   |
+47 |     c.move_line_end();
+   |       ^^^^^^^^^^^^^
+   |
+help: there is a method `move_end` with a similar name
+   |
+47 -     c.move_line_end();
+47 +     c.move_end();
+   |
+
+error[E0599]: no method named `move_line_home` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:49:7
+   |
+49 |     c.move_line_home();
+   |       ^^^^^^^^^^^^^^
+   |
+help: there is a method `move_home` with a similar name
+   |
+49 -     c.move_line_home();
+49 +     c.move_home();
+   |
+
+error[E0599]: no method named `move_document_end` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:51:7
+   |
+51 |     c.move_document_end();
+   |       ^^^^^^^^^^^^^^^^^
+   |
+help: there is a method `move_home` with a similar name
+   |
+51 -     c.move_document_end();
+51 +     c.move_home();
+   |
+
+error[E0599]: no method named `move_document_home_with_selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:53:7
+   |
+53 |     c.move_document_home_with_selection();
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:54:18
+   |
+54 |     assert_eq!(c.selection(), Some(0..c.text().len()));
+   |                  ^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `set_selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:64:7
+   |
+64 |     c.set_selection(6..10);
+   |       ^^^^^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+error[E0599]: no method named `selection` found for struct `polaris_ui_model::composer::Composer` in the current scope
+  --> crates\polaris-ui\crates\model\tests\continuation_editor.rs:68:18
+   |
+68 |     assert_eq!(c.selection(), Some(6..10));
+   |                  ^^^^^^^^^ method not found in `polaris_ui_model::composer::Composer`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-ui-model` (test "continuation_editor") due to 15 previous errors

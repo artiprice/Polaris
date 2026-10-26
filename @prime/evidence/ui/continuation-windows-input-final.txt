@@ -1,0 +1,39 @@
+FINAL VERIFICATION (2026-10-25)
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli --all-targets
+EXIT: 0
+OUTPUT: library 20 passed; editor geometry 3 passed; editor render 1 passed; public exports 1 passed; reference fidelity 9 passed; render contract 17 passed; terminal input 3 passed; terminal lifecycle 6 passed; presenter 6 passed; scheduler 8 passed; native_input_fixture example compiled.
+
+COMMAND: cargo test --offline --locked -p polaris-cli --test ui_terminal -- --nocapture
+EXIT: 0
+OUTPUT: running 15 tests; 15 passed; 0 failed. Includes native ConPTY $-prefixed directive commit, literal bracketed paste, native console record fixture, demo Shift+Enter/Shift+Up cursor placement, and terminal restoration.
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli bracketed_paste::tests -- --nocapture
+EXIT: 0
+OUTPUT: 10 passed; 0 failed. Includes oversized_paste_discards_tail_until_end_marker_then_recovers. The decoder emits one PasteTooLarge error, keeps discarding all content through the closing marker without retaining or emitting it, then accepts a new key.
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli input_decoder::tests -- --nocapture
+EXIT: 0
+OUTPUT: 9 passed; 0 failed. Includes delayed Unicode on VK_MENU/VK_LMENU/VK_RMENU release, duplicate suppression when Unicode already arrived on key-down, and ordinary key-up remaining Release.
+
+CONTROLLED RAW RECORD DIAGNOSTIC:
+A bounded ConPTY fixture sent $a, a, and CSI-u input with ENABLE_VIRTUAL_TERMINAL_INPUT cleared before ReadConsoleInput. It observed:
+VK=0012 U=0000 DOWN=true SCAN=0038 MOD=ControlKeyState(2)
+VK=0063 U=0000 DOWN=true SCAN=0051 MOD=ControlKeyState(2)
+VK=0063 U=0000 DOWN=false SCAN=0051 MOD=ControlKeyState(2)
+VK=0066 U=0000 DOWN=true SCAN=004d MOD=ControlKeyState(2)
+VK=0066 U=0000 DOWN=false SCAN=004d MOD=ControlKeyState(2)
+VK=0012 U=0024 DOWN=false SCAN=0038 MOD=ControlKeyState(0)
+VK=0000 U=0061 DOWN=true SCAN=0000 MOD=ControlKeyState(0)
+VK=0000 U=0061 DOWN=false SCAN=0000 MOD=ControlKeyState(0)
+VK=0000 U=0061 DOWN=true SCAN=0000 MOD=ControlKeyState(0)
+VK=0000 U=0061 DOWN=false SCAN=0000 MOD=ControlKeyState(0)
+The $ Unicode unit arrived on the VK_MENU key-up. The decoder converts that delayed character to one Press and clears pending Alt state when text has already been emitted on key-down, preventing duplicate insertion. The production native reader keeps VT input enabled: clearing that flag passed the sigil tests but failed the existing physical Shift+Up cursor assertion (row position 19 vs expected 20); restoring the flag and retaining Alt-release handling makes all 15 ConPTY tests pass.
+
+COMMAND: cargo test --offline --locked -p polaris-cli demo::tests -- --nocapture
+EXIT: 0
+OUTPUT: 4 passed; 0 failed, including incremental stream, replay lifecycle, atomic questionnaire answers, and bounded scripted beats.
+
+OVERSIZED PASTE SECURITY: after exceeding one MiB, the decoder remains in a discard-only paste state through END_MARKER. Payload tail such as newline + /quit + newline cannot become ordinary editor keys or a Paste event; input resumes after the framing terminator.
+
+UNVERIFIED: Other Windows terminal hosts and physical keyboard layouts were not exercised by this ConPTY fixture.

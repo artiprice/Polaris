@@ -275,9 +275,9 @@ impl PolicySource for PolicyCatalog {
 
 /// OpenShell backend. The policy resolver is generic for direct CAS injection by the composition root.
 pub struct OpenShellBackend<P = PolicyCatalog> {
-    client: Arc<OpenShellClient>,
+    pub(crate) client: Arc<OpenShellClient>,
     policies: P,
-    config: OpenShellConfig,
+    pub(crate) config: OpenShellConfig,
     gateway_driver: GatewayDriverInfo,
 }
 
@@ -979,21 +979,21 @@ impl<P: PolicySource> SandboxBackend for OpenShellBackend<P> {
     }
 }
 
-struct SandboxCleanupGuard {
+pub(crate) struct SandboxCleanupGuard {
     client: Arc<OpenShellClient>,
     name: String,
     armed: bool,
 }
 
 impl SandboxCleanupGuard {
-    fn new(client: Arc<OpenShellClient>, name: String) -> Self {
+    pub(crate) fn new(client: Arc<OpenShellClient>, name: String) -> Self {
         Self {
             client,
             name,
             armed: true,
         }
     }
-    fn disarm(&mut self) {
+    pub(crate) fn disarm(&mut self) {
         self.armed = false;
     }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "parity-diff-check",
+  "command": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:47:01.618Z",
+  "pid": 16340,
+  "code": 0,
+  "finished": "2026-10-25T11:47:01.824Z"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "repair-conversation-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-cli",
+    "--test",
+    "reference_fidelity",
+    "conversation_omits_role_headings_but_retains_error_labels",
+    "--",
+    "--exact"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:52:30.276Z",
+  "pid": 5620,
+  "code": 101,
+  "finished": "2026-10-25T00:52:32.204Z"
+}

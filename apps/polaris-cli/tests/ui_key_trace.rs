@@ -42,10 +42,18 @@ fn trace_enforces_the_byte_limit_without_partial_followup() -> Result<(), Box<dy
     let path = dir.path().join("trace");
     let mut trace = KeyTrace::create(&path)?;
     let event = NormalizedInput::Key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
-    for _ in 0..104_857 {
+    let record_bytes = b"key enter none press\n".len();
+    let accepted = 1_048_576_usize
+        .checked_div(record_bytes)
+        .ok_or("invalid record size")?;
+    for _ in 0..accepted {
         trace.record_input(&event)?;
     }
-    let expected_bytes = 1_048_570_u64;
+    let expected_bytes = u64::try_from(
+        accepted
+            .checked_mul(record_bytes)
+            .ok_or("record budget overflow")?,
+    )?;
     assert_eq!(std::fs::metadata(&path)?.len(), expected_bytes);
     assert!(
         trace.record_input(&event).is_err(),
@@ -66,5 +74,78 @@ fn trace_refuses_symbolic_link_target() -> Result<(), Box<dyn std::error::Error>
     std::os::unix::fs::symlink(&target, &path)?;
     assert!(KeyTrace::create(&path).is_err());
     assert_eq!(std::fs::read_to_string(target)?, "keep");
+    Ok(())
+}
+
+#[test]
+fn trace_distinguishes_enter_modifiers_edit_keys_and_phases()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("trace");
+    let mut trace = KeyTrace::create(&path)?;
+    for key in [
+        KeyEvent::new(KeyCode::Enter, KeyModifiers::SHIFT),
+        KeyEvent::new(KeyCode::Enter, KeyModifiers::CONTROL),
+        KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE),
+        KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE),
+        KeyEvent::new_with_kind(
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+            crossterm::event::KeyEventKind::Release,
+        ),
+    ] {
+        trace.record_input(&NormalizedInput::Key(key))?;
+    }
+    trace.finish()?;
+    let text = std::fs::read_to_string(path)?;
+    for field in [
+        "key enter shift press",
+        "key enter control press",
+        "key backspace none press",
+        "key delete none press",
+        "key enter none release",
+    ] {
+        assert!(text.contains(field), "metadata missing: {field}: {text}");
+    }
+    Ok(())
+}
+
+#[test]
+fn mouse_trace_reports_events_coordinates_and_modifiers_without_text()
+-> Result<(), Box<dyn std::error::Error>> {
+    use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("mouse-trace");
+    let mut trace = KeyTrace::create(&path)?;
+    for kind in [
+        MouseEventKind::Down(MouseButton::Left),
+        MouseEventKind::Drag(MouseButton::Left),
+        MouseEventKind::Up(MouseButton::Left),
+        MouseEventKind::Moved,
+        MouseEventKind::ScrollDown,
+    ] {
+        trace.record_input(&NormalizedInput::Mouse(MouseEvent {
+            kind,
+            column: 12,
+            row: 7,
+            modifiers: KeyModifiers::SHIFT,
+        }))?;
+    }
+    trace.record_input(&NormalizedInput::Paste("PRIVATE-MOUSE-CANARY".to_owned()))?;
+    trace.finish()?;
+    let text = std::fs::read_to_string(path)?;
+    for expected in [
+        "mouse down left 12 7 shift",
+        "mouse drag left 12 7 shift",
+        "mouse up left 12 7 shift",
+        "mouse move none 12 7 shift",
+        "mouse scroll-down none 12 7 shift",
+    ] {
+        assert!(
+            text.contains(expected),
+            "missing mouse metadata: {expected}: {text}"
+        );
+    }
+    assert!(!text.contains("PRIVATE-MOUSE-CANARY"));
     Ok(())
 }

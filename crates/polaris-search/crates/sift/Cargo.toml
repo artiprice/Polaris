@@ -18,3 +18,13 @@ thiserror = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-search-providers = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
+tokio-util = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+blake3 = { workspace = true }
+
+[dev-dependencies]
+bytes = { workspace = true }
+polaris-ratelimit = { workspace = true }
+polaris-storage-cas = { workspace = true }
+tempfile = { workspace = true }

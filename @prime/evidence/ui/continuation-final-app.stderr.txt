@@ -1,0 +1,8 @@
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 3.65s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)
+     Running tests\rtk_cli.rs (target\debug\deps\rtk_cli-0c61445a1e824863.exe)
+     Running tests\ui_key_trace.rs (target\debug\deps\ui_key_trace-85786ca3b770418b.exe)
+     Running tests\ui_session.rs (target\debug\deps\ui_session-001382f92b433545.exe)
+     Running tests\ui_startup.rs (target\debug\deps\ui_startup-4f34445c204916c2.exe)
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-97e39ee21424c315.exe)

@@ -1,0 +1,79 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test legacy_ui_theme_remains_independent ... ok
+test cli_preferences_default_and_validate ... ok
+test global_preference_write_is_atomic_on_failure ... ok
+test only_requested_field_is_updated ... ok
+test global_preference_update_preserves_unknown_keys ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 9 tests
+test defaults_only_is_valid ... ok
+test tables_merge_scalars_replace ... ok
+test provenance_reports_winning_layer ... ok
+test later_layer_overrides_earlier ... ok
+test unknown_key_is_rejected ... ok
+test budget_usd_accepts_integer_and_decimal_text ... ok
+test invalid_value_is_rejected ... ok
+test prop_highest_layer_wins_per_key ... ok
+test prop_merge_with_itself_is_idempotent ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+
+running 11 tests
+test env_conflicting_paths_are_invalid ... ok
+test env_layer_uses_prefix_and_double_underscore ... ok
+test session_overrides_roundtrip ... ok
+test no_repo_dir_is_none ... ok
+test reads_bom_and_crlf_files ... ok
+test home_global_dir_is_not_a_repo_dir ... ok
+test parse_error_reports_file_and_line ... ok
+test finds_nearest_repo_dir_walking_up ... ok
+test rejects_config_files_over_the_parser_bound ... ok
+test long_path_repo_dir_is_found ... ok
+test windows_locked_file_is_retried ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 1 test
+test golden_provenance_snapshot ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+
+running 5 tests
+test repo_cannot_set_endpoint ... ok
+test repo_cannot_downgrade_sandbox_tier ... ok
+test trust_grant_unlocks_listed_key ... ok
+test repo_may_set_allowlisted_style_keys ... ok
+test repo_literal_secret_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test parses_env_scheme ... ok
+test reference_converts_to_validated_sdk_location ... ok
+test rejects_bare_literal ... ok
+test reference_parser_enforces_provider_identifier_bounds ... ok
+test rejects_empty_name ... ok
+test parses_keyring_scheme ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test crates\polaris-config\src\lib.rs - (line 15) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+all doctests ran in 0.89s; merged doctests compilation took 0.72s

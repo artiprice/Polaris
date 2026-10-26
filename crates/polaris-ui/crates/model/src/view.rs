@@ -41,6 +41,8 @@ pub enum EntryKind {
     Assistant,
     /// Application notice.
     System,
+    /// Nonfatal warning visible to the user.
+    Warning,
     /// Failure visible to the user.
     Error,
 }
@@ -352,6 +354,10 @@ impl ViewState {
     }
     pub fn push_system(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
         self.push(EntryKind::System, text)
+    }
+    /// Append a bounded nonfatal warning with a distinct presentation role.
+    pub fn push_warning(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
+        self.push(EntryKind::Warning, text)
     }
     pub fn push_error(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
         self.push(EntryKind::Error, text)

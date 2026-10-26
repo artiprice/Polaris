@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+      Extract the shared request validation into a helper.
+
+    [ Read · src/validation.rs · complete [demo] ]
+      Ctrl+O to expand
+
+    [ Patch · 2 files · proposed [demo] ]
+      Ctrl+O to expand
+
+      I would extract the shared guard and keep the handlers focused on their work.
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Transcript                                                                                                       │
+  │                                                                                                                  │
+  │ Search / type to filter                                                                                          │
+  │ Tools: expanded · all content is from the UI preview                                                             │
+  │                                                                                                                  │
+  │   Extract the shared request validation into a helper.                                                           │
+  │                                                                                                                  │
+  │ [ Read · src/validation.rs · complete [demo] ]                                                                   │
+  │   Two handlers repeat the same input guard.                                                                      │
+  │   The error types already match.                                                                                 │
+  │   A shared helper keeps the handlers short.                                                                      │
+  │   Demo detail: malformed requests return an explicit error.                                                      │
+  │   Demo detail: empty input is rejected.                                                                          │
+  │   Demo detail: no real source files were opened.                                                                 │
+  │                                                                                                                  │
+  │ [ Patch · 2 files · proposed [demo] ]                                                                            │
+  │   src/validation.rs  +8 -3                                                                                       │
+  │   tests/validation.rs  +6 -0                                                                                     │
+  │   Open /diff to inspect the sample patch.                                                                        │
+  │                                                                                                                  │
+  │   I would extract the shared guard and keep the handlers focused on their work.                                  │
+  │ Type to search · Tab tools · Esc/Enter close                                                                     │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

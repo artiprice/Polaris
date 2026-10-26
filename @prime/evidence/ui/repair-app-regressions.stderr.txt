@@ -1,0 +1,8 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 10.11s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-08fd469deb879fd8.exe)
+     Running tests\ui_key_trace.rs (target\debug\deps\ui_key_trace-81b187c5ee3e788b.exe)
+     Running tests\ui_session.rs (target\debug\deps\ui_session-9fe152cef4c9ef2d.exe)
+     Running tests\ui_startup.rs (target\debug\deps\ui_startup-91926d6b37405ce7.exe)
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-d602048b43a42723.exe)
+error: test failed, to rerun pass `-p polaris-cli --test ui_terminal`

@@ -1,0 +1,1104 @@
+    Checking tokio-rustls v0.26.6
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking rustls-platform-verifier v0.7.1
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking tonic v0.14.6
+    Checking hyper-rustls v0.27.10
+    Checking tokio-tungstenite v0.26.2
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking reqwest v0.12.28
+    Checking reqwest v0.13.5
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\composer.rs:433:29
+    |
+433 |           self.draft.cursor = match self
+    |  _____________________________^
+434 | |             .boundaries()
+435 | |             .into_iter()
+436 | |             .take_while(|at| *at <= self.draft.cursor)
+...   |
+440 | |             None => 0,
+441 | |         };
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+    = note: `#[warn(clippy::manual_unwrap_or_default)]` on by default
+help: ascribe the type usize and replace your expression with
+    |
+433 ~         self.draft.cursor = self
+434 +             .boundaries()
+435 +             .into_iter()
+436 +             .take_while(|at| *at <= self.draft.cursor)
+437 ~             .last().unwrap_or_default();
+    |
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\composer.rs:445:9
+    |
+445 | /         match self
+446 | |             .boundaries()
+447 | |             .into_iter()
+448 | |             .take_while(|boundary| *boundary <= at.min(self.draft.text.len()))
+...   |
+452 | |             None => 0,
+453 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+help: ascribe the type usize and replace your expression with
+    |
+445 ~         self
+446 +             .boundaries()
+447 +             .into_iter()
+448 +             .take_while(|boundary| *boundary <= at.min(self.draft.text.len()))
+449 +             .last().unwrap_or_default()
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\questionnaire.rs:643:17
+    |
+643 | /                 if let Some(mut candidate) = self.active_editor().cloned() {
+644 | |                     if candidate.undo() { self.commit_editor(candidate)?; }
+645 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `#[warn(clippy::collapsible_if)]` on by default
+help: collapse nested if block
+    |
+643 ~                 if let Some(mut candidate) = self.active_editor().cloned()
+644 ~                     && candidate.undo() { self.commit_editor(candidate)?; }
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\questionnaire.rs:648:17
+    |
+648 | /                 if let Some(mut candidate) = self.active_editor().cloned() {
+649 | |                     if candidate.redo() { self.commit_editor(candidate)?; }
+650 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+648 ~                 if let Some(mut candidate) = self.active_editor().cloned()
+649 ~                     && candidate.redo() { self.commit_editor(candidate)?; }
+    |
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\tokens.rs:167:25
+    |
+167 |               let value = match numerator.checked_div(100) {
+    |  _________________________^
+168 | |                 Some(value) => value,
+169 | |                 None => 0,
+170 | |             };
+    | |_____________^ help: ascribe the type u32 and replace your expression with: `numerator.checked_div(100).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: this pattern reimplements `Result::unwrap_or`
+   --> crates\polaris-ui\crates\model\src\tokens.rs:171:13
+    |
+171 | /             match u8::try_from(value) {
+172 | |                 Ok(channel) => channel,
+173 | |                 Err(_) => u8::MAX,
+174 | |             }
+    | |_____________^ help: replace with: `u8::try_from(value).unwrap_or(u8::MAX)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `#[warn(clippy::manual_unwrap_or)]` on by default
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:141:19
+    |
+141 |       let seconds = match ms.checked_div(1000) {
+    |  ___________________^
+142 | |         Some(value) => value,
+143 | |         None => 0,
+144 | |     };
+    | |_____^ help: replace it with: `ms.checked_div(1000).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:145:17
+    |
+145 |       let hours = match seconds.checked_div(3600) {
+    |  _________________^
+146 | |         Some(value) => value,
+147 | |         None => 0,
+148 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_div(3600).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:149:19
+    |
+149 |       let minutes = match seconds.checked_div(60).and_then(|v| v.checked_rem(60)) {
+    |  ___________________^
+150 | |         Some(value) => value,
+151 | |         None => 0,
+152 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_div(60).and_then(|v| v.checked_rem(60)).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\model\src\view.rs:153:16
+    |
+153 |       let rest = match seconds.checked_rem(60) {
+    |  ________________^
+154 | |         Some(value) => value,
+155 | |         None => 0,
+156 | |     };
+    | |_____^ help: ascribe the type u64 and replace your expression with: `seconds.checked_rem(60).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\view.rs:535:9
+    |
+535 | /         if let Some(goal) = &mut self.goal {
+536 | |             if goal.state == GoalState::Active {
+537 | |                 goal.accumulated_ms = goal.active_ms(now_ms);
+538 | |                 goal.state = GoalState::Paused;
+539 | |             }
+540 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+535 ~         if let Some(goal) = &mut self.goal
+536 ~             && goal.state == GoalState::Active {
+537 |                 goal.accumulated_ms = goal.active_ms(now_ms);
+538 |                 goal.state = GoalState::Paused;
+539 ~             }
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\model\src\view.rs:544:9
+    |
+544 | /         if let Some(goal) = &mut self.goal {
+545 | |             if goal.state == GoalState::Paused {
+546 | |                 goal.active_since_ms = now_ms;
+547 | |                 goal.state = GoalState::Active;
+548 | |             }
+549 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+544 ~         if let Some(goal) = &mut self.goal
+545 ~             && goal.state == GoalState::Paused {
+546 |                 goal.active_since_ms = now_ms;
+547 |                 goal.state = GoalState::Active;
+548 ~             }
+    |
+
+warning: `polaris-ui-model` (lib) generated 12 warnings (run `cargo clippy --fix --lib -p polaris-ui-model -- --no-deps -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing` to apply 6 suggestions)
+    Checking polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+warning: `polaris-ui-model` (lib test) generated 12 warnings (12 duplicates)
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+warning: very complex type used. Consider factoring parts into `type` definitions
+  --> crates\polaris-ui\crates\model\tests\completion_ranking.rs:77:16
+   |
+77 |     let cases: [(&str, usize, Option<(CompletionKind, usize, &str)>); 18] = [
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#type_complexity
+   = note: `#[warn(clippy::type_complexity)]` on by default
+
+warning: this assertion has a constant value
+   --> crates\polaris-ui\crates\model\tests\completion_ranking.rs:291:5
+    |
+291 |     assert!(INDEX_FETCH_LIMIT >= MAX_RESULTS);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: consider moving this into a const block: `const { assert!(..) }`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#assertions_on_constants
+    = note: `#[warn(clippy::assertions_on_constants)]` on by default
+
+warning: `polaris-ui-model` (test "completion_ranking") generated 2 warnings
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+warning: expression can be simplified using `Option::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\layout.rs:105:20
+    |
+105 |       let max_rows = height
+    |  ____________________^
+106 | |         .saturating_mul(3)
+107 | |         .checked_div(8)
+108 | |         .map_or(1, |rows| rows)
+    | |_______________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+    = note: `#[warn(clippy::map_or_identity)]` on by default
+help: consider using `unwrap_or`
+    |
+108 -         .map_or(1, |rows| rows)
+108 +         .unwrap_or(1)
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+  --> crates\polaris-ui\crates\cli\src\questions.rs:56:19
+   |
+56 |     let desired = u16::try_from(content_rows).map_or(u16::MAX, |n| n).max(9);
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+   |
+56 -     let desired = u16::try_from(content_rows).map_or(u16::MAX, |n| n).max(9);
+56 +     let desired = u16::try_from(content_rows).unwrap_or(u16::MAX).max(9);
+   |
+
+warning: this `let...else` may be rewritten with the `?` operator
+   --> crates\polaris-ui\crates\cli\src\questions.rs:99:5
+    |
+ 99 | /     let Some(question) = overlay.state.current_question() else {
+100 | |         return None;
+101 | |     };
+    | |______^ help: replace it with: `let question = overlay.state.current_question()?;`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#question_mark
+    = note: `#[warn(clippy::question_mark)]` on by default
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:120:43
+    |
+120 |         let y = choice_top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+120 -         let y = choice_top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+120 +         let y = choice_top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:237:44
+    |
+237 |                 let col = x.saturating_add(u16::try_from(position.column).map_or(u16::MAX, |n| n));
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+237 -                 let col = x.saturating_add(u16::try_from(position.column).map_or(u16::MAX, |n| n));
+237 +                 let col = x.saturating_add(u16::try_from(position.column).unwrap_or(u16::MAX));
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:277:20
+    |
+277 |           let used = u16::try_from(text.len())
+    |  ____________________^
+278 | |             .map_or(u16::MAX, |n| n)
+    | |____________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+278 -             .map_or(u16::MAX, |n| n)
+278 +             .unwrap_or(u16::MAX)
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:315:9
+    |
+315 | /         u16::try_from(geometry.rows().len().min(4))
+316 | |             .map_or(4, |n| n)
+    | |_____________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+316 -             .map_or(4, |n| n)
+316 +             .unwrap_or(4)
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:369:29
+    |
+369 |             .saturating_add(u16::try_from(cursor.column).map_or(u16::MAX, |n| n)),
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+369 -             .saturating_add(u16::try_from(cursor.column).map_or(u16::MAX, |n| n)),
+369 +             .saturating_add(u16::try_from(cursor.column).unwrap_or(u16::MAX)),
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:373:29
+    |
+373 |             .saturating_add(u16::try_from(row).map_or(u16::MAX, |n| n)),
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+373 -             .saturating_add(u16::try_from(row).map_or(u16::MAX, |n| n)),
+373 +             .saturating_add(u16::try_from(row).unwrap_or(u16::MAX)),
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:418:41
+    |
+418 |         let screen_y = y.saturating_add(u16::try_from(display_row).map_or(u16::MAX, |n| n));
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+418 -         let screen_y = y.saturating_add(u16::try_from(display_row).map_or(u16::MAX, |n| n));
+418 +         let screen_y = y.saturating_add(u16::try_from(display_row).unwrap_or(u16::MAX));
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:434:33
+    |
+434 | ...                   u16::try_from(span.cells.start).map_or(u16::MAX, |n| n),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+434 -                                 u16::try_from(span.cells.start).map_or(u16::MAX, |n| n),
+434 +                                 u16::try_from(span.cells.start).unwrap_or(u16::MAX),
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:437:29
+    |
+437 | / ...                   u16::try_from(span.cells.end.saturating_sub(span.cells.start))
+438 | | ...                       .map_or(u16::MAX, |n| n),
+    | |__________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+438 -                                 .map_or(u16::MAX, |n| n),
+438 +                                 .unwrap_or(u16::MAX),
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:479:36
+    |
+479 |         let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+479 -         let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+479 +         let y = top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:498:36
+    |
+498 |         let y = top.saturating_add(u16::try_from(rows.saturating_sub(1)).map_or(u16::MAX, |n| n));
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+498 -         let y = top.saturating_add(u16::try_from(rows.saturating_sub(1)).map_or(u16::MAX, |n| n));
+498 +         let y = top.saturating_add(u16::try_from(rows.saturating_sub(1)).unwrap_or(u16::MAX));
+    |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\questions.rs:531:36
+    |
+531 |         let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+531 -         let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+531 +         let y = top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
+    |
+
+warning: unused "map closure" when calling `Option::map_or_else` value
+   --> crates\polaris-ui\crates\cli\src\questions.rs:585:5
+    |
+585 | /     question
+586 | |         .and_then(|q| match &q.kind {
+587 | |             QuestionKind::SingleChoice { options } | QuestionKind::MultiChoice { options } => {
+588 | |                 options.iter().find(|o| o.id == id).map(|o| o.label.clone())
+...   |
+591 | |         })
+592 | |         .map_or_else(|| id.to_owned(), |label| label)
+    | |_____________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#unnecessary_option_map_or_else
+    = note: `#[warn(clippy::unnecessary_option_map_or_else)]` on by default
+help: consider using `unwrap_or_else`
+    |
+592 -         .map_or_else(|| id.to_owned(), |label| label)
+592 +         .unwrap_or_else(|| id.to_owned())
+    |
+
+warning: this `if` has identical blocks
+   --> crates\polaris-ui\crates\cli\src\questions.rs:674:58
+    |
+674 |       let base = if options.colors == ColorMode::TrueColor {
+    |  __________________________________________________________^
+675 | |         Style::default().fg(fg)
+676 | |     } else {
+    | |_____^
+    |
+note: same as this
+   --> crates\polaris-ui\crates\cli\src\questions.rs:676:12
+    |
+676 |       } else {
+    |  ____________^
+677 | |         Style::default().fg(fg)
+678 | |     };
+    | |_____^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#if_same_then_else
+    = note: `#[warn(clippy::if_same_then_else)]` on by default
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\screen.rs:838:5
+    |
+838 | /     if let Some(questionnaire) = state.questionnaire {
+839 | |         if let Some(rect) = questions::overlay_rect(layout.composer, layout.viewport, questionnaire)
+840 | |         {
+841 | |             occlude_hits(&mut metadata.hits, rect);
+...   |
+848 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `#[warn(clippy::collapsible_if)]` on by default
+help: collapse nested if block
+    |
+838 ~     if let Some(questionnaire) = state.questionnaire
+839 ~         && let Some(rect) = questions::overlay_rect(layout.composer, layout.viewport, questionnaire)
+840 |         {
+...
+846 |                 questions::append_hits(&mut metadata.hits, rect, questionnaire, *options);
+847 ~         }
+    |
+
+warning: this `if` has identical blocks
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1169:46
+     |
+1169 |       if metadata.questionnaire_rect.is_some() {
+     |  ______________________________________________^
+1170 | |         metadata.caret = caret;
+1171 | |     } else if state.editor_focus && state.completion.is_none() && state.sheet.is_none() {
+     | |_____^
+     |
+note: same as this
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1171:89
+     |
+1171 |       } else if state.editor_focus && state.completion.is_none() && state.sheet.is_none() {
+     |  _________________________________________________________________________________________^
+1172 | |         metadata.caret = caret;
+1173 | |     } else {
+     | |_____^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#if_same_then_else
+
+warning: this `if` statement can be collapsed
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1185:5
+     |
+1185 | /     if let Some(target) = state.hover {
+1186 | |         if let Some(style) = hover_style(target, state, *options) {
+1187 | |             for region in metadata.hits.iter().filter(|hit| hit.target == target) {
+1188 | |                 buffer.set_style(region.rect, style);
+...    |
+1191 | |     }
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+     |
+1185 ~     if let Some(target) = state.hover
+1186 ~         && let Some(style) = hover_style(target, state, *options) {
+1187 |             for region in metadata.hits.iter().filter(|hit| hit.target == target) {
+1188 |                 buffer.set_style(region.rect, style);
+1189 |             }
+1190 ~         }
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1326:9
+     |
+1326 |         u16::try_from(UnicodeWidthStr::width(version.as_str())).map_or(u16::MAX, |width| width);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1326 -         u16::try_from(UnicodeWidthStr::width(version.as_str())).map_or(u16::MAX, |width| width);
+1326 +         u16::try_from(UnicodeWidthStr::width(version.as_str())).unwrap_or(u16::MAX);
+     |
+
+warning: this `if` statement can be collapsed
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1349:5
+     |
+1349 | /     if path_width >= 12 {
+1350 | |         if let Some(workspace) = state.workspace {
+1351 | |             let display = workspace.strip_prefix(r"\\?\").map_or(workspace, |p| p);
+1352 | |             let clipped = crate::text::fit_display_text(display, path_width);
+...    |
+1366 | |     }
+     | |_____^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+     |
+1349 ~     if path_width >= 12
+1350 ~         && let Some(workspace) = state.workspace {
+1351 |             let display = workspace.strip_prefix(r"\\?\").map_or(workspace, |p| p);
+ ...
+1364 |                 );
+1365 ~         }
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1481:22
+     |
+1481 |       let mode_width = u16::try_from(mode.len())
+     |  ______________________^
+1482 | |         .map_or(u16::MAX, |n| n)
+     | |________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1482 -         .map_or(u16::MAX, |n| n)
+1482 +         .unwrap_or(u16::MAX)
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1484:24
+     |
+1484 |       let effort_width = u16::try_from(effort.len())
+     |  ________________________^
+1485 | |         .map_or(u16::MAX, |n| n)
+     | |________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1485 -         .map_or(u16::MAX, |n| n)
+1485 +         .unwrap_or(u16::MAX)
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1489:9
+     |
+1489 | /         u16::try_from(UnicodeWidthStr::width(label.as_str()))
+1490 | |             .map_or(u16::MAX, |n| n)
+     | |____________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1490 -             .map_or(u16::MAX, |n| n)
+1490 +             .unwrap_or(u16::MAX)
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1502:23
+     |
+1502 |       let model_width = u16::try_from(UnicodeWidthStr::width(model.as_str()))
+     |  _______________________^
+1503 | |         .map_or(u16::MAX, |n| n)
+     | |________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1503 -         .map_or(u16::MAX, |n| n)
+1503 +         .unwrap_or(u16::MAX)
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1581:5
+     |
+1581 | /     u16::try_from(
+1582 | |         composer_geometry(composer, terminal_width.saturating_sub(10).max(1))
+1583 | |             .rows()
+1584 | |             .len(),
+1585 | |     )
+1586 | |     .map_or(u16::MAX, |n| n)
+     | |____________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1586 -     .map_or(u16::MAX, |n| n)
+1586 +     .unwrap_or(u16::MAX)
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1606:29
+     |
+1606 |               Some(gutter) => u16::try_from(UnicodeWidthStr::width(gutter.as_str()))
+     |  _____________________________^
+1607 | |                 .map_or(u16::MAX, |width| width),
+     | |________________________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1607 -                 .map_or(u16::MAX, |width| width),
+1607 +                 .unwrap_or(u16::MAX),
+     |
+
+warning: this `if` statement can be collapsed
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1764:9
+     |
+1764 | /         if let Some(position) = self
+1765 | |             .entries
+1766 | |             .iter()
+1767 | |             .position(|cached| cached.key == key && cached.source_snapshot == source_snapshot)
+...    |
+1778 | |         }
+     | |_________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+     |
+1767 ~             .position(|cached| cached.key == key && cached.source_snapshot == source_snapshot)
+1768 ~             && let Some(cached) = self.entries.remove(position) {
+1769 |                 self.hits = self.hits.saturating_add(1);
+ ...
+1775 |                 return result;
+1776 ~             }
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1867:25
+     |
+1867 |       let (title, body) = entry
+     |  _________________________^
+1868 | |         .text
+1869 | |         .split_once('\n')
+1870 | |         .map_or((entry.text.as_str(), ""), |parts| parts);
+     | |_________________________________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1870 -         .map_or((entry.text.as_str(), ""), |parts| parts);
+1870 +         .unwrap_or((entry.text.as_str(), ""));
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1925:29
+     |
+1925 |           let (title, body) = entry
+     |  _____________________________^
+1926 | |             .text
+1927 | |             .split_once('\n')
+1928 | |             .map_or((entry.text.as_str(), ""), |parts| parts);
+     | |_____________________________________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1928 -             .map_or((entry.text.as_str(), ""), |parts| parts);
+1928 +             .unwrap_or((entry.text.as_str(), ""));
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:1941:28
+     |
+1941 |           let suffix_width = u16::try_from(UnicodeWidthStr::width(suffix.as_str()))
+     |  ____________________________^
+1942 | |             .map_or(u16::MAX, |n| n)
+     | |____________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1942 -             .map_or(u16::MAX, |n| n)
+1942 +             .unwrap_or(u16::MAX)
+     |
+
+warning: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2117:5
+     |
+2117 | /     match input.get(..end) {
+2118 | |         Some(prefix) => prefix,
+2119 | |         None => "",
+2120 | |     }
+     | |_____^ help: ascribe the type &str and replace your expression with: `input.get(..end).unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+     = note: `#[warn(clippy::manual_unwrap_or_default)]` on by default
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2516:25
+     |
+2516 |         .saturating_add(area.width.saturating_sub(w).checked_div(2).map_or(0, |n| n));
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2516 -         .saturating_add(area.width.saturating_sub(w).checked_div(2).map_or(0, |n| n));
+2516 +         .saturating_add(area.width.saturating_sub(w).checked_div(2).unwrap_or(0));
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2518:9
+     |
+2518 | /         area.height
+2519 | |             .saturating_sub(h)
+2520 | |             .saturating_sub(2)
+2521 | |             .checked_div(2)
+2522 | |             .map_or(0, |n| n),
+     | |_____________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2522 -             .map_or(0, |n| n),
+2522 +             .unwrap_or(0),
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2530:39
+     |
+2530 |                 .abs_diff(usize::from(w.checked_div(2).map_or(0, |n| n)))
+     |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2530 -                 .abs_diff(usize::from(w.checked_div(2).map_or(0, |n| n)))
+2530 +                 .abs_diff(usize::from(w.checked_div(2).unwrap_or(0)))
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2531:58
+     |
+2531 |                 .saturating_add(row.abs_diff(usize::from(h.checked_div(2).map_or(0, |n| n))))
+     |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2531 -                 .saturating_add(row.abs_diff(usize::from(h.checked_div(2).map_or(0, |n| n))))
+2531 +                 .saturating_add(row.abs_diff(usize::from(h.checked_div(2).unwrap_or(0))))
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2843:23
+     |
+2843 |       let label_width = menu
+     |  _______________________^
+2844 | |         .items
+2845 | |         .iter()
+2846 | |         .map(|item| UnicodeWidthStr::width(item.label.as_str()))
+2847 | |         .max()
+2848 | |         .map_or(0, |n| n)
+     | |_________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2848 -         .map_or(0, |n| n)
+2848 +         .unwrap_or(0)
+     |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2849:26
+     |
+2849 |         .min(usize::from(area.width.checked_div(2).map_or(0, |n| n)));
+     |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2849 -         .min(usize::from(area.width.checked_div(2).map_or(0, |n| n)));
+2849 +         .min(usize::from(area.width.checked_div(2).unwrap_or(0)));
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2861:56
+     |
+2861 |             crate::text::fit_display_text(&item.label, u16::try_from(label_width).map_or(0, |n| n));
+     |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2861 -             crate::text::fit_display_text(&item.label, u16::try_from(label_width).map_or(0, |n| n));
+2861 +             crate::text::fit_display_text(&item.label, u16::try_from(label_width).unwrap_or(0));
+     |
+
+warning: expression can be simplified using `Result::unwrap_or()`
+    --> crates\polaris-ui\crates\cli\src\screen.rs:2864:18
+     |
+2864 |         let dx = u16::try_from(label_width.saturating_add(3)).map_or(area.width, |n| n);
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+2864 -         let dx = u16::try_from(label_width.saturating_add(3)).map_or(area.width, |n| n);
+2864 +         let dx = u16::try_from(label_width.saturating_add(3)).unwrap_or(area.width);
+     |
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\cli\src\text.rs:150:5
+    |
+150 | /     match input.get(..end) {
+151 | |         Some(prefix) => prefix,
+152 | |         None => "",
+153 | |     }
+    | |_____^ help: ascribe the type &str and replace your expression with: `input.get(..end).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: this `if` has identical blocks
+   --> crates\polaris-ui\crates\cli\src\text.rs:161:28
+    |
+161 |       if is_bidi_control(ch) {
+    |  ____________________________^
+162 | |         None
+163 | |     } else if ch == '\n' {
+    | |_____^
+    |
+note: same as this
+   --> crates\polaris-ui\crates\cli\src\text.rs:163:26
+    |
+163 |       } else if ch == '\n' {
+    |  __________________________^
+164 | |         None
+165 | |     } else if ch == '\t' {
+    | |_____^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#if_same_then_else
+
+warning: expression can be simplified using `Option::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\bracketed_paste.rs:274:17
+    |
+274 |       let first = values
+    |  _________________^
+275 | |         .first()
+276 | |         .copied()
+277 | |         .filter(|value| *value != 0)
+278 | |         .map_or(1, |value| value);
+    | |_________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+278 -         .map_or(1, |value| value);
+278 +         .unwrap_or(1);
+    |
+
+warning: expression can be simplified using `Option::unwrap_or()`
+   --> crates\polaris-ui\crates\cli\src\bracketed_paste.rs:279:18
+    |
+279 |       let second = values
+    |  __________________^
+280 | |         .get(1)
+281 | |         .copied()
+282 | |         .filter(|value| *value != 0)
+283 | |         .map_or(1, |value| value);
+    | |_________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+    |
+283 -         .map_or(1, |value| value);
+283 +         .unwrap_or(1);
+    |
+
+warning: this pattern reimplements `Option::unwrap_or`
+   --> crates\polaris-ui\crates\cli\src\bracketed_paste.rs:323:26
+    |
+323 |       let modifier_field = match fields.next() {
+    |  __________________________^
+324 | |         Some(value) => value,
+325 | |         None => "1",
+326 | |     };
+    | |_____^ help: replace with: `fields.next().unwrap_or("1")`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `#[warn(clippy::manual_unwrap_or)]` on by default
+
+warning: this `if` has identical blocks
+  --> crates\polaris-ui\crates\cli\src\input_decoder.rs:44:63
+   |
+44 |           } else if record.key_down && record.unicode_char != 0 {
+   |  _______________________________________________________________^
+45 | |             self.pending_alt_sequence = false;
+46 | |         } else if !record.key_down
+   | |_________^
+   |
+note: same as this
+  --> crates\polaris-ui\crates\cli\src\input_decoder.rs:49:9
+   |
+49 | /         {
+50 | |             self.pending_alt_sequence = false;
+51 | |         }
+   | |_________^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#if_same_then_else
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\presenter.rs:176:12
+    |
+176 |       } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some() {
+    |  ____________^
+177 | |         if let Some(start) = shown_at {
+178 | |             bytes.drain(start..esc);
+179 | |         }
+180 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+176 ~     } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some()
+177 ~         && let Some(start) = shown_at {
+178 |             bytes.drain(start..esc);
+179 ~         }
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\src\presenter.rs:288:20
+    |
+288 |               } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes) {
+    |  ____________________^
+289 | |                 if bytes.get(reset_len..).is_some_and(is_cursor_suffix) {
+290 | |                     bytes.drain(..reset_len);
+291 | |                 }
+292 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+288 ~             } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes)
+289 ~                 && bytes.get(reset_len..).is_some_and(is_cursor_suffix) {
+290 |                     bytes.drain(..reset_len);
+291 ~                 }
+    |
+
+warning: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ui\crates\cli\src\windows_input.rs:227:5
+    |
+227 | /     match u16::try_from(value) {
+228 | |         Ok(converted) => converted,
+229 | |         Err(_) => 0,
+230 | |     }
+    | |_____^ help: ascribe the type u16 and replace your expression with: `u16::try_from(value).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: `polaris-ui-cli` (lib) generated 50 warnings (run `cargo clippy --fix --lib -p polaris-ui-cli -- --no-deps -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing` to apply 42 suggestions)
+warning: `polaris-ui-cli` (lib test) generated 50 warnings (50 duplicates)
+warning: unnecessary use of `clone` to create a slice from a reference
+  --> crates\polaris-ui\crates\cli\tests\editor_geometry.rs:33:57
+   |
+33 |     let chip_geometry = EditorGeometry::new(&chip_text, &[chip.clone()], 3);
+   |                                                         ^^^^^^^^^^^^^^^ help: try: `std::slice::from_ref(&chip)`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#cloned_ref_to_slice_refs
+   = note: `#[warn(clippy::cloned_ref_to_slice_refs)]` on by default
+
+warning: `polaris-ui-cli` (test "editor_geometry") generated 1 warning (run `cargo clippy --fix --test "editor_geometry" -p polaris-ui-cli -- --no-deps -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing` to apply 1 suggestion)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+warning: this `if` statement can be collapsed
+   --> crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:297:17
+    |
+297 | / ...   if let Some((r, g, b)) = c.bg_rgb {
+298 | | ...       if (r, g, b) != (0, 0, 0) {
+299 | | ...           svg.push_str(&format!("<rect x=\"{}\" y=\"{}\" width=\"9\" height=\"18\" fill=\"#{r:02x}{g:02x}{b:02x}\"/>",u32::fr...
+300 | | ...       }
+301 | | ...   }
+    | |_______^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `#[warn(clippy::collapsible_if)]` on by default
+help: collapse nested if block
+    |
+297 ~                 if let Some((r, g, b)) = c.bg_rgb
+298 ~                     && (r, g, b) != (0, 0, 0) {
+299 |                         svg.push_str(&format!("<rect x=\"{}\" y=\"{}\" width=\"9\" height=\"18\" fill=\"#{r:02x}{g:02x}{b:02x}\"/>",u32::from(x).saturating_mul(9),u32::from(y).saturating_mul(18)));
+300 ~                     }
+    |
+
+warning: this pattern reimplements `Option::unwrap_or`
+   --> crates\polaris-ui\crates\cli\tests\reference_fidelity.rs:305:33
+    |
+305 |                   let (r, g, b) = match c.fg_rgb {
+    |  _________________________________^
+306 | |                     Some(rgb) => rgb,
+307 | |                     None => (232, 232, 232),
+308 | |                 };
+    | |_________________^ help: replace with: `c.fg_rgb.unwrap_or((232, 232, 232))`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `#[warn(clippy::manual_unwrap_or)]` on by default
+
+warning: `polaris-ui-cli` (test "reference_fidelity") generated 2 warnings (run `cargo clippy --fix --test "reference_fidelity" -p polaris-ui-cli -- --no-deps -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::as_conversions -D clippy::indexing_slicing` to apply 2 suggestions)
+error: indexing may panic
+   --> crates\polaris-ui\crates\cli\tests\render_contract.rs:449:23
+    |
+449 |         let initial = suggestions[index]
+    |                       ^^^^^^^^^^^^^^^^^^
+    |
+    = help: consider using `.get(n)` or `.get_mut(n)` instead
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+    = note: requested on the command line with `-D clippy::indexing-slicing`
+
+error: used `expect()` on an `Option` value
+   --> crates\polaris-ui\crates\cli\tests\render_contract.rs:904:16
+    |
+904 |       let rect = dump
+    |  ________________^
+905 | |         .metadata
+906 | |         .questionnaire_rect
+907 | |         .expect("question overlay geometry");
+    | |____________________________________________^
+    |
+    = note: if this value is `None`, it will panic
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#expect_used
+    = note: requested on the command line with `-D clippy::expect-used`
+
+error: slicing may panic
+    --> crates\polaris-ui\crates\cli\tests\render_contract.rs:1096:24
+     |
+1096 |     let model_cells = &footer[usize::from(model.rect.x)..usize::from(model.rect.right())];
+     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: consider using `.get(n..m)` or `.get_mut(n..m)` instead
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+
+    Checking oauth2 v5.0.0
+error: could not compile `polaris-ui-cli` (test "render_contract") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...

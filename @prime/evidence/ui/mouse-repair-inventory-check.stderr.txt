@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<string>", line 11, in <module>
+    if r['path_state']=='EXISTING': assert (root/r['path']).is_file(), r['path']
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~^^
+AssertionError: crates/polaris-proto

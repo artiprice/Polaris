@@ -1,0 +1,38 @@
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Finished `test` profile [unoptimized] target(s) in 2.82s
+     Running unittests src\lib.rs (target\debug\deps\polaris_search_providers-8a8c623c54b256a8.exe)
+
+running 9 tests
+test fetch::tests::decodes_declared_legacy_charset_and_falls_back_for_unknown_label ... ok
+test ssrf::tests::rejects_non_public_ipv4_ranges_and_allows_global_unicast ... ok
+test ssrf::tests::rejects_non_public_ipv6_and_ipv4_mapped_private ... ok
+test fetch::tests::rejects_decoded_expansion_above_configured_byte_limit ... ok
+test ssrf::tests::rejects_overlong_target_before_dns_lookup ... ok
+test fetch::tests::rejects_markdown_output_above_configured_byte_limit ... ok
+test tavily::tests::invalid_site_filter_is_rejected_before_dispatch ... ok
+test fetch::tests::rejects_dom_depth_and_node_count_before_markdown_walk ... ok
+test runtime::tests::worker_guard_holds_concurrency_after_call_drop ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\provider_contract.rs (target\debug\deps\provider_contract-61ff77816d2aff06.exe)
+
+running 9 tests
+test search_fails_closed_when_redactor_accounting_is_invalid ... ok
+test fetch_rejects_control_characters_in_user_agent ... ok
+test fetch_rejects_private_destination_without_explicit_origin ... ok
+test fetch_enforces_body_byte_limit ... ok
+test fetch_revalidates_redirect_target_before_request ... ok
+test tavily_maps_rate_limit_without_exposing_response_body ... ok
+test tavily_maps_results_and_keeps_key_out_of_debug_output ... ok
+test searxng_maps_results_and_redacts_query ... ok
+test fetch_converts_html_strips_hidden_text_and_marks_untrusted ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_search_providers
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

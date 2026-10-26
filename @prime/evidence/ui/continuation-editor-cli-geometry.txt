@@ -1,0 +1,33 @@
+
+running 3 tests
+test vertical_motion_keeps_sticky_column_and_viewport_tracks_cursor ... ok
+test tabs_wide_graphemes_and_exact_width_boundaries_map_to_cells ... ok
+test explicit_newlines_zwj_graphemes_and_mouse_stops_are_stable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test selected_text_is_painted_with_the_editor_selection_role ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test dump_rejects_zero_and_oversized_viewports ... ok
+test composer_mouse_targets_chip_boundaries_only ... ok
+test composer_mouse_vertical_and_guard_helpers_share_wrap_rows ... ok
+test tiny_live_viewport_shows_resize_notice_without_panicking ... ok
+test wide_grapheme_caret_geometry_matches_composer ... ok
+test ansi_palette_preserves_canvas_and_prompt_roles ... ok
+test untrusted_controls_and_bidi_are_inert_in_dump ... ok
+test default_canvas_uses_north_star_background ... ok
+test completion_overlay_paints_selection_and_hides_underlying_sources ... ok
+test caller_selected_panel_content_renders_in_both_responsive_modes ... ok
+test optional_panel_uses_side_rail_only_at_threshold ... ok
+test opaque_overlays_remove_covered_source_spans ... ok
+test history_scroll_and_workspace_are_source_driven ... ok
+test long_composer_window_tracks_cursor_and_renders_recent_rows ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

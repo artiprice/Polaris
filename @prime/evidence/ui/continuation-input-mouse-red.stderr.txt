@@ -1,0 +1,21 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 4.48s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)
+
+thread 'windows_input::tests::native_button_changes_keep_left_drag_and_other_button_transitions' (7740) panicked at crates\polaris-ui\crates\cli\src\windows_input.rs:362:9:
+assertion `left == right` failed
+  left: Some(Down(Left))
+ right: Some(Down(Right))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'windows_input::tests::native_middle_button_down_and_release_keep_identity' (6316) panicked at crates\polaris-ui\crates\cli\src\windows_input.rs:333:9:
+assertion `left == right` failed
+  left: Some(Up(Left))
+ right: Some(Up(Middle))
+
+thread 'windows_input::tests::native_right_button_down_and_release_keep_identity' (3572) panicked at crates\polaris-ui\crates\cli\src\windows_input.rs:312:9:
+assertion `left == right` failed
+  left: Some(Up(Left))
+ right: Some(Up(Right))
+error: test failed, to rerun pass `-p polaris-ui-cli --lib`

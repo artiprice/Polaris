@@ -1,0 +1,99 @@
+COMMAND: cargo test --offline --locked -p polaris-ui-cli input_decoder::tests --lib
+EXIT: null
+STDOUT:
+STDERR:
+    Blocking waiting for file lock on build directory
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli bracketed_paste::tests --lib
+EXIT: 0
+STDOUT:
+
+running 3 tests
+test bracketed_paste::tests::bracketed_payload_is_one_literal_paste_including_escape_sequences ... ok
+test bracketed_paste::tests::non_paste_escape_sequence_is_released_as_keys ... ok
+test bracketed_paste::tests::oversized_native_paste_is_rejected_and_decoder_recovers ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.53s
+
+STDERR:
+    Blocking waiting for file lock on build directory
+warning: value assigned to `saw_word` is never read
+   --> crates\polaris-ui\crates\model\src\composer.rs:666:21
+    |
+666 |                     saw_word = true;
+    |                     ^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-ui-model` (lib) generated 1 warning
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 25.43s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli --test terminal_lifecycle
+EXIT: 0
+STDOUT:
+
+running 6 tests
+test drop_attempts_remaining_modes_after_restore_error ... ok
+test close_attempts_every_restore_step_and_reports_errors ... ok
+test presenter_partial_write_resync_then_guard_close_attempts_cursor_reveal ... ok
+test failed_mode_attempt_is_restored_even_when_enable_reports_error ... ok
+test drop_attempts_best_effort_cleanup ... ok
+test rolls_back_acquired_modes_in_reverse_order ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+STDERR:
+warning: value assigned to `saw_word` is never read
+   --> crates\polaris-ui\crates\model\src\composer.rs:666:21
+    |
+666 |                     saw_word = true;
+    |                     ^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-ui-model` (lib) generated 1 warning
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.35s
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-d1cd67acad6a3e7c.exe)
+
+COMMAND: cargo test --offline --locked -p polaris-ui-cli --test terminal_input
+EXIT: 0
+STDOUT:
+
+running 3 tests
+test normalizes_supported_crossterm_events ... ok
+test only_pressed_escape_and_control_c_are_cancel_priority ... ok
+test rejects_paste_over_one_mibibyte ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+STDERR:
+warning: value assigned to `saw_word` is never read
+   --> crates\polaris-ui\crates\model\src\composer.rs:666:21
+    |
+666 |                     saw_word = true;
+    |                     ^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-ui-model` (lib) generated 1 warning
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.19s
+     Running tests\terminal_input.rs (target\debug\deps\terminal_input-45e415545446b123.exe)
+
+
+FINAL VERIFIED RERUN (2026-10-25): cargo test --offline --locked -p polaris-ui-cli input_decoder::tests
+EXIT: 0
+STDOUT:
+running 5 tests
+test input_decoder::tests::adjacent_surrogates_form_one_scalar ... ok
+test input_decoder::tests::c0_control_enter_is_not_shift_enter ... ok
+test input_decoder::tests::native_repeat_and_release_phases_are_retained ... ok
+test input_decoder::tests::c0_shift_enter_keeps_shift_and_enter ... ok
+test input_decoder::tests::virtual_key_zero_control_character_is_preserved ... ok
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s

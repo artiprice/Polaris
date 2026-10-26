@@ -1,0 +1,37 @@
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Finished `test` profile [unoptimized] target(s) in 2.20s
+     Running tests\source_race.rs (target\debug\deps\source_race-57d00b3b74c748f5.exe)
+
+running 8 tests
+test cancellation_after_permit_acquisition_releases_it ... ok
+test race_failure_preserves_untrusted_fallback ... ok
+test deadline_and_closed_source_pool_have_explicit_outcomes ... ok
+test first_accepted_aborts_and_releases_losers ... ok
+test completed_losers_are_retrieved_instead_of_cancelled ... FAILED
+test race_cancellation_and_validation_budget_are_enforced ... ok
+test best_mode_waits_for_more_relevant_source ... ok
+test duplicate_evidence_is_validated_only_once ... FAILED
+
+failures:
+
+---- completed_losers_are_retrieved_instead_of_cancelled stdout ----
+
+thread 'completed_losers_are_retrieved_instead_of_cancelled' (11320) panicked at crates\polaris-search\crates\sift\tests\source_race.rs:261:72:
+assertion failed: aborted.is_empty()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- duplicate_evidence_is_validated_only_once stdout ----
+
+thread 'duplicate_evidence_is_validated_only_once' (4580) panicked at crates\polaris-search\crates\sift\tests\source_race.rs:271:5:
+assertion `left == right` failed
+  left: 8
+ right: 1
+
+
+failures:
+    completed_losers_are_retrieved_instead_of_cancelled
+    duplicate_evidence_is_validated_only_once
+
+test result: FAILED. 6 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+error: test failed, to rerun pass `-p polaris-search-sift --test source_race`

@@ -1,0 +1,12 @@
+
+running 7 tests
+test ui_services::tests::runtime_preference_override_is_memory_only ... ok
+test ui_services::tests::clipboard_generation_can_be_cancelled_without_native_access ... ok
+test ui_services::tests::empty_clipboard_copy_is_rejected_without_native_access ... ok
+test ui_services::tests::clipboard_text_limit_is_enforced_without_touching_the_system_clipboard ... ok
+test ui_services::tests::missing_clipboard_child_pipe_is_killed_and_reaped ... ok
+test ui_services::tests::file_index_enforces_path_count_bound ... ok
+test ui_services::tests::file_index_respects_builtin_ignore_and_secret_path_rules ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.02s
+

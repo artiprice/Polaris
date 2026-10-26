@@ -1,0 +1,24 @@
+{
+  "type_of": "async_function",
+  "name": "run_dynamic_stress",
+  "file_path": "crates/polaris-hacker/src/dynamic.rs",
+  "logic_name": "Sandboxed Dynamic Stress",
+  "test_list": [
+    { "test_name": "executes_each_boundary_case_through_supplied_sdk_backend", "description": "Each case is sent as stdin to the configured argv through SandboxBackend::exec." },
+    { "test_name": "request_has_deadline_and_output_cap", "description": "Every execution receives the configured timeout and bounded output limit." },
+    { "test_name": "failed_backend_operations_return_typed_error_and_cleanup", "description": "Sandbox errors propagate with destroy attempted after successful creation." },
+    { "test_name": "backend_output_over_cap_is_rejected_and_sandbox_is_destroyed", "description": "A backend result exceeding the requested cap becomes an error and cleanup still runs." },
+    { "test_name": "aborting_caller_during_exec_still_destroys_sandbox", "description": "An owned cleanup task observes caller cancellation and tears down a created sandbox." },
+    { "test_name": "caller_cancellation_does_not_abandon_ambiguous_create", "description": "Cancellation waits for create to resolve before destroying a newly created sandbox." },
+    { "test_name": "backend_ignoring_request_timeout_is_still_bounded_and_destroyed", "description": "Caller-side timeout bounds a backend exec future that ignores the SDK timeout field." },
+    { "test_name": "nonzero_exit_is_observed_not_claimed_as_a_reproduced_bug", "description": "A process exit alone cannot claim a sanitizer diagnosis or reproducible defect." },
+    { "test_name": "run_records_exact_bounded_stdin_for_replay", "description": "Each run retains its submitted bounded stdin, seed and argv as replay evidence." },
+    { "test_name": "captured_output_is_secret_redacted", "description": "SDK output is capped and secret/PII redacted before it is returned." },
+    { "test_name": "token_count_is_zero_by_construction", "description": "Reports derive zero model tokens from an inaccessible private meter." }
+  ],
+  "dependencies": ["polaris-sdk"],
+  "libraries": [],
+  "inputs": [{ "name": "plan", "type": "&StressPlan", "description": "Caller-configured sandbox spec, executable argv, wall timeout, output cap and bounded cases." }, { "name": "backend", "type": "&B", "description": "Actual SDK SandboxBackend selected by the composition root." }],
+  "output_type": "Result<DynamicReport, HackerError>",
+  "output_description": "Bounded observed command outcomes with seed and exact argv. This does not claim the backend's configured sandbox provides host isolation."
+}

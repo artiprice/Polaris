@@ -1,0 +1,18 @@
+{
+  "name": "mouse-repair-final-core",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:25:20.030Z",
+  "pid": 14000,
+  "code": 0,
+  "finished": "2026-10-25T12:25:46.248Z"
+}

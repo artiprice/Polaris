@@ -1,0 +1,17 @@
+{
+  "name": "repair-notice-lifetime-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "controller_tests::unavailable_action_notice_survives_navigation_until_an_edit"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:59:01.572Z",
+  "pid": 16040,
+  "code": 101,
+  "finished": "2026-10-25T00:59:14.045Z"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "parity-question-editor-green",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-ui-model",
+    "--test",
+    "questionnaire_editor",
+    "--test",
+    "questionnaire_state"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T06:51:54.153Z",
+  "pid": 12324,
+  "code": 0,
+  "finished": "2026-10-25T06:51:57.078Z"
+}

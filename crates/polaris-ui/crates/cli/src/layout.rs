@@ -56,8 +56,10 @@ pub struct ScreenLayout {
 pub struct LayoutRequest {
     /// Whether the user has opened the optional panel.
     pub panel_open: bool,
-    /// Visible draft line count used to grow the composer, bounded by eight rows.
+    /// Wrapped draft row count used to grow the composer up to three eighths of height.
     pub draft_lines: u16,
+    /// Reserve a status row only when there is actual transient or goal/proof content.
+    pub status_visible: bool,
 }
 
 /// Return whether dimensions fit the supported viewport and cell limits.
@@ -97,36 +99,41 @@ pub fn screen_layout(area: Rect, request: LayoutRequest) -> ScreenLayout {
         };
     }
 
-    let margin_x = 2_u16;
-    let margin_y = 2_u16;
-    let inner = Rect::new(
-        viewport.x.saturating_add(margin_x),
-        viewport.y.saturating_add(margin_y),
-        width.saturating_sub(margin_x.saturating_mul(2)),
-        height.saturating_sub(margin_y.saturating_mul(2)),
+    let content_x = viewport.x.saturating_add(2);
+    let content_width = width.saturating_sub(4);
+    let status_height = u16::from(request.status_visible);
+    let max_rows = height
+        .saturating_mul(3)
+        .checked_div(8)
+        .map_or(1, |rows| rows)
+        .max(1)
+        .min(
+            height
+                .saturating_sub(12)
+                .saturating_sub(status_height)
+                .max(1),
+        );
+    let composer_height = request.draft_lines.max(1).min(max_rows).saturating_add(2);
+    let composer_y = viewport
+        .bottom()
+        .saturating_sub(2)
+        .saturating_sub(composer_height);
+    let header = Rect::new(
+        content_x.saturating_add(2),
+        viewport.y.saturating_add(2),
+        content_width.saturating_sub(4),
+        2,
     );
-    let header_height = 2_u16.min(inner.height);
-    let footer_height = 1_u16.min(inner.height.saturating_sub(header_height));
-    let usable = inner
-        .height
-        .saturating_sub(header_height)
-        .saturating_sub(footer_height);
-    let status_height = 1_u16.min(usable);
-    let composer_ceiling = 8_u16.min(usable.saturating_sub(status_height));
-    let requested_composer = request.draft_lines.saturating_add(2).clamp(3, 8);
-    let composer_height = requested_composer.min(composer_ceiling);
-    let body_height = usable
+    let body_y = header.bottom();
+    let body_height = composer_y
         .saturating_sub(status_height)
-        .saturating_sub(composer_height)
-        .saturating_sub(1);
-    let header = Rect::new(inner.x, inner.y, inner.width, header_height);
-    let body_y = header.y.saturating_add(header.height);
+        .saturating_sub(body_y);
     let body_width = if request.panel_open && width >= 120 && height >= 28 {
-        inner.width.saturating_sub(PANEL_WIDTH)
+        header.width.saturating_sub(PANEL_WIDTH)
     } else {
-        inner.width
+        header.width
     };
-    let body = Rect::new(inner.x, body_y, body_width, body_height);
+    let body = Rect::new(header.x, body_y, body_width, body_height);
     let panel_placement = if request.panel_open {
         if width >= 120 && height >= 28 {
             PanelPlacement::SideRail
@@ -138,20 +145,22 @@ pub fn screen_layout(area: Rect, request: LayoutRequest) -> ScreenLayout {
     };
     let panel = match panel_placement {
         PanelPlacement::Hidden => None,
-        PanelPlacement::SideRail => Some(Rect::new(
-            inner.x.saturating_add(body_width),
-            body_y,
-            PANEL_WIDTH,
-            body_height,
-        )),
+        PanelPlacement::SideRail => Some(Rect::new(body.right(), body_y, PANEL_WIDTH, body_height)),
         PanelPlacement::BottomSheet => Some(body),
     };
-    let status_y = body_y.saturating_add(body_height);
-    let status = Rect::new(inner.x, status_y, inner.width, status_height);
-    let composer_y = status_y.saturating_add(status_height).saturating_add(1);
-    let composer = Rect::new(inner.x, composer_y, inner.width, composer_height);
-    let footer_y = composer_y.saturating_add(composer_height).saturating_add(1);
-    let footer = Rect::new(inner.x, footer_y, inner.width, footer_height);
+    let status = Rect::new(
+        content_x.saturating_add(2),
+        composer_y.saturating_sub(status_height),
+        content_width.saturating_sub(4),
+        status_height,
+    );
+    let composer = Rect::new(content_x, composer_y, content_width, composer_height);
+    let footer = Rect::new(
+        header.x,
+        viewport.bottom().saturating_sub(1),
+        header.width,
+        1,
+    );
     ScreenLayout {
         viewport,
         header,

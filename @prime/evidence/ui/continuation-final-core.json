@@ -1,0 +1,20 @@
+{
+  "name": "continuation-final-core",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-config",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T06:05:23.652Z",
+  "pid": 2840,
+  "code": 0,
+  "finished": "2026-10-25T06:05:34.342Z"
+}

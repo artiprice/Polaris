@@ -526,6 +526,11 @@ impl ResearchState {
             state: self.clone(),
         }
     }
+    /// Content ID of the immutable program bound to this run.
+    #[must_use]
+    pub const fn program(&self) -> Cid {
+        self.program
+    }
     /// Restore the same immutable program; unresolved external work always requires recovery.
     ///
     /// # Errors

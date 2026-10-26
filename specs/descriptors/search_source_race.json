@@ -1,0 +1,21 @@
+{
+  "type_of": "pipeline",
+  "name": "Sifter::race",
+  "file_path": "crates/polaris-search/crates/sift/src/race.rs",
+  "logic_name": "Bounded multi-source search race",
+  "test_list": [
+    {"test_name": "first_accepted_aborts_and_releases_losers", "description": "Accept a validated hit and drain cancelled source tasks."},
+    {"test_name": "best_mode_waits_for_more_relevant_source", "description": "Select the best validated hit within the deadline."},
+    {"test_name": "race_failure_preserves_untrusted_fallback", "description": "Preserve provenance when S1 is unavailable."},
+    {"test_name": "race_cancellation_and_validation_budget_are_enforced", "description": "Bound validation work and release source permits on cancellation."},
+    {"test_name": "completed_losers_are_retrieved_instead_of_cancelled", "description": "Drain classifies actual task completion and preserves retrieved data."},
+    {"test_name": "duplicate_evidence_is_validated_only_once", "description": "Duplicate source locators do not spend repeated S1 calls."},
+    {"test_name": "cancellation_after_permit_acquisition_releases_it", "description": "Caller cancellation drains in-flight source tasks."},
+    {"test_name": "deadline_and_closed_source_pool_have_explicit_outcomes", "description": "Deadline and failed admission have distinct bounded outcomes."}
+  ],
+  "dependencies": ["KnowledgeSource", "Sifter", "DecisionEngine"],
+  "libraries": ["tokio", "tokio-util"],
+  "inputs": [{"name": "query", "type": "SiftQuery", "description": "Bounded retrieval query and ranking goal."}],
+  "output_type": "Result<RaceOutcome, SiftError>",
+  "output_description": "Validated selection or explicitly marked fallback with source outcomes."
+}

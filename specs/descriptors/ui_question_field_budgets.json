@@ -1,0 +1,30 @@
+{
+  "type_of": "method",
+  "name": "QuestionnaireState::apply",
+  "file_path": "crates/polaris-ui/crates/model/src/questionnaire.rs",
+  "logic_name": "Question field transactional budgets",
+  "test_list": [
+    {
+      "test_name": "replacing_full_notes_uses_resulting_size",
+      "description": "Replacing a selected capped field validates resulting size."
+    },
+    {
+      "test_name": "undo_cannot_restore_over_aggregate_budget",
+      "description": "Rejected over-budget undo preserves draft and history."
+    }
+  ],
+  "dependencies": [
+    "Composer",
+    "QuestionnaireState"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "action",
+      "type": "QuestionnaireAction",
+      "description": "Bounded editor action"
+    }
+  ],
+  "output_type": "Result<(), QuestionnaireError>",
+  "output_description": "Accepted edit or unchanged draft with explicit size error"
+}

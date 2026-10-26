@@ -1,0 +1,21 @@
+{
+  "type_of": "async_function",
+  "name": "McpHub::call",
+  "file_path": "crates/polaris-ext/crates/mcp/src/call.rs",
+  "logic_name": "MCP Tool Call Bounding",
+  "test_list": [
+    {"test_name": "connect_stdio_fixture_lists_and_calls_tool_then_reaps_child", "description": "A successful tools/call response is converted to typed content; invalid arguments and denied effects are refused before the remote call."},
+    {"test_name": "truncates_tool_text_at_utf8_boundary", "description": "Oversize text is truncated at a UTF-8 boundary and marked truncated."},
+    {"test_name": "result_byte_limit_applies_across_text_and_structured_content", "description": "The configured result byte budget applies across text and structured output, and oversized structured output is omitted with the truncated flag set."}
+  ],
+  "dependencies": ["McpHub", "CancelToken", "EffectAuthorization", "ToolOutcome"],
+  "libraries": ["rmcp", "tokio", "serde_json", "thiserror"],
+  "inputs": [
+    {"name": "id", "type": "&NamespacedToolId", "description": "Server-qualified tool identifier."},
+    {"name": "args", "type": "serde_json::Value", "description": "Validated JSON input arguments."},
+    {"name": "cancel", "type": "&CancelToken", "description": "Caller cancellation signal."},
+    {"name": "authorization", "type": "&EffectAuthorization", "description": "Caller-owned decision for the conservative declared tool effects."}
+  ],
+  "output_type": "Result<ToolOutcome, McpError>",
+  "output_description": "Bounded remote tool content, or a typed cancellation, timeout, authorization, lookup, or transport error."
+}

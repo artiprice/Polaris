@@ -1,10 +1,10 @@
 {
-  "snapshot_utc": "2026-10-23T21:58:17.329060+00:00",
+  "snapshot_utc": "2026-10-26T02:51:07.593262+00:00",
   "scope": "First-party source/config/spec files under apps, crates, tests, xtask, @prime/tools, @prime/spikes, specs, .cargo/.github/.config plus root Cargo/toolchain/deny configuration; no vendor, targets, tmp, dep-probe, node_modules or fuzz corpora/artifacts.",
-  "source_fingerprint_sha256": "a6b9a1e9da9af93ccc53a048ced57d9b4b31f3d8a80f172f06dc1a139becede5",
-  "file_count": 979,
-  "rust_file_count": 603,
-  "line_count_including_docs_tests_config": 145226,
+  "source_fingerprint_sha256": "15bf747c1d2a519cf4b1113ff8ff227c7080e954b92eeac541870b61283a4971",
+  "file_count": 1110,
+  "rust_file_count": 691,
+  "line_count_including_docs_tests_config": 189112,
   "packages": [
     {
       "name": "polaris-cli",
@@ -14,7 +14,7 @@
       "layer": 7,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "P1 non-UI main/run/doctor/RTK, aws-lc provider, logging/signals and real local kernel smoke pass (§E30). TUI/dump/terminal UI remain user-deferred; full CLI gate remains open.",
+      "metadata_evidence": "UI foundation implementation 2026-10-24: real offline default TUI/dump, bounded signed directive admission/replay and session resume; focused controller/binary suites. See evidence/ui/verification.txt and UI_PHASES.md for open gates and doctor setup failure. Historical P1 non-UI evidence remains in E30.",
       "responsibilities": [
         "Parse CLI arguments (clap) and resolve config layers.",
         "Embed the kernel in-process by default, or attach to `polarisd` with `--connect`.",
@@ -72,55 +72,95 @@
           "text": "BLOCKED-ON-ACCESS (WSL2 Ubuntu + OpenShell): `doctor` sandbox checks and sandboxed demo run."
         }
       ],
-      "rust_files": 8,
-      "production_rust_lines": 1392,
-      "test_markers": 9,
+      "rust_files": 23,
+      "production_rust_lines": 12421,
+      "test_markers": 149,
       "files": {
         "apps/polaris-cli/Cargo.toml": {
-          "sha256": "938b7eee9cd5d2c032fd4c50b9dde924fb4efb9984750629398253290df0a534",
-          "bytes": 1343,
-          "lines": 44,
-          "nonblank_noncomment_lines_approx": 38,
+          "sha256": "c0f40e03bf15989686da7d8ecd9376ff24bde4a31154329a4f3af307304adc9c",
+          "bytes": 1528,
+          "lines": 49,
+          "nonblank_noncomment_lines_approx": 43,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "apps/polaris-cli/specs/descriptors/headless_cli.json": {
-          "sha256": "e2f07ea0bf9c3fd5e8fca8bd11cb8337f1a5cb90f999da98e4bdb673173c8e95",
-          "bytes": 834,
-          "lines": 1,
-          "nonblank_noncomment_lines_approx": 1,
+          "sha256": "8c59393074a6f0147a5efbb8a4766a0353219c66ba116ccb7d1dc7d20a2b5ed9",
+          "bytes": 2539,
+          "lines": 69,
+          "nonblank_noncomment_lines_approx": 69,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "apps/polaris-cli/src/app.rs": {
-          "sha256": "d6657eccb1a1caddbd4615f12f19e2992eb53a43bafd3c1be3e97272b0a42a82",
-          "bytes": 11455,
-          "lines": 302,
-          "nonblank_noncomment_lines_approx": 242,
+          "sha256": "6f0a26a1581868e2b10438d885f12b9ba35670d92bfb80e9a9558149970523b8",
+          "bytes": 13852,
+          "lines": 358,
+          "nonblank_noncomment_lines_approx": 272,
           "function_definitions": 8,
           "tests": 1,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "apps/polaris-cli/src/cli_settings.rs": {
+          "sha256": "2468250cdd2eed20c2de2dbb15a189976d728924a9ff81a6adeabfb3aa8c2b06",
+          "bytes": 28194,
+          "lines": 773,
+          "nonblank_noncomment_lines_approx": 627,
+          "function_definitions": 39,
+          "tests": 8,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/src/demo.rs": {
+          "sha256": "91daf75d39e5cb15c3f071e39b09bdc77a519aa9a1e6d92db7be99743450f312",
+          "bytes": 23953,
+          "lines": 622,
+          "nonblank_noncomment_lines_approx": 525,
+          "function_definitions": 24,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/src/demo_gallery.rs": {
+          "sha256": "57727403a39fbc7703312b3761fc69988072158c5fbaf117755146607e9f39d5",
+          "bytes": 162786,
+          "lines": 4155,
+          "nonblank_noncomment_lines_approx": 4030,
+          "function_definitions": 94,
+          "tests": 27,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "apps/polaris-cli/src/doctor.rs": {
-          "sha256": "cd709f62a6526963b9ee3e636f83a98465bbe5ef2edf2484a1d79f1721c0ae24",
-          "bytes": 23121,
-          "lines": 652,
-          "nonblank_noncomment_lines_approx": 639,
+          "sha256": "03729376ffa8b603fb88e41e03fd768ee62924d195541900bff9fc5668673792",
+          "bytes": 24352,
+          "lines": 681,
+          "nonblank_noncomment_lines_approx": 668,
           "function_definitions": 16,
           "tests": 3,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "apps/polaris-cli/src/key_trace.rs": {
+          "sha256": "6dd550c20c8bc5e715bac7c2f1f157b1979463b083c116ae62ba591f45a95330",
+          "bytes": 5390,
+          "lines": 140,
+          "nonblank_noncomment_lines_approx": 127,
+          "function_definitions": 3,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "apps/polaris-cli/src/lib.rs": {
-          "sha256": "af4e454fbe8063403883793368789645e5de5a2f38b3a80b86038afc8fe21bf7",
-          "bytes": 1367,
-          "lines": 42,
-          "nonblank_noncomment_lines_approx": 7,
+          "sha256": "d6b4db9b63f364f8a3a16b5479cdd925c275bc5c13a77597e0727e04e3e3420a",
+          "bytes": 1707,
+          "lines": 51,
+          "nonblank_noncomment_lines_approx": 14,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -147,20 +187,50 @@
           "doc_skeleton": false
         },
         "apps/polaris-cli/src/sandbox.rs": {
-          "sha256": "d90bbf34cc3588232c30dc0234e70d4bbf016e7a119afc491e4aa05bc2825d7a",
-          "bytes": 8519,
-          "lines": 235,
-          "nonblank_noncomment_lines_approx": 204,
+          "sha256": "b116f4c788b176d6dac8839086715f014ef618614667275cadebce7cebc4d8ba",
+          "bytes": 8775,
+          "lines": 240,
+          "nonblank_noncomment_lines_approx": 209,
           "function_definitions": 4,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "apps/polaris-cli/src/session.rs": {
+          "sha256": "df0396f0c30dd72811d3315c9dcba3226442f597991d249ef159be21383e9884",
+          "bytes": 14938,
+          "lines": 371,
+          "nonblank_noncomment_lines_approx": 328,
+          "function_definitions": 12,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/src/tui.rs": {
+          "sha256": "c1efc6406673550076abc41797f2c7ca243d43296b93b05e7e25d86a2f67b05a",
+          "bytes": 146062,
+          "lines": 3860,
+          "nonblank_noncomment_lines_approx": 3788,
+          "function_definitions": 76,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/src/ui_services.rs": {
+          "sha256": "cdefa61bf4d7a97fa1b74e2f38234b31cf9e1e1eba43ce39d8e11fe7d51678c4",
+          "bytes": 34199,
+          "lines": 1009,
+          "nonblank_noncomment_lines_approx": 837,
+          "function_definitions": 39,
+          "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "apps/polaris-cli/tests/headless.rs": {
-          "sha256": "6b394cd09d990fd5fcc255a937d1a1c772a301d757ebbd86a7bb7e79afc3213e",
-          "bytes": 2243,
-          "lines": 74,
-          "nonblank_noncomment_lines_approx": 67,
+          "sha256": "bf7a114a82cdc8cad8f648417e82607165ac5bbe3b2e5a6c7b64b3a4af3e87e3",
+          "bytes": 2337,
+          "lines": 79,
+          "nonblank_noncomment_lines_approx": 72,
           "function_definitions": 3,
           "tests": 3,
           "explicit_todo_unimplemented": 0,
@@ -173,6 +243,86 @@
           "nonblank_noncomment_lines_approx": 83,
           "function_definitions": 3,
           "tests": 2,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/ui_key_trace.rs": {
+          "sha256": "9002a526bdcb640bcf668d32f748b4633d5e47350b394b1856fd8c42ecdaa4e2",
+          "bytes": 5119,
+          "lines": 151,
+          "nonblank_noncomment_lines_approx": 140,
+          "function_definitions": 6,
+          "tests": 6,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/ui_session.rs": {
+          "sha256": "0ee80a4b6a8e7df592983c7bf95830230a132fb6bc07d653b6640e97d057f530",
+          "bytes": 3186,
+          "lines": 91,
+          "nonblank_noncomment_lines_approx": 84,
+          "function_definitions": 3,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/ui_startup.rs": {
+          "sha256": "d9147a155a27c442adebaa06fc27b1e63c90c151c9c3ab36a28a4894c9c2dbb8",
+          "bytes": 5711,
+          "lines": 194,
+          "nonblank_noncomment_lines_approx": 179,
+          "function_definitions": 7,
+          "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/ui_terminal.rs": {
+          "sha256": "af145f3a4c244408ea2e1b5d87904e723e590c341dcc63998885e694438e2aec",
+          "bytes": 49626,
+          "lines": 1330,
+          "nonblank_noncomment_lines_approx": 1214,
+          "function_definitions": 47,
+          "tests": 20,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/controller/continuation.rs": {
+          "sha256": "ced616dd504dc390a842d7d6a492aa71a05463787b6078b1b34dda2d3f0d039f",
+          "bytes": 17800,
+          "lines": 522,
+          "nonblank_noncomment_lines_approx": 492,
+          "function_definitions": 16,
+          "tests": 14,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/controller/mod.rs": {
+          "sha256": "021fc19af5576b57646b8f6be8299ba1bd80a8635619de179cf44852d38f397a",
+          "bytes": 19024,
+          "lines": 623,
+          "nonblank_noncomment_lines_approx": 587,
+          "function_definitions": 20,
+          "tests": 18,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/controller/mouse_selection.rs": {
+          "sha256": "67d1e23fcd78d7b0029971471f4db57dc222e5a2d53c997dfd8b215f4e9826fa",
+          "bytes": 14280,
+          "lines": 435,
+          "nonblank_noncomment_lines_approx": 419,
+          "function_definitions": 17,
+          "tests": 13,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-cli/tests/controller/parity.rs": {
+          "sha256": "9237a9fe6305788e5367dc94b62e6b3e9e9e8c59df03485437ac8c37df3602e6",
+          "bytes": 12972,
+          "lines": 385,
+          "nonblank_noncomment_lines_approx": 362,
+          "function_definitions": 12,
+          "tests": 10,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -353,9 +503,9 @@
       "phase": "P9",
       "kind": "app",
       "layer": 7,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. Six local contracts and strict owned-target Clippy pass. Default P1 profile denies remote mutation/terminal; remote mTLS, authority provisioning/revocation and full agent profile remain open.",
       "responsibilities": [
         "Host one kernel instance shared by CLI, desktop and web clients.",
         "Authenticate every local and remote connection with Biscuit tokens.",
@@ -403,27 +553,77 @@
           "text": "v2 (declared): musl static binary, Nix flake / Docker Compose, embedded WireGuard mesh, Telegram gateway."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 32,
-      "test_markers": 0,
+      "rust_files": 4,
+      "production_rust_lines": 782,
+      "test_markers": 6,
       "files": {
         "apps/polaris-daemon/Cargo.toml": {
-          "sha256": "b778db85775d1eb00555be58169754527a6d5ecb8c658360e54e6f7f15c30877",
-          "bytes": 715,
-          "lines": 21,
-          "nonblank_noncomment_lines_approx": 17,
+          "sha256": "36a12864ae7fe4b1f5f2c73f695c84f3db67a43a31668ed91e5b7327c154fef0",
+          "bytes": 1097,
+          "lines": 36,
+          "nonblank_noncomment_lines_approx": 30,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-daemon/specs/descriptors/daemon_config.json": {
+          "sha256": "892cf63c48637141b2cc4699e1ba1a19ebaf80a92fd10b5024f691f05a48e7ed",
+          "bytes": 1481,
+          "lines": 33,
+          "nonblank_noncomment_lines_approx": 33,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-daemon/specs/descriptors/daemon_lifecycle.json": {
+          "sha256": "3f1930ef1456cc40566c2bd588e27653ff52e862c78841fd829dd189ebf0e843",
+          "bytes": 1549,
+          "lines": 31,
+          "nonblank_noncomment_lines_approx": 31,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "apps/polaris-daemon/src/lib.rs": {
-          "sha256": "ecc9f188ecb6097b3f1e50ec9cc03a1a9f4bf758e2dd193adf947b69cd80baad",
-          "bytes": 1089,
-          "lines": 32,
-          "nonblank_noncomment_lines_approx": 0,
-          "function_definitions": 0,
+          "sha256": "8715623b49a3170ed5fee85b72e829e05d01e562511f26816f39bd094a23f6fb",
+          "bytes": 20871,
+          "lines": 590,
+          "nonblank_noncomment_lines_approx": 483,
+          "function_definitions": 23,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-daemon/src/main.rs": {
+          "sha256": "2c4a7db092c13fd645c7815dd3a147acad838a4997af30844f4d1d12185d24d7",
+          "bytes": 6839,
+          "lines": 192,
+          "nonblank_noncomment_lines_approx": 144,
+          "function_definitions": 4,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-daemon/tests/daemon_config.rs": {
+          "sha256": "b0a3a1eaed66ac93126ef6ab97a854a0711e8d6d0a42b5c1fbb8c42a6adc6039",
+          "bytes": 1997,
+          "lines": 62,
+          "nonblank_noncomment_lines_approx": 55,
+          "function_definitions": 3,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "apps/polaris-daemon/tests/daemon_lifecycle.rs": {
+          "sha256": "4a69c97c75403c00d42002d1aeddd0354418311f365d1af2680836513232cb7c",
+          "bytes": 8974,
+          "lines": 269,
+          "nonblank_noncomment_lines_approx": 239,
+          "function_definitions": 9,
+          "tests": 2,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -710,9 +910,9 @@
           "text": "Run Miri over the crate (27 integration tests; `event_record_json_snapshot` skipped under Miri because insta calls `socketpair`, unsupported by Miri) and Kani harnesses for `Effort::try_from(u8)` and `Probability::new` (`src/kani_proofs.rs`, feature `kani`): both VERIFIED. Runner: `@prime/tools/setup/verify-proofs.sh`."
         }
       ],
-      "rust_files": 22,
-      "production_rust_lines": 4613,
-      "test_markers": 50,
+      "rust_files": 24,
+      "production_rust_lines": 4754,
+      "test_markers": 52,
       "files": {
         "crates/polaris-sdk/Cargo.toml": {
           "sha256": "38b96a49168fcd367afdb14ad945782eebcc986cf2a24dc116d63ebac42fda20",
@@ -725,11 +925,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/backends.rs": {
-          "sha256": "4a9470691324403376670bd90d4252983587434585652f45443c52b48566eb12",
-          "bytes": 18131,
-          "lines": 495,
-          "nonblank_noncomment_lines_approx": 382,
-          "function_definitions": 66,
+          "sha256": "3203a03eb93f265e89032bd051bbd6d3468530e6394f95ac2470c33c2be1d7a9",
+          "bytes": 18517,
+          "lines": 502,
+          "nonblank_noncomment_lines_approx": 388,
+          "function_definitions": 67,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -794,6 +994,16 @@
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-sdk/src/interactive.rs": {
+          "sha256": "38e6430414a355dd40d3facdbabd069a0f35e2cdd581d06564584b6a418c29dd",
+          "bytes": 5972,
+          "lines": 133,
+          "nonblank_noncomment_lines_approx": 68,
+          "function_definitions": 10,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-sdk/src/kani_proofs.rs": {
           "sha256": "bc4179a9ff8db749f663cccca2115184cc81d1bd29137551f6615cfa584b589a",
           "bytes": 1902,
@@ -805,10 +1015,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-sdk/src/lib.rs": {
-          "sha256": "493a9bda79da3e7721ad5e0d5c9f724eb530c803f04600d48d7a85697585e694",
-          "bytes": 1987,
-          "lines": 36,
-          "nonblank_noncomment_lines_approx": 11,
+          "sha256": "5399a9cec3c7e5dfa1ff8ebd52abc275f44ed9e2d1a5a33d2e98eec058efaa2b",
+          "bytes": 2008,
+          "lines": 37,
+          "nonblank_noncomment_lines_approx": 12,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -901,6 +1111,16 @@
           "nonblank_noncomment_lines_approx": 146,
           "function_definitions": 8,
           "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-sdk/tests/interactive_contract.rs": {
+          "sha256": "77f6f706ef99f6bf8aa747a4b8d106cd1fc0403b62bca18d2e6fe3b918f5f4a8",
+          "bytes": 2289,
+          "lines": 67,
+          "nonblank_noncomment_lines_approx": 63,
+          "function_definitions": 4,
+          "tests": 2,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -1230,9 +1450,9 @@
           "text": "`budget.usd` keeps exact decimal text (string or integer; TOML floats rejected because they are already binary-rounded)."
         }
       ],
-      "rust_files": 13,
-      "production_rust_lines": 1266,
-      "test_markers": 32,
+      "rust_files": 14,
+      "production_rust_lines": 1726,
+      "test_markers": 37,
       "files": {
         "crates/polaris-config/Cargo.toml": {
           "sha256": "336a177d769aef717e5a0e05c62d6fd32cb0753e0c12c6980de89101f775cb99",
@@ -1265,10 +1485,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-config/src/lib.rs": {
-          "sha256": "63fc26dcf966ed1248eb9595595c2312f9abaa00327ab6a65ff4cb0983c661ed",
-          "bytes": 2110,
-          "lines": 48,
-          "nonblank_noncomment_lines_approx": 21,
+          "sha256": "8395c56546e64c513efec33a7c52ab52d648251e08700acd8a6090434ff1fe83",
+          "bytes": 2283,
+          "lines": 50,
+          "nonblank_noncomment_lines_approx": 23,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -1285,11 +1505,11 @@
           "doc_skeleton": false
         },
         "crates/polaris-config/src/schema.rs": {
-          "sha256": "324dd4cec45af755e4a2bf6f5ffd18f0eb27bb8f288524615602b13ce0484794",
-          "bytes": 12510,
-          "lines": 451,
-          "nonblank_noncomment_lines_approx": 319,
-          "function_definitions": 13,
+          "sha256": "bd0ae0a80f65ef5fc58a27907ec04033d71ddf36e8a1a10af20494a89c05019a",
+          "bytes": 27801,
+          "lines": 909,
+          "nonblank_noncomment_lines_approx": 702,
+          "function_definitions": 25,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -1321,6 +1541,16 @@
           "nonblank_noncomment_lines_approx": 43,
           "function_definitions": 5,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-config/tests/config_cli_preferences.rs": {
+          "sha256": "7588f2f0f83f9babeb42c1d9c3471de58ee20fd1bbad091c2dc896595d4b753d",
+          "bytes": 3533,
+          "lines": 98,
+          "nonblank_noncomment_lines_approx": 87,
+          "function_definitions": 5,
+          "tests": 5,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -4313,9 +4543,9 @@
           "text": "Synthetic mixed-prose corpus plus release throughput workload: 256 KiB / 512 KiB / 1 MiB measured 106.4 / 100.3 / 102.4 MB/s; full-size directive count checked. Explicit workload is ignored in the fast suite and was run separately."
         }
       ],
-      "rust_files": 20,
-      "production_rust_lines": 2057,
-      "test_markers": 47,
+      "rust_files": 21,
+      "production_rust_lines": 2111,
+      "test_markers": 49,
       "files": {
         "crates/polaris-kernel/crates/directives/Cargo.toml": {
           "sha256": "4652824acf78664b4cc2ed069faeaef53753dc1535e5929c90e9b057a7cb4efd",
@@ -4408,10 +4638,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-kernel/crates/directives/src/names.rs": {
-          "sha256": "147b52f3f324816c9fb1c375049552eb1cf40de27f7dc68d5eb58ad654d7884d",
-          "bytes": 1657,
-          "lines": 77,
-          "nonblank_noncomment_lines_approx": 67,
+          "sha256": "7cbcd92a0e7269d1e5c2c92e32e89aebd503c00b119ecbf95422f99beea55680",
+          "bytes": 1701,
+          "lines": 80,
+          "nonblank_noncomment_lines_approx": 70,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -4438,10 +4668,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-kernel/crates/directives/src/slash.rs": {
-          "sha256": "7bfdc8d08944afbe553073b13319789076f2363d9c8f5c62800686f045d2fe7f",
-          "bytes": 10573,
-          "lines": 323,
-          "nonblank_noncomment_lines_approx": 248,
+          "sha256": "6d1b1b1a85a4fa95eec10c437d5b16ee5295e38a6dfc3250748e9687a2094537",
+          "bytes": 12255,
+          "lines": 374,
+          "nonblank_noncomment_lines_approx": 285,
           "function_definitions": 5,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -4524,6 +4754,16 @@
           "nonblank_noncomment_lines_approx": 113,
           "function_definitions": 8,
           "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-kernel/crates/directives/tests/ui_navigation.rs": {
+          "sha256": "800ed98cc05ab45e0b1b16c2e63c1ef5fcf1851c64b4dc43806e710d1bf586b9",
+          "bytes": 1932,
+          "lines": 66,
+          "nonblank_noncomment_lines_approx": 58,
+          "function_definitions": 3,
+          "tests": 2,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -5898,15 +6138,15 @@
           "text": "Live local check against the WSL2 gateway. BLOCKED-ON-ACCESS (WSL2 Ubuntu 24.04 and OpenShell v0.1.4 not installed yet)."
         }
       ],
-      "rust_files": 3,
-      "production_rust_lines": 2169,
-      "test_markers": 20,
+      "rust_files": 4,
+      "production_rust_lines": 3041,
+      "test_markers": 30,
       "files": {
         "crates/polaris-openshell/crates/client/Cargo.toml": {
-          "sha256": "5182254da7bef70252d2e06e268a1bf92c69ad576c5ef7e8a2f319b7284b4610",
-          "bytes": 1143,
-          "lines": 33,
-          "nonblank_noncomment_lines_approx": 29,
+          "sha256": "c91c3692ef74f9d1fa2ffe4ed762e5fb3309b05a89c6622aa951c461f48fcef9",
+          "bytes": 1174,
+          "lines": 34,
+          "nonblank_noncomment_lines_approx": 30,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -5923,8 +6163,8 @@
           "doc_skeleton": false
         },
         "crates/polaris-openshell/crates/client/src/implementation.rs": {
-          "sha256": "c09ef3955479099df24b956da43990741b0bb33c4ba954af210e53eb260e4bff",
-          "bytes": 80168,
+          "sha256": "8c5ff7a35ac75536decf3b857239da22074e60a47075defbdb4327b04571e12b",
+          "bytes": 80223,
           "lines": 2165,
           "nonblank_noncomment_lines_approx": 1948,
           "function_definitions": 82,
@@ -5933,12 +6173,22 @@
           "doc_skeleton": false
         },
         "crates/polaris-openshell/crates/client/src/lib.rs": {
-          "sha256": "130dc6c155314dcd613780ebb4a17ca14d6011295981f7b17a17876f6faeeee1",
-          "bytes": 124,
-          "lines": 4,
-          "nonblank_noncomment_lines_approx": 2,
+          "sha256": "9402261703ca695df4ce2a7d4503fa3bb0096a92c5e7447eb8fda7d64f2a4043",
+          "bytes": 135,
+          "lines": 5,
+          "nonblank_noncomment_lines_approx": 3,
           "function_definitions": 0,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-openshell/crates/client/src/stdio.rs": {
+          "sha256": "519f86596b0c11839b1072b9d6c7bccd9838cbd375b5e3b6aeba0f6bd08220d0",
+          "bytes": 31677,
+          "lines": 871,
+          "nonblank_noncomment_lines_approx": 833,
+          "function_definitions": 41,
+          "tests": 10,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -6306,9 +6556,9 @@
       "phase": "P5",
       "kind": "lib",
       "layer": 2,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass; live service, broader fuzz/load and full P5 integration remain open.",
       "responsibilities": [
         "Implement WebSearch for Tavily and SearXNG; both fully integrated (D7).",
         "Fetch pages under semaphores and rate limits; convert HTML to Markdown."
@@ -6355,27 +6605,97 @@
           "text": "Add wiremock-based contract tests with fixtures labelled synthetic until re-recorded live."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 33,
-      "test_markers": 0,
+      "rust_files": 8,
+      "production_rust_lines": 1680,
+      "test_markers": 18,
       "files": {
         "crates/polaris-search/crates/providers/Cargo.toml": {
-          "sha256": "3674a3b1e92fb4862a45dde8d270d8fd63876efaddc29fbb945aae54cc2ba9d1",
-          "bytes": 689,
-          "lines": 20,
-          "nonblank_noncomment_lines_approx": 16,
+          "sha256": "2181ebb46201f8445ececb83d7c94cadae3d7691bb41346e706c64fa8f391505",
+          "bytes": 1024,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 26,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
-        "crates/polaris-search/crates/providers/src/lib.rs": {
-          "sha256": "fe3c718547142681d018ad9afa056f8aec53c966e93bd205b6038c0928b95b34",
-          "bytes": 1088,
-          "lines": 33,
-          "nonblank_noncomment_lines_approx": 0,
+        "crates/polaris-search/crates/providers/src/error.rs": {
+          "sha256": "c4472d7c92479eae0beeeef1845ebc7bf3f56a7a9c81f6752df2be6b5a1a8f23",
+          "bytes": 2371,
+          "lines": 61,
+          "nonblank_noncomment_lines_approx": 25,
           "function_definitions": 0,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/fetch.rs": {
+          "sha256": "79d63671f23e5be4afc65786c1fdef74b2983b3531d4ed34ea2dcc44a867a996",
+          "bytes": 16903,
+          "lines": 476,
+          "nonblank_noncomment_lines_approx": 416,
+          "function_definitions": 18,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/lib.rs": {
+          "sha256": "f44985bc37d4c953dd538c7131171b47f3cbf3ba80b18ef9f411a7c4a6602df8",
+          "bytes": 1012,
+          "lines": 25,
+          "nonblank_noncomment_lines_approx": 13,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/runtime.rs": {
+          "sha256": "171ee428a69b6ee7a2f653f299c6c1583d6f07dc9a9cd5acfe8b6353e51ec5aa",
+          "bytes": 6461,
+          "lines": 187,
+          "nonblank_noncomment_lines_approx": 154,
+          "function_definitions": 10,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/searxng.rs": {
+          "sha256": "1f4a6c33b5a7ec40848f1eca75314fd8096459fd32816ccebac7202bb83dc2bf",
+          "bytes": 11678,
+          "lines": 334,
+          "nonblank_noncomment_lines_approx": 304,
+          "function_definitions": 7,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/ssrf.rs": {
+          "sha256": "f01688092ae235bbbb6d6ff16ff8a95715ab254fbe4ba5c2a0f86959976df7f4",
+          "bytes": 9458,
+          "lines": 264,
+          "nonblank_noncomment_lines_approx": 241,
+          "function_definitions": 12,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/src/tavily.rs": {
+          "sha256": "fedc530d11a1a7983da70851d30b7a954efee65ed4a1fe9a49e0d9e1aa10b7c5",
+          "bytes": 11526,
+          "lines": 333,
+          "nonblank_noncomment_lines_approx": 298,
+          "function_definitions": 7,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/providers/tests/provider_contract.rs": {
+          "sha256": "b4cf43283755ae494c343ee4722d11eb42444367c67712feb04f15355b39aa61",
+          "bytes": 13647,
+          "lines": 373,
+          "nonblank_noncomment_lines_approx": 346,
+          "function_definitions": 14,
+          "tests": 9,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -6387,9 +6707,9 @@
       "phase": "P7",
       "kind": "lib",
       "layer": 2,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-26 E39: real RMCP3.5.1 stdio/HTTP client, sandbox-only production launch, bounded protocol framing/body/SSE, schema-aware validation, lifecycle and trust/effect controls. Twenty-eight local contracts and strict all-target Clippy pass; live sandbox-backed MCP, full kernel registry/frame composition and wider lifecycle gates remain open.",
       "responsibilities": [
         "Connect configured MCP servers; list and invoke tools; normalize schemas into the Polaris tool registry.",
         "Feed tool descriptions to S1 for per-step pruning (top-k tools per S2 call)."
@@ -6436,27 +6756,147 @@
           "text": "Add reconnect/backoff and a supervisor hook so a crashed server marks its tools unavailable instead of failing the turn."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 32,
-      "test_markers": 0,
+      "rust_files": 13,
+      "production_rust_lines": 2283,
+      "test_markers": 28,
       "files": {
         "crates/polaris-ext/crates/mcp/Cargo.toml": {
-          "sha256": "c80abb96f93bfd12a244fae5968898b06545657bcf33cc1c12e90e7501015635",
-          "bytes": 632,
-          "lines": 19,
-          "nonblank_noncomment_lines_approx": 15,
+          "sha256": "7a9402931a11047eae3f7621b7974ed2ef296cacb921a32a9ba54552cbc067e5",
+          "bytes": 1306,
+          "lines": 40,
+          "nonblank_noncomment_lines_approx": 35,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
-        "crates/polaris-ext/crates/mcp/src/lib.rs": {
-          "sha256": "0963413f1f084e913ec80dbb1b53d42543f6d1c7244cc99e7cbc1f5d76f77ff7",
-          "bytes": 1065,
-          "lines": 32,
-          "nonblank_noncomment_lines_approx": 0,
-          "function_definitions": 1,
+        "crates/polaris-ext/crates/mcp/src/call.rs": {
+          "sha256": "b452e54887d190a79e94780c15fa2876f6a0c279236087c1908c283879190fd0",
+          "bytes": 3846,
+          "lines": 116,
+          "nonblank_noncomment_lines_approx": 105,
+          "function_definitions": 4,
+          "tests": 2,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/error.rs": {
+          "sha256": "e05e3afd3a17046d6526f5f5eb950015a7f2e3beedd9999a26f2bb6fd9c8067b",
+          "bytes": 2059,
+          "lines": 48,
+          "nonblank_noncomment_lines_approx": 17,
+          "function_definitions": 0,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/frame.rs": {
+          "sha256": "d0a6d53c17708aeb07606716655dd4c2ce9fa4e93cde592dbc6e4021394085e8",
+          "bytes": 5071,
+          "lines": 138,
+          "nonblank_noncomment_lines_approx": 119,
+          "function_definitions": 4,
+          "tests": 2,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/http_client.rs": {
+          "sha256": "33317223531b31887bfc7c486a349d565b836f59baabef8ae3e6e3bcee3521d1",
+          "bytes": 17895,
+          "lines": 487,
+          "nonblank_noncomment_lines_approx": 455,
+          "function_definitions": 15,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/hub.rs": {
+          "sha256": "13eb7b04ed7bb7bb08259fb5a44b4efeeee9430486607ec49ff7a1eba07db704",
+          "bytes": 22915,
+          "lines": 616,
+          "nonblank_noncomment_lines_approx": 549,
+          "function_definitions": 24,
+          "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/launcher.rs": {
+          "sha256": "73b3112796d869d9851bd4c84f5aa594d6fd89137431b6fa2a168ffea5c3c88a",
+          "bytes": 10125,
+          "lines": 304,
+          "nonblank_noncomment_lines_approx": 258,
+          "function_definitions": 14,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/lib.rs": {
+          "sha256": "a8959608ef538939a9be39609224cf54b01063291376f1551de7730749e4b42c",
+          "bytes": 1138,
+          "lines": 34,
+          "nonblank_noncomment_lines_approx": 20,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/model.rs": {
+          "sha256": "dc338881614376cf70a06430e30fbbe94485f01079c13156e704b9d8aaf3fe38",
+          "bytes": 7415,
+          "lines": 226,
+          "nonblank_noncomment_lines_approx": 137,
+          "function_definitions": 7,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/schema.rs": {
+          "sha256": "875f45bfd7e5ec93dac1727bc18eb55181e9a67d4c52a8e964539e1506f3eae6",
+          "bytes": 8006,
+          "lines": 247,
+          "nonblank_noncomment_lines_approx": 222,
+          "function_definitions": 6,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/src/summary.rs": {
+          "sha256": "ac1e381cc279a77328288e804950e54fb6cdf81be082ed91c9cc926a578fa2fd",
+          "bytes": 2117,
+          "lines": 67,
+          "nonblank_noncomment_lines_approx": 59,
+          "function_definitions": 3,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/tests/protocol_contract.rs": {
+          "sha256": "15b1b5209632af6ecbd3e9a0d629cc4ff1c790327de0bac40fa99791252d906c",
+          "bytes": 16207,
+          "lines": 511,
+          "nonblank_noncomment_lines_approx": 463,
+          "function_definitions": 23,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/tests/schema_contract.rs": {
+          "sha256": "29774bf9493f49b8b7a53de654ead7c4d42d4ef29b5a7f295f6960896706b50e",
+          "bytes": 4208,
+          "lines": 130,
+          "nonblank_noncomment_lines_approx": 112,
+          "function_definitions": 8,
+          "tests": 8,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ext/crates/mcp/tests/summary_contract.rs": {
+          "sha256": "fe2335b2c161888fa9038003362ad24cf2a4ac910efcde078dd1869af9f67466",
+          "bytes": 1302,
+          "lines": 42,
+          "nonblank_noncomment_lines_approx": 30,
+          "function_definitions": 5,
+          "tests": 5,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -6518,8 +6958,8 @@
         }
       ],
       "rust_files": 5,
-      "production_rust_lines": 2125,
-      "test_markers": 25,
+      "production_rust_lines": 1983,
+      "test_markers": 23,
       "files": {
         "crates/polaris-ext/crates/skills/Cargo.toml": {
           "sha256": "6e77c230e68f1f25d4e4b4c2402129101f3ef31e7e172e83701ee4a551c31e37",
@@ -6532,12 +6972,12 @@
           "doc_skeleton": false
         },
         "crates/polaris-ext/crates/skills/src/approval_cache.rs": {
-          "sha256": "729fb3bf46eeadfbc91493c32912a24b9b5f88c94924bf4c8f5824a0739cc5dc",
-          "bytes": 9248,
-          "lines": 267,
-          "nonblank_noncomment_lines_approx": 224,
-          "function_definitions": 12,
-          "tests": 2,
+          "sha256": "e93ec4891f5fbd3d6280827b07b542011639fed88214ebbb36e3e123d2d500e9",
+          "bytes": 4376,
+          "lines": 125,
+          "nonblank_noncomment_lines_approx": 99,
+          "function_definitions": 5,
+          "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -7612,7 +8052,7 @@
       "layer": 3,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Production provenance-preserving ranking/filtering written with bounded S1 calls and fail-open fallback; UNVERIFIED, source race and validation remain open.",
+      "metadata_evidence": "2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open.",
       "responsibilities": [
         "Race sources under named semaphores; validate the first hit with S1; abort the rest (JoinSet).",
         "Drop boilerplate chunks and keep facts with provenance (\"pristine context\")."
@@ -7659,27 +8099,77 @@
           "text": "Measure token savings (approximate token estimate, labelled approximate) and recall of relevant chunks on the fixtures; record both."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 495,
-      "test_markers": 0,
+      "rust_files": 6,
+      "production_rust_lines": 1375,
+      "test_markers": 19,
       "files": {
         "crates/polaris-search/crates/sift/Cargo.toml": {
-          "sha256": "9761135457d8205fefade3cf1a5ac49f087e3b40546064bf7d7a5ae66223fd67",
-          "bytes": 707,
-          "lines": 20,
-          "nonblank_noncomment_lines_approx": 16,
+          "sha256": "ba1f415d68970f30d064e62d4a5c88bf03cacdaf0b7ea346bcb7d239327a6088",
+          "bytes": 999,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 25,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
-        "crates/polaris-search/crates/sift/src/lib.rs": {
-          "sha256": "1fb00cb2fe2f62227d7e93863224c30a47cc3f96069e454c65bced7da0ec5fa4",
-          "bytes": 17453,
-          "lines": 495,
-          "nonblank_noncomment_lines_approx": 393,
-          "function_definitions": 17,
+        "crates/polaris-search/crates/sift/src/dropped.rs": {
+          "sha256": "8b885bde9321f1899d4800b1b95b609b03ac1707690aa3ff048461e78637c0b4",
+          "bytes": 14417,
+          "lines": 397,
+          "nonblank_noncomment_lines_approx": 310,
+          "function_definitions": 11,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/sift/src/lib.rs": {
+          "sha256": "37cc86f194be429f75d28d92d2b4b7732765bcad347569f96ce68bc965f0d232",
+          "bytes": 17920,
+          "lines": 509,
+          "nonblank_noncomment_lines_approx": 404,
+          "function_definitions": 18,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/sift/src/race.rs": {
+          "sha256": "8040482bbf2998939b329402b249067d14de613522b142c30e16fe4edec2a73b",
+          "bytes": 17478,
+          "lines": 469,
+          "nonblank_noncomment_lines_approx": 396,
+          "function_definitions": 12,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/sift/tests/dropped_manifest.rs": {
+          "sha256": "85898e22bdb57978740d092569329c8d375986a5fba21aa35854f35f40cd6b60",
+          "bytes": 9460,
+          "lines": 299,
+          "nonblank_noncomment_lines_approx": 258,
+          "function_definitions": 17,
+          "tests": 10,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/sift/tests/source_race.rs": {
+          "sha256": "b0c45b2bde5324016d99df7c2edac8d0847430e90aefc237d14af8ef5d97ea65",
+          "bytes": 12970,
+          "lines": 397,
+          "nonblank_noncomment_lines_approx": 383,
+          "function_definitions": 16,
+          "tests": 8,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-search/crates/sift/tests/web_pipeline.rs": {
+          "sha256": "53bc22339f9eabbe3a416a77a9256860e2c160ec88f8e74e110587a9f657fb81",
+          "bytes": 13333,
+          "lines": 361,
+          "nonblank_noncomment_lines_approx": 338,
+          "function_definitions": 9,
+          "tests": 1,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -7693,7 +8183,7 @@
       "layer": 3,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Child module facade exports written; sifter is UNVERIFIED, live providers and search racing remain pending.",
+      "metadata_evidence": "2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open.",
       "responsibilities": [
         "Re-export search children."
       ],
@@ -7716,7 +8206,7 @@
         }
       ],
       "rust_files": 1,
-      "production_rust_lines": 5,
+      "production_rust_lines": 19,
       "test_markers": 0,
       "files": {
         "crates/polaris-search/Cargo.toml": {
@@ -7730,9 +8220,9 @@
           "doc_skeleton": false
         },
         "crates/polaris-search/src/lib.rs": {
-          "sha256": "0f10802e5a8a2b7e5456baf9b20f564a5e7cc084d4ba626693959fd29f314195",
-          "bytes": 236,
-          "lines": 5,
+          "sha256": "c35717ff23254d490d4e98e40a61af2f61a8efdf6afe3f37bf176954ca757cf4",
+          "bytes": 1091,
+          "lines": 19,
           "nonblank_noncomment_lines_approx": 2,
           "function_definitions": 0,
           "tests": 0,
@@ -8452,7 +8942,7 @@
         }
       ],
       "rust_files": 10,
-      "production_rust_lines": 3450,
+      "production_rust_lines": 3451,
       "test_markers": 18,
       "files": {
         "crates/polaris-tools/crates/builtin/Cargo.toml": {
@@ -8626,10 +9116,10 @@
           "doc_skeleton": false
         },
         "crates/polaris-tools/crates/builtin/src/proposal.rs": {
-          "sha256": "9b584033f9dbef58e95d46d6490d3121b538e4d26721465d9ae0e4202d83b847",
-          "bytes": 26896,
-          "lines": 748,
-          "nonblank_noncomment_lines_approx": 658,
+          "sha256": "f1b0eb737444822c8116318a1ef13957c87a88b2acdab3845017f3f3e68763fb",
+          "bytes": 26914,
+          "lines": 749,
+          "nonblank_noncomment_lines_approx": 659,
           "function_definitions": 28,
           "tests": 2,
           "explicit_todo_unimplemented": 0,
@@ -10153,7 +10643,7 @@
       "layer": 4,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Deterministic research core and bounded versioned checkpoint codec: seven contracts and warning-denied scoped clippy PASS. Program parsing, durable store integration, runner/workspace adapters and real research loop remain pending.",
+      "metadata_evidence": "2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. Production sandbox/model/critique and broader crash/portability gates remain open.",
       "responsibilities": [
         "Run hypothesis -> experiment (sandbox, fixed budget) -> metric -> keep/revert (git) -> log, indefinitely within budgets.",
         "Maintain an evidence ledger (every claim cites URL/PDF line/AST symbol/test run); checkpoint for /research resume.",
@@ -10197,15 +10687,15 @@
           "text": "Windows specifics: experiment working copy is a git worktree on a short path (`target-dir` rules), metric output parsed as UTF-8 with CRLF tolerance."
         }
       ],
-      "rust_files": 7,
-      "production_rust_lines": 1202,
-      "test_markers": 9,
+      "rust_files": 16,
+      "production_rust_lines": 3158,
+      "test_markers": 31,
       "files": {
         "crates/polaris-runtime/crates/research/Cargo.toml": {
-          "sha256": "328cb58a8e2dd039c9a3607858535e54f6d2407a9a18ad3d7946206c6735b91f",
-          "bytes": 757,
-          "lines": 20,
-          "nonblank_noncomment_lines_approx": 16,
+          "sha256": "acf0e7f086e5f135d78ecd1b573e24a382268e87a312f5a67af5ffb76980268e",
+          "bytes": 935,
+          "lines": 26,
+          "nonblank_noncomment_lines_approx": 21,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -10222,11 +10712,21 @@
           "doc_skeleton": false
         },
         "crates/polaris-runtime/crates/research/src/lib.rs": {
-          "sha256": "eaaeea540a17d03386dc5e58801e42b04087c9a85377ac5fce61fcdcd3ffae76",
-          "bytes": 689,
-          "lines": 16,
-          "nonblank_noncomment_lines_approx": 7,
+          "sha256": "6cbfd5960812b3bc5dacd1d536baf4e46b5871809416f983bdc7b0cb6ca07e69",
+          "bytes": 1180,
+          "lines": 27,
+          "nonblank_noncomment_lines_approx": 18,
           "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/src/loop.rs": {
+          "sha256": "97c0b4e81ba7b4178fc9b313633afe6a3bd76558f67357f80b2e27fa840bf8de",
+          "bytes": 27309,
+          "lines": 766,
+          "nonblank_noncomment_lines_approx": 619,
+          "function_definitions": 19,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -10241,12 +10741,42 @@
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-runtime/crates/research/src/program.rs": {
+          "sha256": "198e6c2b6b20d1a4558a045f20b831555478234aff9079eb2cd1ed3e21c4998c",
+          "bytes": 12571,
+          "lines": 395,
+          "nonblank_noncomment_lines_approx": 306,
+          "function_definitions": 28,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-runtime/crates/research/src/state.rs": {
-          "sha256": "864c0483d45b1a12767ec39d3e7d7a97984a9e8467119d4550ddd94ab638b855",
-          "bytes": 21685,
-          "lines": 662,
-          "nonblank_noncomment_lines_approx": 500,
-          "function_definitions": 37,
+          "sha256": "b81036578b9cd8b03661683c71ac25d62e1d66432a80df08736dd8e0f227c76c",
+          "bytes": 21832,
+          "lines": 667,
+          "nonblank_noncomment_lines_approx": 503,
+          "function_definitions": 38,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/src/store.rs": {
+          "sha256": "7b0a3135ace95a4367ae03774316bdf0045b4bff7277655b0a6775e2cd381bb1",
+          "bytes": 22343,
+          "lines": 583,
+          "nonblank_noncomment_lines_approx": 445,
+          "function_definitions": 23,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/src/workspace.rs": {
+          "sha256": "48e2f2fee9215c4ae997eba3d2307bbdde13a68a8c2e72b7c6941beec41dab11",
+          "bytes": 6797,
+          "lines": 196,
+          "nonblank_noncomment_lines_approx": 143,
+          "function_definitions": 14,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -10258,6 +10788,16 @@
           "nonblank_noncomment_lines_approx": 55,
           "function_definitions": 5,
           "tests": 3,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/tests/checkpoint_store.rs": {
+          "sha256": "2212925ad00c7c85366fddd4049b04eb694a240e61d416f203863e30752f11f4",
+          "bytes": 6621,
+          "lines": 190,
+          "nonblank_noncomment_lines_approx": 172,
+          "function_definitions": 9,
+          "tests": 7,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -10278,6 +10818,46 @@
           "nonblank_noncomment_lines_approx": 47,
           "function_definitions": 2,
           "tests": 2,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/tests/program_md.rs": {
+          "sha256": "fd37ae7d48ecee49895f6a64d6bfb6d83321b2f21e45673b7063038ad8585d78",
+          "bytes": 2396,
+          "lines": 39,
+          "nonblank_noncomment_lines_approx": 29,
+          "function_definitions": 5,
+          "tests": 5,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/tests/real_pipeline.rs": {
+          "sha256": "64c967ff81999b1c64c7b4aba78f7e7939a44a37dbe8234a533a3b0e1defb9d1",
+          "bytes": 18196,
+          "lines": 526,
+          "nonblank_noncomment_lines_approx": 505,
+          "function_definitions": 24,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/tests/research_owner.rs": {
+          "sha256": "5674637d92e903013b5d5409a4f86c72aa2c8f03c8f7754d1e785fd297b43e3d",
+          "bytes": 8133,
+          "lines": 275,
+          "nonblank_noncomment_lines_approx": 240,
+          "function_definitions": 20,
+          "tests": 5,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-runtime/crates/research/tests/vcs_workspace.rs": {
+          "sha256": "d1996ee7896b3fde8f09a15a90bb597fc445fffd7ec21987acd916be10c628ab",
+          "bytes": 3098,
+          "lines": 99,
+          "nonblank_noncomment_lines_approx": 88,
+          "function_definitions": 6,
+          "tests": 1,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -10465,7 +11045,7 @@
       "layer": 4,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "Production hybrid mutation verification and evidence-backed approvals in progress; UNVERIFIED, validation deferred by user. Existing wire-contract tests preserved (§E25).",
+      "metadata_evidence": "2026-10-26 E39: authentic issued-witness cache isolation/expiry, execution binding and wire contracts pass (five tests), with strict all-target Clippy. Full hybrid mutation acceptance remains open: incomplete unsafe-analysis coverage conservatively requests human approval; no bypass is introduced.",
       "responsibilities": [
         "Verify signature chain and Datalog checks (resource, churn, TTL, no-unsafe, diff blake3).",
         "Reject on churn/complexity limits deterministically before any model call.",
@@ -10509,15 +11089,15 @@
           "text": "Windows specifics: normalise path separators and case before comparing `resource(path)` to the token scope, and reject `..`, drive-relative and UNC forms."
         }
       ],
-      "rust_files": 8,
-      "production_rust_lines": 939,
-      "test_markers": 3,
+      "rust_files": 9,
+      "production_rust_lines": 937,
+      "test_markers": 5,
       "files": {
         "crates/polaris-kernel/crates/verifier/Cargo.toml": {
-          "sha256": "d8a8d005a5ea79a6cc5cbc38e6494f0a9f170d23c5893d0479e44cb89b45d10c",
-          "bytes": 983,
-          "lines": 29,
-          "nonblank_noncomment_lines_approx": 24,
+          "sha256": "2c1cb23561ee59f9cd03527a46250c857800116c627ddbc08fdf6f1293e8edec",
+          "bytes": 1025,
+          "lines": 30,
+          "nonblank_noncomment_lines_approx": 25,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
@@ -10574,12 +11154,22 @@
           "doc_skeleton": false
         },
         "crates/polaris-kernel/crates/verifier/src/verify.rs": {
-          "sha256": "c9ab0b7c0bff28d01b15e9fe9ee39cbd39b67a6017bef81609a4b41833fc97cb",
-          "bytes": 21587,
-          "lines": 591,
-          "nonblank_noncomment_lines_approx": 437,
+          "sha256": "341deaff623b58cbfb98b0aaff8a2fd5444ad97639e7654b95a7d25f650c6512",
+          "bytes": 21633,
+          "lines": 589,
+          "nonblank_noncomment_lines_approx": 434,
           "function_definitions": 15,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-kernel/crates/verifier/tests/approval_cache.rs": {
+          "sha256": "694f563a243e7cc529539fd8fa1ac92caf5bfa55d125db7aa2f7b4359815acc2",
+          "bytes": 5838,
+          "lines": 165,
+          "nonblank_noncomment_lines_approx": 146,
+          "function_definitions": 9,
+          "tests": 2,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -11028,7 +11618,7 @@
       "layer": 6,
       "metadata_implemented": true,
       "metadata_status": "IN PROGRESS",
-      "metadata_evidence": "111 Windows tests incl. 1,000-case properties, 5 initial snapshots reviewed, Unicode chip regression saved; Linux check; ui_completion fuzz 207,648 runs/61 s (§E21). UI deferred by user: remaining settings/provenance, full HUD, metadata arity, Quick Chips, fixtures/Miri and TUI integration.",
+      "metadata_evidence": "2026-10-24 UI foundation: North Star/palette migration, transactional bounded composer, global session projection, cockpit and pure questionnaire state; native tests. See UI_PHASES.md and evidence/ui/verification.txt. Human backend protocol, native/formal/performance acceptance remain open; historical E21 retained.",
       "responsibilities": [
         "Reduce events into view state (conversation, tools, goal line, HUD, sessions) shared by all frontends.",
         "Own theme tokens and command/directive metadata used by completion menus."
@@ -11083,9 +11673,9 @@
           "text": "Provide web-token export (`tokens::css_variables() -> String`) so `polaris-ui-web` generates its `:root` block from the same source."
         }
       ],
-      "rust_files": 18,
-      "production_rust_lines": 3190,
-      "test_markers": 112,
+      "rust_files": 26,
+      "production_rust_lines": 5014,
+      "test_markers": 161,
       "files": {
         "crates/polaris-ui/crates/model/Cargo.toml": {
           "sha256": "7766757a4276a6fbddd78cdedf8f6926ec21bc5afc83532023969ee4c319b5d3",
@@ -11107,93 +11697,133 @@
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-ui/crates/model/src/cockpit.rs": {
+          "sha256": "4234f4e2b896fa6011ed476a78b33b0620909b16da363d536c071add7acda759",
+          "bytes": 5149,
+          "lines": 154,
+          "nonblank_noncomment_lines_approx": 105,
+          "function_definitions": 13,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-ui/crates/model/src/completion.rs": {
-          "sha256": "4e5ed2bc7f3d10e0879a5f227dd27484c0511cc8895e0385ed0a52458c47aa1c",
-          "bytes": 15260,
-          "lines": 437,
-          "nonblank_noncomment_lines_approx": 366,
+          "sha256": "6cdab825d545dc5fca59b5a9a5083db314b96804661ced7f8482252fbf34a474",
+          "bytes": 15402,
+          "lines": 440,
+          "nonblank_noncomment_lines_approx": 369,
           "function_definitions": 8,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/composer.rs": {
-          "sha256": "ac139e3e1fdf78d16fd8c6039382dbe2c9512ac1c0653c49d472002ae92cbd30",
-          "bytes": 19437,
-          "lines": 609,
-          "nonblank_noncomment_lines_approx": 489,
-          "function_definitions": 36,
+          "sha256": "910be36f33e27c0de6f195bfbdc4e87f18fbe80b714d554be521abb2295f6959",
+          "bytes": 39243,
+          "lines": 1191,
+          "nonblank_noncomment_lines_approx": 986,
+          "function_definitions": 78,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/error.rs": {
-          "sha256": "e3606a07f608fed1ffeb2fcd236561cb1c17a5d3ddaeb7989ffa2990aa4544d0",
-          "bytes": 3046,
-          "lines": 82,
-          "nonblank_noncomment_lines_approx": 40,
-          "function_definitions": 2,
+          "sha256": "c8b8e46813d42723a27e62b1dde9de163b6274f17d8406c3c22e0ce27201fc6d",
+          "bytes": 4435,
+          "lines": 122,
+          "nonblank_noncomment_lines_approx": 64,
+          "function_definitions": 3,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/keymap.rs": {
-          "sha256": "e59c6d587e8180eb6fa234111890df2abb09e00418a8d2fcb643607ab390961c",
-          "bytes": 25643,
-          "lines": 926,
-          "nonblank_noncomment_lines_approx": 721,
+          "sha256": "85981d02b4aaaea02db427bdc2aa449be454b3d29420e1733706cbd37880cdea",
+          "bytes": 29264,
+          "lines": 1051,
+          "nonblank_noncomment_lines_approx": 833,
           "function_definitions": 21,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/lib.rs": {
-          "sha256": "f54c152284fefe2d63ea28b6f7dd07f88287e1348d48ff74a4ac5b4ae18651a5",
-          "bytes": 251,
-          "lines": 13,
-          "nonblank_noncomment_lines_approx": 9,
+          "sha256": "6925e2ad95d4794fb29090c5ae8e65c33a480157e051bab05c29b68ce21ec573",
+          "bytes": 308,
+          "lines": 16,
+          "nonblank_noncomment_lines_approx": 12,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/logo.rs": {
-          "sha256": "1a5a32679c0680d86637959bafc3dfa9e774a7177c1f17d4dee9f94cc72d0f59",
-          "bytes": 5820,
-          "lines": 191,
-          "nonblank_noncomment_lines_approx": 127,
-          "function_definitions": 9,
+          "sha256": "ffaeb14f35c4bcf7c5b2c4daebc7b9d6d48017bb39558e739559b32b26091dc0",
+          "bytes": 1948,
+          "lines": 76,
+          "nonblank_noncomment_lines_approx": 60,
+          "function_definitions": 7,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/src/questionnaire.rs": {
+          "sha256": "c79890f16c32b9440da7efa9ad4910dd2465f00f50e91ee7d27486df4889b434",
+          "bytes": 30583,
+          "lines": 776,
+          "nonblank_noncomment_lines_approx": 625,
+          "function_definitions": 29,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/reduce.rs": {
-          "sha256": "207972876e9a6557b5c72733ab669af147f9b0c060ef172078ab3db9628e8af2",
-          "bytes": 7159,
-          "lines": 192,
-          "nonblank_noncomment_lines_approx": 182,
-          "function_definitions": 2,
+          "sha256": "c9994231b559b22787302afcbeb3ffa06b83c06173ce13702afad03d6b218c23",
+          "bytes": 7422,
+          "lines": 202,
+          "nonblank_noncomment_lines_approx": 191,
+          "function_definitions": 3,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/src/session.rs": {
+          "sha256": "5044a6078566c3f3e66a89a239a84a3f37a92d0a3538b922afd951f48f1fd4b7",
+          "bytes": 4929,
+          "lines": 128,
+          "nonblank_noncomment_lines_approx": 100,
+          "function_definitions": 10,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/tokens.rs": {
-          "sha256": "e0eb90aa054db319d28b92050cd23c519aebf65999eeb659b1e42af8e36e36f4",
-          "bytes": 8897,
-          "lines": 262,
-          "nonblank_noncomment_lines_approx": 196,
+          "sha256": "92c6bfe50d36704dfe3d3f18c76701e44a3d775f8bf02d2a9b957ccc247d82ac",
+          "bytes": 8603,
+          "lines": 247,
+          "nonblank_noncomment_lines_approx": 181,
           "function_definitions": 7,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/src/view.rs": {
-          "sha256": "b3efecbb9f311adf50a61dffe2ad63dbf9717cdf92c2d6d4f99fd43a58f72593",
-          "bytes": 13812,
-          "lines": 422,
-          "nonblank_noncomment_lines_approx": 293,
-          "function_definitions": 26,
+          "sha256": "6971237b319416cc6f7ac1f8716405f1a3e8e1b2170f2b0341edbaf54c5d7ee2",
+          "bytes": 19390,
+          "lines": 555,
+          "nonblank_noncomment_lines_approx": 419,
+          "function_definitions": 33,
           "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/tests/cockpit_state.rs": {
+          "sha256": "9f432e53e64fe8cbe9b8986ced1e4e2585283bec62919e24d9f365c06df01872",
+          "bytes": 2564,
+          "lines": 68,
+          "nonblank_noncomment_lines_approx": 58,
+          "function_definitions": 6,
+          "tests": 6,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -11208,42 +11838,62 @@
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/tests/composer_buffer.rs": {
-          "sha256": "5b6951bbc36c02e7554f1c3da32bef697c978a1c8ea3698c19bff23b77840da5",
-          "bytes": 18060,
-          "lines": 597,
-          "nonblank_noncomment_lines_approx": 526,
-          "function_definitions": 24,
-          "tests": 21,
+          "sha256": "6eb003d3ffecc4966f9209f58be270aa73842dd8f3fcd1de4b57cd0efdcab9ba",
+          "bytes": 21599,
+          "lines": 712,
+          "nonblank_noncomment_lines_approx": 631,
+          "function_definitions": 29,
+          "tests": 26,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/tests/continuation_editor.rs": {
+          "sha256": "446eb72ddcaccf116957317dffe13986f08e012a9ec4521b8a0c1dbe5c744e3d",
+          "bytes": 5168,
+          "lines": 164,
+          "nonblank_noncomment_lines_approx": 140,
+          "function_definitions": 8,
+          "tests": 8,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/tests/design_tokens.rs": {
-          "sha256": "23bc678e86f01d5350ae003fbfd77b0915e4e7ea3f0641823fd681a984d9e373",
-          "bytes": 5632,
-          "lines": 181,
-          "nonblank_noncomment_lines_approx": 157,
+          "sha256": "ee55827358a2fb44ab1e08fc2ff708d084fa335eb1d814654191f43812e26b67",
+          "bytes": 5526,
+          "lines": 178,
+          "nonblank_noncomment_lines_approx": 154,
           "function_definitions": 9,
           "tests": 9,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/tests/keymap_table.rs": {
-          "sha256": "e56dca8648a7532867f0d09615325352b2cdf1633016ae9f73a4d73f56b21bf0",
-          "bytes": 12566,
-          "lines": 367,
-          "nonblank_noncomment_lines_approx": 327,
-          "function_definitions": 15,
-          "tests": 12,
+          "sha256": "b0ffe331f9765e1a20f64da207733bac12d34b5500e186b13088edd42d4e3cc7",
+          "bytes": 15145,
+          "lines": 467,
+          "nonblank_noncomment_lines_approx": 425,
+          "function_definitions": 16,
+          "tests": 13,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/tests/logo_grids.rs": {
-          "sha256": "16b6cc5bc531aadd850d6e17d92947de9865c612738cd43add4191be1996824b",
-          "bytes": 5359,
-          "lines": 167,
-          "nonblank_noncomment_lines_approx": 133,
-          "function_definitions": 12,
-          "tests": 12,
+          "sha256": "ec8d384cb2441e989dceb7bfe452bb46299200edb3c79f251ae97433901c4ced",
+          "bytes": 2191,
+          "lines": 74,
+          "nonblank_noncomment_lines_approx": 62,
+          "function_definitions": 8,
+          "tests": 8,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/tests/mouse_selection_model.rs": {
+          "sha256": "23335b0a2c663b101f491b924e2fb6a3d4defbb4aca0046251a63a287a0fd286",
+          "bytes": 5122,
+          "lines": 137,
+          "nonblank_noncomment_lines_approx": 122,
+          "function_definitions": 6,
+          "tests": 6,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -11254,6 +11904,26 @@
           "nonblank_noncomment_lines_approx": 152,
           "function_definitions": 8,
           "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/tests/questionnaire_editor.rs": {
+          "sha256": "17ce038cd8d0c53f110873177a56875bd6081dd37aa29304b2a379839d82a3ec",
+          "bytes": 3441,
+          "lines": 110,
+          "nonblank_noncomment_lines_approx": 100,
+          "function_definitions": 5,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/model/tests/questionnaire_state.rs": {
+          "sha256": "8823e3f711075f99a7825481a69ff13914aa6dcc9edb94cc0380eb6c5337f8e0",
+          "bytes": 11178,
+          "lines": 345,
+          "nonblank_noncomment_lines_approx": 323,
+          "function_definitions": 15,
+          "tests": 13,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
@@ -11268,12 +11938,12 @@
           "doc_skeleton": false
         },
         "crates/polaris-ui/crates/model/tests/view_reducer.rs": {
-          "sha256": "36ec4a799310a4710c3b0c2cee81145fb47a49aec048ad5d70280170d76773b7",
-          "bytes": 25271,
-          "lines": 861,
-          "nonblank_noncomment_lines_approx": 782,
-          "function_definitions": 38,
-          "tests": 28,
+          "sha256": "68e9cbbb9db3a6597b899aed2a6148f074d22e914f3230c7de376cba0db765c3",
+          "bytes": 36960,
+          "lines": 1245,
+          "nonblank_noncomment_lines_approx": 1143,
+          "function_definitions": 48,
+          "tests": 38,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         }
@@ -11285,9 +11955,9 @@
       "phase": "P1",
       "kind": "lib",
       "layer": 6,
-      "metadata_implemented": false,
-      "metadata_status": "NOT STARTED",
-      "metadata_evidence": "",
+      "metadata_implemented": true,
+      "metadata_status": "IN PROGRESS",
+      "metadata_evidence": "2026-10-24 UI foundation: pure responsive renderer plus bounded input scheduler, staged Ratatui presenter and fallible terminal guard; 37 native tests. See UI_PHASES.md and evidence/ui/verification.txt; phase gates remain open.",
       "responsibilities": [
         "Rebuild the demo UX (design only): composer with paste chips/history, completion wheel, $/ /@ coloring, keymap.",
         "Hide the cursor during repaint; support --dump WxH snapshots for insta tests.",
@@ -11304,7 +11974,7 @@
         },
         {
           "checked": false,
-          "text": "Implement the shared layout: header (welcome 15x7 / compact 11x5 / emblem 11x1 by body rows), history, goal line right-aligned above the composer, composer, exactly one blank row, one-row footer."
+          "text": "Implement UI_PLAN §2 shared layout: header (9×5 / 5×3 / one-cell mark), history, goal/status, growing composer, blank row and context footer; optional 34-column panel at ≥120×28 and sheet below."
         },
         {
           "checked": false,
@@ -11312,7 +11982,7 @@
         },
         {
           "checked": false,
-          "text": "Implement conversation rendering: no role headings, sent prompts on `#373737`, assistant text neutral, `To latest` control, Worked-for summary line, Warning/Error labels visible without colour, URL underline."
+          "text": "Implement conversation rendering: no role headings, sent prompts on `#141414`, assistant text neutral, `To latest` control, Worked-for summary line, Warning/Error labels visible without colour, URL underline."
         },
         {
           "checked": false,
@@ -11347,26 +12017,316 @@
           "text": "Add minimum-size screen: below 60x20 ask for a larger terminal while preserving draft and navigation."
         }
       ],
-      "rust_files": 1,
-      "production_rust_lines": 33,
-      "test_markers": 0,
+      "rust_files": 24,
+      "production_rust_lines": 7938,
+      "test_markers": 118,
       "files": {
         "crates/polaris-ui/crates/cli/Cargo.toml": {
-          "sha256": "a2121219381cdb2a32e73ac1befac863e3b8970249d1f5d704bdc80e1fa7acab",
-          "bytes": 655,
-          "lines": 19,
-          "nonblank_noncomment_lines_approx": 15,
+          "sha256": "a39fc8af7ccc1bfec0010ccf48f86d2c0b5455ed94a96fa5a1a600c766766164",
+          "bytes": 909,
+          "lines": 27,
+          "nonblank_noncomment_lines_approx": 22,
           "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
         },
+        "crates/polaris-ui/crates/cli/src/bracketed_paste.rs": {
+          "sha256": "e26a351c723aaf435d90b61d8606ad4e6360d57f5252db856cce29874f395cba",
+          "bytes": 26462,
+          "lines": 783,
+          "nonblank_noncomment_lines_approx": 714,
+          "function_definitions": 34,
+          "tests": 12,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/editor.rs": {
+          "sha256": "5fc5a2fc32befa8662e4185e8d17ad58f5dfa47a8f9618175cba8b59727ca0f5",
+          "bytes": 11390,
+          "lines": 327,
+          "nonblank_noncomment_lines_approx": 270,
+          "function_definitions": 12,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/input.rs": {
+          "sha256": "03ee0e0ad5d64696ab7ab94b2d357a527007227c09629ff917cb954f576f727e",
+          "bytes": 5739,
+          "lines": 154,
+          "nonblank_noncomment_lines_approx": 94,
+          "function_definitions": 14,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/input_decoder.rs": {
+          "sha256": "7a32d8859ca0d8801298c036a46467cb54cb4c4ece6b1ec9be36285f5cf34330",
+          "bytes": 13566,
+          "lines": 396,
+          "nonblank_noncomment_lines_approx": 345,
+          "function_definitions": 20,
+          "tests": 12,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/layout.rs": {
+          "sha256": "5a1ffc08fd9be17d6bc38840fea736fc18153f97e236f71edbe7e95d953b85a8",
+          "bytes": 5863,
+          "lines": 176,
+          "nonblank_noncomment_lines_approx": 135,
+          "function_definitions": 2,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
         "crates/polaris-ui/crates/cli/src/lib.rs": {
-          "sha256": "5d207f061fb85750b63a9db0675a7a44940acfd4d0ec1e69bceb0cfb76f57219",
-          "bytes": 1273,
-          "lines": 33,
-          "nonblank_noncomment_lines_approx": 0,
+          "sha256": "56b82a07be31fad085fad3658c96fc9cf90a35d9592b610343a703acd1031442",
+          "bytes": 789,
+          "lines": 25,
+          "nonblank_noncomment_lines_approx": 11,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/presenter.rs": {
+          "sha256": "e4a14b62bc3d48a3e14bd2a0127d23213710011d50b5f9beeb4bd283bf6ddf26",
+          "bytes": 11330,
+          "lines": 336,
+          "nonblank_noncomment_lines_approx": 285,
+          "function_definitions": 17,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/questions.rs": {
+          "sha256": "abe619f2446f58a01795a4c1434386e08255907da18680d02a97b22569465101",
+          "bytes": 26085,
+          "lines": 825,
+          "nonblank_noncomment_lines_approx": 798,
+          "function_definitions": 22,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/scheduler.rs": {
+          "sha256": "883b712d783f1fba4a5f5ed5389263bd83758685088da36afa2ab45fd0a590fb",
+          "bytes": 7802,
+          "lines": 223,
+          "nonblank_noncomment_lines_approx": 186,
+          "function_definitions": 12,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/screen.rs": {
+          "sha256": "bc30349c69db96a86b0e1bb33dc0a242569565446a2bc456170e67ff19d923db",
+          "bytes": 118459,
+          "lines": 3460,
+          "nonblank_noncomment_lines_approx": 3039,
+          "function_definitions": 105,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/terminal.rs": {
+          "sha256": "d9a536cae7e098a1e9562c61bd3fba8430c01ea6e0b67939b2d4fff52cf0b461",
+          "bytes": 12605,
+          "lines": 386,
+          "nonblank_noncomment_lines_approx": 329,
+          "function_definitions": 41,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/text.rs": {
+          "sha256": "be1cf71962c6cd27813936dbaf8b6af4d6aef9e91fa16c46f270feae6f6a5f0c",
+          "bytes": 6157,
+          "lines": 188,
+          "nonblank_noncomment_lines_approx": 153,
+          "function_definitions": 8,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/src/windows_input.rs": {
+          "sha256": "508dd98bc477fbe72341f23b576ca552cdd1db2d1c80b5161dbab07231c7c583",
+          "bytes": 22612,
+          "lines": 659,
+          "nonblank_noncomment_lines_approx": 585,
+          "function_definitions": 38,
+          "tests": 11,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/editor_geometry.rs": {
+          "sha256": "f8923041cab001e9be32cd6f5ab32cc7030b39b463e08b1a98ea6029fe4e12bc",
+          "bytes": 2759,
+          "lines": 68,
+          "nonblank_noncomment_lines_approx": 55,
+          "function_definitions": 4,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/editor_render.rs": {
+          "sha256": "2ca5f814204c2b728855f534ae01dde66581534dfb38903ae08db469aa6c4078",
+          "bytes": 1304,
+          "lines": 40,
+          "nonblank_noncomment_lines_approx": 35,
           "function_definitions": 1,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/public_exports.rs": {
+          "sha256": "2f3f397873dfdc2e2deec52bd2be8e76ba5d7de2ff0c2fa674af010c66d67b80",
+          "bytes": 689,
+          "lines": 21,
+          "nonblank_noncomment_lines_approx": 15,
+          "function_definitions": 1,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/reference_fidelity.rs": {
+          "sha256": "8cf277d12088252b371451fa8db2c77e05a61bc2bff99ddecbdf5bb917f9367f",
+          "bytes": 11712,
+          "lines": 325,
+          "nonblank_noncomment_lines_approx": 310,
+          "function_definitions": 11,
+          "tests": 9,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/render_cache.rs": {
+          "sha256": "b3ea999591a78a63478749ae3a381fa8cfa90b3284a9a293b1264eafb7a853ec",
+          "bytes": 7051,
+          "lines": 179,
+          "nonblank_noncomment_lines_approx": 154,
+          "function_definitions": 6,
+          "tests": 5,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/render_cache_benchmark.rs": {
+          "sha256": "1328320f0d122bdf1e5a41b2319b96b410ae14352f36218bd9e6701919509ea5",
+          "bytes": 3629,
+          "lines": 102,
+          "nonblank_noncomment_lines_approx": 94,
+          "function_definitions": 3,
+          "tests": 1,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/render_contract.rs": {
+          "sha256": "526fac06bbed8628a15ec6161b63922df831397b4dd755e69a2ef81f42ce5f15",
+          "bytes": 66475,
+          "lines": 1920,
+          "nonblank_noncomment_lines_approx": 1816,
+          "function_definitions": 39,
+          "tests": 37,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/terminal_input.rs": {
+          "sha256": "5846fab9ca20976c974375296e32f997bba5cb46d59d78271548bc43283cd925",
+          "bytes": 2110,
+          "lines": 62,
+          "nonblank_noncomment_lines_approx": 51,
+          "function_definitions": 4,
+          "tests": 4,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/terminal_lifecycle.rs": {
+          "sha256": "f7156a9fc5e275ef24e27c0079735582c54aaea501a23d6ed5efd6fdd1a83ec6",
+          "bytes": 7951,
+          "lines": 280,
+          "nonblank_noncomment_lines_approx": 265,
+          "function_definitions": 24,
+          "tests": 7,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/terminal_presenter.rs": {
+          "sha256": "658ed9d18bd1b29bf8d53aaf095fc0152305c09f825d7a4a3f66d0a2f5eefc78",
+          "bytes": 7236,
+          "lines": 212,
+          "nonblank_noncomment_lines_approx": 198,
+          "function_definitions": 8,
+          "tests": 6,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/terminal_scheduler.rs": {
+          "sha256": "3cdf06b71f804472953da7abbba240eff0d7586c1ac622416b62a3ac807ccd95",
+          "bytes": 7314,
+          "lines": 233,
+          "nonblank_noncomment_lines_approx": 216,
+          "function_definitions": 9,
+          "tests": 8,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/render_cache.json": {
+          "sha256": "f2dd596b46705b00570bab1d662beef66c19e564a17e21f37479756ea76cb5ed",
+          "bytes": 1857,
+          "lines": 44,
+          "nonblank_noncomment_lines_approx": 44,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/render_parity.json": {
+          "sha256": "ed226748ae4f349a3935ef5049d07b35cf8d287abe272a1d60b936a69e04b84b",
+          "bytes": 1601,
+          "lines": 21,
+          "nonblank_noncomment_lines_approx": 21,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/terminal_input.json": {
+          "sha256": "2a635f734349a1fde809fc13dc18ea71df73d0c93f8daa4696a2a0271db52fed",
+          "bytes": 985,
+          "lines": 36,
+          "nonblank_noncomment_lines_approx": 36,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/terminal_lifecycle.json": {
+          "sha256": "359981d562e9f001aad751c43b3f5f0c91d4b243f5885c221ee2c4c9edecca74",
+          "bytes": 1305,
+          "lines": 46,
+          "nonblank_noncomment_lines_approx": 46,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/terminal_presenter.json": {
+          "sha256": "0c75ebf293d32c3552a765dc0c666c178fc993df2ec425c37c506dc4d6def157",
+          "bytes": 1545,
+          "lines": 44,
+          "nonblank_noncomment_lines_approx": 44,
+          "function_definitions": 0,
+          "tests": 0,
+          "explicit_todo_unimplemented": 0,
+          "doc_skeleton": false
+        },
+        "crates/polaris-ui/crates/cli/tests/descriptors/terminal_scheduler.json": {
+          "sha256": "f9269e0db6c4815a25d2b426b9e1ece00342cb61a1fa2dceac2db0f103b38205",
+          "bytes": 2199,
+          "lines": 60,
+          "nonblank_noncomment_lines_approx": 60,
+          "function_definitions": 0,
           "tests": 0,
           "explicit_todo_unimplemented": 0,
           "doc_skeleton": false
@@ -12710,11 +13670,11 @@
       "doc_skeleton": true
     },
     "@prime/tools/workspace.toml": {
-      "sha256": "37fa570b9eb3e1db83dd2e4396c9ffd142f98ce7147d272f4606e8d011a467a0",
-      "bytes": 110676,
-      "lines": 2758,
-      "nonblank_noncomment_lines_approx": 2544,
-      "function_definitions": 100,
+      "sha256": "e0d19c6b254ce040e26574ffa48435a1fff499e1a504c0b58efb1c423a7234fc",
+      "bytes": 110990,
+      "lines": 2789,
+      "nonblank_noncomment_lines_approx": 2572,
+      "function_definitions": 101,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
@@ -13649,6 +14609,16 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/config_cli_preferences.json": {
+      "sha256": "2a1f9ba67e58460c81883c2415eb150a3bf601a64cd17ece3b086d4d4d46ebb9",
+      "bytes": 1489,
+      "lines": 36,
+      "nonblank_noncomment_lines_approx": 36,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/config_directory_discovery.json": {
       "sha256": "0ef59572812f11003f204c3345fbab01c65fe0521c79437d5991507a0adeb457",
       "bytes": 2483,
@@ -14034,6 +15004,46 @@
       "bytes": 998,
       "lines": 9,
       "nonblank_noncomment_lines_approx": 9,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/mcp_connect_handshake.json": {
+      "sha256": "52c56a51177f1269744dc0420ab26000cc7ddf96bbea275951367b66a0bcee51",
+      "bytes": 1753,
+      "lines": 21,
+      "nonblank_noncomment_lines_approx": 21,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/mcp_prune_summary.json": {
+      "sha256": "9db067b4b6ff813c3ecf92e3281b866a6a2ff5ef503412b224cc96d6c3e1d736",
+      "bytes": 1401,
+      "lines": 21,
+      "nonblank_noncomment_lines_approx": 21,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/mcp_schema_namespacing.json": {
+      "sha256": "3d96f23f9ddb995f7d220bfcae31190f34c46a1b8d94a78f95738a94fffec164",
+      "bytes": 2266,
+      "lines": 26,
+      "nonblank_noncomment_lines_approx": 26,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/mcp_tool_call_bounding.json": {
+      "sha256": "48496df35d410ff72ada6915b099a849bddaf9ff0e032ac6adad4f486431cbba",
+      "bytes": 1604,
+      "lines": 21,
+      "nonblank_noncomment_lines_approx": 21,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -14439,9 +15449,29 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/research_checkpoint_store.json": {
+      "sha256": "870ea561fcd41884966504894d1b3f698a0199931ce38fd5ca51d7ab73871853",
+      "bytes": 1599,
+      "lines": 1,
+      "nonblank_noncomment_lines_approx": 1,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/research_decision_state.json": {
       "sha256": "faa19c8ae0512b2f4d97d71e1a606419205e6f580301001256911f4cf39d0be1",
       "bytes": 989,
+      "lines": 1,
+      "nonblank_noncomment_lines_approx": 1,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/research_evidence_report.json": {
+      "sha256": "67b926773be670814ca083dd90b52bc93b925b56b29b5290411576050170a5e7",
+      "bytes": 1343,
       "lines": 1,
       "nonblank_noncomment_lines_approx": 1,
       "function_definitions": 0,
@@ -14454,6 +15484,46 @@
       "bytes": 830,
       "lines": 1,
       "nonblank_noncomment_lines_approx": 1,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/research_orchestration.json": {
+      "sha256": "82d83e2f2cba334aac7ca515af1f827d6ad727c7ad36783821532e9a80bee8d7",
+      "bytes": 1925,
+      "lines": 1,
+      "nonblank_noncomment_lines_approx": 1,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/research_program_md.json": {
+      "sha256": "857785703b3f62097e5b3fc58849a4ea149d376c562b88adaf6aa3c682032bc4",
+      "bytes": 1304,
+      "lines": 1,
+      "nonblank_noncomment_lines_approx": 1,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/research_real_pipeline.json": {
+      "sha256": "82b9c42dad6d5640f1927e7eb148c21752b53716e6911577d58a9d09c5fa0bd6",
+      "bytes": 2258,
+      "lines": 39,
+      "nonblank_noncomment_lines_approx": 39,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/research_run_owner.json": {
+      "sha256": "ec48699726aa8b9be8535c023bc8cdd32c3ee956ff22d12b1bb21f14a4d34624",
+      "bytes": 1821,
+      "lines": 40,
+      "nonblank_noncomment_lines_approx": 40,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -14629,6 +15699,16 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/sandbox_stdio.json": {
+      "sha256": "b14e5867670cc9d512d215af2dd10ccaae3ab99465e6df0fc113684c428a9dd7",
+      "bytes": 1679,
+      "lines": 17,
+      "nonblank_noncomment_lines_approx": 17,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/sandbox_wsl_resident_pressure.json": {
       "sha256": "135219679d0d39c6887c5cac63e1ab547d8d5c38753f0bf53a7f2d27c057a0bc",
       "bytes": 1199,
@@ -14704,6 +15784,76 @@
       "bytes": 1393,
       "lines": 18,
       "nonblank_noncomment_lines_approx": 18,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_dropped_manifest.json": {
+      "sha256": "3445c30433778fed0ca1a8299590b2622af0652e96abea0e5e481db84a767942",
+      "bytes": 2588,
+      "lines": 26,
+      "nonblank_noncomment_lines_approx": 26,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_provider_bounded_fetch.json": {
+      "sha256": "ed664ff673214e6b5b943fc478edd1b7a7fc622b6a674d6de0a7e125b2f3bcd7",
+      "bytes": 3043,
+      "lines": 28,
+      "nonblank_noncomment_lines_approx": 28,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_provider_searxng.json": {
+      "sha256": "98363c9d2d5279d81d8f8d84029cc5ea39d699941f0ceda39297799a3eb6cf53",
+      "bytes": 1828,
+      "lines": 22,
+      "nonblank_noncomment_lines_approx": 22,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_provider_ssrf_guard.json": {
+      "sha256": "a0d6c9fb316c602fa4d9bdd8cd85bb6af0efedeee5ac7ac34bf16f09ff1684eb",
+      "bytes": 1905,
+      "lines": 23,
+      "nonblank_noncomment_lines_approx": 23,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_provider_tavily.json": {
+      "sha256": "869a1fc82539a4af92b0689aedd408ef08773b8f25332e895f5933f7cb0cbe04",
+      "bytes": 1919,
+      "lines": 23,
+      "nonblank_noncomment_lines_approx": 23,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_source_race.json": {
+      "sha256": "687e29a343f8c14a348a67fe350b57e1dee8cef6d11c47f9b59874b450f61e7c",
+      "bytes": 1718,
+      "lines": 21,
+      "nonblank_noncomment_lines_approx": 21,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/search_web_pipeline.json": {
+      "sha256": "b44d3bb91e15e3dcc3fe52d94414250fa146d416e45de387beee3471a05e4fa2",
+      "bytes": 1642,
+      "lines": 42,
+      "nonblank_noncomment_lines_approx": 42,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -15009,6 +16159,16 @@
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
+    "specs/descriptors/uimodel_cockpit_state.json": {
+      "sha256": "2ae74f68e6e775ee9628de39cd6144aecbf6febf7b506a6103e815d0bc4577da",
+      "bytes": 1622,
+      "lines": 48,
+      "nonblank_noncomment_lines_approx": 48,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
     "specs/descriptors/uimodel_completion_ranking.json": {
       "sha256": "4f09562d905b914f3158706e8d2d5782988044ee8023962515cd737a78e961b5",
       "bytes": 3337,
@@ -15020,18 +16180,18 @@
       "doc_skeleton": false
     },
     "specs/descriptors/uimodel_composer_buffer.json": {
-      "sha256": "83017dc38bfb54e7289f8bb87aa392673ebfeb34229d14d12914f1e828f9853a",
-      "bytes": 4082,
-      "lines": 114,
-      "nonblank_noncomment_lines_approx": 114,
+      "sha256": "6a4714d26a3647314c070a9c1af12cae5d0722188bb02f509bf86062245f62c8",
+      "bytes": 2183,
+      "lines": 59,
+      "nonblank_noncomment_lines_approx": 59,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
     "specs/descriptors/uimodel_design_tokens.json": {
-      "sha256": "db224be2650b624576f918b2d17b32652babeb6f93eeee2fe1681c297cf15710",
-      "bytes": 2203,
+      "sha256": "715c151a84775b551929809e3d7d4700eae8c2591819c5230964638a61de8b18",
+      "bytes": 2240,
       "lines": 64,
       "nonblank_noncomment_lines_approx": 64,
       "function_definitions": 0,
@@ -15040,20 +16200,20 @@
       "doc_skeleton": false
     },
     "specs/descriptors/uimodel_keymap_table.json": {
-      "sha256": "d69fab2e69a54be33966f19abd02b2254121cca33d11ad22aee057daf5aa7168",
-      "bytes": 2757,
-      "lines": 81,
-      "nonblank_noncomment_lines_approx": 81,
+      "sha256": "de90e9ff586f472d058aea40ca55479be61d58e546c2436b409e03f7ec3cd78b",
+      "bytes": 3093,
+      "lines": 85,
+      "nonblank_noncomment_lines_approx": 85,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
       "doc_skeleton": false
     },
     "specs/descriptors/uimodel_logo_grids.json": {
-      "sha256": "848949181432945f99371e736e53102b1029e9baba9f1509fb9a3f1e8830da14",
-      "bytes": 2350,
-      "lines": 71,
-      "nonblank_noncomment_lines_approx": 71,
+      "sha256": "4886ab17ecf4016181996c3a2138b393b819e1cd7ef39f8e5887586ca9de1e6e",
+      "bytes": 1573,
+      "lines": 55,
+      "nonblank_noncomment_lines_approx": 55,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -15064,6 +16224,16 @@
       "bytes": 1481,
       "lines": 43,
       "nonblank_noncomment_lines_approx": 43,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/uimodel_questionnaire_state.json": {
+      "sha256": "90dcefb7294ba56fda430f7691c937b52908b55c981164be7e3729d3c2bea21f",
+      "bytes": 3351,
+      "lines": 80,
+      "nonblank_noncomment_lines_approx": 80,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -15080,10 +16250,150 @@
       "doc_skeleton": false
     },
     "specs/descriptors/uimodel_view_reducer.json": {
-      "sha256": "defda17b3011834db63d225f512b27cf004997b977de08b67f4c7084d64998c4",
-      "bytes": 4767,
-      "lines": 131,
-      "nonblank_noncomment_lines_approx": 131,
+      "sha256": "e00fc0842b9254c9184f2216f235c20016da572b947db255980c243131087ada",
+      "bytes": 7157,
+      "lines": 171,
+      "nonblank_noncomment_lines_approx": 171,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_application.json": {
+      "sha256": "a018bb2f6d36a14316918add6fb1020fe80ff98429a72c1a021b63586d3af393",
+      "bytes": 4623,
+      "lines": 110,
+      "nonblank_noncomment_lines_approx": 110,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_demo_runtime.json": {
+      "sha256": "bb6855239da7b9212b09da10be192b1710a498f12fff736a77786c0045870a12",
+      "bytes": 1175,
+      "lines": 34,
+      "nonblank_noncomment_lines_approx": 34,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_editor_controller.json": {
+      "sha256": "dffa688cf448931818a3249aca64069f093c3838f6f673a90ae23f8673ae8182",
+      "bytes": 874,
+      "lines": 28,
+      "nonblank_noncomment_lines_approx": 28,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_key_trace_metadata.json": {
+      "sha256": "99011b31dbab73146008cd79671bbcbbd52cdf6c7502fafe904dae40f368b25b",
+      "bytes": 768,
+      "lines": 27,
+      "nonblank_noncomment_lines_approx": 27,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_mouse_selection_repair.json": {
+      "sha256": "681821ef3d6cb866350f4089e3bf6d99bbb71b6519816b3c893619dfd97c6051",
+      "bytes": 2799,
+      "lines": 81,
+      "nonblank_noncomment_lines_approx": 81,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_reference_fidelity.json": {
+      "sha256": "1156690a22066104f266bf8c799ead823e046d64ba35ffe478dcc4c7fccc6924",
+      "bytes": 2685,
+      "lines": 63,
+      "nonblank_noncomment_lines_approx": 63,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_reference_parity.json": {
+      "sha256": "1d400813d203fc4f7578289e0803e6c74c3f94a31e98e727eaee0bdeedcb3afa",
+      "bytes": 1343,
+      "lines": 18,
+      "nonblank_noncomment_lines_approx": 18,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_screen_renderer.json": {
+      "sha256": "c816508edaf8f03dda5221a2c0c5def09d3e8d122eb3d13f520ac32a2e0aae6b",
+      "bytes": 4711,
+      "lines": 100,
+      "nonblank_noncomment_lines_approx": 100,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_terminal.json": {
+      "sha256": "079835d92c41308bd42c7ba4ab660b0d23071644b933f05abc50a83eb25a7d69",
+      "bytes": 3388,
+      "lines": 69,
+      "nonblank_noncomment_lines_approx": 69,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cli_terminal_runtime.json": {
+      "sha256": "25c0bc0656c82f8cdac54f171ed3f69a767f03ac3ce88dcc578cdc9ebd5054c2",
+      "bytes": 6459,
+      "lines": 117,
+      "nonblank_noncomment_lines_approx": 117,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_cursor_repaint_integrity.json": {
+      "sha256": "d45309acb7c1d6fabf1b688d4fc9743605f9bfe9cb7243a5d6773c8351c87199",
+      "bytes": 623,
+      "lines": 24,
+      "nonblank_noncomment_lines_approx": 24,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_key_trace.json": {
+      "sha256": "d5e6ec6da71ca2c3107af7acd1e7e431b421cdd138324557b5c33e62bfdec798",
+      "bytes": 1058,
+      "lines": 35,
+      "nonblank_noncomment_lines_approx": 35,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_navigation_commands.json": {
+      "sha256": "eb664f9d558e136536d343633d1da01cfe446aa35a2336152d5fe5174f2b55ca",
+      "bytes": 878,
+      "lines": 30,
+      "nonblank_noncomment_lines_approx": 30,
+      "function_definitions": 0,
+      "tests": 0,
+      "explicit_todo_unimplemented": 0,
+      "doc_skeleton": false
+    },
+    "specs/descriptors/ui_question_field_budgets.json": {
+      "sha256": "8eda61b35367e13f078ebf672b421379eec918a8bb6980bf24fd2b708bfc4deb",
+      "bytes": 884,
+      "lines": 30,
+      "nonblank_noncomment_lines_approx": 30,
       "function_definitions": 0,
       "tests": 0,
       "explicit_todo_unimplemented": 0,
@@ -15220,9 +16530,9 @@
       "doc_skeleton": false
     },
     "Cargo.toml": {
-      "sha256": "8463d3ddcbf7deaef4f7fd53c11acf8de0aaf654d5b707b91e0c1b9a37f99b85",
-      "bytes": 17534,
-      "lines": 376,
+      "sha256": "ed566cc5eed314dfa2ee3efec34d413c3c5c9037d861e707183ee2d9144b138c",
+      "bytes": 17636,
+      "lines": 380,
       "nonblank_noncomment_lines_approx": 0,
       "function_definitions": 0,
       "tests": 0,

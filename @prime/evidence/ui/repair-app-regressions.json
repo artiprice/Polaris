@@ -1,0 +1,24 @@
+{
+  "name": "repair-app-regressions",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "--test",
+    "ui_terminal",
+    "--test",
+    "ui_startup",
+    "--test",
+    "ui_key_trace",
+    "--test",
+    "ui_session"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:45:31.664Z",
+  "pid": 2148,
+  "code": 101,
+  "finished": "2026-10-25T00:45:57.005Z"
+}

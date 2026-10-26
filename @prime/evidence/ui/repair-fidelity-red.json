@@ -1,0 +1,17 @@
+{
+  "name": "repair-fidelity-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-cli",
+    "--test",
+    "reference_fidelity"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:39:03.515Z",
+  "pid": 12212,
+  "code": 101,
+  "finished": "2026-10-25T00:40:25.894Z"
+}

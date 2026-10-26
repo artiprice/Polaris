@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<string>", line 14, in <module>
+    assert path.is_file() or (path.is_dir() and (path/'Cargo.toml').is_file()),item
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: apps/polaris-cli/tests

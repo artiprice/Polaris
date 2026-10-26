@@ -1,0 +1,6 @@
+{
+  "command": "rustfmt --check --edition 2021 apps/polaris-cli/tests/ui_terminal.rs",
+  "exit_code": 1,
+  "stdout": "Diff in \\\\?\\C:\\mDev\\Polaris\\apps\\polaris-cli\\tests\\ui_terminal.rs:1:\n //! Physical terminal smoke tests against the actual CLI binary through a bounded PTY.\n use crossterm::event::{KeyCode, KeyEventKind, KeyModifiers};\n use polaris_ui_cli::input::{InputReader, NormalizedInput, TerminalInput};\n\u001b[31m-use portable_pty::{Child, CommandBuilder, ExitStatus, MasterPty, PtySize, native_pty_system};\n\u001b[0m\u001b[32m+use portable_pty::{native_pty_system, Child, CommandBuilder, ExitStatus, MasterPty, PtySize};\n\u001b[0m use std::{\n     error::Error,\n     io::{self, Read, Write},\nDiff in \\\\?\\C:\\mDev\\Polaris\\apps\\polaris-cli\\tests\\ui_terminal.rs:882:\n         return Ok(());\n     }\n \n\u001b[31m-    let mut pty = PtySession::spawn_native_probe(\n\u001b[0m\u001b[31m-        \"conpty_raw_mouse_mode_sequence_probe\",\n\u001b[0m\u001b[31m-        CHILD_MARKER,\n\u001b[0m\u001b[31m-    )?;\n\u001b[0m\u001b[32m+    let mut pty =\n\u001b[0m\u001b[32m+        PtySession::spawn_native_probe(\"conpty_raw_mouse_mode_sequence_probe\", CHILD_MARKER)?;\n\u001b[0m     let status = pty.wait_for_exit(Duration::from_secs(5))?;\n     std::fs::write(\n         std::path::Path::new(env!(\"CARGO_MANIFEST_DIR\"))\n",
+  "stderr": ""
+}

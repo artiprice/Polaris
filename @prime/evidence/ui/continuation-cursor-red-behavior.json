@@ -1,0 +1,20 @@
+{
+  "name": "continuation-cursor-red-behavior",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-ui-cli",
+    "--test",
+    "terminal_presenter",
+    "changed_cells_restore_unchanged_editor_cursor_after_paint",
+    "--",
+    "--exact"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T01:25:13.323Z",
+  "pid": 6428,
+  "code": 101,
+  "finished": "2026-10-25T01:25:15.940Z"
+}

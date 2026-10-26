@@ -1,0 +1,175 @@
+
+running 108 tests
+test demo_gallery::tests::app_owned_scenarios_preserve_the_current_gallery_page ... ok
+test demo::tests::cancel_reset_and_replay_have_bounded_local_lifecycles ... ok
+test demo::tests::long_stream_is_incremental_in_one_bounded_entry ... ok
+test demo::tests::runtime_is_local_bounded_and_runs_scripted_beats ... ok
+test demo::tests::questionnaire_acceptance_is_atomic_and_contains_all_questions ... ok
+test app::tests::status_json_is_a_headless_cli_action ... ok
+test cli_settings::tests::memory_only_settings_reject_persistence ... ok
+test cli_settings::tests::navigation_and_rows_are_stable ... ok
+test cli_settings::tests::untouched_runtime_overrides_are_not_persisted ... ok
+test demo_gallery::tests::completed_and_many_agent_fixtures_keep_counts_statuses_and_scroll_hits ... ok
+test demo_gallery::tests::info_pages_enter_closes_and_primary_detail_hotkeys_remain_distinct ... ok
+test demo_gallery::tests::approval_buttons_make_only_a_typed_mock_decision ... ok
+test demo_gallery::tests::model_picker_returns_a_typed_model_and_effort ... ok
+test demo_gallery::tests::mixed_agent_fixture_preserves_all_seven_statuses_and_unknown_token_counts ... ok
+test demo_gallery::tests::nested_provider_navigation_restores_model_and_configured_draft_is_retained ... ok
+test demo_gallery::tests::normalized_fixture_calendar_uses_reference_start_and_end_dates ... ok
+test demo_gallery::tests::mouse_hits_are_invalidated_after_navigation ... ok
+test demo_gallery::tests::normalized_stats_fixture_reconciles_with_reference_totals ... ok
+test demo_gallery::tests::preview_catalog_exposes_every_audited_scenario ... ok
+test demo_gallery::tests::provider_picker_opens_reference_form_and_session_rows_open_a_fixture ... ok
+test demo_gallery::tests::calendar_click_selects_a_real_day_and_opens_its_inspector ... ok
+test cli_settings::tests::memory_only_worker_save_does_not_write_and_cancel_discards_result ... ok
+test demo_gallery::tests::paste_sanitizes_control_characters_and_obeys_field_limits ... ok
+test demo_gallery::tests::renderer_uses_the_dark_reference_palette_and_selected_green_accent ... ok
+test demo_gallery::tests::usage_and_settings_choices_are_functional_and_explicitly_local ... ok
+test demo_gallery::tests::agent_roster_routes_each_reference_fixture_by_name ... ok
+test demo_gallery::tests::sessions_search_filters_rows_and_settings_exposes_six_categories ... ok
+test demo_gallery::tests::statistics_controls_change_view_range_chart_details_and_bucket ... ok
+test cli_settings::tests::explicit_edit_persists_only_edited_field_and_keeps_other_overrides ... ok
+test demo_gallery::tests::usage_bar_styles_have_distinct_shapes_and_respect_empty_capacity ... ok
+test demo_gallery::tests::settings_style_rows_are_distinct_live_choices ... ok
+test cli_settings::tests::worker_persists_on_a_worker_and_returns_updated_settings ... ok
+test demo_gallery::tests::scenario_loading_keeps_empty_and_sample_views_distinct ... ok
+test demo_gallery::tests::visible_mouse_targets_dispatch_and_small_viewports_have_no_hidden_hits ... ok
+test tui::controller_tests::accepted_directive_clears_only_after_acknowledgement ... ok
+test doctor::tests::credential_metadata_probe_never_renders_secret_values ... ok
+test tui::controller_tests::clear_command_clears_notice_and_visible_conversation ... ok
+test cli_settings::tests::cycle_is_memory_only_until_explicit_apply ... ok
+test demo_gallery::tests::stats_mouse_tab_targets_follow_current_rendered_geometry ... ok
+test demo_gallery::tests::statistics_matches_two_tabs_ranges_and_labeled_shared_fixture ... ok
+test tui::controller_tests::color_depth_auto_uses_windows_vt_and_respects_explicit_overrides ... ok
+test tui::controller_tests::continuation::arriving_demo_questions_do_not_overwrite_an_active_picker ... ok
+test demo_gallery::tests::usage_starts_with_labeled_fixture_and_details_toggle ... ok
+test tui::controller_tests::continuation::effort_picker_applies_explicitly_and_keeps_the_draft_cursor ... ok
+test demo_gallery::tests::stats_charts_render_time_buckets_and_split_without_dropping_the_tail ... ok
+test tui::controller_tests::continuation::continuation_visual_scenarios_use_the_interactive_projection ... ok
+test tui::controller_tests::completion_wheel_clamps_without_scrolling_transcript ... ok
+test cli_settings::tests::settings_worker_cancellation_discards_stale_generation ... ok
+test tui::controller_tests::continuation::late_clipboard_read_cannot_paste_into_a_changed_draft_or_cursor ... ok
+test tui::controller_tests::continuation::demo_question_notes_none_and_atomic_submit_are_connected ... ok
+test tui::controller_tests::continuation::pointer_hover_and_click_use_current_completion_geometry ... ok
+test tui::controller_tests::continuation::profiles_keep_drafts_separate_and_demo_never_dispatches_kernel_controls ... ok
+test tui::controller_tests::continuation::interactive_projection_keeps_dollar_in_prefill_and_literal_paste ... ok
+test tui::controller_tests::continuation::pasted_text_preview_expands_the_exact_chip_payload ... ok
+test tui::controller_tests::continuation::vertical_navigation_keeps_column_and_effort_does_not_move_caret ... ok
+test tui::controller_tests::continuation::transcript_drag_copies_canonical_unicode_bytes_without_repainting_for_hit_test ... ok
+test tui::controller_tests::continuation::word_selection_replacement_and_line_home_are_connected ... ok
+test tui::controller_tests::control_backpressure_preserves_draft_without_closing_ui ... ok
+test tui::controller_tests::continuation::shift_enter_is_newline_and_control_enter_is_not ... ok
+test tui::controller_tests::help_only_advertises_available_local_controls ... ok
+test tui::controller_tests::draft_text_chip_submits_its_expanded_directive ... ok
+test tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection ... ok
+test tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection ... ok
+test tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet ... ok
+test tui::controller_tests::mouse_selection::mouse_selection_survives_release_and_delete ... ok
+test tui::controller_tests::mouse_selection::double_click_editor_padding_keeps_no_selection ... ok
+test doctor::tests::optional_missing_item_does_not_block_readiness ... ok
+test tui::controller_tests::mouse_selection::double_click_drag_extends_by_words ... ok
+test tui::controller_tests::mouse_selection::selected_word_is_replaced_by_typing_and_paste ... ok
+test tui::controller_tests::mouse_selection::transcript_word_drag_reverses_by_whole_words ... ok
+test tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line ... ok
+test tui::controller_tests::mouse_selection::notes_double_and_triple_click_keep_the_main_draft_intact ... ok
+test tui::controller_tests::new_session_starts_without_a_persistent_notice ... ok
+test doctor::tests::every_setup_item_has_a_probe ... ok
+test tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes ... ok
+test tui::controller_tests::mouse_selection::transcript_triple_click_selects_source_line_across_soft_wrap ... ok
+test tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions ... ok
+test tui::controller_tests::mouse_selection::reverse_unicode_drag_delete_and_late_copy_keep_the_exact_range ... ok
+test tui::controller_tests::parity::cross_entry_selection_keeps_direction_and_semantic_newlines ... ok
+test tui::controller_tests::parity::plain_delete_keys_edit_draft_and_selected_range ... ok
+test tui::controller_tests::parity::free_text_question_click_and_vertical_edit_use_visible_geometry ... ok
+test tui::controller_tests::parity::demo_commands_open_views_without_starting_response ... ok
+test tui::controller_tests::parity::gallery_paste_cannot_edit_the_hidden_main_draft ... ok
+test tui::controller_tests::parity::model_gallery_is_anchored_above_global_footer ... ok
+test tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt ... ok
+test tui::controller_tests::continuation::settings_enter_persists_one_field_off_thread_and_demo_cannot_save ... ok
+test tui::controller_tests::pending_resume_prevents_directive_from_crossing_sessions ... ok
+test tui::controller_tests::query_failure_cannot_cancel_an_inflight_directive ... ok
+test tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice ... ok
+test tui::controller_tests::parity::question_review_preserves_answers_notes_and_requires_final_submit ... ok
+test tui::controller_tests::rejection_and_unsupported_model_input_keep_exact_draft ... ok
+test tui::controller_tests::release_is_idle_and_paste_remains_literal ... ok
+test tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit ... ok
+test tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command ... ok
+test ui_services::tests::clipboard_generation_can_be_cancelled_without_native_access ... ok
+test ui_services::tests::runtime_preference_override_is_memory_only ... ok
+test ui_services::tests::clipboard_text_limit_is_enforced_without_touching_the_system_clipboard ... ok
+test ui_services::tests::empty_clipboard_copy_is_rejected_without_native_access ... ok
+test tui::controller_tests::repeated_frame_and_caret_move_do_not_clear_terminal ... ok
+test ui_services::tests::missing_clipboard_child_pipe_is_killed_and_reaped ... ok
+test ui_services::tests::file_index_enforces_path_count_bound ... ok
+test ui_services::tests::file_index_respects_builtin_ignore_and_secret_path_rules ... ok
+test tui::controller_tests::draft_limit_rejection_keeps_editor_alive ... ok
+test session::tests::failed_payload_owner_is_consumed_once_before_close ... ok
+test session::tests::cancelled_payload_poll_retains_record_and_joins_one_cas_job ... ok
+test session::tests::unrelated_session_payload_is_not_materialized ... ok
+test tui::controller_tests::footer_controls_dispatch_to_help_mode_and_profile_sheets ... ok
+test tui::controller_tests::parity::all_reference_scenarios_use_the_actual_app_frame_path ... ok
+
+test result: ok. 108 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+
+running 2 tests
+test filter_mode_does_not_touch_the_issue_ledger ... ok
+test real_cli_rtk_filters_and_closes_issues_from_piped_streams ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.97s
+
+
+running 5 tests
+test trace_never_overwrites_existing_file ... ok
+test trace_excludes_draft_paste_and_printable_keys ... ok
+test trace_distinguishes_enter_modifiers_edit_keys_and_phases ... ok
+test mouse_trace_reports_events_coordinates_and_modifiers_without_text ... ok
+test trace_enforces_the_byte_limit_without_partial_followup ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+
+running 3 tests
+test registry_is_real_and_oversized_directives_are_rejected ... ok
+test rejected_directive_preserves_draft ... ok
+test offline_directive_survives_restart ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 7 tests
+test default_arguments_select_interactive_mode ... ok
+test initial_prompt_is_prefilled_and_not_executed ... ok
+test non_tty_default_fails_without_terminal_controls ... ok
+test demo_dump_is_explicit_deterministic_and_isolated ... ok
+test dump_is_deterministic_and_has_no_state_side_effects ... ok
+test invalid_dump_and_scenario_are_rejected ... ok
+test every_demo_scenario_is_reachable_from_the_real_binary ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+
+running 20 tests
+test conpty_console_mode_bits_probe ... ok
+test conpty_raw_mouse_mode_sequence_probe ... ok
+test terminal_parser_observes_autowrap_and_erase_characters ... ok
+test native_conpty_console_records_preserve_dollar_and_ascii_keys ... ok
+test native_conpty_vt_sequences_preserve_editor_events ... ok
+test quit_restores_terminal_modes_and_cursor ... ok
+test default_terminal_launch_shows_real_welcome_at_80x24 ... ok
+test enhanced_control_j_inserts_a_visible_newline_without_submitting ... ok
+test native_conpty_mouse_click_selects_demo_profile ... ok
+test profile_picker_switches_between_offline_and_demo_and_ignores_hover_bytes ... ok
+test demo_control_enter_does_not_insert_a_composer_newline ... ok
+test slash_menu_opens_help_and_escape_returns_to_editor ... ok
+test initial_prompt_is_visible_but_unsent_until_enter ... ok
+test bracketed_paste_is_literal_and_never_submitted ... ok
+test valid_directive_commits_and_renders_receipt ... ok
+test demo_shift_enter_and_shift_up_keep_native_cursor_position_in_sync ... ok
+test idle_screen_emits_no_redundant_frames ... ok
+test offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste ... ok
+test windows_auto_color_uses_rgb_without_colorterm ... ok
+test demo_prompt_is_scripted_without_creating_session_state ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+

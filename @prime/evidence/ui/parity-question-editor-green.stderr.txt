@@ -1,0 +1,4 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Finished `test` profile [unoptimized] target(s) in 2.52s
+     Running tests\questionnaire_editor.rs (target\debug\deps\questionnaire_editor-243ec5a73e3497c7.exe)
+     Running tests\questionnaire_state.rs (target\debug\deps\questionnaire_state-414d01b7929d67a3.exe)

@@ -1,0 +1,16 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\bracketed_paste.rs:1:
+ //! Bounded bracketed-paste recognition for native Windows key records.
+[31m-use crate::input::{InputError, NormalizedInput, MAX_PASTE_BYTES};
+[0m[32m+use crate::input::{InputError, MAX_PASTE_BYTES, NormalizedInput};
+[0m use crossterm::event::{
+     KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind,
+ };
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:176:
+ #[cfg(test)]
+ mod tests {
+     use super::{
+[31m-        KeyDecoder, NativeKeyRecord, ALT_VIRTUAL_KEY, LEFT_ALT_VIRTUAL_KEY, RIGHT_ALT_VIRTUAL_KEY,
+[0m[32m+        ALT_VIRTUAL_KEY, KeyDecoder, LEFT_ALT_VIRTUAL_KEY, NativeKeyRecord, RIGHT_ALT_VIRTUAL_KEY,
+[0m         SHIFT_PRESSED,
+     };
+     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};

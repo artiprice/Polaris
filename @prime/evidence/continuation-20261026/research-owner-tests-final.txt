@@ -1,0 +1,96 @@
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Finished `test` profile [unoptimized] target(s) in 4.21s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_research-92e8f1547b2926b5.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\checkpoint_encoding.rs (target\debug\deps\checkpoint_encoding-fdcfe7d9228e3825.exe)
+
+running 3 tests
+test checkpoint_rejects_corrupt_accounting ... ok
+test checkpoint_roundtrip_preserves_recovery_and_accounting ... ok
+test checkpoint_rejects_truncation_and_trailing_bytes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\checkpoint_store.rs (target\debug\deps\checkpoint_store-ff6bbeae919189f7.exe)
+
+running 7 tests
+test malformed_evidence_ledger_pointer_fails_closed ... ok
+test ledger_rejects_missing_evidence_payload ... ok
+test atomic_checkpoint_reopens_after_store_drop ... ok
+test in_flight_work_requires_recovery_after_reopen ... ok
+test program_identity_is_checked_on_reopen ... ok
+test evidence_ledger_is_content_addressed_and_reopens_in_order ... ok
+test concurrent_handles_serialize_checkpoint_and_ledger_updates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.84s
+
+     Running tests\decision_state.rs (target\debug\deps\decision_state-2a33dc399261d033.exe)
+
+running 4 tests
+test budget_reservation_is_conservative ... ok
+test confirmation_requires_independent_evidence ... ok
+test interrupted_iteration_requires_recovery ... ok
+test strict_improvements_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\metric_output.rs (target\debug\deps\metric_output-891181cb4522fc50.exe)
+
+running 2 tests
+test named_metric_tolerates_crlf_but_not_duplicates ... ok
+test scalar_requires_one_finite_number ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\program_md.rs (target\debug\deps\program_md-dee171b526d6a106.exe)
+
+running 5 tests
+test missing_metric_is_rejected ... ok
+test overlapping_editable_and_readonly_rejected ... ok
+test valid_program_parses ... ok
+test non_positive_budget_rejected ... ok
+test program_digest_binds_exact_source ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\real_pipeline.rs (target\debug\deps\real_pipeline-e19f7477c41003b9.exe)
+
+running 4 tests
+test abrupt_child_exit_helper ... ok
+
+running 1 test
+test tool_cannot_write_outside_the_exact_vcs_snapshot_path ... ok
+test abrupt_child_exit_reopens_as_recovery_and_restores_baseline ... ok
+test twenty_iterations_keep_only_strict_improvements_and_reopen_evidence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.83s
+
+     Running tests\research_owner.rs (target\debug\deps\research_owner-93dd56de643edae3.exe)
+
+running 5 tests
+test abrupt_owner_child_helper ... ok
+test fresh_constructor_refuses_existing_checkpoint ... ok
+test second_loop_owner_is_rejected_while_first_is_alive ... ok
+test resume_can_acquire_owner_after_previous_loop_drops ... ok
+test abrupt_process_termination_releases_run_owner ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\vcs_workspace.rs (target\debug\deps\vcs_workspace-aa353c7427283c4e.exe)
+
+running 1 test
+warning: in the working copy of 'src/value.txt', LF will be replaced by CRLF the next time Git touches it
+test vcs_keep_and_revert_return_distinct_receipts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+   Doc-tests polaris_runtime_research
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

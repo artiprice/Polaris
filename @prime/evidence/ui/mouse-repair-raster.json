@@ -1,0 +1,19 @@
+{
+  "name": "mouse-repair-raster",
+  "command": [
+    "C:/mDev/Polaris/target/ui-repair/raster/target/debug/ui-buffer-raster.exe",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/word-drag.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/word-drag.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/unicode-selection.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/unicode-selection.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/transcript-line.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/transcript-line.png",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/notes-line.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/mouse-repair-after/notes-line.png"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:28:36.486Z",
+  "pid": 15904,
+  "code": 0,
+  "finished": "2026-10-25T12:28:43.072Z"
+}

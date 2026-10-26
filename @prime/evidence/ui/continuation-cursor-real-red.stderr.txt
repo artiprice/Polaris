@@ -1,0 +1,15 @@
+    Blocking waiting for file lock on build directory
+warning: value assigned to `saw_word` is never read
+   --> crates\polaris-ui\crates\model\src\composer.rs:666:21
+    |
+666 |                     saw_word = true;
+    |                     ^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-ui-model` (lib) generated 1 warning
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 37.87s
+     Running tests\terminal_presenter.rs (target\debug\deps\terminal_presenter-efedd02e3675b408.exe)
+error: test failed, to rerun pass `-p polaris-ui-cli --test terminal_presenter`

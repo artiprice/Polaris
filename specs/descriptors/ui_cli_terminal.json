@@ -31,6 +31,18 @@
     {
       "test_name": "control_j_inserts_a_visible_newline_without_submitting",
       "description": "The advertised Ctrl+J fallback is exercised through the actual native PTY and must move subsequent draft text onto the next composer row."
+    },
+    {
+      "test_name": "windows_auto_color_uses_rgb_without_colorterm",
+      "description": "On native Windows ConPTY, remove COLORTERM and NO_COLOR in the child only; auto policy must emit the reference RGB palette and no permanent startup warning."
+    },
+    {
+      "test_name": "terminal_parser_observes_autowrap_and_erase_characters",
+      "description": "Test-harness VT projection must handle real ConPTY full-width autowrap and CSI X erase-character delta output; retain product text assertions unchanged."
+    },
+    {
+      "test_name": "slash_menu_opens_help_and_escape_returns_to_editor",
+      "description": "Real native PTY: bare slash opens candidates; /hel filters Help, Tab accepts, Enter opens the real sheet, Esc closes it, and /quit still exits."
     }
   ],
   "dependencies": [

@@ -1,0 +1,23 @@
+{
+  "name": "continuation-app-final",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "--test",
+    "ui_startup",
+    "--test",
+    "ui_session",
+    "--test",
+    "ui_key_trace"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:54:06.917Z",
+  "pid": 18380,
+  "code": 0,
+  "finished": "2026-10-25T05:54:24.708Z"
+}

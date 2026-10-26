@@ -1,0 +1,17 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Finished `test` profile [unoptimized] target(s) in 36.75s
+     Running tests\source_race.rs (target\debug\deps\source_race-6716c3cb325389c7.exe)
+
+running 8 tests
+test cancellation_after_permit_acquisition_releases_it ... ok
+test race_failure_preserves_untrusted_fallback ... ok
+test race_cancellation_and_validation_budget_are_enforced ... ok
+test deadline_and_closed_source_pool_have_explicit_outcomes ... ok
+test duplicate_evidence_is_validated_only_once ... ok
+test completed_losers_are_retrieved_instead_of_cancelled ... ok
+test first_accepted_aborts_and_releases_losers ... ok
+test best_mode_waits_for_more_relevant_source ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

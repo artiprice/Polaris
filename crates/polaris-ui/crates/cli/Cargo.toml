@@ -22,3 +22,6 @@ thiserror = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-ui-model = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+crossterm_winapi = { workspace = true }

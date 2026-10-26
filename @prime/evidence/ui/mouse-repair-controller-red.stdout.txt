@@ -1,0 +1,60 @@
+
+running 7 tests
+test tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet ... FAILED
+test tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection ... FAILED
+test tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection ... FAILED
+test tui::controller_tests::mouse_selection::double_click_drag_extends_by_words ... FAILED
+test tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes ... FAILED
+test tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line ... FAILED
+test tui::controller_tests::mouse_selection::mouse_selection_survives_release_and_delete ... ok
+
+failures:
+
+---- tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet stdout ----
+
+thread 'tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet' (15352) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:48:259:
+assertion failed: state.demo_active
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection stdout ----
+
+thread 'tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection' (14820) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:37:44:
+padding click must not retain a stale range
+
+---- tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection stdout ----
+
+thread 'tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection' (4588) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:43:2:
+editor focus must clear transcript span
+
+---- tui::controller_tests::mouse_selection::double_click_drag_extends_by_words stdout ----
+
+thread 'tui::controller_tests::mouse_selection::double_click_drag_extends_by_words' (18356) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:25:2:
+assertion `left == right` failed
+  left: Some("alpha")
+ right: Some("alpha beta")
+
+---- tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes stdout ----
+
+thread 'tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes' (3448) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:55:54:
+assertion `left == right` failed
+  left: Some("apha beta")
+ right: Some("a beta")
+
+---- tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line stdout ----
+
+thread 'tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line' (7020) panicked at apps\polaris-cli\src\..\tests\controller\mouse_selection.rs:18:2:
+assertion `left == right` failed
+  left: Some("alpha")
+ right: Some("alpha beta\n")
+
+
+failures:
+    tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection
+    tui::controller_tests::mouse_selection::double_click_drag_extends_by_words
+    tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection
+    tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet
+    tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes
+    tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line
+
+test result: FAILED. 1 passed; 6 failed; 0 ignored; 0 measured; 95 filtered out; finished in 0.00s
+

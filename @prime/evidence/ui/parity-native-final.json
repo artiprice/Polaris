@@ -1,0 +1,18 @@
+{
+  "name": "parity-native-final",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--test",
+    "ui_terminal"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:34:28.402Z",
+  "pid": 12476,
+  "code": 101,
+  "finished": "2026-10-25T11:34:46.705Z"
+}

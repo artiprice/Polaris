@@ -1,0 +1,7 @@
+COMMAND: rustfmt --edition 2024 --check crates/polaris-ui/crates/cli/src/windows_input.rs crates/polaris-ui/crates/cli/src/input.rs crates/polaris-ui/crates/cli/src/terminal.rs crates/polaris-ui/crates/cli/tests/terminal_input.rs crates/polaris-ui/crates/cli/tests/terminal_lifecycle.rs apps/polaris-cli/tests/ui_terminal.rs
+EXIT: 0
+
+STDOUT:
+
+STDERR:
+

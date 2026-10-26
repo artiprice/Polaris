@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 13.70s
+     Running tests\headless.rs (target\debug\deps\headless-a65f6d4672227e09.exe)
+error: test failed, to rerun pass `-p polaris-cli --test headless`

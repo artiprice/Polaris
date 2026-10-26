@@ -1,0 +1,5 @@
+{
+  "command": "cargo test --offline -p polaris-cli --lib ui_services::tests",
+  "exit_code": 0,
+  "scope": "Clipboard rejection and spawned-child cleanup regressions"
+}

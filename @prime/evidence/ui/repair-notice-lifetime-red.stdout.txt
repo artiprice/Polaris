@@ -1,0 +1,18 @@
+
+running 1 test
+test tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit ... FAILED
+
+failures:
+
+---- tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit stdout ----
+
+thread 'tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit' (11832) panicked at apps\polaris-cli\src\..\tests\controller\mod.rs:33:9:
+assertion failed: state.notice.contains("Native clipboard adapter is unavailable")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tui::controller_tests::unavailable_action_notice_survives_navigation_until_an_edit
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+

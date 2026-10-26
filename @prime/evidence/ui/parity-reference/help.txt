@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+
+
+
+
+
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Help & shortcuts                                                                                                 │
+  │                                                                                                                  │
+  │ Search / type to filter                                                                                          │
+  │                                                                                                                  │
+  │ Commands                                                                                                         │
+  │ /preview      Explore every screen and state                                                                     │
+  │ /model        Choose provider and model                                                                          │
+  │ /settings     Appearance, providers, interaction, accessibility                                                  │
+  │ /sessions     Browse demo session history                                                                        │
+  │ /status       View the current session                                                                           │
+  │ /usage        Session usage and provider limits                                                                  │
+  │ /agents       Inspect agent activity and conversations                                                           │
+  │ /stats        Activity and statistics                                                                            │
+  │ /diff         Review a demo patch                                                                                │
+  │ /providers    Configure providers in memory                                                                      │
+  │ /onboarding   Walk through first-run setup                                                                       │
+  │ /help         Commands and keyboard shortcuts                                                                    │
+  │ /clear        Start a fresh preview conversation                                                                 │
+  │ /quit         Exit the preview                                                                                   │
+  │                                                                                                                  │
+  │ PgUp/PgDn scroll · Esc/Enter close                                                                               │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

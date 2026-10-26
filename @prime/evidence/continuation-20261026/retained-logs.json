@@ -1,0 +1,20 @@
+[
+  "ctutils-fetch.txt",
+  "ctutils-security-update.txt",
+  "daemon-help-final.log",
+  "daemon-tests-final.log",
+  "dependency-deny.txt",
+  "dropped-aggregate-red.txt",
+  "gateway-readiness.txt",
+  "mcp-cargo-test.log",
+  "providers-followup-tests-final.txt",
+  "providers-followup-user-agent-red.txt",
+  "research-owner-clippy-final.txt",
+  "research-owner-red.txt",
+  "research-owner-tests-final.txt",
+  "research-reviewed-final-tests3.log",
+  "search-web-pipeline-test.log",
+  "source-race-barrier.txt",
+  "source-race-review-red.txt",
+  "stdio-cleanup-red.txt"
+]

@@ -1,0 +1,10 @@
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.70s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-cc545ca8f50319a1.exe)
+     Running tests\public_exports.rs (target\debug\deps\public_exports-4abc7e6d38072f76.exe)
+     Running tests\reference_fidelity.rs (target\debug\deps\reference_fidelity-a1ed4e3cfd74f097.exe)
+     Running tests\render_contract.rs (target\debug\deps\render_contract-7d4dc41e88a935f0.exe)
+     Running tests\terminal_input.rs (target\debug\deps\terminal_input-af82080b4cdb800a.exe)
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-b0c3bdb64a5375cd.exe)
+     Running tests\terminal_presenter.rs (target\debug\deps\terminal_presenter-2ebf919abb12afb7.exe)
+     Running tests\terminal_scheduler.rs (target\debug\deps\terminal_scheduler-a2ceb0e7131fe1b3.exe)

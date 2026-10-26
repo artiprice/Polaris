@@ -1,0 +1,11 @@
+
+running 6 tests
+test default_arguments_select_interactive_mode ... ok
+test initial_prompt_is_prefilled_and_not_executed ... ok
+test non_tty_default_fails_without_terminal_controls ... ok
+test dump_is_deterministic_and_has_no_state_side_effects ... ok
+test demo_dump_is_explicit_deterministic_and_isolated ... ok
+test invalid_dump_and_scenario_are_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+

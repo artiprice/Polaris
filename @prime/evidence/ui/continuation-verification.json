@@ -1,0 +1,89 @@
+{
+  "checkpoint": "2026-10-25 CLI interactive continuation",
+  "scope_verdict": "PARTIAL; no UI phase/M1 acceptance",
+  "suites": [
+    {
+      "name": "continuation-final-core",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-config",
+        "-p",
+        "polaris-ui-model",
+        "-p",
+        "polaris-ui-cli"
+      ],
+      "exit_code": 0,
+      "passed": 263,
+      "failed": 0,
+      "ignored": 0,
+      "raw_stdout": "continuation-final-core.stdout.txt",
+      "raw_stderr": "continuation-final-core.stderr.txt",
+      "repeat_not_additional": false
+    },
+    {
+      "name": "continuation-final-app",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-cli",
+        "--lib",
+        "--test",
+        "ui_startup",
+        "--test",
+        "ui_session",
+        "--test",
+        "ui_key_trace",
+        "--test",
+        "rtk_cli",
+        "--test",
+        "ui_terminal"
+      ],
+      "exit_code": 0,
+      "passed": 87,
+      "failed": 0,
+      "ignored": 0,
+      "raw_stdout": "continuation-final-app.stdout.txt",
+      "raw_stderr": "continuation-final-app.stderr.txt",
+      "repeat_not_additional": false
+    },
+    {
+      "name": "continuation-final-native-selfcontained",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "-p",
+        "polaris-cli",
+        "--test",
+        "ui_terminal"
+      ],
+      "exit_code": 0,
+      "passed": 15,
+      "failed": 0,
+      "ignored": 0,
+      "raw_stdout": "continuation-final-native-selfcontained.stdout.txt",
+      "raw_stderr": "continuation-final-native-selfcontained.stderr.txt",
+      "repeat_not_additional": true
+    }
+  ],
+  "scoped_nonrepeat_passed": 350,
+  "checks": [
+    "continuation-final-safety-checked",
+    "continuation-final-format-checked",
+    "continuation-final-dependency-policy",
+    "continuation-final-consistency"
+  ],
+  "open_command_failures": [
+    "continuation-headless-environment",
+    "continuation-final-advisories"
+  ],
+  "detail": "continuation-verification.md"
+}

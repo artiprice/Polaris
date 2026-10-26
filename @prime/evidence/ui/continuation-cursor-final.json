@@ -1,0 +1,18 @@
+{
+  "name": "continuation-cursor-final",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-ui-cli",
+    "--test",
+    "terminal_presenter"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:17:21.260Z",
+  "pid": 16200,
+  "code": 0,
+  "finished": "2026-10-25T05:17:23.920Z"
+}

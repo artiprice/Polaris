@@ -30,7 +30,7 @@
     },
     {
       "test_name": "plan_keymap_rows_present",
-      "description": "Every row of the polaris-cli keymap table resolves to the stated action through lookup."
+      "description": "Enter submits; Shift+Enter, Alt+Enter and Ctrl+J insert a newline; Ctrl+Enter is intentionally unbound. Other table rows resolve to their stated action."
     },
     {
       "test_name": "lookup_respects_guards_and_context_chain",

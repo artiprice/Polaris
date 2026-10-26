@@ -1,4 +1,5 @@
 //! Pure, bounded questionnaire draft state. This module does not dispatch human requests.
+use crate::composer::Composer;
 
 /// Maximum UTF-8 byte length accepted for one prompt, option, answer, or notes field.
 pub const MAX_FIELD_BYTES: usize = 16 * 1024;
@@ -59,12 +60,6 @@ fn estimate_request_size(spec: &QuestionnaireSpec) -> usize {
     size
 }
 
-fn encoded_append_len(existing: &str, addition: &str) -> usize {
-    conservative_json_string_len(existing)
-        .saturating_add(conservative_json_string_len(addition))
-        .saturating_sub(2)
-}
-
 fn estimate_answer_size(
     spec: &QuestionnaireSpec,
     drafts: &[AnswerDraft],
@@ -82,18 +77,18 @@ fn estimate_answer_size(
         let draft_text = if replacement
             .is_some_and(|(at, focus, _)| at == index && focus == QuestionnaireFocus::Choices)
         {
-            let addition = replacement.map_or("", |(_, _, text)| text);
-            encoded_append_len(&draft.text, addition)
+            let prospective = replacement.map_or("", |(_, _, text)| text);
+            conservative_json_string_len(prospective)
         } else {
-            conservative_json_string_len(&draft.text)
+            conservative_json_string_len(draft.text.text())
         };
         let draft_notes = if replacement
             .is_some_and(|(at, focus, _)| at == index && focus == QuestionnaireFocus::Notes)
         {
-            let addition = replacement.map_or("", |(_, _, text)| text);
-            encoded_append_len(&draft.notes, addition)
+            let prospective = replacement.map_or("", |(_, _, text)| text);
+            conservative_json_string_len(prospective)
         } else {
-            conservative_json_string_len(&draft.notes)
+            conservative_json_string_len(draft.notes.text())
         };
         size = size.saturating_add(draft_text).saturating_add(draft_notes);
         match &question.kind {
@@ -195,8 +190,28 @@ pub enum QuestionnaireAction {
     FocusChoices,
     /// Append text to the active notes or free-text field.
     InsertText(String),
-    /// Remove the final Unicode scalar value from the active text field.
+    /// Remove the preceding grapheme or the selected text.
     Backspace,
+    /// Remove the following grapheme or the selected text.
+    Delete,
+    /// Move through the active text editor.
+    MoveLeft { extend: bool, word: bool },
+    /// Move through the active text editor.
+    MoveRight { extend: bool, word: bool },
+    /// Move to the logical line start.
+    Home { extend: bool },
+    /// Move to the logical line end.
+    End { extend: bool },
+    /// Set a checked grapheme cursor offset.
+    SetCursor(usize),
+    /// Set a range selection in the active notes or free-text editor.
+    SetSelection { anchor: usize, head: usize },
+    /// Select all text in the active field.
+    SelectAll,
+    /// Undo the active field edit.
+    Undo,
+    /// Redo the active field edit.
+    Redo,
 }
 /// Multi-select response; the explicit none choice excludes named options.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -274,9 +289,8 @@ impl std::error::Error for AnswerSubmitError {}
 struct AnswerDraft {
     selected: Vec<bool>,
     none: bool,
-    text: String,
-    notes: String,
-    cursor: usize,
+    text: Composer,
+    notes: Composer,
 }
 /// Bounded editable response state for a validated questionnaire.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -358,9 +372,8 @@ impl QuestionnaireState {
                 AnswerDraft {
                     selected: vec![false; n],
                     none: false,
-                    text: String::new(),
-                    notes: String::new(),
-                    cursor: 0,
+                    text: Composer::new(),
+                    notes: Composer::new(),
                 }
             })
             .collect();
@@ -411,7 +424,7 @@ impl QuestionnaireState {
     pub fn answered_count(&self) -> usize {
         self.answers
             .iter()
-            .filter(|a| a.none || a.selected.iter().any(|x| *x) || !a.text.trim().is_empty())
+            .filter(|a| a.none || a.selected.iter().any(|x| *x) || !a.text.text().trim().is_empty())
             .count()
     }
     #[must_use]
@@ -439,17 +452,116 @@ impl QuestionnaireState {
     #[must_use]
     /// Optional notes entered for the active question.
     pub fn notes(&self) -> &str {
-        self.current().map_or("", |a| a.notes.as_str())
+        self.current().map_or("", |a| a.notes.text())
     }
     #[must_use]
     /// Free-text answer entered for the active question.
     pub fn answer_text(&self) -> &str {
-        self.current().map_or("", |a| a.text.as_str())
+        self.current().map_or("", |a| a.text.text())
+    }
+    /// Borrow the active notes/free-text editor with shared Unicode and selection semantics.
+    #[must_use]
+    pub fn active_editor(&self) -> Option<&Composer> {
+        let answer = self.current()?;
+        Some(if self.focus == QuestionnaireFocus::Notes {
+            &answer.notes
+        } else {
+            &answer.text
+        })
+    }
+    fn active_editor_mut(&mut self) -> Option<&mut Composer> {
+        let notes = self.focus == QuestionnaireFocus::Notes;
+        let answer = self.current_mut()?;
+        Some(if notes {
+            &mut answer.notes
+        } else {
+            &mut answer.text
+        })
+    }
+    /// Current UTF-8 byte cursor in the active text field.
+    #[must_use]
+    pub fn active_text_cursor(&self) -> usize {
+        self.active_editor().map_or(0, Composer::cursor)
+    }
+    /// Ordered review projection, including explicit unanswered fields; does not submit or validate.
+    #[must_use]
+    pub fn draft_answers(&self) -> Vec<AnswerEntry> {
+        self.spec
+            .questions
+            .iter()
+            .zip(self.answers.iter())
+            .map(|(q, a)| {
+                let answer = match &q.kind {
+                    QuestionKind::SingleChoice { options } => {
+                        if a.none {
+                            QuestionAnswer::SingleChoice(ChoiceAnswer::NoneOfTheAbove)
+                        } else if let Some(option) =
+                            options
+                                .iter()
+                                .zip(a.selected.iter())
+                                .find_map(
+                                    |(option, selected)| {
+                                        if *selected { Some(option) } else { None }
+                                    },
+                                )
+                        {
+                            QuestionAnswer::SingleChoice(ChoiceAnswer::Option(option.id.clone()))
+                        } else {
+                            QuestionAnswer::Unanswered
+                        }
+                    }
+                    QuestionKind::MultiChoice { options } => {
+                        if a.none {
+                            QuestionAnswer::MultiChoice(MultiChoiceAnswer::NoneOfTheAbove)
+                        } else {
+                            let selected: Vec<_> = options
+                                .iter()
+                                .zip(a.selected.iter())
+                                .filter_map(|(option, selected)| {
+                                    if *selected {
+                                        Some(option.id.clone())
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect();
+                            if selected.is_empty() {
+                                QuestionAnswer::Unanswered
+                            } else {
+                                QuestionAnswer::MultiChoice(MultiChoiceAnswer::Options(selected))
+                            }
+                        }
+                    }
+                    QuestionKind::FreeText => {
+                        if a.text.text().trim().is_empty() {
+                            QuestionAnswer::Unanswered
+                        } else {
+                            QuestionAnswer::FreeText(a.text.text().to_owned())
+                        }
+                    }
+                };
+                AnswerEntry {
+                    question_id: q.id.clone(),
+                    answer,
+                    notes: a.notes.text().to_owned(),
+                }
+            })
+            .collect()
     }
     /// Remaining conservative answer-byte budget for the current draft.
     #[must_use]
     pub fn remaining_answer_bytes(&self) -> usize {
         MAX_ANSWER_BYTES.saturating_sub(estimate_answer_size(&self.spec, &self.answers, None))
+    }
+    /// Select a valid question directly, preserving every answer and editor snapshot.
+    pub fn select_question(&mut self, index: usize) -> bool {
+        if index >= self.spec.questions.len() {
+            return false;
+        }
+        self.index = index;
+        self.focus = QuestionnaireFocus::Choices;
+        self.option_cursor = 0;
+        true
     }
     /// Move to another question, clamping at either end of the questionnaire.
     pub fn navigate(&mut self, delta: isize) {
@@ -469,6 +581,22 @@ impl QuestionnaireState {
         self.index = next;
         self.focus = QuestionnaireFocus::Choices;
         self.option_cursor = 0;
+    }
+    fn commit_editor(&mut self, candidate: Composer) -> Result<(), QuestionnaireError> {
+        if candidate.text().len() > MAX_FIELD_BYTES
+            || estimate_answer_size(
+                &self.spec,
+                &self.answers,
+                Some((self.index, self.focus, candidate.text())),
+            ) > MAX_ANSWER_BYTES
+        {
+            return Err(QuestionnaireError::FieldTooLarge);
+        }
+        let editor = self
+            .active_editor_mut()
+            .ok_or(QuestionnaireError::InvalidQuestion)?;
+        *editor = candidate;
+        Ok(())
     }
     /// Apply one bounded local editing action.
     ///
@@ -531,45 +659,85 @@ impl QuestionnaireState {
                 }
             }
             QuestionnaireAction::InsertText(text) => {
-                let focus = self.focus;
-                let current = self.current().ok_or(QuestionnaireError::InvalidQuestion)?;
-                let current_len = if focus == QuestionnaireFocus::Notes {
-                    current.notes.len()
-                } else {
-                    current.text.len()
+                let mut candidate = self
+                    .active_editor()
+                    .ok_or(QuestionnaireError::InvalidQuestion)?
+                    .clone();
+                let range = match candidate.selection() {
+                    Some(range) => range,
+                    None => candidate.cursor()..candidate.cursor(),
                 };
-                if current_len.saturating_add(text.len()) > MAX_FIELD_BYTES
-                    || estimate_answer_size(
-                        &self.spec,
-                        &self.answers,
-                        Some((self.index, focus, &text)),
-                    ) > MAX_ANSWER_BYTES
-                {
-                    return Err(QuestionnaireError::FieldTooLarge);
-                }
-                let a = self
-                    .current_mut()
-                    .ok_or(QuestionnaireError::InvalidQuestion)?;
-                let target = if focus == QuestionnaireFocus::Notes {
-                    &mut a.notes
-                } else {
-                    &mut a.text
-                };
-                target.push_str(&text);
-                a.cursor = target.len();
+                candidate
+                    .apply_completion(range, &text)
+                    .map_err(|_| QuestionnaireError::FieldTooLarge)?;
+                self.commit_editor(candidate)?;
             }
             QuestionnaireAction::Backspace => {
-                let focus = self.focus;
-                let a = self
-                    .current_mut()
-                    .ok_or(QuestionnaireError::InvalidQuestion)?;
-                let target = if focus == QuestionnaireFocus::Notes {
-                    &mut a.notes
-                } else {
-                    &mut a.text
-                };
-                target.pop();
-                a.cursor = target.len();
+                if let Some(editor) = self.active_editor_mut() {
+                    let _changed = editor.backspace();
+                }
+            }
+            QuestionnaireAction::Delete => {
+                if let Some(editor) = self.active_editor_mut() {
+                    let _changed = editor.delete();
+                }
+            }
+            QuestionnaireAction::MoveLeft { extend, word } => {
+                if let Some(editor) = self.active_editor_mut() {
+                    if word {
+                        editor.move_word_left_with_selection(extend);
+                    } else {
+                        editor.move_left_with_selection(extend);
+                    }
+                }
+            }
+            QuestionnaireAction::MoveRight { extend, word } => {
+                if let Some(editor) = self.active_editor_mut() {
+                    if word {
+                        editor.move_word_right_with_selection(extend);
+                    } else {
+                        editor.move_right_with_selection(extend);
+                    }
+                }
+            }
+            QuestionnaireAction::Home { extend } => {
+                if let Some(editor) = self.active_editor_mut() {
+                    editor.move_line_home_with_selection(extend);
+                }
+            }
+            QuestionnaireAction::End { extend } => {
+                if let Some(editor) = self.active_editor_mut() {
+                    editor.move_line_end_with_selection(extend);
+                }
+            }
+            QuestionnaireAction::SetCursor(at) => {
+                if let Some(editor) = self.active_editor_mut() {
+                    editor.set_cursor(at);
+                }
+            }
+            QuestionnaireAction::SetSelection { anchor, head } => {
+                if let Some(editor) = self.active_editor_mut() {
+                    editor.set_selection(anchor..head);
+                }
+            }
+            QuestionnaireAction::SelectAll => {
+                if let Some(editor) = self.active_editor_mut() {
+                    editor.select_all();
+                }
+            }
+            QuestionnaireAction::Undo => {
+                if let Some(mut candidate) = self.active_editor().cloned() {
+                    if candidate.undo() {
+                        self.commit_editor(candidate)?;
+                    }
+                }
+            }
+            QuestionnaireAction::Redo => {
+                if let Some(mut candidate) = self.active_editor().cloned() {
+                    if candidate.redo() {
+                        self.commit_editor(candidate)?;
+                    }
+                }
             }
         }
         Ok(())
@@ -586,66 +754,18 @@ impl QuestionnaireState {
         if estimate_answer_size(&self.spec, &self.answers, None) > MAX_ANSWER_BYTES {
             return Err(AnswerSubmitError::TooLarge);
         }
-        let mut entries = Vec::with_capacity(self.spec.questions.len());
-        for (index, q) in self.spec.questions.iter().enumerate() {
-            let Some(a) = self.answers.get(index) else {
-                return Err(AnswerSubmitError::Invalid);
-            };
-            let answer = match &q.kind {
-                QuestionKind::SingleChoice { options } => {
-                    if a.none {
-                        Some(QuestionAnswer::SingleChoice(ChoiceAnswer::NoneOfTheAbove))
-                    } else if let Some((n, _)) = a.selected.iter().enumerate().find(|(_, s)| **s) {
-                        options.get(n).map(|o| {
-                            QuestionAnswer::SingleChoice(ChoiceAnswer::Option(o.id.clone()))
-                        })
-                    } else {
-                        None
-                    }
-                }
-                QuestionKind::MultiChoice { options } => {
-                    if a.none {
-                        Some(QuestionAnswer::MultiChoice(
-                            MultiChoiceAnswer::NoneOfTheAbove,
-                        ))
-                    } else {
-                        let selected: Vec<_> = options
-                            .iter()
-                            .zip(a.selected.iter())
-                            .filter_map(|(o, s)| if *s { Some(o.id.clone()) } else { None })
-                            .collect();
-                        if selected.is_empty() {
-                            None
-                        } else {
-                            Some(QuestionAnswer::MultiChoice(MultiChoiceAnswer::Options(
-                                selected,
-                            )))
-                        }
-                    }
-                }
-                QuestionKind::FreeText => {
-                    if a.text.trim().is_empty() {
-                        None
-                    } else {
-                        Some(QuestionAnswer::FreeText(a.text.clone()))
-                    }
-                }
-            };
-            if q.required && answer.is_none() {
+        let entries = self.draft_answers();
+        if entries.len() != self.spec.questions.len() {
+            return Err(AnswerSubmitError::Invalid);
+        }
+        for (index, (question, entry)) in self.spec.questions.iter().zip(entries.iter()).enumerate()
+        {
+            if question.required && entry.answer == QuestionAnswer::Unanswered {
                 return Err(AnswerSubmitError::Incomplete(ValidationError {
-                    question_id: q.id.clone(),
+                    question_id: question.id.clone(),
                     question_index: index,
                 }));
             }
-            let answer = match answer {
-                Some(value) => value,
-                None => QuestionAnswer::Unanswered,
-            };
-            entries.push(AnswerEntry {
-                question_id: q.id.clone(),
-                answer,
-                notes: a.notes.clone(),
-            });
         }
         Ok(QuestionnaireBatch {
             request_id: self.spec.request_id.clone(),

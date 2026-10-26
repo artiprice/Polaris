@@ -1,0 +1,36 @@
+{
+  "type_of": "function",
+  "name": "CliPreferences and save_global_cli_preference",
+  "file_path": "crates/polaris-config/src/schema.rs",
+  "logic_name": "Independent persisted CLI UI preferences",
+  "test_list": [
+    {
+      "test_name": "legacy_ui_theme_remains_independent",
+      "description": "ui.theme keeps its existing meaning while ui.cli.theme parses separately."
+    },
+    {
+      "test_name": "cli_preferences_default_and_validate",
+      "description": "CLI preferences use stable defaults and reject invalid enum values or types."
+    },
+    {
+      "test_name": "global_preference_update_preserves_unknown_keys",
+      "description": "Updating one ui.cli field preserves unrelated known and unknown TOML values."
+    },
+    {
+      "test_name": "global_preference_write_is_atomic_on_failure",
+      "description": "A failed update leaves the existing configuration bytes unchanged."
+    },
+    {
+      "test_name": "only_requested_field_is_updated",
+      "description": "Saving one field does not replace sibling ui.cli preferences."
+    },
+    {
+      "test_name": "untouched_cli_override_is_not_persisted",
+      "description": "Saving an unedited selected row performs no write even when a CLI runtime override supplies its effective value."
+    },
+    {
+      "test_name": "explicitly_edited_field_only_is_persisted",
+      "description": "Cycling a setting marks only that field as an explicit edit; saving it does not persist sibling CLI overrides."
+    }
+  ]
+}

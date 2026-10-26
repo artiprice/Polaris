@@ -1,0 +1,135 @@
+{
+  "type_of": "pipeline",
+  "name": "windows-safe-terminal-input",
+  "file_path": "crates/polaris-ui/crates/cli/src/input.rs, input_decoder.rs, bracketed_paste.rs, windows_input.rs, terminal.rs, crates/polaris-ui/crates/cli/examples/native_input_fixture.rs, apps/polaris-cli/tests/ui_terminal.rs",
+  "logic_name": "Windows safe input and Shift+Enter",
+  "test_list": [
+    {
+      "test_name": "c0_shift_enter_keeps_shift_and_enter",
+      "description": "Native C0 Enter retains Shift as a modifier."
+    },
+    {
+      "test_name": "c0_control_enter_is_not_shift_enter",
+      "description": "Native Ctrl+Enter retains Control and is not classified as Shift+Enter."
+    },
+    {
+      "test_name": "virtual_key_zero_control_character_is_preserved",
+      "description": "C0 key records with virtual key zero map to printable control-key events."
+    },
+    {
+      "test_name": "native_repeat_and_release_phases_are_retained",
+      "description": "Win32 repeat counts and key-up records retain Crossterm event phases."
+    },
+    {
+      "test_name": "adjacent_surrogates_form_one_scalar",
+      "description": "Adjacent UTF-16 surrogate records decode into one Unicode scalar."
+    },
+    {
+      "test_name": "bracketed_payload_is_one_literal_paste_including_escape_sequences",
+      "description": "Bracketed paste payload retains escape sequences literally and emits one paste event."
+    },
+    {
+      "test_name": "oversized_native_paste_is_rejected_and_decoder_recovers",
+      "description": "Native paste payloads above one MiB are rejected with bounded state."
+    },
+    {
+      "test_name": "stopped_poll_returns_without_waiting_and_does_not_claim_shift_enter",
+      "description": "A stop token ends Crossterm polling immediately and unknown capability remains unknown."
+    },
+    {
+      "test_name": "failed_mode_attempt_is_restored_even_when_enable_reports_error",
+      "description": "Terminal output and keyboard mode attempts are paired with restoration."
+    },
+    {
+      "test_name": "arrow_and_function_key_escape_sequences_are_decoded",
+      "description": "Native VT cursor and function key sequences normalize into events."
+    },
+    {
+      "test_name": "csi_u_enter_and_modified_arrows_preserve_modifiers",
+      "description": "CSI-u Shift+Enter and modified arrow keys preserve their key and modifier semantics."
+    },
+    {
+      "test_name": "csi_u_control_enter_and_sgr_hover_are_events_not_text",
+      "description": "CSI-u Ctrl+Enter and SGR hover bytes normalize as events and do not leak into composer text."
+    },
+    {
+      "test_name": "native_right_button_down_and_release_keep_identity",
+      "description": "Track the right-button state across native press/release records so release reports Right rather than defaulting to Left."
+    },
+    {
+      "test_name": "native_middle_button_down_and_release_keep_identity",
+      "description": "Track the middle-button state across native press/release records so release reports Middle rather than defaulting to Left."
+    },
+    {
+      "test_name": "native_button_changes_keep_left_drag_and_other_button_transitions",
+      "description": "Preserve a left drag while tracking a right-button press and left/right releases by the exact single changed button."
+    },
+    {
+      "test_name": "simultaneous_mouse_button_changes_do_not_guess_chord_order",
+      "description": "Do not assign an ambiguous simultaneous button transition to an arbitrary button; synchronize state so a later single transition retains identity."
+    },
+    {
+      "test_name": "demo_shift_enter_and_shift_up_keep_native_cursor_position_in_sync",
+      "description": "A Windows ConPTY Shift+Enter inserts a draft row and Shift+Up keeps the physical cursor on the draft row."
+    },
+    {
+      "test_name": "demo_prompt_is_scripted_without_creating_session_state",
+      "description": "A prompt in --demo runs scripted local behavior without session state writes."
+    },
+    {
+      "test_name": "profile_picker_switches_between_offline_and_demo_and_ignores_hover_bytes",
+      "description": "F5 switches profiles and mouse hover input remains an event."
+    },
+    {
+      "test_name": "control_j_keeps_its_character_identity",
+      "description": "Native LF input maps back to Ctrl+J while CR remains Enter."
+    },
+    {
+      "test_name": "delayed_unicode_on_alt_release_becomes_one_character_press",
+      "description": "ConPTY delayed Unicode on VK_MENU, VK_LMENU, or VK_RMENU key-up becomes a single text press; ordinary key-up remains a release."
+    },
+    {
+      "test_name": "native_conpty_console_records_preserve_dollar_and_ascii_keys",
+      "description": "A bounded fixture sends $ and ASCII keys through ConPTY and verifies native console key records preserve their Unicode values."
+    },
+    {
+      "test_name": "valid_directive_commits_and_renders_receipt",
+      "description": "A typed directive beginning with $ remains intact through native ConPTY input and commits."
+    },
+    {
+      "test_name": "bracketed_paste_is_literal_and_never_submitted",
+      "description": "A bracketed paste beginning with $ remains literal and is not submitted."
+    },
+    {
+      "test_name": "oversized_paste_discards_tail_until_end_marker_then_recovers",
+      "description": "After the one-MiB limit is exceeded, payload tail is discarded through the paste end marker; only later input is emitted."
+    }
+  ],
+  "dependencies": [
+    "crossterm",
+    "crossterm_winapi 0.9.1"
+  ],
+  "libraries": [
+    "crossterm",
+    "crossterm_winapi"
+  ],
+  "inputs": [
+    {
+      "name": "Windows INPUT_RECORD key event",
+      "type": "NativeKeyRecord",
+      "description": "Virtual key, UTF-16 code unit, modifier bits and repeat/down state."
+    },
+    {
+      "name": "native normalized events",
+      "type": "NormalizedInput",
+      "description": "Bounded stream of native key, mouse, resize and focus events."
+    },
+    {
+      "name": "terminal mode snapshot",
+      "type": "Win32 console mode",
+      "description": "Exact input and output modes captured before changes."
+    }
+  ],
+  "output_type": "normalized terminal input and restored console state",
+  "output_description": "Shift+Enter remains distinguishable from Ctrl+Enter; bracketed paste is literal and capped at one MiB; input polling is bounded and cancellable. CSI-u keyboard and SGR mouse input is decoded through the native Windows path. Native key-up Alt composition records that carry translated Unicode are normalized to one Press without duplicating ordinary key-up text. Once an oversized paste is rejected, all remaining payload is discarded through the end marker before input resumes."
+}

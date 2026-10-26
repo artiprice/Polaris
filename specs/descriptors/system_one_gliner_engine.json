@@ -1,0 +1,23 @@
+{
+  "type_of": "struct",
+  "name": "GlinerEngine",
+  "file_path": "crates/polaris-system-one/crates/engine/src/lib.rs",
+  "logic_name": "Configured GLiNER2 System-One Inference",
+  "test_list": [
+    { "test_name": "configured_python_normalization_changes_actual_model_text", "description": "Raw input remains unchanged while the configured GLiNER2 Python normalization appends a period only when needed." },
+    { "test_name": "input_context_is_included_and_checked_before_inference", "description": "Primary text and context are combined and rejected when their aggregate UTF-8 byte count exceeds the configured bound." },
+    { "test_name": "duplicate_model_prompts_are_rejected_before_inference", "description": "Ambiguous GLiNER task names are rejected before native inference." },
+    { "test_name": "question_ids_are_unique_independently_of_noul_prompts", "description": "Repeated SDK question IDs are rejected even when Noul statements differ." },
+    { "test_name": "duplicate_choice_labels_are_rejected_but_reused_labels_are_valid_across_prompts", "description": "Duplicate labels in one choice are rejected while the same label across different prompts remains valid." },
+    { "test_name": "oversized_noul_statement_and_aggregate_schema_fail_before_inference", "description": "Oversized statements and aggregate question schemas are bounded before native inference." },
+    { "test_name": "real_model_returns_bounded_choice_probabilities", "description": "Ignored installed-artifact integration check runs the configured local model and validates actual bounded outputs." }
+  ],
+  "dependencies": ["gliner2_rs::SpanEngine", "polaris_sdk::system_one::{DecisionInput, Decision}"],
+  "libraries": ["gliner2-rs", "ort"],
+  "inputs": [
+    { "name": "config", "type": "EngineConfig", "description": "Explicit model directory, ORT dynamic library, normalization contract, and bounded thread count." },
+    { "name": "input", "type": "DecisionInput", "description": "Validated text and questions supplied through the public SDK contract." }
+  ],
+  "output_type": "Result<Decision, EngineError>",
+  "output_description": "A real local GLiNER2 classification result with model-derived probabilities and no network/model fallback."
+}

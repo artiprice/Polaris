@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                           ╷
+                                                           │
+                                                       ╶───✦───╴
+                                                           │
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Session history                                                                                                  │
+  │                                                                                                                  │
+  │ Search / type to filter                                                                                          │
+  │ Demo sessions · these are not records from your machine                                                          │
+  │                                                                                                                  │
+  │ > Refactor request validation                                                                                    │
+  │   NVIDIA NIM · 2026-10-18 09:42 · demo · demo workspace                                                          │
+  │                                                                                                                  │
+  │   Explain the streaming parser                                                                                   │
+  │   Anthropic · 2026-10-17 16:08 · demo · demo workspace                                                           │
+  │                                                                                                                  │
+  │   Add keyboard navigation                                                                                        │
+  │   OpenAI · 2026-10-17 11:24 · demo · demo workspace                                                              │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │ Type to search · Up/Down select · Enter open · Esc back                                                          │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

@@ -1,0 +1,26 @@
+{
+  "type_of": "pipeline",
+  "name": "MCP Tool Registry Normalization",
+  "file_path": "crates/polaris-ext/crates/mcp/src/schema.rs",
+  "logic_name": "MCP Schema and Registry Normalization",
+  "test_list": [
+    {"test_name": "valid_schema_passes", "description": "A valid MCP input schema becomes normalized registry schema."},
+    {"test_name": "invalid_schema_rejected", "description": "Malformed or invalid schemas are rejected with SchemaInvalid."},
+    {"test_name": "unsupported_assertion_keywords_are_rejected", "description": "Unsupported assertion keywords fail closed rather than weakening argument validation."},
+    {"test_name": "property_names_and_nested_schemas_are_preserved", "description": "Property names remain intact and nested property schemas normalize in schema context."},
+    {"test_name": "literal_default_enum_and_const_objects_are_not_traversed_as_schemas", "description": "Literal JSON values are not recursively interpreted as schema objects."},
+    {"test_name": "harmless_annotation_keywords_are_dropped_and_recorded", "description": "Non-assertion annotations are removed and recorded for the registry dialect."},
+    {"test_name": "ref_cycles_rejected", "description": "Recursive reference cycles are rejected without recursion overflow."},
+    {"test_name": "namespaced_ids_prevent_server_collisions", "description": "Identically named tools from different servers receive distinct stable IDs."},
+    {"test_name": "connect_stdio_fixture_lists_and_calls_tool_then_reaps_child", "description": "Listed tool effects remain conservative and caller authorization gates remote calls."}
+  ],
+  "dependencies": ["NamespacedToolId", "ToolSpec", "conservative effect model"],
+  "libraries": ["jsonschema", "serde", "serde_json", "thiserror"],
+  "inputs": [
+    {"name": "server", "type": "&ServerName", "description": "Owning server namespace."},
+    {"name": "tool", "type": "rmcp::model::Tool", "description": "Tool advertised by the remote server."},
+    {"name": "policy", "type": "&SchemaPolicy", "description": "Bounds and supported schema keywords."}
+  ],
+  "output_type": "Result<ToolSpec, McpError>",
+  "output_description": "A namespaced, validated, bounded registry entry with conservative effects, or a typed schema error."
+}

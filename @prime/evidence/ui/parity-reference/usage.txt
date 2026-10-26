@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Usage                                                                                          Usage unavailable │
+  │                                                                                                                  │
+  │ [ Ctrl+O Details ]                                                                                               │
+  │                                                                                                                  │
+  │ Session                                                   Models                                                 │
+  │ Total cost   Unavailable                                  Usage unavailable                                      │
+  │ Tokens       Unavailable                                                                                         │
+  │ Duration     Unavailable                                                                                         │
+  │ Changes      Unavailable                                                                                         │
+  │                                                                                                                  │
+  │ Context                                    Unavailable                                                           │
+  │                                                                                                                  │
+  │ Provider limits                                                                                                  │
+  │ Current window                             Unavailable                                                           │
+  │ Reset unavailable                                                                                                │
+  │                                                                                                                  │
+  │ Weekly allowance                           Unavailable                                                           │
+  │ Reset unavailable                                                                                                │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │                                                                                                                  │
+  │ No usage source connected; missing is not zero.                                                                  │
+  │ D sample/empty · PgUp/PgDn scroll · Esc/Enter close                                                              │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

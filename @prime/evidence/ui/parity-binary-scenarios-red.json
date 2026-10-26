@@ -1,0 +1,19 @@
+{
+  "name": "parity-binary-scenarios-red",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--test",
+    "ui_startup",
+    "every_demo_scenario_is_reachable_from_the_real_binary"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:40:55.533Z",
+  "pid": 13800,
+  "code": 101,
+  "finished": "2026-10-25T11:41:09.759Z"
+}

@@ -1,0 +1,23 @@
+{
+  "type_of": "module",
+  "name": "worker_auth",
+  "file_path": "crates/polaris-proto/src/worker_auth.rs",
+  "logic_name": "Worker RPC Authentication",
+  "test_list": [
+    { "test_name": "generated_credentials_are_fixed_lowercase_hex_and_round_trip", "description": "Generated 32-byte bearer credentials export exactly 64 lowercase hexadecimal bytes and authenticate after explicit parent-controlled transfer." },
+    { "test_name": "valid_worker_token_authorizes_sensitive_metadata", "description": "Exactly one correctly formatted matching sensitive metadata value passes the tonic interceptor." },
+    { "test_name": "missing_malformed_duplicate_and_wrong_tokens_are_rejected", "description": "Missing, duplicate, malformed, wrong-length, and wrong-secret values are rejected without secret-bearing status text." },
+    { "test_name": "independently_issued_credentials_do_not_authenticate_each_other", "description": "A credential for one worker cannot authenticate to a second worker authenticator." },
+    { "test_name": "credential_export_propagates_writer_errors", "description": "Credential transfer writes to the caller-controlled channel and propagates output failure." },
+    { "test_name": "credential_debug_and_display_are_not_implemented", "description": "Compile-fail documentation checks ensure the bearer credential cannot be formatted through Debug or Display; no serde implementation is provided." }
+  ],
+  "dependencies": ["tonic::service::Interceptor", "secrecy::SecretString", "zeroize", "getrandom", "blake3"],
+  "libraries": ["tonic", "secrecy", "zeroize", "getrandom", "blake3"],
+  "inputs": [
+    { "name": "parent_secret", "type": "SecretString", "description": "A parent-issued 64-byte lowercase hexadecimal value read from a controlled channel such as child stdin." },
+    { "name": "request", "type": "tonic::Request<T>", "description": "The outgoing worker request to authorize with one sensitive bearer metadata value." },
+    { "name": "incoming_metadata", "type": "tonic::metadata::MetadataMap", "description": "Incoming request metadata that must contain exactly one valid matching token." }
+  ],
+  "output_type": "Result<Request<T>, Status> / Interceptor",
+  "output_description": "Client credentials attach a sensitive worker token; the server accepts only the matching token and returns a generic unauthenticated status for every rejected form. This authenticates caller to worker only; parent/client endpoint ownership, ACLs, and sandbox isolation are separate composition responsibilities."
+}

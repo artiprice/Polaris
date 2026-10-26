@@ -1,0 +1,4 @@
+{
+  "command": "cargo test --offline -p polaris-ui-cli --lib --test terminal_input --test terminal_lifecycle",
+  "exit_code": 0
+}

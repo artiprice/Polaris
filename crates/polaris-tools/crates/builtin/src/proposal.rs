@@ -620,6 +620,7 @@ mod tests {
     use polaris_storage_cas::{Cas, CasConfig, content_id};
     use std::{
         future::Future,
+        pin::Pin,
         sync::Mutex,
         task::{Context, Poll, Waker},
     };

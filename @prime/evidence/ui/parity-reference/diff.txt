@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+
+
+
+
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Review changes                                                                                                   │
+  │                                                                                                                  │
+  │ DEMO PATCH · 2 files · no changes have been applied                                                              │
+  │                                                                                                                  │
+  │ src/validation.rs (+8 -3)                               tests/validation.rs (+6 -0)                              │
+  │                                                                                                                  │
+  │        --- a/src/validation.rs                                                                                   │
+  │        +++ b/src/validation.rs                                                                                   │
+  │        @@ -1,8 +1,13 @@                                                                                          │
+  │      1  use crate::Error;                                                                                        │
+  │      2                                                                                                           │
+  │      3 +fn require_input(input: &str) -> Result<(), Error> {                                                     │
+  │      4 +    if input.trim().is_empty() {                                                                         │
+  │      5 +        return Err(Error::EmptyInput);                                                                   │
+  │      6 +    }                                                                                                    │
+  │      7 +    Ok(())                                                                                               │
+  │      8 +}                                                                                                        │
+  │      9 +                                                                                                         │
+  │     10  pub fn handle(input: &str) -> Result<(), Error> {                                                        │
+  │      4 -    if input.trim().is_empty() {                                                                         │
+  │      5 -        return Err(Error::EmptyInput);                                                                   │
+  │ Left/Right files · PgUp/PgDn scroll · Esc/Enter close                                                            │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

@@ -13,9 +13,24 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+futures = { workspace = true }
 thiserror = { workspace = true }
+clap = { workspace = true }
+secrecy = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-kernel = { workspace = true }
 polaris-rpc = { workspace = true }
-polaris-config = { workspace = true }
 polaris-log = { workspace = true }
+polaris-proto = { workspace = true }
+polaris-security-capability = { workspace = true }
+polaris-sdk = { workspace = true }
+polaris-security-automata = { workspace = true }
+tonic = { workspace = true }
+
+[[bin]]
+name = "polarisd"
+path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = { workspace = true }

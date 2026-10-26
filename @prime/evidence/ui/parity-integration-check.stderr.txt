@@ -1,0 +1,216 @@
+    Checking aws-lc-sys v0.46.0
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking tree-sitter-python v0.25.0
+    Checking tree-sitter v0.27.1
+    Checking tree-sitter-cuda v0.21.2
+    Checking tree-sitter-rust v0.24.2
+    Checking tree-sitter-cpp v0.23.4
+    Checking tree-sitter-typescript v0.23.2
+    Checking zstd-sys v2.1.2+zstd.1.5.7
+    Checking libsqlite3-sys v0.38.2
+    Checking link-cplusplus v1.0.12
+    Checking numkong v7.8.5
+    Checking libmimalloc-sys v0.1.49
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Checking cxx v1.0.205
+    Checking mimalloc v0.1.52
+    Checking zstd-safe v8.2.0
+    Checking rusqlite v0.40.2
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+    Checking polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Checking zstd v0.14.3
+    Checking polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Checking aws-lc-rs v1.18.2
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Checking polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking usearch v2.26.5
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+    Checking rustls-webpki v0.103.16
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+    Checking polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+    Checking rustls v0.23.46
+    Checking tokio-rustls v0.26.6
+    Checking tungstenite v0.26.2
+    Checking rustls-platform-verifier v0.7.1
+    Checking tonic v0.14.6
+    Checking hyper-rustls v0.27.10
+    Checking reqwest v0.12.28
+    Checking reqwest v0.13.5
+    Checking tokio-tungstenite v0.26.2
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking oauth2 v5.0.0
+    Checking tonic-prost v0.14.6
+    Checking openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking tonic-types v0.14.6
+    Checking polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking bollard-buildkit-proto v0.8.1
+    Checking polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+    Checking openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+    Checking polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking bollard-stubs v1.53.1-rc.29.3.1
+    Checking openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+    Checking bollard v0.21.1
+    Checking polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+    Checking polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+    Checking polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Checking polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: unused import: `Borders`
+  --> apps\polaris-cli\src\demo_gallery.rs:11:22
+   |
+11 |     widgets::{Block, Borders, Clear, Paragraph, Wrap},
+   |                      ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0609]: no field `stats_demo` on type `&DemoGallery`
+    --> apps\polaris-cli\src\demo_gallery.rs:1584:26
+     |
+1584 |                 if !self.stats_demo {
+     |                          ^^^^^^^^^^ unknown field
+     |
+     = note: available fields are: `page`, `selected`, `model`, `effort`, `stats_tab` ... and 22 others
+
+error[E0609]: no field `stats_demo` on type `&DemoGallery`
+    --> apps\polaris-cli\src\demo_gallery.rs:1591:37
+     |
+1591 | ...                   if self.stats_demo {
+     |                               ^^^^^^^^^^ unknown field
+     |
+     = note: available fields are: `page`, `selected`, `model`, `effort`, `stats_tab` ... and 22 others
+
+warning: unreachable pattern
+    --> apps\polaris-cli\src\demo_gallery.rs:1242:13
+     |
+1242 |             _ => {}
+     |             ^ no value can reach this
+     |
+note: multiple earlier patterns match some of the same values
+    --> apps\polaris-cli\src\demo_gallery.rs:1242:13
+     |
+ 976 |               GalleryPage::Model => match key.code {
+     |               ------------------ matches some of the same values
+...
+1018 | /             GalleryPage::Preview
+1019 | |             | GalleryPage::Sessions
+1020 | |             | GalleryPage::Providers
+1021 | |             | GalleryPage::ProviderPicker
+1022 | |             | GalleryPage::Agents => match key.code {
+     | |_________________________________- matches some of the same values
+...
+1047 |               GalleryPage::Stats => match key.code {
+     |               ------------------ matches some of the same values
+...
+1098 |               GalleryPage::Usage => match key.code {
+     |               ------------------ matches some of the same values
+...
+1242 |               _ => {}
+     |               ^ ...and 7 other patterns collectively make this unreachable
+     = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+error[E0599]: the method `to_string` exists for reference `&ratatui::prelude::Buffer`, but its trait bounds were not satisfied
+    --> apps\polaris-cli\src\demo_gallery.rs:2356:50
+     |
+2356 |         let output = terminal.backend().buffer().to_string();
+     |                                                  ^^^^^^^^^
+     |
+    ::: C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ratatui-core-0.1.2\src\buffer\buffer.rs:67:1
+     |
+  67 | pub struct Buffer {
+     | ----------------- doesn't satisfy `ratatui::prelude::Buffer: ToString` or `ratatui::prelude::Buffer: std::fmt::Display`
+     |
+     = note: the following trait bounds were not satisfied:
+             `ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `ratatui::prelude::Buffer: ToString`
+             `&ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `&ratatui::prelude::Buffer: ToString`
+
+error[E0599]: the method `to_string` exists for reference `&ratatui::prelude::Buffer`, but its trait bounds were not satisfied
+    --> apps\polaris-cli\src\demo_gallery.rs:2373:52
+     |
+2373 |         let overview = terminal.backend().buffer().to_string();
+     |                                                    ^^^^^^^^^
+     |
+    ::: C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ratatui-core-0.1.2\src\buffer\buffer.rs:67:1
+     |
+  67 | pub struct Buffer {
+     | ----------------- doesn't satisfy `ratatui::prelude::Buffer: ToString` or `ratatui::prelude::Buffer: std::fmt::Display`
+     |
+     = note: the following trait bounds were not satisfied:
+             `ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `ratatui::prelude::Buffer: ToString`
+             `&ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `&ratatui::prelude::Buffer: ToString`
+
+error[E0599]: the method `to_string` exists for reference `&ratatui::prelude::Buffer`, but its trait bounds were not satisfied
+    --> apps\polaris-cli\src\demo_gallery.rs:2387:49
+     |
+2387 |         let chart = terminal.backend().buffer().to_string();
+     |                                                 ^^^^^^^^^
+     |
+    ::: C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ratatui-core-0.1.2\src\buffer\buffer.rs:67:1
+     |
+  67 | pub struct Buffer {
+     | ----------------- doesn't satisfy `ratatui::prelude::Buffer: ToString` or `ratatui::prelude::Buffer: std::fmt::Display`
+     |
+     = note: the following trait bounds were not satisfied:
+             `ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `ratatui::prelude::Buffer: ToString`
+             `&ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `&ratatui::prelude::Buffer: ToString`
+
+error[E0599]: the method `to_string` exists for reference `&ratatui::prelude::Buffer`, but its trait bounds were not satisfied
+    --> apps\polaris-cli\src\demo_gallery.rs:2418:50
+     |
+2418 |         let output = terminal.backend().buffer().to_string();
+     |                                                  ^^^^^^^^^
+     |
+    ::: C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ratatui-core-0.1.2\src\buffer\buffer.rs:67:1
+     |
+  67 | pub struct Buffer {
+     | ----------------- doesn't satisfy `ratatui::prelude::Buffer: ToString` or `ratatui::prelude::Buffer: std::fmt::Display`
+     |
+     = note: the following trait bounds were not satisfied:
+             `ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `ratatui::prelude::Buffer: ToString`
+             `&ratatui::prelude::Buffer: std::fmt::Display`
+             which is required by `&ratatui::prelude::Buffer: ToString`
+
+For more information about this error, try `rustc --explain E0609`.
+warning: `polaris-cli` (lib) generated 2 warnings
+error: could not compile `polaris-cli` (lib) due to 2 previous errors; 2 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0599, E0609.
+For more information about an error, try `rustc --explain E0599`.
+warning: `polaris-cli` (lib test) generated 2 warnings (2 duplicates)
+error: could not compile `polaris-cli` (lib test) due to 6 previous errors; 2 warnings emitted

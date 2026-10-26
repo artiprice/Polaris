@@ -1,0 +1,22 @@
+{
+  "name": "parity-visual-capture",
+  "command": [
+    "python",
+    "-c",
+    "import os,subprocess,sys; e=dict(os.environ);e[\"POLARIS_UI_CAPTURE_DIR\"]=sys.argv[1];raise SystemExit(subprocess.call(sys.argv[2:],env=e))",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-after",
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "tui::controller_tests"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:27:28.656Z",
+  "pid": 8504,
+  "code": 101,
+  "finished": "2026-10-25T11:27:34.681Z"
+}

@@ -18,3 +18,9 @@ thiserror = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-runtime-frames = { workspace = true }
 polaris-runtime-context = { workspace = true }
+polaris-vcs = { workspace = true }
+polaris-storage-cas = { workspace = true }
+polaris-security-capability = { workspace = true }
+
+[dev-dependencies]
+bytes = { workspace = true }

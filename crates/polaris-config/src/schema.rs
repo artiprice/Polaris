@@ -2,10 +2,15 @@
 
 use polaris_sdk::effort::Effort;
 use polaris_sdk::ids::ModelId;
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Write};
+use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::error::{ConfigError, invalid};
 use crate::layer::lookup;
 use crate::secret_ref::SecretRef;
+use crate::sources::Dirs;
 
 /// Built-in defaults (the `Defaults` layer).
 ///
@@ -50,6 +55,14 @@ level = "info"
 
 [ui]
 theme = "dark"
+
+[ui.cli]
+theme = "dark"
+color = "auto"
+color_depth = "auto"
+ascii = false
+reduce_motion = false
+panel = "closed"
 "#;
 
 /// Every key of the schema (dotted paths of leaves).
@@ -77,6 +90,12 @@ pub const KNOWN_KEYS: &[&str] = &[
     "budget.usd",
     "budget.tokens",
     "ui.theme",
+    "ui.cli.theme",
+    "ui.cli.color",
+    "ui.cli.color_depth",
+    "ui.cli.ascii",
+    "ui.cli.reduce_motion",
+    "ui.cli.panel",
 ];
 
 /// Request and token rate limits for the model provider.
@@ -237,6 +256,110 @@ pub enum Theme {
 pub struct UiConfig {
     /// Theme.
     pub theme: Theme,
+    /// Independent terminal-client preferences.
+    pub cli: CliPreferences,
+}
+
+/// CLI canvas theme, independent of the legacy `ui.theme` setting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CliTheme {
+    /// Black application canvas.
+    Dark,
+    /// Inherit terminal colors.
+    Terminal,
+}
+
+/// CLI color policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CliColorPolicy {
+    /// Detect terminal support and `NO_COLOR`.
+    Auto,
+    /// Always emit the selected colors.
+    Always,
+    /// Emit no application colors.
+    Never,
+}
+
+/// CLI color depth.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CliColorDepth {
+    /// Detect terminal truecolor support.
+    Auto,
+    /// Use RGB colors.
+    Truecolor,
+    /// Use the ANSI palette.
+    Ansi,
+}
+
+/// Default panel visibility.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CliPanelDefault {
+    /// Start with the panel open.
+    Open,
+    /// Start with the panel closed.
+    Closed,
+}
+
+/// Complete CLI UI preference set.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CliPreferences {
+    /// Canvas theme.
+    pub theme: CliTheme,
+    /// Whether to render application colors.
+    pub color: CliColorPolicy,
+    /// Color palette depth.
+    pub color_depth: CliColorDepth,
+    /// Use ASCII-only drawing characters.
+    pub ascii: bool,
+    /// Reduce or disable nonessential motion.
+    pub reduce_motion: bool,
+    /// Initial panel visibility.
+    pub panel: CliPanelDefault,
+}
+
+impl Default for CliPreferences {
+    fn default() -> Self {
+        Self {
+            theme: CliTheme::Dark,
+            color: CliColorPolicy::Auto,
+            color_depth: CliColorDepth::Auto,
+            ascii: false,
+            reduce_motion: false,
+            panel: CliPanelDefault::Closed,
+        }
+    }
+}
+
+/// One persisted global CLI preference field.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PreferenceField {
+    /// `ui.cli.theme`.
+    Theme,
+    /// `ui.cli.color`.
+    Color,
+    /// `ui.cli.color_depth`.
+    ColorDepth,
+    /// `ui.cli.ascii`.
+    Ascii,
+    /// `ui.cli.reduce_motion`.
+    ReduceMotion,
+    /// `ui.cli.panel`.
+    Panel,
+}
+
+/// Typed value accepted when persisting one CLI preference.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PreferenceValue {
+    /// CLI theme value.
+    Theme(CliTheme),
+    /// CLI color policy value.
+    Color(CliColorPolicy),
+    /// CLI color depth value.
+    ColorDepth(CliColorDepth),
+    /// Boolean preference value.
+    Boolean(bool),
+    /// CLI initial panel visibility.
+    Panel(CliPanelDefault),
 }
 
 /// The resolved configuration.
@@ -306,6 +429,12 @@ impl Reader<'_> {
                 .map(Some)
                 .ok_or_else(|| invalid(key, "expected a non-negative integer")),
         }
+    }
+
+    fn bool(&self, key: &str) -> Result<bool, ConfigError> {
+        self.value(key)
+            .and_then(toml::Value::as_bool)
+            .ok_or_else(|| invalid(key, "expected a boolean"))
     }
 
     /// Exact decimal text: a decimal string or a non-negative integer. TOML floats are rejected
@@ -446,6 +575,335 @@ pub(crate) fn build(table: &toml::Table) -> Result<PolarisConfig, ConfigError> {
                 "ui.theme",
                 &[("dark", Theme::Dark), ("light", Theme::Light)],
             )?,
+            cli: CliPreferences {
+                theme: r.choice(
+                    "ui.cli.theme",
+                    &[("dark", CliTheme::Dark), ("terminal", CliTheme::Terminal)],
+                )?,
+                color: r.choice(
+                    "ui.cli.color",
+                    &[
+                        ("auto", CliColorPolicy::Auto),
+                        ("always", CliColorPolicy::Always),
+                        ("never", CliColorPolicy::Never),
+                    ],
+                )?,
+                color_depth: r.choice(
+                    "ui.cli.color_depth",
+                    &[
+                        ("auto", CliColorDepth::Auto),
+                        ("truecolor", CliColorDepth::Truecolor),
+                        ("ansi", CliColorDepth::Ansi),
+                    ],
+                )?,
+                ascii: r.bool("ui.cli.ascii")?,
+                reduce_motion: r.bool("ui.cli.reduce_motion")?,
+                panel: r.choice(
+                    "ui.cli.panel",
+                    &[
+                        ("open", CliPanelDefault::Open),
+                        ("closed", CliPanelDefault::Closed),
+                    ],
+                )?,
+            },
         },
     })
+}
+
+/// Read only the persisted global CLI preference table. Unknown sibling config keys are ignored.
+///
+/// # Errors
+/// Returns an I/O, size, parse, or preference validation error.
+pub fn read_global_cli_preferences(dirs: &Dirs) -> Result<CliPreferences, ConfigError> {
+    let path = dirs.global.join("config.toml");
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(CliPreferences::default());
+        }
+        Err(error) => return Err(config_io(&path, error)),
+    };
+    let limit = u64::try_from(crate::MAX_CONFIG_FILE_BYTES)
+        .map_err(|_| invalid("ui.cli", "configuration size limit is invalid"))?;
+    let mut text = String::new();
+    file.take(limit.saturating_add(1))
+        .read_to_string(&mut text)
+        .map_err(|error| config_io(&path, error))?;
+    if text.len() > crate::MAX_CONFIG_FILE_BYTES {
+        return Err(ConfigError::FileTooLarge {
+            path,
+            limit: crate::MAX_CONFIG_FILE_BYTES,
+        });
+    }
+    let table = toml::from_str::<toml::Table>(&text).map_err(|error| ConfigError::Parse {
+        file: path.clone(),
+        line: line_number(error.span().and_then(|span| text.get(..span.start))),
+        reason: error.message().to_owned(),
+    })?;
+    let value = lookup_value(&table, "ui.cli");
+    let Some(preferences) = value.and_then(toml::Value::as_table) else {
+        if value.is_some() {
+            return Err(invalid("ui.cli", "expected a table"));
+        }
+        return Ok(CliPreferences::default());
+    };
+    Ok(CliPreferences {
+        theme: pref_choice(
+            preferences,
+            "theme",
+            "ui.cli.theme",
+            CliTheme::Dark,
+            &[("dark", CliTheme::Dark), ("terminal", CliTheme::Terminal)],
+        )?,
+        color: pref_choice(
+            preferences,
+            "color",
+            "ui.cli.color",
+            CliColorPolicy::Auto,
+            &[
+                ("auto", CliColorPolicy::Auto),
+                ("always", CliColorPolicy::Always),
+                ("never", CliColorPolicy::Never),
+            ],
+        )?,
+        color_depth: pref_choice(
+            preferences,
+            "color_depth",
+            "ui.cli.color_depth",
+            CliColorDepth::Auto,
+            &[
+                ("auto", CliColorDepth::Auto),
+                ("truecolor", CliColorDepth::Truecolor),
+                ("ansi", CliColorDepth::Ansi),
+            ],
+        )?,
+        ascii: pref_bool(preferences, "ascii", "ui.cli.ascii")?.is_some_and(|value| value),
+        reduce_motion: pref_bool(preferences, "reduce_motion", "ui.cli.reduce_motion")?
+            .is_some_and(|value| value),
+        panel: pref_choice(
+            preferences,
+            "panel",
+            "ui.cli.panel",
+            CliPanelDefault::Closed,
+            &[
+                ("open", CliPanelDefault::Open),
+                ("closed", CliPanelDefault::Closed),
+            ],
+        )?,
+    })
+}
+
+/// Persist one preference in `dirs.global/config.toml`, preserving all other TOML keys.
+/// Only [`Dirs::global`] is used. Repository and session overrides remain memory-only and are not
+/// accepted by this API.
+///
+/// # Errors
+/// Returns an I/O, size, parse, encoding, or field/value mismatch error. A failed write leaves
+/// the existing config file untouched.
+pub fn save_global_cli_preference(
+    dirs: &Dirs,
+    field: PreferenceField,
+    value: PreferenceValue,
+) -> Result<(), ConfigError> {
+    let path = dirs.global.join("config.toml");
+    let original = read_config_bytes(&path)?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    let source = std::str::from_utf8(&original).map_err(|_| ConfigError::Parse {
+        file: path.clone(),
+        line: 1,
+        reason: "configuration is not UTF-8".to_owned(),
+    })?;
+    let mut table = toml::from_str::<toml::Table>(source).map_err(|error| ConfigError::Parse {
+        file: path.clone(),
+        line: line_number(error.span().and_then(|span| source.get(..span.start))),
+        reason: error.message().to_owned(),
+    })?;
+    let (key, toml_value) = preference_value(field, value)?;
+    if !crate::layer::insert_path(&mut table, key, toml_value) {
+        return Err(invalid(key, "conflicts with an existing TOML value"));
+    }
+    let encoded =
+        toml::to_string(&table).map_err(|error| ConfigError::Encode(error.to_string()))?;
+    if encoded.len() > crate::MAX_CONFIG_FILE_BYTES {
+        return Err(ConfigError::FileTooLarge {
+            path,
+            limit: crate::MAX_CONFIG_FILE_BYTES,
+        });
+    }
+    atomic_replace(&path, encoded.as_bytes())
+}
+
+fn preference_value(
+    field: PreferenceField,
+    value: PreferenceValue,
+) -> Result<(&'static str, toml::Value), ConfigError> {
+    let pair = match (field, value) {
+        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Dark)) => {
+            ("ui.cli.theme", "dark")
+        }
+        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Terminal)) => {
+            ("ui.cli.theme", "terminal")
+        }
+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Auto)) => {
+            ("ui.cli.color", "auto")
+        }
+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Always)) => {
+            ("ui.cli.color", "always")
+        }
+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Never)) => {
+            ("ui.cli.color", "never")
+        }
+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Auto)) => {
+            ("ui.cli.color_depth", "auto")
+        }
+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Truecolor)) => {
+            ("ui.cli.color_depth", "truecolor")
+        }
+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Ansi)) => {
+            ("ui.cli.color_depth", "ansi")
+        }
+        (PreferenceField::Ascii, PreferenceValue::Boolean(value)) => {
+            return Ok(("ui.cli.ascii", toml::Value::Boolean(value)));
+        }
+        (PreferenceField::ReduceMotion, PreferenceValue::Boolean(value)) => {
+            return Ok(("ui.cli.reduce_motion", toml::Value::Boolean(value)));
+        }
+        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Open)) => {
+            ("ui.cli.panel", "open")
+        }
+        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Closed)) => {
+            ("ui.cli.panel", "closed")
+        }
+        _ => return Err(invalid("ui.cli", "preference value does not match field")),
+    };
+    Ok((pair.0, toml::Value::String(pair.1.to_owned())))
+}
+
+fn lookup_value<'a>(table: &'a toml::Table, path: &str) -> Option<&'a toml::Value> {
+    let mut pieces = path.split('.');
+    let first = table.get(pieces.next()?)?;
+    pieces.try_fold(first, |value, piece| value.as_table()?.get(piece))
+}
+
+fn pref_choice<T: Copy>(
+    table: &toml::Table,
+    key: &str,
+    full_key: &str,
+    default: T,
+    choices: &[(&str, T)],
+) -> Result<T, ConfigError> {
+    let Some(value) = table.get(key) else {
+        return Ok(default);
+    };
+    let Some(word) = value.as_str() else {
+        return Err(invalid(full_key, "expected a string"));
+    };
+    choices
+        .iter()
+        .find(|choice| choice.0 == word)
+        .map(|choice| choice.1)
+        .ok_or_else(|| {
+            invalid(
+                full_key,
+                format!(
+                    "expected one of {}",
+                    choices
+                        .iter()
+                        .map(|choice| choice.0)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+            )
+        })
+}
+
+fn pref_bool(table: &toml::Table, key: &str, full_key: &str) -> Result<Option<bool>, ConfigError> {
+    match table.get(key) {
+        None => Ok(None),
+        Some(value) => value
+            .as_bool()
+            .map(Some)
+            .ok_or_else(|| invalid(full_key, "expected a boolean")),
+    }
+}
+
+fn config_io(path: &Path, error: std::io::Error) -> ConfigError {
+    ConfigError::Io {
+        path: path.to_path_buf(),
+        reason: error.to_string(),
+    }
+}
+
+fn line_number(before: Option<&str>) -> u32 {
+    before.map_or(1, |text| {
+        text.bytes()
+            .filter(|byte| *byte == b'\n')
+            .fold(1_u32, |line, _| line.saturating_add(1))
+    })
+}
+
+fn read_config_bytes(path: &Path) -> Result<Option<Vec<u8>>, ConfigError> {
+    let file = match File::open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(config_io(path, error)),
+    };
+    let limit = u64::try_from(crate::MAX_CONFIG_FILE_BYTES)
+        .map_err(|_| invalid("ui.cli", "configuration size limit is invalid"))?;
+    let mut bytes = Vec::new();
+    file.take(limit.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|error| config_io(path, error))?;
+    if bytes.len() > crate::MAX_CONFIG_FILE_BYTES {
+        return Err(ConfigError::FileTooLarge {
+            path: path.to_path_buf(),
+            limit: crate::MAX_CONFIG_FILE_BYTES,
+        });
+    }
+    Ok(Some(bytes))
+}
+
+static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+fn atomic_replace(path: &Path, bytes: &[u8]) -> Result<(), ConfigError> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| invalid("ui.cli", "global config path has no parent"))?;
+    fs::create_dir_all(parent).map_err(|error| config_io(parent, error))?;
+    let mut attempts = 0_u8;
+    loop {
+        attempts = attempts.saturating_add(1);
+        let sequence = TEMP_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let name = format!("config.toml.tmp.{}.{}", std::process::id(), sequence);
+        let temp = parent.join(name);
+        let mut options = OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let mut file = match options.open(&temp) {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && attempts < 8 => {
+                continue;
+            }
+            Err(error) => return Err(config_io(&temp, error)),
+        };
+        let write_result = file.write_all(bytes).and_then(|()| file.sync_all());
+        drop(file);
+        if let Err(error) = write_result {
+            let _ = fs::remove_file(&temp);
+            return Err(config_io(&temp, error));
+        }
+        match fs::rename(&temp, path) {
+            Ok(()) => return Ok(()),
+            Err(error) => {
+                let _ = fs::remove_file(&temp);
+                return Err(config_io(path, error));
+            }
+        }
+    }
 }

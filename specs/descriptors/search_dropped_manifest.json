@@ -1,0 +1,26 @@
+{
+  "type_of": "module",
+  "name": "dropped manifest persistence and recovery",
+  "file_path": "crates/polaris-search/crates/sift/src/dropped.rs",
+  "logic_name": "Bounded durable dropped-chunk CAS manifest",
+  "test_list": [
+    {"test_name": "dropped_chunks_recoverable_by_ref", "description": "Persist dropped chunk metadata and exact source text in CAS, then recover it by the manifest CID."},
+    {"test_name": "dropped_refs_unique", "description": "Deduplicate identical content references while preserving duplicate chunk occurrences on recovery."},
+    {"test_name": "drop_stats_count_matches_dropped", "description": "The manifest contains exactly the dropped chunks supplied by Distilled."},
+    {"test_name": "oversized_dropped_chunk_is_rejected", "description": "Reject a chunk that exceeds the configured serialized content bound without truncation."},
+    {"test_name": "recovery_rejects_content_hash_mismatch", "description": "Independently verify fetched chunk bytes against their CID before decoding."},
+    {"test_name": "recovery_rejects_unknown_kind_and_version", "description": "Reject validly addressed blobs with an unsupported record kind or version."},
+    {"test_name": "recovery_rejects_unknown_wire_fields", "description": "Reject schema fields that are not declared by the versioned manifest record."},
+    {"test_name": "recovery_enforces_manifest_bounds", "description": "Reject manifest bytes and entry counts beyond fixed limits before allocating recovery output."},
+    {"test_name": "persistence_never_commits_an_unrecoverable_aggregate", "description": "Apply the same aggregate byte cap during persistence and recovery, including repeated chunk occurrences."},
+    {"test_name": "recovery_limits_aggregate_content_bytes", "description": "Reject repeated valid chunk references when their aggregate encoded size exceeds the recovery memory budget."}
+  ],
+  "dependencies": ["polaris_sdk::content::ContentStore", "Distilled", "RawChunk"],
+  "libraries": ["serde", "serde_json", "blake3"],
+  "inputs": [
+    {"name": "distilled", "type": "Distilled", "description": "Sifted chunks including the original dropped chunks."},
+    {"name": "store", "type": "ContentStore", "description": "Injected bounded content-addressed storage."}
+  ],
+  "output_type": "Result<DroppedManifest, DropManifestError>",
+  "output_description": "A durable manifest CID and unique dropped-chunk CIDs; recovery restores exact chunk text, locator, source and original trust annotation after validating per-record and aggregate bounds, record kind/version, and content hashes."
+}

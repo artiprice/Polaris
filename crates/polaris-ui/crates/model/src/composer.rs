@@ -83,17 +83,18 @@ struct OwnedChip {
     attachment: Attachment,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct Draft {
     text: String,
     cursor: usize,
+    selection_anchor: Option<usize>,
     chips: Vec<OwnedChip>,
     next_id: u64,
     next_image: u32,
 }
 
 /// Editable draft. Image bytes remain in the frontend; this type owns only references and budgets.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Composer {
     draft: Draft,
     revision: u64,
@@ -121,6 +122,104 @@ fn trim_blank_rows(text: &str) -> String {
     lines.join("\n")
 }
 
+/// Return the complete grapheme containing a canonical source byte offset.
+///
+/// Offsets inside a grapheme snap to its start. Offsets at or beyond the source end select
+/// the final grapheme; empty text has no selectable grapheme.
+#[must_use]
+pub fn source_grapheme_range(text: &str, at: usize) -> Option<Range<usize>> {
+    let at = at.min(text.len());
+    let mut last = None;
+    for (start, grapheme) in text.grapheme_indices(true) {
+        let end = start.saturating_add(grapheme.len());
+        if start <= at && at < end {
+            return Some(start..end);
+        }
+        last = Some(start..end);
+    }
+    if at == text.len() { last } else { None }
+}
+
+/// Return the Unicode word, whitespace run, or punctuation grapheme under a byte offset.
+///
+/// Alphanumeric and underscore graphemes form words, adjacent whitespace graphemes form one
+/// selectable run, and punctuation selects one grapheme. Offsets inside a grapheme snap to it;
+/// offsets at or beyond the source end select the final grapheme.
+#[must_use]
+pub fn source_word_range(text: &str, at: usize) -> Option<Range<usize>> {
+    let spans: Vec<_> = text
+        .grapheme_indices(true)
+        .map(|(start, grapheme)| start..start.saturating_add(grapheme.len()))
+        .collect();
+    let at = at.min(text.len());
+    let clicked = spans
+        .iter()
+        .position(|span| span.start <= at && at < span.end)
+        .or_else(|| spans.len().checked_sub(1).filter(|_| at == text.len()))?;
+    let selected = spans.get(clicked)?;
+    let class = source_grapheme_class(text, selected)?;
+    if class == 3 {
+        return Some(selected.clone());
+    }
+    let mut start = selected.start;
+    let mut end = selected.end;
+    for span in spans.iter().take(clicked).rev() {
+        if source_grapheme_class(text, span) == Some(class) {
+            start = span.start;
+        } else {
+            break;
+        }
+    }
+    for span in spans.iter().skip(clicked.saturating_add(1)) {
+        if source_grapheme_class(text, span) == Some(class) {
+            end = span.end;
+        } else {
+            break;
+        }
+    }
+    Some(start..end)
+}
+
+/// Return the logical source line under a byte offset, including its existing LF or CRLF.
+///
+/// A byte offset on a line terminator belongs to the preceding line. An offset at EOF selects
+/// the final line only when that line contains source bytes; empty text and the synthetic empty
+/// line after a terminal newline have no range.
+#[must_use]
+pub fn source_line_range(text: &str, at: usize) -> Option<Range<usize>> {
+    if text.is_empty() {
+        return None;
+    }
+    let at = at.min(text.len());
+    let mut start = 0;
+    for (offset, ch) in text.char_indices() {
+        if ch == '\n' {
+            let end = offset.saturating_add(ch.len_utf8());
+            if start <= at && at < end {
+                return Some(start..end);
+            }
+            start = end;
+        }
+    }
+    if start < text.len() && start <= at && at <= text.len() {
+        Some(start..text.len())
+    } else {
+        None
+    }
+}
+
+fn source_grapheme_class(text: &str, span: &Range<usize>) -> Option<u8> {
+    let segment = text.get(span.clone())?;
+    let first = segment.chars().next()?;
+    Some(if first.is_alphanumeric() || first == '_' {
+        1
+    } else if first.is_whitespace() {
+        2
+    } else {
+        3
+    })
+}
+
 impl Composer {
     /// Start an empty session-local composer.
     #[must_use]
@@ -138,6 +237,12 @@ impl Composer {
     #[must_use]
     pub const fn cursor(&self) -> usize {
         self.draft.cursor
+    }
+
+    /// Current monotonic edit and cursor revision for validating asynchronous work.
+    #[must_use]
+    pub const fn revision(&self) -> u64 {
+        self.revision
     }
 
     /// Whether there is no text or attachment.
@@ -264,6 +369,7 @@ impl Composer {
         });
         self.draft.text.replace_range(range.clone(), insert);
         self.draft.cursor = range.start.saturating_add(insert.len());
+        self.draft.selection_anchor = None;
         self.snap_cursor();
     }
 
@@ -287,7 +393,16 @@ impl Composer {
         if payload.is_empty() {
             return Ok(());
         }
-        self.check_size(self.logical_len().saturating_add(payload.len()))?;
+        let selected = self.selection();
+        let removed = match selected.clone() {
+            Some(range) => self.expanded(range, false).len(),
+            None => 0,
+        };
+        self.check_size(
+            self.logical_len()
+                .saturating_sub(removed)
+                .saturating_add(payload.len()),
+        )?;
         let chars = payload.chars().count();
         let attachment = if payload.lines().count() > 5 || chars > 500 {
             Some(Attachment::Text {
@@ -303,11 +418,16 @@ impl Composer {
             payload.clone()
         };
         let merge_space = self.group_space
+            && selected.is_none()
             && attachment.is_none()
             && payload.chars().all(|c| c == ' ' || c == '\t');
         self.remember(merge_space);
-        let start = self.draft.cursor;
-        self.replace(start..start, &label);
+        let range = match selected {
+            Some(range) => range,
+            None => self.draft.cursor..self.draft.cursor,
+        };
+        let start = range.start;
+        self.replace(range, &label);
         if let Some(attachment) = attachment {
             self.push_chip(start, label.len(), attachment);
             self.group_space = false;
@@ -408,15 +528,171 @@ impl Composer {
         };
     }
 
-    /// Set the cursor, snapping backward to a grapheme/chip boundary and clamping to the draft.
-    pub fn set_cursor(&mut self, at: usize) {
-        self.draft.cursor = at.min(self.draft.text.len());
-        self.snap_cursor();
+    fn snap_position(&self, at: usize) -> usize {
+        match self
+            .boundaries()
+            .into_iter()
+            .take_while(|boundary| *boundary <= at.min(self.draft.text.len()))
+            .last()
+        {
+            Some(boundary) => boundary,
+            None => 0,
+        }
+    }
+
+    fn move_to(&mut self, at: usize, extend: bool) {
+        let before = self.draft.cursor;
+        let target = self.snap_position(at);
+        if extend {
+            if self.draft.selection_anchor.is_none() {
+                self.draft.selection_anchor = Some(self.draft.cursor);
+            }
+            self.draft.cursor = target;
+        } else {
+            self.draft.cursor = target;
+            self.draft.selection_anchor = None;
+        }
+        if before != self.draft.cursor {
+            self.revision = self.revision.saturating_add(1);
+        }
+        self.group_space = false;
+    }
+
+    /// Current selected byte range, if its endpoints differ.
+    #[must_use]
+    pub fn selection(&self) -> Option<Range<usize>> {
+        let anchor = self.draft.selection_anchor?;
+        if anchor == self.draft.cursor {
+            None
+        } else if anchor < self.draft.cursor {
+            Some(anchor..self.draft.cursor)
+        } else {
+            Some(self.draft.cursor..anchor)
+        }
+    }
+
+    /// Selected text with text-chip payloads expanded and image labels retained.
+    #[must_use]
+    pub fn selected_text(&self) -> Option<String> {
+        self.selection().map(|range| self.expanded(range, true))
+    }
+
+    /// Anchor endpoint used by shift navigation, if a selection gesture has started.
+    #[must_use]
+    pub const fn selection_anchor(&self) -> Option<usize> {
+        self.draft.selection_anchor
+    }
+
+    /// Select a complete range, snapping both endpoints to legal grapheme/chip boundaries.
+    pub fn set_selection(&mut self, range: Range<usize>) {
+        let start = self.snap_position(range.start);
+        let end = self.snap_position(range.end);
+        self.draft.selection_anchor = Some(start);
+        self.draft.cursor = end;
         self.revision = self.revision.saturating_add(1);
         self.group_space = false;
     }
+
+    /// Select the Unicode word or atomic chip at a byte position.
+    ///
+    /// Whitespace double-clicks select the contiguous whitespace run; punctuation
+    /// selects one grapheme. A position inside a chip selects the whole chip.
+    pub fn select_word_at(&mut self, at: usize) -> bool {
+        let at = at.min(self.draft.text.len());
+        if let Some(chip) = self
+            .draft
+            .chips
+            .iter()
+            .find(|chip| at >= chip.range.start && at <= chip.range.end)
+        {
+            self.set_selection(chip.range.clone());
+            return true;
+        }
+
+        let boundaries = self.boundaries();
+        let spans: Vec<_> = boundaries
+            .windows(2)
+            .filter_map(|pair| Some(*pair.first()?..*pair.get(1)?))
+            .collect();
+        let clicked = spans
+            .iter()
+            .position(|span| at >= span.start && at < span.end)
+            .or_else(|| {
+                spans
+                    .len()
+                    .checked_sub(1)
+                    .filter(|_| at == self.draft.text.len())
+            });
+        let Some(clicked) = clicked else {
+            return false;
+        };
+        let Some(selected) = spans.get(clicked) else {
+            return false;
+        };
+        let Some(segment) = self.draft.text.get(selected.clone()) else {
+            return false;
+        };
+        let Some(first) = segment.chars().next() else {
+            return false;
+        };
+        let class = if first.is_alphanumeric() || first == '_' {
+            1_u8
+        } else if first.is_whitespace() {
+            2_u8
+        } else {
+            3_u8
+        };
+        let mut start = selected.start;
+        let mut end = selected.end;
+        if class < 3 {
+            for span in spans.iter().take(clicked).rev() {
+                if self.segment_class(span) == Some(class) {
+                    start = span.start;
+                } else {
+                    break;
+                }
+            }
+            for span in spans.iter().skip(clicked.saturating_add(1)) {
+                if self.segment_class(span) == Some(class) {
+                    end = span.end;
+                } else {
+                    break;
+                }
+            }
+        }
+        self.set_selection(start..end);
+        true
+    }
+
+    /// Select the complete draft.
+    pub fn select_all(&mut self) {
+        self.set_selection(0..self.draft.text.len());
+    }
+
+    /// Remove the active selection and return its expanded text.
+    pub fn cut(&mut self) -> Option<String> {
+        let range = self.selection()?;
+        let copied = self.expanded(range.clone(), true);
+        self.remember(false);
+        self.replace(range, "");
+        self.group_space = false;
+        Some(copied)
+    }
+
+    /// Set the cursor, snapping backward to a grapheme/chip boundary and clamping to the draft.
+    pub fn set_cursor(&mut self, at: usize) {
+        self.move_to(at, false);
+    }
     /// Move over one grapheme or chip to the left.
     pub fn move_left(&mut self) {
+        if let Some(range) = self.selection() {
+            self.move_to(range.start, false);
+            return;
+        }
+        self.move_left_with_selection(false);
+    }
+    /// Move left by one grapheme or chip, optionally extending the selection.
+    pub fn move_left_with_selection(&mut self, extend: bool) {
         let before = self.draft.cursor;
         if let Some(at) = self
             .boundaries()
@@ -426,6 +702,13 @@ impl Composer {
         {
             self.draft.cursor = at;
         }
+        if extend {
+            if self.draft.selection_anchor.is_none() {
+                self.draft.selection_anchor = Some(before);
+            }
+        } else {
+            self.draft.selection_anchor = None;
+        }
         if before != self.draft.cursor {
             self.revision = self.revision.saturating_add(1);
         }
@@ -433,6 +716,14 @@ impl Composer {
     }
     /// Move over one grapheme or chip to the right.
     pub fn move_right(&mut self) {
+        if let Some(range) = self.selection() {
+            self.move_to(range.end, false);
+            return;
+        }
+        self.move_right_with_selection(false);
+    }
+    /// Move right by one grapheme or chip, optionally extending the selection.
+    pub fn move_right_with_selection(&mut self, extend: bool) {
         let before = self.draft.cursor;
         if let Some(at) = self
             .boundaries()
@@ -440,6 +731,13 @@ impl Composer {
             .find(|at| *at > self.draft.cursor)
         {
             self.draft.cursor = at;
+        }
+        if extend {
+            if self.draft.selection_anchor.is_none() {
+                self.draft.selection_anchor = Some(before);
+            }
+        } else {
+            self.draft.selection_anchor = None;
         }
         if before != self.draft.cursor {
             self.revision = self.revision.saturating_add(1);
@@ -455,8 +753,136 @@ impl Composer {
         self.set_cursor(self.draft.text.len());
     }
 
+    /// Move to the current logical line start.
+    pub fn move_line_home(&mut self) {
+        self.move_line_home_with_selection(false);
+    }
+    /// Move to the current logical line start, optionally extending the selection.
+    pub fn move_line_home_with_selection(&mut self, extend: bool) {
+        let target = match self
+            .draft
+            .text
+            .get(..self.draft.cursor)
+            .and_then(|before| before.rfind('\n'))
+        {
+            Some(newline) => newline.saturating_add(1),
+            None => 0,
+        };
+        self.move_to(target, extend);
+    }
+    /// Move to the current logical line end.
+    pub fn move_line_end(&mut self) {
+        self.move_line_end_with_selection(false);
+    }
+    /// Move to the current logical line end, optionally extending the selection.
+    pub fn move_line_end_with_selection(&mut self, extend: bool) {
+        let target = match self
+            .draft
+            .text
+            .get(self.draft.cursor..)
+            .and_then(|after| after.find('\n'))
+        {
+            Some(offset) => self.draft.cursor.saturating_add(offset),
+            None => self.draft.text.len(),
+        };
+        self.move_to(target, extend);
+    }
+    /// Move to the beginning of the complete document.
+    pub fn move_document_home(&mut self) {
+        self.move_to(0, false);
+    }
+    /// Move to the end of the complete document.
+    pub fn move_document_end(&mut self) {
+        self.move_to(self.draft.text.len(), false);
+    }
+    /// Move to document start and extend the selection.
+    pub fn move_document_home_with_selection(&mut self) {
+        self.move_to(0, true);
+    }
+    /// Move to document end and extend the selection.
+    pub fn move_document_end_with_selection(&mut self) {
+        self.move_to(self.draft.text.len(), true);
+    }
+
+    fn word_target(&self, left: bool) -> usize {
+        let boundaries = self.boundaries();
+        let mut position = self.draft.cursor;
+        let origin = position;
+        let mut saw_word = false;
+        let mut saw_whitespace = false;
+        if left {
+            for at in boundaries.into_iter().rev().filter(|at| *at < origin) {
+                let whitespace = self
+                    .draft
+                    .text
+                    .get(at..position)
+                    .is_some_and(|part| part.chars().all(char::is_whitespace));
+                if whitespace {
+                    if saw_word {
+                        break;
+                    }
+                } else {
+                    saw_word = true;
+                }
+                position = at;
+            }
+        } else {
+            for at in boundaries.into_iter().filter(|at| *at > origin) {
+                let whitespace = self
+                    .draft
+                    .text
+                    .get(position..at)
+                    .is_some_and(|part| part.chars().all(char::is_whitespace));
+                if whitespace {
+                    saw_whitespace = true;
+                } else if saw_whitespace {
+                    break;
+                }
+                position = at;
+            }
+        }
+        position
+    }
+
+    fn segment_class(&self, span: &Range<usize>) -> Option<u8> {
+        let segment = self.draft.text.get(span.clone())?;
+        let first = segment.chars().next()?;
+        Some(if first.is_alphanumeric() || first == '_' {
+            1
+        } else if first.is_whitespace() {
+            2
+        } else {
+            3
+        })
+    }
+
+    /// Move left across preceding whitespace and the preceding word.
+    pub fn move_word_left(&mut self) {
+        self.move_word_left_with_selection(false);
+    }
+    /// Move left across a word, optionally extending the selection.
+    pub fn move_word_left_with_selection(&mut self, extend: bool) {
+        let target = self.word_target(true);
+        self.move_to(target, extend);
+    }
+    /// Move right across the current word and its following whitespace.
+    pub fn move_word_right(&mut self) {
+        self.move_word_right_with_selection(false);
+    }
+    /// Move right across a word, optionally extending the selection.
+    pub fn move_word_right_with_selection(&mut self, extend: bool) {
+        let target = self.word_target(false);
+        self.move_to(target, extend);
+    }
+
     /// Delete one preceding grapheme or chip; return whether anything changed.
     pub fn backspace(&mut self) -> bool {
+        if let Some(range) = self.selection() {
+            self.remember(false);
+            self.replace(range, "");
+            self.group_space = false;
+            return true;
+        }
         let end = self.draft.cursor;
         let Some(start) = self
             .boundaries()
@@ -473,12 +899,48 @@ impl Composer {
     }
     /// Delete one following grapheme or chip; return whether anything changed.
     pub fn delete(&mut self) -> bool {
+        if let Some(range) = self.selection() {
+            self.remember(false);
+            self.replace(range, "");
+            self.group_space = false;
+            return true;
+        }
         let start = self.draft.cursor;
         let Some(end) = self.boundaries().into_iter().find(|at| *at > start) else {
             return false;
         };
         self.remember(false);
         self.replace(start..end, "");
+        self.group_space = false;
+        true
+    }
+
+    /// Delete backward through preceding whitespace and the previous word.
+    pub fn delete_word_backward(&mut self) -> bool {
+        if self.selection().is_some() {
+            return self.backspace();
+        }
+        let start = self.word_target(true);
+        if start == self.draft.cursor {
+            return false;
+        }
+        self.remember(false);
+        self.replace(start..self.draft.cursor, "");
+        self.group_space = false;
+        true
+    }
+
+    /// Delete forward through the current word and following whitespace.
+    pub fn delete_word_forward(&mut self) -> bool {
+        if self.selection().is_some() {
+            return self.delete();
+        }
+        let end = self.word_target(false);
+        if end == self.draft.cursor {
+            return false;
+        }
+        self.remember(false);
+        self.replace(self.draft.cursor..end, "");
         self.group_space = false;
         true
     }

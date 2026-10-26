@@ -1,0 +1,16 @@
+$ cargo test --offline -p polaris-ui-model --test continuation_editor
+exit=0
+
+running 7 tests
+test history_restores_saved_draft_selection ... ok
+test line_and_document_home_end_are_distinct ... ok
+test selection_replaces_text_and_undo_restores_selection ... ok
+test word_navigation_and_deletion_respect_graphemes_and_chips ... ok
+test double_click_selection_tracks_unicode_words_whitespace_and_atomic_chips ... ok
+test shift_navigation_and_select_all_keep_legal_boundaries ... ok
+test selected_chip_copy_replace_and_byte_budget_are_consistent ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+    Finished `test` profile [unoptimized] target(s) in 0.63s
+     Running tests\continuation_editor.rs (target\debug\deps\continuation_editor-3a8c179150998ced.exe)

@@ -1,0 +1,19 @@
+rustfmt --check --edition 2024 crates/polaris-ui/crates/cli/src/terminal.rs crates/polaris-ui/crates/cli/src/windows_input.rs crates/polaris-ui/crates/cli/src/input_decoder.rs crates/polaris-ui/crates/cli/src/bracketed_paste.rs crates/polaris-ui/crates/cli/src/input.rs crates/polaris-ui/crates/cli/tests/terminal_input.rs crates/polaris-ui/crates/cli/tests/terminal_lifecycle.rs apps/polaris-cli/tests/ui_terminal.rs
+EXIT 1
+STDOUT
+Diff in \\?\C:\mDev\Polaris\apps\polaris-cli\tests\ui_terminal.rs:767:
+                 }
+             }
+         }
+[31m-        let success = saw_shift_enter
+[0m[31m-            && saw_control_enter
+[0m[31m-            && saw_backspace
+[0m[31m-            && saw_delete
+[0m[31m-            && saw_middle_paste;
+[0m[32m+        let success =
+[0m[32m+            saw_shift_enter && saw_control_enter && saw_backspace && saw_delete && saw_middle_paste;
+[0m         output.write_all(b"\x1b[<uNATIVE_SEQUENCE_FIXTURE_")?;
+         output.write_all(if success { b"PASS" } else { b"FAIL" })?;
+         output.flush()?;
+
+STDERR

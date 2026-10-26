@@ -3,6 +3,7 @@
 > **Document:** `@prime/PLAN.md` · **Version:** 1.0 · **Date:** 2026-10-20 · **Branch:** `mvp`
 > **Companions:** `@prime/PHASES.md` (tasks) · `@prime/PHASES_STATUS.md` (evidence-backed status)
 > **CLI UI companions:** [UI_PLAN.md](UI_PLAN.md) (design/contracts), [UI_PHASES.md](UI_PHASES.md) (gates), [UI_MODULES.csv](UI_MODULES.csv) (logical modules); CLI implementation in progress; see UI_PHASES for remaining acceptance gates.
+> **Current CLI checkpoint (2026-10-25):** [mouse delivery and source-only selection repair](evidence/ui/mouse-repair-verification.md), PHASES_STATUS §E38. Earlier E36/E37 checkpoints remain historical; exact scoped results and remaining gates are in the new report. Full UI/M1 acceptance remains open.
 > **Single source of truth for packages:** `@prime/tools/workspace.toml` (regenerate with `python -I @prime/tools/workspace.py gen`)
 > **Binding rules:** `@prime/prompt.md` (engineering) · `AGENTS.md` (truth kernel + completion contract) | IF ALL OF IT EXISTS IN WORKSPACE.
 
@@ -53,7 +54,7 @@ older paragraph below disagrees, this section wins; the load-bearing places (§2
 | S0-7 sync | 10k files: no-op manifest+diff 1.1 s, 61 MiB initial push 10.4 s, sha256-exact, CRLF/exec bit kept, deny-list holds; error paths leaked a sandbox | P2 sync = blake3 manifest + tar-over-exec-stdin; reaper/RAII delete on every exit path; case-fidelity tests still TODO |
 | S0-8 iceoryx2 | RTT p50 2.0 µs; survives peer kill; dead-node cleanup works; **default root `C:\Temp\iceoryx2` inherits `Authenticated Users:(M)`** | ADR-013 condition: per-user `set_root_path` with an owner-only ACL before any use |
 | S0-9 LanceDB | 0.40.0 **does not compile without `features = ["remote"]`** (job.rs gating bug) and needs protoc; 36 min build at -j4, 4.8 GB target, 249 MB exe → kill criterion met; fallback verified: usearch 2.26.5 + SQLite builds in 1 min 41 s, 4.3 MB, kNN p50 0.475 ms | ADR-007/§6.9: **usearch + SQLite is the default vector store**; LanceDB = opt-in `lancedb` feature |
-| S0-10 crossterm | probe built; needs a manual key test per terminal (IN PROGRESS) | newline chord decided after the test |
+| S0-10 crossterm | Safe native Windows reader and 15 ConPTY tests cover modifiers/caret/observable cleanup; direct raw/mouse OS-mode inspection and physical/Linux matrix still open (§E36) | Shift+Enter newline; Ctrl+J/Alt+Enter fallbacks; Ctrl+Enter intentionally unbound |
 | S0-11 mxc | no Windows gateway asset in v0.1.4; MXC "coming soon" | WSL2 tiers only (E1w dropped for now) |
 | S0-12 guest + browser | guest built in WSL2 and baked into an image; `protocol_version` handshake + mismatch refusal work; default sandbox policy: `/opt` neither readable nor executable, `/usr` fine, downloads only from `/sandbox`, Chromium zygote denied → `--no-zygote`; headless Chromium screenshot works; Xvfb fails | images install under `/usr`; P7 browser loop = headless Chromium over CDP |
 | Local LLM (P3) | Ollama 0.40.6 + `nemotron-mini`: SSE streaming OK; **tool calls in 1 of 4 runs** | evaluate a stronger ≤ 4 GB model before P3-X-1 (new risk R22) |
@@ -517,7 +518,7 @@ These companions extend P1-X-2/M1 through P2–P4 and
 individually gated P5–P8 capabilities; desktop and full web planning remain deferred.
 
 TUI design reuses the demo's **behavior/style, not code**: black canvas, minimal North Star
-(9×5 welcome, 5×3 compact, one-cell app-bar star), #141414 prompt surface, restrained green/gold/blue/
+(9×5 welcome, 5×3 compact, one-cell app-bar star), black live editor and #141414 submitted-prompt surface, restrained green/gold/blue/
 pink roles, growing open-sided composer, completion and semantic selection. UI_PLAN §§2/4/5 supersede
 the earlier chip artwork and unconditional keyboard claims. Use safe terminal capability fallbacks;
 no authored unsafe console exception is selected. Ratatui supplies the sole cell diff, with bounded
@@ -3460,6 +3461,8 @@ pub enum ProofFailure { BuildFailed { open_issues: u32 }, TestsFailed(u32), NoTe
 |---|---|---|---|---|
 | `crates/polaris-runtime/crates/research` | L4 | lib | `polaris-runtime` | P7 |
 
+**E39 implementation checkpoint.** E39 implements ProgramMd, CheckpointStore, a lifetime run-owner lease, real VCS receipt payloads and ResearchLoop over path-attenuated tools and SDK execution. Twenty local-process iterations and abrupt-exit/owner recovery pass. Direct trusted store/VCS calls still require owner coordination; live sandbox/model, critique, complete telemetry and broader crash windows remain open.
+
 **Purpose.** Long-running, resumable research and optimisation. The core loop follows Karpathy's autoresearch as verified in the PLAN core (§0–§12): a human-written `program.md` fixes the goal and the metric, the agent edits, runs a fixed-budget experiment, measures, keeps or reverts the change, and repeats. Polaris adds an evidence ledger (every claim cites a source), an adversarial skeptic frame that tries to refute a result before it is marked confirmed, and checkpoints so `/research resume` continues after a crash. The epistemic graph and devil's-advocate parts are Polaris additions, not Karpathy's design.
 
 **API sketch.**
@@ -5854,6 +5857,8 @@ pub use polaris_search_sift as sift;             // L3: multi-source race + S1 s
 |---|---|---|---|---|
 | `crates/polaris-search/crates/providers` | L2 | lib | `polaris-search` | P5 |
 
+**E39 implementation checkpoint.** E39 implements both SDK web adapters, request redaction, pinned-DNS SSRF checks and bounded fetch/charset/DOM conversion. Local protocol contracts pass; live service/container, robots policy, broader DNS/fuzz/load and complete egress integration remain open.
+
 **Purpose.** Implements the sdk `WebSearch` trait for Tavily (API key) and SearXNG (self-hosted in WSL2, JSON API), and a `Fetcher` that downloads pages under rate limits and converts HTML to Markdown. Both providers are first-class (D7). The fetcher is the main attack surface: it fetches attacker-chosen URLs on behalf of a model, so SSRF, size and content-type controls are part of the contract.
 
 **API sketch.**
@@ -5927,6 +5932,8 @@ pub enum SearchError { Http(String), Status(u16), RateLimited { retry_after: Opt
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-search/crates/sift` | L3 | lib | `polaris-search` | P5 |
+
+**E39 implementation checkpoint.** E39 adds KnowledgeSource/WebSearchSource, named semaphore pools, both race modes, bounded S1 work and cancellation/drain. Distilled::persist_dropped and recover_dropped use a hash-verified bounded CAS manifest with preserved order/metadata. The connected local HTTP/provider/Sifter/CAS fixture passes. Production source assembly, model calibration, wider stress/formal and measured recall/savings remain open.
 
 **Purpose.** Queries NVIDIA docs, `$rag` and `$websearch` concurrently under named semaphores, validates hits with S1, aborts losers, and "sifts" retrieved chunks into pristine, provenance-tagged context. The race is a latency hedge, not a quality oracle: the policy can wait for the best of several hits within a deadline. Sources are adapters (`KnowledgeSource`) implemented at the composition root, so this crate has no edge to `nvidia-docs` or `storage-vector`.
 
@@ -6068,7 +6075,7 @@ pub enum McpError { Spawn(String), Handshake(String), VersionMismatch, ToolNotFo
 ```
 `rmcp = 3.5.1` types and method names are "API to confirm at implementation".
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-config`. External (workspace.toml): `rmcp = 3.5.1` (client, macros, transport-child-process, transport-streamable-http-client-reqwest, reqwest-tls-no-provider), `tokio = 1.54.1`, `schemars = 1.2.3`. Proposed additions: `serde = 1.0.229`, `serde_json = 1.0.154`, `url = 2.5.8`, `jsonschema = 0.59.0`, `thiserror = 2.0.21`.
+**Dependencies (E39 implementation).** Internal: `polaris-sdk`, `polaris-config`. `rmcp` is exactly pinned to `3.5.1` with client, macros, transport-async-rw, transport-streamable-http-client-reqwest and reqwest-tls-no-provider. Production stdio uses `InteractiveSandbox`; the host child-process transport is disabled. The bounded HTTP adapter uses the already locked `sse-stream` parser with a per-event byte guard. The authoritative external list and dev-only fixture features live in `workspace.toml` and the package manifest; schema validation, secret references and bounded JSON bodies are implemented, with local protocol evidence in E39.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md section 6.3) for: connect + handshake, namespacing, schema normalization, result bounding, trust gating, prune-summary sanitizer.
@@ -6886,7 +6893,7 @@ pub struct SemanticTextMap { /* source text <-> wrapped rows, same wrap code as 
 pub enum Screen { Welcome, Conversation, Model, Provider, Status, Usage, Stats, Diff, Help, Sessions, ContextMap, ParallelDag, Hud }
 ```
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-ui-model`. External: `ratatui = 0.30.2`, `crossterm = 0.29.0` (feature event-stream), `ratatui-textarea = 0.9.3`, `syntect = 5.3.0` (default-fancy), `two-face = 0.5.2`, `ansi-to-tui = 8.0.1`, `arboard = 3.7.0`, `unicode-width = 0.2.2`, `unicode-segmentation = 1.13.3`. The implemented renderer/runtime use ratatui, crossterm, Unicode geometry and tracing directly; the other listed libraries remain planned and are not claimed as integrated. Current source/tests and open gates are recorded in UI_PHASES and evidence/ui/verification.txt.
+**Dependencies.** Internal: `polaris-sdk`, `polaris-ui-model`. External: `ratatui = 0.30.2`, `crossterm = 0.29.0` (feature event-stream), `ratatui-textarea = 0.9.3`, `syntect = 5.3.0` (default-fancy), `two-face = 0.5.2`, `ansi-to-tui = 8.0.1`, `unicode-width = 0.2.2`, `unicode-segmentation = 1.13.3`. The implemented renderer/runtime use ratatui, crossterm, Unicode geometry and tracing directly; the other listed libraries remain planned and are not claimed as integrated. `arboard` was omitted from the resolved dependency graph after its Windows clipboard dependency was yanked; the app cold-service slice uses owned platform text processes instead. Current source/tests and open gates are recorded in UI_PHASES and evidence/ui/verification.txt.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: theme/colour resolution, header layout + logo renderer, conversation wrapping + semantic text map, input decoding, completion menu, diff/code renderer.
@@ -7074,7 +7081,11 @@ Web design contract extracted from the demo (VERIFIED from `webui/index.html`, `
 
 ### `polaris-cli` — terminal client `polaris`: ratatui TUI (default), headless `polaris run`, `doctor`, `--dump WxH`
 
+**VERIFIED reference repair (2026-10-25):** the current demo welcome composition, live editor rules, adaptive wrapping, footer controls, conversation colors and opaque menu/sheet behavior are restored with source-derived assertions. The pure CLI API now also exports `FooterAction` and `footer_action_at(view, viewport, x, y)` so painting and mouse dispatch share control geometry. Repair evidence and remaining acceptance boundaries are in [UI_PHASES §0.3](UI_PHASES.md#03-reference-design-repair-2026-10-25) and [repair-verification.md](evidence/ui/repair-verification.md). Provider/model execution remains a separate incomplete integration.
+
 **VERIFIED implementation (2026-10-24):** no subcommand selects the real local offline TUI; `--dump WxH` renders without services or a TTY. The optional prompt is unsent prefill. Existing onboarding/status/sandbox/rtk/run/doctor routes are retained. Real signed directives, registry queries, session resume and CAS replay are integrated; provider/model execution and P9 attachment remain unavailable. Focused tests, ConPTY smoke and current limitations are recorded in UI_PHASES and evidence/ui/verification.txt. The full CLI test command still fails the doctor readiness assertion in this environment; no check was weakened.
+
+**VERIFIED interactive continuation (2026-10-25):** app-owned `ui_services.rs` supplies text-only clipboard and bounded workspace-index workers; `cli_settings.rs` delegates explicit one-field saves to `polaris-config` on a bounded worker. Late paste is bound to profile/session/composer revision; untouched launch overrides and demo cannot persist. Shared Unicode textarea geometry, clipped hit maps, hover/selection, physical caret staging and an explicit isolated `--demo` profile are integrated. The demo exercises streaming/cancel/replay and atomic no-default questions including None/notes; it is not a live provider or durable human-request backend. [Current evidence](evidence/ui/continuation-verification.md) records 350 scoped passing tests, 15 final native ConPTY cases, visual exports and selected safety checks. Tests do not access the host clipboard. Full UI4/M1 acceptance stays open for native clipboard, cross-entry selection, settings error/restart flows, physical/Linux matrix, full tool/diff interaction and measured performance; real human/model integration and web/desktop retain their independent gates.
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -7102,7 +7113,7 @@ async fn run_headless(cfg: PolarisConfig, task: String, fmt: OutputFormat) -> Re
 fn dump(opts: &UiOptions, w: u16, h: u16, scenario: Option<&str>) -> Result<String, CliError>;
 pub enum CliError { /* thiserror: Config, Terminal, Kernel, Rpc, UsageError */ }
 ```
-`--scenario` is allowed with `--dump` (and tests) only, and loads event scripts from fixtures; there is no simulated "preview mode" in the product.
+`--scenario` is allowed with `--dump` (and tests) only. The separately authorized `--demo` profile is visibly labelled, presentation-only, and isolated from real sessions, signed events, receipts and model providers. It has separate drafts and memory-only settings; F5 or the model footer opens the Offline/Demo picker.
 
 **Keymap target (shared metadata; implemented/capability-filtered local subset in UI_PHASES).** UI_PLAN §§2.4/3.4/4.1 defines context precedence and capability-filtered hints; human questions override generic popup Esc/Enter behavior.
 
@@ -7110,7 +7121,7 @@ pub enum CliError { /* thiserror: Config, Terminal, Kernel, Rpc, UsageError */ }
 |---|---|
 | Enter / Return in composer | Submit |
 | Shift+Enter | Insert newline (depends on S0-10) |
-| Alt+Enter, Ctrl+Enter, Ctrl+J | Additional newline bindings (Ctrl+Enter depends on terminal; UNVERIFIED) |
+| Alt+Enter, Ctrl+J | Compatibility newline bindings; Ctrl+Enter is intentionally unbound |
 | Up / Down at first / last visual composer row | Older / newer prompt history; Down past newest restores unsent draft |
 | Shift+Tab | Toggle auto / plan mode |
 | Shift+Up / Shift+Down | Raise / lower active model effort (low, medium, high, xhigh, max) immediately |
@@ -7123,20 +7134,20 @@ pub enum CliError { /* thiserror: Config, Terminal, Kernel, Rpc, UsageError */ }
 | Mouse wheel over `/`, `@`, `$` menu | Move one suggestion per notch (clamped); does not scroll conversation |
 | F2 | Open status |
 | Ctrl+O | Expand / collapse all tool bodies (click a title toggles one) |
-| Ctrl+C | Interrupt work, close popup, clear draft; press twice on an empty draft to exit |
+| Ctrl+C | Copy active editor/transcript selection; otherwise interrupt work, close popup, clear draft; press twice on an empty draft to exit |
 | Tab / Shift+Tab in provider form | Next / previous field |
 | Ctrl+S in provider form | Save settings |
 | P / C in /model | Choose / configure provider |
 | Left / Right in /model | Adjust effort |
 | Tab or Left / Right in /stats | Switch Overview / Models |
 | R in /stats | Cycle All time / 7 days / 30 days |
-| Ctrl+V, Shift+Insert | App-owned paste (image first, else text) |
+| Ctrl+V, Shift+Insert | App-owned text paste through the bounded worker; image paste is deferred |
 | E / C in text-attachment preview | Expand into draft / copy |
 | Mouse drag + release | Select and copy (semantic source text) |
 | Double-click, then drag | Select word, extend by whole words |
 | Click tool title / `To latest` | Toggle that tool entry / jump to bottom |
 
-Dropped from the demo: `D` (demo-data toggle), because Polaris shows real data or an empty state. Undo/redo keys in the composer are required by the model (undo state exists) but their chords are not stated in the demo docs; assign at implementation (UNVERIFIED).
+Dropped from the reference: `D` as an implicit data toggle. Normal Polaris shows real records or an empty state; scripted data requires the explicit isolated `--demo` profile. Composer undo/redo are Ctrl+Z/Ctrl+Y. The implementation status and remaining terminal/performance gates are recorded in UI_PHASES.
 
 **TUI layout regions (top to bottom; one shared layout calculation).**
 1. Top margin: 2 blank rows.
@@ -7329,6 +7340,8 @@ pub enum WebError { /* thiserror: Auth, Origin, Kernel, Render */ }
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `apps/polaris-daemon` | L7 | app | none | P9 |
+
+**E39 implementation checkpoint.** E39 implements the polarisd executable and real kernel/RPC lifecycle with explicit credentials and bounded endpoints, TLS files and shutdown. The default P1 profile supports authenticated health/events; mutation and terminal paths explicitly fail closed. Richer profiles use the generic embedding seam. Full remote deployment, revocation, authority provisioning and complete agent operation remain open.
 
 **Purpose.** Hosts one kernel instance and serves it through `polaris-rpc` so that the CLI (`--connect`), the desktop and the web server can share sessions, sandboxes and caches. It is also the "Remote Headless Daemon" from the chatlog: the same binary can run on a Nebius AI Cloud VM (msg 35 "cloud bursting"; msg 37 self-hosting is declared v2) with mTLS and Biscuit tokens. It adds no business logic: it wires config, logging, the composition root, a transport, a shutdown path and a health endpoint.
 
@@ -8325,3 +8338,6 @@ ed25519-dalek (included by biscuit-auth), nix (POSIX-only; process-wrap/rustix c
 | Blast radius | Pre-execution estimate of files/call sites affected by a command or change. |
 | RTK | Diagnostic-stream filter + atomic issue ledger (port of the `harness rtk` reference). |
 | PASS evidence | Command + raw output + conditions pasted into PHASES_STATUS.md. |
+
+
+**CLI reference parity continuation (2026-10-25; E37):** [current evidence](evidence/ui/parity-verification.md) links all 27 original reference binary dumps, actual app fixtures at five sizes, safe input regressions, typed local Demo commands, questions replacing the textarea with atomic Submit review, source-based bottom sheets, rich transcript/selection and bounded retained layout caching. Demo fixture totals and approval decisions stay local and labelled; they do not satisfy P2/P3 authority or execution gates. CPU-only microbenchmarks separate debug/release and cold/warm work. Full paging, physical Alacritty/Linux, clipboard images, real providers/human protocol and release/performance acceptance remain open; web/WEB-OPT/desktop stay deferred.

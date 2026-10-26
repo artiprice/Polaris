@@ -1,7 +1,6 @@
 //! Fallible terminal mode acquisition with explicit, retryable restoration.
 use crossterm::{
     cursor::{Hide, Show},
-    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -25,6 +24,16 @@ impl std::fmt::Display for TerminalError {
 impl std::error::Error for TerminalError {}
 /// Safe, injectable operations used to acquire and restore terminal modes.
 pub trait TerminalOps<W: Write> {
+    /// Captures output console modes before any terminal escape sequences are written.
+    fn capture_output_mode(&mut self, w: &mut W) -> io::Result<()> {
+        let _ = w;
+        Ok(())
+    }
+    /// Restores the exact output console mode captured at acquisition.
+    fn restore_output_mode(&mut self, w: &mut W) -> io::Result<()> {
+        let _ = w;
+        Ok(())
+    }
     /// Enables Crossterm raw input mode.
     fn enable_raw(&mut self, w: &mut W) -> io::Result<()>;
     /// Restores cooked input mode.
@@ -45,15 +54,72 @@ pub trait TerminalOps<W: Write> {
     fn enable_mouse(&mut self, w: &mut W) -> io::Result<()>;
     /// Disables mouse capture.
     fn disable_mouse(&mut self, w: &mut W) -> io::Result<()>;
+    /// Pushes enhanced keyboard reporting when the platform supports ANSI protocol commands.
+    fn push_keyboard(&mut self, w: &mut W) -> io::Result<()> {
+        let _ = w;
+        Ok(())
+    }
+    /// Balances a prior enhanced keyboard push.
+    fn pop_keyboard(&mut self, w: &mut W) -> io::Result<()> {
+        let _ = w;
+        Ok(())
+    }
 }
 /// Crossterm implementation of [`TerminalOps`].
 #[derive(Debug, Default)]
-pub struct CrosstermOps;
+pub struct CrosstermOps {
+    #[cfg(windows)]
+    original_output_mode: Option<(crossterm_winapi::ConsoleMode, u32)>,
+    #[cfg(windows)]
+    original_input_mode: Option<(crossterm_winapi::ConsoleMode, u32)>,
+}
 impl<W: Write> TerminalOps<W> for CrosstermOps {
+    fn capture_output_mode(&mut self, _: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        {
+            use crossterm_winapi::{ConsoleMode, Handle, HandleType};
+            const ENABLE_VIRTUAL_TERMINAL_PROCESSING: u32 = 0x0004;
+            let handle = Handle::new(HandleType::OutputHandle)?;
+            let mode = ConsoleMode::from(handle);
+            let original = mode.mode()?;
+            mode.set_mode(original | ENABLE_VIRTUAL_TERMINAL_PROCESSING)?;
+            self.original_output_mode = Some((mode, original));
+        }
+        Ok(())
+    }
+    fn restore_output_mode(&mut self, _: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        if let Some((mode, original)) = &self.original_output_mode {
+            mode.set_mode(*original)?;
+            self.original_output_mode = None;
+        }
+        Ok(())
+    }
     fn enable_raw(&mut self, _: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        {
+            use crossterm_winapi::{ConsoleMode, Handle, HandleType};
+            let handle = Handle::new(HandleType::InputHandle)?;
+            let mode = ConsoleMode::from(handle);
+            let original = mode.mode()?;
+            self.original_input_mode = Some((mode, original));
+        }
         terminal::enable_raw_mode()
     }
     fn disable_raw(&mut self, _: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        if let Some((mode, original)) = &self.original_input_mode {
+            mode.set_mode(*original)?;
+            let actual = mode.mode()?;
+            if actual != *original {
+                return Err(io::Error::other(format!(
+                    "Windows console input mode restoration mismatch: expected {:#010x}, observed {actual:#010x}",
+                    original
+                )));
+            }
+            self.original_input_mode = None;
+            return Ok(());
+        }
         terminal::disable_raw_mode()
     }
     fn enter_alternate(&mut self, w: &mut W) -> io::Result<()> {
@@ -69,17 +135,88 @@ impl<W: Write> TerminalOps<W> for CrosstermOps {
         execute!(w, Show)
     }
     fn enable_paste(&mut self, w: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        return w.write_all(b"\x1b[?2004h");
+        #[cfg(not(windows))]
         execute!(w, crossterm::event::EnableBracketedPaste)
     }
     fn disable_paste(&mut self, w: &mut W) -> io::Result<()> {
+        #[cfg(windows)]
+        return w.write_all(b"\x1b[?2004l");
+        #[cfg(not(windows))]
         execute!(w, crossterm::event::DisableBracketedPaste)
     }
     fn enable_mouse(&mut self, w: &mut W) -> io::Result<()> {
-        execute!(w, EnableMouseCapture)
+        #[cfg(windows)]
+        {
+            push_mouse_protocol(w)
+        }
+        #[cfg(not(windows))]
+        {
+            execute!(w, crossterm::event::EnableMouseCapture)
+        }
     }
     fn disable_mouse(&mut self, w: &mut W) -> io::Result<()> {
-        execute!(w, DisableMouseCapture)
+        #[cfg(windows)]
+        {
+            pop_mouse_protocol(w)
+        }
+        #[cfg(not(windows))]
+        {
+            execute!(w, crossterm::event::DisableMouseCapture)
+        }
     }
+    fn push_keyboard(&mut self, w: &mut W) -> io::Result<()> {
+        #[cfg(not(windows))]
+        {
+            execute!(
+                w,
+                crossterm::event::PushKeyboardEnhancementFlags(
+                    crossterm::event::KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+                        | crossterm::event::KeyboardEnhancementFlags::REPORT_EVENT_TYPES
+                )
+            )
+        }
+        #[cfg(windows)]
+        {
+            push_keyboard_protocol(w)
+        }
+    }
+    fn pop_keyboard(&mut self, w: &mut W) -> io::Result<()> {
+        #[cfg(not(windows))]
+        {
+            execute!(w, crossterm::event::PopKeyboardEnhancementFlags)
+        }
+        #[cfg(windows)]
+        {
+            pop_keyboard_protocol(w)
+        }
+    }
+}
+
+#[cfg(windows)]
+fn push_mouse_protocol(w: &mut impl Write) -> io::Result<()> {
+    w.write_all(b"\x1b[?1000h\x1b[?1002h\x1b[?1003h\x1b[?1006h")?;
+    w.flush()
+}
+
+#[cfg(windows)]
+fn pop_mouse_protocol(w: &mut impl Write) -> io::Result<()> {
+    w.write_all(b"\x1b[?1006l\x1b[?1003l\x1b[?1002l\x1b[?1000l")?;
+    w.flush()
+}
+
+#[cfg(windows)]
+fn push_keyboard_protocol(w: &mut impl Write) -> io::Result<()> {
+    // Crossterm 0.28 rejects this command on Windows even when Alacritty supports CSI-u.
+    w.write_all(b"\x1b[>1u")?;
+    w.flush()
+}
+
+#[cfg(windows)]
+fn pop_keyboard_protocol(w: &mut impl Write) -> io::Result<()> {
+    w.write_all(b"\x1b[<u")?;
+    w.flush()
 }
 /// Owns the terminal writer and restoration of every possibly changed terminal mode.
 pub struct TerminalGuard<O: TerminalOps<W>, W: Write> {
@@ -90,6 +227,8 @@ pub struct TerminalGuard<O: TerminalOps<W>, W: Write> {
     hidden: bool,
     paste: bool,
     mouse: bool,
+    keyboard: bool,
+    output_mode: bool,
 }
 impl<O, W> TerminalGuard<O, W>
 where
@@ -109,8 +248,12 @@ where
             hidden: false,
             paste: false,
             mouse: false,
+            keyboard: false,
+            output_mode: false,
         };
         let r = (|| -> io::Result<()> {
+            g.output_mode = true;
+            g.ops.capture_output_mode(&mut g.writer)?;
             g.raw = true;
             g.ops.enable_raw(&mut g.writer)?;
             g.alternate = true;
@@ -121,6 +264,8 @@ where
             g.ops.enable_paste(&mut g.writer)?;
             g.mouse = true;
             g.ops.enable_mouse(&mut g.writer)?;
+            g.keyboard = true;
+            g.ops.push_keyboard(&mut g.writer)?;
             g.writer.flush()
         })();
         if let Err(e) = r {
@@ -142,6 +287,11 @@ where
                 }
             };
         }
+        attempt!(
+            keyboard,
+            self.ops.pop_keyboard(&mut self.writer),
+            "pop keyboard enhancement"
+        );
         attempt!(
             mouse,
             self.ops.disable_mouse(&mut self.writer),
@@ -170,6 +320,11 @@ where
         if let Err(x) = self.writer.flush() {
             e.push(format!("flush restore: {x}"));
         }
+        attempt!(
+            output_mode,
+            self.ops.restore_output_mode(&mut self.writer),
+            "restore output console mode"
+        );
         e
     }
     /// Attempts every remaining restoration step; failed steps remain retryable.
@@ -224,6 +379,8 @@ where
             .field("hidden", &self.hidden)
             .field("paste", &self.paste)
             .field("mouse", &self.mouse)
+            .field("keyboard", &self.keyboard)
+            .field("output_mode", &self.output_mode)
             .finish_non_exhaustive()
     }
 }

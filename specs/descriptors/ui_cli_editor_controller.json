@@ -1,0 +1,28 @@
+{
+  "name": "ui_cli_editor_controller",
+  "owner": "polaris-cli",
+  "invariants": [
+    "Enter submits; Shift+Enter inserts newline; Ctrl+J and Alt+Enter are compatibility fallbacks",
+    "Ctrl+Enter is not a newline shortcut",
+    "Shift+Up/Down changes effort without moving the draft caret",
+    "Word navigation, selection replacement and deletion preserve Unicode/chip boundaries",
+    "Vertical movement retains the desired visual column across short rows"
+  ],
+  "tests": [
+    "controller_tests::continuation"
+  ],
+  "type_of": "module",
+  "file_path": "apps/polaris-cli/src/tui.rs",
+  "logic_name": "ui_cli_editor_controller",
+  "output_type": "Result",
+  "dependencies": [],
+  "libraries": [
+    "std"
+  ],
+  "test_list": [
+    {
+      "test_name": "controller_tests::continuation",
+      "description": "Regression for controller_tests::continuation"
+    }
+  ]
+}

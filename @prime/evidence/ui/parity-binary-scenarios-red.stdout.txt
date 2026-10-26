@@ -1,0 +1,19 @@
+
+running 1 test
+test every_demo_scenario_is_reachable_from_the_real_binary ... FAILED
+
+failures:
+
+---- every_demo_scenario_is_reachable_from_the_real_binary stdout ----
+
+thread 'every_demo_scenario_is_reachable_from_the_real_binary' (16408) panicked at apps\polaris-cli\tests\ui_startup.rs:146:2:
+working: polaris: unknown --scenario; use welcome, conversation, error, completion, panel or help
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    every_demo_scenario_is_reachable_from_the_real_binary
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 1.11s
+

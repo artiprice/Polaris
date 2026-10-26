@@ -8,7 +8,7 @@
 //! | Kind | app |
 //! | Phase | P1 |
 //! | Parent facade | — |
-//! | Status | headless local controls implemented; rendering deferred by user |
+//! | Status | interactive CLI, isolated demo, local controls and deterministic dumps implemented; UI release gates remain open |
 //!
 //! ## Responsibilities
 //!
@@ -34,12 +34,18 @@
 //! `tokio`, `clap`, `crossterm`, `ratatui`, `miette`, `mimalloc`, `rustls`
 
 mod app;
+/// CLI preferences editor using the configuration owner's atomic persistence boundary.
+pub mod cli_settings;
+pub mod demo;
+mod demo_gallery;
 mod doctor;
 pub mod key_trace;
 mod rtk;
 mod sandbox;
 pub mod session;
 pub mod tui;
+/// Bounded clipboard and workspace-index workers owned by the CLI controller.
+pub mod ui_services;
 pub use app::{Action, Args, CliError, install_crypto_provider, run};
 pub use rtk::{RtkArgs, RtkCliError, RtkModeArg};
 pub use sandbox::{SandboxAction, SandboxArgs};

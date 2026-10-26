@@ -1,0 +1,33 @@
+{
+  "name": "mouse-repair-final-safety",
+  "command": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "--no-deps",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli",
+    "-p",
+    "polaris-cli",
+    "--all-targets",
+    "--",
+    "-D",
+    "clippy::unwrap_used",
+    "-D",
+    "clippy::expect_used",
+    "-D",
+    "clippy::panic",
+    "-D",
+    "clippy::as_conversions",
+    "-D",
+    "clippy::indexing_slicing"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:25:20.049Z",
+  "pid": 17080,
+  "code": 0,
+  "finished": "2026-10-25T12:26:24.485Z"
+}

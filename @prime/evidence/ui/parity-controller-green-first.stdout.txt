@@ -1,0 +1,9 @@
+
+running 4 tests
+test tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions ... ok
+test tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt ... ok
+test tui::controller_tests::parity::plain_delete_keys_edit_draft_and_selected_range ... ok
+test tui::controller_tests::parity::demo_commands_open_views_without_starting_response ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 0.00s
+

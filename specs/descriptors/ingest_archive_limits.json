@@ -1,0 +1,20 @@
+{
+  "type_of": "function",
+  "name": "validate_archive",
+  "file_path": "crates/polaris-ingest/src/archive.rs",
+  "logic_name": "OOXML Archive Safety Limits",
+  "test_list": [
+    { "test_name": "normal_archive_passes_and_hostile_archives_are_rejected", "description": "Generated ZIP inputs exercise valid archives, entry count, total expansion, duplicate normalized names, traversal, ratio, and malformed input." },
+    { "test_name": "normal_archive_passes_and_hostile_archives_are_rejected", "description": "Generated duplicate-normalized names, traversal names, expansion, count, and malformed archives are rejected." },
+    { "test_name": "non_integer_compression_ratio_is_rejected_exactly", "description": "An archive member whose expansion ratio is greater than one but less than two is rejected at a ratio cap of one." },
+    { "test_name": "malformed_zip_is_typed_error", "description": "Invalid ZIP bytes return a parser error without panicking." }
+  ],
+  "dependencies": ["polaris_sdk::registry::IngestError"],
+  "libraries": ["zip"],
+  "inputs": [
+    { "name": "bytes", "type": "&[u8]", "description": "Untrusted OOXML container bytes." },
+    { "name": "limits", "type": "IngestLimits", "description": "Entry count, total expansion, per-entry expansion, and ratio bounds." }
+  ],
+  "output_type": "Result<(), IngestError>",
+  "output_description": "Archive accepted for downstream parser or rejected before extraction."
+}

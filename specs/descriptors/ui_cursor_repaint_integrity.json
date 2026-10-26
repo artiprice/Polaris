@@ -1,0 +1,24 @@
+{
+  "type_of": "module",
+  "name": "cursor_repaint_integrity",
+  "file_path": "crates/polaris-ui/crates/cli/src/presenter.rs",
+  "logic_name": "cursor_repaint_integrity",
+  "test_list": [],
+  "dependencies": [
+    "BufferedPresenter",
+    "ratatui::Terminal"
+  ],
+  "libraries": [
+    "ratatui",
+    "crossterm"
+  ],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "Ratatui frame + caret",
+      "description": "Changed footer cells with stable editor cursor."
+    }
+  ],
+  "output_type": "Result",
+  "output_description": "Final physical cursor restored after every painting frame, without out-of-band writes."
+}

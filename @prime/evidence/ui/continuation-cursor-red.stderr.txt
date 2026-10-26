@@ -1,0 +1,29 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+error[E0506]: cannot assign to `position` because it is borrowed
+   --> crates\polaris-ui\crates\model\src\composer.rs:651:17
+    |
+638 |             for at in boundaries.into_iter().rev().filter(|at| *at < position) {
+    |                       --------------------------------------------------------
+    |                       |                                   |          |
+    |                       |                                   |          borrow occurs due to use in closure
+    |                       |                                   `position` is borrowed here
+    |                       borrow later used here
+...
+651 |                 position = at;
+    |                 ^^^^^^^^^^^^^ `position` is assigned to here but it was already borrowed
+
+error[E0506]: cannot assign to `position` because it is borrowed
+   --> crates\polaris-ui\crates\model\src\composer.rs:667:17
+    |
+654 |             for at in boundaries.into_iter().filter(|at| *at > position) {
+    |                       --------------------------------------------------
+    |                       |                             |          |
+    |                       |                             |          borrow occurs due to use in closure
+    |                       |                             `position` is borrowed here
+    |                       borrow later used here
+...
+667 |                 position = at;
+    |                 ^^^^^^^^^^^^^ `position` is assigned to here but it was already borrowed
+
+For more information about this error, try `rustc --explain E0506`.
+error: could not compile `polaris-ui-model` (lib) due to 2 previous errors

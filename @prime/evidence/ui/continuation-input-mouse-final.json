@@ -1,0 +1,4 @@
+{
+  "command": "cargo test --offline -p polaris-ui-cli --lib windows_input::tests -- --nocapture",
+  "exit_code": 0
+}

@@ -17,6 +17,17 @@ pub struct DisplayLine {
     pub text: String,
     /// Approximate source byte range; removed bidi controls may create gaps.
     pub source_bytes: Range<usize>,
+    /// Per-grapheme source ranges and terminal-cell intervals for mouse selection.
+    pub cells: Vec<DisplayCell>,
+}
+
+/// Cell interval for one visible source grapheme.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DisplayCell {
+    /// Relative terminal cells occupied by this grapheme.
+    pub cells: Range<usize>,
+    /// Source byte interval that produced the grapheme.
+    pub source_bytes: Range<usize>,
 }
 
 /// Convert a source string to bounded, inert text lines and wrap on terminal cells.
@@ -56,6 +67,7 @@ pub(crate) fn wrap_display_text_window(
         let mut line_start = source_offset;
         let mut line_end = source_offset;
         let mut used_cells = 0_usize;
+        let mut cells = Vec::new();
         for (relative, grapheme) in raw_line.grapheme_indices(true) {
             let grapheme_end = relative.saturating_add(grapheme.len());
             let source_start = source_offset.saturating_add(relative);
@@ -69,10 +81,12 @@ pub(crate) fn wrap_display_text_window(
             let max_cells = usize::from(width);
             if !text.is_empty() && used_cells.saturating_add(glyph_width) > max_cells {
                 let wrapped_text = core::mem::take(&mut text);
+                let row_cells = core::mem::take(&mut cells);
                 if display_row >= skip_rows {
                     result.push(DisplayLine {
                         text: wrapped_text,
                         source_bytes: line_start..line_end,
+                        cells: row_cells,
                     });
                     if result.len() >= max_rows {
                         break 'source;
@@ -82,6 +96,7 @@ pub(crate) fn wrap_display_text_window(
                 line_start = source_start;
                 used_cells = 0;
             }
+            let cell_start = used_cells;
             if glyph_width > max_cells {
                 if text.is_empty() {
                     text.push('�');
@@ -92,11 +107,18 @@ pub(crate) fn wrap_display_text_window(
                 used_cells = used_cells.saturating_add(glyph_width);
             }
             line_end = source_end;
+            if used_cells > cell_start {
+                cells.push(DisplayCell {
+                    cells: cell_start..used_cells,
+                    source_bytes: source_start..source_end,
+                });
+            }
         }
         if display_row >= skip_rows {
             result.push(DisplayLine {
                 text,
                 source_bytes: line_start..line_end.max(line_start),
+                cells,
             });
             if result.len() >= max_rows {
                 break;

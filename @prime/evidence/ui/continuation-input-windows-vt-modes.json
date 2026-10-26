@@ -1,0 +1,4 @@
+{
+  "command": "cargo test --offline -p polaris-ui-cli --test terminal_lifecycle windows_vt_mouse_and_keyboard_protocols_are_balanced -- --exact --nocapture",
+  "exit_code": 0
+}

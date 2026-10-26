@@ -1,0 +1,88 @@
+command: cargo test -p polaris-ui-model --test mouse_selection_model --test composer_buffer --test continuation_editor --test questionnaire_editor --test questionnaire_state\nexit code: 0\n--- stdout ---\n
+running 26 tests
+test apply_completion_replaces_range ... ok
+test backspace_deletes_whole_grapheme ... ok
+test cloned_undo_snapshot_shares_paste_payload_storage ... ok
+test control_characters_are_stripped ... ok
+test empty_submit_rejected_and_state_kept ... ok
+test image_chip_label_and_numbering ... ok
+test expand_chip_inserts_payload_literally ... ok
+test crlf_normalized_to_lf ... ok
+test image_over_64mib_rejected ... ok
+test cursor_moves_by_grapheme ... ok
+test session_attachment_cap_enforced ... ok
+test prepare_cancel_and_rejection_preserve_complete_draft ... ok
+test short_insert_stays_literal ... ok
+test long_paste_becomes_chip ... ok
+test stale_prepared_submission_cannot_clear_cursor_change ... ok
+test stale_prepared_submission_cannot_clear_new_edits ... ok
+test submit_expands_chips ... ok
+test submit_keeps_interior_blank_paragraphs ... ok
+test submit_trims_trailing_blank_rows ... ok
+test undo_redo_restores_text_cursor_and_chips ... ok
+test undo_and_history_respect_retention_bounds ... ok
+test chip_payload_counts_toward_text_cap ... ok
+test backspace_after_chip_removes_chip_and_frees_budget ... ok
+test text_over_1mib_rejected ... ok
+test prop_submit_preserves_chip_payloads ... ok
+test prop_cursor_always_on_char_boundary ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+
+running 8 tests
+test line_and_document_home_end_are_distinct ... ok
+test revision_tracks_cursor_edits_and_undo ... ok
+test word_navigation_and_deletion_respect_graphemes_and_chips ... ok
+test double_click_selection_tracks_unicode_words_whitespace_and_atomic_chips ... ok
+test selection_replaces_text_and_undo_restores_selection ... ok
+test shift_navigation_and_select_all_keep_legal_boundaries ... ok
+test history_restores_saved_draft_selection ... ok
+test selected_chip_copy_replace_and_byte_budget_are_consistent ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+
+running 5 tests
+test source_grapheme_range_covers_combining_zwj_and_clamped_offsets ... ok
+test source_line_range_includes_present_lf_and_crlf_and_handles_eof ... ok
+test questionnaire_set_selection_edits_notes_and_undo_restores_selected_range ... ok
+test full_selection_deletes_unicode_and_chip_atomically_and_undo_restores_it ... ok
+test source_word_range_groups_unicode_words_and_actual_whitespace_runs ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test notes_backspace_removes_one_grapheme_not_one_scalar ... ok
+test notes_support_middle_edit_selection_and_undo ... ok
+test undo_cannot_restore_over_aggregate_budget ... ok
+test replacing_full_notes_uses_resulting_size ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 13 tests
+test multi_choice_toggles_named_options ... ok
+test navigation_preserves_per_question_answers_and_notes ... ok
+test none_of_the_above_is_explicit_and_exclusive ... ok
+test invalid_choice_kind_cannot_be_toggled ... ok
+test questionnaire_plan_caps_reject_excess_questions_and_options ... ok
+test single_choice_and_none_are_mutually_exclusive ... ok
+test required_answers_block_atomic_submit_and_optional_is_unanswered ... ok
+test required_free_text_needs_nonblank_answer_and_notes_are_optional ... ok
+test questions_start_with_no_selection ... ok
+test oversized_field_rejects_without_truncating ... ok
+test oversized_selected_option_ids_block_batch_without_losing_selections ... ok
+test request_payload_cap_counts_aggregate_metadata ... ok
+test answer_budget_rejects_without_truncating_notes_or_answer ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+\n--- stderr ---\n   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Finished `test` profile [unoptimized] target(s) in 1.66s
+     Running tests\composer_buffer.rs (target\debug\deps\composer_buffer-6febe3c6eeef3350.exe)
+     Running tests\continuation_editor.rs (target\debug\deps\continuation_editor-3a8c179150998ced.exe)
+     Running tests\mouse_selection_model.rs (target\debug\deps\mouse_selection_model-5758d8e25115d160.exe)
+     Running tests\questionnaire_editor.rs (target\debug\deps\questionnaire_editor-243ec5a73e3497c7.exe)
+     Running tests\questionnaire_state.rs (target\debug\deps\questionnaire_state-414d01b7929d67a3.exe)

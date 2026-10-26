@@ -36,9 +36,11 @@ pub use error::ConfigError;
 pub use layer::{Layer, LayerInput};
 pub use merge::{Loaded, Provenance, load};
 pub use schema::{
-    BudgetConfig, ConcurrencyConfig, DEFAULTS_TOML, EffortModels, KNOWN_KEYS, LogConfig, LogLevel,
-    NebiusConfig, PolarisConfig, RateLimitConfig, SandboxConfig, SandboxTier, SearchConfig,
-    StorageConfig, StorageLevel, Theme, UiConfig,
+    BudgetConfig, CliColorDepth, CliColorPolicy, CliPanelDefault, CliPreferences, CliTheme,
+    ConcurrencyConfig, DEFAULTS_TOML, EffortModels, KNOWN_KEYS, LogConfig, LogLevel, NebiusConfig,
+    PolarisConfig, PreferenceField, PreferenceValue, RateLimitConfig, SandboxConfig, SandboxTier,
+    SearchConfig, StorageConfig, StorageLevel, Theme, UiConfig, read_global_cli_preferences,
+    save_global_cli_preference,
 };
 pub use secret_ref::SecretRef;
 pub use sources::{

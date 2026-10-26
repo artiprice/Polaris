@@ -1,6 +1,10 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+#[cfg(not(windows))]
+use polaris_ui_cli::input::TerminalInput;
 use polaris_ui_cli::input::{self, NormalizedInput};
 use std::error::Error;
+#[cfg(not(windows))]
+use std::time::Duration;
 type TestResult = Result<(), Box<dyn Error>>;
 
 #[test]
@@ -40,5 +44,19 @@ fn only_pressed_escape_and_control_c_are_cancel_priority() -> TestResult {
     let mut release = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
     release.kind = KeyEventKind::Release;
     assert!(!NormalizedInput::Key(release).is_cancel_priority());
+    Ok(())
+}
+
+#[cfg(not(windows))]
+#[test]
+fn stopped_poll_returns_without_waiting_and_does_not_claim_shift_enter() -> TestResult {
+    let mut input = input::CrosstermTerminalInput::default();
+    input.close()?;
+    assert!(input.stop_token().is_stopped());
+    assert_eq!(input.poll(Duration::from_secs(30))?, None);
+    assert_eq!(
+        input.shift_enter_capability(),
+        input::ShiftEnterCapability::Unknown
+    );
     Ok(())
 }

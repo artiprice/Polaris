@@ -1,0 +1,37 @@
+cargo test --offline -p polaris-ui-cli --lib
+EXIT 0
+
+running 25 tests
+test bracketed_paste::tests::bracketed_payload_is_one_literal_paste_including_escape_sequences ... ok
+test bracketed_paste::tests::bracketed_payload_preserves_leading_dollar_sigils ... ok
+test bracketed_paste::tests::arrow_and_function_key_escape_sequences_are_decoded ... ok
+test bracketed_paste::tests::csi_u_control_j_remains_distinct_from_control_enter ... ok
+test bracketed_paste::tests::csi_u_scalar_modifiers_phases_and_focus_are_preserved ... ok
+test bracketed_paste::tests::csi_u_enter_and_modified_arrows_preserve_modifiers ... ok
+test bracketed_paste::tests::csi_u_control_enter_and_sgr_hover_are_events_not_text ... ok
+test input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter ... ok
+test bracketed_paste::tests::sgr_motion_with_pressed_buttons_is_drag ... ok
+test bracketed_paste::tests::unknown_complete_csi_is_discarded_and_paste_keeps_escape_bytes ... ok
+test bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste ... ok
+test input_decoder::tests::adjacent_surrogates_form_one_scalar ... ok
+test input_decoder::tests::c0_control_c_is_inferred_when_native_flags_are_absent ... ok
+test input_decoder::tests::c0_control_enter_is_not_shift_enter ... ok
+test input_decoder::tests::c0_shift_enter_keeps_shift_and_enter ... ok
+test input_decoder::tests::control_j_keeps_its_character_identity ... ok
+test input_decoder::tests::delayed_unicode_on_alt_release_becomes_one_character_press ... ok
+test input_decoder::tests::native_backspace_and_delete_virtual_keys_remain_distinct ... ok
+test input_decoder::tests::native_del_character_is_backspace ... ok
+test input_decoder::tests::native_repeat_and_release_phases_are_retained ... ok
+test input_decoder::tests::shifted_dollar_key_preserves_its_unicode_character ... ok
+test input_decoder::tests::virtual_key_zero_control_character_is_preserved ... ok
+test windows_input::tests::native_mouse_motion_with_pressed_button_is_drag ... ok
+test bracketed_paste::tests::oversized_native_paste_is_rejected_and_decoder_recovers ... ok
+test bracketed_paste::tests::oversized_paste_discards_tail_until_end_marker_then_recovers ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.77s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)

@@ -1,0 +1,167 @@
+{
+  "records": [
+    {
+      "scenario": "welcome",
+      "exit": 0,
+      "bytes": 1418,
+      "stderr": ""
+    },
+    {
+      "scenario": "conversation",
+      "exit": 0,
+      "bytes": 1683,
+      "stderr": ""
+    },
+    {
+      "scenario": "working",
+      "exit": 0,
+      "bytes": 1110,
+      "stderr": ""
+    },
+    {
+      "scenario": "agents-working",
+      "exit": 0,
+      "bytes": 2104,
+      "stderr": ""
+    },
+    {
+      "scenario": "agents-mixed",
+      "exit": 0,
+      "bytes": 2563,
+      "stderr": ""
+    },
+    {
+      "scenario": "agents-completed",
+      "exit": 0,
+      "bytes": 1724,
+      "stderr": ""
+    },
+    {
+      "scenario": "agents-many",
+      "exit": 0,
+      "bytes": 2653,
+      "stderr": ""
+    },
+    {
+      "scenario": "messages",
+      "exit": 0,
+      "bytes": 1308,
+      "stderr": ""
+    },
+    {
+      "scenario": "approval",
+      "exit": 0,
+      "bytes": 1289,
+      "stderr": ""
+    },
+    {
+      "scenario": "diff",
+      "exit": 0,
+      "bytes": 3662,
+      "stderr": ""
+    },
+    {
+      "scenario": "error",
+      "exit": 0,
+      "bytes": 1216,
+      "stderr": ""
+    },
+    {
+      "scenario": "onboarding",
+      "exit": 0,
+      "bytes": 3200,
+      "stderr": ""
+    },
+    {
+      "scenario": "models",
+      "exit": 0,
+      "bytes": 2859,
+      "stderr": ""
+    },
+    {
+      "scenario": "providers",
+      "exit": 0,
+      "bytes": 3198,
+      "stderr": ""
+    },
+    {
+      "scenario": "settings",
+      "exit": 0,
+      "bytes": 4567,
+      "stderr": ""
+    },
+    {
+      "scenario": "sessions",
+      "exit": 0,
+      "bytes": 3207,
+      "stderr": ""
+    },
+    {
+      "scenario": "status",
+      "exit": 0,
+      "bytes": 3135,
+      "stderr": ""
+    },
+    {
+      "scenario": "usage",
+      "exit": 0,
+      "bytes": 4392,
+      "stderr": ""
+    },
+    {
+      "scenario": "usage-demo",
+      "exit": 0,
+      "bytes": 4716,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats",
+      "exit": 0,
+      "bytes": 1197,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats-stacked",
+      "exit": 0,
+      "bytes": 3127,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats-lines",
+      "exit": 0,
+      "bytes": 2914,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats-trends",
+      "exit": 0,
+      "bytes": 3242,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats-details",
+      "exit": 0,
+      "bytes": 3203,
+      "stderr": ""
+    },
+    {
+      "scenario": "stats-demo",
+      "exit": 0,
+      "bytes": 1686,
+      "stderr": ""
+    },
+    {
+      "scenario": "transcript",
+      "exit": 0,
+      "bytes": 3945,
+      "stderr": ""
+    },
+    {
+      "scenario": "help",
+      "exit": 0,
+      "bytes": 3537,
+      "stderr": ""
+    }
+  ],
+  "config_created": false
+}

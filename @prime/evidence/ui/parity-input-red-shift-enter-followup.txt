@@ -1,0 +1,215 @@
+test --offline -p polaris-cli --test ui_terminal offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste -- --exact --nocapture
+EXIT 101
+
+running 1 test
+test offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste ... FAILED
+
+failures:
+
+failures:
+    offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 1.31s
+
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+warning: constant `GOLD` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:31:7
+   |
+31 | const GOLD: Color = Color::Rgb(249, 226, 175);
+   |       ^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `DIRECTIVE` is never used
+  --> crates\polaris-ui\crates\cli\src\screen.rs:33:7
+   |
+33 | const DIRECTIVE: Color = Color::Rgb(137, 180, 250);
+   |       ^^^^^^^^^
+
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: `polaris-ui-cli` (lib) generated 2 warnings
+warning: unreachable pattern
+  --> apps\polaris-cli\src\demo_gallery.rs:47:3717
+   |
+47 | ... , GalleryPage::Preview|GalleryPage::Sessions|GalleryPage::Providers|GalleryPage::ProviderPicker|GalleryPage::Settings|GalleryPage::Agents=>match key.code{KeyCode::Up=>{self.selected=self.selected.saturating_sub(1);self.changed()},KeyCode::Down=>{self.selected=self.selected.saturating_add(1).min(self.line_count().saturating_sub(1));self.changed()},KeyCode::Enter=>return self.activate_selected(),KeyCode::Char(c) if self.page==GalleryPage::Sessions=>{self.query.push(c);self.changed()},KeyCode::Backspace if self.page==GalleryPage::Sessions=>{self.query.pop();self.changed()},_=>{}}, GalleryPage::Stats=>match key.code{KeyCode::Tab=>{self.stats_tab=(self.stats_tab+1)%3;self.changed()},KeyCode::Char('r')=>{self.stats_range=(self.stats_range+1)%3;self.changed()},KeyCode::Char('c')=>{self.stats_chart=(self.stats_chart+1)%3;self.changed()},KeyCode::Char('o') if key.modifiers.contains(KeyModifiers::CONTROL)=>{self.stats_details=!self.stats_details;self.changed()},KeyCode::Right=>{self.stats_bucket=Some(self.stats_bucket.map_or(0,|v|v.saturating_add(1).min(6)));self.changed()},KeyCode::Left=>{self.stats_bucket=Some(self.stats_bucket.map_or(0,|v|v.saturating_sub(1)));self.changed()},_=>{}},GalleryPage::Usage=>match key.code{KeyCode::Char('d')=>{self.usage_demo=!self.usage_demo;self.changed()},KeyCode::Char('o') if key.modifiers.contains(KeyModifiers::CONTROL)=>{self.usage_details=!self.usage_details;self.changed()},_=>{}},GalleryPage::Onboarding=>match key.code{KeyCode::Enter|KeyCode::Right=>{self.onboarding_step=self.onboarding_step.saturating_add(1).min(3);self.changed()},KeyCode::Left=>{self.onboarding_step=self.onboarding_step.saturating_sub(1);self.changed()},_=>{}},GalleryPage::Transcript=>match key.code{KeyCode::Enter|KeyCode::Char(' ')=>{self.transcript_expanded=!self.transcript_expanded;self.changed()},_=>{}},GalleryPage::Questions=>match key.code{KeyCode::Tab|KeyCode::Down=>{self.question_index=(self.question_index+1)%3;self.changed()},KeyCode::Enter=>{self.question_index=(self.question_index+1)%3;self.changed()},_=>{}},GalleryPage::ProviderEdit=>match key.code{KeyCode::Tab|KeyCode::Down=>{self.provider_field=(self.provider_field+1)%5;self.changed()},KeyCode::Up=>{self.provider_field=self.provider_field.saturating_sub(1);self.changed()},KeyCode::Enter=>{if self.provider_field==4{return GalleryEffect::ProviderSaved(self.provider_draft.clone())}self.provider_field=(self.provider_field+1).min(4);self.changed()},KeyCode::Char(c) if !key.modifiers.intersects(KeyModifiers::CONTROL|KeyModifiers::ALT)=>{let field=match self.provider_field{0=>Some(&mut self.provider_draft.label),1=>Some(&mut self.provider_draft.endpoint),2=>Some(&mut self.provider_draft.credential_source),_=>Some(&mut self.provider_draft.model_id)};if let Some(text)=field{text.push(c);}self.changed()},KeyCode::Backspace=>{let field=match self.provider_field{0=>Some(&mut self.provider_draft.label),1=>Some(&mut self.provider_draft.endpoint),2=>Some(&mut self.provider_draft.credential_source),_=>Some(&mut self.provider_draft.model_id)};if let Some(text)=field{text.pop();}self.changed()},_=>{}},GalleryPage::Settings=>m...
+   |       --------------------------------------------------------------------------------------------------------------------------------------- matches all the relevant values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^^^^^^^^^^^^^^^^^^^^^ no value can reach this
+   |
+   = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unreachable pattern
+  --> apps\polaris-cli\src\demo_gallery.rs:47:4261
+   |
+47 | ...ed=!self.transcript_expanded;self.changed()},_=>{}},_=>{}} GalleryEffect::Consumed }
+   |                                                        ^ no value can reach this
+   |
+note: multiple earlier patterns match some of the same values
+  --> apps\polaris-cli\src\demo_gallery.rs:47:4261
+   |
+47 | ... { GalleryPage::Model=>match key.code{KeyCode::Up=>{self.model=self.model.saturating_sub(1);self.changed()},KeyCode::Down=>{self.model=self.model.saturating_add(1).min(MODELS.len().saturating_sub(1));self.changed()},KeyCode::Left=>{self.effort=self.effort.saturating_sub(1);self.changed()},KeyCode::Right=>{self.effort=self.effort.saturating_add(1).min(Effort::ALL.len().saturating_sub(1));self.changed()},KeyCode::Enter=>return self.activate_selected(),_=>{}} , GalleryPage::Preview|GalleryPage::Sessions|GalleryPage::Providers|GalleryPage::ProviderPicker|GalleryPage::Settings|GalleryPage::Agents=>match key.code{KeyCode::Up=>{self.selected=self.selected.saturating_sub(1);self.changed()},KeyCode::Down=>{self.selected=self.selected.saturating_add(1).min(self.line_count().saturating_sub(1));self.changed()},KeyCode::Enter=>return self.activate_selected(),KeyCode::Char(c) if self.page==GalleryPage::Sessions=>{self.query.push(c);self.changed()},KeyCode::Backspace if self.page==GalleryPage::Sessions=>{self.query.pop();self.changed()},_=>{}}, GalleryPage::Stats=>match key.code{KeyCode::Tab=>{self.stats_tab=(self.stats_tab+1)%3;self.changed()},KeyCode::Char('r')=>{self.stats_range=(self.stats_range+1)%3;self.changed()},KeyCode::Char('c')=>{self.stats_chart=(self.stats_chart+1)%3;self.changed()},KeyCode::Char('o') if key.modifiers.contains(KeyModifiers::CONTROL)=>{self.stats_details=!self.stats_details;self.changed()},KeyCode::Right=>{self.stats_bucket=Some(self.stats_bucket.map_or(0,|v|v.saturating_add(1).min(6)));self.changed()},KeyCode::Left=>{self.stats_bucket=Some(self.stats_bucket.map_or(0,|v|v.saturating_sub(1)));self.changed()},_=>{}},GalleryPage::Usage=>match key.code{KeyCode::Char('d')=>{self.usage_demo=!self.usage_demo;self.changed()},KeyCode::Char('o') if key.modifiers.contains(KeyModifiers::CONTROL)=>{self.usage_details=!self.usage_details;self.changed()},_=>{}},GalleryPage::Onboarding=>match key.code{KeyCode::Enter|KeyCode::Right=>{self.onboarding_step=self.onboarding_step.saturating_add(1).min(3);self.changed()},KeyCode::Left=>{self.onboarding_step=self.onboarding_step.saturating_sub(1);self.changed()},_=>{}},GalleryPage::Transcript=>match key.code{KeyCode::Enter|KeyCode::Char(' ')=>{self.transcript_expanded=!self.transcript_expanded;self.changed()},_=>{}},GalleryPage::Questions=>match key.code{KeyCode::Tab|KeyCode::Down=>{self.question_index=(self.question_index+1)%3;self.changed()},KeyCode::Enter=>{self.question_index=(self.question_index+1)%3;self.changed()},_=>{}},GalleryPage::ProviderEdit=>match key.code{KeyCode::Tab|KeyCode::Down=>{self.provider_field=(self.provider_field+1)%5;self.changed()},KeyCode::Up=>{self.provider_field=self.provider_field.saturating_sub(1);self.changed()},KeyCode::Enter=>{if self.provider_field==4{return GalleryEffect::ProviderSaved(self.provider_draft.clone())}self.provider_field=(self.provider_field+1).min(4);self.changed()},KeyCode::Char(c) if !key.modifiers.intersects(KeyModifiers::CONTROL|KeyModifiers::ALT)=>{let field=match self.provider_field{0=>Some(&mut self.provider_draft.label),1=>Some(&mut self.provider_draft.endpoint),2=>Some(&mut self.provider_draft.credential_source),_=>Some(&mut self.provider_draft.model_id)};if let Some(text)=field{text.push(c);}self.changed()},KeyCode::Backspace=>{let field=match self.provider_field{0=>Some(&mut self.provider_draft.label),1=>Some(&mut self.provider_draft.endpoint),2=>Some(&mut self.provider_draft.credential_source),_=>Some(&mut self.provider_draft.model_id)};if let Some(text)=field{text.pop();}self.changed()},_=>{}},GalleryPage::Settings=>match key.code{KeyCode::Up=>{self.selected=self.selected.saturating_sub(1);self.changed()},KeyCode::Down|KeyCode::Tab=>{self.selected=self.selected.saturating_add(1).min(3);self.changed()},KeyCode::Enter=>return self.activate_selected(),_=>{}},GalleryPage::Welcome=>match key.code{KeyCode::Enter|KeyCode::Char('p')=>{self.open(GalleryPage::Preview);},_=>{}},GalleryPage::Help|GalleryPage::Status|GalleryPage::Diff=>match key.code{KeyCode::Enter=>{self.transcript_expanded=!self.transcript_expanded;self.changed()},_=>{}},_=>{...
+   |       ------------------ matches some of the same values                                                                                                                                                                                                                                                                                                                                                                                                                          --------------------------------------------------------------------------------------------------------------------------------------- matches some of the same values                                                                                                                                                                                                                                                                                                                                                                                                                                ------------------ matches some of the same values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ------------------ matches some of the same values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ^ ...and 6 other patterns collectively make this unreachable
+
+warning: enum `GalleryPage` is never used
+ --> apps\polaris-cli\src\demo_gallery.rs:9:10
+  |
+9 | pub enum GalleryPage { Welcome, Preview, Model, Providers, ProviderEdit, ProviderPicker, Sessions, Status, Usage, Stats, Diff, Transc...
+  |          ^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `ModelSelection` is never constructed
+  --> apps\polaris-cli\src\demo_gallery.rs:11:12
+   |
+11 | pub struct ModelSelection { pub id: &'static str, pub name: &'static str, pub provider: &'static str, pub effort: Effort }
+   |            ^^^^^^^^^^^^^^
+
+warning: struct `ProviderDraft` is never constructed
+  --> apps\polaris-cli\src\demo_gallery.rs:13:12
+   |
+13 | pub struct ProviderDraft { pub label: String, pub endpoint: String, pub credential_source: String, pub model_id: String }
+   |            ^^^^^^^^^^^^^
+
+warning: enum `GalleryEffect` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:15:10
+   |
+15 | pub enum GalleryEffect { Consumed, Close, LoadScenario(&'static str), ModelSelected(ModelSelection), SettingSelected { key: &'static...
+   |          ^^^^^^^^^^^^^
+
+warning: method `is_consumed` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:16:35
+   |
+16 | impl GalleryEffect { pub const fn is_consumed(&self) -> bool { !matches!(self, Self::Close) } }
+   | ------------------                ^^^^^^^^^^^
+   | |
+   | method in this implementation
+
+warning: constant `SCENARIOS` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:17:11
+   |
+17 | pub const SCENARIOS: &[(&str,&str)] = &[
+   |           ^^^^^^^^^
+
+warning: constant `MODELS` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:19:7
+   |
+19 | const MODELS: &[(&str,&str,&str)] = &[("nvidia/llama-3.3-nemotron-super-49b-v1.5","Nemotron Super 49B v1.5","NVIDIA NIM"),("nvidia/n...
+   |       ^^^^^^
+
+warning: constant `SESSIONS` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:20:7
+   |
+20 | const SESSIONS: &[(&str,&str,&str)] = &[("Refactor request validation","NVIDIA NIM","2026-10-18 09:42 · demo"),("Explain the streami...
+   |       ^^^^^^^^
+
+warning: constant `PROVIDERS` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:21:7
+   |
+21 | const PROVIDERS: &[(&str,&str,&str)] = &[("NVIDIA NIM","https://integrate.api.nvidia.com/v1","Credential source: environment / local...
+   |       ^^^^^^^^^
+
+warning: struct `Hit` is never constructed
+  --> apps\polaris-cli\src\demo_gallery.rs:22:38
+   |
+22 | #[derive(Clone, Copy, Debug)] struct Hit { rect: Rect, action: HitAction }
+   |                                      ^^^
+
+warning: enum `HitAction` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:23:36
+   |
+23 | #[derive(Clone, Copy, Debug)] enum HitAction { Select(usize), ToggleDemo, ToggleDetails, Tab(usize), Open(GalleryPage), Close }
+   |                                    ^^^^^^^^^
+
+warning: struct `DemoGallery` is never constructed
+  --> apps\polaris-cli\src\demo_gallery.rs:24:36
+   |
+24 | #[derive(Clone, Debug)] pub struct DemoGallery { page: GalleryPage, selected: usize, model: usize, effort: usize, stats_tab: usize, ...
+   |                                    ^^^^^^^^^^^
+
+warning: multiple associated items are never used
+  --> apps\polaris-cli\src\demo_gallery.rs:27:9
+   |
+26 | impl DemoGallery {
+   | ---------------- associated items in this implementation
+27 |  pub fn new() -> Self { Self { page: GalleryPage::Welcome, selected: 0, model: 0, effort: 2, stats_tab: 0, stats_range: 0, stats_cha...
+   |         ^^^
+28 |  pub fn open(&mut self, page: GalleryPage) { self.page=page; self.selected=0; self.query.clear(); self.invalidate_hits(); }
+   |         ^^^^
+29 |  pub const fn page(&self)->GalleryPage { self.page }
+   |               ^^^^
+30 |  pub fn selected_model(&self)->Option<ModelSelection> { let (id,name,provider)=MODELS.get(self.model).copied()?; let effort=Effort::...
+   |         ^^^^^^^^^^^^^^
+31 |  pub fn selected_effort(&self)->Option<Effort> { Effort::ALL.get(self.effort).copied() }
+   |         ^^^^^^^^^^^^^^^
+32 |  pub fn stats_tab_label(&self)->&'static str { ["Overview","Models","Providers"].get(self.stats_tab).copied().unwrap_or("Overview") }
+   |         ^^^^^^^^^^^^^^^
+33 |  pub fn stats_range_label(&self)->&'static str { ["Today","Last 7 days","Last 30 days"].get(self.stats_range).copied().unwrap_or("To...
+   |         ^^^^^^^^^^^^^^^^^
+34 |  pub fn stats_chart_label(&self)->&'static str { ["Stacked","Lines","Trends"].get(self.stats_chart).copied().unwrap_or("Stacked") }
+   |         ^^^^^^^^^^^^^^^^^
+35 |  pub const fn stats_details_visible(&self)->bool { self.stats_details }
+   |               ^^^^^^^^^^^^^^^^^^^^^
+36 |  pub const fn stats_bucket(&self)->Option<usize> { self.stats_bucket }
+   |               ^^^^^^^^^^^^
+37 |  pub const fn usage_demo_visible(&self)->bool { self.usage_demo }
+   |               ^^^^^^^^^^^^^^^^^^
+38 |  pub const fn usage_details_visible(&self)->bool { self.usage_details }
+   |               ^^^^^^^^^^^^^^^^^^^^^
+39 |  fn invalidate_hits(&mut self) { self.hits.clear(); self.hits_ready=false; }
+   |     ^^^^^^^^^^^^^^^
+40 |  fn changed(&mut self) { self.invalidate_hits(); }
+   |     ^^^^^^^
+41 |  pub fn hit_region(&self,index:usize)->Option<Rect> { self.hits.get(index).map(|h|h.rect) }
+   |         ^^^^^^^^^^
+42 |  pub fn prepare_hits(&mut self, viewport:Rect, _options:RenderOptions) { let _=self.layout(viewport); }
+   |         ^^^^^^^^^^^^
+43 |  fn line_count(&self)->usize { match self.page { GalleryPage::Preview=>SCENARIOS.len(), GalleryPage::Sessions=>SESSIONS.len(), Galle...
+   |     ^^^^^^^^^^
+44 |  fn layout(&mut self, area:Rect)->(Rect,usize) { self.hits.clear(); self.hits_ready=false; if area.width<12||area.height<5{return (R...
+   |     ^^^^^^
+45 |  pub fn handle_mouse(&mut self,event:MouseEvent)->GalleryEffect { if !self.hits_ready||event.kind!=MouseEventKind::Down(MouseButton:...
+   |         ^^^^^^^^^^^^
+46 |  fn activate_selected(&mut self)->GalleryEffect { match self.page { GalleryPage::Preview=>SCENARIOS.get(self.selected).map(|(n,_)|Ga...
+   |     ^^^^^^^^^^^^^^^^^
+47 |  pub fn handle_key(&mut self,key:KeyEvent)->GalleryEffect { if key.code==KeyCode::Esc {self.invalidate_hits();return GalleryEffect::...
+   |         ^^^^^^^^^^
+48 |  pub fn render(&mut self,frame:&mut Frame<'_>,viewport:Rect,options:RenderOptions) { let (inner,start)=self.layout(viewport); if vie...
+   |         ^^^^^^
+49 |  fn title(&self)->&'static str {match self.page{GalleryPage::Welcome=>"Polaris · Welcome",GalleryPage::Preview=>"Preview gallery",Ga...
+   |     ^^^^^
+50 |  fn content(&self,inner:Rect,start:usize,options:RenderOptions)->Vec<Line<'static>> {let mut out=Vec::new();let muted=Style::default...
+   |     ^^^^^^^
+
+warning: `polaris-cli` (lib) generated 15 warnings
+    Finished `test` profile [unoptimized] target(s) in 10.72s
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-97e39ee21424c315.exe)
+
+thread 'offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste' (12324) panicked at apps\polaris-cli\tests\ui_terminal.rs:908:5:
+assertion `left == right` failed: 
+
+    ✦ Polaris v0.1.0alpha      C:\Users\Admin\AppData\Local\Temp\.tmpQgdFe5
+
+
+
+
+                                       ╷
+                                       │
+                                   ╶───✦───╴
+                                       │
+                                       ╵
+
+                       What's on your mind for Polaris?
+
+
+
+  ───────────────────────────────────────────────────────────────────────────
+    >
+      secondBC
+  ───────────────────────────────────────────────────────────────────────────
+
+    ? for shortcuts                 [ auto mode on ] [ offline ] [ medium ]
+
+  left: 19
+ right: 20
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p polaris-cli --test ui_terminal`

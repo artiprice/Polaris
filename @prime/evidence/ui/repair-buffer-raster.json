@@ -1,0 +1,20 @@
+{
+  "name": "repair-buffer-raster",
+  "command": [
+    "cargo",
+    "run",
+    "--offline",
+    "--manifest-path",
+    "target/ui-repair/raster/Cargo.toml",
+    "--",
+    "C:/mDev/Polaris/@prime/evidence/ui/repair-after/welcome-80x24.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/repair-after/welcome-80x24.png",
+    "C:/mDev/Polaris/dist/demo-design-preview-slop/target/stats-rebuild/captures/welcome-80x24.svg",
+    "C:/mDev/Polaris/@prime/evidence/ui/repair-after/reference-80x24.png"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T00:49:16.526Z",
+  "pid": 9304,
+  "code": 0,
+  "finished": "2026-10-25T00:49:58.913Z"
+}

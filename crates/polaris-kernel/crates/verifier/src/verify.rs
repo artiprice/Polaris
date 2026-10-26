@@ -125,7 +125,8 @@ pub enum Rejection {
 #[derive(Debug, PartialEq, Eq)]
 pub enum VerificationDecision {
     /// The command has been promoted only after a durable, digest-checked evidence record exists.
-    Approved(ApprovedMutation),
+    /// The cold approval payload is boxed so rejection and escalation do not carry its full size.
+    Approved(Box<ApprovedMutation>),
     /// A deterministic layer rejected the request.
     Rejected(Rejection),
     /// The safety assessor degraded or timed out; a human decision is required.
@@ -400,10 +401,7 @@ where
                 Metric::ChurnLines,
             )));
         }
-        let cyclomatic_increase = match u32::try_from(measured.cyclomatic_delta) {
-            Ok(value) => value,
-            Err(_) => 0,
-        };
+        let cyclomatic_increase = measured.cyclomatic_delta.max(0).unsigned_abs();
         if cyclomatic_increase > self.config.max_cyclomatic_increase {
             return Ok(VerificationDecision::Rejected(Rejection::Metric(
                 Metric::CyclomaticIncrease,
@@ -520,7 +518,7 @@ where
         let approver = ApproverId::new("polaris-kernel-verifier")?;
         let witness = ApprovalWitness::new(approver, evidence_cid, self.clock.now());
         let command = request.command.clone().verify(witness);
-        Ok(VerificationDecision::Approved(ApprovedMutation {
+        Ok(VerificationDecision::Approved(Box::new(ApprovedMutation {
             command,
             command_id,
             agent,
@@ -530,7 +528,7 @@ where
             new_source,
             metrics: measured,
             evidence: evidence_cid,
-        }))
+        })))
     }
 }
 

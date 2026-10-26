@@ -3,6 +3,32 @@ use clap::Parser;
 use std::process::Command;
 
 #[test]
+fn demo_dump_is_explicit_deterministic_and_isolated() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let state = temp.path().join("absent-demo-state");
+    let invoke = || {
+        Command::new(env!("CARGO_BIN_EXE_polaris"))
+            .arg("--state-dir")
+            .arg(&state)
+            .args(["--demo", "--dump", "80x24"])
+            .output()
+    };
+    let first = invoke()?;
+    let second = invoke()?;
+    assert!(
+        first.status.success(),
+        "demo rejected: {}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert!(second.status.success());
+    assert_eq!(first.stdout, second.stdout);
+    assert!(!first.stdout.contains(&27));
+    assert!(String::from_utf8(first.stdout)?.contains("DEMO"));
+    assert!(!state.exists(), "demo must never create durable state");
+    Ok(())
+}
+
+#[test]
 fn default_arguments_select_interactive_mode() {
     assert!(
         polaris_cli::Args::try_parse_from(["polaris"]).is_ok(),
@@ -109,5 +135,60 @@ fn initial_prompt_is_prefilled_and_not_executed() -> Result<(), Box<dyn std::err
         String::from_utf8(out.stdout)?.contains("keep this draft"),
         "draft missing"
     );
+    Ok(())
+}
+
+#[test]
+fn every_demo_scenario_is_reachable_from_the_real_binary() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let state = temp.path().join("absent-demo-state");
+    for name in [
+        "welcome",
+        "conversation",
+        "working",
+        "agents-working",
+        "agents-mixed",
+        "agents-completed",
+        "agents-many",
+        "messages",
+        "approval",
+        "diff",
+        "error",
+        "onboarding",
+        "models",
+        "providers",
+        "settings",
+        "sessions",
+        "status",
+        "usage",
+        "usage-demo",
+        "stats",
+        "stats-stacked",
+        "stats-lines",
+        "stats-trends",
+        "stats-details",
+        "stats-demo",
+        "transcript",
+        "help",
+        "questions",
+        "editor",
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_polaris"))
+            .arg("--state-dir")
+            .arg(&state)
+            .args(["--demo", "--scenario", name, "--dump", "120x40"])
+            .output()?;
+        assert!(
+            out.status.success(),
+            "{name}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert!(
+            String::from_utf8(out.stdout)?.contains("DEMO"),
+            "{name} lost the local fixture disclosure"
+        );
+        assert!(!state.exists(), "{name} created durable demo state");
+    }
     Ok(())
 }

@@ -1,0 +1,44 @@
+{
+  "type_of": "struct_and_methods",
+  "name": "RenderCache",
+  "file_path": "crates/polaris-ui/crates/cli/src/screen.rs",
+  "logic_name": "Renderer Transcript Cache",
+  "test_list": [
+    {
+      "test_name": "cache_hits_for_identical_bounded_transcript_entries",
+      "description": "A second metadata preparation with unchanged entries and width reuses cached per-entry rows."
+    },
+    {
+      "test_name": "cache_invalidates_on_content_width_and_tool_expansion_changes",
+      "description": "Changed bounded content, viewport width, or presentation-tool state causes a miss rather than stale rows."
+    },
+    {
+      "test_name": "cache_evicts_within_configured_byte_budget",
+      "description": "The LRU cache evicts least-recently-used rows and never reports resident memory above its configured budget or 32 MiB maximum."
+    },
+    {
+      "test_name": "source_snapshot_validation_stays_below_its_separate_limit",
+      "description": "Exact content snapshots remain collision-safe while a separate 1 MiB ceiling prevents retaining large transcript copies."
+    },
+    {
+      "test_name": "cached_renderer_matches_uncached_render_output",
+      "description": "The cached and uncached paths produce identical visible cells and source metadata."
+    }
+  ],
+  "dependencies": ["ScreenState", "RenderMetadata", "RenderRow"],
+  "libraries": ["ratatui"],
+  "inputs": [
+    {
+      "name": "state",
+      "type": "&ScreenState",
+      "description": "Borrowed view and presentation state for one screen pass."
+    },
+    {
+      "name": "cache",
+      "type": "&mut RenderCache",
+      "description": "Caller-owned bounded cache retained across render calls."
+    }
+  ],
+  "output_type": "RenderMetadata",
+  "output_description": "Geometry and transcript rows prepared for the current screen pass, with cache accounting available to the caller."
+}

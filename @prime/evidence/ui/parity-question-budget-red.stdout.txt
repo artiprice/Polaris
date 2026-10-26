@@ -1,0 +1,25 @@
+
+running 4 tests
+test notes_backspace_removes_one_grapheme_not_one_scalar ... ok
+test notes_support_middle_edit_selection_and_undo ... ok
+test undo_cannot_restore_over_aggregate_budget ... FAILED
+test replacing_full_notes_uses_resulting_size ... FAILED
+
+failures:
+
+---- undo_cannot_restore_over_aggregate_budget stdout ----
+
+thread 'undo_cannot_restore_over_aggregate_budget' (13952) panicked at crates\polaris-ui\crates\model\tests\questionnaire_editor.rs:63:2:
+undo must respect the shared encoded-size cap
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- replacing_full_notes_uses_resulting_size stdout ----
+Error: FieldTooLarge
+
+
+failures:
+    replacing_full_notes_uses_resulting_size
+    undo_cannot_restore_over_aggregate_budget
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

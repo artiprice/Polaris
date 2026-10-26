@@ -1,0 +1,33 @@
+
+running 4 tests
+test tui::controller_tests::parity::plain_delete_keys_edit_draft_and_selected_range ... ok
+test tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt ... FAILED
+test tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions ... FAILED
+test tui::controller_tests::parity::demo_commands_open_views_without_starting_response ... FAILED
+
+failures:
+
+---- tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt stdout ----
+
+thread 'tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt' (14472) panicked at apps\polaris-cli\src\..\tests\controller\parity.rs:27:5:
+unknown commands must not start a simulation
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions stdout ----
+
+thread 'tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions' (2084) panicked at apps\polaris-cli\src\..\tests\controller\parity.rs:39:5:
+ordinary responses unexpectedly steal composer focus
+
+---- tui::controller_tests::parity::demo_commands_open_views_without_starting_response stdout ----
+
+thread 'tui::controller_tests::parity::demo_commands_open_views_without_starting_response' (16468) panicked at apps\polaris-cli\src\..\tests\controller\parity.rs:13:9:
+/model was swallowed as an ordinary demo prompt
+
+
+failures:
+    tui::controller_tests::parity::demo_commands_open_views_without_starting_response
+    tui::controller_tests::parity::ordinary_demo_prompt_does_not_force_questions
+    tui::controller_tests::parity::unknown_demo_slash_is_not_a_simulated_prompt
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 58 filtered out; finished in 0.00s
+

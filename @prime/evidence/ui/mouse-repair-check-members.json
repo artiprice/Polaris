@@ -1,0 +1,13 @@
+{
+  "name": "mouse-repair-check-members",
+  "command": [
+    "cargo",
+    "xtask",
+    "check-members"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:35:06.592Z",
+  "pid": 10264,
+  "code": 0,
+  "finished": "2026-10-25T12:35:07.503Z"
+}

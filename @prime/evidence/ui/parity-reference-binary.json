@@ -1,0 +1,16 @@
+{
+  "name": "parity-reference-binary",
+  "command": [
+    "python",
+    "-c",
+    "import os,sys,subprocess,json,pathlib\nbase=pathlib.Path(sys.argv[1]);base.mkdir(parents=True,exist_ok=True)\ne=dict(os.environ);e[\"POLARIS_CONFIG_DIR\"]=str(base/\"config-must-not-be-created\")\nrecords=[]\nfor name in json.loads(sys.argv[3]):\n r=subprocess.run([sys.argv[2],\"--scenario\",name,\"--theme\",\"dark\",\"--color\",\"always\",\"--dump\",\"120x40\"],env=e,capture_output=True,timeout=15)\n (base/(name+\".txt\")).write_bytes(r.stdout)\n records.append({\"scenario\":name,\"exit\":r.returncode,\"bytes\":len(r.stdout),\"stderr\":r.stderr.decode(\"utf8\",\"replace\")})\nprint(json.dumps({\"records\":records,\"config_created\":(base/\"config-must-not-be-created\").exists()},indent=2))\nraise SystemExit(0 if all(x[\"exit\"]==0 for x in records) else 1)",
+    "C:/mDev/Polaris/@prime/evidence/ui/parity-reference",
+    "C:/mDev/Polaris/dist/demo-design-preview-slop/dist/polaris.exe",
+    "[\"welcome\",\"conversation\",\"working\",\"agents-working\",\"agents-mixed\",\"agents-completed\",\"agents-many\",\"messages\",\"approval\",\"diff\",\"error\",\"onboarding\",\"models\",\"providers\",\"settings\",\"sessions\",\"status\",\"usage\",\"usage-demo\",\"stats\",\"stats-stacked\",\"stats-lines\",\"stats-trends\",\"stats-details\",\"stats-demo\",\"transcript\",\"help\"]"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:38:03.958Z",
+  "pid": 17664,
+  "code": 0,
+  "finished": "2026-10-25T11:38:04.756Z"
+}

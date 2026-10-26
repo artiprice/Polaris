@@ -1,0 +1,11 @@
+
+running 6 tests
+test commits_only_explicit_nonempty_frames ... ok
+test extracted_presenter_closes_live_writer_handles ... ok
+test stages_and_deduplicates_cursor_intents ... ok
+test changed_cells_restore_unchanged_editor_cursor_after_paint ... ok
+test ratatui_identical_grid_emits_zero_and_cursor_change_emits_only_position ... ok
+test bounds_staged_frame_and_marks_resync_after_partial_write ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

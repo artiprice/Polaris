@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    Statistics                                                                                             DEMO DATA
+    [ Overview ] [ Models ]                                                                              [ Details ]
+    [ All time ] [ Last 7 days ] [ Last 30 days ]
+    Total tokens                         Sessions                             Active days
+    77.0M                                892                                  253 / 365
+
+    Activity / sessions per day
+    Oct 19 '25 - Oct 18 '26
+        Oct   Nov     Dec       Jan     Feb     Mar       Apr     May     Jun       Jul     Aug       Sep     Oct
+    Mon
+
+    Wed
+
+    Fri
+
+
+
+    Less            More / sessions
+
+    Top model: Nemotron Super 49B v1.5                      Busiest day: Oct 21 / 6 sessions
+    Current streak: 2 days                                  Longest streak: 5 days
+    Longest session: 4h 57m
+
+
+
+
+
+    Oct 18 '26 / 2 sessions
+    26165 tokens / [ ] inspect day
+    Tab views / R dates / C chart / Ctrl+O details / [ ] inspect / Esc/Enter close                        [ Sample ]
+
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

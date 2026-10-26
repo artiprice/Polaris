@@ -1,0 +1,21 @@
+{
+  "type_of": "module",
+  "name": "screen rendering parity",
+  "file_path": "src/screen.rs",
+  "logic_name": "Screen Rendering Parity",
+  "test_list": [
+    {"test_name":"transcript_hover_does_not_restyle_body","description":"A broad transcript hit region remains non-decorative; only action affordances receive hover styles."},
+    {"test_name":"tool_latest_footer_and_completion_hover_preserve_role_specific_styles","description":"Tool/latest/footer/completion hover changes only the exact intended foreground or bounded background."},
+    {"test_name":"transcript_selection_preserves_foreground_and_uses_source_tint","description":"Copy selection blends 30 percent source foreground over the existing background, uses neutral whitespace tint, ANSI index 237 and bold without color."},
+    {"test_name":"questionnaire_surface_replaces_composer_and_exposes_typed_hits","description":"Question choice, tabs, notes and submit have typed targets; the main composer is absent and question hints remain pinned."}
+  ],
+  "dependencies": ["polaris_ui_model::questionnaire", "ratatui::buffer"],
+  "libraries": ["ratatui", "unicode-width"],
+  "inputs": [
+    {"name":"state","type":"ScreenState", "description":"Borrowed application view, composer and optional questionnaire draft."},
+    {"name":"options","type":"RenderOptions", "description":"Resolved color and glyph capabilities."},
+    {"name":"area","type":"Rect", "description":"Bounded terminal-cell viewport."}
+  ],
+  "output_type":"RenderMetadata",
+  "output_description":"Painted styled cells, typed hit targets, geometry and source mappings."
+}

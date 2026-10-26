@@ -1,0 +1,16 @@
+ Downloading crates ...
+  Downloaded ctutils v0.4.4
+ctutils #constant-time #crypto #intrinsics
+Constant-time utility library with selection and equality testing support targeting cryptographic
+applications. Supports `const fn` where appropriate. Built on the `cmov` crate which provides
+architecture-specific predication intrinsics. Heavily inspired by the `subtle` crate.
+version: 0.4.4 (latest 0.4.6)
+license: Apache-2.0 OR MIT
+rust-version: 1.87
+documentation: https://docs.rs/ctutils
+repository: https://github.com/RustCrypto/utils
+crates.io: https://crates.io/crates/ctutils/0.4.4
+features:
+  alloc  = []
+  subtle = [dep:subtle]
+note: to see how you depend on ctutils, run `cargo tree --invert ctutils@0.4.4`

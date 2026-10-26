@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                           ╷
+                                                           │
+                                                       ╶───✦───╴
+                                                           │
+                                                           ╵
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ Session status                                                                                                   │
+  │                                                                                                                  │
+  │ Warnings (1)                                                                                                     │
+  │ ! Provider is not configured                                                                                     │
+  │                                                                                                                  │
+  │ Workspace      C:\mDev\Polaris                                                                                   │
+  │ Provider       NVIDIA NIM                                                                                        │
+  │ Model          Nemotron Super 49B v1.5                                                                           │
+  │ Connection     Not connected                                                                                     │
+  │ Account        Not configured                                                                                    │
+  │ Mode           auto mode on                                                                                      │
+  │                                                                                                                  │
+  │ Provider connections and coding tools are simulated.                                                             │
+  │ Account labels are local display settings, not authentication.                                                   │
+  │ PgUp/PgDn scroll · Esc/Enter close                                                                               │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

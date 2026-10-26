@@ -1,0 +1,26 @@
+
+running 4 tests
+test trace_never_overwrites_existing_file ... ok
+test trace_excludes_draft_paste_and_printable_keys ... ok
+test trace_distinguishes_enter_modifiers_edit_keys_and_phases ... FAILED
+test trace_enforces_the_byte_limit_without_partial_followup ... ok
+
+failures:
+
+---- trace_distinguishes_enter_modifiers_edit_keys_and_phases stdout ----
+
+thread 'trace_distinguishes_enter_modifiers_edit_keys_and_phases' (14924) panicked at apps\polaris-cli\tests\ui_key_trace.rs:77:143:
+metadata missing: key enter shift press: key enter
+key enter
+key edit
+key edit
+key enter
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    trace_distinguishes_enter_modifiers_edit_keys_and_phases
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.39s
+

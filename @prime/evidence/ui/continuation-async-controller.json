@@ -1,0 +1,18 @@
+{
+  "name": "continuation-async-controller",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "controller_tests::continuation"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:39:22.041Z",
+  "pid": 11064,
+  "code": 0,
+  "finished": "2026-10-25T05:39:40.621Z"
+}

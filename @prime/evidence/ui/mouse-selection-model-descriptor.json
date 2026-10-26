@@ -1,0 +1,48 @@
+{
+  "type_of": "module",
+  "name": "source_selection_ranges_and_questionnaire_selection",
+  "file_path": "crates/polaris-ui/crates/model/src/composer.rs",
+  "logic_name": "Mouse Selection Model",
+  "test_list": [
+    {
+      "test_name": "source_grapheme_range_selects_complete_unicode_graphemes",
+      "description": "Cursor offsets inside combining sequences, emoji ZWJ sequences, wide scalars, and out-of-range positions yield exact complete grapheme byte ranges."
+    },
+    {
+      "test_name": "source_word_range_selects_word_whitespace_and_single_punctuation_grapheme",
+      "description": "Unicode alphanumeric/underscore runs and whitespace runs are selected whole; punctuation selects exactly one grapheme."
+    },
+    {
+      "test_name": "source_line_range_includes_existing_line_ending",
+      "description": "Logical line range includes an existing LF or CRLF terminator, handles blank lines and EOF, and ignores visual soft wraps."
+    },
+    {
+      "test_name": "questionnaire_set_selection_targets_notes_without_changing_answers",
+      "description": "SetSelection applies to active notes field, insertion/deletion preserves answer focus semantics and undo restores selected notes."
+    },
+    {
+      "test_name": "composer_full_unicode_and_chip_selection_delete_undo_is_atomic",
+      "description": "Selecting all text containing a combining/ZWJ sequence and an attachment chip deletes as one legal range and undo restores complete text, chip and selection."
+    }
+  ],
+  "dependencies": [
+    "unicode-segmentation",
+    "Composer",
+    "QuestionnaireState"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Canonical Unicode source text indexed by UTF-8 byte offsets."
+    },
+    {
+      "name": "at",
+      "type": "usize",
+      "description": "Possibly interior or out-of-range source byte offset."
+    }
+  ],
+  "output_type": "Option<Range<usize>>",
+  "output_description": "Byte range for the grapheme, contiguous word or whitespace run, or logical line at the clamped source position; questionnaire selection is applied through the active Composer editor."
+}\n

@@ -1,0 +1,19 @@
+cargo test --offline -p polaris-ui-cli --test terminal_lifecycle
+EXIT 0
+
+running 7 tests
+test drop_attempts_best_effort_cleanup ... ok
+test drop_attempts_remaining_modes_after_restore_error ... ok
+test close_attempts_every_restore_step_and_reports_errors ... ok
+test failed_mode_attempt_is_restored_even_when_enable_reports_error ... ok
+test presenter_partial_write_resync_then_guard_close_attempts_cursor_reveal ... ok
+test rolls_back_acquired_modes_in_reverse_order ... ok
+test windows_vt_mouse_and_keyboard_protocols_are_balanced ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 2.30s
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-d1cd67acad6a3e7c.exe)

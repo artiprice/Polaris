@@ -1,0 +1,5 @@
+{
+  "command": "cargo test --offline -p polaris-cli --lib persisting_one_selection_clears_only_that_runtime_override -- --nocapture",
+  "exit_code": 101,
+  "description": "Expected RED: current implementation persists the untouched CLI override when apply_selection is called."
+}

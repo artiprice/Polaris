@@ -1,0 +1,147 @@
+{
+  "status": "PASS",
+  "scope": "documentation/module inventory/workspace member and layer consistency only",
+  "checks": [
+    {
+      "name": "mouse-repair-check-docs",
+      "command": [
+        "python",
+        "-I",
+        "@prime/tools/workspace.py",
+        "check-docs"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:06.563Z",
+      "pid": 12708,
+      "code": 0,
+      "finished": "2026-10-25T12:35:06.967Z",
+      "stdout": "check-docs: 93 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "mouse-repair-render-docs",
+      "command": [
+        "python",
+        "-I",
+        "@prime/tools/workspace.py",
+        "render-docs",
+        "--check"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:06.577Z",
+      "pid": 18424,
+      "code": 0,
+      "finished": "2026-10-25T12:35:07.033Z",
+      "stdout": "PHASES.md: up to date (11 generated blocks)\r\nPHASES_STATUS.md: up to date (10 generated blocks)\r\n",
+      "stderr": ""
+    },
+    {
+      "name": "mouse-repair-check-members",
+      "command": [
+        "cargo",
+        "xtask",
+        "check-members"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:06.592Z",
+      "pid": 10264,
+      "code": 0,
+      "finished": "2026-10-25T12:35:07.503Z",
+      "stdout": "check-members: 93 packages -> OK\n",
+      "stderr": ""
+    },
+    {
+      "name": "mouse-repair-check-layers",
+      "command": [
+        "cargo",
+        "xtask",
+        "check-layers"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:06.604Z",
+      "pid": 18128,
+      "code": 0,
+      "finished": "2026-10-25T12:35:07.617Z",
+      "stdout": "check-layers: 93 packages, 269 edges -> OK\n",
+      "stderr": ""
+    },
+    {
+      "name": "mouse-repair-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:06.616Z",
+      "pid": 17836,
+      "code": 0,
+      "finished": "2026-10-25T12:35:06.817Z",
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'Cargo.toml', CRLF will be replaced by LF the next time Git touches it\n"
+    },
+    {
+      "name": "mouse-repair-inventory-complete",
+      "command": [
+        "python",
+        "-I",
+        "-c",
+        "import csv,json,pathlib,re\nroot=pathlib.Path.cwd()\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8',newline='')))\nby_id={r['module_id']:r for r in rows}\nassert len(rows)==len(by_id)==60, 'module identity/count changed'\nphases=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\ntasks=set(re.findall(r'^\\| (UI\\d+-\\d+|WEB-WELCOME|WEB-OPT|DESKTOP-LATER) \\|',phases,re.M))\ncovered={t for r in rows for t in r['ui_tasks'].split(';')}\nassert covered==tasks, ('task coverage',tasks-covered,covered-tasks)\nfor r in rows:\n    if r['path_state']=='EXISTING':\n        for item in r['path'].split(';'):\n            path=root/item.strip()\n            assert path.exists(),item  # Inventory paths may name files, package directories or test directories.\n    for dep in filter(None,r['depends_on_modules'].split(';')): assert dep in by_id, (r['module_id'],dep)\n    for source in filter(None,r['demo_sources'].split(';')): assert (root/source).exists(),source\n    doc,anchor=r['plan_anchor'].split('#',1)\n    text=(root/'@prime'/doc).read_text(encoding='utf-8')\n    headings=re.findall(r'^#+ (.+)$',text,re.M)\n    def slug(s): return re.sub(r'[^\\w\\- ]','',s.lower()).replace(' ','-')\n    assert anchor in {slug(h) for h in headings},r['plan_anchor']\nvisiting=set();visited=set()\ndef visit(mid):\n    assert mid not in visiting, ('cycle',mid)\n    if mid in visited: return\n    visiting.add(mid)\n    for dep in filter(None,by_id[mid]['depends_on_modules'].split(';')): visit(dep)\n    visiting.remove(mid);visited.add(mid)\nfor mid in by_id: visit(mid)\nfor name in ['mouse-repair-verification.md']:\n    doc=root/'@prime/evidence/ui'/name\n    for target in re.findall(r'\\]\\(([^)]+)\\)',doc.read_text(encoding='utf-8')):\n        if '://' not in target and not target.startswith('#'):\n            assert (doc.parent/target.split('#')[0]).exists(),target\nprint(json.dumps({'modules':len(rows),'tasks_including_deferred':len(tasks),'dependencies':'acyclic','existing_paths':'resolved','demo_sources':'resolved','plan_anchors':'resolved','current_evidence_links':'resolved'}))\n"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:37:54.158Z",
+      "pid": 14072,
+      "code": 0,
+      "finished": "2026-10-25T12:37:54.319Z",
+      "stdout": "{\"modules\": 60, \"tasks_including_deferred\": 41, \"dependencies\": \"acyclic\", \"existing_paths\": \"resolved\", \"demo_sources\": \"resolved\", \"plan_anchors\": \"resolved\", \"current_evidence_links\": \"resolved\"}\r\n",
+      "stderr": ""
+    }
+  ],
+  "checker_corrections": [
+    {
+      "name": "mouse-repair-inventory-check",
+      "command": [
+        "python",
+        "-I",
+        "-c",
+        "import csv,json,pathlib,re\nroot=pathlib.Path.cwd()\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8',newline='')))\nby_id={r['module_id']:r for r in rows}\nassert len(rows)==len(by_id)==60, 'module identity/count changed'\nphases=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\ntasks=set(re.findall(r'^\\| (UI\\d+-\\d+) \\|',phases,re.M))\ncovered={t for r in rows for t in r['ui_tasks'].split(';') if t.startswith('UI')}\nassert covered==tasks, ('task coverage',tasks-covered,covered-tasks)\nfor r in rows:\n    if r['path_state']=='EXISTING': assert (root/r['path']).is_file(), r['path']\n    for dep in filter(None,r['depends_on_modules'].split(';')): assert dep in by_id, (r['module_id'],dep)\n    for source in filter(None,r['demo_sources'].split(';')): assert (root/source).exists(),source\n    doc,anchor=r['plan_anchor'].split('#',1)\n    text=(root/'@prime'/doc).read_text(encoding='utf-8')\n    headings=re.findall(r'^#+ (.+)$',text,re.M)\n    def slug(s): return re.sub(r'[^\\w\\- ]','',s.lower()).replace(' ','-')\n    assert anchor in {slug(h) for h in headings},r['plan_anchor']\nvisiting=set();visited=set()\ndef visit(mid):\n    assert mid not in visiting, ('cycle',mid)\n    if mid in visited: return\n    visiting.add(mid)\n    for dep in filter(None,by_id[mid]['depends_on_modules'].split(';')): visit(dep)\n    visiting.remove(mid);visited.add(mid)\nfor mid in by_id: visit(mid)\nfor name in ['mouse-repair-verification.md']:\n    doc=root/'@prime/evidence/ui'/name\n    for target in re.findall(r'\\]\\(([^)]+)\\)',doc.read_text(encoding='utf-8')):\n        if '://' not in target and not target.startswith('#'):\n            assert (doc.parent/target.split('#')[0]).exists(),target\nprint(json.dumps({'modules':len(rows),'ui_tasks':len(tasks),'dependencies':'acyclic','existing_paths':'resolved','demo_sources':'resolved','plan_anchors':'resolved','current_evidence_links':'resolved'}))\n"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:35:39.512Z",
+      "pid": 9280,
+      "code": 1,
+      "finished": "2026-10-25T12:35:39.692Z",
+      "reason": "Checker assumed single source-file/package-only paths; corrected to existing semicolon-separated file/directory schema without changing product checks."
+    },
+    {
+      "name": "mouse-repair-inventory-check-paths",
+      "command": [
+        "python",
+        "-I",
+        "-c",
+        "import csv,json,pathlib,re\nroot=pathlib.Path.cwd()\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8',newline='')))\nby_id={r['module_id']:r for r in rows}\nassert len(rows)==len(by_id)==60, 'module identity/count changed'\nphases=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\ntasks=set(re.findall(r'^\\| (UI\\d+-\\d+) \\|',phases,re.M))\ncovered={t for r in rows for t in r['ui_tasks'].split(';') if t.startswith('UI')}\nassert covered==tasks, ('task coverage',tasks-covered,covered-tasks)\nfor r in rows:\n    if r['path_state']=='EXISTING':\n        path=root/r['path']\n        assert path.is_file() or (path.is_dir() and (path/'Cargo.toml').is_file()),r['path']\n    for dep in filter(None,r['depends_on_modules'].split(';')): assert dep in by_id, (r['module_id'],dep)\n    for source in filter(None,r['demo_sources'].split(';')): assert (root/source).exists(),source\n    doc,anchor=r['plan_anchor'].split('#',1)\n    text=(root/'@prime'/doc).read_text(encoding='utf-8')\n    headings=re.findall(r'^#+ (.+)$',text,re.M)\n    def slug(s): return re.sub(r'[^\\w\\- ]','',s.lower()).replace(' ','-')\n    assert anchor in {slug(h) for h in headings},r['plan_anchor']\nvisiting=set();visited=set()\ndef visit(mid):\n    assert mid not in visiting, ('cycle',mid)\n    if mid in visited: return\n    visiting.add(mid)\n    for dep in filter(None,by_id[mid]['depends_on_modules'].split(';')): visit(dep)\n    visiting.remove(mid);visited.add(mid)\nfor mid in by_id: visit(mid)\nfor name in ['mouse-repair-verification.md']:\n    doc=root/'@prime/evidence/ui'/name\n    for target in re.findall(r'\\]\\(([^)]+)\\)',doc.read_text(encoding='utf-8')):\n        if '://' not in target and not target.startswith('#'):\n            assert (doc.parent/target.split('#')[0]).exists(),target\nprint(json.dumps({'modules':len(rows),'ui_tasks':len(tasks),'dependencies':'acyclic','existing_paths':'resolved','demo_sources':'resolved','plan_anchors':'resolved','current_evidence_links':'resolved'}))\n"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:36:30.556Z",
+      "pid": 6356,
+      "code": 1,
+      "finished": "2026-10-25T12:36:30.738Z",
+      "reason": "Checker assumed single source-file/package-only paths; corrected to existing semicolon-separated file/directory schema without changing product checks."
+    },
+    {
+      "name": "mouse-repair-inventory-final",
+      "command": [
+        "python",
+        "-I",
+        "-c",
+        "import csv,json,pathlib,re\nroot=pathlib.Path.cwd()\nrows=list(csv.DictReader((root/'@prime/UI_MODULES.csv').open(encoding='utf-8',newline='')))\nby_id={r['module_id']:r for r in rows}\nassert len(rows)==len(by_id)==60, 'module identity/count changed'\nphases=(root/'@prime/UI_PHASES.md').read_text(encoding='utf-8')\ntasks=set(re.findall(r'^\\| (UI\\d+-\\d+) \\|',phases,re.M))\ncovered={t for r in rows for t in r['ui_tasks'].split(';') if t.startswith('UI')}\nassert covered==tasks, ('task coverage',tasks-covered,covered-tasks)\nfor r in rows:\n    if r['path_state']=='EXISTING':\n        for item in r['path'].split(';'):\n            path=root/item.strip()\n            assert path.is_file() or (path.is_dir() and (path/'Cargo.toml').is_file()),item\n    for dep in filter(None,r['depends_on_modules'].split(';')): assert dep in by_id, (r['module_id'],dep)\n    for source in filter(None,r['demo_sources'].split(';')): assert (root/source).exists(),source\n    doc,anchor=r['plan_anchor'].split('#',1)\n    text=(root/'@prime'/doc).read_text(encoding='utf-8')\n    headings=re.findall(r'^#+ (.+)$',text,re.M)\n    def slug(s): return re.sub(r'[^\\w\\- ]','',s.lower()).replace(' ','-')\n    assert anchor in {slug(h) for h in headings},r['plan_anchor']\nvisiting=set();visited=set()\ndef visit(mid):\n    assert mid not in visiting, ('cycle',mid)\n    if mid in visited: return\n    visiting.add(mid)\n    for dep in filter(None,by_id[mid]['depends_on_modules'].split(';')): visit(dep)\n    visiting.remove(mid);visited.add(mid)\nfor mid in by_id: visit(mid)\nfor name in ['mouse-repair-verification.md']:\n    doc=root/'@prime/evidence/ui'/name\n    for target in re.findall(r'\\]\\(([^)]+)\\)',doc.read_text(encoding='utf-8')):\n        if '://' not in target and not target.startswith('#'):\n            assert (doc.parent/target.split('#')[0]).exists(),target\nprint(json.dumps({'modules':len(rows),'ui_tasks':len(tasks),'dependencies':'acyclic','existing_paths':'resolved','demo_sources':'resolved','plan_anchors':'resolved','current_evidence_links':'resolved'}))\n"
+      ],
+      "status": "COMPLETE",
+      "started": "2026-10-25T12:36:57.154Z",
+      "pid": 12984,
+      "code": 1,
+      "finished": "2026-10-25T12:36:57.340Z",
+      "reason": "Checker assumed single source-file/package-only paths; corrected to existing semicolon-separated file/directory schema without changing product checks."
+    }
+  ]
+}

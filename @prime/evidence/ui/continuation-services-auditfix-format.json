@@ -1,0 +1,5 @@
+{
+  "command": "rustfmt --check --edition 2024 apps/polaris-cli/src/cli_settings.rs apps/polaris-cli/src/ui_services.rs",
+  "exit_code": 0,
+  "scope": "Rust formatting check for owned service files"
+}

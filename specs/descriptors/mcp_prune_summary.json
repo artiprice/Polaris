@@ -1,0 +1,21 @@
+{
+  "type_of": "function",
+  "name": "prune_summary",
+  "file_path": "crates/polaris-ext/crates/mcp/src/summary.rs",
+  "logic_name": "MCP Prune Summary Sanitization",
+  "test_list": [
+    {"test_name": "summary_truncates_to_limit", "description": "Summary output stays within the configured character limit."},
+    {"test_name": "summary_strips_control_and_zero_width", "description": "Control and zero-width characters are removed deterministically."},
+    {"test_name": "summary_strips_markdown_and_html_markup", "description": "Markdown delimiters and HTML tags are removed from the remote summary text."},
+    {"test_name": "summary_neutralizes_instruction_prefix", "description": "Instruction-like prefixes are neutralized before S1 sees the summary."},
+    {"test_name": "summary_deterministic", "description": "The same tool metadata always yields the same sanitized summary."}
+  ],
+  "dependencies": ["bounded text sanitizer", "untrusted remote metadata"],
+  "libraries": ["thiserror"],
+  "inputs": [
+    {"name": "description", "type": "&str", "description": "Untrusted remote tool description."},
+    {"name": "max_chars", "type": "usize", "description": "Maximum output size in Unicode scalar values."}
+  ],
+  "output_type": "String",
+  "output_description": "A deterministic bounded string with control characters and Markdown/HTML markup removed and a clear untrusted-metadata prefix."
+}

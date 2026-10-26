@@ -1,0 +1,2 @@
+    Finished `test` profile [unoptimized] target(s) in 1.85s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)

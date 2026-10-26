@@ -1,0 +1,33 @@
+{
+  "type_of": "configuration",
+  "name": "Daemon startup configuration",
+  "file_path": "apps/polaris-daemon/src/lib.rs",
+  "logic_name": "Validate bounded daemon settings and require authenticated public TCP",
+  "test_list": [
+    {
+      "test_name": "daemon_limits_accept_only_supported_bounds",
+      "description": "Reject zero or excessive event buffers and invalid graceful shutdown limits."
+    },
+    {
+      "test_name": "public_tcp_requires_mutual_tls_material",
+      "description": "Reject a non-loopback listener unless server certificate, private key, and client CA are all configured."
+    },
+    {
+      "test_name": "local_endpoint_configuration_is_explicit",
+      "description": "Reject ambiguous endpoint selection and invalid local endpoint values before startup."
+    }
+  ],
+  "dependencies": [
+    "polaris-rpc::Transport",
+    "polaris-rpc::TransportLimits",
+    "polaris-rpc::RpcLimits"
+  ],
+  "libraries": ["clap", "tokio", "secrecy"],
+  "inputs": [
+    { "name": "event_buffer", "type": "usize", "description": "Bounded per-subscriber queue capacity." },
+    { "name": "shutdown_grace", "type": "Duration", "description": "Bounded server drain interval." },
+    { "name": "listen", "type": "SocketAddr", "description": "Loopback plaintext or mTLS-protected public TCP listener." }
+  ],
+  "output_type": "Result<DaemonConfig, DaemonError>",
+  "output_description": "Validated explicit daemon configuration; no implicit public listener or credential."
+}

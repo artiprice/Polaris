@@ -1,0 +1,11 @@
+
+running 1 test
+test quit_restores_terminal_modes_and_cursor ... FAILED
+
+failures:
+
+failures:
+    quit_restores_terminal_modes_and_cursor
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 1.31s
+

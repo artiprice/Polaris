@@ -1,0 +1,629 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\lib.rs:37:
+ pub use merge::{Loaded, Provenance, load};
+ pub use schema::{
+     BudgetConfig, CliColorDepth, CliColorPolicy, CliPanelDefault, CliPreferences, CliTheme,
+[31m-    ConcurrencyConfig, DEFAULTS_TOML, EffortModels, KNOWN_KEYS, LogConfig, LogLevel,
+[0m[31m-    NebiusConfig, PolarisConfig, PreferenceField, PreferenceValue, RateLimitConfig, SandboxConfig,
+[0m[31m-    SandboxTier, SearchConfig, StorageConfig, StorageLevel, Theme, UiConfig,
+[0m[31m-    read_global_cli_preferences, save_global_cli_preference,
+[0m[32m+    ConcurrencyConfig, DEFAULTS_TOML, EffortModels, KNOWN_KEYS, LogConfig, LogLevel, NebiusConfig,
+[0m[32m+    PolarisConfig, PreferenceField, PreferenceValue, RateLimitConfig, SandboxConfig, SandboxTier,
+[0m[32m+    SearchConfig, StorageConfig, StorageLevel, Theme, UiConfig, read_global_cli_preferences,
+[0m[32m+    save_global_cli_preference,
+[0m };
+ pub use secret_ref::SecretRef;
+ pub use sources::{
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:2:
+ 
+ use polaris_sdk::effort::Effort;
+ use polaris_sdk::ids::ModelId;
+[31m-use std::path::Path;
+[0m use std::fs::{self, File, OpenOptions};
+ use std::io::{Read, Write};
+[32m+use std::path::Path;
+[0m use std::sync::atomic::{AtomicU64, Ordering};
+ 
+ use crate::error::{ConfigError, invalid};
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:599:
+                 reduce_motion: r.bool("ui.cli.reduce_motion")?,
+                 panel: r.choice(
+                     "ui.cli.panel",
+[31m-                    &[("open", CliPanelDefault::Open), ("closed", CliPanelDefault::Closed)],
+[0m[32m+                    &[
+[0m[32m+                        ("open", CliPanelDefault::Open),
+[0m[32m+                        ("closed", CliPanelDefault::Closed),
+[0m[32m+                    ],
+[0m                 )?,
+             },
+         },
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:633:
+     }
+     let table = toml::from_str::<toml::Table>(&text).map_err(|error| ConfigError::Parse {
+         file: path.clone(),
+[31m-        line: u32::try_from(error.span().and_then(|span| text.get(..span.start)).map_or(0, |before| before.matches('\n').count()).saturating_add(1)).unwrap_or(u32::MAX),
+[0m[32m+        line: u32::try_from(
+[0m[32m+            error
+[0m[32m+                .span()
+[0m[32m+                .and_then(|span| text.get(..span.start))
+[0m[32m+                .map_or(0, |before| before.matches('\n').count())
+[0m[32m+                .saturating_add(1),
+[0m[32m+        )
+[0m[32m+        .unwrap_or(u32::MAX),
+[0m         reason: error.message().to_owned(),
+     })?;
+     let value = lookup_value(&table, "ui.cli");
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:644:
+         return Ok(CliPreferences::default());
+     };
+     let mut result = CliPreferences::default();
+[31m-    result.theme = pref_choice(preferences, "theme", "ui.cli.theme", &[("dark", CliTheme::Dark), ("terminal", CliTheme::Terminal)])?;
+[0m[31m-    result.color = pref_choice(preferences, "color", "ui.cli.color", &[("auto", CliColorPolicy::Auto), ("always", CliColorPolicy::Always), ("never", CliColorPolicy::Never)])?;
+[0m[31m-    result.color_depth = pref_choice(preferences, "color_depth", "ui.cli.color_depth", &[("auto", CliColorDepth::Auto), ("truecolor", CliColorDepth::Truecolor), ("ansi", CliColorDepth::Ansi)])?;
+[0m[32m+    result.theme = pref_choice(
+[0m[32m+        preferences,
+[0m[32m+        "theme",
+[0m[32m+        "ui.cli.theme",
+[0m[32m+        &[("dark", CliTheme::Dark), ("terminal", CliTheme::Terminal)],
+[0m[32m+    )?;
+[0m[32m+    result.color = pref_choice(
+[0m[32m+        preferences,
+[0m[32m+        "color",
+[0m[32m+        "ui.cli.color",
+[0m[32m+        &[
+[0m[32m+            ("auto", CliColorPolicy::Auto),
+[0m[32m+            ("always", CliColorPolicy::Always),
+[0m[32m+            ("never", CliColorPolicy::Never),
+[0m[32m+        ],
+[0m[32m+    )?;
+[0m[32m+    result.color_depth = pref_choice(
+[0m[32m+        preferences,
+[0m[32m+        "color_depth",
+[0m[32m+        "ui.cli.color_depth",
+[0m[32m+        &[
+[0m[32m+            ("auto", CliColorDepth::Auto),
+[0m[32m+            ("truecolor", CliColorDepth::Truecolor),
+[0m[32m+            ("ansi", CliColorDepth::Ansi),
+[0m[32m+        ],
+[0m[32m+    )?;
+[0m     result.ascii = pref_bool(preferences, "ascii", "ui.cli.ascii")?.unwrap_or(false);
+[31m-    result.reduce_motion = pref_bool(preferences, "reduce_motion", "ui.cli.reduce_motion")?.unwrap_or(false);
+[0m[31m-    result.panel = pref_choice(preferences, "panel", "ui.cli.panel", &[("open", CliPanelDefault::Open), ("closed", CliPanelDefault::Closed)])?;
+[0m[32m+    result.reduce_motion =
+[0m[32m+        pref_bool(preferences, "reduce_motion", "ui.cli.reduce_motion")?.unwrap_or(false);
+[0m[32m+    result.panel = pref_choice(
+[0m[32m+        preferences,
+[0m[32m+        "panel",
+[0m[32m+        "ui.cli.panel",
+[0m[32m+        &[
+[0m[32m+            ("open", CliPanelDefault::Open),
+[0m[32m+            ("closed", CliPanelDefault::Closed),
+[0m[32m+        ],
+[0m[32m+    )?;
+[0m     Ok(result)
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:684:
+     })?;
+     let mut table = toml::from_str::<toml::Table>(source).map_err(|error| ConfigError::Parse {
+         file: path.clone(),
+[31m-        line: u32::try_from(error.span().and_then(|span| source.get(..span.start)).map_or(0, |before| before.matches('\n').count()).saturating_add(1)).unwrap_or(u32::MAX),
+[0m[32m+        line: u32::try_from(
+[0m[32m+            error
+[0m[32m+                .span()
+[0m[32m+                .and_then(|span| source.get(..span.start))
+[0m[32m+                .map_or(0, |before| before.matches('\n').count())
+[0m[32m+                .saturating_add(1),
+[0m[32m+        )
+[0m[32m+        .unwrap_or(u32::MAX),
+[0m         reason: error.message().to_owned(),
+     })?;
+     let (key, toml_value) = preference_value(field, value)?;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:691:
+     if !crate::layer::insert_path(&mut table, key, toml_value) {
+         return Err(invalid(key, "conflicts with an existing TOML value"));
+     }
+[31m-    let encoded = toml::to_string(&table).map_err(|error| ConfigError::Encode(error.to_string()))?;
+[0m[32m+    let encoded =
+[0m[32m+        toml::to_string(&table).map_err(|error| ConfigError::Encode(error.to_string()))?;
+[0m     if encoded.len() > crate::MAX_CONFIG_FILE_BYTES {
+         return Err(ConfigError::FileTooLarge {
+             path,
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:701:
+     atomic_replace(&path, encoded.as_bytes())
+ }
+ 
+[31m-fn preference_value(field: PreferenceField, value: PreferenceValue) -> Result<(&'static str, toml::Value), ConfigError> {
+[0m[32m+fn preference_value(
+[0m[32m+    field: PreferenceField,
+[0m[32m+    value: PreferenceValue,
+[0m[32m+) -> Result<(&'static str, toml::Value), ConfigError> {
+[0m     let pair = match (field, value) {
+[31m-        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Dark)) => ("ui.cli.theme", "dark"),
+[0m[31m-        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Terminal)) => ("ui.cli.theme", "terminal"),
+[0m[31m-        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Auto)) => ("ui.cli.color", "auto"),
+[0m[31m-        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Always)) => ("ui.cli.color", "always"),
+[0m[31m-        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Never)) => ("ui.cli.color", "never"),
+[0m[31m-        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Auto)) => ("ui.cli.color_depth", "auto"),
+[0m[31m-        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Truecolor)) => ("ui.cli.color_depth", "truecolor"),
+[0m[31m-        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Ansi)) => ("ui.cli.color_depth", "ansi"),
+[0m[31m-        (PreferenceField::Ascii, PreferenceValue::Boolean(value)) => return Ok(("ui.cli.ascii", toml::Value::Boolean(value))),
+[0m[31m-        (PreferenceField::ReduceMotion, PreferenceValue::Boolean(value)) => return Ok(("ui.cli.reduce_motion", toml::Value::Boolean(value))),
+[0m[31m-        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Open)) => ("ui.cli.panel", "open"),
+[0m[31m-        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Closed)) => ("ui.cli.panel", "closed"),
+[0m[32m+        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Dark)) => {
+[0m[32m+            ("ui.cli.theme", "dark")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Theme, PreferenceValue::Theme(CliTheme::Terminal)) => {
+[0m[32m+            ("ui.cli.theme", "terminal")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Auto)) => {
+[0m[32m+            ("ui.cli.color", "auto")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Always)) => {
+[0m[32m+            ("ui.cli.color", "always")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Color, PreferenceValue::Color(CliColorPolicy::Never)) => {
+[0m[32m+            ("ui.cli.color", "never")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Auto)) => {
+[0m[32m+            ("ui.cli.color_depth", "auto")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Truecolor)) => {
+[0m[32m+            ("ui.cli.color_depth", "truecolor")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::ColorDepth, PreferenceValue::ColorDepth(CliColorDepth::Ansi)) => {
+[0m[32m+            ("ui.cli.color_depth", "ansi")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Ascii, PreferenceValue::Boolean(value)) => {
+[0m[32m+            return Ok(("ui.cli.ascii", toml::Value::Boolean(value)));
+[0m[32m+        }
+[0m[32m+        (PreferenceField::ReduceMotion, PreferenceValue::Boolean(value)) => {
+[0m[32m+            return Ok(("ui.cli.reduce_motion", toml::Value::Boolean(value)));
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Open)) => {
+[0m[32m+            ("ui.cli.panel", "open")
+[0m[32m+        }
+[0m[32m+        (PreferenceField::Panel, PreferenceValue::Panel(CliPanelDefault::Closed)) => {
+[0m[32m+            ("ui.cli.panel", "closed")
+[0m[32m+        }
+[0m         _ => return Err(invalid("ui.cli", "preference value does not match field")),
+     };
+     Ok((pair.0, toml::Value::String(pair.1.to_owned())))
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:726:
+     pieces.try_fold(first, |value, piece| value.as_table()?.get(piece))
+ }
+ 
+[31m-fn pref_choice<T: Copy>(table: &toml::Table, key: &str, full_key: &str, choices: &[(&str, T)]) -> Result<T, ConfigError> {
+[0m[32m+fn pref_choice<T: Copy>(
+[0m[32m+    table: &toml::Table,
+[0m[32m+    key: &str,
+[0m[32m+    full_key: &str,
+[0m[32m+    choices: &[(&str, T)],
+[0m[32m+) -> Result<T, ConfigError> {
+[0m     let Some(value) = table.get(key) else {
+[31m-        return choices.first().map(|choice| choice.1).ok_or_else(|| invalid(full_key, "no default value"));
+[0m[32m+        return choices
+[0m[32m+            .first()
+[0m[32m+            .map(|choice| choice.1)
+[0m[32m+            .ok_or_else(|| invalid(full_key, "no default value"));
+[0m     };
+     let Some(word) = value.as_str() else {
+         return Err(invalid(full_key, "expected a string"));
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:735:
+     };
+[31m-    choices.iter().find(|choice| choice.0 == word).map(|choice| choice.1).ok_or_else(|| {
+[0m[31m-        invalid(full_key, format!("expected one of {}", choices.iter().map(|choice| choice.0).collect::<Vec<_>>().join(", ")))
+[0m[31m-    })
+[0m[32m+    choices
+[0m[32m+        .iter()
+[0m[32m+        .find(|choice| choice.0 == word)
+[0m[32m+        .map(|choice| choice.1)
+[0m[32m+        .ok_or_else(|| {
+[0m[32m+            invalid(
+[0m[32m+                full_key,
+[0m[32m+                format!(
+[0m[32m+                    "expected one of {}",
+[0m[32m+                    choices
+[0m[32m+                        .iter()
+[0m[32m+                        .map(|choice| choice.0)
+[0m[32m+                        .collect::<Vec<_>>()
+[0m[32m+                        .join(", ")
+[0m[32m+                ),
+[0m[32m+            )
+[0m[32m+        })
+[0m }
+ 
+ fn pref_bool(table: &toml::Table, key: &str, full_key: &str) -> Result<Option<bool>, ConfigError> {
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:742:
+     match table.get(key) {
+         None => Ok(None),
+[31m-        Some(value) => value.as_bool().map(Some).ok_or_else(|| invalid(full_key, "expected a boolean")),
+[0m[32m+        Some(value) => value
+[0m[32m+            .as_bool()
+[0m[32m+            .map(Some)
+[0m[32m+            .ok_or_else(|| invalid(full_key, "expected a boolean")),
+[0m     }
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:748:
+ fn config_io(path: &Path, error: std::io::Error) -> ConfigError {
+[31m-    ConfigError::Io { path: path.to_path_buf(), reason: error.to_string() }
+[0m[32m+    ConfigError::Io {
+[0m[32m+        path: path.to_path_buf(),
+[0m[32m+        reason: error.to_string(),
+[0m[32m+    }
+[0m }
+ 
+ static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:753:
+ 
+ fn atomic_replace(path: &Path, bytes: &[u8]) -> Result<(), ConfigError> {
+[31m-    let parent = path.parent().ok_or_else(|| invalid("ui.cli", "global config path has no parent"))?;
+[0m[32m+    let parent = path
+[0m[32m+        .parent()
+[0m[32m+        .ok_or_else(|| invalid("ui.cli", "global config path has no parent"))?;
+[0m     let mut attempts = 0_u8;
+     loop {
+         attempts = attempts.saturating_add(1);
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\src\schema.rs:768:
+         }
+         let mut file = match options.open(&temp) {
+             Ok(file) => file,
+[31m-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && attempts < 8 => continue,
+[0m[32m+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && attempts < 8 => {
+[0m[32m+                continue;
+[0m[32m+            }
+[0m             Err(error) => return Err(config_io(&temp, error)),
+         };
+         let write_result = file.write_all(bytes).and_then(|()| file.sync_all());
+Diff in \\?\C:\mDev\Polaris\crates\polaris-config\tests\config_cli_preferences.rs:1:
+ //! CLI UI preference descriptors: specs/descriptors/config_cli_preferences.json.
+ use polaris_config::{
+[31m-    CliColorDepth, CliColorPolicy, CliPanelDefault, CliTheme, Layer, LayerInput,
+[0m[31m-    PreferenceField, PreferenceValue, TrustGrant, load, read_global_cli_preferences,
+[0m[31m-    save_global_cli_preference,
+[0m[32m+    CliColorDepth, CliColorPolicy, CliPanelDefault, CliTheme, Layer, LayerInput, PreferenceField,
+[0m[32m+    PreferenceValue, TrustGrant, load, read_global_cli_preferences, save_global_cli_preference,
+[0m };
+ use std::fs;
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\bracketed_paste.rs:1:
+ //! Bounded bracketed-paste recognition for native Windows key records.
+[31m-use crate::input::{InputError, NormalizedInput, MAX_PASTE_BYTES};
+[0m[32m+use crate::input::{InputError, MAX_PASTE_BYTES, NormalizedInput};
+[0m use crossterm::event::{KeyCode, KeyEventKind, KeyModifiers};
+ use std::collections::VecDeque;
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\bracketed_paste.rs:184:
+     }
+ 
+     #[test]
+[31m-    fn bracketed_payload_is_one_literal_paste_including_escape_sequences() -> Result<(), InputError> {
+[0m[32m+    fn bracketed_payload_is_one_literal_paste_including_escape_sequences() -> Result<(), InputError>
+[0m[32m+    {
+[0m         let mut decoder = BracketedPasteDecoder::default();
+         send(&mut decoder, "\u{1b}[200~hello\u{1b}[31m\u{1b}[201~")?;
+[31m-        assert_eq!(decoder.pop(), Some(NormalizedInput::Paste("hello\u{1b}[31m".to_owned())));
+[0m[32m+        assert_eq!(
+[0m[32m+            decoder.pop(),
+[0m[32m+            Some(NormalizedInput::Paste("hello\u{1b}[31m".to_owned()))
+[0m[32m+        );
+[0m         assert_eq!(decoder.pop(), None);
+         Ok(())
+     }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\bracketed_paste.rs:211:
+         for _ in 0..crate::input::MAX_PASTE_BYTES {
+             decoder.push(key(KeyCode::Char('x')))?;
+         }
+[31m-        assert_eq!(decoder.push(key(KeyCode::Char('y'))), Err(InputError::PasteTooLarge));
+[0m[32m+        assert_eq!(
+[0m[32m+            decoder.push(key(KeyCode::Char('y'))),
+[0m[32m+            Err(InputError::PasteTooLarge)
+[0m[32m+        );
+[0m         assert_eq!(decoder.pop(), None);
+         decoder.push(key(KeyCode::Char('a')))?;
+         assert_eq!(decoder.pop(), Some(key(KeyCode::Char('a'))));
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\editor.rs:146:
+     #[must_use]
+     pub fn caret_position(&self, cursor: usize) -> CellPosition {
+         for (row_index, row) in self.rows.iter().enumerate() {
+[31m-            if let Some(boundary) = row.boundaries.iter().find(|boundary| boundary.byte == cursor) {
+[0m[32m+            if let Some(boundary) = row
+[0m[32m+                .boundaries
+[0m[32m+                .iter()
+[0m[32m+                .find(|boundary| boundary.byte == cursor)
+[0m[32m+            {
+[0m                 return CellPosition {
+                     row: row_index,
+                     column: boundary.column,
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:84:
+         0x001B => Some(KeyCode::Esc),
+         0x0001..=0x001A => {
+             let offset = u32::from(unit).checked_sub(1)?;
+[31m-            char::from_u32(u32::from('a').checked_add(offset)?)
+[0m[31m-                .map(KeyCode::Char)
+[0m[32m+            char::from_u32(u32::from('a').checked_add(offset)?).map(KeyCode::Char)
+[0m         }
+         _ => char::from_u32(u32::from(unit)).map(KeyCode::Char),
+     }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:143:
+     fn c0_shift_enter_keeps_shift_and_enter() {
+         let mut decoder = KeyDecoder::default();
+         let key = decoder.decode(record(0, 0x000A, 0x0010));
+[31m-        assert_eq!(key.map(|event| (event.code, event.modifiers)), Some((KeyCode::Enter, KeyModifiers::SHIFT)));
+[0m[32m+        assert_eq!(
+[0m[32m+            key.map(|event| (event.code, event.modifiers)),
+[0m[32m+            Some((KeyCode::Enter, KeyModifiers::SHIFT))
+[0m[32m+        );
+[0m     }
+ 
+     #[test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:150:
+     fn c0_control_enter_is_not_shift_enter() {
+         let mut decoder = KeyDecoder::default();
+         let key = decoder.decode(record(0, 0x000A, 0x0008));
+[31m-        assert_eq!(key.map(|event| (event.code, event.modifiers)), Some((KeyCode::Enter, KeyModifiers::CONTROL)));
+[0m[32m+        assert_eq!(
+[0m[32m+            key.map(|event| (event.code, event.modifiers)),
+[0m[32m+            Some((KeyCode::Enter, KeyModifiers::CONTROL))
+[0m[32m+        );
+[0m     }
+ 
+     #[test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:157:
+     fn virtual_key_zero_control_character_is_preserved() {
+         let mut decoder = KeyDecoder::default();
+         let key = decoder.decode(record(0, 0x0003, 0x0008));
+[31m-        assert_eq!(key.map(|event| (event.code, event.modifiers)), Some((KeyCode::Char('c'), KeyModifiers::CONTROL)));
+[0m[32m+        assert_eq!(
+[0m[32m+            key.map(|event| (event.code, event.modifiers)),
+[0m[32m+            Some((KeyCode::Char('c'), KeyModifiers::CONTROL))
+[0m[32m+        );
+[0m     }
+ 
+     #[test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:165:
+         let mut decoder = KeyDecoder::default();
+         let mut repeated = record(0x0D, 0, 0);
+         repeated.repeat_count = 4;
+[31m-        assert_eq!(decoder.decode(repeated).map(|event| event.kind), Some(KeyEventKind::Repeat));
+[0m[32m+        assert_eq!(
+[0m[32m+            decoder.decode(repeated).map(|event| event.kind),
+[0m[32m+            Some(KeyEventKind::Repeat)
+[0m[32m+        );
+[0m         let mut released = record(0x0D, 0, 0);
+         released.key_down = false;
+[31m-        assert_eq!(decoder.decode(released).map(|event| event.kind), Some(KeyEventKind::Release));
+[0m[32m+        assert_eq!(
+[0m[32m+            decoder.decode(released).map(|event| event.kind),
+[0m[32m+            Some(KeyEventKind::Release)
+[0m[32m+        );
+[0m     }
+ 
+     #[test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\input_decoder.rs:175:
+     fn adjacent_surrogates_form_one_scalar() {
+         let mut decoder = KeyDecoder::default();
+         assert_eq!(decoder.decode(record(0, 0xD83D, 0)), None);
+[31m-        assert_eq!(decoder.decode(record(0, 0xDE80, 0)).map(|event| event.code), Some(KeyCode::Char('🚀')));
+[0m[32m+        assert_eq!(
+[0m[32m+            decoder.decode(record(0, 0xDE80, 0)).map(|event| event.code),
+[0m[32m+            Some(KeyCode::Char('🚀'))
+[0m[32m+        );
+[0m     }
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\lib.rs:7:
+ /// Safe terminal text shaping and Unicode-width wrapping.
+ pub mod text;
+ 
+[32m+mod bracketed_paste;
+[0m /// Crossterm event normalization and bounded paste handling.
+ pub mod input;
+ mod input_decoder;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\lib.rs:13:
+[31m-mod bracketed_paste;
+[0m[31m-/// Safe Win32 console input adapter.
+[0m[31m-#[cfg(windows)]
+[0m[31m-pub mod windows_input;
+[0m /// Bounded Ratatui frame staging and cursor output.
+ pub mod presenter;
+ /// Ordered semantic event scheduling and frame deadlines.
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\lib.rs:20:
+ pub mod scheduler;
+ /// Crossterm terminal mode acquisition and restoration.
+ pub mod terminal;
+[32m+/// Safe Win32 console input adapter.
+[0m[32m+#[cfg(windows)]
+[0m[32m+pub mod windows_input;
+[0m 
+ /// Shared Unicode editor geometry and source mapping.
+ pub mod editor;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\windows_input.rs:3:
+     input::{InputStopToken, NormalizedInput, ShiftEnterCapability, TerminalInput},
+     input_decoder::{KeyDecoder, NativeKeyRecord},
+ };
+[31m-use crossterm::{
+[0m[31m-    event::{KeyModifiers, MouseButton, MouseEvent as CrosstermMouseEvent, MouseEventKind},
+[0m[32m+use crossterm::event::{
+[0m[32m+    KeyModifiers, MouseButton, MouseEvent as CrosstermMouseEvent, MouseEventKind,
+[0m };
+[31m-use crossterm_winapi::{Console, ConsoleMode, ControlKeyState, EventFlags, Handle, HandleType, InputRecord};
+[0m[31m-use std::{io, thread, time::{Duration, Instant}};
+[0m[32m+use crossterm_winapi::{
+[0m[32m+    Console, ConsoleMode, ControlKeyState, EventFlags, Handle, HandleType, InputRecord,
+[0m[32m+};
+[0m[32m+use std::{
+[0m[32m+    io, thread,
+[0m[32m+    time::{Duration, Instant},
+[0m[32m+};
+[0m 
+ const ENABLE_ECHO_INPUT: u32 = 0x0004;
+ const ENABLE_LINE_INPUT: u32 = 0x0002;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\windows_input.rs:72:
+                 columns: size.size.x,
+                 rows: size.size.y,
+             }),
+[31m-            InputRecord::FocusEvent(focus) => Some(NormalizedInput::Focus { focused: focus.set_focus }),
+[0m[32m+            InputRecord::FocusEvent(focus) => Some(NormalizedInput::Focus {
+[0m[32m+                focused: focus.set_focus,
+[0m[32m+            }),
+[0m             InputRecord::MenuEvent(_) => None,
+         };
+         Ok(event)
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\windows_input.rs:116:
+ 
+ fn control_state_bits(state: ControlKeyState) -> u32 {
+     let mut bits = 0;
+[31m-    for flag in [SHIFT_PRESSED, LEFT_CTRL_PRESSED, RIGHT_CTRL_PRESSED, LEFT_ALT_PRESSED, RIGHT_ALT_PRESSED] {
+[0m[32m+    for flag in [
+[0m[32m+        SHIFT_PRESSED,
+[0m[32m+        LEFT_CTRL_PRESSED,
+[0m[32m+        RIGHT_CTRL_PRESSED,
+[0m[32m+        LEFT_ALT_PRESSED,
+[0m[32m+        RIGHT_ALT_PRESSED,
+[0m[32m+    ] {
+[0m         if state.has_state(flag) {
+             bits |= flag;
+         }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\src\windows_input.rs:147:
+         EventFlags::MouseHwheeled if buttons.scroll_up() => MouseEventKind::ScrollRight,
+         EventFlags::MouseHwheeled => MouseEventKind::ScrollLeft,
+         EventFlags::DoubleClick => MouseEventKind::Down(MouseButton::Left),
+[31m-        EventFlags::PressOrRelease if buttons.left_button() => MouseEventKind::Down(MouseButton::Left),
+[0m[31m-        EventFlags::PressOrRelease if buttons.right_button() => MouseEventKind::Down(MouseButton::Right),
+[0m[31m-        EventFlags::PressOrRelease if buttons.middle_button() => MouseEventKind::Down(MouseButton::Middle),
+[0m[32m+        EventFlags::PressOrRelease if buttons.left_button() => {
+[0m[32m+            MouseEventKind::Down(MouseButton::Left)
+[0m[32m+        }
+[0m[32m+        EventFlags::PressOrRelease if buttons.right_button() => {
+[0m[32m+            MouseEventKind::Down(MouseButton::Right)
+[0m[32m+        }
+[0m[32m+        EventFlags::PressOrRelease if buttons.middle_button() => {
+[0m[32m+            MouseEventKind::Down(MouseButton::Middle)
+[0m[32m+        }
+[0m         EventFlags::PressOrRelease => MouseEventKind::Up(MouseButton::Left),
+         EventFlags::Unknown => MouseEventKind::Moved,
+     }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_lifecycle.rs:109:
+     assert_eq!(
+         got,
+         vec![
+[31m-            "output-mode+", "raw+", "alt+", "hide", "paste+", "mouse+", "keyboard+", "keyboard-", "mouse-", "paste-", "show", "alt-", "raw-", "output-mode-"
+[0m[32m+            "output-mode+",
+[0m[32m+            "raw+",
+[0m[32m+            "alt+",
+[0m[32m+            "hide",
+[0m[32m+            "paste+",
+[0m[32m+            "mouse+",
+[0m[32m+            "keyboard+",
+[0m[32m+            "keyboard-",
+[0m[32m+            "mouse-",
+[0m[32m+            "paste-",
+[0m[32m+            "show",
+[0m[32m+            "alt-",
+[0m[32m+            "raw-",
+[0m[32m+            "output-mode-"
+[0m         ]
+     );
+     Ok(())
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_lifecycle.rs:127:
+         .lock()
+         .map_err(|_| io::Error::other("calls lock poisoned"))?
+         .clone();
+[31m-    assert!(got.ends_with(&["keyboard-", "mouse-", "paste-", "show", "alt-", "raw-", "output-mode-"]));
+[0m[32m+    assert!(got.ends_with(&[
+[0m[32m+        "keyboard-",
+[0m[32m+        "mouse-",
+[0m[32m+        "paste-",
+[0m[32m+        "show",
+[0m[32m+        "alt-",
+[0m[32m+        "raw-",
+[0m[32m+        "output-mode-"
+[0m[32m+    ]));
+[0m     Ok(())
+ }
+ #[test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_lifecycle.rs:140:
+         .lock()
+         .map_err(|_| io::Error::other("calls lock poisoned"))?
+         .clone();
+[31m-    assert!(got.ends_with(&["keyboard-", "mouse-", "paste-", "show", "alt-", "raw-", "output-mode-"]));
+[0m[32m+    assert!(got.ends_with(&[
+[0m[32m+        "keyboard-",
+[0m[32m+        "mouse-",
+[0m[32m+        "paste-",
+[0m[32m+        "show",
+[0m[32m+        "alt-",
+[0m[32m+        "raw-",
+[0m[32m+        "output-mode-"
+[0m[32m+    ]));
+[0m     Ok(())
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_lifecycle.rs:155:
+         .lock()
+         .map_err(|_| io::Error::other("calls lock poisoned"))?
+         .clone();
+[31m-    assert!(got.ends_with(&["keyboard-", "mouse-", "paste-", "show", "alt-", "raw-", "output-mode-"]));
+[0m[32m+    assert!(got.ends_with(&[
+[0m[32m+        "keyboard-",
+[0m[32m+        "mouse-",
+[0m[32m+        "paste-",
+[0m[32m+        "show",
+[0m[32m+        "alt-",
+[0m[32m+        "raw-",
+[0m[32m+        "output-mode-"
+[0m[32m+    ]));
+[0m     Ok(())
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_presenter.rs:15:
+ 
+ #[test]
+ fn changed_cells_restore_unchanged_editor_cursor_after_paint() -> TestResult {
+[31m-    let mut presenter = BufferedPresenter::new_with_cursor_state(Sink::default(), CursorState::Hidden);
+[0m[32m+    let mut presenter =
+[0m[32m+        BufferedPresenter::new_with_cursor_state(Sink::default(), CursorState::Hidden);
+[0m     let backend = CrosstermBackend::new(presenter.writer());
+[31m-    let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport: Viewport::Fixed(Rect::new(0, 0, 20, 5)) })?;
+[0m[32m+    let mut terminal = Terminal::with_options(
+[0m[32m+        backend,
+[0m[32m+        TerminalOptions {
+[0m[32m+            viewport: Viewport::Fixed(Rect::new(0, 0, 20, 5)),
+[0m[32m+        },
+[0m[32m+    )?;
+[0m     for effort in ["medium", "high"] {
+         let before = presenter.output().bytes.len();
+         presenter.begin_frame()?;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\cli\tests\terminal_presenter.rs:26:
+             frame.set_cursor_position(Position::new(1, 1));
+         })?;
+         let _written = presenter.commit()?;
+[31m-        let delta = presenter.output().bytes.get(before..).ok_or("output moved backwards")?;
+[0m[31m-        assert!(delta.ends_with(b"\x1b[2;2H\x1b[?25h"), "paint must end in editor position then reveal: {delta:?}");
+[0m[31m-        if effort == "high" { assert!(delta.starts_with(b"\x1b[?25l"), "visible caret must be hidden while repainting"); }
+[0m[32m+        let delta = presenter
+[0m[32m+            .output()
+[0m[32m+            .bytes
+[0m[32m+            .get(before..)
+[0m[32m+            .ok_or("output moved backwards")?;
+[0m[32m+        assert!(
+[0m[32m+            delta.ends_with(b"\x1b[2;2H\x1b[?25h"),
+[0m[32m+            "paint must end in editor position then reveal: {delta:?}"
+[0m[32m+        );
+[0m[32m+        if effort == "high" {
+[0m[32m+            assert!(
+[0m[32m+                delta.starts_with(b"\x1b[?25l"),
+[0m[32m+                "visible caret must be hidden while repainting"
+[0m[32m+            );
+[0m[32m+        }
+[0m     }
+     presenter.begin_frame()?;
+     terminal.draw(|frame| {
+Diff in \\?\C:\mDev\Polaris\crates\polaris-ui\crates\model\tests\continuation_editor.rs:110:
+     assert_eq!(c.selection(), Some(0..c.text().len()));
+     Ok(())
+ }
+[31m-
+[0m 

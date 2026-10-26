@@ -1,6 +1,6 @@
 # Polaris — Phase status
 
-> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-25 (CLI UI continuation; historical P1 non-UI acceptance retained) · **Branch:** `main`
+> **Document:** `@prime/PHASES_STATUS.md` · **Snapshot:** 2026-10-26 (non-UI continuation; historical P1 and later UI evidence retained) · **Branch:** `main`
 > (the team's periodic commits picked up part of the P0 work; this session committed nothing) ·
 > **Reference PC:** Windows 11 LTSC 2024, Ryzen 7 2700, 16 GB RAM, GTX 1650 4 GB, rustc/cargo 1.99.0,
 > WSL2 Ubuntu 24.04.5.
@@ -18,16 +18,16 @@
 |---|---|
 | PASS | 45 |
 | FAIL | 3 |
-| IN PROGRESS | 56 |
+| IN PROGRESS | 59 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 44 |
+| NOT STARTED | 41 |
 | **total** | 163 |
 
 **Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
 P1 now composes actual CAS/redb/SQLite, a signed directive verifier, bounded receipts/replay, native process ownership, workspace read tools and a real headless CLI. Windows hard-kill and Linux journal-throughput failures were fixed against failing regressions; earlier outputs remain retained. Tokio 1.54.0 was yanked during verification and was replaced with 1.54.1 in all resolution graphs. No advisory exemption was introduced.
 
-**Full M1/P1 UI acceptance remains open:** CLI UI implementation was subsequently authorized; tested foundation slices and remaining gates are recorded in §E33 and UI_PHASES. Facades remain IN PROGRESS where later-phase children or the full execution bundle are open; their P1 exports and local profile are checked separately. P2–P9 source compiles in the workspace, but this does not mark those feature phases complete.
+**Full M1/P1 UI acceptance remains open:** CLI UI implementation was subsequently authorized; tested foundation slices and remaining gates are recorded in §E33, §E35 and UI_PHASES. Facades remain IN PROGRESS where later-phase children or the full execution bundle are open; their P1 exports and local profile are checked separately. P2–P9 source compiles in the workspace, but this does not mark those feature phases complete.
 
 P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account requests, the Slint licence decision and dependency vetting open. PID-only orphan identities remain fail-closed for operator review. Full model/sandbox/S1 assembly, remote transports, live credentials and UI retain their own phase gates.
 
@@ -37,12 +37,12 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 |---|---|---|
 | P0-SKEL-1 `.gitignore` anchored, Cargo.lock tracked | PASS | §E1; spike outputs (`bin/`, `out*/`, `research/*-src/`) added to the ignore list this session |
 | P0-SKEL-2 `.gitattributes` | PASS | file present (LF default; CRLF for .ps1/.bat/.cmd) |
-| P0-SKEL-3 `workspace.toml` (93 packages, 156 ext deps, 26 member-setup items) | PASS | §E2 |
+| P0-SKEL-3 `workspace.toml` (93 packages, 164 ext deps, 26 member-setup items) | PASS | §E2 historical inventory; current counts from E39 `workspace.py summary` |
 | P0-SKEL-4 `workspace.py` tooling | PASS | §E2–§E8, §E13 (`gen` skips `implemented` crates; `render-docs`) |
 | P0-SKEL-5 root `Cargo.toml` + `rust-toolchain.toml` generated | PASS | §E3 (`cargo metadata`: 93 packages) |
 | P0-SKEL-6 doc-only skeleton compiles | PASS | §E4, re-run §E13 |
 | P0-SKEL-7 member + layer checks | PASS | §E5 (Python) and §E9 (Rust xtask) |
-| P0-SKEL-8 version audit + resolution probe | PASS | §E6 (156/156 OK; lockfile resolved — 1,699 packages; see probe history) |
+| P0-SKEL-8 version audit + resolution probe | PASS | Historical §E6 (156/156 OK; lockfile resolved — 1,699 packages; see probe history). Full version audit of the expanded E39 graph is not rerun. |
 | P0-SKEL-9 PLAN.md / PHASES.md / PHASES_STATUS.md; inventory 100 % covered | PASS | §E13 (`check-docs`, `render-docs --check`, `chatlog-inventory --check`) |
 | P0-ACC-1 Token Factory API key | BLOCKED-ON-ACCESS | team action: request key |
 | P0-ACC-2 Token Factory Sandboxes (Contree) access | BLOCKED-ON-ACCESS | team action |
@@ -80,7 +80,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | Task | Status |
 |---|---|
 | P1-X-1 composition-root wiring v0 | PASS (§E30: actual LocalBackends, signed directive dispatch, read tools, durable stores, session typestate and shutdown) |
-| P1-X-2 TUI shell | IN PROGRESS (§E33: real offline TUI, deterministic dump, focused model/renderer/controller/ConPTY evidence; complete UI gates remain open) |
+| P1-X-2 TUI shell | IN PROGRESS (§E33–§E36: real offline TUI, shared textarea/hover/selection, safe native reader, isolated demo and cold services; 350 scoped tests green, complete UI gates remain open) |
 | P1-X-3 rustls aws-lc-rs provider in `main` | PASS (§E30: real main and subprocess provider smoke) |
 | P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final toolchain/guest image and live gateway/sync passed; remaining full audit in [P2 audit](P2_LOGIC_STATUS.md) |
 | P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
@@ -219,7 +219,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | 2026-10-24 E32: bounded model/tool/verifier loop with linked transcript replay, quota charging and CAS-before-event journaling; focused contracts pass. Full production plan/edit/test/proof composition remains open. |
 | `crate:polaris-runtime-context` | `polaris-runtime-context` | P3 | IN PROGRESS | Production deterministic prompt assembly and byte-exact CAS context folding in progress; UNVERIFIED, validation deferred. |
 | `crate:polaris-kernel-operators` | `polaris-kernel-operators` | P3 | IN PROGRESS | Production typed operator combinators, cancellation, bounded retries and stage-order contracts in progress; UNVERIFIED, full composition remains open. |
-| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | P3 | IN PROGRESS | Production hybrid mutation verification and evidence-backed approvals in progress; UNVERIFIED, validation deferred by user. Existing wire-contract tests preserved (§E25). |
+| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | P3 | IN PROGRESS | 2026-10-26 E39: authentic issued-witness cache isolation/expiry, execution binding and wire contracts pass (five tests), with strict all-target Clippy. Full hybrid mutation acceptance remains open: incomplete unsafe-analysis coverage conservatively requests human approval; no bypass is introduced. |
 | `crate:polaris-spike-ratelimit` | `polaris-spike-ratelimit` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ### P4
@@ -246,9 +246,9 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | IN PROGRESS | 2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open. |
 | `crate:polaris-ingest` | `polaris-ingest` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | Production provenance-preserving ranking/filtering written with bounded S1 calls and fail-open fallback; UNVERIFIED, source race and validation remain open. |
-| `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | Child module facade exports written; sifter is UNVERIFIED, live providers and search racing remain pending. |
+| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass; live service, broader fuzz/load and full P5 integration remain open. |
+| `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | 2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open. |
+| `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | 2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open. |
 | `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ### P6
@@ -265,13 +265,13 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-guest` | `polaris-guest` | P7 | IN PROGRESS | P2 protocol-version and locked conditional sync-cas helper implemented; Linux filesystem tests 6 passed plus host/Linux checks. Final image/live sync gate pending. Full structured exec/browser remains P7. |
-| `crate:polaris-ext-mcp` | `polaris-ext-mcp` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ext-mcp` | `polaris-ext-mcp` | P7 | IN PROGRESS | 2026-10-26 E39: real RMCP3.5.1 stdio/HTTP client, sandbox-only production launch, bounded protocol framing/body/SSE, schema-aware validation, lifecycle and trust/effect controls. Twenty-eight local contracts and strict all-target Clippy pass; live sandbox-backed MCP, full kernel registry/frame composition and wider lifecycle gates remain open. |
 | `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | IN PROGRESS | 2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open. |
 | `crate:polaris-ext` | `polaris-ext` | P7 | IN PROGRESS | Skills exports and catalog are implemented. MCP child and full P7 integration remain open. |
 | `crate:polaris-browser` | `polaris-browser` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-hacker` | `polaris-hacker` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | Production bounded DAG scheduler, named pools, speculative races and cancellation written; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | Deterministic research core and bounded versioned checkpoint codec: seven contracts and warning-denied scoped clippy PASS. Program parsing, durable store integration, runner/workspace adapters and real research loop remain pending. |
+| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | 2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. Production sandbox/model/critique and broader crash/portability gates remain open. |
 
 ### P8
 
@@ -291,7 +291,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-desktop` | `polaris-desktop` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-web` | `polaris-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-daemon` | `polaris-daemon` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. Six local contracts and strict owned-target Clippy pass. Default P1 profile denies remote mutation/terminal; remote mTLS, authority provisioning/revocation and full agent profile remain open. |
 | `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open. |
 | `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-ui-web` | `polaris-ui-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
@@ -1287,3 +1287,85 @@ Implementation of UI_PLAN is authorized and in progress. The CLI model, responsi
 Evidence and scope: [verification index](evidence/ui/verification.txt), [contract and resource audit](evidence/ui/contract-audit.md), [UI gates](UI_PHASES.md), [module inventory](UI_MODULES.csv). Historical §E21/§E30 results are retained. Current doctor readiness and advisory-cache failures are recorded separately; earlier acceptance is not a claim that this managed environment satisfies setup today.
 
 E33 final checkpoint: the four-package offline command reported 266 passed, 1 failed and 1 ignored. The only failure is the current doctor readiness assertion for missing environment prerequisites. Selected owned-target safety Clippy, all-target UI/application API check and formatting passed. Configured advisory audit could not lock its read-only cache; the separately identified licence/bans/sources subset passed. Exact commands and raw files are in the linked verification index. Full UI gates remain open.
+
+
+## E34 — CLI reference-design repair (2026-10-25)
+
+**VERIFIED focused repair:** corrected the live-editor surface misunderstanding, actual demo geometry/palette, adaptive wrapped input, neutral conversation and opaque overlays. Cell/color comparison outside the actual-state footer matches the saved demo welcome at five sizes. Footer clicks, quiet startup, concise rejection and /clear are covered.
+
+The focused offline repair run passed **92 tests**, including nine real native PTY scenarios and one VT-parser regression. Selected owned-target safety Clippy passed. [Exact commands, raw output, visual exports, source-to-assertion mapping and limitations](evidence/ui/repair-verification.md). This is separate from E33’s full-package doctor failure and is not full UI/M1 acceptance. The GUI browser was unavailable; visual inspection used rasterized actual Ratatui buffers, not a physical-host screenshot. Runtime model execution, live human questions and the other declared UI gates remain incomplete.
+
+
+## E35 — CLI cold services and UI preferences (2026-10-25)
+
+**VERIFIED scoped continuation:** added typed `[ui.cli]` preferences in `polaris-config`, an explicit one-field global atomic save API, CLI settings state with memory-only runtime/demo overrides, a bounded settings-save worker, text-only platform clipboard worker and bounded workspace path snapshot worker. UI service paths delegate workspace ignore, secret-path, symlink/reparse and containment policy to `polaris-tools-builtin`; tests do not access or mutate the user's clipboard. No UI phase or M1 acceptance is claimed.
+
+**VERIFIED current commands:** `cargo test --offline -p polaris-config` passed all package tests and doctests; `cargo test --offline -p polaris-cli --lib` passed 45/45; selected all-target safety Clippy passed for config/model/UI CLI/app. [Continuation evidence index](evidence/ui/continuation-services-verification.md) links the exact raw stdout/stderr and command records. Generic Clippy style warnings remain.
+
+**Red evidence gap:** the service descriptor predates implementation, but a service-specific meaningful red transcript was not retained. No red is claimed. The full native clipboard operation, Windows/Linux/macOS matrix, path junction/case/deleted-suggestion cases, settings save retry/restart/malformed-file screen flows, visual QA and cold-path allocation profile remain unverified. Live human-request/backend protocol is still not implemented; WEB-OPT and desktop remain deferred.
+
+## E36 — CLI editor, pointer, safe native input and isolated demo (2026-10-25)
+
+**VERIFIED scoped continuation:** one Unicode geometry now drives textarea paint/caret/click/selection/vertical navigation; Shift+Enter inserts newline, Ctrl+Enter is unbound, and effort changes preserve the physical editor caret after repaint. Typed clipped hit maps add hover, footer/completion/tool interaction, editor drag and canonical single-entry transcript selection. The safe public Windows console wrapper preserves key modifiers/Alt-code characters with bounded CSI/paste processing; oversized paste is discarded through its terminator. Reader teardown restores its mode snapshot before terminal teardown.
+
+The explicit `--demo`/footer profile owns separate drafts/transcript, labelled scripted streaming/cancel/reset/replay and three-question None/notes/atomic-submit behavior. It calls no KernelApi/provider and does not open durable offline state or save preferences. Cold services are integrated with generation/revision-scoped paste and explicit off-thread per-field saves; user clipboard contents are not touched by tests.
+
+**VERIFIED commands:** config/model/renderer package tests passed **263**; selected app targets passed **87** (58 library, 2 RTK, 3 trace, 3 session, 6 startup, 15 terminal). The final self-contained ConPTY target passed **15/15** again; this repeat is not added to the 350 total. Five selected owned-target safety lints, formatting and dependency-policy subset passed. [Exact commands, raw output, meaningful red records and visual exports](evidence/ui/continuation-verification.md); [machine index](evidence/ui/continuation-verification.json).
+
+**Open verdict:** separate headless doctor readiness still fails on missing setup prerequisites (2 passed, 1 failed); advisory audit cannot acquire its read-only cache lock. Native clipboard success, physical-terminal/Linux matrix, cross-entry selection/word drag, full interactive tool/diff demo cards, full settings error/restart flows, real human/model backend integration and measured cache/allocation/performance/release gates remain open. Earlier broad/service initial-red gaps are retained. Web welcome/WEB-OPT and desktop remain deferred. No complete UI phase, M1 or whole-workspace PASS is claimed.
+
+
+## E37 — CLI reference parity, complete local Demo catalog and bounded layout cache (2026-10-25)
+
+**VERIFIED scoped implementation:** typed local commands open reference-derived bottom sheets; all 27 original preview names plus questions/editor are accepted by the real binary. The compact questionnaire replaces the composer, keeps no defaults and explicit exclusive None, edits Unicode answers/notes with shared geometry, and requires Submit review. Native input handles interleaved key releases, DEL and right/middle mouse release identity; rich transcript styling, multi-entry semantic selection, presentation-only tools and a retained bounded cache are connected to the app. Fixtures remain labelled Demo and grant no P2/P3 authority.
+
+**VERIFIED commands:** config/model/renderer package tests: 297 passed, 0 failed, 1 opt-in benchmark ignored; selected application targets: 129 passed, 0 failed (95 library, 2 RTK, 4 trace, 3 session, 7 startup, 18 terminal). The separate benchmark was explicitly executed in debug and release, not added to this count. Selected five owned-target safety Clippy and formatting passed. [Exact commands, raw output, source mapping, regression REDs, visual exports and limits](evidence/ui/parity-verification.md).
+
+**Open verdict:** the separate current headless target is 2 passed, 1 doctor readiness failure on missing setup prerequisites. The release warm CPU microcase has p50 3.888 ms / max 4.805 ms at 200×60; debug/cold paths exceed 8 ms, so full UI6 acceptance stays open. ConPTY consumes mouse DECSET controls in this environment; exact writer bytes are checked directly and physical Alacritty remains UNVERIFIED. Timed agent/independent child transcripts, full overlay parity, OS clipboard/images, settings error/restart flows, complete paging/performance, real human/provider protocols and formal/Linux/release gates remain open. No full UI/M1 or whole-workspace PASS; web/WEB-OPT/desktop remain deferred. Existing state changes and earlier evidence are preserved.
+
+## E38 — CLI mouse delivery, Demo activation and source-only editor selection (2026-10-25)
+
+**VERIFIED scoped repair:** the native Windows input owner enables mouse/window/extended/VT input and disables Quick Edit through the existing safe adapter. Explicit fallible close restores its snapshot, disarms successful restoration and leaves failed restoration retryable; terminal teardown restores the original full mask. A child ConPTY readback observed initial `0x1f7`, raw `0x1f0`, native `0x3b8`, after input close `0x1f0`, final `0x1f7`. A single profile-row click activates Demo via the same guarded path as Enter.
+
+Shared gesture ownership now handles character drag, double-click word/word drag and triple-click logical line across composer, transcript and question editors. Only source cells are painted; decorative padding cannot begin word/line selection. Mouse release preserves editable ranges for Delete/Backspace, typing, paste and Undo. Diagnostic mouse traces contain categories/buttons/coordinates/modifiers only.
+
+**VERIFIED commands:** current model/CLI-renderer package tests passed **277**, 0 failed, 1 opt-in CPU benchmark ignored; selected app targets passed **145**, 0 failed (108 library, 2 RTK, 5 trace, 3 session, 7 startup, 20 native terminal). The **422** total excludes config and broader workspace targets, repeats and the separate renderer captures. Five selected owned-target safety Clippy rules passed. [Exact commands, raw outputs, RED regressions, four actual-buffer visual exports and limits](evidence/ui/mouse-repair-verification.md).
+
+**Open verdict:** synthetic ConPTY mouse/input and actual OS-mode readback do not verify physical Alacritty keyboard/mouse operation. OS clipboard success, Linux, full strict Clippy/formal/performance/release and full UI/M1 acceptance remain open; prior doctor readiness/advisory-cache failures are unchanged and not rerun in this slice. P2/P3/provider/human authority, web welcome/WEB-OPT and desktop are outside this repair. Earlier evidence and pre-existing local state remain preserved.
+
+## E39 — Non-UI retrieval, extension, research and daemon continuation (2026-10-26)
+
+**VERIFIED scoped implementation:** concrete redacting Tavily/SearXNG adapters and DNS-pinned,
+bounded fetch/extraction; named-pool source races with cancellation, deduplicated S1 budgets and
+accurate task outcomes; equal-cap persisted/recovered dropped-chunk manifests; real RMCP 3.5.1
+stdio/HTTP clients with bounded framing and schema-aware argument checks. MCP production stdio
+uses the new SDK/OpenShell dedicated-sandbox duplex resource boundary. The local RMCP subprocess
+fixture is test-only, and the live configured gateway was unavailable.
+
+Research now parses immutable programs, narrows tool capabilities to snapshotted paths, stores
+actual tool/metric/VCS receipt payloads in CAS, and serializes durable checkpoint/ledger writes.
+The 20-iteration local-process/Git fixture reopens all 60 evidence payloads and recovers one abrupt
+exit. A lifetime OS run lease prevents two orchestration instances; fresh initialization refuses
+an existing checkpoint, and child-process termination releases the lease. These local process
+fixtures do not prove sandbox isolation or live model behavior.
+
+The new `polarisd` composes the real local kernel and authenticated RPC service, validates bounded
+listener/TLS configuration, closes readiness before draining and propagates signal/log-flush
+failures. Its default P1 profile supports health and event replay and explicitly denies remote
+mutation/terminal operations. Full remote agent composition, authority provisioning/revocation,
+single-instance deployment and live remote mTLS acceptance remain open.
+
+**Current evidence:** the scoped command run records 157 passing tests, with exact argv,
+exit codes and raw output in [commands.json](evidence/continuation-20261026/commands.json).
+See the [evidence index and limitations](evidence/continuation-20261026/README.md). The SDK's full
+suite still has two unchanged schema-boundary assertion failures. The source-policy witness gate
+is green after moving approval-cache coverage to verifier tests using authentic issued witnesses;
+no checker or cache assertion was weakened. The dependency advisory gate still fails on four
+unmaintained crates after the ctutils 0.4.4 vulnerability fix, and cargo-vet retains 724 unvetted
+dependencies. These are open release gates, not phase acceptance.
+
+**Consistency:** central dependency ownership, module exports, descriptors and generated phase
+tables are updated. The percentage report refreshes only this continuation's affected rows;
+other requirement estimates retain their earlier audit basis. No UI implementation is changed
+by this continuation. Phase 2's broader completion work remains paused; its stdio seam is needed
+for P7 MCP. All full-system and complete-phase acceptance claims remain open.

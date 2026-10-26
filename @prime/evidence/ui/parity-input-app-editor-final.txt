@@ -1,0 +1,58 @@
+cargo test --offline -p polaris-cli --test ui_terminal offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste -- --exact --nocapture
+EXIT 0
+STDOUT
+
+running 1 test
+test offline_alacritty_editor_deletes_ascii_unicode_and_middle_paste ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 1.94s
+
+
+STDERR
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: method `is_consumed` is never used
+  --> apps\polaris-cli\src\demo_gallery.rs:65:18
+   |
+64 | impl GalleryEffect {
+   | ------------------ method in this implementation
+65 |     pub const fn is_consumed(&self) -> bool {
+   |                  ^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple methods are never used
+   --> apps\polaris-cli\src\demo_gallery.rs:573:12
+    |
+488 | impl DemoGallery {
+    | ---------------- methods in this implementation
+...
+573 |     pub fn selected_effort(&self) -> Option<Effort> {
+    |            ^^^^^^^^^^^^^^^
+...
+576 |     pub fn stats_tab_label(&self) -> &'static str {
+    |            ^^^^^^^^^^^^^^^
+...
+594 |     pub fn stats_summary(&self) -> StatsSummary {
+    |            ^^^^^^^^^^^^^
+...
+603 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+612 |     pub const fn stats_details_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+615 |     pub const fn stats_bucket(&self) -> Option<usize> {
+    |                  ^^^^^^^^^^^^
+...
+618 |     pub const fn usage_demo_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^
+...
+621 |     pub const fn usage_details_visible(&self) -> bool {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+631 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+    |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 10.09s
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-97e39ee21424c315.exe)

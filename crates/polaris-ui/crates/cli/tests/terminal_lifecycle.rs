@@ -48,6 +48,12 @@ impl Write for Fake {
 }
 struct Ops;
 impl TerminalOps<Fake> for Ops {
+    fn capture_output_mode(&mut self, w: &mut Fake) -> io::Result<()> {
+        w.call("output-mode+")
+    }
+    fn restore_output_mode(&mut self, w: &mut Fake) -> io::Result<()> {
+        w.call("output-mode-")
+    }
     fn enable_raw(&mut self, w: &mut Fake) -> io::Result<()> {
         w.call("raw+")
     }
@@ -78,6 +84,12 @@ impl TerminalOps<Fake> for Ops {
     fn disable_mouse(&mut self, w: &mut Fake) -> io::Result<()> {
         w.call("mouse-")
     }
+    fn push_keyboard(&mut self, w: &mut Fake) -> io::Result<()> {
+        w.call("keyboard+")
+    }
+    fn pop_keyboard(&mut self, w: &mut Fake) -> io::Result<()> {
+        w.call("keyboard-")
+    }
 }
 #[test]
 fn rolls_back_acquired_modes_in_reverse_order() -> Result<(), Box<dyn std::error::Error>> {
@@ -97,7 +109,16 @@ fn rolls_back_acquired_modes_in_reverse_order() -> Result<(), Box<dyn std::error
     assert_eq!(
         got,
         vec![
-            "raw+", "alt+", "hide", "paste+", "paste-", "show", "alt-", "raw-"
+            "output-mode+",
+            "raw+",
+            "alt+",
+            "hide",
+            "paste+",
+            "paste-",
+            "show",
+            "alt-",
+            "raw-",
+            "output-mode-"
         ]
     );
     Ok(())
@@ -115,7 +136,15 @@ fn close_attempts_every_restore_step_and_reports_errors() -> Result<(), Box<dyn 
         .lock()
         .map_err(|_| io::Error::other("calls lock poisoned"))?
         .clone();
-    assert!(got.ends_with(&["mouse-", "paste-", "show", "alt-", "raw-"]));
+    assert!(got.ends_with(&[
+        "keyboard-",
+        "mouse-",
+        "paste-",
+        "show",
+        "alt-",
+        "raw-",
+        "output-mode-"
+    ]));
     Ok(())
 }
 #[test]
@@ -128,7 +157,15 @@ fn drop_attempts_best_effort_cleanup() -> Result<(), Box<dyn std::error::Error>>
         .lock()
         .map_err(|_| io::Error::other("calls lock poisoned"))?
         .clone();
-    assert!(got.ends_with(&["mouse-", "paste-", "show", "alt-", "raw-"]));
+    assert!(got.ends_with(&[
+        "keyboard-",
+        "mouse-",
+        "paste-",
+        "show",
+        "alt-",
+        "raw-",
+        "output-mode-"
+    ]));
     Ok(())
 }
 
@@ -143,7 +180,15 @@ fn drop_attempts_remaining_modes_after_restore_error() -> Result<(), Box<dyn std
         .lock()
         .map_err(|_| io::Error::other("calls lock poisoned"))?
         .clone();
-    assert!(got.ends_with(&["mouse-", "paste-", "show", "alt-", "raw-"]));
+    assert!(got.ends_with(&[
+        "keyboard-",
+        "mouse-",
+        "paste-",
+        "show",
+        "alt-",
+        "raw-",
+        "output-mode-"
+    ]));
     Ok(())
 }
 
@@ -173,7 +218,15 @@ fn presenter_partial_write_resync_then_guard_close_attempts_cursor_reveal()
         .lock()
         .map_err(|_| io::Error::other("calls lock poisoned"))?
         .clone();
-    assert!(got.ends_with(&["mouse-", "paste-", "show", "alt-", "raw-"]));
+    assert!(got.ends_with(&[
+        "keyboard-",
+        "mouse-",
+        "paste-",
+        "show",
+        "alt-",
+        "raw-",
+        "output-mode-"
+    ]));
     Ok(())
 }
 
@@ -186,6 +239,8 @@ fn failed_mode_attempt_is_restored_even_when_enable_reports_error()
         ("hide", "show"),
         ("paste+", "paste-"),
         ("mouse+", "mouse-"),
+        ("keyboard+", "keyboard-"),
+        ("output-mode+", "output-mode-"),
     ] {
         let writer = Fake {
             fail: Some(attempt),
@@ -204,5 +259,22 @@ fn failed_mode_attempt_is_restored_even_when_enable_reports_error()
             "partial mode attempt {attempt} requires inverse {inverse}; got {calls:?}"
         );
     }
+    Ok(())
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_vt_mouse_and_keyboard_protocols_are_balanced() -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut bytes = Vec::new();
+    let mut ops = CrosstermOps::default();
+    ops.enable_mouse(&mut bytes)?;
+    ops.push_keyboard(&mut bytes)?;
+    ops.pop_keyboard(&mut bytes)?;
+    ops.disable_mouse(&mut bytes)?;
+    assert_eq!(
+        bytes,
+        b"\x1b[?1000h\x1b[?1002h\x1b[?1003h\x1b[?1006h\x1b[>1u\x1b[<u\x1b[?1006l\x1b[?1003l\x1b[?1002l\x1b[?1000l"
+    );
     Ok(())
 }

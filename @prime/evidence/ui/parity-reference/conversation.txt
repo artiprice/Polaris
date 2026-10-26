@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+      Extract the shared request validation into a helper.
+
+    [ Read · src/validation.rs · complete [demo] ]
+      Ctrl+O to expand
+
+    [ Patch · 2 files · proposed [demo] ]
+      Ctrl+O to expand
+
+      I would extract the shared guard and keep the handlers focused on their work.
+
+
+      The sample patch adds a shared helper and covers empty input.
+
+
+      code / rust
+         1 fn require_input(input: &str) -> Result<(), Error> {
+         2     if input.trim().is_empty() { return Err(Error::EmptyInput); }
+         3     Ok(())
+         4 }
+      No files have been read, edited, or tested by this preview.
+
+
+      Use /diff to review the fixture, or Ctrl+O for full tool output.
+
+
+
+
+
+
+
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    > What's on your mind for Polaris?
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

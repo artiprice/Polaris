@@ -1,5 +1,5 @@
 {
-  "snapshot_utc": "2026-10-23T21:58:17.329060+00:00",
+  "snapshot_utc": "2026-10-26T02:51:07.593262+00:00",
   "package_estimates": {
     "polaris-sdk": {
       "code": 100,
@@ -404,21 +404,21 @@
       "ui": false
     },
     "polaris-search-providers": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only live search providers.",
+      "code": 75,
+      "verified": 55,
+      "reason": "Concrete redacting Tavily/SearXNG, DNS-pinned SSRF policy and bounded fetch/charset/DOM conversion; 18 local contracts pass. Live service/container, broader DNS/fuzz/load and audit gates remain open; E39.",
       "ui": false
     },
     "polaris-search-sift": {
-      "code": 60,
-      "verified": 20,
-      "reason": "Provenance-preserving sift/fallback logic; integrated source races and validation incomplete.",
+      "code": 85,
+      "verified": 60,
+      "reason": "Bounded source race, pools, cancellation/drain, deduplicated S1 budget, SDK web bridge and hash-verified durable drop manifests. Local recovery/race contracts pass; live production composition, calibration and wider workloads remain open; E39.",
       "ui": false
     },
     "polaris-search": {
-      "code": 25,
-      "verified": 10,
-      "reason": "Partial exports; providers and composed retrieval path absent.",
+      "code": 100,
+      "verified": 80,
+      "reason": "Both real children exported with provider-to-race/sift flow documented and doctest checked. This facade score does not certify production kernel retrieval composition or live services; E39.",
       "ui": false
     },
     "polaris-nvidia-docs": {
@@ -440,21 +440,21 @@
       "ui": false
     },
     "polaris-ext": {
-      "code": 25,
-      "verified": 10,
-      "reason": "Skills exports/catalog exist; MCP and complete extension runtime absent.",
+      "code": 75,
+      "verified": 55,
+      "reason": "Skills and concrete MCP client exported with shared trust documentation; full capability-bound kernel extension assembly remains open; E39.",
       "ui": false
     },
     "polaris-ext-mcp": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only MCP client/registry integration.",
+      "code": 75,
+      "verified": 50,
+      "reason": "Real RMCP stdio/HTTP client, bounded framing, schema-aware normalization, caller authorization and lifecycle checks. Local protocol fixtures pass; live sandbox-backed MCP, production registry/frame assembly and wider lifecycle/adversarial gates remain open; E39.",
       "ui": false
     },
     "polaris-ext-skills": {
       "code": 80,
       "verified": 75,
-      "reason": "Confined discovery/selection/approval cache, Windows/Linux/redb evidence; runtime enablement/injection incomplete.",
+      "reason": "Confined discovery/selection/cache retained; authentic LocalDirectiveVerifier-issued cache witnesses pass and check-witness is green. Skill-specific approval, runtime enablement/injection and full trust integration remain open; E39.",
       "ui": false
     },
     "polaris-browser": {
@@ -476,9 +476,9 @@
       "ui": false
     },
     "polaris-runtime-research": {
-      "code": 40,
-      "verified": 35,
-      "reason": "Deterministic core/checkpoint codec and tests; research runner/store/parser and 20-iteration resume absent.",
+      "code": 80,
+      "verified": 60,
+      "reason": "Strict program parser, locked durable checkpoint/CAS evidence, path-attenuated tools, VCS receipts and bounded runner. Twenty real local-process iterations plus crash/reopen pass; live sandbox/model composition, cross-process contention, broader crash windows and adversarial critique remain open; E39.",
       "ui": false
     },
     "polaris-guest": {
@@ -518,9 +518,9 @@
       "ui": false
     },
     "polaris-daemon": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only daemon; no authenticated running listener.",
+      "code": 60,
+      "verified": 35,
+      "reason": "Real headless CLI composes local kernel and authenticated RPC listener with bounded configuration and shutdown. P1 profile exposes authenticated health/events; mutation dispatch and terminal attachment require a fuller kernel profile. Live remote deployment and broader lifecycle gates remain open; E39.",
       "ui": false
     },
     "polaris-rpc": {
@@ -950,7 +950,7 @@
       "id": "P5-X-1",
       "code": 0,
       "verified": 0,
-      "reason": "SearXNG provider/container acceptance unavailable.",
+      "reason": "SearXNG adapter and local protocol fixtures exist; the named live container/engine acceptance remains unperformed; E39.",
       "ui": false
     },
     {
@@ -958,7 +958,7 @@
       "id": "P5-X-2",
       "code": 0,
       "verified": 0,
-      "reason": "Tavily provider not implemented/live; credential missing.",
+      "reason": "Tavily adapter and local protocol fixtures exist; the named keyed live acceptance remains unavailable; E39.",
       "ui": false
     },
     {
@@ -1004,9 +1004,9 @@
     {
       "phase": "P7",
       "id": "P7-X-1",
-      "code": 0,
-      "verified": 0,
-      "reason": "No 20-iteration research run and kill/resume acceptance.",
+      "code": 70,
+      "verified": 50,
+      "reason": "Twenty capability-checked local process/Git/CAS iterations, all 60 payloads reopened and one abrupt-exit recovery pass. Actual sandbox/model research composition and broader crash matrix remain open; E39.",
       "ui": false
     },
     {
@@ -1088,6 +1088,14 @@
       "verified": 35,
       "reason": "Real Linux check legs exist; full current portability matrix/macOS adaptation not delivered.",
       "ui": false
+    },
+    {
+      "phase": "P3",
+      "id": "P3-X-5",
+      "code": 0,
+      "verified": 0,
+      "reason": "Durable human ask/answer and targeted frame cancellation is a non-UI backend follow-on. SDK/proto/kernel/frame ownership, atomic answers and restart/race acceptance remain planned; UI question fixtures do not implement this protocol.",
+      "ui": false
     }
   ],
   "phase_summary": {
@@ -1107,9 +1115,9 @@
       "leaf_count": 19
     },
     "P3": {
-      "code": 43,
-      "verified": 25,
-      "leaf_count": 17
+      "code": 40,
+      "verified": 24,
+      "leaf_count": 18
     },
     "P4": {
       "code": 28,
@@ -1117,8 +1125,8 @@
       "leaf_count": 13
     },
     "P5": {
-      "code": 17,
-      "verified": 9,
+      "code": 34,
+      "verified": 26,
       "leaf_count": 10
     },
     "P6": {
@@ -1127,8 +1135,8 @@
       "leaf_count": 5
     },
     "P7": {
-      "code": 23,
-      "verified": 15,
+      "code": 44,
+      "verified": 30,
       "leaf_count": 11
     },
     "P8": {
@@ -1137,8 +1145,8 @@
       "leaf_count": 5
     },
     "P9": {
-      "code": 44,
-      "verified": 36,
+      "code": 59,
+      "verified": 45,
       "leaf_count": 4
     },
     "P10": {
@@ -1146,5 +1154,25 @@
       "verified": 18,
       "leaf_count": 5
     }
+  },
+  "scoped_refresh": {
+    "packages": [
+      "polaris-search-providers",
+      "polaris-search-sift",
+      "polaris-search",
+      "polaris-ext",
+      "polaris-ext-mcp",
+      "polaris-ext-skills",
+      "polaris-runtime-research",
+      "polaris-daemon"
+    ],
+    "tasks": [
+      "P3-X-5",
+      "P5-X-1",
+      "P5-X-2",
+      "P7-X-1"
+    ],
+    "evidence": "@prime/evidence/continuation-20261026/README.md",
+    "other_estimates": "retained from earlier audit, not freshly reassessed"
   }
 }

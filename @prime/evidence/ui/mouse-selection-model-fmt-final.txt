@@ -1,0 +1,1 @@
+command: cargo fmt --package polaris-ui-model -- --check\nexit code: 0\n--- stdout ---\n\n--- stderr ---\n

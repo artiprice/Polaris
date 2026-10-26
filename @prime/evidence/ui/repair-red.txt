@@ -1,0 +1,135 @@
+COMMAND: cargo test -p polaris-cli --lib controller_tests::
+EXIT CODE: 101
+--- STDOUT ---
+
+running 15 tests
+test tui::controller_tests::help_only_advertises_available_local_controls ... ok
+test tui::controller_tests::release_is_idle_and_paste_remains_literal ... ok
+test tui::controller_tests::completion_wheel_clamps_without_scrolling_transcript ... ok
+test tui::controller_tests::pending_resume_prevents_directive_from_crossing_sessions ... ok
+test tui::controller_tests::accepted_directive_clears_only_after_acknowledgement ... ok
+test tui::controller_tests::draft_text_chip_submits_its_expanded_directive ... ok
+test tui::controller_tests::query_failure_cannot_cancel_an_inflight_directive ... ok
+test tui::controller_tests::control_backpressure_preserves_draft_without_closing_ui ... ok
+test tui::controller_tests::rejection_and_unsupported_model_input_keep_exact_draft ... ok
+test tui::controller_tests::new_session_starts_without_a_persistent_notice ... FAILED
+test tui::controller_tests::clear_command_clears_notice_and_visible_conversation ... FAILED
+test tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command ... FAILED
+test tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice ... FAILED
+test tui::controller_tests::repeated_frame_and_caret_move_do_not_clear_terminal ... ok
+test tui::controller_tests::draft_limit_rejection_keeps_editor_alive ... ok
+
+failures:
+
+---- tui::controller_tests::new_session_starts_without_a_persistent_notice stdout ----
+
+thread 'tui::controller_tests::new_session_starts_without_a_persistent_notice' (7492) panicked at apps\polaris-cli\src\..\tests\controller\mod.rs:25:5:
+offline availability belongs in the persistent footer/header, not a notice row
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tui::controller_tests::clear_command_clears_notice_and_visible_conversation stdout ----
+
+thread 'tui::controller_tests::clear_command_clears_notice_and_visible_conversation' (12024) panicked at apps\polaris-cli\src\..\tests\controller\mod.rs:56:5:
+/clear should dismiss the notice too
+
+---- tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command stdout ----
+
+thread 'tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command' (2096) panicked at apps\polaris-cli\src\..\tests\controller\mod.rs:77:5:
+assertion `left == right` failed
+  left: "/hack"
+ right: "/help"
+
+---- tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice stdout ----
+
+thread 'tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice' (6700) panicked at apps\polaris-cli\src\..\tests\controller\mod.rs:39:5:
+assertion `left == right` failed: ordinary task rejection should state the limit concisely
+  left: "This local profile accepts one standalone $directive. Model task execution is unavailable; draft retained."
+ right: "Task execution unavailable; draft retained"
+
+
+failures:
+    tui::controller_tests::clear_command_clears_notice_and_visible_conversation
+    tui::controller_tests::new_session_starts_without_a_persistent_notice
+    tui::controller_tests::rejected_ordinary_task_keeps_draft_with_a_short_notice
+    tui::controller_tests::slash_completion_renders_and_tab_accepts_a_matching_command
+
+test result: FAILED. 11 passed; 4 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.05s
+
+
+--- STDERR ---
+   Compiling aws-lc-sys v0.46.0
+   Compiling tree-sitter-cuda v0.21.2
+   Compiling tree-sitter-typescript v0.23.2
+   Compiling tree-sitter-cpp v0.23.4
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-python v0.25.0
+   Compiling tree-sitter v0.27.1
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling link-cplusplus v1.0.12
+   Compiling numkong v7.8.5
+   Compiling libsqlite3-sys v0.38.2
+   Compiling libmimalloc-sys v0.1.49
+   Compiling cxx v1.0.205
+   Compiling mimalloc v0.1.52
+   Compiling zstd-safe v8.2.0
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling zstd v0.14.3
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling aws-lc-rs v1.18.2
+   Compiling rustls v0.23.46
+   Compiling usearch v2.26.5
+   Compiling rustls-webpki v0.103.16
+   Compiling rusqlite v0.40.2
+   Compiling polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+   Compiling tokio-rustls v0.26.6
+   Compiling tungstenite v0.26.2
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+   Compiling tonic v0.14.6
+   Compiling hyper-rustls v0.27.10
+   Compiling reqwest v0.12.28
+   Compiling reqwest v0.13.5
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling tokio-tungstenite v0.26.2
+   Compiling polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling tonic-prost v0.14.6
+   Compiling openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling tonic-types v0.14.6
+   Compiling bollard-buildkit-proto v0.8.1
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling oauth2 v5.0.0
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling bollard v0.21.1
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 2m 10s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-08fd469deb879fd8.exe)
+error: test failed, to rerun pass `-p polaris-cli --lib`

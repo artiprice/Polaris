@@ -1,0 +1,23 @@
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Finished `test` profile [unoptimized] target(s) in 1.72s
+     Running tests\dropped_manifest.rs (target\debug\deps\dropped_manifest-7f12830a70628a07.exe)
+
+running 1 test
+test persistence_never_commits_an_unrecoverable_aggregate ... FAILED
+
+failures:
+
+---- persistence_never_commits_an_unrecoverable_aggregate stdout ----
+
+thread 'persistence_never_commits_an_unrecoverable_aggregate' (14304) panicked at crates\polaris-search\crates\sift\tests\dropped_manifest.rs:246:5:
+assertion failed: matches!(distilled(dropped).persist_dropped(&store),
+    Err(DropManifestError::RecoveryTooLarge { .. }))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    persistence_never_commits_an_unrecoverable_aggregate
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.79s
+
+error: test failed, to rerun pass `-p polaris-search-sift --test dropped_manifest`

@@ -1,0 +1,18 @@
+
+running 13 tests
+test tui::controller_tests::mouse_selection::mouse_selects_demo_from_profile_sheet ... ok
+test tui::controller_tests::mouse_selection::transcript_word_drag_reverses_by_whole_words ... ok
+test tui::controller_tests::mouse_selection::question_notes_drag_selects_and_deletes ... ok
+test tui::controller_tests::mouse_selection::reverse_unicode_drag_delete_and_late_copy_keep_the_exact_range ... ok
+test tui::controller_tests::mouse_selection::double_click_editor_padding_keeps_no_selection ... ok
+test tui::controller_tests::mouse_selection::blank_transcript_click_clears_selection ... ok
+test tui::controller_tests::mouse_selection::editor_focus_clears_transcript_selection ... ok
+test tui::controller_tests::mouse_selection::triple_click_selects_the_logical_editor_line ... ok
+test tui::controller_tests::mouse_selection::double_click_drag_extends_by_words ... ok
+test tui::controller_tests::mouse_selection::selected_word_is_replaced_by_typing_and_paste ... ok
+test tui::controller_tests::mouse_selection::mouse_selection_survives_release_and_delete ... ok
+test tui::controller_tests::mouse_selection::transcript_triple_click_selects_source_line_across_soft_wrap ... ok
+test tui::controller_tests::mouse_selection::notes_double_and_triple_click_keep_the_main_draft_intact ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 95 filtered out; finished in 0.01s
+

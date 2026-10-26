@@ -1,0 +1,15 @@
+
+running 1 test
+test windows_auto_color_uses_rgb_without_colorterm ... FAILED
+
+failures:
+
+---- windows_auto_color_uses_rgb_without_colorterm stdout ----
+Error: Custom { kind: TimedOut, error: "PTY did not render \"[ offline ]\"; captured 3039 bytes; first bytes: [1b, 5b, 36, 6e, 1b, 5b, 3f, 39, 30, 30, 31, 68, 1b, 5b, 3f, 31, 30, 30, 34, 68, 1b, 5b, 6d, 1b, 5d, 30, 3b, 43, 3a, 5c, 6d, 44, 65, 76, 5c, 50, 6f, 6c, 61, 72, 69, 73, 5c, 74, 61, 72, 67, 65, 74, 5c, 64, 65, 62, 75, 67, 5c, 70, 6f, 6c, 61, 72, 69, 73, 2e, 65, 78, 65, 07, 1b, 5b, 3f, 32, 35, 68, 1b, 5b, 3f, 31, 30, 34, 39, 68, 1b, 5b, 3f, 32, 35, 6c, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a, 1b, 5b, 4b, 0d, 0a]; visible output: \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" }
+
+
+failures:
+    windows_auto_color_uses_rgb_without_colorterm
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 10.79s
+

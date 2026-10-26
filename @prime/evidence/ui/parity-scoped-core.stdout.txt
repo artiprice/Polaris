@@ -1,0 +1,470 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test legacy_ui_theme_remains_independent ... ok
+test cli_preferences_default_and_validate ... ok
+test global_preference_write_is_atomic_on_failure ... ok
+test only_requested_field_is_updated ... ok
+test global_preference_update_preserves_unknown_keys ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 9 tests
+test defaults_only_is_valid ... ok
+test provenance_reports_winning_layer ... ok
+test tables_merge_scalars_replace ... ok
+test later_layer_overrides_earlier ... ok
+test unknown_key_is_rejected ... ok
+test budget_usd_accepts_integer_and_decimal_text ... ok
+test invalid_value_is_rejected ... ok
+test prop_highest_layer_wins_per_key ... ok
+test prop_merge_with_itself_is_idempotent ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 11 tests
+test env_conflicting_paths_are_invalid ... ok
+test env_layer_uses_prefix_and_double_underscore ... ok
+test session_overrides_roundtrip ... ok
+test no_repo_dir_is_none ... ok
+test home_global_dir_is_not_a_repo_dir ... ok
+test finds_nearest_repo_dir_walking_up ... ok
+test parse_error_reports_file_and_line ... ok
+test long_path_repo_dir_is_found ... ok
+test rejects_config_files_over_the_parser_bound ... ok
+test reads_bom_and_crlf_files ... ok
+test windows_locked_file_is_retried ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+
+running 1 test
+test golden_provenance_snapshot ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+
+running 5 tests
+test repo_cannot_set_endpoint ... ok
+test repo_cannot_downgrade_sandbox_tier ... ok
+test repo_may_set_allowlisted_style_keys ... ok
+test trust_grant_unlocks_listed_key ... ok
+test repo_literal_secret_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test parses_env_scheme ... ok
+test rejects_bare_literal ... ok
+test rejects_empty_name ... ok
+test reference_parser_enforces_provider_identifier_bounds ... ok
+test reference_converts_to_validated_sdk_location ... ok
+test parses_keyring_scheme ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 29 tests
+test bracketed_paste::tests::arrow_and_function_key_escape_sequences_are_decoded ... ok
+test bracketed_paste::tests::bracketed_payload_preserves_leading_dollar_sigils ... ok
+test bracketed_paste::tests::csi_u_control_enter_and_sgr_hover_are_events_not_text ... ok
+test bracketed_paste::tests::bracketed_payload_is_one_literal_paste_including_escape_sequences ... ok
+test bracketed_paste::tests::csi_u_control_j_remains_distinct_from_control_enter ... ok
+test bracketed_paste::tests::csi_u_enter_and_modified_arrows_preserve_modifiers ... ok
+test bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste ... ok
+test bracketed_paste::tests::sgr_motion_with_pressed_buttons_is_drag ... ok
+test bracketed_paste::tests::unknown_complete_csi_is_discarded_and_paste_keeps_escape_bytes ... ok
+test input_decoder::tests::adjacent_surrogates_form_one_scalar ... ok
+test input_decoder::tests::ambiguous_c0_lf_is_conservatively_control_enter ... ok
+test input_decoder::tests::c0_control_c_is_inferred_when_native_flags_are_absent ... ok
+test bracketed_paste::tests::csi_u_scalar_modifiers_phases_and_focus_are_preserved ... ok
+test input_decoder::tests::c0_control_enter_is_not_shift_enter ... ok
+test input_decoder::tests::c0_shift_enter_keeps_shift_and_enter ... ok
+test input_decoder::tests::control_j_keeps_its_character_identity ... ok
+test input_decoder::tests::delayed_unicode_on_alt_release_becomes_one_character_press ... ok
+test input_decoder::tests::native_backspace_and_delete_virtual_keys_remain_distinct ... ok
+test input_decoder::tests::native_del_character_is_backspace ... ok
+test input_decoder::tests::native_repeat_and_release_phases_are_retained ... ok
+test input_decoder::tests::shifted_dollar_key_preserves_its_unicode_character ... ok
+test input_decoder::tests::virtual_key_zero_control_character_is_preserved ... ok
+test windows_input::tests::native_button_changes_keep_left_drag_and_other_button_transitions ... ok
+test windows_input::tests::native_middle_button_down_and_release_keep_identity ... ok
+test windows_input::tests::native_mouse_motion_with_pressed_button_is_drag ... ok
+test windows_input::tests::native_right_button_down_and_release_keep_identity ... ok
+test windows_input::tests::simultaneous_mouse_button_changes_do_not_guess_chord_order ... ok
+test bracketed_paste::tests::oversized_paste_discards_tail_until_end_marker_then_recovers ... ok
+test bracketed_paste::tests::oversized_native_paste_is_rejected_and_decoder_recovers ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+
+running 3 tests
+test tabs_wide_graphemes_and_exact_width_boundaries_map_to_cells ... ok
+test explicit_newlines_zwj_graphemes_and_mouse_stops_are_stable ... ok
+test vertical_motion_keeps_sticky_column_and_viewport_tracks_cursor ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test selected_text_is_painted_with_the_editor_selection_role ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test terminal_modules_are_usable_through_the_public_crate_api ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 9 tests
+test export_reference_matrix ... ok
+test composer_has_open_black_interior_and_complete_rules ... ok
+test welcome_strokes_keep_reference_center_ray_and_tip_colors ... ok
+test welcome_matches_reference_composition ... ok
+test conversation_omits_role_headings_but_retains_error_labels ... ok
+test information_sheet_keeps_black_surface_and_pinned_hints ... ok
+test completion_keeps_selected_candidate_visible_on_black_surface ... ok
+test ansi_and_terminal_preserve_reference_semantic_colors ... ok
+test composer_grows_from_wrapped_rows_up_to_three_eighths ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 4 tests
+test cache_invalidates_on_content_width_and_tool_expansion_changes ... ok
+test cache_hits_for_identical_bounded_transcript_entries ... ok
+test cache_evicts_within_configured_byte_budget ... ok
+test cached_renderer_matches_uncached_render_output ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 1 test
+test reports_render_cache_latency_percentiles_at_200_by_60 ... ignored, manual CPU-only cache benchmark; run with --ignored --nocapture
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 29 tests
+test dump_rejects_zero_and_oversized_viewports ... ok
+test composer_mouse_targets_chip_boundaries_only ... ok
+test composer_mouse_vertical_and_guard_helpers_share_wrap_rows ... ok
+test ansi_palette_preserves_canvas_and_prompt_roles ... ok
+test composer_rect_matches_render_metadata_without_transcript_dependency ... ok
+test default_canvas_uses_north_star_background ... ok
+test selected_whitespace_uses_neutral_text_tint ... ok
+test compact_question_review_scrolls_through_every_answer ... ok
+test tiny_live_viewport_shows_resize_notice_without_panicking ... ok
+test profile_footer_has_a_separate_target_without_removing_model_or_effort ... ok
+test friendly_model_label_uses_the_same_footer_geometry_as_its_hit_target ... ok
+test transcript_grapheme_cells_map_to_source_and_selection_styles_them ... ok
+test transcript_span_selection_crosses_entry_boundaries_and_preserves_source_foreground ... ok
+test selection_fallbacks_use_ansi_237_and_bold_without_reverse_video ... ok
+test caller_selected_panel_content_renders_in_both_responsive_modes ... ok
+test completion_overlay_paints_selection_and_hides_underlying_sources ... ok
+test transcript_tokens_and_code_lines_keep_source_maps_and_semantic_styles ... ok
+test untrusted_controls_and_bidi_are_inert_in_dump ... ok
+test warning_entries_use_the_observed_warning_role_without_bold_weight ... ok
+test to_latest_uses_exact_base_and_hover_surfaces ... ok
+test wide_grapheme_caret_geometry_matches_composer ... ok
+test optional_panel_uses_side_rail_only_at_threshold ... ok
+test completion_hover_keeps_surface_and_applies_each_semantic_foreground ... ok
+test compact_questionnaire_overlay_keeps_typed_targets_and_review_rows ... ok
+test history_scroll_and_workspace_are_source_driven ... ok
+test opaque_overlays_remove_covered_source_spans ... ok
+test transcript_presentation_tools_toggle_real_entry_body_and_map_source_offsets ... ok
+test long_composer_window_tracks_cursor_and_renders_recent_rows ... ok
+test hitmap_uses_painted_regions_and_hover_is_visible ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 3 tests
+test normalizes_supported_crossterm_events ... ok
+test only_pressed_escape_and_control_c_are_cancel_priority ... ok
+test rejects_paste_over_one_mibibyte ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test drop_attempts_best_effort_cleanup ... ok
+test close_attempts_every_restore_step_and_reports_errors ... ok
+test drop_attempts_remaining_modes_after_restore_error ... ok
+test failed_mode_attempt_is_restored_even_when_enable_reports_error ... ok
+test presenter_partial_write_resync_then_guard_close_attempts_cursor_reveal ... ok
+test rolls_back_acquired_modes_in_reverse_order ... ok
+test windows_vt_mouse_and_keyboard_protocols_are_balanced ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test commits_only_explicit_nonempty_frames ... ok
+test extracted_presenter_closes_live_writer_handles ... ok
+test stages_and_deduplicates_cursor_intents ... ok
+test changed_cells_restore_unchanged_editor_cursor_after_paint ... ok
+test ratatui_identical_grid_emits_zero_and_cursor_change_emits_only_position ... ok
+test bounds_staged_frame_and_marks_resync_after_partial_write ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 8 tests
+test coalesces_adjacent_resize_events_to_latest_dimensions ... ok
+test coalesces_only_adjacent_mouse_moves_without_crossing_semantic_barriers ... ok
+test preserves_sequence_across_reserved_cancel_lane ... ok
+test reserved_cancel_queue_preserves_cross_lane_order_and_works_when_regular_queue_full ... ok
+test every_semantic_and_cancel_kind_breaks_mouse_move_coalescing ... ok
+test schedules_dirty_frames_at_sixty_fps_without_idle_wakeups ... ok
+test enforces_record_payload_and_batch_limits ... ok
+test payload_budget_and_batch_deadline_are_enforced ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test focused_panel_becomes_sheet_and_small_viewport_notice ... ok
+test unpinned_main_panel_closes_on_narrow_layout ... ok
+test resize_collapses_and_restores_without_focus_theft ... ok
+test default_is_main_focused_with_panel_closed ... ok
+test panel_focus_never_changes_main_target ... ok
+test toggle_selected_panel_and_focus_cycle ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 17 tests
+test code_span_is_not_a_token ... ok
+test dollar_and_at_need_token_boundary ... ok
+test slash_inside_path_is_not_a_token ... ok
+test prefix_beats_substring_beats_fuzzy ... ok
+test suggestions_carry_the_help_text ... ok
+test help_tables_cover_exactly_the_names ... ok
+test static_index_ranks_and_limits ... ok
+test cursor_off_char_boundary_returns_nothing ... ok
+test directives_come_from_directives_names ... ok
+test match_tier_classifies_prefix_substring_fuzzy ... ok
+test suggestion_range_replaces_the_token ... ok
+test quoted_mention_for_spaces ... ok
+test ties_sorted_lexicographically ... ok
+test commands_come_from_directives_names ... ok
+test file_results_capped_at_100 ... ok
+test prop_detect_never_panics_and_ranges_are_boundaries ... ok
+test prop_never_more_than_100 ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+
+running 26 tests
+test image_chip_label_and_numbering ... ok
+test apply_completion_replaces_range ... ok
+test control_characters_are_stripped ... ok
+test cloned_undo_snapshot_shares_paste_payload_storage ... ok
+test crlf_normalized_to_lf ... ok
+test empty_submit_rejected_and_state_kept ... ok
+test expand_chip_inserts_payload_literally ... ok
+test image_over_64mib_rejected ... ok
+test backspace_deletes_whole_grapheme ... ok
+test prepare_cancel_and_rejection_preserve_complete_draft ... ok
+test long_paste_becomes_chip ... ok
+test cursor_moves_by_grapheme ... ok
+test session_attachment_cap_enforced ... ok
+test short_insert_stays_literal ... ok
+test stale_prepared_submission_cannot_clear_cursor_change ... ok
+test stale_prepared_submission_cannot_clear_new_edits ... ok
+test submit_keeps_interior_blank_paragraphs ... ok
+test submit_expands_chips ... ok
+test submit_trims_trailing_blank_rows ... ok
+test undo_redo_restores_text_cursor_and_chips ... ok
+test undo_and_history_respect_retention_bounds ... ok
+test chip_payload_counts_toward_text_cap ... ok
+test backspace_after_chip_removes_chip_and_frees_budget ... ok
+test text_over_1mib_rejected ... ok
+test prop_submit_preserves_chip_payloads ... ok
+test prop_cursor_always_on_char_boundary ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+
+running 8 tests
+test line_and_document_home_end_are_distinct ... ok
+test history_restores_saved_draft_selection ... ok
+test revision_tracks_cursor_edits_and_undo ... ok
+test double_click_selection_tracks_unicode_words_whitespace_and_atomic_chips ... ok
+test shift_navigation_and_select_all_keep_legal_boundaries ... ok
+test word_navigation_and_deletion_respect_graphemes_and_chips ... ok
+test selection_replaces_text_and_undo_restores_selection ... ok
+test selected_chip_copy_replace_and_byte_budget_are_consistent ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+
+running 9 tests
+test css_variables_block_shape ... ok
+test css_variables_contain_every_role ... ok
+test error_role_has_ansi_red_fallback ... ok
+test every_plan_role_present_with_exact_hex ... ok
+test placeholder_text_exact ... ok
+test rgb_parsing_rejects_malformed_hex ... ok
+test role_names_are_unique_and_hex_well_formed ... ok
+test selection_tints_match_blend_formula ... ok
+test prop_hex_round_trip ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test chord_display_format ... ok
+test chord_normalization ... ok
+test every_action_has_a_binding_or_is_marked_unbound ... ok
+test footer_text_generated_from_table ... ok
+test lookup_respects_guards_and_context_chain ... ok
+test footer_changes_when_the_table_changes ... ok
+test mouse_gestures_bound ... ok
+test plan_keymap_rows_present ... ok
+test no_duplicate_chords_in_one_context ... ok
+test questionnaire_contexts_bind_atomic_answer_and_requester_controls ... ok
+test unbound_actions_are_not_bound ... ok
+test help_lines_list_every_chord ... ok
+test prop_lookup_never_panics ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test ascii_fallback_keeps_dimensions ... ok
+test compact_is_5_by_3 ... ok
+test compact_rows_exact ... ok
+test welcome_rows_exact ... ok
+test glyph_lookup_is_bounds_checked ... ok
+test roles_follow_star_rays_and_gray_tips ... ok
+test welcome_is_9_by_5 ... ok
+test emblem_is_one_star_cell ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test history_is_session_local ... ok
+test history_only_moves_at_first_and_last_row ... ok
+test history_dedupes_consecutive_and_strips_image_markers ... ok
+test history_walks_oldest_to_newest ... ok
+test history_restores_unsent_draft ... ok
+test history_round_trip_keeps_draft_chips ... ok
+test prop_history_never_loses_the_draft ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 4 tests
+test notes_backspace_removes_one_grapheme_not_one_scalar ... ok
+test notes_support_middle_edit_selection_and_undo ... ok
+test undo_cannot_restore_over_aggregate_budget ... ok
+test replacing_full_notes_uses_resulting_size ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 13 tests
+test none_of_the_above_is_explicit_and_exclusive ... ok
+test required_free_text_needs_nonblank_answer_and_notes_are_optional ... ok
+test single_choice_and_none_are_mutually_exclusive ... ok
+test invalid_choice_kind_cannot_be_toggled ... ok
+test multi_choice_toggles_named_options ... ok
+test required_answers_block_atomic_submit_and_optional_is_unanswered ... ok
+test navigation_preserves_per_question_answers_and_notes ... ok
+test questionnaire_plan_caps_reject_excess_questions_and_options ... ok
+test questions_start_with_no_selection ... ok
+test oversized_field_rejects_without_truncating ... ok
+test request_payload_cap_counts_aggregate_metadata ... ok
+test oversized_selected_option_ids_block_batch_without_losing_selections ... ok
+test answer_budget_rejects_without_truncating_notes_or_answer ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+
+running 6 tests
+test incomplete_or_unknown_command_is_neutral ... ok
+test known_complete_command_is_command ... ok
+test inert_text_has_no_spans ... ok
+test known_directive_is_directive ... ok
+test mention_spans_including_quoted ... ok
+test prop_spans_are_in_bounds_ordered_non_overlapping ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 38 tests
+test backend_lifecycle_reopen_updates_existing_session_row ... ok
+test duration_format ... ok
+test effort_clamps_at_endpoints ... ok
+test decision_updates_s1_latency ... ok
+test first_record_may_start_anywhere ... ok
+test mode_toggles ... ok
+test nothing_follows_the_maximum_sequence ... ok
+test out_of_order_returns_error ... ok
+test per_model_effort_preference ... ok
+test goal_time_excludes_pauses ... ok
+test message_events_append_conversation ... ok
+test global_toggle_clears_overrides ... ok
+test model_request_updates_token_weather ... ok
+test selected_projection_rejects_global_gap_in_unrelated_record ... ok
+test selected_projection_never_folds_wrong_session_facts ... ok
+test selected_projection_skips_unrelated_session_growth_but_folds_target ... ok
+test seq_gap_returns_error ... ok
+test session_views_validate_one_global_sequence_without_false_local_gaps ... ok
+test session_started_and_closed ... ok
+test token_weather_saturates_instead_of_overflowing ... ok
+test tool_completion_marks_status_and_latency ... ok
+test tool_completion_without_start_creates_entry ... ok
+test tool_title_collapsed_until_toggle ... ok
+test tool_title_capacity_errors_leave_projection_unchanged ... ok
+test status_from_worker_circuit_dead_letter ... ok
+test session_view_capacity_rejects_before_mutation ... ok
+test view_state_serde_round_trip ... ok
+test session_row_capacity_rejects_before_mutation ... ok
+test unknown_event_ignored_not_panicking ... ok
+test conversation_capacity_errors_leave_entries_unchanged ... ok
+test user_capacity_preflight_matches_append_invariant ... ok
+test prop_error_leaves_state_unchanged ... ok
+test prop_reducer_is_deterministic ... ok
+test snapshot_conversation ... ok
+test snapshot_welcome ... ok
+test snapshot_error_and_status ... ok
+test snapshot_goal_active_and_paused ... ok
+test tool_activity_capacity_rejects_before_mutation ... ok
+
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+
+running 1 test
+test crates\polaris-config\src\lib.rs - (line 15) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 1.04s; merged doctests compilation took 0.90s
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

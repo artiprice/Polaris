@@ -1,0 +1,23 @@
+{
+  "type_of": "function",
+  "name": "validate_target",
+  "file_path": "crates/polaris-search/crates/providers/src/ssrf.rs",
+  "logic_name": "Search Provider SSRF Guard",
+  "test_list": [
+    { "test_name": "rejects_loopback_and_private_ip_literals", "description": "Reject IPv4 and IPv6 loopback, private, link-local, unspecified, multicast, and IPv4-mapped private destinations." },
+    { "test_name": "rejects_metadata_destinations", "description": "Reject cloud metadata IPv4 and IPv6 addresses." },
+    { "test_name": "rejects_non_http_schemes_and_credentials", "description": "Reject non-HTTP(S) URLs and URLs containing user information." },
+    { "test_name": "rejects_dns_names_resolving_to_any_private_address", "description": "Resolve the hostname, reject mixed public/private answer sets, and pin the validated set for the request." },
+    { "test_name": "revalidates_each_redirect_target", "description": "A public response redirecting to a private or loopback destination is blocked." },
+    { "test_name": "allows_only_explicit_configured_local_origin", "description": "An explicit local self-host exception applies only to the configured origin." },
+    { "test_name": "rejects_overlong_target_before_dns_lookup", "description": "Reject URLs above the request target byte limit before resolving their host." }
+  ],
+  "dependencies": ["reqwest", "tokio::net::lookup_host", "url::Url"],
+  "libraries": ["reqwest", "tokio", "url"],
+  "inputs": [
+    { "name": "target", "type": "&Url", "description": "Untrusted destination URL supplied by a caller or redirect." },
+    { "name": "local_origin", "type": "Option<&Url>", "description": "Optional exact origin explicitly configured for a local self-hosted service." }
+  ],
+  "output_type": "Result<ValidatedTarget, SearchProviderError>",
+  "output_description": "A URL and its pinned, validated DNS address set, or a sanitized block reason."
+}

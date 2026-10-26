@@ -1,0 +1,33 @@
+COMMAND: cargo test -p polaris-ui-cli --lib --test terminal_input --test terminal_lifecycle
+EXIT: 101
+
+STDOUT:
+
+STDERR:
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+error[E0594]: cannot assign to `mode.reject_mouse`, as `mode` is not declared as mutable
+   --> crates\polaris-ui\crates\cli\src\windows_input.rs:516:9
+    |
+516 |         mode.reject_mouse = true;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^ cannot assign
+    |
+help: consider changing this to be mutable
+    |
+513 |         let mut mode = FakeMode::new(original);
+    |             +++
+
+error[E0594]: cannot assign to `mode.reject_mouse`, as `mode` is not declared as mutable
+   --> crates\polaris-ui\crates\cli\src\windows_input.rs:520:9
+    |
+520 |         mode.reject_mouse = false;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^ cannot assign
+    |
+help: consider changing this to be mutable
+    |
+513 |         let mut mode = FakeMode::new(original);
+    |             +++
+
+For more information about this error, try `rustc --explain E0594`.
+error: could not compile `polaris-ui-cli` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+

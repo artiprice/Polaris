@@ -1,0 +1,6 @@
+{
+  "command": "rustfmt --edition 2021 crates/polaris-ui/crates/cli/src/windows_input.rs",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

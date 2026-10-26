@@ -1,0 +1,27 @@
+{
+  "name": "mouse-repair-final-app",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "--test",
+    "ui_startup",
+    "--test",
+    "ui_session",
+    "--test",
+    "ui_key_trace",
+    "--test",
+    "rtk_cli",
+    "--test",
+    "ui_terminal"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:25:20.039Z",
+  "pid": 14860,
+  "code": 0,
+  "finished": "2026-10-25T12:25:59.054Z"
+}

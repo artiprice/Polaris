@@ -1,0 +1,9 @@
+    Finished `test` profile [unoptimized] target(s) in 0.65s
+     Running unittests src\lib.rs (target\debug\deps\polaris_config-0147ec6afcd9c3dd.exe)
+     Running tests\config_cli_preferences.rs (target\debug\deps\config_cli_preferences-253e20bd0f449f6a.exe)
+     Running tests\config_layer_merge.rs (target\debug\deps\config_layer_merge-f33fd68f60face40.exe)
+     Running tests\directory_discovery.rs (target\debug\deps\directory_discovery-3104b968972d31f4.exe)
+     Running tests\golden_provenance.rs (target\debug\deps\golden_provenance-474f1b8d97fab618.exe)
+     Running tests\repo_layer_trust_filter.rs (target\debug\deps\repo_layer_trust_filter-bc68633e9b668cd2.exe)
+     Running tests\secret_reference_parsing.rs (target\debug\deps\secret_reference_parsing-fefe20b3cb010e0c.exe)
+   Doc-tests polaris_config

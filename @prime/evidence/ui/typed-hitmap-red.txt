@@ -1,0 +1,6 @@
+$ cargo test --offline -p polaris-ui-cli --test render_contract hitmap_uses_painted_regions_and_hover_is_visible
+exit=101
+error[E0432]: unresolved imports `polaris_ui_cli::screen::HitTarget`, `polaris_ui_cli::screen::prepare_metadata`
+error[E0599]: no method named `with_hover` found for struct `ScreenState<'a>`
+
+Expected compile-red evidence for the typed hit map, pure metadata preparation, and hover projection contract.

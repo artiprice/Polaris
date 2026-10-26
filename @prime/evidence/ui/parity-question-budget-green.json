@@ -1,0 +1,20 @@
+{
+  "name": "parity-question-budget-green",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-ui-model",
+    "--test",
+    "questionnaire_editor",
+    "--test",
+    "questionnaire_state"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:21:09.802Z",
+  "pid": 14100,
+  "code": 0,
+  "finished": "2026-10-25T11:21:53.596Z"
+}

@@ -1,0 +1,25 @@
+cargo test --offline -p polaris-ui-cli --lib bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste -- --exact --nocapture
+EXIT 101
+
+running 1 test
+test bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste ... FAILED
+
+failures:
+
+failures:
+    bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.74s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_cli-d4809dc78657ecf8.exe)
+
+thread 'bracketed_paste::tests::native_release_records_do_not_break_csi_u_or_bracketed_paste' (13888) panicked at crates\polaris-ui\crates\cli\src\bracketed_paste.rs:474:9:
+assertion `left == right` failed
+  left: Some(Key(KeyEvent { code: Esc, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }))
+ right: Some(Key(KeyEvent { code: Enter, modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p polaris-ui-cli --lib`

@@ -1,0 +1,4 @@
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Finished `test` profile [unoptimized] target(s) in 2.33s
+     Running tests\ui_terminal.rs (target\debug\deps\ui_terminal-d602048b43a42723.exe)
+error: test failed, to rerun pass `-p polaris-cli --test ui_terminal`

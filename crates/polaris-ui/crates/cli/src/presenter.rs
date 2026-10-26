@@ -117,11 +117,20 @@ fn is_cursor_suffix(bytes: &[u8]) -> bool {
     normalize_cursor_suffix(&mut probe, CursorState::Unknown).is_some() && probe == bytes
 }
 
+fn contains_cell_output(bytes: &[u8]) -> bool {
+    !bytes.is_empty() && redundant_style_reset_prefix(bytes) != Some(bytes.len())
+}
+
 fn normalize_cursor_suffix(bytes: &mut Vec<u8>, previous: CursorState) -> Option<CursorState> {
     const HIDE: &[u8] = b"\x1b[?25l";
     const SHOW: &[u8] = b"\x1b[?25h";
     if bytes.ends_with(HIDE) {
         let start = bytes.len().checked_sub(HIDE.len())?;
+        if contains_cell_output(bytes.get(..start)?) && previous != CursorState::Hidden {
+            bytes.truncate(start);
+            bytes.splice(..0, HIDE.iter().copied());
+            return Some(CursorState::Hidden);
+        }
         if previous == CursorState::Hidden {
             bytes.truncate(start);
         }
@@ -152,7 +161,17 @@ fn normalize_cursor_suffix(bytes: &mut Vec<u8>, previous: CursorState) -> Option
         None => esc,
     };
     let state = CursorState::Visible(column, row);
-    if previous == state {
+    if contains_cell_output(bytes.get(..cursor_start)?) {
+        // Cell output moves the physical cursor even when the requested editor
+        // position is unchanged. Keep that final move and reveal only after it.
+        let position = command.to_vec();
+        bytes.truncate(cursor_start);
+        if matches!(previous, CursorState::Visible(_, _)) {
+            bytes.splice(..0, HIDE.iter().copied());
+        }
+        bytes.extend_from_slice(&position);
+        bytes.extend_from_slice(SHOW);
+    } else if previous == state {
         bytes.truncate(cursor_start);
     } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some() {
         if let Some(start) = shown_at {
@@ -260,6 +279,9 @@ impl<W: Write> BufferedPresenter<W> {
         s.active = false;
         drop(s);
         let next_cursor = normalize_cursor_suffix(&mut bytes, self.cursor);
+        if bytes.len() > MAX_FRAME_BYTES {
+            return Err(PresenterError::FrameTooLarge);
+        }
         if self.style_reset_known {
             if redundant_style_reset_prefix(&bytes) == Some(bytes.len()) {
                 bytes.clear();

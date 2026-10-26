@@ -1,0 +1,40 @@
+
+
+    ✦ Polaris v0.1.0alpha                                                                            C:\mDev\Polaris
+
+      Splitting the registry work into independent tasks. [demo]
+      This is a scripted activity preview; no agents are executed.
+
+    ● 2 agents launched [demo]
+      Registry / Implement storage registry
+      RTK tools / Implement tool registry
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    > What's on your mind for Polaris?
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    Agents [demo] / 2 done                                                                                [ expand ]
+
+    ? for shortcuts                                            [ auto mode on ] [ Nemotron Super 49B v1.5 ] [ high ]

@@ -1,3 +1,9 @@
+HISTORICAL FOUNDATION SNAPSHOT — superseded for current interactive coverage
+Current checkpoint: continuation-verification.md / continuation-verification.json (2026-10-25, E36).
+The later checkpoint records 350 scoped passing tests, 15 final native cases, current services, visual exports and remaining failures. Counts/absence statements below describe the earlier foundation only.
+
+Follow-up 2026-10-25: reference-design repair and current focused results are in repair-verification.md. The checkpoint below is retained as historical evidence, including its failed full-package doctor gate.
+
 CLI UI verification checkpoint — 2026-10-25 Europe/Kyiv (continuing 2026-10-24)
 
 VERDICT: PARTIAL IMPLEMENTATION. No complete UI phase or M1 acceptance is claimed.
@@ -54,3 +60,7 @@ CONSISTENCY
 
 Main PLAN.md, PHASES.md, PHASES_STATUS.md (E33), UI_PLAN.md, UI_PHASES.md, UI_MODULES.csv and authoritative workspace.toml metadata are aligned to partial implementation. Generated phase blocks are retained/refreshed. Historical E21/E30 evidence is preserved. UI inventory still has 56 logical modules; it is not a Cargo generation input.
 No code commit, deployment or external publication was performed.
+
+2026-10-25 E37 reference parity continuation: see parity-verification.md and parity-verification.json. Scoped tests 426 passed / 0 failed; opt-in CPU benchmark separate. Current headless doctor gate still fails; physical Alacritty and full UI/M1 acceptance remain open. Main/UI plans and 60-module inventory synchronized.
+
+2026-10-25 E38 mouse delivery and source-only selection repair: see mouse-repair-verification.md and mouse-repair-verification.json. Model/CLI renderer 277 passed; selected app targets 145 passed; 0 failed; 1 opt-in CPU benchmark ignored. Native ConPTY OS mode readback and single-click Demo activation checked; physical Alacritty remains UNVERIFIED. Main/UI plans and inventory synchronized; full UI/M1 acceptance remains open.

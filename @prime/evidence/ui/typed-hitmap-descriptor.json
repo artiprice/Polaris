@@ -1,0 +1,19 @@
+{
+  "name": "typed-hit-map-and-hover",
+  "status": "implemented",
+  "contract": [
+    "composer_rect returns composer placement from layout inputs without preparing transcript rows",
+    "prepare_metadata computes pointer targets without rendering into a Buffer",
+    "hit_at resolves the topmost region using the same rectangles as screen painting",
+    "opaque sheet and completion overlays occlude covered underlay targets",
+    "completion rows preserve visible suggestion indexes",
+    "hover feedback is visible for footer, completion, panel, and tool targets",
+    "the main transcript is a non-action target; ToLatest exists only when its visible affordance is painted",
+    "transcript grapheme cells map to source bytes and optional selection ranges are styled",
+    "tool targets are emitted for derived cockpit tool rows; custom panel content is panel-level only",
+    "caret metadata is absent when editor focus is off",
+    "no-hover rendering preserves the stable reference output"
+  ],
+  "test": "crates/polaris-ui/crates/cli/tests/render_contract.rs::hitmap_uses_painted_regions_and_hover_is_visible",
+  "additional_test": "crates/polaris-ui/crates/cli/tests/render_contract.rs::composer_rect_matches_render_metadata_without_transcript_dependency"
+}

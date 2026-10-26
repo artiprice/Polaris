@@ -1,0 +1,4 @@
+{
+  "command": "cargo test --offline -p polaris-cli --test ui_terminal -- --nocapture",
+  "exit_code": 101
+}

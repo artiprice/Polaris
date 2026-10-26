@@ -1,0 +1,20 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Finished `test` profile [unoptimized] target(s) in 6.17s
+     Running tests\provider_contract.rs (target\debug\deps\provider_contract-61ff77816d2aff06.exe)
+
+running 1 test
+test fetch_rejects_control_characters_in_user_agent ... FAILED
+
+failures:
+
+---- fetch_rejects_control_characters_in_user_agent stdout ----
+Error: "fetcher accepted control characters in its user-agent"
+
+
+failures:
+    fetch_rejects_control_characters_in_user_agent
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-search-providers --test provider_contract`

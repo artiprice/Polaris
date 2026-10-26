@@ -1,0 +1,88 @@
+{
+  "checked_utc": "2026-10-26T02:54:07.006894+00:00",
+  "checks": [
+    {
+      "name": "generated-docs",
+      "argv": [
+        "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-I",
+        "@prime/tools/workspace.py",
+        "render-docs",
+        "--check"
+      ],
+      "exit_code": 0,
+      "raw": "generated-docs.txt"
+    },
+    {
+      "name": "document-coverage",
+      "argv": [
+        "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-I",
+        "@prime/tools/workspace.py",
+        "check-docs"
+      ],
+      "exit_code": 0,
+      "raw": "document-coverage.txt"
+    },
+    {
+      "name": "percentages",
+      "argv": [
+        "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "-I",
+        "@prime/tmp/p2/validate_phase_percentages.py"
+      ],
+      "exit_code": 0,
+      "raw": "percentages.txt"
+    },
+    {
+      "name": "documentation-whitespace",
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "@prime/PLAN.md",
+        "@prime/PHASES.md",
+        "@prime/PHASES_STATUS.md",
+        "@prime/PHASES_STATUS_PERCENTAGE.md",
+        "@prime/tools/workspace.toml"
+      ],
+      "exit_code": 0,
+      "raw": "documentation-whitespace.txt"
+    },
+    {
+      "name": "source-hashes",
+      "checked_files": 1110,
+      "exit_code": 0
+    },
+    {
+      "name": "descriptor-json",
+      "files": [
+        "specs\\descriptors\\search_dropped_manifest.json",
+        "specs\\descriptors\\search_provider_bounded_fetch.json",
+        "specs\\descriptors\\search_provider_searxng.json",
+        "specs\\descriptors\\search_provider_ssrf_guard.json",
+        "specs\\descriptors\\search_provider_tavily.json",
+        "specs\\descriptors\\search_source_race.json",
+        "specs\\descriptors\\search_web_pipeline.json",
+        "specs\\descriptors\\mcp_connect_handshake.json",
+        "specs\\descriptors\\mcp_prune_summary.json",
+        "specs\\descriptors\\mcp_schema_namespacing.json",
+        "specs\\descriptors\\mcp_tool_call_bounding.json",
+        "specs\\descriptors\\research_checkpoint_encoding.json",
+        "specs\\descriptors\\research_checkpoint_store.json",
+        "specs\\descriptors\\research_decision_state.json",
+        "specs\\descriptors\\research_evidence_report.json",
+        "specs\\descriptors\\research_metric_output.json",
+        "specs\\descriptors\\research_orchestration.json",
+        "specs\\descriptors\\research_program_md.json",
+        "specs\\descriptors\\research_real_pipeline.json",
+        "specs\\descriptors\\research_run_owner.json",
+        "specs\\descriptors\\sandbox_stdio.json",
+        "apps\\polaris-daemon\\specs\\descriptors\\daemon_config.json",
+        "apps\\polaris-daemon\\specs\\descriptors\\daemon_lifecycle.json"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

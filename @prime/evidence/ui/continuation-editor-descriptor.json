@@ -1,0 +1,68 @@
+{
+  "type_of": "struct",
+  "name": "ContinuationEditor",
+  "file_path": "crates/polaris-ui/crates/model/src/composer.rs and crates/polaris-ui/crates/cli/src/editor.rs",
+  "logic_name": "Continuation Editor",
+  "test_list": [
+    {
+      "test_name": "revision_tracks_cursor_edits_and_undo",
+      "description": "The read-only revision advances after cursor movement, edits, and undo."
+    },
+    {
+      "test_name": "selection_replaces_text_and_undo_restores_selection",
+      "description": "Selected text replacement and undo preserve the exact prior selection."
+    },
+    {
+      "test_name": "word_navigation_and_deletion_respect_graphemes_and_chips",
+      "description": "Word navigation/deletion preserve grapheme boundaries and atomic chips."
+    },
+    {
+      "test_name": "line_and_document_home_end_are_distinct",
+      "description": "Line and document navigation differ and extend selections."
+    },
+    {
+      "test_name": "double_click_selection_tracks_unicode_words_whitespace_and_atomic_chips",
+      "description": "Double-click selection expands Unicode words, whitespace runs, punctuation graphemes, and atomic chips."
+    },
+    {
+      "test_name": "history_restores_saved_draft_selection",
+      "description": "History restores unsent draft selection."
+    },
+    {
+      "test_name": "geometry_maps_tabs_wide_graphemes_chips_and_wrap_boundaries",
+      "description": "Geometry covers tabs, Unicode widths, chips, newline and exact-width wraps."
+    },
+    {
+      "test_name": "geometry_vertical_motion_preserves_sticky_column",
+      "description": "Vertical motion keeps desired column and mouse mapping returns legal boundaries."
+    }
+  ],
+  "dependencies": [
+    "polaris_ui_model::composer::Composer",
+    "unicode-segmentation",
+    "unicode-width"
+  ],
+  "libraries": [
+    "unicode-segmentation",
+    "unicode-width"
+  ],
+  "inputs": [
+    {
+      "name": "composer",
+      "type": "&mut Composer",
+      "description": "Bounded chip-aware draft."
+    },
+    {
+      "name": "text",
+      "type": "&str",
+      "description": "Draft display text."
+    },
+    {
+      "name": "width",
+      "type": "u16",
+      "description": "Terminal width."
+    }
+  ],
+  "output_type": "editor state transitions and byte/cell mapping",
+  "output_description": "Selection editing and shared wrapped geometry."
+}

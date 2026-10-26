@@ -31,26 +31,35 @@ pub struct Args {
     /// Render a deterministic plain-text screen without starting services.
     #[arg(long)]
     pub dump: Option<crate::tui::DumpSize>,
-    /// Explicit synthetic render fixture; allowed only with --dump.
-    #[arg(long, requires = "dump")]
+    /// Explicit fixture for --dump, or an interactive scenario in --demo.
+    #[arg(long)]
     pub scenario: Option<String>,
+    /// Run the isolated interactive UI demo without a kernel or model provider.
+    #[arg(long, conflicts_with = "session")]
+    pub demo: bool,
     /// Initial unsent draft.
     pub prompt: Option<String>,
     /// Color policy.
-    #[arg(long, value_enum, default_value = "auto")]
-    pub color: crate::tui::ColorPolicy,
+    #[arg(long, value_enum)]
+    pub color: Option<crate::tui::ColorPolicy>,
     /// Color depth; terminal support must be verified independently.
-    #[arg(long, value_enum, default_value = "auto")]
-    pub color_depth: crate::tui::ColorDepth,
+    #[arg(long, value_enum)]
+    pub color_depth: Option<crate::tui::ColorDepth>,
     /// Use inherited terminal colors rather than the dark application palette.
-    #[arg(long, value_enum, default_value = "dark")]
-    pub theme: crate::tui::ThemeMode,
+    #[arg(long, value_enum)]
+    pub theme: Option<crate::tui::ThemeMode>,
     /// Use ASCII application decoration; preserve user Unicode text.
     #[arg(long)]
     pub ascii: bool,
+    /// Override a saved ASCII preference and use Unicode decoration.
+    #[arg(long, conflicts_with = "ascii")]
+    pub no_ascii: bool,
     /// Disable cosmetic motion.
     #[arg(long)]
     pub reduce_motion: bool,
+    /// Override a saved reduced-motion preference for this invocation.
+    #[arg(long, conflicts_with = "reduce_motion")]
+    pub no_reduce_motion: bool,
     /// Create a new diagnostic trace containing categories only, never text.
     #[arg(long)]
     pub key_trace: Option<PathBuf>,
@@ -146,6 +155,10 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    if args.demo {
+        // No log sink or durable owner is initialized for the presentation demo.
+        return crate::tui::run(&args, &loaded, &dirs).await;
+    }
     let redactor = polaris_security::automata::DfaRedactor::default_redactor()
         .map_err(|_| CliError::Unavailable("log redactor could not compile"))?;
     let mut log_config = polaris_log::LogConfig::new(args.state_dir.join("logs"));

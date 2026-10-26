@@ -218,7 +218,7 @@ zstd = "0.14.3"
 ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "api-23"] }
 # No onig/esaxx C builds.
 tokenizers = { version = "0.23.2", default-features = false }
-gliner2-rs = "0.9.6"
+gliner2-rs = "=0.9.6"
 hf-hub = { version = "1.0.0", features = ["rustls-tls"] }
 ndarray = "0.17.2"
 
@@ -236,6 +236,7 @@ image_hasher = "3.1.1"
 pulldown-cmark = "0.13.4"
 scraper = "0.27.0"
 htmd = "0.5.6"
+markup5ever_rcdom = "0.38.0"
 encoding_rs = "0.8.42"
 infer = "0.22.0"
 
@@ -275,6 +276,7 @@ shlex = "2.0.1"
 # ---------------------------------------------------------------- tui
 ratatui = "0.30.2"
 crossterm = { version = "0.29.0", features = ["event-stream"] }
+crossterm_winapi = "=0.9.1"
 ratatui-textarea = "0.9.3"
 syntect = { version = "5.3.0", default-features = false, features = ["default-fancy"] }
 two-face = { version = "0.5.2", default-features = false, features = ["syntect-fancy"] }
@@ -296,7 +298,12 @@ wasm-bindgen = "0.2.129"
 
 # ---------------------------------------------------------------- agents
 chromiumoxide = { version = "0.9.1", default-features = false, features = ["bytes"] }
-rmcp = { version = "3.5.1", default-features = false, features = ["client", "macros", "transport-child-process", "transport-streamable-http-client-reqwest", "reqwest-tls-no-provider"] }
+rmcp = { version = "=3.5.1", default-features = false, features = ["client", "macros", "transport-async-rw", "transport-streamable-http-client-reqwest", "reqwest-tls-no-provider"] }
+sse-stream = "0.2.6"
+http-body-util = "0.1.5"
+csv = "1.4.0"
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+quick-xml = "0.42.0"
 # Default features (http, pipe): Docker Desktop over the Windows named pipe; no TLS (avoids ring).
 bollard = { version = "0.21.1", features = ["buildkit_providerless", "aws-lc-rs", "chrono"] }
 # Pulls reqwest 0.11; members must depend on it as an optional feature.

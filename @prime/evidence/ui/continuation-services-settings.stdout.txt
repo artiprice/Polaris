@@ -1,0 +1,12 @@
+
+running 7 tests
+test cli_settings::tests::memory_only_settings_reject_persistence ... ok
+test cli_settings::tests::navigation_and_rows_are_stable ... ok
+test cli_settings::tests::memory_only_worker_save_does_not_write_and_cancel_discards_result ... ok
+test cli_settings::tests::cycle_is_memory_only_until_explicit_apply ... ok
+test cli_settings::tests::persisting_one_selection_clears_only_that_runtime_override ... ok
+test cli_settings::tests::worker_persists_on_a_worker_and_returns_updated_settings ... ok
+test cli_settings::tests::settings_worker_cancellation_discards_stale_generation ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 38 filtered out; finished in 0.02s
+

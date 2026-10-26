@@ -1,0 +1,64 @@
+{
+  "type_of": "service",
+  "name": "CLI continuation services",
+  "file_path": "apps/polaris-cli/src/ui_services.rs and apps/polaris-cli/src/cli_settings.rs",
+  "logic_name": "Real text clipboard, bounded workspace path snapshot, and persisted preferences",
+  "test_list": [
+    {
+      "test_name": "clipboard_request_is_nonblocking_and_generation_scoped",
+      "description": "Text read and copy are queued with caller generation; stale generations are retired and OS clipboard is not touched by tests."
+    },
+    {
+      "test_name": "clipboard_text_limit_is_enforced",
+      "description": "Text over 1 MiB is rejected and image clipboard content is never requested."
+    },
+    {
+      "test_name": "workspace_index_is_bounded_and_cancellable",
+      "description": "A bounded glob snapshot reports truncation and stale generation results are retired."
+    },
+    {
+      "test_name": "workspace_index_uses_builtin_path_policy",
+      "description": "Snapshot paths respect ignore rules, secret exclusions, and symlink containment provided by polaris-tools-builtin."
+    },
+    {
+      "test_name": "preferences_are_session_overrides_unless_explicitly_persisted",
+      "description": "Runtime preference overlays are memory-only; explicit persistence uses only the global config owner."
+    },
+    {
+      "test_name": "settings_cycle_stays_in_memory_until_apply",
+      "description": "Cycling a setting changes only the runtime override; explicit apply persists one selected field to Dirs.global and leaves other overrides active."
+    },
+    {
+      "test_name": "settings_rows_and_navigation_are_stable",
+      "description": "The settings helper returns six real value rows, wraps selection, and marks exactly the selected row."
+    },
+    {
+      "test_name": "memory_only_settings_reject_persistence",
+      "description": "Render fixtures and demo settings constructed from snapshots reject apply_selection before writing global config."
+    },
+    {
+      "test_name": "settings_save_runs_on_owned_worker",
+      "description": "Explicit preference persistence is queued to a bounded worker and returns a generation-tagged result to nonblocking polling."
+    },
+    {
+      "test_name": "settings_worker_retires_stale_generations",
+      "description": "Canceled or superseded save results are discarded; memory-only settings cannot persist through the worker."
+    },
+    {
+      "test_name": "untouched_cli_override_is_not_persisted",
+      "description": "An untouched settings selection does not write a runtime CLI override to global preferences."
+    },
+    {
+      "test_name": "explicitly_edited_field_only_is_persisted",
+      "description": "A cycled setting can be explicitly saved while unrelated CLI overrides remain memory-only."
+    },
+    {
+      "test_name": "empty_clipboard_copy_is_rejected_without_native_access",
+      "description": "Empty text writes are rejected before queueing so the native clipboard backend cannot clear other clipboard formats."
+    },
+    {
+      "test_name": "missing_clipboard_child_pipe_is_killed_and_reaped",
+      "description": "A spawned clipboard child with a missing stdout pipe is killed and waited before returning an error."
+    }
+  ]
+}

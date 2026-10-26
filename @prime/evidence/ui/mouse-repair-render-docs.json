@@ -1,0 +1,15 @@
+{
+  "name": "mouse-repair-render-docs",
+  "command": [
+    "python",
+    "-I",
+    "@prime/tools/workspace.py",
+    "render-docs",
+    "--check"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T12:35:06.577Z",
+  "pid": 18424,
+  "code": 0,
+  "finished": "2026-10-25T12:35:07.033Z"
+}

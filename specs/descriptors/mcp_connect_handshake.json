@@ -1,0 +1,21 @@
+{
+  "type_of": "async_function",
+  "name": "McpHub::connect",
+  "file_path": "crates/polaris-ext/crates/mcp/src/hub.rs",
+  "logic_name": "MCP Connect and Handshake",
+  "test_list": [
+    {"test_name": "connect_stdio_fixture_lists_and_calls_tool_then_reaps_child", "description": "Connect through the supervised stdio launcher, negotiate MCP, list and call a tool, then confirm the fixture child exited."},
+    {"test_name": "connect_http_fixture_lists_and_calls_tool", "description": "Connect to a local streamable HTTP fixture, list and call a tool, and disconnect."},
+    {"test_name": "connect_repo_unapproved_is_denied_before_launcher", "description": "A RepoUnapproved server is denied before the injected launcher is invoked."},
+    {"test_name": "transport_limits_enforce_documented_inclusive_bounds", "description": "Startup and call timeouts accept the inclusive 120-second maximum, reject zero or larger values, and result limits stay within the frame cap."},
+    {"test_name": "plaintext_http_is_limited_to_loopback_even_without_headers", "description": "Plain HTTP to a public hostname is rejected even when no custom headers are configured, while loopback HTTP remains valid."}
+  ],
+  "dependencies": ["ProcessLauncher", "TrustLevel", "McpTransport", "rmcp client service"],
+  "libraries": ["rmcp", "tokio", "serde", "url", "thiserror"],
+  "inputs": [
+    {"name": "hub", "type": "&mut McpHub", "description": "Hub that owns live MCP sessions."},
+    {"name": "spec", "type": "McpServerSpec", "description": "Transport, trust, timeout, bounds, and secret references."}
+  ],
+  "output_type": "Result<(), McpError>",
+  "output_description": "A live initialized session, or a typed sanitized error with failed startup resources cleaned up."
+}

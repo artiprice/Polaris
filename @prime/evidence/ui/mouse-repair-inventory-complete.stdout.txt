@@ -1,0 +1,1 @@
+{"modules": 60, "tasks_including_deferred": 41, "dependencies": "acyclic", "existing_paths": "resolved", "demo_sources": "resolved", "plan_anchors": "resolved", "current_evidence_links": "resolved"}

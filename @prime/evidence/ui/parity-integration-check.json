@@ -1,0 +1,17 @@
+{
+  "name": "parity-integration-check",
+  "command": [
+    "cargo",
+    "check",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--all-targets"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T07:00:27.974Z",
+  "pid": 6464,
+  "code": 101,
+  "finished": "2026-10-25T07:01:00.852Z"
+}

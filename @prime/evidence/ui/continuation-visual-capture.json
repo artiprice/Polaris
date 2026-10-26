@@ -1,0 +1,22 @@
+{
+  "name": "continuation-visual-capture",
+  "command": [
+    "python",
+    "-c",
+    "import os, subprocess, sys; e=dict(os.environ); e[\"POLARIS_UI_CAPTURE_DIR\"]=sys.argv[1]; raise SystemExit(subprocess.call(sys.argv[2:],env=e))",
+    "C:/mDev/Polaris/@prime/evidence/ui/continuation-after",
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-cli",
+    "--lib",
+    "continuation_visual_scenarios"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T05:40:22.002Z",
+  "pid": 17988,
+  "code": 0,
+  "finished": "2026-10-25T05:40:33.420Z"
+}

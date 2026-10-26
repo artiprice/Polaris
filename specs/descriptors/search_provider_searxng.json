@@ -1,0 +1,22 @@
+{
+  "type_of": "struct",
+  "name": "Searxng",
+  "file_path": "crates/polaris-search/crates/providers/src/searxng.rs",
+  "logic_name": "Search Provider SearXNG",
+  "test_list": [
+    { "test_name": "searxng_maps_json_results_to_sdk_hits", "description": "Map result URLs, titles, snippets, and provider identity to the SDK contract." },
+    { "test_name": "searxng_reports_disabled_json_format_as_protocol_error", "description": "A non-JSON or invalid JSON response is reported without exposing response bodies." },
+    { "test_name": "searxng_maps_unavailable_and_http_status_errors", "description": "Map connection failures, 5xx, 401, and 429 to the SDK error taxonomy." },
+    { "test_name": "searxng_redacts_query_before_egress", "description": "Only the redactor output is included in the outgoing request." },
+    { "test_name": "searxng_rejects_unconfigured_private_endpoints", "description": "Private and loopback endpoints are accepted only for an explicitly configured local SearXNG origin." },
+    { "test_name": "searxng_obeys_result_limit_and_cancellation", "description": "Do not return more than requested and allow cancellation to stop transport work." }
+  ],
+  "dependencies": ["polaris_sdk::registry::WebSearch", "polaris_sdk::registry::Redactor", "polaris_ratelimit::DualLimiter"],
+  "libraries": ["reqwest", "serde", "serde_json", "tokio", "url"],
+  "inputs": [
+    { "name": "config", "type": "SearxngConfig", "description": "Configured base URL, engine allow-list, timeout, local-origin exception, and limiter." },
+    { "name": "redactor", "type": "Arc<dyn Redactor>", "description": "SDK redactor applied before query data leaves the process." }
+  ],
+  "output_type": "impl WebSearch",
+  "output_description": "A production SearXNG adapter using its JSON search API and returning SDK SearchHit values."
+}

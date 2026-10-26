@@ -1,0 +1,16 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Finished `test` profile [unoptimized] target(s) in 4.04s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ui_model-3118915acc718f98.exe)
+     Running tests\cockpit_state.rs (target\debug\deps\cockpit_state-6b73d0f880f720ca.exe)
+     Running tests\completion_ranking.rs (target\debug\deps\completion_ranking-07e3bfe941b48af6.exe)
+     Running tests\composer_buffer.rs (target\debug\deps\composer_buffer-6febe3c6eeef3350.exe)
+     Running tests\continuation_editor.rs (target\debug\deps\continuation_editor-3a8c179150998ced.exe)
+     Running tests\design_tokens.rs (target\debug\deps\design_tokens-908e3286bcdc47e2.exe)
+     Running tests\keymap_table.rs (target\debug\deps\keymap_table-810f58551c79d44f.exe)
+     Running tests\logo_grids.rs (target\debug\deps\logo_grids-b73fa6b8892e2e16.exe)
+     Running tests\prompt_history.rs (target\debug\deps\prompt_history-2e96e951f0ea49e7.exe)
+     Running tests\questionnaire_editor.rs (target\debug\deps\questionnaire_editor-243ec5a73e3497c7.exe)
+     Running tests\questionnaire_state.rs (target\debug\deps\questionnaire_state-414d01b7929d67a3.exe)
+     Running tests\token_classification.rs (target\debug\deps\token_classification-51876e88975cb062.exe)
+     Running tests\view_reducer.rs (target\debug\deps\view_reducer-367cbe20595e8e13.exe)
+   Doc-tests polaris_ui_model

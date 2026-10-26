@@ -1,0 +1,16 @@
+{
+  "name": "continuation-final-advisories",
+  "command": [
+    "cargo",
+    "deny",
+    "--offline",
+    "--locked",
+    "check",
+    "advisories"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T06:09:40.908Z",
+  "pid": 12524,
+  "code": 1,
+  "finished": "2026-10-25T06:09:46.844Z"
+}

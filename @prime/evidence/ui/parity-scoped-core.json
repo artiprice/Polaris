@@ -1,0 +1,20 @@
+{
+  "name": "parity-scoped-core",
+  "command": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-config",
+    "-p",
+    "polaris-ui-model",
+    "-p",
+    "polaris-ui-cli"
+  ],
+  "status": "COMPLETE",
+  "started": "2026-10-25T11:29:51.721Z",
+  "pid": 12356,
+  "code": 0,
+  "finished": "2026-10-25T11:30:11.619Z"
+}

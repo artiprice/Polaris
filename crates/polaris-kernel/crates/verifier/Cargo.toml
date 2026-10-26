@@ -25,5 +25,6 @@ polaris-code-intel = { workspace = true }
 polaris-system-one-verifier = { workspace = true }
 
 [dev-dependencies]
+polaris-ext-skills = { workspace = true }
 polaris-proto = { workspace = true }
 prost = { workspace = true }

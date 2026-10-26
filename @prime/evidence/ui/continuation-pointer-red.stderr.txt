@@ -1,0 +1,21 @@
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+   Compiling polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+warning: fields `drag_anchor`, `last_click`, and `chip_preview` are never read
+   --> apps\polaris-cli\src\tui.rs:677:5
+    |
+635 | struct UiState {
+    |        ------- fields in this struct
+...
+677 |     drag_anchor: Option<usize>,
+    |     ^^^^^^^^^^^
+678 |     last_click: Option<(Instant, usize)>,
+    |     ^^^^^^^^^^
+679 |     chip_preview: Option<u64>,
+    |     ^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-cli` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 11.23s
+     Running unittests src\lib.rs (target\debug\deps\polaris_cli-fcda833fbe9c816f.exe)
+error: test failed, to rerun pass `-p polaris-cli --lib`

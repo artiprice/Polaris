@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python",
+    "-I",
+    "-c",
+    "import xml.etree.ElementTree as ET,json,pathlib\nroot=pathlib.Path.cwd()\ndef cells(path):\n result={}\n for e in ET.parse(path).getroot():\n  if e.tag.endswith('text'):\n   result[(int(e.attrib['x'])//9,(int(e.attrib['y'])-14)//18)]=(e.text,e.attrib.get('fill','').lower())\n return result\nout=[]\nfor w,h in [(60,20),(80,24),(100,30),(120,40),(160,60)]:\n ref=cells(root/f'dist/demo-design-preview-slop/target/stats-rebuild/captures/welcome-{w}x{h}.svg')\n actual=cells(root/f'@prime/evidence/ui/repair-after/welcome-{w}x{h}.svg')\n # Footer has real offline/model/effort state instead of demo model data.\n diffs=[{'cell':k,'reference':ref.get(k),'actual':actual.get(k)} for k in set(ref)|set(actual) if k[1]<h-1 and ref.get(k)!=actual.get(k)]\n out.append({'size':f'{w}x{h}','non_footer_differences':diffs})\nprint(json.dumps(out,indent=2))\nraise SystemExit(any(x['non_footer_differences'] for x in out))"
+  ],
+  "code": 0,
+  "stdout": "[\r\n  {\r\n    \"size\": \"60x20\",\r\n    \"non_footer_differences\": []\r\n  },\r\n  {\r\n    \"size\": \"80x24\",\r\n    \"non_footer_differences\": []\r\n  },\r\n  {\r\n    \"size\": \"100x30\",\r\n    \"non_footer_differences\": []\r\n  },\r\n  {\r\n    \"size\": \"120x40\",\r\n    \"non_footer_differences\": []\r\n  },\r\n  {\r\n    \"size\": \"160x60\",\r\n    \"non_footer_differences\": []\r\n  }\r\n]\r\n",
+  "stderr": ""
+}

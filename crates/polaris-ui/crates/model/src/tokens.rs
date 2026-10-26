@@ -73,7 +73,7 @@ pub const ROLES: &[ColorRole] = &[
     role_of(
         "prompt-surface",
         "#141414",
-        "UI_PLAN current-demo composer surface",
+        "ui-design.md (submitted prompt; live composer uses canvas)",
     ),
     role_of("to-latest-bg", "#262626", "ui-design.md (To latest)"),
     role_of(

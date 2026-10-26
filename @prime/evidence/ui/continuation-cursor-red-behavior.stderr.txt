@@ -1,0 +1,28 @@
+   Compiling polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+error[E0308]: mismatched types
+  --> crates\polaris-ui\crates\cli\src\windows_input.rs:70:25
+   |
+70 |                 column: mouse.mouse_position.x,
+   |                         ^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `i16`
+
+error[E0308]: mismatched types
+  --> crates\polaris-ui\crates\cli\src\windows_input.rs:71:22
+   |
+71 |                 row: mouse.mouse_position.y,
+   |                      ^^^^^^^^^^^^^^^^^^^^^^ expected `u16`, found `i16`
+
+error[E0308]: mismatched types
+  --> crates\polaris-ui\crates\cli\src\windows_input.rs:75:26
+   |
+75 |                 columns: size.size.x,
+   |                          ^^^^^^^^^^^ expected `u16`, found `i16`
+
+error[E0308]: mismatched types
+  --> crates\polaris-ui\crates\cli\src\windows_input.rs:76:23
+   |
+76 |                 rows: size.size.y,
+   |                       ^^^^^^^^^^^ expected `u16`, found `i16`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `polaris-ui-cli` (lib) due to 4 previous errors

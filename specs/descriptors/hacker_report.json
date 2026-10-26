@@ -1,0 +1,17 @@
+{
+  "type_of": "struct",
+  "name": "FindingConfidence",
+  "file_path": "crates/polaris-hacker/src/report.rs",
+  "logic_name": "Evidence and Confidence Rules",
+  "test_list": [
+    { "test_name": "every_static_finding_has_rule_and_valid_source_span", "description": "Finding evidence is traceable to a rule and an in-bounds source range." },
+    { "test_name": "heuristic_is_never_labeled_as_a_sound_fact", "description": "Pattern-based findings use advisory confidence." },
+    { "test_name": "dynamic_exit_does_not_claim_reproduction", "description": "Observed process status is distinct from a detected sanitizer report or replay-verified bug." },
+    { "test_name": "model_token_usage_is_private_and_zero", "description": "No model API is linked and report token usage cannot be incremented by callers." }
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [],
+  "output_type": "AuditReport",
+  "output_description": "Evidence-bounded static and dynamic observations with explicit limitations and zero model-token accounting."
+}

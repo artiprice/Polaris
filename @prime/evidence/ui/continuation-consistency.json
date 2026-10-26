@@ -1,0 +1,41 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "command": [
+        "python",
+        "@prime/tools/workspace.py",
+        "check-members"
+      ],
+      "code": 0,
+      "stdout": "check-members: 93 members matched, table has 93 -> OK\r\n",
+      "stderr": ""
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "command": [
+        "python",
+        "@prime/tools/workspace.py",
+        "check-layers"
+      ],
+      "code": 0,
+      "stdout": "check-layers: 93 packages, 269 edges -> OK\r\n",
+      "stderr": ""
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "command": [
+        "python",
+        "@prime/tools/workspace.py",
+        "check-docs"
+      ],
+      "code": 0,
+      "stdout": "check-docs: 93 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK\r\n",
+      "stderr": ""
+    }
+  }
+]

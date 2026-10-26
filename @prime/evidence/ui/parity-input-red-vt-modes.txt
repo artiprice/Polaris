@@ -1,0 +1,27 @@
+COMMAND: cargo test --offline -p polaris-ui-cli --test terminal_lifecycle windows_vt_mouse_and_keyboard_protocols_are_balanced -- --exact --nocapture
+EXIT: 101
+STDOUT:
+
+running 1 test
+test windows_vt_mouse_and_keyboard_protocols_are_balanced ... FAILED
+
+failures:
+
+failures:
+    windows_vt_mouse_and_keyboard_protocols_are_balanced
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+STDERR:
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Finished `test` profile [unoptimized] target(s) in 1.51s
+     Running tests\terminal_lifecycle.rs (target\debug\deps\terminal_lifecycle-d1cd67acad6a3e7c.exe)
+
+thread 'windows_vt_mouse_and_keyboard_protocols_are_balanced' (1924) panicked at crates\polaris-ui\crates\cli\tests\terminal_lifecycle.rs:274:5:
+assertion `left == right` failed
+  left: []
+ right: [27, 91, 63, 49, 48, 48, 48, 104, 27, 91, 63, 49, 48, 48, 50, 104, 27, 91, 63, 49, 48, 48, 51, 104, 27, 91, 63, 49, 48, 48, 54, 104, 27, 91, 62, 49, 117, 27, 91, 60, 117, 27, 91, 63, 49, 48, 48, 54, 108, 27, 91, 63, 49, 48, 48, 51, 108, 27, 91, 63, 49, 48, 48, 50, 108, 27, 91, 63, 49, 48, 48, 48, 108]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p polaris-ui-cli --test terminal_lifecycle`

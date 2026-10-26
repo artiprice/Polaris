@@ -1,0 +1,67 @@
+test --offline -p polaris-ui-cli --lib input_decoder::tests:: -- --nocapture
+EXIT 101
+
+STDERR
+   Compiling polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+warning: unused import: `core::ops::Range`
+ --> crates\polaris-ui\crates\cli\src\questions.rs:3:5
+  |
+3 | use core::ops::Range;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0425]: cannot find function `note_rows` in this scope
+  --> crates\polaris-ui\crates\cli\src\questions.rs:44:29
+   |
+44 |             .saturating_add(note_rows(overlay, composer.width.saturating_sub(2)))
+   |                             ^^^^^^^^^ not found in this scope
+
+error[E0069]: `return;` in a function whose return type is not `()`
+  --> crates\polaris-ui\crates\cli\src\questions.rs:91:9
+   |
+60 | ) -> Option<super::QuestionnaireEditorGeometry> {
+   |      ------------------------------------------ expected `Option<super::QuestionnaireEditorGeometry>` because of this return type
+...
+91 |         return;
+   |         ^^^^^^ return type is not `()`
+   |
+help: give the `return` a value of the expected type
+   |
+91 |         return None;
+   |                ++++
+
+error[E0425]: cannot find function `note_rows` in this scope
+  --> crates\polaris-ui\crates\cli\src\questions.rs:94:23
+   |
+94 |     let notes_lines = note_rows(overlay, inner_width);
+   |                       ^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `editor_surface` in this scope
+   --> crates\polaris-ui\crates\cli\src\questions.rs:127:10
+    |
+127 |     Some(editor_surface(area, overlay, inner_x, notes_y, inner_width, notes_lines))
+    |          ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `note_rows` in this scope
+   --> crates\polaris-ui\crates\cli\src\questions.rs:179:27
+    |
+179 |         let notes_lines = note_rows(overlay, width);
+    |                           ^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `draw_notes_editor` in this scope
+   --> crates\polaris-ui\crates\cli\src\questions.rs:182:9
+    |
+182 |         draw_notes_editor(buffer, x, notes_y, width, notes_lines, overlay, options);
+    |         ^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `editor_caret` in this scope
+   --> crates\polaris-ui\crates\cli\src\questions.rs:184:21
+    |
+184 |             caret = editor_caret(area, overlay, x, notes_y, width, notes_lines);
+    |                     ^^^^^^^^^^^^ not found in this scope
+
+Some errors have detailed explanations: E0069, E0425.
+For more information about an error, try `rustc --explain E0069`.
+warning: `polaris-ui-cli` (lib test) generated 1 warning
+error: could not compile `polaris-ui-cli` (lib test) due to 7 previous errors; 1 warning emitted
