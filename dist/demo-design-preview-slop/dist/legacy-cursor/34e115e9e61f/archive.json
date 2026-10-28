@@ -1,0 +1,22 @@
+[
+  {
+    "source": "dist/polaris.exe",
+    "backup": "dist/legacy-cursor/34e115e9e61f/primary",
+    "sha256": "34e115e9e61fb8fc6588f83aae286ff845766422f0bd2be72763a3cc68316fde"
+  },
+  {
+    "source": "dist/message-presentation/polaris.exe",
+    "backup": "dist/legacy-cursor/34e115e9e61f/message-presentation",
+    "sha256": "34e115e9e61fb8fc6588f83aae286ff845766422f0bd2be72763a3cc68316fde"
+  },
+  {
+    "source": "dist/overlay-surfaces/polaris.exe",
+    "backup": "dist/legacy-cursor/34e115e9e61f/overlay-surfaces",
+    "sha256": "34e115e9e61fb8fc6588f83aae286ff845766422f0bd2be72763a3cc68316fde"
+  },
+  {
+    "source": "dist/word-selection/polaris.exe",
+    "backup": "dist/legacy-cursor/34e115e9e61f/word-selection",
+    "sha256": "34e115e9e61fb8fc6588f83aae286ff845766422f0bd2be72763a3cc68316fde"
+  }
+]

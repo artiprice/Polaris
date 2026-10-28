@@ -1,0 +1,29 @@
+{
+  "reason": "Before increasing selection visibility from 10% to 30%",
+  "copies": [
+    {
+      "label": "primary",
+      "from": "dist",
+      "to": "dist/legacy-selection/b9594d381b5f/primary",
+      "sha256": "b9594d381b5f6fff86f3afe588fa2f541771063fc9469ba247c0280a8c5048d4"
+    },
+    {
+      "label": "message-presentation",
+      "from": "dist/message-presentation",
+      "to": "dist/legacy-selection/b9594d381b5f/message-presentation",
+      "sha256": "b9594d381b5f6fff86f3afe588fa2f541771063fc9469ba247c0280a8c5048d4"
+    },
+    {
+      "label": "overlay-surfaces",
+      "from": "dist/overlay-surfaces",
+      "to": "dist/legacy-selection/b9594d381b5f/overlay-surfaces",
+      "sha256": "b9594d381b5f6fff86f3afe588fa2f541771063fc9469ba247c0280a8c5048d4"
+    },
+    {
+      "label": "word-selection",
+      "from": "dist/word-selection",
+      "to": "dist/legacy-selection/b9594d381b5f/word-selection",
+      "sha256": "b9594d381b5f6fff86f3afe588fa2f541771063fc9469ba247c0280a8c5048d4"
+    }
+  ]
+}

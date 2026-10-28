@@ -1,0 +1,40 @@
+[
+  {
+    "label": "primary",
+    "sha256": "4bceec800502cb8a34dce6e6a4cd0b3cd6d12d9687222b80ccb1bb6ceac40eb9",
+    "backup": "dist/legacy-nvvi/4bceec800502/primary"
+  },
+  {
+    "label": "message-presentation",
+    "sha256": "4bceec800502cb8a34dce6e6a4cd0b3cd6d12d9687222b80ccb1bb6ceac40eb9",
+    "backup": "dist/legacy-nvvi/4bceec800502/message-presentation"
+  },
+  {
+    "label": "overlay-surfaces",
+    "sha256": "4bceec800502cb8a34dce6e6a4cd0b3cd6d12d9687222b80ccb1bb6ceac40eb9",
+    "backup": "dist/legacy-nvvi/4bceec800502/overlay-surfaces"
+  },
+  {
+    "label": "word-selection",
+    "sha256": "4bceec800502cb8a34dce6e6a4cd0b3cd6d12d9687222b80ccb1bb6ceac40eb9",
+    "backup": "dist/legacy-nvvi/4bceec800502/word-selection"
+  },
+  {
+    "label": "earlier-instance-backup",
+    "original": "dist/nvvi.running-3220.exe",
+    "sha256": "ac08a7d7ff9c4393219e89e42e2b285b7199cf2df32392849db1e4a902dad0f5",
+    "backup": "dist/legacy-nvvi/ac08a7d7ff9c/earlier-instance-backups/nvvi.running-3220.exe"
+  },
+  {
+    "label": "earlier-instance-backup",
+    "original": "dist/nvvi.running-7861e308a639.exe",
+    "sha256": "7861e308a63961d2baa6dee9ecf1bbebe42044263329a0ff52e2ed3840b30148",
+    "backup": "dist/legacy-nvvi/7861e308a639/earlier-instance-backups/nvvi.running-7861e308a639.exe"
+  },
+  {
+    "label": "earlier-instance-backup",
+    "original": "dist/nvvi.running-d74563ac225a.exe",
+    "sha256": "d74563ac225ac7fa13bb11445e4682e6c413eb2aa999ec9ebea833425d6d0312",
+    "backup": "dist/legacy-nvvi/d74563ac225a/earlier-instance-backups/nvvi.running-d74563ac225a.exe"
+  }
+]

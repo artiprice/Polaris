@@ -1,0 +1,23 @@
+[
+  {
+    "file": "space-grotesk.ttf",
+    "source": "https://github.com/google/fonts/blob/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+    "license": "Space-Grotesk-OFL.txt",
+    "bytes": 136676,
+    "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72"
+  },
+  {
+    "file": "inter.woff2",
+    "source": "elements/projects/themes/src/fonts/inter.woff2",
+    "license": "Inter-OFL.md",
+    "bytes": 227180,
+    "sha256": "17fe38ab302c7e5dbfb5c3d87801092d79be958500db6412ed3bc0f126bd53d3"
+  },
+  {
+    "file": "jetbrains-mono.ttf",
+    "source": "https://github.com/JetBrains/JetBrainsMono/blob/master/fonts/variable/JetBrainsMono%5Bwght%5D.ttf",
+    "license": "JetBrains-Mono-OFL.txt",
+    "bytes": 300144,
+    "sha256": "3cfafa86e28b87184d592fef82846e8c10cb48653c62efcda34f082da225ec34"
+  }
+]

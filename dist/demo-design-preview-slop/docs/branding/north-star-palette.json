@@ -1,0 +1,13 @@
+{
+  "name": "Polaris CLI minimal North Star",
+  "canvas": "#000000",
+  "center": "#C0E58C",
+  "rays": "#76B900",
+  "tips": "#6B6B6B",
+  "rule": "#343434",
+  "sentPrompt": "#141414",
+  "controlHover": "#181818",
+  "controlFocus": "#191919",
+  "weight": "regular",
+  "filledPackage": false
+}

@@ -1,0 +1,479 @@
+#[path = "support/selection.rs"]
+mod selection;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use polaris::{
+    app::{App, Entry, EntryKind},
+    interaction::{TextRegionId, UiMap, ViewSelection},
+    runtime::selection_text,
+    theme::{Theme, ThemeMode},
+    ui,
+};
+use ratatui::{
+    Terminal,
+    backend::TestBackend,
+    buffer::Buffer,
+    layout::Rect,
+    style::{Color, Modifier},
+    widgets::{Paragraph, Wrap},
+};
+fn capture(app: &App, w: u16, h: u16) -> (Buffer, UiMap) {
+    let mut t = Terminal::new(TestBackend::new(w, h)).unwrap();
+    let mut map = UiMap::default();
+    t.draw(|f| map = ui::render_interactive(f, app)).unwrap();
+    (t.backend().buffer().clone(), map)
+}
+fn text(b: &Buffer, r: Rect) -> String {
+    (r.y..r.bottom())
+        .map(|y| {
+            (r.x..r.right())
+                .map(|x| b[(x, y)].symbol())
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+fn esc(app: &mut App) {
+    app.key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+}
+fn is_artwork_color(c: Color) -> bool {
+    matches!(
+        c,
+        Color::Rgb(36, 208, 70)
+            | Color::Rgb(150, 214, 172)
+            | Color::Rgb(184, 184, 184)
+            | Color::Rgb(107, 107, 107)
+            | Color::Rgb(28, 28, 28)
+    )
+}
+fn logo_rect(compact: bool) -> Rect {
+    Rect::new(
+        2,
+        2,
+        if compact { 11 } else { 15 },
+        if compact { 5 } else { 7 },
+    )
+}
+#[test]
+fn balanced_welcome_aligns_metadata_and_leaves_composer_and_footer_fixed() {
+    let app = App::default();
+    for (w, h) in [
+        (120, 40),
+        (120, 36),
+        (120, 35),
+        (100, 30),
+        (90, 30),
+        (89, 40),
+        (80, 24),
+        (60, 20),
+    ] {
+        let (b, map) = capture(&app, w, h);
+        assert_eq!(text(&b, Rect::new(0, 0, w, 2)).trim(), "");
+        let (tx, ty) = (20, 3);
+        assert_eq!(text(&b, Rect::new(tx, ty, 7, 1)), "Polaris");
+        assert!(b[(tx, ty)].modifier.contains(Modifier::BOLD));
+        assert_eq!(b[(tx + 8, ty)].fg, Color::Rgb(133, 133, 133));
+        assert!(!b[(tx + 8, ty)].modifier.contains(Modifier::BOLD));
+        assert_eq!(
+            text(&b, Rect::new(tx, ty + 1, 22, 1)),
+            "Account not configured"
+        );
+        let logo = logo_rect(false);
+        let mut ink = Vec::new();
+        for y in 0..h {
+            for x in 0..w {
+                let c = &b[(x, y)];
+                if is_artwork_color(c.fg) || is_artwork_color(c.bg) {
+                    ink.push((x, y));
+                }
+            }
+        }
+        assert!(!ink.is_empty());
+        assert!(ink.iter().all(|&(x, y)| logo.contains((x, y).into())));
+        assert_eq!(ink.iter().map(|p| p.0).min(), Some(2));
+        assert_eq!(ink.iter().map(|p| p.0).max(), Some(16));
+        assert_eq!(ink.iter().map(|p| p.1).min(), Some(2));
+        assert_eq!(ink.iter().map(|p| p.1).max(), Some(8));
+        assert!(text(&b, Rect::new(17, 2, 3, 7)).trim().is_empty());
+        assert_eq!(map.region(&TextRegionId::Composer).unwrap().rect.y, h - 3);
+        assert_eq!(text(&b, Rect::new(0, h - 2, w, 1)).trim(), "");
+        assert!(text(&b, Rect::new(0, h - 1, w, 1)).contains("auto mode on"));
+    }
+}
+#[test]
+fn typing_submission_popups_previews_and_clear_restore_the_right_artwork() {
+    let mut app = App::default();
+    let (welcome, _) = capture(&app, 120, 40);
+    app.input.set("Typing retains the welcome star");
+    assert_eq!(
+        text(&welcome, logo_rect(false)),
+        text(&capture(&app, 120, 40).0, logo_rect(false))
+    );
+    app.submit();
+    app.working = false;
+    let (chat, map) = capture(&app, 120, 40);
+    assert_ne!(
+        text(&welcome, logo_rect(false)),
+        text(&chat, logo_rect(false))
+    );
+    assert!(text(&chat, logo_rect(true)).contains("─✦─"));
+    assert_eq!(map.region(&TextRegionId::Conversation).unwrap().rect.y, 8);
+    for command in [
+        "/model",
+        "/status",
+        "/stats",
+        "/providers",
+        "/preview",
+        "/onboarding",
+    ] {
+        app.command(command);
+        let (popup, map) = capture(&app, 120, 40);
+        assert_eq!(
+            text(&popup, logo_rect(true)),
+            text(&chat, logo_rect(true)),
+            "{command}"
+        );
+        let sheet = ui::popup_area(&app, Rect::new(0, 0, 120, 40));
+        assert!(sheet.y > 2);
+        assert!(map.text_regions.iter().all(|r| {
+            r.cells
+                .iter()
+                .all(|c| c.y < sheet.y || c.y >= sheet.bottom())
+        }));
+        esc(&mut app);
+        assert_eq!(
+            text(&capture(&app, 120, 40).0, logo_rect(true)),
+            text(&chat, logo_rect(true))
+        );
+    }
+    app.paste(&"long paste\n".repeat(60));
+    let id = app.input.spans[0].attachment.id;
+    app.open_attachment(id);
+    assert_eq!(
+        text(&capture(&app, 120, 40).0, logo_rect(true)),
+        text(&chat, logo_rect(true))
+    );
+    esc(&mut app);
+    app.command("/clear");
+    assert_eq!(
+        text(&capture(&app, 120, 40).0, logo_rect(false)),
+        text(&welcome, logo_rect(false))
+    );
+}
+#[test]
+fn long_unicode_metadata_ellipsizes_without_overwriting_artwork_or_right_margin() {
+    let mut app = App::default();
+    app.account_email = Some("开发者👩‍💻é-account".repeat(20));
+    app.workspace = "C:/项目/🦀/workspace/".repeat(20);
+    for ascii in [false, true] {
+        app.ascii = ascii;
+        let (b, _) = capture(&app, 60, 20);
+        for y in [4, 6] {
+            assert!(text(&b, Rect::new(20, y, 38, 1)).ends_with(if ascii { "..." } else { "…" }));
+            assert_eq!(text(&b, Rect::new(58, y, 2, 1)), "  ");
+        }
+        assert!(text(&b, Rect::new(17, 2, 3, 7)).trim().is_empty());
+        assert_eq!(text(&b, Rect::new(20, 3, 7, 1)), "Polaris");
+        assert!(text(&b, Rect::new(20, 7, 38, 1)).trim().is_empty());
+    }
+}
+#[test]
+fn resize_scroll_limits_selection_and_source_cells_share_the_header_geometry() {
+    let mut app = App::default();
+    let lines: Vec<_> = (0..100)
+        .map(|n| format!("line {n:03} contains actual selectable text"))
+        .collect();
+    app.entries.push(Entry {
+        draft: None,
+        kind: EntryKind::User,
+        title: String::new(),
+        lines: lines.clone(),
+    });
+    for (w, h) in [(120, 40), (60, 20), (100, 30), (80, 24), (120, 40)] {
+        for scroll in [usize::MAX, 0] {
+            app.scroll = scroll;
+            let (before, map) = capture(&app, w, h);
+            let r = map.region(&TextRegionId::Conversation).unwrap();
+            assert_eq!(r.rect.y, 8);
+            assert_eq!(r.rect.bottom(), h - ui::composer_height(&app, w) - 2);
+            let rendered = ui::entry_lines(&app.entries[0], &app, false);
+            let total = Paragraph::new(rendered)
+                .wrap(Wrap { trim: false })
+                .line_count(w - 4);
+            assert_eq!(
+                ui::conversation_max_scroll(&app, w, h),
+                total - r.rect.height as usize
+            );
+            for c in &r.cells {
+                let source = &r.source[c.byte_offset..];
+                if let Some(ch) = source.chars().next().filter(|ch| !ch.is_whitespace()) {
+                    assert_eq!(
+                        before[(c.x, c.y)].symbol(),
+                        ch.to_string(),
+                        "mapped wrong glyph at {w}x{h}, scroll {scroll}"
+                    );
+                }
+            }
+            if scroll == usize::MAX {
+                assert!(r.cells.iter().any(|c| c.byte_offset == 0));
+            } else {
+                assert!(text(&before, r.rect).contains("line 099"));
+            }
+            app.view_selection = Some(ViewSelection {
+                region: TextRegionId::Conversation,
+                anchor: 0,
+                end: r.source.len(),
+            });
+            let (selected, selected_map) = capture(&app, w, h);
+            assert_eq!(
+                selection_text(&app, &selected_map),
+                lines.join(
+                    "
+"
+                )
+            );
+            for (index, (a, b)) in before.content.iter().zip(&selected.content).enumerate() {
+                let (x, y) = ((index % w as usize) as u16, (index / w as usize) as u16);
+                let copied = r.cells.iter().any(|c| {
+                    c.x == x
+                        && c.y == y
+                        && c.byte_offset < r.source.len()
+                        && !r.source[c.byte_offset..].starts_with('\n')
+                });
+                assert_eq!(
+                    b.bg,
+                    if copied {
+                        selection::background(app.theme, a)
+                    } else {
+                        a.bg
+                    }
+                );
+            }
+            app.view_selection = None;
+        }
+    }
+}
+
+#[test]
+fn ansi_ascii_and_no_color_fallbacks_keep_the_hybrid_and_small_terminal_guard() {
+    for rgb in [true, false] {
+        for color in [true, false] {
+            for ascii in [true, false] {
+                for mode in [ThemeMode::Dark, ThemeMode::Terminal] {
+                    let mut app = App::default();
+                    app.theme = Theme { mode, color, rgb };
+                    app.ascii = ascii;
+                    for chat in [false, true] {
+                        if chat {
+                            app.entries
+                                .push(Entry::new(EntryKind::User, "", &["hello"]));
+                        }
+                        let (b, _) = capture(&app, 100, 30);
+                        let art = text(&b, logo_rect(chat));
+                        assert!(!art.contains("NV"));
+                        assert!(!art.chars().any(|c| "█▀▄║═╔╗╚╝╧╤╢╟".contains(c)));
+                        if ascii {
+                            assert!(text(&b, b.area).is_ascii());
+                            assert!(art.contains('*'));
+                        } else {
+                            assert!(art.contains('✦'));
+                            assert!(art.contains('┤'));
+                        }
+                        if !color {
+                            assert!(
+                                b.content
+                                    .iter()
+                                    .all(|c| c.fg == Color::Reset && c.bg == Color::Reset)
+                            );
+                        }
+                        if mode == ThemeMode::Terminal {
+                            assert!(b.content.iter().all(|c| c.bg == Color::Reset));
+                        }
+                        if !rgb {
+                            assert!(b.content.iter().all(|c| !matches!(c.fg, Color::Rgb(..))
+                                && !matches!(c.bg, Color::Rgb(..))));
+                        }
+                        if ascii && chat {
+                            assert_eq!(
+                                art,
+                                "   | | |   \n +-+-+-+-+ \n-+  -*-  +-\n +-+-+-+-+ \n   | | |   "
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let small = ui::dump(&App::default(), 59, 19).unwrap();
+    assert!(small.contains("Resize to at least"));
+    assert!(!small.contains("v0.1.0alpha"));
+}
+#[test]
+fn hybrid_uses_fine_gray_frame_green_star_lime_traces_and_one_mint_highlight() {
+    for compact in [false, true] {
+        let mut app = App::default();
+        if compact {
+            app.entries
+                .push(Entry::new(EntryKind::User, "", &["hello"]));
+        }
+        let (b, _) = capture(&app, 80, 24);
+        let r = logo_rect(compact);
+        let expected = if compact {
+            "   │ │ │   \n ┌─┴─┴─┴─┐ \n─┤  ─✦─  ├─\n └─┬─┬─┬─┘ \n   │ │ │   "
+        } else {
+            "    │  │  │    \n  ┌─┴──┴──┴─┐  \n  │    ╷    │  \n──┤  ╶─✦─╴  ├──\n  │    ╵    │  \n  └─┬──┬──┬─┘  \n    │  │  │    "
+        };
+        assert_eq!(text(&b, r), expected);
+        let (cx, cy) = if compact { (7, 4) } else { (9, 5) };
+        assert_eq!(b[(cx, cy)].fg, Color::Rgb(36, 208, 70));
+        for dx in [-1, 1] {
+            assert_eq!(b[((cx as i16 + dx) as u16, cy)].fg, Color::Rgb(118, 185, 0));
+        }
+        let mint = if compact { (7, 2) } else { (9, 4) };
+        assert_eq!(b[mint].fg, Color::Rgb(150, 214, 172));
+        let (left, right, bottom) = if compact { (3, 11, 5) } else { (4, 14, 7) };
+        let mut greens = 0;
+        let mut mints = 0;
+        for y in r.y..r.bottom() {
+            for x in r.x..r.right() {
+                let c = &b[(x, y)];
+                assert!(!c.modifier.contains(Modifier::BOLD));
+                assert_eq!(
+                    c.bg,
+                    if (left..=right).contains(&x) && (3..=bottom).contains(&y) {
+                        Color::Rgb(28, 28, 28)
+                    } else {
+                        Color::Rgb(0, 0, 0)
+                    }
+                );
+                greens += usize::from(c.fg == Color::Rgb(36, 208, 70));
+                mints += usize::from(c.fg == Color::Rgb(150, 214, 172));
+            }
+        }
+        assert_eq!(greens, 1);
+        assert_eq!(mints, 1);
+        assert_eq!(b[(left, 3)].fg, Color::Rgb(184, 184, 184));
+        assert_eq!(b[(right, bottom)].fg, Color::Rgb(107, 107, 107));
+        assert_eq!(app.theme.accent().fg, Some(Color::Rgb(118, 185, 0)));
+        assert_eq!(app.theme.auto_mode().fg, Some(Color::Rgb(245, 194, 231)));
+        assert_eq!(app.theme.error().fg, Some(Color::Rgb(172, 66, 66)));
+    }
+}
+#[test]
+fn tall_unsent_drafts_compact_the_header_without_overlapping_the_composer() {
+    let welcome = capture(&App::default(), 120, 40).0;
+    let mut compact_app = App::default();
+    compact_app
+        .entries
+        .push(Entry::new(EntryKind::Note, "Context", &["reference"]));
+    let compact = capture(&compact_app, 120, 40).0;
+    let mut app = App::default();
+    for lines in [1, 4, 8, 12, 200] {
+        let draft = (0..lines)
+            .map(|n| format!("draft line {n:03}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        app.input.set(&draft);
+        for notice in ["", "Local layout test notice"] {
+            app.notice = notice.into();
+            for (w, h) in [(60, 20), (120, 40), (80, 24), (100, 30), (60, 20)] {
+                let (b, map) = capture(&app, w, h);
+                let body = h - ui::composer_height(&app, w).min(h - 10) - 2;
+                let compact_now = body < 11;
+                let rect = logo_rect(compact_now);
+                assert_eq!(
+                    text(&b, rect),
+                    text(if compact_now { &compact } else { &welcome }, rect)
+                );
+                assert!(rect.bottom() < body);
+                assert!(
+                    text(&b, Rect::new(rect.right(), 2, 3, rect.height))
+                        .trim()
+                        .is_empty()
+                );
+                assert!(map.region(&TextRegionId::Composer).unwrap().rect.y >= body);
+                assert!(text(&b, Rect::new(0, h - 2, w, 1)).trim().is_empty());
+                assert_eq!(app.input.text, draft);
+                assert!(app.entries.is_empty());
+            }
+        }
+    }
+    app.notice.clear();
+    app.input.set("short again");
+    assert_eq!(
+        text(&capture(&app, 60, 20).0, logo_rect(false)),
+        text(&welcome, logo_rect(false))
+    );
+}
+#[test]
+fn hybrid_surfaces_stay_confined_while_copy_selection_shades_text_across_themes() {
+    for variant in 0..3 {
+        for mode in [ThemeMode::Dark, ThemeMode::Terminal] {
+            for color in [true, false] {
+                for rgb in [true, false] {
+                    for ascii in [true, false] {
+                        let mut app = App::default();
+                        app.theme = Theme { mode, color, rgb };
+                        app.ascii = ascii;
+                        app.input.set("Draft for selection coverage");
+                        if variant == 1 {
+                            app.entries.push(Entry::new(
+                                EntryKind::Note,
+                                "Context",
+                                &["Selection preserves hybrid colors."],
+                            ));
+                        }
+                        if variant == 2 {
+                            app.command("/model");
+                        }
+                        let (before, map) = capture(&app, 80, 24);
+                        app.input.anchor = Some(0);
+                        if variant == 1 {
+                            let source = &map.region(&TextRegionId::Conversation).unwrap().source;
+                            app.view_selection = Some(ViewSelection {
+                                region: TextRegionId::Conversation,
+                                anchor: 0,
+                                end: source.len(),
+                            });
+                        }
+                        if variant == 2 {
+                            app.selected = (app.selected + 1) % app.model_rows().len();
+                        }
+                        let (after, after_map) = capture(&app, 80, 24);
+                        let rect = logo_rect(variant == 1);
+                        for y in 0..24 {
+                            for x in 0..80 {
+                                let selected = after_map.text_regions.iter().any(|r| {
+                                    (r.id == TextRegionId::Composer
+                                        || (variant == 1 && r.id == TextRegionId::Conversation))
+                                        && r.cells.iter().any(|c| {
+                                            c.x == x
+                                                && c.y == y
+                                                && c.byte_offset < r.source.len()
+                                                && !r.source[c.byte_offset..].starts_with('\n')
+                                        })
+                                });
+                                let expected = if color && selected {
+                                    selection::background(app.theme, &before[(x, y)])
+                                } else {
+                                    before[(x, y)].bg
+                                };
+                                assert_eq!(
+                                    after[(x, y)].bg,
+                                    expected,
+                                    "selection surface at {x},{y}"
+                                );
+                                assert!(!after[(x, y)].modifier.contains(Modifier::REVERSED));
+                                if is_artwork_color(before[(x, y)].bg) {
+                                    assert!(rect.contains((x, y).into()));
+                                }
+                                if rect.contains((x, y).into()) {
+                                    assert_eq!(before[(x, y)], after[(x, y)]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

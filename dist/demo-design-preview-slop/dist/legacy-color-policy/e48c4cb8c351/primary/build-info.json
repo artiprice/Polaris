@@ -1,0 +1,29 @@
+{
+  "target": "x86_64-pc-windows-gnu",
+  "bytes": 7723008,
+  "sha256": "e48c4cb8c3510e00085246efdfca61d44a9ab713802081392d225f83581a6680",
+  "imports": [
+    "ADVAPI32.dll",
+    "api-ms-win-core-path-l1-1-0.dll",
+    "api-ms-win-core-synch-l1-2-0.dll",
+    "api-ms-win-crt-environment-l1-1-0.dll",
+    "api-ms-win-crt-heap-l1-1-0.dll",
+    "api-ms-win-crt-locale-l1-1-0.dll",
+    "api-ms-win-crt-math-l1-1-0.dll",
+    "api-ms-win-crt-private-l1-1-0.dll",
+    "api-ms-win-crt-runtime-l1-1-0.dll",
+    "api-ms-win-crt-stdio-l1-1-0.dll",
+    "api-ms-win-crt-string-l1-1-0.dll",
+    "bcryptprimitives.dll",
+    "gdi32.dll",
+    "KERNEL32.dll",
+    "kernel32.dll",
+    "ntdll.dll",
+    "shell32.dll",
+    "USER32.dll",
+    "user32.dll",
+    "USERENV.dll",
+    "WS2_32.dll"
+  ],
+  "runtime": "Static Rust/MinGW support; Windows system DLLs including OS UCRT required"
+}

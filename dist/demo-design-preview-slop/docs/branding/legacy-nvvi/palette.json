@@ -1,0 +1,44 @@
+{
+  "baselineCommit": "d0a419195b05d541798b05922ce9b847bdd0b71c",
+  "application": {
+    "canvas": "#000000",
+    "text": "#E8E8E8",
+    "muted": "#858585",
+    "accent": "#76B900",
+    "selection": "#B6E35B",
+    "selectionBackground": "#181818",
+    "sentPrompt": "#373737",
+    "auto": "#F5C2E7",
+    "plan": "#F9E2AF",
+    "mentions": "#F9E2AF",
+    "settings": "#89B4FA",
+    "settingsHover": "#B4D2FF",
+    "error": "#AC4242",
+    "warning": "#E5B454",
+    "placeholder": "#525252"
+  },
+  "legacyLogo": {
+    "package": "#1C1C1C",
+    "die": "#303030",
+    "highlight": "#B8B8B8",
+    "edgeAndPins": "#6B6B6B",
+    "outline": "#76B900",
+    "monogram": "#B6E35B",
+    "ansi": {
+      "package": "Black",
+      "die": "DarkGray",
+      "highlight": "Gray",
+      "edgeAndPins": "DarkGray",
+      "outline": "Green",
+      "monogram": "LightGreen"
+    }
+  },
+  "starRollbackMapping": {
+    "body": "#76B900",
+    "highlight": "#B6E35B"
+  },
+  "newLogo": {
+    "body": "#24D046",
+    "highlight": "#96D6AC"
+  }
+}

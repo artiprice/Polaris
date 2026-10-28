@@ -1,0 +1,401 @@
+//! Cell-native NV chip artwork and shared header geometry.
+use crate::{
+    app::App,
+    theme::{Theme, ThemeMode},
+};
+use ratatui::{
+    Frame,
+    buffer::Cell,
+    layout::Rect,
+    style::{Color, Modifier},
+};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Variant {
+    Welcome,
+    Compact,
+    Emblem,
+}
+impl Variant {
+    fn size(self) -> (u16, u16) {
+        match self {
+            Self::Welcome => (15, 7),
+            Self::Compact => (11, 5),
+            Self::Emblem => (11, 1),
+        }
+    }
+}
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct HeaderLayout {
+    pub variant: Variant,
+    pub logo: Rect,
+    pub metadata: Rect,
+    pub history_y: u16,
+}
+
+/// body_height excludes the composer and footer, but includes the top margin.
+pub(crate) fn layout(app: &App, area: Rect, body_height: u16) -> HeaderLayout {
+    // Popups keep the underlying chip; the emblem is only an extreme height fallback.
+    let variant = if body_height < 7 {
+        Variant::Emblem
+    } else if !app.entries.is_empty() || app.working || body_height < 11 {
+        Variant::Compact
+    } else {
+        Variant::Welcome
+    };
+    let (width, height) = variant.size();
+    let header_height = height.max(4);
+    let (x, y) = (area.x.saturating_add(2), area.y.saturating_add(2));
+    let text_x = x + width + 3;
+    HeaderLayout {
+        variant,
+        logo: Rect::new(x, y, width, height),
+        metadata: Rect::new(
+            text_x,
+            y + (header_height - 4) / 2,
+            area.right().saturating_sub(2).saturating_sub(text_x),
+            4,
+        ),
+        history_y: y + header_height + 1,
+    }
+}
+
+// Hand-tuned cell grids preserve the mixed single/double junctions exactly.
+const WELCOME: [&str; 7] = [
+    "    │  │  │    ",
+    "  ╔═╧══╧══╧═╗  ",
+    "  ║ ┌─────┐ ║  ",
+    "──╢ │ NV  │ ╟──",
+    "  ║ └─────┘ ║  ",
+    "  ╚═╤══╤══╤═╝  ",
+    "    │  │  │    ",
+];
+const COMPACT: [&str; 5] = [
+    "   │ │ │   ",
+    " ╔═╧═╧═╧═╗ ",
+    "─╢  NV   ╟─",
+    " ╚═╤═╤═╤═╝ ",
+    "   │ │ │   ",
+];
+const EMBLEM: [&str; 1] = ["  ─[NV]─   "];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Ink {
+    PackageHighlight,
+    Package,
+    Die,
+    Monogram,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Surface {
+    Canvas,
+    Package,
+    Die,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Stroke {
+    glyph: char,
+    ink: Ink,
+    surface: Surface,
+}
+fn artwork(variant: Variant) -> Vec<Vec<Stroke>> {
+    let rows: &[&str] = match variant {
+        Variant::Welcome => &WELCOME,
+        Variant::Compact => &COMPACT,
+        Variant::Emblem => &EMBLEM,
+    };
+    rows.iter()
+        .enumerate()
+        .map(|(y, row)| {
+            row.chars()
+                .enumerate()
+                .map(|(x, glyph)| {
+                    let surface = match variant {
+                        Variant::Welcome if (4..=10).contains(&x) && (2..=4).contains(&y) => {
+                            Surface::Die
+                        }
+                        Variant::Welcome if (2..=12).contains(&x) && (1..=5).contains(&y) => {
+                            Surface::Package
+                        }
+                        Variant::Compact if (3..=7).contains(&x) && y == 2 => Surface::Die,
+                        Variant::Compact if (1..=9).contains(&x) && (1..=3).contains(&y) => {
+                            Surface::Package
+                        }
+                        _ => Surface::Canvas,
+                    };
+                    let left = if variant == Variant::Welcome { 2 } else { 1 };
+                    let bottom = if variant == Variant::Welcome { 5 } else { 3 };
+                    let ink = if matches!(glyph, 'N' | 'V') {
+                        Ink::Monogram
+                    } else if surface == Surface::Die {
+                        Ink::Die
+                    } else if surface == Surface::Package && (y == 1 || (x == left && y < bottom)) {
+                        Ink::PackageHighlight
+                    } else {
+                        Ink::Package
+                    };
+                    Stroke {
+                        glyph,
+                        ink,
+                        surface,
+                    }
+                })
+                .collect()
+        })
+        .collect()
+}
+fn ink(theme: Theme, role: Ink) -> Color {
+    if !theme.color {
+        Color::Reset
+    } else if theme.rgb && theme.mode == ThemeMode::Dark {
+        match role {
+            Ink::PackageHighlight => Color::Rgb(184, 184, 184),
+            Ink::Package => Color::Rgb(107, 107, 107),
+            Ink::Die => Color::Rgb(118, 185, 0),
+            Ink::Monogram => Color::Rgb(182, 227, 91),
+        }
+    } else {
+        match role {
+            Ink::PackageHighlight => Color::Gray,
+            Ink::Package => Color::DarkGray,
+            Ink::Die => Color::Green,
+            Ink::Monogram => Color::LightGreen,
+        }
+    }
+}
+fn surface_color(theme: Theme, surface: Surface) -> Color {
+    if !theme.color || theme.mode == ThemeMode::Terminal {
+        return Color::Reset;
+    }
+    if theme.rgb {
+        match surface {
+            Surface::Canvas => Color::Rgb(0, 0, 0),
+            Surface::Package => Color::Rgb(28, 28, 28),
+            Surface::Die => Color::Rgb(48, 48, 48),
+        }
+    } else {
+        match surface {
+            Surface::Canvas | Surface::Package => Color::Black,
+            Surface::Die => Color::DarkGray,
+        }
+    }
+}
+fn stroke_cell(stroke: Stroke, theme: Theme, ascii: bool) -> Cell {
+    let glyph = if ascii {
+        match stroke.glyph {
+            '│' | '║' => '|',
+            '─' | '═' => '-',
+            '┌' | '┐' | '└' | '┘' | '╔' | '╗' | '╚' | '╝' | '╧' | '╤' | '╢' | '╟' => {
+                '+'
+            }
+            other => other,
+        }
+    } else {
+        stroke.glyph
+    };
+    let mut cell = Cell::default();
+    cell.set_char(glyph)
+        .set_style(theme.base())
+        .set_fg(ink(theme, stroke.ink))
+        .set_bg(surface_color(theme, stroke.surface));
+    if stroke.ink == Ink::Monogram {
+        cell.modifier.insert(Modifier::BOLD);
+    }
+    cell
+}
+
+pub(crate) fn render(frame: &mut Frame, rect: Rect, variant: Variant, theme: Theme, ascii: bool) {
+    let visible = rect.intersection(frame.area());
+    if visible.is_empty() {
+        return;
+    }
+    let cells = artwork(variant);
+    for y in visible.y..visible.bottom() {
+        for x in visible.x..visible.right() {
+            frame.buffer_mut()[(x, y)] = stroke_cell(
+                cells[(y - rect.y) as usize][(x - rect.x) as usize],
+                theme,
+                ascii,
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::{Entry, EntryKind};
+    use unicode_width::UnicodeWidthStr;
+
+    #[test]
+    fn header_balances_welcome_and_tracks_session_and_available_body_height() {
+        let mut app = App::default();
+        for (w, h) in [(120, 40), (100, 30), (80, 24), (60, 20)] {
+            assert_eq!(
+                layout(&app, Rect::new(0, 0, w, h), h - 4).variant,
+                Variant::Welcome
+            );
+        }
+        let area = Rect::new(0, 0, 60, 20);
+        app.input
+            .set("A draft keeps the welcome badge while it fits");
+        assert_eq!(layout(&app, area, 11).variant, Variant::Welcome);
+        assert_eq!(layout(&app, area, 10).variant, Variant::Compact);
+        assert_eq!(layout(&app, area, 8).history_y, 8);
+        app.entries
+            .push(Entry::new(EntryKind::User, "", &["hello"]));
+        assert_eq!(layout(&app, area, 16).variant, Variant::Compact);
+        app.command("/model");
+        assert_eq!(layout(&app, area, 16).variant, Variant::Compact);
+        app.command("/clear");
+        assert_eq!(layout(&app, area, 16).variant, Variant::Welcome);
+    }
+
+    #[test]
+    fn mixed_package_junctions_inner_die_and_nv_have_exact_geometry() {
+        for variant in [Variant::Welcome, Variant::Compact, Variant::Emblem] {
+            let cells = artwork(variant);
+            let (w, h) = variant.size();
+            assert_eq!(cells.len(), h as usize);
+            assert!(cells.iter().all(|row| row.len() == w as usize));
+            let letters: Vec<_> = cells
+                .iter()
+                .flatten()
+                .filter(|s| s.ink == Ink::Monogram)
+                .map(|s| s.glyph)
+                .collect();
+            assert_eq!(letters, ['N', 'V']);
+        }
+        let w = artwork(Variant::Welcome);
+        for x in [4, 7, 10] {
+            assert_eq!(w[0][x].glyph, '│');
+            assert_eq!(w[1][x].glyph, '╧');
+            assert_eq!(w[5][x].glyph, '╤');
+            assert_eq!(w[6][x].glyph, '│');
+        }
+        for (x, y, glyph) in [
+            (2, 1, '╔'),
+            (12, 1, '╗'),
+            (2, 5, '╚'),
+            (12, 5, '╝'),
+            (2, 3, '╢'),
+            (12, 3, '╟'),
+        ] {
+            assert_eq!(w[y][x].glyph, glyph);
+            assert_eq!(
+                w[y][x].ink,
+                if y == 1 || (x == 2 && y < 5) {
+                    Ink::PackageHighlight
+                } else {
+                    Ink::Package
+                }
+            );
+        }
+        for (x, y, glyph) in [(4, 2, '┌'), (10, 2, '┐'), (4, 4, '└'), (10, 4, '┘')] {
+            assert_eq!(w[y][x].glyph, glyph);
+            assert_eq!(w[y][x].ink, Ink::Die);
+        }
+        assert_eq!(w[3][5].glyph, ' ');
+        assert_eq!(w[3][8].glyph, ' ');
+        let c = artwork(Variant::Compact);
+        for x in [3, 5, 7] {
+            assert_eq!(c[0][x].glyph, '│');
+            assert_eq!(c[1][x].glyph, '╧');
+            assert_eq!(c[3][x].glyph, '╤');
+            assert_eq!(c[4][x].glyph, '│');
+        }
+        assert_eq!(c[2][1].glyph, '╢');
+        assert_eq!(c[2][9].glyph, '╟');
+    }
+
+    #[test]
+    fn line_cells_preserve_palette_width_background_and_ascii_and_no_color_fallbacks() {
+        for color in [true, false] {
+            for rgb in [true, false] {
+                for ascii in [true, false] {
+                    for mode in [ThemeMode::Dark, ThemeMode::Terminal] {
+                        let theme = Theme { color, rgb, mode };
+                        for variant in [Variant::Welcome, Variant::Compact, Variant::Emblem] {
+                            for stroke in artwork(variant).into_iter().flatten() {
+                                let cell = stroke_cell(stroke, theme, ascii);
+                                assert_eq!(UnicodeWidthStr::width(cell.symbol()), 1);
+                                assert_eq!(
+                                    cell.bg,
+                                    if !color || mode == ThemeMode::Terminal {
+                                        Color::Reset
+                                    } else if rgb {
+                                        match stroke.surface {
+                                            Surface::Canvas => Color::Rgb(0, 0, 0),
+                                            Surface::Package => Color::Rgb(28, 28, 28),
+                                            Surface::Die => Color::Rgb(48, 48, 48),
+                                        }
+                                    } else if stroke.surface == Surface::Die {
+                                        Color::DarkGray
+                                    } else {
+                                        Color::Black
+                                    }
+                                );
+                                assert_eq!(
+                                    cell.modifier.contains(Modifier::BOLD),
+                                    stroke.ink == Ink::Monogram
+                                );
+                                if ascii {
+                                    assert!(cell.symbol().is_ascii());
+                                }
+                                if !color {
+                                    assert_eq!(cell.fg, Color::Reset);
+                                }
+                                assert!(!cell.symbol().chars().any(|ch| "█▀▄▓▒░".contains(ch)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let theme = Theme::default();
+        assert_eq!(ink(theme, Ink::Package), Color::Rgb(107, 107, 107));
+        assert_eq!(ink(theme, Ink::Die), Color::Rgb(118, 185, 0));
+        assert_eq!(ink(theme, Ink::Monogram), Color::Rgb(182, 227, 91));
+    }
+    #[test]
+    fn layered_surfaces_and_edge_highlights_are_bounded_to_the_package() {
+        for (variant, package, die) in [
+            (Variant::Welcome, 34, 21),
+            (Variant::Compact, 22, 5),
+            (Variant::Emblem, 0, 0),
+        ] {
+            let rows = artwork(variant);
+            assert_eq!(
+                rows.iter()
+                    .flatten()
+                    .filter(|s| s.surface == Surface::Package)
+                    .count(),
+                package
+            );
+            assert_eq!(
+                rows.iter()
+                    .flatten()
+                    .filter(|s| s.surface == Surface::Die)
+                    .count(),
+                die
+            );
+        }
+        let welcome = artwork(Variant::Welcome);
+        for (x, y) in [(2, 1), (12, 1), (2, 2), (2, 3), (2, 4)] {
+            assert_eq!(welcome[y][x].ink, Ink::PackageHighlight);
+        }
+        for (x, y) in [(2, 5), (12, 5), (12, 2), (12, 3), (12, 4)] {
+            assert_eq!(welcome[y][x].ink, Ink::Package);
+        }
+        for (x, y) in [(4, 0), (0, 3), (14, 3), (4, 6), (1, 1), (13, 5)] {
+            assert_eq!(welcome[y][x].surface, Surface::Canvas);
+        }
+        assert_eq!(welcome[3][6].surface, Surface::Die);
+        assert_eq!(artwork(Variant::Compact)[2][4].surface, Surface::Die);
+        assert_eq!(
+            ink(Theme::default(), Ink::PackageHighlight),
+            Color::Rgb(184, 184, 184)
+        );
+    }
+}

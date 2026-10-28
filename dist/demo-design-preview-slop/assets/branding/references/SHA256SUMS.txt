@@ -1,0 +1,2 @@
+aca08d7abc9f29ff9c35d056d7c0d1b0399328bcfaf13ed8bf2c6f203cf59531  star-primary.png
+f42fe11155d17f61624318fb4e922061f17775eeaf76b7a7d4d37546f9822d1a  star-secondary.png

@@ -1,0 +1,35 @@
+{
+  "design": "Polaris thin microcircuit and North Star",
+  "star": "#24D046",
+  "trace": "#76B900",
+  "mint": "#96D6AC",
+  "frameHighlight": "#B8B8B8",
+  "frameAndPins": "#6B6B6B",
+  "package": "#1C1C1C",
+  "canvas": "#000000",
+  "mintLocation": {
+    "welcome": [
+      7,
+      2
+    ],
+    "compact": [
+      5,
+      0
+    ]
+  },
+  "footprints": {
+    "welcome": [
+      15,
+      7
+    ],
+    "compact": [
+      11,
+      5
+    ],
+    "emblem": [
+      11,
+      1
+    ]
+  },
+  "applicationThemeChanged": false
+}

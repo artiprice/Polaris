@@ -1,0 +1,7 @@
+Polaris design sample. Extract the shared request validation guard while keeping response mapping in each handler. Cover empty input, whitespace-only input, and a valid request.
+
+Polaris design sample. Extract the shared request validation guard while keeping response mapping in each handler. Cover empty input, whitespace-only input, and a valid request.
+
+Polaris design sample. Extract the shared request validation guard while keeping response mapping in each handler. Cover empty input, whitespace-only input, and a valid request.
+
+Polaris design sample. Extract the shared request validation guard while keeping response mapping in each handler. Cover empty input, whitespace-on

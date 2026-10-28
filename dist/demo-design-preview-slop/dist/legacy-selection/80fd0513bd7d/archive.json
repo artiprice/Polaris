@@ -1,0 +1,29 @@
+{
+  "reason": "Before source-colored copy selection",
+  "copies": [
+    {
+      "label": "primary",
+      "dir": "dist",
+      "archive": "dist/legacy-selection/80fd0513bd7d/primary",
+      "sha256": "80fd0513bd7d6839a43d0e1e6464b083ba89e7c16e729b58e0eee43d52d6228d"
+    },
+    {
+      "label": "message-presentation",
+      "dir": "dist/message-presentation",
+      "archive": "dist/legacy-selection/80fd0513bd7d/message-presentation",
+      "sha256": "80fd0513bd7d6839a43d0e1e6464b083ba89e7c16e729b58e0eee43d52d6228d"
+    },
+    {
+      "label": "overlay-surfaces",
+      "dir": "dist/overlay-surfaces",
+      "archive": "dist/legacy-selection/80fd0513bd7d/overlay-surfaces",
+      "sha256": "80fd0513bd7d6839a43d0e1e6464b083ba89e7c16e729b58e0eee43d52d6228d"
+    },
+    {
+      "label": "word-selection",
+      "dir": "dist/word-selection",
+      "archive": "dist/legacy-selection/80fd0513bd7d/word-selection",
+      "sha256": "80fd0513bd7d6839a43d0e1e6464b083ba89e7c16e729b58e0eee43d52d6228d"
+    }
+  ]
+}

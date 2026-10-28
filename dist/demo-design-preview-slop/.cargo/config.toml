@@ -1,0 +1,6 @@
+[alias]
+static = "build --release --locked --target x86_64-pc-windows-gnu --target-dir target/static"
+
+[target.x86_64-pc-windows-gnu]
+linker = "gcc"
+rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-static"]

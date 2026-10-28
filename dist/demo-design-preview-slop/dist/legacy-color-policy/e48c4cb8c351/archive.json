@@ -1,0 +1,22 @@
+[
+  {
+    "source": "dist/polaris.exe",
+    "backup": "dist/legacy-color-policy/e48c4cb8c351/primary",
+    "sha256": "e48c4cb8c3510e00085246efdfca61d44a9ab713802081392d225f83581a6680"
+  },
+  {
+    "source": "dist/message-presentation/polaris.exe",
+    "backup": "dist/legacy-color-policy/e48c4cb8c351/message-presentation",
+    "sha256": "e48c4cb8c3510e00085246efdfca61d44a9ab713802081392d225f83581a6680"
+  },
+  {
+    "source": "dist/overlay-surfaces/polaris.exe",
+    "backup": "dist/legacy-color-policy/e48c4cb8c351/overlay-surfaces",
+    "sha256": "e48c4cb8c3510e00085246efdfca61d44a9ab713802081392d225f83581a6680"
+  },
+  {
+    "source": "dist/word-selection/polaris.exe",
+    "backup": "dist/legacy-color-policy/e48c4cb8c351/word-selection",
+    "sha256": "e48c4cb8c3510e00085246efdfca61d44a9ab713802081392d225f83581a6680"
+  }
+]
