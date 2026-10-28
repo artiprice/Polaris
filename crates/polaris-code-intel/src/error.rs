@@ -32,6 +32,12 @@ pub enum CodeIntelError {
         /// Language of the second input.
         new: Lang,
     },
+    /// An internal size, index or distance invariant could not be represented safely.
+    #[error("checked code-intelligence arithmetic invariant failed: {0}")]
+    ArithmeticInvariant(&'static str),
+    /// AST pattern was invalid, the source was not UTF-8, or a matching bound was exceeded.
+    #[error("AST pattern evaluation failed: {0}")]
+    AstPattern(String),
 }
 
 impl HasKind for CodeIntelError {
@@ -43,6 +49,8 @@ impl HasKind for CodeIntelError {
             | Self::ParseFailed
             | Self::TooLarge { .. }
             | Self::LanguageMismatch { .. } => ErrorKind::Permanent,
+            Self::ArithmeticInvariant(_) => ErrorKind::Fatal,
+            Self::AstPattern(_) => ErrorKind::Permanent,
         }
     }
 }

@@ -1,0 +1,94 @@
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Finished `test` profile [unoptimized] target(s) in 2.48s
+     Running unittests src\lib.rs (target\debug\deps\polaris_security_rules-7a5a11ee0d272cb5.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\additional_rule_coverage.rs (target\debug\deps\additional_rule_coverage-90002f8dac0980cf.exe)
+
+running 10 tests
+test python_shell_execution_has_a_benign_negative_case ... ok
+test reassigned_pointer_after_free_is_not_reported_as_same_expression_uaf ... ok
+test freed_pointer_use_in_same_compound_statement_is_reported_as_potential ... ok
+test other_pointer_after_free_is_not_reported_as_same_expression_uaf ... ok
+test repeated_adjacent_delete_in_one_compound_statement_is_reported ... ok
+test direct_cuda_thread_index_access_is_an_informational_review_hint ... ok
+test repeated_adjacent_free_in_one_compound_statement_is_reported ... ok
+test explicit_parent_component_in_joined_open_path_is_reported ... ok
+test rust_subprocess_arguments_are_reviewed_for_taint ... ok
+test symlink_check_then_open_of_same_path_is_reported ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\command_rule_corpus.rs (target\debug\deps\command_rule_corpus-2928879cb21008d5.exe)
+
+running 3 tests
+test posix_and_windows_destructive_commands_are_categorized ... ok
+test all_embedded_secret_families_have_redacted_positive_cases ... ok
+test each_secret_rule_has_a_specific_positive_and_benign_negative ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\diff_properties.rs (target\debug\deps\diff_properties-9d5539d19f0038ad.exe)
+
+running 2 tests
+test unchanged_revision_never_emits_new_findings ... ok
+test successful_findings_stay_inside_source_bounds ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.38s
+
+     Running tests\manifest_typosquat.rs (target\debug\deps\manifest_typosquat-bc7b5c00c89dd6a6.exe)
+
+running 10 tests
+test unsupported_manifest_has_explicit_status ... ok
+test missing_trusted_baseline_is_explicit_and_scans_nothing ... ok
+test overlong_manifest_path_is_rejected_before_findings_copy_it ... ok
+test ambiguous_equal_distance_candidates_are_sorted_and_marked ... ok
+test cargo_renamed_dependency_uses_declared_package_name ... ok
+test python_distribution_name_separators_normalize_to_one_dash ... ok
+test npm_and_python_manifests_extract_dependency_names ... ok
+test near_package_name_reports_without_cwe ... ok
+test exact_known_package_is_excluded ... ok
+test oversized_inputs_and_baselines_fail_before_partial_output ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\s1_arbitration.rs (target\debug\deps\s1_arbitration-5335ffe8a6fde792.exe)
+
+running 9 tests
+test over_cap_findings_return_typed_bound_before_s1_or_schema_work ... ok
+test foreign_schema_and_missing_evidence_keep_findings ... ok
+test calibration_mismatch_and_foreign_finding_evidence_keep_findings ... ok
+test calibrated_confident_false_positive_removes_disputed_finding ... ok
+test engine_error_and_uncalibrated_schema_keep_findings ... ok
+test only_masked_evidence_reaches_s1_and_evidence_debug_is_redacted ... ok
+test undisputed_finding_is_never_removed ... ok
+test timeout_keeps_findings ... ok
+test schema_deadline_caps_longer_caller_timeout ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\security_rules_contract.rs (target\debug\deps\security_rules_contract-21e048cd81329bb7.exe)
+
+running 10 tests
+test malformed_ast_pattern_is_rejected_during_pack_loading ... ok
+test unknown_cwe_rejected ... ok
+test duplicate_rule_id_rejected ... ok
+test valid_pack_parses ... ok
+test invalid_hunks_and_oversized_commands_fail_closed ... ok
+test unsupported_rule_coverage_and_unsafe_paths_are_explicit ... ok
+test command_rules_are_structured_and_redact_secret_text ... ok
+test unchanged_matches_are_not_reported ... ok
+test finds_python_ast_rule_only_in_changed_hunk ... ok
+test configured_language_rules_have_ast_true_positive_and_negative_cases ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests polaris_security_rules
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

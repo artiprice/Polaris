@@ -1,0 +1,9 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 14.59s
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)
+
+running 1 test
+test human_wait_rechecks_expired_execute_authority ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 2.25s
+

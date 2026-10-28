@@ -378,3 +378,17 @@ fn counters(s: &TelemetrySnapshot) -> Vec<u64> {
         s.outcomes.circuits_tripped,
     ]
 }
+
+#[test]
+fn user_input_does_not_change_usage_counters() -> TestResult {
+    let baseline = snapshot_of(&[request(10, 1, 0, 100, 1)])?;
+    let s = snapshot_of(&[
+        Event::UserInputSubmitted { text: cid(40) },
+        request(10, 1, 0, 100, 1),
+    ])?;
+    assert_eq!(s.events_seen, baseline.events_seen + 1, "counted as seen");
+    assert_eq!(s.usage, baseline.usage, "no usage or cost from user input");
+    assert_eq!(s.tools, baseline.tools);
+    assert_eq!(s.outcomes, baseline.outcomes);
+    Ok(())
+}

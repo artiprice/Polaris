@@ -1,0 +1,13 @@
+{
+  "name": "render-docs",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tools/workspace.py",
+    "render-docs"
+  ],
+  "started_utc": "2026-10-26T22:38:47.917222+00:00",
+  "elapsed_seconds": 0.331,
+  "exit_code": 0,
+  "raw": "16-render-docs.txt"
+}

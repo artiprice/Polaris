@@ -1,0 +1,31 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Finished `test` profile [unoptimized] target(s) in 3.27s
+     Running tests\task_route.rs (target\debug\deps\task_route-7fd7b91206d9a55c.exe)
+
+running 4 tests
+test route_timeout_defaults_to_medium_within_allowlist ... ok
+test route_rejects_oversize_input_before_inference ... ok
+test route_preserves_hard_facts_and_explicit_direct_tool ... ok
+test route_combines_intent_effort_parallel_and_vision_once ... FAILED
+
+failures:
+
+---- route_combines_intent_effort_parallel_and_vision_once stdout ----
+
+thread 'route_combines_intent_effort_parallel_and_vision_once' (6556) panicked at crates\polaris-system-one\crates\router\tests\task_route.rs:43:42:
+assertion `left == right` failed
+  left: Medium
+ right: High
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    route_combines_intent_effort_parallel_and_vision_once
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-system-one-router --test task_route`

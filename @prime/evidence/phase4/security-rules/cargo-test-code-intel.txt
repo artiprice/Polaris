@@ -1,0 +1,200 @@
+    Finished `test` profile [unoptimized] target(s) in 0.85s
+     Running unittests src\lib.rs (target\debug\deps\polaris_code_intel-41a0092dab688ce6.exe)
+
+running 4 tests
+test metrics::arithmetic_regressions::grid_rejects_invalid_coordinates_and_addresses ... ok
+test metrics::arithmetic_regressions::single_node_tree_distance_matches_independent_edit_cost ... ok
+test walk::tests::tracked_depth_matches_native_cursor_on_mixed_trees ... ok
+test metrics::arithmetic_regressions::unary_tree_distance_matches_independent_levenshtein ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\ast_pattern_match.rs (target\debug\deps\ast_pattern_match-4682d5ec86fc0e96.exe)
+
+running 4 tests
+test invalid_utf8_is_rejected ... ok
+test ignores_text_inside_literals ... ok
+test match_limit_fails_closed ... ok
+test matches_structural_pattern ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\hostile_depth.rs (target\debug\deps\hostile_depth-8dbe1c37dfc896be.exe)
+
+running 1 test
+test ten_thousand_nested_blocks_never_recurse_in_our_walkers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\language_detection.rs (target\debug\deps\language_detection-9531faa7fbaa9fd5.exe)
+
+running 8 tests
+test c_sources_and_headers_use_the_cpp_grammar ... ok
+test extension_maps_each_language ... ok
+test extension_is_case_insensitive_and_path_agnostic ... ok
+test unknown_files_yield_none ... ok
+test shebang_detects_python_without_extension ... ok
+test shebang_survives_a_utf8_bom ... ok
+test tsx_is_not_claimed_by_the_typescript_grammar ... ok
+test known_extension_wins_over_shebang ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\mutation_metrics.rs (target\debug\deps\mutation_metrics-7175282c03ed8d53.exe)
+
+running 15 tests
+test comparing_different_languages_is_an_error ... ok
+test changed_symbols_ignores_whitespace_outside_declarations ... ok
+test churn_sees_line_ending_changes ... ok
+test ted_ignores_comments_and_layout ... ok
+test identical_trees_zero_metrics ... ok
+test ted_rename_costs_one_and_insert_costs_the_subtree_size ... ok
+test churn_counts_added_plus_deleted ... ok
+test ted_fallback_above_node_cap ... ok
+test cyclomatic_counts_each_decision_point ... ok
+test changed_symbols_lists_edited_added_and_removed_declarations ... ok
+test added_branch_raises_cyclomatic ... ok
+test metrics_of_identical_inputs_are_zero ... ok
+test hostile_nesting_is_measured_without_overflow ... ok
+test capped_distance_is_a_lower_bound_of_the_exact_one ... ok
+test churn_and_tree_edit_distance_are_symmetric ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.29s
+
+     Running tests\parser_pool.rs (target\debug\deps\parser_pool-cb65478b3cb0a5db.exe)
+
+running 12 tests
+test previous_tree_of_another_language_is_ignored ... ok
+test every_grammar_is_abi_compatible_with_the_runtime ... ok
+test oversized_source_is_rejected_at_the_limit ... ok
+test utf8_bom_keeps_original_offsets ... ok
+test incremental_reparse_matches_a_full_parse ... ok
+test zero_timeout_cancels_and_the_pool_recovers ... ok
+test every_language_parses_clean ... ok
+test shared_pool_parses_from_many_threads ... ok
+test incremental_equals_full_for_valid_edits ... ok
+test deep_tree_fingerprint_has_a_bounded_walk_cost ... ok
+test arbitrary_bytes_never_panic_in_any_language ... ok
+test hostile_nesting_does_not_overflow_the_stack ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+     Running tests\repo_map_ranking.rs (target\debug\deps\repo_map_ranking-ea373d0a97edc919.exe)
+
+running 13 tests
+test empty_graph_yields_empty_map ... ok
+test re_adding_a_file_replaces_it ... ok
+test ties_break_by_path ... ok
+test most_referenced_file_ranks_first ... ok
+test path_separators_are_normalised ... ok
+test focus_boosts_the_files_it_depends_on ... ok
+test focus_file_boosts_rank ... ok
+test unknown_focus_files_are_ignored ... ok
+test version_changes_with_content ... ok
+test budget_is_respected ... ok
+test output_is_byte_identical_across_runs ... ok
+test ranks_are_finite_non_negative_and_sum_to_one ... ok
+test rendering_is_independent_of_insertion_order ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\rust_unsafe_coverage.rs (target\debug\deps\rust_unsafe_coverage-4eb3745df16c60c0.exe)
+
+running 2 tests
+test rust_expansion_and_invalid_syntax_keep_incomplete_coverage ... ok
+test rust_without_expansion_has_complete_unsafe_inventory ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\safety_observations.rs (target\debug\deps\safety_observations-783afeca5f4989a0.exe)
+
+running 2 tests
+test unrelated_rust_attribute_text_does_not_create_a_test ... ok
+test safety_observations_cover_the_five_supported_grammars ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\safety_stress.rs (target\debug\deps\safety_stress-0e88aae4033b7cc1.exe)
+
+running 2 tests
+test fifty_megabyte_source_is_rejected_before_tree_sitter ... ok
+test safety_inventory_scales_to_ten_thousand_rust_tests ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+
+     Running tests\scalability.rs (target\debug\deps\scalability-047093c2f4b7d7a7.exe)
+
+running 1 test
+test repo_map_scalability_and_skeleton_throughput ... ignored, release-mode workload; run explicitly to record machine-specific budgets
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\skeleton_extraction.rs (target\debug\deps\skeleton_extraction-39e81bebe2cb7ac2.exe)
+
+running 15 tests
+test empty_source_has_an_empty_skeleton ... ok
+test multiline_signatures_collapse_to_one_line ... ok
+test cuda_kernel_qualifiers_preserved ... ok
+test python_class_methods_listed ... ok
+test item_spans_cover_the_whole_declaration ... ok
+test syntax_error_file_still_yields_partial_skeleton ... ok
+test cpp_namespaces_classes_and_prototypes ... ok
+test rust_misc_items_are_listed ... ok
+test rust_fn_signature_kept_body_elided ... ok
+test oversized_signature_is_truncated_on_a_char_boundary ... ok
+test typescript_declarations ... ok
+test bodies_never_leak_into_signatures ... ok
+test skeleton_spans_are_in_bounds_and_ordered ... ok
+test deeply_nested_modules_do_not_overflow_the_stack ... ok
+test item_count_limit_returns_too_large ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running tests\subtree_fingerprints.rs (target\debug\deps\subtree_fingerprints-a76e5fc723e8b80c.exe)
+
+running 8 tests
+test equal_functions_share_a_fingerprint_but_not_a_span ... ok
+test moving_a_function_keeps_its_fingerprint ... ok
+test nested_declarations_get_their_own_fingerprints ... ok
+test fingerprint_is_xxh3_of_the_declaration_bytes ... ok
+test identical_sources_have_identical_fingerprints ... ok
+test editing_one_function_changes_only_its_fingerprint ... ok
+test works_for_every_language ... ok
+test unchanged_functions_keep_their_fingerprint ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\symbol_merge.rs (target\debug\deps\symbol_merge-d1aa5d6d47962253.exe)
+
+running 20 tests
+test identical_edits_on_both_sides_merge ... ok
+test both_sides_adding_different_functions_keeps_both ... ok
+test merging_different_languages_is_an_error ... ok
+test both_sides_adding_the_same_name_differently_conflicts ... ok
+test both_sides_adding_methods_to_one_impl_keeps_both ... ok
+test deleting_an_untouched_function_succeeds_but_deleting_an_edited_one_conflicts ... ok
+test conflict_never_returns_merged_bytes ... ok
+test orthogonal_functions_merge_cleanly ... ok
+test import_lines_merge_by_content ... ok
+test eol_style_preserved ... ok
+test cpp_and_cuda_functions_merge_independently ... ok
+test same_function_edited_conflicts ... ok
+test rust_impl_methods_merge_independently ... ok
+test utf8_bom_is_preserved ... ok
+test python_class_methods_merge_independently ... ok
+test typescript_functions_merge_independently ... ok
+test unchanged_inputs_merge_to_themselves ... ok
+test adjacent_one_sided_changes_are_not_reported_as_conflicts ... ok
+test one_sided_changes_reproduce_the_changed_side ... ok
+test disjoint_edits_commute ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests polaris_code_intel
+
+running 1 test
+test crates\polaris-code-intel\src\lang.rs - lang::detect_lang (line 73) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 1.10s; merged doctests compilation took 0.92s

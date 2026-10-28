@@ -1,0 +1,5 @@
+warning: version qualifier in `-p openshell-extension-core@0.0.0` is ignored, cleaning all versions of `openshell-extension-core` found
+warning: version qualifier in `-p reqwest@0.12.28` is ignored, cleaning all versions of `reqwest` found
+warning: version qualifier in `-p reqwest@0.13.5` is ignored, cleaning all versions of `reqwest` found
+warning: version qualifier in `-p tonic@0.14.6` is ignored, cleaning all versions of `tonic` found
+     Removed 1336 files, 1.0GiB total

@@ -1,0 +1,11 @@
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Finished `test` profile [unoptimized] target(s) in 2.84s
+     Running tests\frame_tool_authority.rs (target\debug\deps\frame_tool_authority-495bd60ac677d978.exe)
+
+running 2 tests
+test binding_matches_only_actual_frame_token ... ok
+test child_binding_preserves_root_identity ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

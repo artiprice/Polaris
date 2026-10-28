@@ -1,0 +1,68 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+error: implementation of an `unsafe` trait
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:15:1
+   |
+15 | / unsafe impl GlobalAlloc for CountingAllocator {
+16 | |     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+17 | |         if COUNTING.load(Ordering::Relaxed) {
+18 | |             ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+...  |
+36 | | }
+   | |_^
+   |
+   = note: requested on the command line with `-F unsafe-code`
+
+error: implementation of an `unsafe` method
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:16:5
+   |
+16 | /     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+17 | |         if COUNTING.load(Ordering::Relaxed) {
+18 | |             ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+...  |
+21 | |         unsafe { System.alloc(layout) }
+22 | |     }
+   | |_____^
+
+error: usage of an `unsafe` block
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:21:9
+   |
+21 |         unsafe { System.alloc(layout) }
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: implementation of an `unsafe` method
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:24:5
+   |
+24 | /     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+25 | |         // SAFETY: pointer and layout originate from the paired system allocation above.
+26 | |         unsafe { System.dealloc(pointer, layout) };
+27 | |     }
+   | |_____^
+
+error: usage of an `unsafe` block
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:26:9
+   |
+26 |         unsafe { System.dealloc(pointer, layout) };
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: implementation of an `unsafe` method
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:29:5
+   |
+29 | /     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+30 | |         if COUNTING.load(Ordering::Relaxed) {
+31 | |             ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+...  |
+34 | |         unsafe { System.realloc(pointer, layout, new_size) }
+35 | |     }
+   | |_____^
+
+error: usage of an `unsafe` block
+  --> crates\polaris-nebius-cloud\crates\token-factory\tests\sse_allocations.rs:34:9
+   |
+34 |         unsafe { System.realloc(pointer, layout, new_size) }
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `polaris-nebius-cloud-token-factory` (test "sse_allocations") due to 7 previous errors
+warning: build failed, waiting for other jobs to finish...
+Exit code: 101

@@ -1,0 +1,18 @@
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+error[E0432]: unresolved import `polaris_worker::S1IdlePolicy`
+  --> apps\polaris-worker\tests\idle_eviction.rs:17:9
+   |
+17 |     use polaris_worker::S1IdlePolicy;
+   |         ^^^^^^^^^^^^^^^^------------
+   |                         |
+   |                         no `S1IdlePolicy` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-worker` (test "idle_eviction") due to 1 previous error

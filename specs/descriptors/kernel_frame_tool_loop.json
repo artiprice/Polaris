@@ -1,0 +1,49 @@
+{
+  "type_of": "pipeline",
+  "name": "kernel_frame_tool_loop",
+  "file_path": "crates/polaris-kernel/tests/frame_tools_loop.rs",
+  "logic_name": "Kernel Frame Tool Loop",
+  "chronology": "This descriptor documents integration tests added after the KernelToolRunner implementation was present; it does not claim test-first or pre-implementation specification chronology.",
+  "test_list": [
+    {
+      "test_name": "child_loop_reads_only_its_exact_path_and_parent_scope_remains_available",
+      "description": "A synthetic test provider invokes the real run_step with the production KernelToolRunner; a child reads its exact attenuated path, and the parent retains access to a different path in its wider workspace scope."
+    },
+    {
+      "test_name": "run_step_authorizes_all_calls_before_executing_any_child_call",
+      "description": "One synthetic model response proposes a child-authorized exact-path read followed by a capability-denied sibling read; run_step returns authorization failure before any result is captured, CAS blob is added, or workspace file changes."
+    }
+  ],
+  "dependencies": [
+    "KernelToolRunner",
+    "AgentContextFrame",
+    "run_step",
+    "Authority",
+    "SystemClock"
+  ],
+  "libraries": [
+    "tokio",
+    "tokio-util",
+    "serde_json",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "temporary_workspace",
+      "type": "local test fixture",
+      "description": "Synthetic root and child files read through the real kernel workspace and CAS."
+    },
+    {
+      "name": "chat_provider",
+      "type": "SyntheticModel",
+      "description": "In-memory scripted ChatModel used only by the integration test; no production provider or live endpoint."
+    },
+    {
+      "name": "assembler_and_verifier",
+      "type": "ReadAssembler and Accept",
+      "description": "Test-only fixtures; the fixed token bound and verifier fingerprint are protocol fixture values, not evidence from a production tokenizer or independent verification system."
+    }
+  ],
+  "output_type": "Result<StepExecution, FrameError>",
+  "output_description": "A verified child/root tool result or an authorization error before any tool execution when one call in the model response is denied."
+}

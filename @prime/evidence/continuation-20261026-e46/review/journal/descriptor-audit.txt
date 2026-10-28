@@ -1,0 +1,1 @@
+descriptor test list matches all 12 regression functions

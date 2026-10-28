@@ -1,0 +1,38 @@
+{
+  "type_of": "pipeline",
+  "name": "create_binary_calibration",
+  "file_path": "xtask/src/calibration.rs",
+  "logic_name": "Bounded measured calibration artifact",
+  "test_list": [
+    {
+      "test_name": "runner_hashes_exact_joined_inputs_and_refuses_clobber",
+      "description": "Produces a provenance-bound measured candidate artifact from exact inputs and immutable checkpoint."
+    },
+    {
+      "test_name": "runner_refuses_incomplete_observations_and_unmet_precision",
+      "description": "Reject incomplete ID sets and precision/support failures without creating output."
+    },
+    {
+      "test_name": "calibration_cli_requires_explicit_unique_options",
+      "description": "The actual CLI parser rejects duplicate/omitted/unknown flags and forwards explicit measured inputs."
+    }
+  ],
+  "dependencies": [
+    "polaris-system-one-schemas::calibration"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json",
+    "toml",
+    "blake3"
+  ],
+  "inputs": [
+    {
+      "name": "config",
+      "type": "CalibrationRunConfig",
+      "description": "Explicit bounded source paths, schema and precision/support policy."
+    }
+  ],
+  "output_type": "Result<(),CalibrationRunError>",
+  "output_description": "Create-new complete TOML measured candidate including exact input digests and rational metrics; no automatic policy weakening or calibration certification."
+}

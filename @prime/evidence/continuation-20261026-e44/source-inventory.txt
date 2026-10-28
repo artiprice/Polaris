@@ -1,0 +1,94 @@
+Inventory: 93 packages, 1192 first-party source/config/spec files, 733 Rust files; SHA256 7e1bba2f147f0b7efdf9a2b6b37095459caccb875a478616b668b2169aa9fe3f
+P0  polaris-tests                           src_lines=   34 tests=  2 metadata=IN PROGRESS  TODOs=13
+P0  xtask                                   src_lines= 1107 tests= 30 metadata=PASS         TODOs=13
+P1  polaris-cli                             src_lines=12421 tests=149 metadata=IN PROGRESS  TODOs=12
+P1  polaris-code-intel                      src_lines= 3602 tests=101 metadata=PASS         TODOs=10
+P1  polaris-config                          src_lines= 1726 tests= 37 metadata=PASS         TODOs=10
+P1  polaris-kernel                          src_lines= 4009 tests= 50 metadata=IN PROGRESS  TODOs=8
+P1  polaris-kernel-bus                      src_lines=  464 tests= 17 metadata=PASS         TODOs=10
+P1  polaris-kernel-directives               src_lines= 2111 tests= 49 metadata=PASS         TODOs=12
+P1  polaris-kernel-reaper                   src_lines= 1076 tests= 43 metadata=PASS         TODOs=9
+P1  polaris-kernel-supervisor               src_lines= 1458 tests= 50 metadata=PASS         TODOs=10
+P1  polaris-log                             src_lines= 1860 tests= 64 metadata=PASS         TODOs=8
+P1  polaris-proto                           src_lines= 1300 tests= 58 metadata=PASS         TODOs=9
+P1  polaris-sdk                             src_lines= 4812 tests= 53 metadata=PASS         TODOs=12
+P1  polaris-spike-bus                       src_lines=   24 tests=  6 metadata=PASS         TODOs=9
+P1  polaris-storage                         src_lines=   71 tests=  0 metadata=IN PROGRESS  TODOs=3
+P1  polaris-storage-cache                   src_lines=  661 tests= 28 metadata=PASS         TODOs=9
+P1  polaris-storage-cas                     src_lines=  796 tests= 37 metadata=PASS         TODOs=12
+P1  polaris-storage-eventlog                src_lines=  957 tests= 36 metadata=PASS         TODOs=11
+P1  polaris-storage-registry                src_lines= 1030 tests= 54 metadata=PASS         TODOs=10
+P1  polaris-telemetry                       src_lines= 1126 tests= 51 metadata=PASS         TODOs=9
+P1  polaris-tools                           src_lines=   59 tests=  1 metadata=IN PROGRESS  TODOs=4
+P1  polaris-tools-builtin                   src_lines= 3451 tests= 18 metadata=PASS         TODOs=10
+P1  polaris-tools-rtk                       src_lines= 1690 tests=107 metadata=PASS         TODOs=10
+P1  polaris-ui                              src_lines=   37 tests=  0 metadata=NOT STARTED  TODOs=6
+P1  polaris-ui-cli                          src_lines= 7938 tests=118 metadata=IN PROGRESS  TODOs=13
+P1  polaris-ui-model                        src_lines= 5014 tests=161 metadata=IN PROGRESS  TODOs=12
+P2  polaris-openshell                       src_lines=    8 tests=  0 metadata=IN PROGRESS  TODOs=4
+P2  polaris-openshell-client                src_lines= 3041 tests= 30 metadata=IN PROGRESS  TODOs=11
+P2  polaris-openshell-nemoclaw              src_lines= 1018 tests=  6 metadata=IN PROGRESS  TODOs=10
+P2  polaris-openshell-policy                src_lines=  423 tests=  5 metadata=IN PROGRESS  TODOs=10
+P2  polaris-platform                        src_lines=   26 tests=  0 metadata=IN PROGRESS  TODOs=4
+P2  polaris-platform-process                src_lines= 1819 tests= 36 metadata=IN PROGRESS  TODOs=10
+P2  polaris-platform-wsl                    src_lines= 1119 tests= 10 metadata=IN PROGRESS  TODOs=11
+P2  polaris-runtime                         src_lines=    9 tests=  0 metadata=IN PROGRESS  TODOs=4
+P2  polaris-runtime-guards                  src_lines= 2309 tests= 21 metadata=IN PROGRESS  TODOs=9
+P2  polaris-runtime-leases                  src_lines= 1472 tests= 15 metadata=IN PROGRESS  TODOs=9
+P2  polaris-security                        src_lines=   45 tests=  1 metadata=IN PROGRESS  TODOs=3
+P2  polaris-security-automata               src_lines= 1177 tests= 38 metadata=IN PROGRESS  TODOs=10
+P2  polaris-spike-sandbox                   src_lines=  520 tests= 15 metadata=IN PROGRESS  TODOs=8
+P2  polaris-storage-sync                    src_lines= 2343 tests= 55 metadata=IN PROGRESS  TODOs=10
+P2  polaris-vcs                             src_lines= 1394 tests=  6 metadata=IN PROGRESS  TODOs=10
+P3  polaris-kernel-operators                src_lines= 1260 tests=  6 metadata=IN PROGRESS  TODOs=9
+P3  polaris-kernel-verifier                 src_lines=  937 tests=  5 metadata=IN PROGRESS  TODOs=9
+P3  polaris-models                          src_lines= 1623 tests= 20 metadata=IN PROGRESS  TODOs=10
+P3  polaris-nebius-cloud                    src_lines=   20 tests=  0 metadata=IN PROGRESS  TODOs=4
+P3  polaris-nebius-cloud-sandboxes          src_lines=   34 tests=  0 metadata=NOT STARTED  TODOs=11
+P3  polaris-nebius-cloud-token-factory      src_lines= 2987 tests= 25 metadata=IN PROGRESS  TODOs=11
+P3  polaris-ratelimit                       src_lines=  770 tests=  0 metadata=IN PROGRESS  TODOs=10
+P3  polaris-runtime-context                 src_lines= 1779 tests= 12 metadata=IN PROGRESS  TODOs=10
+P3  polaris-runtime-frames                  src_lines= 1962 tests= 22 metadata=IN PROGRESS  TODOs=8
+P3  polaris-security-capability             src_lines=  646 tests= 22 metadata=IN PROGRESS  TODOs=10
+P3  polaris-security-secrets                src_lines=  724 tests= 19 metadata=IN PROGRESS  TODOs=9
+P3  polaris-spike-ratelimit                 src_lines=   26 tests=  0 metadata=NOT STARTED  TODOs=9
+P3  polaris-tools-math                      src_lines= 1355 tests= 25 metadata=IN PROGRESS  TODOs=9
+P4  polaris-security-pii                    src_lines=  707 tests=  0 metadata=IN PROGRESS  TODOs=10
+P4  polaris-security-rules                  src_lines=   32 tests=  0 metadata=NOT STARTED  TODOs=9
+P4  polaris-spike-s1                        src_lines=   26 tests=  0 metadata=NOT STARTED  TODOs=9
+P4  polaris-system-one                      src_lines=    9 tests=  0 metadata=IN PROGRESS  TODOs=4
+P4  polaris-system-one-client               src_lines= 1137 tests= 17 metadata=IN PROGRESS  TODOs=10
+P4  polaris-system-one-engine               src_lines=  708 tests=  8 metadata=IN PROGRESS  TODOs=12
+P4  polaris-system-one-router               src_lines=  724 tests=  0 metadata=IN PROGRESS  TODOs=10
+P4  polaris-system-one-schemas              src_lines=  790 tests=  3 metadata=IN PROGRESS  TODOs=10
+P4  polaris-system-one-verifier             src_lines= 1746 tests=  0 metadata=IN PROGRESS  TODOs=10
+P4  polaris-system-one-watchdog             src_lines= 1133 tests=  0 metadata=IN PROGRESS  TODOs=10
+P4  polaris-worker                          src_lines= 1714 tests= 27 metadata=IN PROGRESS  TODOs=12
+P5  polaris-ingest                          src_lines= 1879 tests= 18 metadata=IN PROGRESS  TODOs=11
+P5  polaris-nvidia-docs                     src_lines=   35 tests=  0 metadata=NOT STARTED  TODOs=12
+P5  polaris-search                          src_lines=   19 tests=  0 metadata=IN PROGRESS  TODOs=4
+P5  polaris-search-providers                src_lines= 1680 tests= 18 metadata=IN PROGRESS  TODOs=10
+P5  polaris-search-sift                     src_lines= 1375 tests= 19 metadata=IN PROGRESS  TODOs=10
+P5  polaris-storage-vector                  src_lines= 1189 tests= 20 metadata=IN PROGRESS  TODOs=10
+P6  polaris-nebius-cloud-ai-cloud           src_lines=  574 tests= 23 metadata=IN PROGRESS  TODOs=9
+P6  polaris-nebius-cloud-data-lab           src_lines= 1105 tests=  0 metadata=IN PROGRESS  TODOs=9
+P7  polaris-browser                         src_lines=   34 tests=  0 metadata=NOT STARTED  TODOs=10
+P7  polaris-ext                             src_lines=    8 tests=  1 metadata=IN PROGRESS  TODOs=3
+P7  polaris-ext-mcp                         src_lines= 2283 tests= 28 metadata=IN PROGRESS  TODOs=10
+P7  polaris-ext-skills                      src_lines= 1983 tests= 23 metadata=IN PROGRESS  TODOs=10
+P7  polaris-guest                           src_lines= 2611 tests= 19 metadata=IN PROGRESS  TODOs=11
+P7  polaris-hacker                          src_lines=  717 tests= 12 metadata=IN PROGRESS  TODOs=10
+P7  polaris-runtime-dag                     src_lines= 1844 tests= 12 metadata=IN PROGRESS  TODOs=9
+P7  polaris-runtime-research                src_lines= 3158 tests= 31 metadata=IN PROGRESS  TODOs=9
+P8  polaris-devenv                          src_lines=   14 tests=  0 metadata=IN PROGRESS  TODOs=4
+P8  polaris-devenv-cicd                     src_lines= 1074 tests=  8 metadata=IN PROGRESS  TODOs=9
+P8  polaris-devenv-docker                   src_lines= 2255 tests= 12 metadata=IN PROGRESS  TODOs=9
+P8  polaris-devenv-nix                      src_lines=  756 tests= 16 metadata=IN PROGRESS  TODOs=9
+P8  polaris-system-one-nano                 src_lines=   32 tests=  0 metadata=NOT STARTED  TODOs=9
+P9  polaris-daemon                          src_lines=  782 tests=  6 metadata=IN PROGRESS  TODOs=10
+P9  polaris-desktop                         src_lines=   32 tests=  0 metadata=NOT STARTED  TODOs=10
+P9  polaris-rpc                             src_lines= 1810 tests=  9 metadata=IN PROGRESS  TODOs=12
+P9  polaris-spike-web                       src_lines=   26 tests=  0 metadata=NOT STARTED  TODOs=8
+P9  polaris-ui-gui                          src_lines=   31 tests=  0 metadata=NOT STARTED  TODOs=11
+P9  polaris-ui-web                          src_lines=   32 tests=  0 metadata=NOT STARTED  TODOs=11
+P9  polaris-web                             src_lines=   34 tests=  0 metadata=NOT STARTED  TODOs=11

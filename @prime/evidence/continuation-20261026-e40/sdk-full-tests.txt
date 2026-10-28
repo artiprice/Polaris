@@ -1,0 +1,172 @@
+    Finished `test` profile [unoptimized] target(s) in 0.70s
+     Running unittests src\lib.rs (target\debug\deps\polaris_sdk-650f9869045ab675.exe)
+
+running 3 tests
+test hex::tests::every_byte_matches_ascii_hex_contract ... ok
+test system_one::decision_schema_tests::validated_schema_snapshot_preserves_version_policy_and_calibration_state ... ok
+test system_one::decision_schema_tests::schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\blast_alert_schema.rs (target\debug\deps\blast_alert_schema-463bcd537b5607db.exe)
+
+running 1 test
+test blast_alert_requires_schema_three ... FAILED
+
+failures:
+
+---- blast_alert_requires_schema_three stdout ----
+
+thread 'blast_alert_requires_schema_three' (11196) panicked at crates\polaris-sdk\tests\blast_alert_schema.rs:20:9:
+assertion `left == right` failed: exact alert minimum and maximum schema
+  left: true
+ right: false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    blast_alert_requires_schema_three
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-sdk --test blast_alert_schema`
+     Running tests\command_typestate.rs (target\debug\deps\command_typestate-54cc87314d25f03b.exe)
+
+running 3 tests
+test token_bytes_debug_is_redacted ... ok
+test verified_requires_approval_witness ... ok
+test command_serde_roundtrip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_identifiers.rs (target\debug\deps\content_identifiers-bd1d5bbfb50aed28.exe)
+
+running 6 tests
+test cid_hex_roundtrip ... ok
+test cid_rejects_wrong_length_hex ... ok
+test short_ref_is_first_48_bits ... ok
+test short_ref_renders_12_lowercase_hex ... ok
+test short_ref_parse_accepts_marker_and_bare_hex ... ok
+test prop_cid_shortref_hex_roundtrip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_store_dispatch.rs (target\debug\deps\content_store_dispatch-c86a9a9fcee49c0a.exe)
+
+running 3 tests
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+test one_of_three_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\effort_parsing.rs (target\debug\deps\effort_parsing-efd9149b50cb1618.exe)
+
+running 6 tests
+test display_roundtrips_name ... ok
+test parses_numeric_1_to_5 ... ok
+test parses_names_case_insensitively ... ok
+test rejects_zero_and_six ... ok
+test try_from_u8_is_total ... ok
+test prop_order_matches_numeric_form ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-0e2a68444b5e5266.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests\interactive_contract.rs (target\debug\deps\interactive_contract-7d696b57b05cce08.exe)
+
+running 2 tests
+test interactive_debug_never_exposes_arguments_or_environment ... ok
+test interactive_enum_and_arc_preserve_dispatch_and_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\probability_validation.rs (target\debug\deps\probability_validation-1f4c009bfc0dcbf2.exe)
+
+running 5 tests
+test accepts_bounds ... ok
+test rejects_above_one_and_below_zero ... ok
+test ordering_is_total_for_valid_values ... ok
+test serde_rejects_out_of_range ... ok
+test rejects_nan ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\registry_dispatch.rs (target\debug\deps\registry_dispatch-cb06074eec8e7742.exe)
+
+running 5 tests
+test error_kinds_cover_taxonomy ... ok
+test arc_forwards_sync_registry_traits ... ok
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_source_contract.rs (target\debug\deps\secret_source_contract-7fb3f91b434523c1.exe)
+
+running 7 tests
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test has_kind_maps_transient_and_permanent_failures ... ok
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test validated_locations_contain_identifiers_only ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+test source_error_display_is_sanitized ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\session_lifecycle.rs (target\debug\deps\session_lifecycle-8f334f35a50e581f.exe)
+
+running 5 tests
+test schema_one_records_remain_readable ... ok
+test new_lifecycle_events_cannot_claim_schema_one ... ok
+test lifecycle_records_use_current_schema ... ok
+test versioned_constructor_validates_schema ... FAILED
+test prop_schema_acceptance_matches_lifecycle_minimum ... ok
+
+failures:
+
+---- versioned_constructor_validates_schema stdout ----
+
+thread 'versioned_constructor_validates_schema' (4824) panicked at crates\polaris-sdk\tests\session_lifecycle.rs:98:5:
+future schema refused
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    versioned_constructor_validates_schema
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-sdk --test session_lifecycle`
+   Doc-tests polaris_sdk
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 290) ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 321) ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 265) ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 315) - compile fail ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 304) - compile fail ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 260) - compile fail ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+all doctests ran in 0.98s; merged doctests compilation took 0.70s
+error: 2 targets failed:
+    `-p polaris-sdk --test blast_alert_schema`
+    `-p polaris-sdk --test session_lifecycle`

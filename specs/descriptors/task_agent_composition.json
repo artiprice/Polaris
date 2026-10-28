@@ -1,0 +1,18 @@
+{
+  "type_of":"pipeline",
+  "name":"task_agent_composition",
+  "file_path":"apps/polaris-cli/src/task.rs",
+  "logic_name":"Non-UI agent task host composition",
+  "test_list":[
+    {"test_name":"agent_profile_requires_private_host_control_and_calibrated_schemas","description":"Reject absent authority transport, changed schema pin or mismatched calibration before model execution."},
+    {"test_name":"agent_task_uses_real_mutation_and_sandbox_test_owners","description":"Bind actual capabilities, leases, S1, mutation receipts, sandbox approval and independent proof."},
+    {"test_name":"agent_task_joins_control_and_owned_runtimes_on_cancellation","description":"Cancel the control service and close model/kernel owners before returning."},
+    {"test_name":"agent_task_checkpoint_key_is_reference_only","description":"Recover an explicit environment/keyring key without persisting or exposing plaintext key values."},
+    {"test_name":"agent_task_preserves_inspection_only_profile","description":"Profiles without agent policy retain their original read authority and proof distinction."}
+  ],
+  "dependencies":["ConfiguredAgentToolRunner","ConfiguredFramePolicy","PrivateFrameCheckpointStore","LocalModelRuntime","OpenShellBackend"],
+  "libraries":["tokio","tokio-util","serde","toml","blake3","serde_json"],
+  "inputs":[{"name":"profile","type":"trusted bounded TOML","description":"Explicit host-owned runtime paths, authority policy, schema pins, sandbox policy and optional private checkpoint key reference."}],
+  "output_type":"Result<TaskSummary, TaskError>",
+  "output_description":"Actual driver and separate proof status. Implementation verification deferred by user instruction."
+}

@@ -4,6 +4,8 @@
     {"test_name":"linear_hits_knots","description":"Linear interpolation returns the y value at every knot."},
     {"test_name":"catmull_rom_passes_through_control_points","description":"Catmull-Rom returns all exact knots and interpolates within supported range."},
     {"test_name":"unsorted_knots_rejected","description":"Knots must be strictly ordered by x."},
+    {"test_name":"signed_zero_is_not_a_strictly_increasing_knot_interval","description":"Negative zero and positive zero are numerically equal and cannot form a valid positive-width knot interval."},
+    {"test_name":"catmull_rom_uniformity_tolerance_scales_with_small_coordinates","description":"Catmull-Rom rejects materially uneven knot spacing even when the coordinate scale is much smaller than one."},
     {"test_name":"x_outside_range_is_error_or_clamped_per_policy","description":"Out-of-domain queries return a typed error."},
     {"test_name":"non_finite_input_rejected","description":"NaN and infinities cannot enter through constructors or serde."},
     {"test_name":"bezier_stays_within_control_bounds","description":"Bezier interpolation remains inside the convex hull for t in [0,1]."},

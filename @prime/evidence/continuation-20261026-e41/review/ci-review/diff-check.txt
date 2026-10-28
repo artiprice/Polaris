@@ -1,0 +1,3 @@
+$ git diff --check -- crates/polaris-devenv/crates/cicd specs/descriptors/cicd_sandbox_lifecycle.json
+
+[exit=0]

@@ -45,7 +45,7 @@ older paragraph below disagrees, this section wins; the load-bearing places (§2
 | Topic | Outcome (VERIFIED unless marked) | Consequence |
 |---|---|---|
 | Team setup | Per-PC installs are data (`[[member_setup]]` in `workspace.toml`, 26 items) rendered into PHASES.md §0.1; `setup-windows.ps1` (Windows PowerShell 5.1-compatible, idempotent, `-Check`) runs `setup-wsl.sh` inside WSL2 | every member runs one script; `polaris doctor` (P2-X-2) re-checks the same list |
-| Licences | **evalexpr ≥ 12 is AGPL-3.0-only** (11.3.1 was MIT) → replaced by **exmex 0.21.0** (MIT OR Apache-2.0). `cargo deny check` clean; `cargo vet` passes with 5 audit imports + 29 exemptions (audit backlog, not audits). Only Slint's triple licence remains open (ADR-014) | team decision on Slint before P9 |
+| Licences | **evalexpr ≥ 12 is AGPL-3.0-only** (11.3.1 was MIT) → replaced by **exmex 0.21.0** (MIT OR Apache-2.0). `cargo deny check` clean; `cargo vet` passes with 5 audit imports + 29 exemptions (audit backlog, not audits). Slint licence DECIDED: royalty-free (ADR-014); `cargo deny check licenses` reports "licenses ok" with per-crate exceptions for the 14 slint / i-slint-* crates only | none |
 | S0-1 OpenShell SDK | builds on windows-msvc without protoc; SDK `ClientConfig` has **no mTLS identity** → Polaris builds the tonic channel (CA + client `Identity`, `domain_name("localhost")`) and calls `OpenShellClient::from_parts(channel, EdgeAuthInterceptor::noop())`; dial **`https://localhost:17670`** (127.0.0.1 fails from Windows); gateway rejects requests **> 1 MiB decoded**; after a WSL2 boot the gateway listens only after ~3 s; the gateway needs `OPENSHELL_COMPUTE_DRIVER=docker` pinned (boot race) | `polaris-openshell-client`: own channel, retry/backoff, ≤ 896 KiB chunks; `polaris-platform-wsl`: cert discovery + keepalive |
 | S0-2 vm driver | `/dev/kvm` in WSL2; vm driver boots Ubuntu (guest 6.12.76) in 27.5 s, exec 216 ms; one driver per gateway | E2 microVM tier is local; P7 needs a second gateway instance or a driver switch |
 | S0-3 NemoClaw | custom agents unsupported (in-tree only); blueprint pins OpenShell 0.0.116 | native blueprint applier in `polaris-openshell-nemoclaw` (reuse blueprint shape, base images, policy presets) |
@@ -137,8 +137,9 @@ for the **Nebius × NVIDIA Global AI Hackathon — Coding & Agentic Engineering 
 | ADR-011 | Context: lossless folding into CAS; stable prefix; no destructive summarization |
 | ADR-012 | Web: Leptos SSR + PWA (no Tauri); desktop/mobile: Slint |
 | ADR-013 | IPC: tonic over named pipes (token-authenticated) now; iceoryx2 later if S0-8 passes |
-| ADR-014 | Licensing: Apache-2.0 workspace; Slint licence decision; NVIDIA docs not redistributed in git |
+| ADR-014 | Licensing: Apache-2.0 workspace; Slint royalty-free (decided); NVIDIA docs not redistributed in git |
 | ADR-015 | Pinned versions & couplings (ort exact pin, reqwest majors, arrow via lancedb) |
+| ADR-016 | ASCII aurora welcome background (desktop) |
 
 ---
 
@@ -534,7 +535,7 @@ no defaults, optional notes, and security approvals remain separate. UI_PLAN §3
 Web welcome reference only: Space Grotesk / Inter / JetBrains Mono, green aurora/stars and black
 composer. WEB-WELCOME and the separately gated WEB-OPT follow-on remain deferred; optimization is
 welcome-only and requires a measured baseline. Slint desktop and full Leptos SSR/PWA/RPC interface
-design remain later P9 work under ADR-012/014; no GUI/web implementation is authorized here.
+design remain later P9 work under ADR-012/014; the desktop welcome screen and offline session view (ASCII aurora, ADR-016; real local kernel session, no model replies) are IN PROGRESS, the daemon `--connect` bridge stays open in P9.
 
 ### 6.17 Platform seam
 
@@ -602,14 +603,34 @@ desktop and later mobile (Android Rust support; iOS initial support since Slint 
 **ADR-013 — IPC.** tonic over Windows named pipes (custom connector; pre-created next instance;
 token auth) and TCP+mTLS; iceoryx2 for bulk zero-copy only if S0-8 passes. **P0 result (S0-8, VERIFIED):** iceoryx2 works (RTT p50 2.0 µs, survives peer kill) but its default Windows root `C:\Temp\iceoryx2` is writable by all authenticated users — adoption requires a per-user `set_root_path` with an owner-only ACL (R24).
 
-**ADR-014 — Licensing.** Workspace Apache-2.0. Slint: choose royalty-free (attribution) or GPLv3/commercial
-before P9; NVIDIA docs content stays local (not in git, not embedded); model licences recorded
+**ADR-014 — Licensing.** Workspace Apache-2.0. Slint: DECIDED royalty-free (`LicenseRef-Slint-Royalty-free-2.0`).
+Attribution condition 2(a) is met by the `AboutSlint` widget in the desktop app's About panel
+(`crates/polaris-ui/crates/gui/ui/app.slint`). `deny.toml` carries per-crate exceptions for the 14 slint /
+i-slint-* crates only; `cargo deny check licenses` reports "licenses ok". NVIDIA docs content stays local (not in git, not embedded); model licences recorded
 (GLiNER Apache-2.0, Needle Apache-2.0, Nemotron 3 Ultra / 3.5 Super VL under OpenMDW-1.1 per catalog).
 
 **ADR-015 — Pins & couplings.** ort `=2.0.0-rc.13`; rten 0.26.0 (ocrs); reqwest 0.13.5 own code (0.12 via
 OpenShell/lance, 0.11 via dagger, feature-gated); tower-http 0.6.11 and tokio-tungstenite 0.26.2 aligned
 with OpenShell; arrow only via lancedb re-exports; regex-automata 0.4.18 / regex-syntax 0.8.11 as the user
 pinned; leptos_meta 0.8.7.
+
+**ADR-016 — ASCII aurora welcome background (desktop).** The desktop welcome background is an animated
+ASCII-art port of the web demo's northern lights, rendered on the CPU by a new pure-Rust crate
+`polaris-ui-ascii-aurora` (`crates/polaris-ui/crates/ascii-aurora`, layer 6, parent `polaris-ui`, phase P9).
+Pipeline: procedural field (demo mesh/nebula blobs, two S-curve aurora ribbons from `aurora.svg` with the
+demo keyframe timings, hand-written noise shimmer, seeded twinkling stars, 14%/12% edge fade) -> luminance ->
+glyph ramp -> glyph tiles baked once from JetBrains Mono with `ab_glyph 0.2.32` -> blitted into a reused RGBA
+buffer, shown in Slint as an `Image` updated by a 50 ms (20 fps) `slint::Timer`, double-buffered; paused while
+minimised/hidden; `--static` / `POLARIS_REDUCED_MOTION` draws one still frame. Style reference: frames
+extracted from the user's reference video (glyphs in tiles, dense glyphs inverted on bright tiles, faint
+cell grid, soft underglow, no glyph bloom). Rejected: one Slint `Text` per cell (thousands of elements),
+`StyledText` (markdown only, no per-char colour), Slint backdrop-blur (not in 1.18.1; Skia/master only),
+the unstable wgpu path, stale noise crates. Why: the web demo's welcome page is laggy (large transformed
+blur layers, mask-composite, soft-light blend). **Measured 2026-10-28 (VERIFIED,
+`@prime/evidence/ui/desktop/desktop-verification.txt`):** Ryzen 7 2700 + GTX 1650, release, 1280x800 window,
+20 fps: 19.4% of one core (engine 4.9 ms/frame, rest Slint repaint + texture upload); minimised and
+`--static`: 0%. 30 fps measured 28.4%, hence 20 fps; frames are handed over as premultiplied RGBA (all
+opaque) to skip a conversion pass. Not compared against the web demo in a browser.
 
 ---
 
@@ -1033,7 +1054,7 @@ pub enum CommandBody { SubmitUserInput, ProposeDiff, AcquireAstScope, ReleaseAst
 pub enum Event { SessionStarted, DirectiveApplied, DecisionMade, ModelRequestCompleted, ToolExecutionStarted, ToolExecutionCompleted,
                  DiffApproved, DiffRejected, FileLeaseGranted, FileLeaseRevoked, SandboxSnapshotBranchCreated, SandboxExecutionCompleted,
                  ProofOfDonePassed, ProofOfDoneBlocked, WorkerRestarted, CircuitTripped, DeadLettered, SessionClosed,
-                 SessionConfigured, SessionPaused, SessionResumed } // schema 2; schema-1 envelopes remain readable
+                 SessionConfigured, SessionPaused, SessionResumed, UserInputSubmitted } // schema 2 adds lifecycle, schema 7 adds UserInputSubmitted; older envelopes remain readable
 pub struct EventRecord { pub seq: Seq, pub at: jiff::Timestamp, pub schema: u16, pub session: SessionId, pub event: Event }
 ```
 
@@ -1086,11 +1107,18 @@ pub struct EventRecord { pub seq: Seq, pub at: jiff::Timestamp, pub schema: u16,
 
 ---
 
+**E43 SDK schema-test checkpoint (2026-10-26).** Two authorized schema-test fixes are included in the SDK full-suite run: 56 passed, 0 failed, 0 ignored. Schema snapshots are unchanged. This records the scoped SDK result, not full-system or phase acceptance. [Commands and raw output](evidence/continuation-20261026-e43/commands.json).
+
 ### `polaris-proto` — Protobuf contracts and generated tonic/prost code for kernel, worker and guest services
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-proto` | L1 | lib | — | P1 |
+
+
+
+
+**E40 implementation checkpoint.** Shared worker credentials/interception now enforce exact sensitive metadata, zeroized parent bootstrap and constant-time digest equality. This authenticates callers only; endpoint ownership remains a parent responsibility. The pinned tonic generator’s three status casts use an equivalent typed conversion behind a deterministic drift guard. Schemas/descriptors stay unchanged. Existing byte-corruption tests retain their full assertions and mutation distribution with checked remainder operations. [Evidence](evidence/continuation-20261026-e40/README.md).
 
 **Purpose.** Owns `proto/polaris/v1/{kernel,worker,guest}.proto`, generates Rust in `build.rs` with a vendored `protoc` (no system protoc needed; protoc is VERIFIED missing on this machine), and keeps generated code isolated from hand-written crates. It also holds the sdk <-> proto conversions and the `PROTOCOL_VERSION` constant used in the `polaris-guest` handshake. It contains **definitions only**; transports (named pipe, TCP+mTLS) belong to `polaris-rpc` and the worker/daemon apps.
 
@@ -2000,6 +2028,9 @@ pub enum SyncError { Walk(String), Io(..), Backend(String), Conflicts(Vec<PathCo
 
 ### `polaris-security-capability` — Biscuit capability tokens: session authority, per-frame attenuation, authorization
 
+**E45 readonly frame checkpoint (2026-10-26).** E45 adds explicit Workspace scope while preserving right/time/churn/unsafe/diff checks and monotone child attenuation. New frame-root/token binding and actual kernel readonly authorization have scoped native/Linux evidence; full mutation assembly and security audit remain open. [Scoped evidence](evidence/continuation-20261026-e45/README.md).
+
+
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-security/crates/capability` | L1 | lib | `polaris-security` | P3 |
@@ -2394,11 +2425,22 @@ pub enum RulesError { Yaml(String), BadPattern { rule: RuleId, reason: String },
 
 ### `polaris-kernel` — facade over the kernel children and the composition root (L5)
 
+**E47 prompt assembly checkpoint (2026-10-27).** E47 adds KernelPromptAssembler and its bound run_frame entry point: actual PII vault before network counting, catalog/role policy, complete history groups, verified authorized archives, per-count deadline and cumulative archive-byte cap. Counted/dispatched HTTP identity and real durable events pass with synthetic server counts/verifier decisions. P2 paused; UI deferred; live S2 edit/test/proof acceptance remains open. [Evidence](evidence/continuation-20261027-e47/README.md).
+
+
+**E46 durable journal checkpoint (2026-10-27).** E46 adds the production KernelFrameJournal: sealed frame/root identity, bounded admission before transcript allocation, offloaded actual CAS persistence and durable bus publication, and accepted-owner drain after caller drop/shutdown. Actual two-turn driver tests retain exact tool IDs/bytes and failure transcripts with synthetic provider/assembler/verifier fixtures. Broader P2 paused; UI deferred; live S2/edit/test/proof loop remains open. [Evidence](evidence/continuation-20261026-e46/README.md).
+
+
+**E45 readonly frame checkpoint (2026-10-26).** E45 adds the production readonly KernelToolRunner over actual workspace/CAS/session history, explicit issuer and sealed frame binding, consumed permits, local revocation, verified CAS envelopes and 64-slot blocking ownership drained at shutdown. Full S2/edit/test/proof walking-skeleton composition remains open; P2 paused, UI deferred. [Scoped evidence](evidence/continuation-20261026-e45/README.md).
+
+
 **CLI follow-on (planned):** UI4/UI5 application adapters consume real session/event/CAS contracts; P3-X-5 adds validated atomic human answers and targeted CancelFrame dispatch. An enum variant is not implementation evidence. Missing domain APIs stay owned here/SDK/runtime, never fabricated by the renderer; UI_PLAN §3 defines receipt/replay rules.
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-kernel` | L5 | facade | (top-level) | P1 |
+
+**E41 implementation checkpoint.** S1WorkerLifecycle readiness and generation fencing are wired through the actual worker adapter. The focused kernel library check does not establish full kernel or P2 acceptance. [Evidence](evidence/continuation-20261026-e41/README.md).
 
 **Purpose.** Re-exports the six kernel children and is the single place where concrete backends are constructed and injected (prompt.md §6.2 "single implementation point"). It resolves the prompt.md §6.2 "generics, no `dyn`" rule with one `Backends` associated-type bundle, enum dispatch for runtime-selected variants, and typestate sessions. `polaris-rpc` never depends on this crate; it serves the sdk `KernelApi` trait that `KernelHandle` implements.
 
@@ -2484,6 +2526,7 @@ pub trait Projection { fn apply(&mut self, e: &EventEnvelope); }   // generic, n
 - VERIFIED (§E25): `Session<Archived> -> Paused` reopens through ordered durable replay; archived objects release the live lease immediately. Running recovery also commits a pause before returning a mutable owner.
 - VERIFIED (current layer boundary): the kernel implements session/registry projections; `polaris-ui-model` builds view models above L5 from the same events. The kernel does not depend on the L6 consumer.
 - VERIFIED: layer rule forbids `polaris-sdk` (L0) from naming adapter types, so the enum wrappers live here (flag 2).
+- VERIFIED (2026-10-28, tests in `crates/polaris-kernel/tests/local_user_input.rs` and `crates/polaris-kernel/crates/verifier/tests/local_control.rs`): the P1 local-control profile now admits two bodies through the same session/frame-scoped signed credential and digest-bound evidence: `ApplyDirective` (exactly one directive, unchanged) and `SubmitUserInput`. `KernelHandle::submit_user_input` stores the text in CAS and `Session::record_user_input` commits `Event::UserInputSubmitted { text: Cid }` (event schema 7). The text is stored verbatim (no directive parsing), is bounded by the 64 KiB control limit, must be UTF-8 and non-blank, and is recorded offline only: no model execution or reply is implied. Every other `CommandBody` is still rejected as outside the P1 local control profile. Typed messages are not indexed into the registry's history search yet.
 
 **Chatlog sources.** msg 1 (kernel as orchestrator, state machine, event bus, `Cargo.toml` members), msg 13 (EDA/CQRS, commands vs events), msg 39 (operator pipeline order). Corrected: chatlog sketches `todo!()` bodies and `Box<dyn Error>`; replaced by typed errors; "actor-like state machine" became typestate sessions.
 
@@ -2716,6 +2759,8 @@ pub fn render(d: &SessionDirective) -> String;   // canonical text form for /sta
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-kernel/crates/supervisor` | L2 | lib | `polaris-kernel` | P1 |
+
+**E41 implementation checkpoint.** Worker initialization and retirement are per generation. Retirement is recorded before slow cleanup and guarded at most once; startup and stop waits are bounded, and fatal uncertain cleanup remains visible. The six focused supervisor tests pass. `retirement-order-red` and `bounded-stop-red` are behavioral RED/GREEN regressions; the separate API compile RED is compile evidence, not a behavioral test. [Evidence](evidence/continuation-20261026-e41/README.md).
 
 **Purpose.** Implements the approved D3 split: Rust actors (tokio tasks) are restarted in-process, one-for-one, inside a restart-intensity limit; native and FFI work (ONNX Runtime, PDF/OCR, the Needle engine) runs in `polaris-worker` child processes, one OS process per mode (`s1`, `ingest`, `nano`), restarted by the same policy. Tokio already isolates task panics (`JoinError::is_panic`), so no `catch_unwind` wrapper is used on tasks; segfaults and aborts in native code cannot be caught in-process at all, which is why those workloads are processes. Failed work is routed to a bounded dead-letter queue and surfaced to the UI as an event.
 
@@ -2950,6 +2995,8 @@ pub struct ReflectOp<D: DecisionEngine> { /* P7: auto-learn project invariants *
 
 ---
 
+**E43 operator checkpoint (2026-10-26).** `RateLimitOp` now uses the shared dual RPM/TPM limiter. Its admission input is non-Clone, the acquired permit travels with admitted work, and dispatch plus final usage are reconciled through that permit. The scoped test and safety checks pass. This does not assemble the production pipeline or establish full P3 acceptance. [Commands and raw output](evidence/continuation-20261026-e43/commands.json).
+
 ### `polaris-kernel-verifier` — HybridMutationVerifier: Biscuit Datalog authorization, AST metric calculus, S1 semantic congruence
 
 | Path | Layer | Kind | Parent | Phase |
@@ -3058,6 +3105,15 @@ pub enum VerifierError { Token(CapabilityError), Metrics(CodeIntelError), Decisi
 
 ### `polaris-runtime-frames` — agents as context frames over one S2 client and one S1 engine
 
+**E47 prompt assembly checkpoint (2026-10-27).** E47 adds sealed actual frame/root/role/model/effort prompt bindings and the SDK full-chat-tokenizer contract. E46 durable bounded journals remain. Kernel bound execution rejects replaced frame selections and uses one model/tokenizer owner; live edit/test/proof and formal phase acceptance remain open. [Evidence](evidence/continuation-20261027-e47/README.md).
+
+
+**E46 durable journal checkpoint (2026-10-27).** E46 adds bounded PreparedFrameStep serialization and result snapshots, geometric buffer growth, configured/hard ceilings, explicit oversized backend-read rejection, reference hash checks and verified transcript CAS readback before generic event append. Native/Linux scoped suites pass; full production tokenizer/provider/edit/test/proof composition and formal acceptance remain open. [Evidence](evidence/continuation-20261026-e46/README.md).
+
+
+**E45 readonly frame checkpoint (2026-10-26).** E45 adds sealed actual-frame/root/role/token bindings and shares the existing role policy with the real KernelToolRunner. Actual run_step child authorization and authorize-all-before-execute have integration evidence with a synthetic provider. Full production tokenizer/provider/edit/test/proof composition remains open. [Scoped evidence](evidence/continuation-20261026-e45/README.md).
+
+
 **CLI follow-on (planned):** P3-X-5/UI5-10 add real ask_user host/tool routing, durable request wait/resume and per-frame cancellation ownership. Only the requesting frame waits; siblings continue without a dependency on the P7 DAG. Answer/cancel races serialize one terminal outcome. See UI_PLAN §3.4.
 
 | Path | Layer | Kind | Parent | Phase |
@@ -3135,6 +3191,9 @@ pub enum FrameError { QuotaExceeded(&'static str), ScopeNotSubset, DepthLimit, S
 ---
 
 ### `polaris-runtime-context` — lossless context virtualization: stable prefix, scratchpad, `§ref` folding
+
+**E47 prompt assembly checkpoint (2026-10-27).** E47 adds shared tokenizer-independent ConversationWindow validation and bounded verified lossless archive persistence. Kernel production assembly uses complete groups, actual masking, provider counting and capability-gated archive visibility. Real CAS and loopback integration pass; full context lifecycle/live-model acceptance remains open. [Evidence](evidence/continuation-20261027-e47/README.md).
+
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -3214,11 +3273,15 @@ pub enum ContextError { Store(StoreError), UnknownRef(ShortRef), RefCollision, B
 
 ---
 
+**E43 context checkpoint (2026-10-26).** Context folding retains exact structured output in CAS, enforces a hard byte cap, and exposes bounded expansion with an explicit truncation notice. Scoped tests and workspace checks pass. Production dispatch composition at the root and full P3 acceptance remain open. [Commands and raw output](evidence/continuation-20261026-e43/commands.json).
+
 ### `polaris-runtime-dag` — DAG scheduler, named semaphore pools, speculative races, structured cancellation
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-runtime/crates/dag` | L4 | lib | `polaris-runtime` | P7 |
+
+**E44 scheduler checkpoint (2026-10-26).** Tokio task IDs now bind every normal or interrupted completion to its graph node. A task interruption is a terminal per-node result with no claimed attempt count; ContinueIndependent skips descendants while unrelated work continues, and FailFast stops/drains owned siblings. Interrupted tasks are not replayed even under Retry because execution state is uncertain; Retry applies only to structured failures from opted-in retry-safe tasks. Real Tokio aborts exercise normalization and shared result transitions, while public scheduler tests cover ordinary failures, ordering and cancellation. Full-scheduler join interruption and actual panic execution remain unverified. The root descriptor was published before source changes, but the descriptor file and tests were written afterwards: this is post-implementation verification, not full historical TDD or prompt §6.3 process compliance. A subsequent cleanup-retention regression compiled and failed before its targeted fix; completed outcomes are now preserved when cancellation drains already-finished tasks. The order_started accessor records scheduler dispatch order, not observed entry order. [Evidence](evidence/continuation-20261026-e44/README.md).
 
 **Purpose.** Runs a validated acyclic task graph with maximum safe parallelism: each node starts exactly once, as soon as its dependencies have succeeded, under a named concurrency pool (`inference`, `web`, `docs`, `disk`, `s1`, `sandbox`) that protects against HTTP 429, `EMFILE`, socket starvation and tensor-pool contention. The same crate offers the speculative race (several sources in parallel, first accepted result wins, losers are aborted and release their permits) used by search and by Contree branching. Cancellation is structured: dropping or cancelling a run cancels every node.
 
@@ -3284,7 +3347,7 @@ pub enum DagError { Cycle, UnknownNode(NodeId), DuplicateNode(NodeId), Closed, C
 | logic_name | type_of | name | file_path | tests |
 |---|---|---|---|---|
 | DAG validation | method | `DagBuilder::build` | `crates/polaris-runtime/crates/dag/src/builder.rs` | `cycle_is_rejected`, `unknown_dependency_is_rejected`, `duplicate_node_is_rejected`, `empty_graph_runs_to_empty_report` |
-| Exactly-once scheduling | async_function | `run` | `crates/polaris-runtime/crates/dag/src/run.rs` | `each_node_executes_exactly_once`, `dependents_wait_for_all_dependencies`, `panicking_node_does_not_hang_run`, `cancel_stops_all_nodes`, `ready_nodes_start_without_waiting_for_siblings` |
+| Exactly-once scheduling | async_function | `run` | `crates/polaris-runtime/crates/dag/src/graph.rs` | `each_node_executes_exactly_once`, `dependents_wait_for_all_dependencies`, `panicking_node_does_not_hang_run`, `cancel_stops_all_nodes`, `ready_nodes_start_without_waiting_for_siblings` |
 | Named pools | struct | `Pools` | `crates/polaris-runtime/crates/dag/src/pools.rs` | `permits_never_exceed_limit`, `resize_applies_to_new_acquires`, `closed_pool_returns_error_not_panic`, `stats_count_queued_waiters` |
 | Speculative race | async_function | `race` | `crates/polaris-runtime/crates/dag/src/race.rs` | `first_accepted_wins_and_others_abort`, `rejected_candidates_do_not_end_race`, `losers_release_permits`, `none_accepted_returns_none` |
 
@@ -3539,6 +3602,8 @@ pub enum ResearchError { Program(&'static str), Workspace(WorkspaceError), Runne
 |---|---|---|---|---|
 | `crates/polaris-models` | L3 | lib | (top-level) | P3 |
 
+**E42 implementation checkpoint.** Twenty focused contracts exercise the existing dated catalog, deterministic effort overrides, atomic availability updates, shared load ownership, lease capacity, deadline/drain behavior, idle reload, pressure selection and permanent shutdown. They pass on Windows and Linux using test-only loaders; they are baseline verification, not a historical test-first claim. Real loaders must prevent handles escaping leases and own safe cleanup across future cancellation. Production model-slot assembly and full stress/Loom/formal gates remain open. [Evidence](evidence/continuation-20261026-e42/README.md).
+
 **Purpose.** Single source of truth for which model serves which purpose: the verified Token Factory ids, the effort-to-model mapping (low..max or 1..5), user overrides from `$subagent-models`, the vision model, the embedding model, and custom OpenAI-compatible entries (the local Ollama/llama.cpp endpoint used for the P3 walking skeleton). It also owns the lifecycle of local model slots: lazy load, RAII leases, idle eviction and forced eviction before heavy builds, so a 16 GB machine can compile and run a model in turn.
 
 **Verified catalog (live Token Factory `api/public/models_info`, 2026-10-20; VERIFIED).**
@@ -3658,6 +3723,9 @@ pub enum ModelError { UnknownModel(String), BadAlias(String), EffortGap, Load(Lo
 ---
 
 ### `polaris-tools-builtin` — built-in agent tools and the `ToolRegistry`
+
+**E45 readonly frame checkpoint (2026-10-26).** E45 adds bounded authorized readonly dispatch, per-resource checks, bounded local-ignore preflight, caller output caps, bounded CAS reads and pre-open regular-file rejection. Native and Linux domain suites include FIFO/symlink regressions; external parent/global ignores are disabled for authorized calls and stable-workspace assumptions remain. [Scoped evidence](evidence/continuation-20261026-e45/README.md).
+
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -4047,6 +4115,8 @@ pub enum WslError { NotInstalled, DistroMissing(DistroName), Decode, Exit { code
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-platform/crates/process` | L2 | lib | `polaris-platform` | P2 |
+
+**E41 implementation checkpoint.** The actual child bootstrap sends the secret once through stdin and reports pending or unconfirmed kill outcomes honestly. This does not prove Windows endpoint ACL ownership or mutual server authentication. [Evidence](evidence/continuation-20261026-e41/README.md).
 
 **Purpose.** The single implementation point (prompt.md §6.2) of the sdk `PlatformOps` trait: spawn child processes inside kill-on-drop trees, stop them gracefully where Windows allows it and forcefully otherwise, run PTY sessions for the terminal tool and `AttachTerminal`, watch the workspace (treating watcher overflow as a forced rescan), and sample memory pressure for model eviction. It is the only place that touches OS process APIs; everything else uses the trait.
 
@@ -4536,6 +4606,8 @@ pub enum NemoclawError { Yaml(String), DigestMismatch, UnsupportedVersion(u32), 
 |---|---|---|---|---|
 | `crates/polaris-nebius-cloud` | L2 | facade | (top-level) | P3 |
 
+**E41 implementation checkpoint.** The facade now exports the implemented AI Cloud surface and its supported child APIs. The facade does not supply the missing provider transport or live remote execution. [Evidence](evidence/continuation-20261026-e41/README.md).
+
 **Purpose.** Pure re-export crate with no logic. It documents how the Nebius children map to the hackathon requirements. The hackathon text (`@prime/hackaton_content.md`) requires that every submission "run on either Nebius Token Factory or Nebius AI Cloud and use at least one NVIDIA open source model", and the Coding and Agentic Engineering track asks for "agents that write, run, and test code in Token Factory".
 **Re-exports.** `pub use polaris_nebius_cloud_token_factory as token_factory;` `pub use polaris_nebius_cloud_sandboxes as sandboxes;` `pub use polaris_nebius_cloud_data_lab as data_lab;` `pub use polaris_nebius_cloud_ai_cloud as ai_cloud;` (`pub use polaris_nebius_cloud_*`). Children never depend on this facade.
 
@@ -4557,6 +4629,9 @@ pub enum NemoclawError { Yaml(String), DigestMismatch, UnsupportedVersion(u32), 
 ---
 
 ### `polaris-nebius-cloud-token-factory` — OpenAI-compatible Token Factory client: SSE chat streaming, tool calls, embeddings, model list, usage accounting
+
+**E47 prompt assembly checkpoint (2026-10-27).** E47 adds explicit VllmChatClient with same-owner ChatModel and PromptTokenizer, shared chat-wire projection, same-origin /tokenize, bounded token-ID response validation and no estimate fallback. Real loopback HTTP protocol/security fixtures pass. Live vLLM/Nebius tokenizer/provider acceptance remains unverified. [Evidence](evidence/continuation-20261027-e47/README.md).
+
 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
@@ -4645,29 +4720,21 @@ pub enum TfError { Http { status: u16, retry_after: Option<std::time::Duration> 
 |---|---|---|---|---|
 | `crates/polaris-nebius-cloud/crates/sandboxes` | L2 | lib | `polaris-nebius-cloud` | P3 |
 
-**Purpose.** Implements the sdk `SandboxBackend` for execution tier E3 (the track-literal "write, run, test code in Token Factory"). VERIFIED: Token Factory Sandboxes are VM-isolated, ship 7,000+ preloaded SWE environments (SWE-bench Verified, SWE-rebench, SWE-rebench-V2) and support branching; the SDK is Python-only, so Polaris runs the official MCP server as a supervised sidecar (`pip install contree-mcp`, then `contree-mcp --mode http --http-port 9452`) and talks to it with an `rmcp` streamable-HTTP client. VERIFIED: the server exposes 18 tools: `run`, `rsync`, `import_image`, `list_images`, `get_image`, `set_tag`, `upload`, `download`, `list_files`, `read_file`, `grep`, `get_operation`, `list_operations`, `wait_operations`, `cancel_operation`, `registry_token_obtain`, `registry_auth`, `get_guide`. Branching is by `directory_state_id`; the tree-search strategy on top ("MCTS-style" exploration of N branches) is Polaris's own algorithm over those ids, not a Contree feature. Authentication of the sidecar to Nebius is UNVERIFIED (S0-13).
+**Purpose (upstream correction, 2026-10-27).** Exposes the actual stateless Contree MCP contract for tier E3. Upstream [nebius/contree-mcp](https://github.com/nebius/contree-mcp/tree/c2f1541e3993bc77c3c7dbcf57b0edfe5b3634cc) registers **19** tools, including `whoami`. Each `run` starts a fresh microVM; this protocol does not supply persistent sandbox create/exec/destroy handles. Non-disposable runs produce immutable result-image identities; `directory_state_id` is an integer returned by `rsync`. The adapter therefore does **not** implement the persistent SDK `SandboxBackend` contract. It uses SDK `McpToolClient`, implemented by the existing effect-authorized `McpHub` transport, without an L2 sibling dependency. This corrects the earlier sketch; E3/SWE, supervision, environment resolution, workload, privacy and live acceptance requirements remain.
 
-**API sketch.**
+**E48 implementation status.** Typed inventory/run/wait/cancel/branch/file/image/upload and approved-path sync projection exist with explicitly synthetic MCP contracts. Deployed Contree startup/configuration and a real SWE task remain unverified; access is unavailable. [Current evidence and limits](evidence/phase3-20261027/README.md).
+
+**API sketch (actual adapter; SWE environment resolver below remains planned).**
 ```rust
-pub struct StateId(/* directory_state_id as returned by the server */ String);
-pub struct ImageRef(String);                               // image tag or id
-pub struct OperationId(String);
-pub struct Stopped; pub struct Starting; pub struct Ready;               // sidecar typestate
-pub struct Sidecar<S> { /* port, venv path, endpoint */ _s: core::marker::PhantomData<S> }
-pub struct SidecarCommand { pub program: AbsProgram, pub args: Vec<OsString>, pub env: EnvSpec, pub bind: LoopbackAddr, pub port: u16 }   // handed to kernel supervisor
-impl Sidecar<Stopped> { pub fn command(cfg: &SidecarCfg) -> Result<SidecarCommand, SandboxError>; }
-impl Sidecar<Starting> { pub async fn wait_ready(self, t: std::time::Duration) -> Result<Sidecar<Ready>, SandboxError>; }
-pub struct ContreeBackend { /* rmcp client session, tool inventory (checked against the pinned 18) */ }
-impl ContreeBackend {
-    pub async fn connect(ep: &SidecarEndpoint) -> Result<ContreeBackend, SandboxError>;                 // tools/list vs pinned inventory
-    pub async fn run(&self, r: &RunRequest) -> Result<RunOutcome, SandboxError>;                      // command, image, wait, from: Option<StateId>
-    pub async fn branch_run(&self, from: &StateId, cmds: &[RunRequest], budget: BranchBudget) -> Result<Vec<BranchResult>, SandboxError>;
-    pub async fn sync_up(&self, plan: &SyncPlan) -> Result<StateId, SandboxError>;                    // only paths approved by storage-sync
-    pub async fn read_file(&self, s: &StateId, p: &RemotePath) -> Result<bytes::Bytes, SandboxError>;
-    pub async fn wait(&self, ops: &[OperationId]) -> Result<Vec<OperationResult>, SandboxError>;
-    pub async fn cancel(&self, op: &OperationId) -> Result<(), SandboxError>;
-}
-/* impl polaris_sdk::SandboxBackend for ContreeBackend */
+pub struct DirectoryStateId(u64);
+pub struct ImageId(String);
+pub struct PendingOperation { /* operation id, source image and optional directory state */ }
+pub struct ContreeBackend<C: polaris_sdk::registry::McpToolClient> { /* bounded client */ }
+// connect(client, validated_loopback_endpoint, explicit_egress_consent)
+// run / branch_run / wait_operations / cancel_operation
+// sync_plan_uploads: exact approved path set, deny rules, file-size and hash checks
+// list_images / get_image / list_files / read_file / grep / upload_bytes / download
+// The existing MCP hub owns HTTP, process lifetime and effect authorization.
 pub fn resolve_env(m: &RepoManifest, catalog: &[ImageCandidate]) -> Result<ResolvedImage, SandboxError>;   // exact-match first; ranker injected
 pub trait ImageRanker { fn rank(&self, m: &RepoManifest, c: &[ImageCandidate]) -> Result<Vec<Scored>, SandboxError>; }   // S1 wired at composition root
 pub enum SandboxError { SidecarUnavailable, ToolInventoryDrift { missing: Vec<String> }, AuthRequired, Remote { op: OperationId, message: String },
@@ -4682,8 +4749,8 @@ Tool-name strings and request/response field names above come from the verified 
 - [ ] Spike S0-13 (keyed): start the sidecar, call `get_guide`, `list_images(tag_prefix)`, `run`, and a branch from a `directory_state_id`; record the real auth mechanism, tool schemas, whether `run` returns a new state id, operation lifetimes and limits. BLOCKED-ON-ACCESS (Contree/Token Factory Sandboxes access and key).
 - [ ] Prepare the sidecar install in an isolated venv under `~/.polaris/sidecars/contree` (needs Python and `pip`/`uv`; `uv` is not installed on this machine yet); pin the `contree-mcp` version once S0-13 shows which one works.
 - [ ] Bind the sidecar to loopback only (verify the flag/behavior of `--mode http`; if it binds all interfaces, wrap or firewall it) and treat the unauthenticated local MCP port as a credential-bearing endpoint; make the port configurable (default 9452).
-- [ ] Implement the tool-inventory check: compare `tools/list` with the pinned 18 and fail closed on missing tools, ignore extras with a warning (drift detection; the server is third-party and may change).
-- [ ] Implement `SandboxBackend` mapping: exec -> `run`; file transfer -> `upload`/`download`/`rsync`; reads -> `list_files`/`read_file`/`grep`; long runs -> `get_operation`/`wait_operations`/`cancel_operation`; cancellation must call `cancel_operation`, not just drop the future.
+- [ ] Implement the tool-inventory check: compare `tools/list` with the pinned 19 and fail closed on missing or unexpected tools (drift detection; the server is third-party and may change).
+- [ ] Complete and validate the stateless typed MCP mapping: `run`, upload/download/approved-path sync, image reads and operation wait/cancel. No persistent SDK SandboxBackend handles may be invented. Cancellation must confirm the owned operation outcome; dropping a future alone is not remote cleanup.
 - [ ] Implement `StateId` branching helpers and `BranchBudget` (max concurrent branches 3-5, from the chatlog's `ConTreeSandboxesSemaphore` default; max total VM time); the search policy itself (which branch to expand) stays in `polaris-runtime`.
 - [ ] Implement `resolve_env`: exact repo/commit match against catalog entries from `list_images`; then deterministic heuristics; then an injected `ImageRanker` (S1) for ambiguity. Never trust the chatlog's invented `nebius.cr/swe-bench/...` naming; image names come from `list_images`.
 - [ ] Treat `registry_token_obtain` / `registry_auth` outputs as secrets (redaction layer, never logged, never in events).
@@ -4805,6 +4872,8 @@ pub enum DataLabError { NotOptedIn, NotVerified, ResidualSecret, SchemaViolation
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-nebius-cloud/crates/ai-cloud` | L2 | lib | `polaris-nebius-cloud` | P6 |
+
+**E41 implementation checkpoint.** AI Cloud contracts now use checked budget reservations, terminal TTL handling, strict mTLS/IP ingress validation and owner-label selection. Provider transport is absent, so these local contracts do not establish a live Nebius request or remote gateway lifecycle. [Evidence](evidence/continuation-20261026-e41/README.md).
 
 **Purpose.** Provisions, starts, stops and deletes a Linux VM on Nebius AI Cloud that runs a remote OpenShell gateway (execution tier E4), and hands connection details (mTLS endpoint) to `polaris-openshell-client` through an sdk type. E4 is the fallback when nested KVM or WSL2 is unavailable (S0-2) and the path for heavy builds. It is cost-sensitive: a forgotten VM bills, so every VM has an idle auto-stop, a hard TTL and a budget check. Nothing about the Nebius AI Cloud API is verified yet (UNVERIFIED); no official Rust SDK is known to us (LIKELY), so the integration path is decided by a keyed spike.
 
@@ -5062,6 +5131,8 @@ pub enum DockerError { EngineUnavailable, ApiVersion(String), ImageNotFound(Stri
 |---|---|---|---|---|
 | `crates/polaris-devenv/crates/cicd` | L2 | lib | `polaris-devenv` | P8 |
 
+**E41 implementation checkpoint.** CI execution now has bounded caps, owned cancellation cleanup and late cleanup for ambiguous create outcomes. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger execution and persistent cache acceptance remain open; output redaction follows the output cap and is not a preemptive memory limit. [Evidence](evidence/continuation-20261026-e41/README.md).
+
 **Purpose.** Defines Polaris CI pipelines (lint, build, test, matrix legs) as a typed model, runs them through an engine, and returns a `CiReport` that feeds Proof-of-Done. The default engine runs each step through the sdk `SandboxBackend` (OpenShell or Contree), so CI works without Dagger. The Dagger engine is an optional accelerator behind a cargo feature because `dagger-sdk` 0.21.10 pulls reqwest 0.11 (VERIFIED coupling) and needs a running Dagger engine: the SDK provisions/uses a Dagger engine (a container run by a Docker-compatible runtime), so "Dagger on BuildKit" requires Docker (Docker Desktop here) and is not serverless. Time-saving figures in the chatlog (180 s -> 2.4 s) are targets to measure, not facts.
 
 **API sketch.**
@@ -5271,6 +5342,11 @@ Proposed worker caps: `s1` worker resident <= 3.0 GB (target), `ingest` worker <
 |---|---|---|---|---|
 | `crates/polaris-system-one/crates/engine` | L2 | lib | `polaris-system-one` | P4 |
 
+
+
+
+**E40 implementation checkpoint.** GlinerEngine loads explicit local model/runtime paths, requires GLINER2_DEVICE=cpu, pins fp32 and Standard execution, validates typed Choice/Score/Noul schemas, and makes punctuation normalization explicit. Native handles stay on the worker owner thread. The installed-artifact checks each cover one real input, not the full S0-4 parity/calibration workload. PII-NER, CUDA/fp16, manifests and complete acceptance remain open. [Evidence](evidence/continuation-20261026-e40/README.md).
+
 **Purpose.** Loads the Decide checkpoint (and the PII-NER checkpoint) through `gliner2-rs` on ONNX Runtime with `load-dynamic`, runs batched multi-task classification/extraction, and returns raw probabilities. Because no ONNX ships for Decide, this crate also owns the export pipeline definition, the parity gate against the Python `gliner2` reference (spike S0-4) and the supervised Python-sidecar fallback. It never decides thresholds and never touches the network except to fetch weights via `hf-hub`.
 
 **API sketch.**
@@ -5357,6 +5433,15 @@ pub enum EngineError { OrtLoad(String), OrtVersionTooOld { found: String, need: 
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-system-one/crates/client` | L2 | lib | `polaris-system-one` | P4 |
+
+
+
+
+**E40 implementation checkpoint.** S1Client implements the real SDK DecisionEngine through authenticated, message-capped local IPC with bounded connectors/deadlines, protocol negotiation and exact response validation. The actual public named-pipe connector is exercised against a child worker. The Windows connector retries raw ERROR_PIPE_BUSY (231), while access errors fail immediately. Cross-call batching and cache are absent: the wire contract has no checkpoint identity. Full kernel/supervisor composition remains open. [Evidence](evidence/continuation-20261026-e40/README.md).
+
+**E41 implementation checkpoint.** The SDK optional-trait bootstrap path and S1WorkerLifecycle readiness/generation fencing now reach the actual worker integration. Per-generation initialization and retirement preserve stale-generation boundaries. Native execution remains non-preemptive and the complete calibrated S1 phase remains open. [Evidence](evidence/continuation-20261026-e41/README.md).
+
+**E42 implementation checkpoint.** S1Client::evict_models authenticates handshake and RPC, applies each call deadline and validates a zero-or-one acknowledgement. Five new fixture cases and actual Windows child explicit/idle eviction with real reload pass. A successful RPC confirms acknowledged handle destruction, not an RSS decrease or exclusion of later admissions. Cache, cross-call batching and complete phase acceptance remain unfinished. [Evidence](evidence/continuation-20261026-e42/README.md).
 
 **Purpose.** Implements the sdk `DecisionEngine` against the `polaris-worker --mode s1` process over tonic on a Windows named pipe (uses `polaris-proto` and tonic, never `polaris-rpc`). Owns request coalescing, the xxh3 + `quick_cache` result cache, per-consumer deadlines and the deterministic fail-open/fail-closed outcome, so no caller hand-rolls timeout behaviour.
 
@@ -6199,6 +6284,11 @@ pub enum SkillError { Io(String), FrontMatter(String), TooLarge, NameCollision(S
 |---|---|---|---|---|
 | `crates/polaris-ingest` | L2 | lib | — | P5 |
 
+
+
+
+**E40 implementation checkpoint.** Concrete text, Markdown, HTML, CSV/TSV, DOCX, XLSX, PPTX and text-layer PDF parsers are implemented, with real fixture acceptance, archive expansion/name checks, XML/DOM/sheet preflight, output caps and available source locations. The worker persists untrusted provenance separately from the SDK Document, which lacks locations. A pinned published-source DOCX backport moves the resolved ZIP graph to 9.1.1, disables image previews and rejects NUL member names. Its exact source/license guard has adversarial tamper coverage; no pre-implementation Python RED run was captured. OCR is explicitly unsupported. Synchronous library allocation/CPU work precedes some checks; this crate does not provide an OS memory or preemptive time limit. [Evidence](evidence/continuation-20261026-e40/README.md).
+
 **Purpose.** Implements the sdk `DocParser` per format and normalizes documents to Markdown blocks with provenance (page, line, sheet/cell). Scanned PDF pages and images go to an OCR pair: `ocrs` (pure Rust on `rten`) and `oar-ocr` (PaddleOCR via ONNX Runtime). It runs only in `polaris-worker --mode ingest`, so a parser crash or abort cannot take down the kernel. Output is untrusted data and goes through PII masking before any cloud call.
 
 **API sketch.**
@@ -6452,6 +6542,11 @@ pub enum BrowserError { StaleElement(ElementRef), Guest(String), Decode(String),
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `crates/polaris-hacker` | L3 | lib | — | P7 |
+
+
+
+
+**E40 implementation checkpoint.** Static AST/DFA observations carry bounded source spans and metadata-only evidence; deterministic boundary generation and SDK sandbox stress retain actual inputs/results. An owned cancellation task waits for ambiguous create completion and attempts destroy after execution failures or caller cancellation. Static async detection is explicitly heuristic; clean output proves neither safety nor isolation. Live TSan/Miri/Loom, race/CUDA/performance analysis and kernel command assembly remain open. [Evidence](evidence/continuation-20261026-e40/README.md).
 
 **Purpose.** Implements `/hack` and `/redteam`: it tries to break a patch without spending model tokens. Three stages: static AST/DFA detectors, deterministic boundary-input generation (Needle 3 optional), and dynamic stress runs inside a sandbox obtained through the sdk `SandboxBackend` trait. "Zero-token" is enforced by construction: the crate takes no `ChatModel` and has no dependency that can reach one; `tokens_used = 0` is derived from a measured counter, not asserted. Escalation to S2 happens in the caller, only for findings whose confidence is `Reproduced`.
 
@@ -6945,7 +7040,11 @@ pub enum Screen { Welcome, Conversation, Model, Provider, Status, Usage, Stats, 
 |---|---|---|---|---|
 | `crates/polaris-ui/crates/gui` | L6 | lib | `polaris-ui` | P9 |
 
-**Purpose.** The Slint view layer for `polaris-desktop`: `.slint` components (chat, sessions, diff viewer, HUD, latency graph, sub-agent tree) plus Rust controllers that copy `ViewState` into Slint models and forward UI callbacks as `Action`s. Generated Slint code is isolated in this crate by `slint-build`. It reuses the web welcome-page tokens (`#76B900`, black canvas) through `polaris-ui-model::tokens`, so desktop, web and TUI look like one product. Mobile (Android Rust-only, iOS) is declared v2 and not built now.
+**Status.** IN PROGRESS - desktop welcome + offline session view (real local kernel session, no model replies); daemon `--connect` (P9 RPC), model execution (P3), attachments, speech input and message search indexing open.
+
+**Current scope (2026-10-28).** Two screens. (1) Welcome screen (ASCII aurora, design unchanged): sidebar with the North Star brand and nav buttons (Models/Usage/Settings tooltips say the page is not in the desktop shell yet); topbar Context toggle; heading; shared composer; About panel with `AboutSlint` (ADR-014 attribution). Sending from the welcome page switches to the session view. (2) Session view: sidebar (New session, full-text Search over registry history, sessions grouped by workspace folder with relative times and an accent bar on the active one, About); top bar with the session title; conversation list; docked composer; status line `workspace folder · stored branch · mode · model · effort · "Offline · no model replies"`. The aurora pauses in the session view (measured 1.39% of one core in the session view vs ~19-28% animated welcome). **Composer v2** (`crates/polaris-ui/crates/gui/ui/composer.slint`, shared by both screens): input box (autofocused when a screen appears; Enter sends, Shift+Enter newline) plus toolbar: attach (disabled: "Attachments need the model/ingest profile"), mode chip (plan "asks first" / auto), model+effort menu, mic (disabled: "Speech input is not available yet"), green send button; tray strip with `$directive` chips (websearch, subagents, skills, mcp, rag; help text from `polaris_ui_model::completion::DIRECTIVE_HELP`) that append the directive to the draft. **Models are not hardcoded:** `AppOptions` carries `models: Vec<ModelOption{id,label}>` + `default_model`, built by `apps/polaris-desktop/src/models.rs` from the loaded `[nebius.effort]` map; an empty list is `GuiError::NoModels`. The `polaris_ui_gui::backend` module defines `BackendRequest` (Open/Submit/List/Search/Close) and `BackendEvent` (Starting/Opened/Message/Committed/Rejected/Sessions/Hits/Failed/Closed), implemented by the desktop bridge. Still open: model execution / assistant replies (P3), attachments, speech input, message indexing for search, Slint pages Models/Usage/Settings. Tokens: `build.rs` generates a Slint `Tokens` global from `polaris_ui_model::tokens::ROLES` plus `src/palette.rs` `WELCOME_ROLES`; no hand-copied colours in `.slint` (a test enforces it). The crate uses `#![deny(unsafe_code)]` instead of `forbid` because Slint-generated code carries `allow(unsafe_code)`. Descriptors: `specs/descriptors/ui_gui_tokens.json`, `ui_gui_welcome.json`, `ui_gui_composer.json`, `ui_gui_session_view.json`. Tests (VERIFIED 2026-10-28): 36 (composer 10, window 8, controller 13, tokens 4, render 1).
+
+**Purpose (full P9 target; the items below the welcome shell are deferred).** The Slint view layer for `polaris-desktop`: `.slint` components (chat, sessions, diff viewer, HUD, latency graph, sub-agent tree) plus Rust controllers that copy `ViewState` into Slint models and forward UI callbacks as `Action`s. Generated Slint code is isolated in this crate by `slint-build`. It reuses the web welcome-page tokens (`#76B900`, black canvas) through `polaris-ui-model::tokens`, so desktop, web and TUI look like one product. Mobile (Android Rust-only, iOS) is declared v2 and not built now.
 
 **API sketch.**
 ```rust
@@ -6961,13 +7060,13 @@ pub enum GuiError { #[error("slint platform: {0}")] Platform(String), /* ... */ 
 ```
 Note: `arc-swap` is pinned in `workspace.toml` but not in this crate's planned `ext`; the simplest wiring is `slint::invoke_from_event_loop` pushing owned snapshots, which needs no extra crate (decide at implementation).
 
-**Dependencies.** Internal: `polaris-sdk`, `polaris-ui-model`. External: `slint = 1.18.1` (features std, backend-winit, renderer-femtovg, renderer-software, accessibility, compat-1-2), `slint-build = 1.18.1`.
+**Dependencies.** Internal: `polaris-ui-model`, `polaris-ui-ascii-aurora`, `polaris-sdk`. External: `slint = 1.18.1` (features std, backend-winit, renderer-femtovg, renderer-software, accessibility, compat-1-2), `tracing`, `thiserror`; build: `slint-build = 1.18.1`, `polaris-ui-model`; dev: `i-slint-backend-testing = =1.18.1`, `proptest`.
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: ViewState to Slint model adapter, action callback bridge, token global generation, diff viewer model.
-- [ ] Record the Slint licence decision (GPLv3 / royalty-free / commercial) in the licence ADR before any binary is published (plan: decided with cargo-deny in P0).
-- [ ] Add `build.rs` with `slint-build`; keep generated code in `OUT_DIR`, never committed.
-- [ ] Generate a Slint `Tokens` global from `polaris-ui-model::tokens` so colours are not hand-copied.
+- [x] Record the Slint licence decision in the licence ADR: royalty-free, ADR-014 (attribution via `AboutSlint`; `cargo deny check licenses` reports "licenses ok").
+- [x] Add `build.rs` with `slint-build`; keep generated code in `OUT_DIR`, never committed.
+- [x] Generate a Slint `Tokens` global from `polaris-ui-model::tokens` (+ `WELCOME_ROLES`) so colours are not hand-copied.
 - [ ] Implement `ChatView` (streaming text, tool activity collapse, code with line numbers, diff rows) with virtualised list.
 - [ ] Implement `DiffViewer` with per-hunk approve/reject (maps to `Approval` commands); AST-chunk granularity only if the kernel emits it.
 - [ ] Implement `HudBar` (token weather) and a latency graph S1 vs S2 fed by telemetry snapshots; empty-state when no data (no fake series).
@@ -6990,16 +7089,49 @@ Note: `arc-swap` is pinned in `workspace.toml` but not in this crate's planned `
 |---|---|---|---|---|
 | Slint Model Adapter | function | `apply` | `crates/polaris-ui/crates/gui/src/adapter.rs` | `conversation_rows_match_view`, `empty_hud_shows_no_data_state`, `updates_are_applied_on_event_loop_only`, `tool_expansion_flag_propagates` |
 | Action Bridge | function | `on_action` | `crates/polaris-ui/crates/gui/src/actions.rs` | `submit_button_emits_submit`, `approve_hunk_emits_approval`, `keyboard_shortcut_matches_keymap_table` |
-| Design Tokens Global | module | `tokens` | `crates/polaris-ui/crates/gui/src/tokens.rs` | `accent_equals_model_accent`, `canvas_is_pure_black`, `all_roles_present` |
+| Design Tokens Global | module | `tokens` | `crates/polaris-ui/crates/gui/src/tokens.rs` | `accent_equals_model_accent`, `canvas_is_pure_black`, `all_roles_present` (descriptor: `specs/descriptors/ui_gui_tokens.json`) |
+| Welcome Screen | module | welcome shell | `specs/descriptors/ui_gui_welcome.json` | per the descriptor |
 
 **Risks & open questions.**
-- VERIFIED (plan): Slint is GPLv3 / royalty-free / commercial; licence decision is a P0 deliverable. Not decided yet.
+- RESOLVED: Slint licence is royalty-free (ADR-014); condition 2(a) attribution is met by `AboutSlint` in the About panel.
 - UNVERIFIED: femtovg on a GTX 1650 box and in headless CI; software renderer is the fallback. Binary size and compile time (Slint is heavy) are unmeasured.
 - UNVERIFIED: Slint 1.18.1 mobile status (Android Rust-only was stated in workspace.toml; not verified here).
 - LIKELY: P9 is late; the GUI must not block the MVP (end of P4). Keep it out of default workspace checks if compile time hurts.
 - Open: which Slint testing/screenshot API is available for snapshot tests (to confirm).
 
 **Chatlog / demo sources.** msg 0 (Gui: Slint), msg 1 (Slint desktop, light and fast), msg 3 (latency graphs S1/S2 and sub-agent tree in desktop), msg 1 action plan (Slint GUI with themes and an interactive diff viewer), msg 23 (`/parallel-dag` in GUI), msg 37 (Slint mobile v2, swipe review, Quick Chips; the chatlog said Tauri v2 Mobile, which D6 replaced with Slint). Corrected: Tauri dropped (D6).
+
+### `polaris-ui-ascii-aurora` — CPU-rendered ASCII northern-lights background for the desktop welcome screen
+
+| Path | Layer | Kind | Parent | Phase |
+|---|---|---|---|---|
+| `crates/polaris-ui/crates/ascii-aurora` | L6 | lib | `polaris-ui` | P9 |
+
+**Status.** IN PROGRESS - ASCII aurora backs the desktop welcome screen and pauses in the session view (ADR-016); daemon `--connect` P9 open.
+
+**Purpose.** Pure-Rust animated ASCII-art port of the web demo's northern lights: procedural field -> luminance -> glyph ramp -> glyph tiles baked once from JetBrains Mono -> blitted into a reused RGBA buffer that `polaris-ui-gui` shows as a Slint `Image` (50 ms / 20 fps `slint::Timer`, double-buffered, paused while minimised/hidden; `--static` / `POLARIS_REDUCED_MOTION` draws one still frame).
+
+**API.** `Aurora`, `AuroraConfig`, `FrameSize`, `FrameClock`, `GlyphAtlas`, `AuroraError`, `RAMP`.
+
+**Dependencies.** External: `thiserror`, `ab_glyph` (0.2.32).
+
+**Tests.** Descriptors: `specs/descriptors/ui_ascii_aurora_field.json`, `specs/descriptors/ui_ascii_aurora_ramp.json`, `specs/descriptors/ui_ascii_aurora_atlas.json`, `specs/descriptors/ui_ascii_aurora_blit.json`, `specs/descriptors/ui_ascii_aurora_clock.json`. CPU budget: see ADR-016 and `@prime/evidence/ui/desktop/desktop-verification.txt` (VERIFIED 2026-10-28: 19.4% of one core at 20 fps, 0% minimised/static; `render_rgba` 9.4 ms at 1920x1080 in release). Actual RAMP order is `" .':;toXS#%8@"` (sorted by measured ink coverage of JetBrains Mono).
+
+### `polaris-ui-session` — frontend-neutral offline session host over the real local kernel
+
+| Path | Layer | Kind | Parent | Phase |
+|---|---|---|---|---|
+| `crates/polaris-ui/crates/session` | L6 | lib | `polaris-ui` | P9 |
+
+**Status.** IN PROGRESS - extracted from `polaris-cli` so the terminal and the Slint desktop share one adapter (2026-10-28).
+
+**Purpose.** `OfflineSession` opens or resumes one durable local session (real redb log, CAS, SQLite registry, signed local control), streams its ordered committed records with bounded UTF-8 text for `DirectiveApplied` and `UserInputSubmitted` (tagged by `RecordTextKind`), and routes a submitted line: exactly one directive with no prose, slash command or mention goes to `apply_directive`, everything else is recorded verbatim with `submit_user_input`. It never generates model replies. `list_sessions`, `session_exists` and `search_history` read the registry without starting a kernel. Search finds only messages that were indexed into the registry; typed user input is not indexed yet.
+
+**API.** `OfflineSession` (`open`, `submit`, `apply_directive`, `submit_user_input`, `next_record`, `list_sessions`, `session_exists`, `close`), `ResolvedRecord`, `RecordTextKind`, `SessionHostError`, `list_sessions`, `session_exists`, `search_history`.
+
+**Dependencies.** Internal: `polaris-sdk`, `polaris-kernel`. External: `tokio`, `thiserror`; dev: `tempfile`.
+
+**Tests.** Descriptor: `specs/descriptors/ui_session_host.json`.
 
 ### `polaris-ui-web` — Leptos components (SSR + hydrate), the approved welcome page, PWA manifest and service worker assets
 
@@ -7212,11 +7344,16 @@ Dropped from the reference: `D` as an implicit data toggle. Normal Polaris shows
 |---|---|---|---|---|
 | `apps/polaris-desktop` | L7 | app | none | P9 |
 
-**Purpose.** Hosts the `polaris-ui-gui` Slint window and bridges it to the kernel event stream. It runs an embedded kernel by default or connects to a running `polarisd` over a named pipe (Windows) / UDS (Linux leg) or mTLS TCP. It owns the Tokio runtime and the Slint event loop and keeps them apart: kernel work runs on Tokio threads, UI updates are marshalled onto the Slint thread. Mobile (Android Rust-only, iOS) is declared v2; this crate only keeps the entry point mobile-ready (library entry plus thin `main`), without building those targets.
+**Status.** IN PROGRESS - desktop welcome + offline session view (real local kernel session, no model replies); daemon `--connect` (P9 RPC), model execution (P3), attachments, speech input and message search indexing open.
+
+**Current scope (2026-10-28).** Binary `polaris-desktop`, args `[--static] [--workspace <dir>] [--state-dir <dir>] [--log-dir <dir>]`; `--connect` is rejected until P9. Loads config like the TUI (discover, read_layers, load) and builds the model list from `[nebius.effort]` (`src/models.rs`: distinct models in low-to-max order, default = the `high` model). `src/bridge.rs` runs a background thread with a tokio runtime that implements `polaris_ui_gui::backend` (BackendRequest Open/Submit/List/Search/Close to BackendEvent Starting/Opened/Message/Committed/Rejected/Sessions/Hits/Failed/Closed) over `polaris-ui-session`: a real offline kernel session, started lazily on the first send; the session store defaults to `<workspace>/.polaris/state` (shared with the TUI). Measured live (release, Windows): session open 31 ms new / 13 ms resume; a restart lists the session and resume replays the messages. No model replies (P3), no daemon `--connect` (P9 RPC), no attachments or speech input, no message indexing for search. Logging goes through `polaris-log` with the `polaris-security` `DfaRedactor`. Release builds use the Windows GUI subsystem. Tests (VERIFIED 2026-10-28): 17 (args 5, bridge 8, models 4). Descriptors: `specs/descriptors/ui_desktop_main.json`, `ui_desktop_bridge.json`, `ui_desktop_models.json`. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` and `live-1..4` PNGs.
+
+**Purpose (full P9 target; the embedded offline bridge exists, the daemon bridge is deferred).** Hosts the `polaris-ui-gui` Slint window and bridges it to the kernel event stream. It runs an embedded kernel by default or connects to a running `polarisd` over a named pipe (Windows) / UDS (Linux leg) or mTLS TCP. It owns the Tokio runtime and the Slint event loop and keeps them apart: kernel work runs on Tokio threads, UI updates are marshalled onto the Slint thread. Mobile (Android Rust-only, iOS) is declared v2; this crate only keeps the entry point mobile-ready (library entry plus thin `main`), without building those targets.
 
 **API sketch.**
 ```text
-polaris-desktop [--connect <ENDPOINT>] [--config PATH] [--theme dark|system]
+polaris-desktop [--static] [--workspace <dir>] [--log-dir <dir>]               # current
+polaris-desktop [--connect <ENDPOINT>] [--config PATH] [--theme dark|system]   # P9 target; --connect rejected until P9
 ```
 ```rust
 fn main() -> miette::Result<()>;                                   // thin; builds runtime, installs aws-lc-rs, starts UI
@@ -7226,11 +7363,11 @@ struct Bridge { /* subscribes to events, calls polaris_ui_model::reduce, pushes 
 pub enum DesktopError { /* thiserror: Slint platform, Kernel, Rpc, Config */ }
 ```
 
-**Dependencies.** Internal: `polaris-kernel`, `polaris-ui-gui`, `polaris-rpc`, `polaris-config`, `polaris-log`. External: `tokio = 1.54.1`, `slint = 1.18.1`, `slint-build = 1.18.1`, `rustls = 0.23.46`. (A Windows GUI-subsystem build setting is not a lint attribute and does not conflict with D10; confirm the exact mechanism at implementation.)
+**Dependencies.** Internal (current): `polaris-ui-gui`, `polaris-ui-session`, `polaris-log`, `polaris-security`, `polaris-sdk`, `polaris-config`. `polaris-kernel` and `polaris-rpc` are not direct deps (the kernel arrives through `polaris-ui-session`; `polaris-rpc` returns with the P9 daemon bridge; the P9 target list was `polaris-kernel`, `polaris-ui-gui`, `polaris-rpc`, `polaris-config`, `polaris-log`). External: `tokio = 1.54.1`, `slint = 1.18.1`, `slint-build = 1.18.1`, `rustls = 0.23.46`, `miette`, `tracing`. (A Windows GUI-subsystem build setting is not a lint attribute and does not conflict with D10; confirm the exact mechanism at implementation.)
 
 **TODO.**
 - [ ] Write JSON descriptors (prompt.md §6.3) for: runtime/UI thread bridge, kernel mode selection, shutdown sequence.
-- [ ] Replace the doc-only lib skeleton with `src/main.rs` + bin target `polaris-desktop`.
+- [x] Replace the doc-only lib skeleton with `src/main.rs` + bin target `polaris-desktop` (welcome shell).
 - [ ] Install the rustls aws-lc-rs provider and choose the allocator at startup, same as the CLI.
 - [ ] Implement the bridge: kernel event stream to `reduce` to Slint model update on the event loop; commands from Slint callbacks to the kernel. No blocking calls on the Slint thread.
 - [ ] Implement embedded and remote modes behind the same `KernelApi` generic; remote reuses `polaris-rpc::connect`.
@@ -7252,13 +7389,14 @@ pub enum DesktopError { /* thiserror: Slint platform, Kernel, Rpc, Config */ }
 **Test-first descriptors.**
 | logic_name | type_of | name | file_path | test names |
 |---|---|---|---|---|
+| Desktop Main | function | `main` | `specs/descriptors/ui_desktop_main.json` | per the descriptor |
 | Kernel Mode Selection | function | `select_mode` | `apps/polaris-desktop/src/mode.rs` | `defaults_to_embedded`, `connect_flag_selects_remote`, `plaintext_remote_rejected`, `invalid_endpoint_is_error` |
 | UI Thread Bridge | struct | `Bridge` | `apps/polaris-desktop/src/bridge.rs` | `events_reduced_in_order`, `ui_updates_only_via_event_loop`, `lagging_ui_drops_to_snapshot_not_unbounded_queue` |
 | Shutdown Sequence | async_function | `shutdown` | `apps/polaris-desktop/src/shutdown.rs` | `reaper_runs_before_exit`, `second_close_is_idempotent` |
 
 **Risks & open questions.**
 - UNVERIFIED: Slint plus Tokio integration details; dedicated runtime thread is the intended shape.
-- VERIFIED (plan): Slint licence decision pending (P0); GUI is P9 (could), not MVP.
+- RESOLVED: Slint licence is royalty-free (ADR-014); GUI is P9 (could), not MVP.
 - UNVERIFIED: GPU renderer on the GTX 1650 test machine and in CI; software renderer is the fallback.
 - LIKELY: desktop and CLI duplicate startup code; extract to a shared bootstrap in `polaris-config`/kernel or accept small duplication (open).
 
@@ -7406,6 +7544,15 @@ pub enum DaemonError { /* thiserror: Config, Tls, Bind, AlreadyRunning, Kernel *
 | Path | Layer | Kind | Parent | Phase |
 |---|---|---|---|---|
 | `apps/polaris-worker` | L7 | app | none | P4 |
+
+
+
+
+**E40 implementation checkpoint.** The executable serves authenticated s1 and ingest modes. Parent-issued 64-byte credentials enter through stdin; the parent keeps that pipe open until shutdown. S1 loads/runs/drops ORT on one bounded owner thread; ingestion uses a permit-retaining blocking owner and real bounded/hash-verifying CAS. Shutdown signals before await, includes lock contention in its drain deadline, bounds transport grace to 120 seconds and final runtime waiting to 30 seconds; none of these preempt started native or blocking work. Shutdown reports drain timeouts honestly; native work needs process isolation/force-stop supervision. SDK SpawnSpec still lacks credential bootstrap plumbing, so automatic supervisor provisioning remains unfinished. Nano, idle/RSS eviction, complete pressure policy and deployment ACL acceptance remain open. [Evidence](evidence/continuation-20261026-e40/README.md).
+
+**E41 implementation checkpoint.** SDK optional-trait bootstrap now provisions authenticated worker startup, superseding the E40 limitation that automatic supervisor credential provisioning was not wired. A one-shot stdin secret is removed after use, with pending or unconfirmed kill outcomes preserved as such. The supervisor initializes and retires each generation independently, bounds startup, and surfaces fatal uncertain cleanup. S1WorkerLifecycle readiness and generation fencing are connected to actual worker integration. Native work is not preempted by a timeout; process isolation and confirmed termination remain necessary for resource-release claims. [Evidence](evidence/continuation-20261026-e41/README.md).
+
+**E42 implementation checkpoint.** The native inference owner now enforces a validated idle TTL (default 45 seconds, CLI --idle-ttl-ms from 1 ms to one day) without dropping a model during native work. Cancelled queued decisions do not renew the deadline. Explicit eviction acknowledges after the owner drops the session. A real 46-second idle case failed before implementation and passes after it; authenticated child explicit/idle eviction and subsequent real reload both pass. These are handle-lifecycle cases, not RSS, admission-pause, preemption or calibrated-parity proof. [Evidence](evidence/continuation-20261026-e42/README.md).
 
 **Purpose.** Isolates the FFI-heavy and crash-prone work from the kernel process (decision D3: `panic = "unwind"` plus native work in supervised children). `--mode s1` hosts the GLiNER2 engine (Decide plus PII-NER) on ONNX Runtime; `--mode ingest` runs document parsers and OCR on untrusted files (the most crash-prone); `--mode nano` bridges the optional Needle 3 sidecar. It serves the `WorkerService` gRPC API over a Windows named pipe, reports health and memory to the supervisor, lazy-loads models, and evicts them on idle TTL, memory pressure or a force-evict request before heavy builds. A crash kills only this process; the kernel's supervisor restarts it within intensity limits.
 
@@ -8008,6 +8155,8 @@ pub enum XtaskError { /* thiserror: Io, Toml, Json, Cargo(exit status + captured
 **Chatlog / demo sources.** Plan "Execution steps" (workspace.py subcommands, dep-probe, mechanical consistency pass), prompt.md sections 1, 6.3 and 7 (lint set, test-first descriptors, Miri/Kani/fuzz), workspace.toml (`xtask` responsibilities), chatlog msg 26 (spdlog/regex requests: inventory items), msg 38 and 40 (user additions that the inventory must cover). Demo: `scripts/build_static.py` and `scripts/test_*.py` show the demo's own verification scripting; no code reused.
 
 ---
+
+**E43 release SBOM checkpoint (2026-10-26).** `cargo xtask release-sbom` emits deterministic SPDX 2.3 for the full locked Cargo graph from offline metadata, with an explicit timestamp, BLAKE3 lockfile digest, atomic no-clobber writes, and an explicit force option. Two outputs with the same timestamp were byte-identical. The official SPDX schema only checks that `creationInfo.created` is a string; it does not enforce RFC3339. The initial helper accepted the impossible-date fixture, a missed validation now retained in the evidence history. The independent RFC3339 check accepts the real document (exit 0) and rejects that fixture (exit 1); official schema validation rejects a non-string `created` value (exit 1). This is not a target-binary inventory, license validation, or security audit. `cargo deny check advisories` reports six unmaintained crates; `cargo vet --locked` reports 804 unvetted dependencies. [Commands and raw output](evidence/continuation-20261026-e43/commands.json).
 
 ## 14. Chatlog traceability matrix (semantic)
 

@@ -1,0 +1,120 @@
+{
+  "type_of": "pipeline",
+  "name": "KernelAgentToolRunner",
+  "file_path": "crates/polaris-kernel/src/agent_tools.rs",
+  "logic_name": "Bound kernel agent tool dispatch",
+  "test_list": [
+    {
+      "test_name": "model_loop_mutates_then_waits_for_a_real_host_answer",
+      "description": "Actual edit, durable question, signed host answer and model continuation share one frame driver."
+    },
+    {
+      "test_name": "denied_later_call_prevents_every_mutation",
+      "description": "Deny a later call before any admitted mutation in the same batch executes."
+    },
+    {
+      "test_name": "dropping_a_waiting_call_persists_request_interruption",
+      "description": "Dropping a waiter signals an owned worker that durably interrupts the request."
+    },
+    {
+      "test_name": "waiting_question_allows_sibling_workspace_reads",
+      "description": "A pending human request does not consume every immutable workspace read slot."
+    },
+    {
+      "test_name": "independent_runners_share_one_workspace_mutation_lease",
+      "description": "Separate runners use the same kernel lease manager and reject the stale second writer."
+    },
+    {
+      "test_name": "write_requires_explicit_absence_or_revision",
+      "description": "Missing expected_base is rejected, preserving None as explicit absence."
+    },
+    {
+      "test_name": "mutation_result_budget_is_rejected_during_admission",
+      "description": "Reject an insufficient driver result budget before side effects."
+    },
+    {
+      "test_name": "shutdown_interrupts_and_drains_waiting_request_owners",
+      "description": "Shutdown drains accepted question owners and durable failed tool completions."
+    },
+    {
+      "test_name": "contended_mutations_do_not_reserve_all_read_slots",
+      "description": "Queued writers leave immutable-read admission available."
+    },
+    {
+      "test_name": "cancelling_a_queued_mutation_does_not_wait_for_current_holder",
+      "description": "Cancellation promptly removes a lease waiter."
+    },
+    {
+      "test_name": "run_tests_without_execution_profile_fails_before_activity",
+      "description": "Reject an unconfigured sandbox profile during admission, before reviews or tool activity."
+    },
+    {
+      "test_name": "custom_results_bind_exact_call_and_content",
+      "description": "Separate durable call-bound result evidence from model-visible content."
+    },
+    {
+      "test_name": "mutation_command_id_preserves_exact_diff_authority",
+      "description": "Preserve the preauthorized command identity through exact diff verification."
+    },
+    {
+      "test_name": "host_cancels_waiting_child_preserving_root_and_sibling",
+      "description": "Signed host cancellation interrupts only the actual child subtree."
+    },
+    {
+      "test_name": "production_verifier_accepts_real_mutation_and_rejects_forged_link",
+      "description": "Accept a real mutation, reject substituted unrecorded result evidence and changed source."
+    },
+    {
+      "test_name": "targeted_runner_cancel_preserves_shared_parent_and_peer",
+      "description": "Runner cancellation preserves its supplied parent and peer runner."
+    },
+    {
+      "test_name": "configured_test_tool_waits_for_host_then_proves_actual_source",
+      "description": "Opt-in real OpenShell execution; scripted model/count only. Exact reviewed fixed fixture commands, real ordinary/falsifier tests, durable result and current-source completion proof, no leaks."
+    },
+    {
+      "test_name": "local_model_drives_real_revision_tool_and_continuation",
+      "description": "Opt-in actual pinned llama.cpp model and exact tokenizer through the production prompt assembler, frame driver, authorized kernel tool, verifier and durable journal. Readonly; not full M3."
+    },
+    {
+      "test_name": "truncated_human_answer_is_retrievable_only_by_its_runner",
+      "description": "A bounded ask_user reply exposes its exact real answer CID to the asking runner under Read capability; a peer runner still cannot expand it."
+    },
+    {
+      "test_name": "human_wait_rechecks_expired_execute_authority",
+      "description": "Expiry during a durable human wait must prevent publishing a successful agent tool result while preserving the actual host answer."
+    },
+    {
+      "test_name": "local_model_edits_and_runs_real_sandbox_with_fixture_safety",
+      "description": "Opt-in actual local S2/tokenizer, revision/edit/test tools, exact host execution review, real OpenShell ordinary+falsifier and current-source completion. Semantic S1 assessment is explicitly synthetic, so this is not calibrated hybrid acceptance."
+    }
+  ],
+  "dependencies": [
+    "KernelHandle",
+    "FrameMutationService",
+    "HumanRequestService",
+    "SandboxExecution",
+    "FrameStepBinding",
+    "KernelToolRunner"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json",
+    "tokio",
+    "tokio-util"
+  ],
+  "inputs": [
+    {
+      "name": "binding",
+      "type": "FrameToolBinding",
+      "description": "Sealed identity captured from the actual runtime frame."
+    },
+    {
+      "name": "call",
+      "type": "ToolCall",
+      "description": "Untrusted model call, fully admitted before any call in the batch executes."
+    }
+  ],
+  "output_type": "Result<ToolResultRef, ToolError>",
+  "output_description": "Real bounded tool results with durable call linkage; execution approval is supplied only by the host."
+}

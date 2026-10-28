@@ -1,0 +1,24 @@
+{
+  "type_of": "pipeline",
+  "name": "S1 checkpoint identity and decision cache",
+  "file_path": "crates/polaris-system-one/crates/client/src/cache.rs",
+  "logic_name": "Checkpoint Bound System-One Decision Cache",
+  "test_list": [
+    { "test_name": "health_identity_requires_a_complete_digest_and_nonzero_generation", "description": "Health identity requires a valid 32-byte digest paired with a nonzero model generation." },
+    { "test_name": "cache_key_binds_model_generation_schema_and_masked_context", "description": "Changing checkpoint identity, load generation, question schema, masked text, or context causes a miss." },
+    { "test_name": "cache_digest_collision_with_different_request_bytes_is_a_miss", "description": "A digest-key collision with different serialized request bytes is rejected as a miss." },
+    { "test_name": "cache_capacity_and_identity_change_clear_old_entries", "description": "Insertion beyond capacity evicts the oldest entry and switching model identity clears prior cached requests." },
+    { "test_name": "health_has_no_loaded_model_identity_before_first_decision", "description": "Health omits model identity while the worker has not loaded its native model." },
+    { "test_name": "engine_identity_binds_model_runtime_and_normalization_inputs", "description": "The identity covers required model artifacts, ONNX runtime bytes, text normalization, and engine thread count." },
+    { "test_name": "worker_without_loaded_identity_never_serves_cached_answers", "description": "Repeated requests are not served from a cache when authenticated health omits model identity." },
+    { "test_name": "result_from_prior_model_generation_is_not_cached_under_reloaded_identity", "description": "A response spanning a worker identity change is not tagged with the new generation." }
+  ],
+  "dependencies": ["polaris_proto::pb::HealthResponse", "polaris_system_one_engine::GlinerEngine", "polaris_sdk::system_one::DecisionRequest"],
+  "libraries": ["blake3", "prost", "tokio"],
+  "inputs": [
+    { "name": "model_identity", "type": "authenticated worker health identity", "description": "The worker-computed digest and load generation for the currently loaded model/runtime/normalization inputs." },
+    { "name": "request", "type": "serialized DecisionRequest", "description": "The complete schema, already-masked primary text, and optional context." }
+  ],
+  "output_type": "bounded cached Decision",
+  "output_description": "An in-memory cache bounded by 256 entries and four MiB of combined serialized request/decision bytes, keyed by loaded-model identity and the full request. Cache lookup rechecks fresh authenticated identity; stored request bytes are compared on hits."
+}

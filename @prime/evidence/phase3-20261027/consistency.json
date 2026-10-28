@@ -1,0 +1,13 @@
+{
+  "source_fingerprint_sha256": "f4eb133b9ff519116919508b00b71d71db19edba89c97de6d017f709d308e618",
+  "source_files": 1241,
+  "rust_files": 760,
+  "workspace_packages": 93,
+  "external_aliases": 168,
+  "sealed_hashes": 1250,
+  "phase3_exit": "OPEN",
+  "ui": "DEFERRED",
+  "phase2": "PAUSED",
+  "live_token_factory_contree": "BLOCKED-ON-ACCESS",
+  "code_intel_strict_arithmetic": "FAIL (38 violations retained)"
+}

@@ -1,0 +1,137 @@
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+error[E0425]: cannot find type `BurstRequest` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:20:38
+   |
+20 | fn requests(count:usize)->Result<Vec<BurstRequest>,Box<dyn Error>> {
+   |                                      ^^^^^^^^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+20 | fn requests<BurstRequest>(count:usize)->Result<Vec<BurstRequest>,Box<dyn Error>> {
+   |            ++++++++++++++
+
+error[E0422]: cannot find struct, variant or union type `BurstRequest` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:21:26
+   |
+21 |     (0..count).map(|_|Ok(BurstRequest{questions:vec![Question{id:QuestionId::new("relevant")?,kind:QuestionKind::Noul{statement:"The...
+   |                          ^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find type `BurstConfig` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:24:14
+   |
+24 | fn bounds()->BurstConfig{BurstConfig{max_owned_tasks:4,request_timeout:Duration::from_secs(1)}}
+   |              ^^^^^^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `BurstConfig` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:24:26
+   |
+24 | fn bounds()->BurstConfig{BurstConfig{max_owned_tasks:4,request_timeout:Duration::from_secs(1)}}
+   |                          ^^^^^^^^^^^ not found in this scope
+
+warning: unused import: `polaris_spike_s1::*`
+ --> tests\spike\s1\tests\owned_burst.rs:2:5
+  |
+2 | use polaris_spike_s1::*;
+  |     ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0425]: cannot find function `run_burst` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:28:16
+   |
+28 |     let report=run_burst(Arc::clone(&engine),requests(50)?,bounds(),&CancellationToken::new()).await?;
+   |                ^^^^^^^^^ not found in this scope
+
+error[E0433]: cannot find type `RequestOutcome` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:30:124
+   |
+30 | ...,expected);assert_eq!(record.outcome,RequestOutcome::Answered);assert!(record.latency.is_some());}
+   |                                         ^^^^^^^^^^^^^^ use of undeclared type `RequestOutcome`
+
+error[E0425]: cannot find function `run_burst` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:36:16
+   |
+36 |     let report=run_burst(Arc::clone(&engine),requests(8)?,config,&CancellationToken::new()).await?;
+   |                ^^^^^^^^^ not found in this scope
+
+warning: method call on a diverging inference variable
+  --> tests\spike\s1\tests\owned_burst.rs:37:23
+   |
+37 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::Timeout && r.latency.is_some())...
+   |                       ^^^^^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+   = note: `#[warn(method_call_on_diverging_infer_var)]` (part of `#[warn(future_incompatible)]`) on by default
+
+error[E0599]: no method named `succeeded` found for type `!` in the current scope
+  --> tests\spike\s1\tests\owned_burst.rs:37:23
+   |
+37 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::Timeout && r.latency.is_some())...
+   |                       ^^^^^^^^^ method not found in `!`
+
+error[E0609]: no field `records` on type `!`
+  --> tests\spike\s1\tests\owned_burst.rs:37:53
+   |
+37 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::Timeout && r.latency.is_some())...
+   |                                                     ^^^^^^^ unknown field
+
+error[E0433]: cannot find type `RequestOutcome` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:37:86
+   |
+37 | ...ort.records.iter().all(|r|r.outcome==RequestOutcome::Timeout && r.latency.is_some()));assert_eq!(engine.active.load(Ordering::Acq...
+   |                                         ^^^^^^^^^^^^^^ use of undeclared type `RequestOutcome`
+
+error[E0425]: cannot find function `run_burst` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:42:38
+   |
+42 |     let task=tokio::spawn(async move{run_burst(owner,requests,bounds(),&task_cancel).await});
+   |                                      ^^^^^^^^^ not found in this scope
+
+error[E0433]: cannot find type `RequestOutcome` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:45:89
+   |
+45 | ...ort.records.iter().all(|r|r.outcome==RequestOutcome::Cancelled));assert_eq!(engine.active.load(Ordering::Acquire),0);assert!(repo...
+   |                                         ^^^^^^^^^^^^^^ use of undeclared type `RequestOutcome`
+
+error[E0425]: cannot find function `run_burst` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:49:16
+   |
+49 |     let report=run_burst(engine(Duration::ZERO,true),requests(3)?,bounds(),&CancellationToken::new()).await?;
+   |                ^^^^^^^^^ not found in this scope
+
+warning: method call on a diverging inference variable
+  --> tests\spike\s1\tests\owned_burst.rs:50:23
+   |
+50 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::InvalidDecision));Ok(())
+   |                       ^^^^^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `succeeded` found for type `!` in the current scope
+  --> tests\spike\s1\tests\owned_burst.rs:50:23
+   |
+50 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::InvalidDecision));Ok(())
+   |                       ^^^^^^^^^ method not found in `!`
+
+error[E0609]: no field `records` on type `!`
+  --> tests\spike\s1\tests\owned_burst.rs:50:53
+   |
+50 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::InvalidDecision));Ok(())
+   |                                                     ^^^^^^^ unknown field
+
+error[E0433]: cannot find type `RequestOutcome` in this scope
+  --> tests\spike\s1\tests\owned_burst.rs:50:86
+   |
+50 |     assert_eq!(report.succeeded(),0);assert!(report.records.iter().all(|r|r.outcome==RequestOutcome::InvalidDecision));Ok(())
+   |                                                                                      ^^^^^^^^^^^^^^ use of undeclared type `RequestOutcome`
+
+Some errors have detailed explanations: E0422, E0425, E0433, E0599, E0609.
+For more information about an error, try `rustc --explain E0422`.
+warning: `polaris-spike-s1` (test "owned_burst") generated 3 warnings
+error: could not compile `polaris-spike-s1` (test "owned_burst") due to 16 previous errors; 5 warnings emitted

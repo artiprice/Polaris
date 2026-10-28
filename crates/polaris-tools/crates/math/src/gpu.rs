@@ -115,9 +115,16 @@ impl GpuSpecTable {
 }
 
 fn valid_source_url(url: &str) -> bool {
-    url.strip_prefix("https://").is_some_and(|host_and_path| {
-        !host_and_path.is_empty() && !host_and_path.chars().any(char::is_whitespace)
-    })
+    let Some(host_and_path) = url.strip_prefix("https://") else {
+        return false;
+    };
+    let Some(authority) = host_and_path.split(['/', '?', '#']).next() else {
+        return false;
+    };
+    matches!(
+        authority,
+        "nvidia.com" | "www.nvidia.com" | "developer.nvidia.com" | "docs.nvidia.com"
+    ) && !host_and_path.chars().any(char::is_whitespace)
 }
 
 fn valid_iso_date(date: &str) -> bool {

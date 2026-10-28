@@ -1,0 +1,35 @@
+{
+  "type_of": "method",
+  "name": "Watchdog loop and negative-constraint evaluation",
+  "file_path": "crates/polaris-system-one/crates/watchdog/src/loops.rs",
+  "logic_name": "Preserve matching rejected-hypothesis evidence and reject degenerate near-duplicate thresholds",
+  "test_list": [
+    {
+      "test_name": "matching_rejected_hypothesis_survives_newer_unproductive_match",
+      "description": "A newer matching failure does not hide a matching prior rejected-patch fingerprint."
+    },
+    {
+      "test_name": "watchdog_rejects_zero_near_duplicate_threshold",
+      "description": "Configuration cannot set a zero similarity cutoff that would classify disjoint steps as duplicates."
+    },
+    {
+      "test_name": "distinct_nonoverlapping_steps_do_not_match_at_positive_threshold",
+      "description": "Distinct steps with no shared token shingles remain unmatched under a positive threshold."
+    }
+  ],
+  "dependencies": ["polaris-system-one-watchdog", "polaris-system-one-schemas", "polaris-sdk"],
+  "inputs": [
+    {
+      "name": "recent_records",
+      "type": "bounded StepRecord window",
+      "description": "Oldest-first records with their outcome and sorted shingle sets."
+    },
+    {
+      "name": "watchdog_config",
+      "type": "WatchdogConfig",
+      "description": "Externally supplied bounded loop, pressure, and similarity settings."
+    }
+  ],
+  "output_type": "LoopMatch or InvalidConfig",
+  "output_description": "The selected matching step and its linked rejected hypothesis, or a construction error for a degenerate configuration."
+}

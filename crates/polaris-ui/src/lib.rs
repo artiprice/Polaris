@@ -3,7 +3,7 @@
 // Replace this file when the crate's phase starts; see @prime/PLAN.md and @prime/PHASES.md.
 //! # polaris-ui
 //!
-//! Facade re-exporting UI children (model, cli, gui, web).
+//! Facade re-exporting UI children (model, cli, gui, web, ascii-aurora).
 //!
 //! | Property | Value |
 //! |---|---|
@@ -18,6 +18,8 @@
 //! - `polaris-ui-model`
 //! - `polaris-ui-cli`
 //! - `polaris-ui-gui`
+//! - `polaris-ui-ascii-aurora`
+//! - `polaris-ui-session`
 //! - `polaris-ui-web`
 //!
 //! ## Responsibilities
@@ -30,7 +32,7 @@
 //!
 //! ## Internal dependencies
 //!
-//! `polaris-ui-model`, `polaris-ui-cli`, `polaris-ui-gui`, `polaris-ui-web`
+//! `polaris-ui-model`, `polaris-ui-cli`, `polaris-ui-gui`, `polaris-ui-web`, `polaris-ui-ascii-aurora`, `polaris-ui-session`
 //!
 //! ## Planned external dependencies
 //!

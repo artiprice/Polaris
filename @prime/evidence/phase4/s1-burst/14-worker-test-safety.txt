@@ -1,0 +1,60 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking ast-grep-core v0.51.0
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking gix-diff v0.69.0
+    Checking ordered-float v2.10.1
+    Checking serde_regex v1.2.0
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking serde-value v0.7.0
+    Checking ast-grep-config v0.51.0
+    Checking gix-status v0.36.0
+    Checking gix v0.89.0
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+    Checking polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+error[E0432]: unresolved import `serde`
+ --> crates\polaris-system-one\crates\watchdog\src\types.rs:4:5
+  |
+4 | use serde::{Deserialize, Serialize};
+  |     ^^^^^ use of unresolved module or unlinked crate `serde`
+  |
+  = help: if you wanted to use a crate named `serde`, use `cargo add serde` to add it to your `Cargo.toml`
+
+    Checking polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-system-one-watchdog` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

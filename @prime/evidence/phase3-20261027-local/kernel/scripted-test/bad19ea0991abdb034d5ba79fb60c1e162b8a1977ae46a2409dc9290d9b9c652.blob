@@ -1,0 +1,3 @@
+   Compiling polaris-p2-acceptance v0.1.0 (/sandbox/ws)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running tests/falsifier.rs (/sandbox/build/debug/deps/falsifier-9fbd1b1f349e5e17)

@@ -1,0 +1,13 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Finished `test` profile [unoptimized] target(s) in 7.04s
+     Running tests\generated_status.rs (target\debug\deps\generated_status-a4e17d8d408d272b.exe)
+
+running 3 tests
+test rewrites_exact_expected_status_casts ... ok
+test unexpected_generator_shape_fails_closed ... ok
+test generated_status_uses_typed_conversion ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

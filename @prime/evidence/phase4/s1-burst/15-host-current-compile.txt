@@ -1,0 +1,32 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling interprocess v2.4.5
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-system-one-nano v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\nano)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `PlatformOps`
+  --> crates\polaris-kernel\src\worker_lifecycle.rs:18:51
+   |
+18 |     DecisionEngine, DecisionError, PlatformError, PlatformOps, ProcessTree, WorkerBootstrapPlatform,
+   |                                                   ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-kernel` (lib) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 1m 05s
+  Executable tests\supervised_worker.rs (target\debug\deps\supervised_worker-122a1bb3e4c7990f.exe)

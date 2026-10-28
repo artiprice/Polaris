@@ -1,0 +1,19 @@
+Focused tests:
+python -I @prime/tools/system-one/test_gliner_export.py -v
+
+Final result:
+Ran 10 tests in 0.105s
+OK
+
+Test-first configuration check:
+RED: missing pinned python_reference was accepted (`PipelineError not raised`).
+GREEN: exact required tool-set validation added; named-manifest test passes.
+
+Test-first Python-golden output check:
+RED: empty reference outputs and a label below the maximum-probability class were accepted.
+GREEN: all 200 rows must match IDs/kinds/schema; each task must have complete finite normalized probabilities and a top-probability label.
+
+JSON checks:
+python -I -m json.tool @prime/tools/system-one/gliner_export_config.json
+python -I -m json.tool specs/descriptors/system_one_export_pipeline.json
+Both exited 0.

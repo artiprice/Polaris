@@ -1,0 +1,49 @@
+// Stroke icons of the design demo (`webui/assets/icons.json`, 24x24 viewBox).
+// Circles and rounded rectangles are rewritten as path arcs because Slint `Path` takes one
+// command string.
+
+export global IconPaths {
+    out property <string> plus: "M12 5v14M5 12h14";
+    out property <string> chat: "M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3A7.5 7.5 0 0 1 20 11.5Z M7 10h8M7 14h5";
+    out property <string> history: "M3 11a9 9 0 1 1 2.6 7M3 4v7h7M12 7v5l3 2";
+    out property <string> models: "M5 4h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M15 4h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z M5 14h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z M15 14h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z";
+    out property <string> usage: "M4 4v16h16M8 15l4-5 4 2 4-7";
+    out property <string> states: "M3 8l9-5 9 5-9 5-9-5Z M3 13l9 5 9-5 M3 18l9 5 9-5";
+    out property <string> settings: "M4 7h4m4 0h8M4 17h8m4 0h4 M12 7a2 2 0 1 1-4 0a2 2 0 1 1 4 0Z M16 17a2 2 0 1 1-4 0a2 2 0 1 1 4 0Z";
+    out property <string> sparkle: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z";
+    out property <string> arrow-right: "M5 12h14m-6-6 6 6-6 6";
+    out property <string> panel-right: "M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z M15 3v18m3-13h1m-1 4h1m-1 4h1";
+    out property <string> file: "M14 3H5v18h14V8l-5-5Z M14 3v5h5M8 13h8M8 17h5";
+    out property <string> chevron-down: "M8 10l4 4 4-4";
+    out property <string> check: "M5 12l4 4L19 6";
+    out property <string> send: "M12 19V5m-6 6 6-6 6 6";
+    out property <string> close: "M6 6l12 12M18 6 6 18";
+    out property <string> chevron-up: "M8 14l4-4 4 4";
+    out property <string> hand: "M18 11V6a2 2 0 0 0-4 0v5 M14 10V4a2 2 0 0 0-4 0v6 M10 10.5V6a2 2 0 0 0-4 0v8 M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15";
+    out property <string> bolt: "M13 2L3 14h9l-1 8 10-12h-9l1-8Z";
+    out property <string> mic: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v3";
+    out property <string> search: "M11 4a7 7 0 1 1 0 14a7 7 0 1 1 0-14Z M21 21l-4.35-4.35";
+    out property <string> folder: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z";
+    out property <string> branch: "M6 3v12 M18 3a3 3 0 1 1 0 6a3 3 0 1 1 0-6Z M6 15a3 3 0 1 1 0 6a3 3 0 1 1 0-6Z M18 9a9 9 0 0 1-9 9";
+    out property <string> info: "M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18Z M12 11v5 M12 8h.01";
+}
+
+// One stroke icon. The stroke keeps the demo's 1.45 units of a 24-unit box at any size.
+export component Icon {
+    in property <string> commands;
+    in property <brush> color;
+    width: 18px;
+    height: 18px;
+    Path {
+        width: parent.width;
+        height: parent.height;
+        commands: root.commands;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        fill: transparent;
+        stroke: root.color;
+        stroke-width: 1.45px * (root.width / 24px);
+        stroke-line-cap: round;
+        stroke-line-join: round;
+    }
+}

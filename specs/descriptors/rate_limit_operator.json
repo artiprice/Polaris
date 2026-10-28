@@ -1,0 +1,53 @@
+{
+  "type_of": "operator",
+  "name": "RateLimitOp",
+  "file_path": "crates/polaris-kernel/crates/operators/src/rate_limit.rs",
+  "logic_name": "Dual RPM/TPM Request Admission",
+  "test_list": [
+    {
+      "test_name": "admits_and_carries_single_use_reservation",
+      "description": "Uses the injected DualLimiter and returns the original payload together with a non-cloneable Permit that remains available through downstream model work."
+    },
+    {
+      "test_name": "denies_background_when_shed_by_pressure",
+      "description": "Returns the real limiter denial when priority shedding rejects the request; it never substitutes an unmetered success."
+    },
+    {
+      "test_name": "rejects_estimates_above_token_burst",
+      "description": "Propagates ExceedsBurst without returning an admission."
+    },
+    {
+      "test_name": "wait_obeys_cancellation_and_timeout",
+      "description": "Admission wait ends on caller cancellation or the configured finite timeout; cancellation drops the wait future and no Permit escapes."
+    },
+    {
+      "test_name": "reservation_requires_dispatch_before_reconciliation",
+      "description": "Downstream marks dispatch before transport handoff and reconciles final usage; dropping a possibly-dispatched reservation never refunds rate capacity."
+    },
+    {
+      "test_name": "admission_types_cannot_be_cloned_for_automatic_retry",
+      "description": "RateLimitInput and RateLimited are single-owner values so the generic RetryOp cannot clone an admission across uncertain upstream work."
+    },
+    {
+      "test_name": "zero_timeout_is_rejected",
+      "description": "Rejects a zero admission deadline during operator construction instead of creating an unbounded or immediate-failure configuration."
+    }
+  ],
+  "dependencies": [
+    "polaris_ratelimit::DualLimiter",
+    "polaris_ratelimit::{Estimate, Priority, Permit}",
+    "polaris_sdk::registry::FunctionalOperator",
+    "tokio::time",
+    "tokio_util::sync::CancellationToken"
+  ],
+  "libraries": ["tokio", "tokio-util", "thiserror"],
+  "inputs": [
+    {
+      "name": "RateLimitInput<T>",
+      "type": "RateLimitInput<T>",
+      "description": "Owned payload, trusted prompt/output token reservation estimate, caller-selected priority, and cancellation token."
+    }
+  ],
+  "output_type": "Result<RateLimited<T, C>, RateLimitOpError>",
+  "output_description": "The owned payload plus an actual non-cloneable DualLimiter Permit. Downstream keeps this value through model work, calls mark_dispatched immediately before transport handoff, then consumes it to reconcile final provider usage."
+}

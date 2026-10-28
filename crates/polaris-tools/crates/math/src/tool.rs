@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 /// Tagged math operation input. Decimal values are JSON strings to avoid lossy JSON numbers.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "operation", rename_all = "snake_case")]
+#[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 pub enum MathInput {
     /// Fixed-scale exact decimal expression.
     Calc { expression: String },
@@ -66,6 +66,12 @@ pub enum MathOutput {
 #[derive(Debug, Default, Clone, Copy)]
 pub struct MathTool;
 impl MathTool {
+    /// Evaluate an actual bounded deterministic math operation on a caller-owned blocking boundary.
+    /// # Errors
+    /// Invalid expressions, unsupported hardware, nonfinite values or operation-specific input limits.
+    pub fn evaluate(&self, input: MathInput) -> Result<MathOutput, MathError> {
+        dispatch(input)
+    }
     /// Returns the model-facing SDK descriptor for the combined math dispatcher.
     #[must_use]
     pub fn tool_spec(&self) -> ToolSpec {
@@ -80,8 +86,10 @@ impl Tool for MathTool {
 
     fn spec(&self) -> ToolSpec {
         let schema = schema_for!(MathInput);
-        let schema_json =
-            serde_json::to_string(&schema).unwrap_or_else(|_| r#"{"not":{}}"#.to_owned());
+        let schema_json = match serde_json::to_string(&schema) {
+            Ok(schema) => schema,
+            Err(_) => r#"{"not":{}}"#.to_owned(),
+        };
         ToolSpec { name: Self::NAME.into(), description: "Deterministic math: fixed-scale decimal arithmetic (28–29 significant digits, not arbitrary precision; rational fractions such as 1/3 are rounded to this scale), finite interpolation/statistics, and first-order GPU occupancy from a bundled curated NVIDIA table with per-row citations. Operations have bounded inputs and return typed validation errors; occupancy excludes compiler allocation granularity and spills.".into(), input_schema_json: schema_json.into(), effects: Effects::PURE }
     }
 
@@ -90,7 +98,8 @@ impl Tool for MathTool {
         input: Self::Input,
         _ctx: &ToolContext<'_>,
     ) -> Result<Self::Output, ToolError> {
-        dispatch(input).map_err(|error| ToolError::InvalidInput(error.to_string()))
+        self.evaluate(input)
+            .map_err(|error| ToolError::InvalidInput(error.to_string()))
     }
 }
 

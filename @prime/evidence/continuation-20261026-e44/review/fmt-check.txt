@@ -1,0 +1,328 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:484:
+ 
+ fn normalize_join<O>(
+     joined: Result<
+-        (TokioTaskId, (usize, NodeId, Pool, Result<NodeResult<O>, DagError>)),
++        (
++            TokioTaskId,
++            (usize, NodeId, Pool, Result<NodeResult<O>, DagError>),
++        ),
+         JoinError,
+     >,
+     in_flight: &mut BTreeMap<TokioTaskId, TrackedTask>,
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:538:
+                 .ok_or(DagError::GraphInvariant)?;
+             *degree = degree.checked_sub(1).ok_or(DagError::GraphInvariant)?;
+             if *degree == 0 && !started.contains(dependent) {
+-                let dependent_node = dag
+-                    .nodes
+-                    .get(*dependent)
+-                    .ok_or(DagError::GraphInvariant)?;
++                let dependent_node = dag.nodes.get(*dependent).ok_or(DagError::GraphInvariant)?;
+                 ready.insert((dependent_node.id, *dependent));
+             }
+         }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:565:
+             (index, id, NodeResult::Interrupted { reason })
+         }
+     };
+-    let (failed, cancelled) =
+-        record_node_result(dag, index, id, node_result, results, indegree, started, ready)?;
++    let (failed, cancelled) = record_node_result(
++        dag,
++        index,
++        id,
++        node_result,
++        results,
++        indegree,
++        started,
++        ready,
++    )?;
+     Ok((id, failed, cancelled))
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:631:
+                 let result = execute_node(task, pool, id, pools, token, options.on_failure).await;
+                 (index, id, pool, result)
+             });
+-            in_flight.insert(
+-                abort_handle.id(),
+-                TrackedTask { index, id, pool },
+-            );
++            in_flight.insert(abort_handle.id(), TrackedTask { index, id, pool });
+         }
+ 
+         if join_set.is_empty() {
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:922:
+         match event {
+             JoinedNode::Interrupted { index, id, reason } => {
+                 assert_eq!(index, 4, "the interrupted task must retain its graph index");
+-                assert_eq!(id, NodeId::new(41), "the interrupted task must retain its node id");
+-                assert_eq!(reason, NodeInterruption::Aborted, "Tokio cancellation is Aborted");
++                assert_eq!(
++                    id,
++                    NodeId::new(41),
++                    "the interrupted task must retain its node id"
++                );
++                assert_eq!(
++                    reason,
++                    NodeInterruption::Aborted,
++                    "Tokio cancellation is Aborted"
++                );
+             }
+             JoinedNode::Completed { .. } => return Err(DagError::JoinFailed),
+         }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:930:
+-        assert!(in_flight.is_empty(), "the exact completion must remove its tracking entry");
++        assert!(
++            in_flight.is_empty(),
++            "the exact completion must remove its tracking entry"
++        );
+         Ok(())
+     }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:945:
+         builder.node(independent_id, Pool::Web, independent)?;
+         builder.edge(root_id, child_id)?;
+         let dag = builder.build()?;
+-        let mut indegree: Vec<usize> = dag.nodes.iter().map(|node| node.dependencies.len()).collect();
++        let mut indegree: Vec<usize> = dag
++            .nodes
++            .iter()
++            .map(|node| node.dependencies.len())
++            .collect();
+         let mut ready: BTreeSet<(NodeId, usize)> = dag
+             .nodes
+             .iter()
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:953:
+             .filter_map(|(index, node)| node.dependencies.is_empty().then_some((node.id, index)))
+             .collect();
+         let mut started = BTreeSet::new();
+-        let mut results: Vec<Option<NodeResult<usize>>> =
+-            std::iter::repeat_with(|| None).take(dag.nodes.len()).collect();
++        let mut results: Vec<Option<NodeResult<usize>>> = std::iter::repeat_with(|| None)
++            .take(dag.nodes.len())
++            .collect();
+         let root_index = dag_index(&dag, root_id)?;
+         let mut join_set = JoinSet::new();
+         let abort_handle = join_set.spawn(std::future::pending::<(
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:985:
+             &mut started,
+             &mut ready,
+         )?;
+-        assert_eq!(failure, (root_id, true, false), "interruption is failure, not global cancellation");
++        assert_eq!(
++            failure,
++            (root_id, true, false),
++            "interruption is failure, not global cancellation"
++        );
+         let child_index = dag_index(&dag, child_id)?;
+         let independent_index = dag_index(&dag, independent_id)?;
+         assert!(
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1016:
+             RunOptions::default(),
+         )
+         .await?;
+-        assert_eq!(report.status(), DagRunStatus::Failed, "a failed node makes the report Failed");
+-        assert!(matches!(report.result(root_id), Some(NodeResult::Failed { .. })), "root failure remains visible");
++        assert_eq!(
++            report.status(),
++            DagRunStatus::Failed,
++            "a failed node makes the report Failed"
++        );
+         assert!(
++            matches!(report.result(root_id), Some(NodeResult::Failed { .. })),
++            "root failure remains visible"
++        );
++        assert!(
+             matches!(report.result(child_id), Some(NodeResult::DependencyFailed { caused_by }) if *caused_by == root_id),
+             "the child must not start after its prerequisite fails"
+         );
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1025:
+-        assert!(matches!(report.result(independent_id), Some(NodeResult::Succeeded { .. })), "independent work must finish");
+-        assert_eq!(child_calls.load(Ordering::SeqCst), 0, "a skipped child must not execute");
+-        assert_eq!(independent_calls.load(Ordering::SeqCst), 1, "the independent sibling must execute once");
++        assert!(
++            matches!(
++                report.result(independent_id),
++                Some(NodeResult::Succeeded { .. })
++            ),
++            "independent work must finish"
++        );
++        assert_eq!(
++            child_calls.load(Ordering::SeqCst),
++            0,
++            "a skipped child must not execute"
++        );
++        assert_eq!(
++            independent_calls.load(Ordering::SeqCst),
++            1,
++            "the independent sibling must execute once"
++        );
+         Ok(())
+     }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1049:
+             },
+         )
+         .await?;
+-        assert_eq!(report.status(), DagRunStatus::Failed, "FailFast must preserve failure status");
+-        assert!(matches!(report.result(sibling_id), Some(NodeResult::Cancelled)), "running sibling is stopped");
++        assert_eq!(
++            report.status(),
++            DagRunStatus::Failed,
++            "FailFast must preserve failure status"
++        );
++        assert!(
++            matches!(report.result(sibling_id), Some(NodeResult::Cancelled)),
++            "running sibling is stopped"
++        );
+         let stats = pool_set.stats();
+-        assert_eq!(stats.web.active, 0, "all sibling permits must be released before return");
+-        assert_eq!(stats.web.aborted_early, 1, "the running sibling abort must be counted once");
++        assert_eq!(
++            stats.web.active, 0,
++            "all sibling permits must be released before return"
++        );
++        assert_eq!(
++            stats.web.aborted_early, 1,
++            "the running sibling abort must be counted once"
++        );
+         Ok(())
+     }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1084:
+         let unknown = normalize_join(
+             Ok((
+                 unknown_handle.id(),
+-                (0, NodeId::new(10), Pool::Disk, Ok(NodeResult::Succeeded { value: 1, attempts: 1 })),
++                (
++                    0,
++                    NodeId::new(10),
++                    Pool::Disk,
++                    Ok(NodeResult::Succeeded {
++                        value: 1,
++                        attempts: 1,
++                    }),
++                ),
+             )),
+             &mut in_flight,
+         );
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1091:
+-        assert!(matches!(unknown, Err(DagError::JoinFailed)), "unknown task IDs must fail closed");
++        assert!(
++            matches!(unknown, Err(DagError::JoinFailed)),
++            "unknown task IDs must fail closed"
++        );
+ 
+         let mismatch = normalize_join(
+             Ok((
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1095:
+                 tracked_handle.id(),
+-                (1, NodeId::new(11), Pool::Web, Ok(NodeResult::Succeeded { value: 2, attempts: 1 })),
++                (
++                    1,
++                    NodeId::new(11),
++                    Pool::Web,
++                    Ok(NodeResult::Succeeded {
++                        value: 2,
++                        attempts: 1,
++                    }),
++                ),
+             )),
+             &mut in_flight,
+         );
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1100:
+-        assert!(matches!(mismatch, Err(DagError::JoinFailed)), "mismatched identity must fail closed");
++        assert!(
++            matches!(mismatch, Err(DagError::JoinFailed)),
++            "mismatched identity must fail closed"
++        );
+         join_set.abort_all();
+         while join_set.join_next().await.is_some() {}
+         Ok(())
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1129:
+             RunOptions::default(),
+         )
+         .await?;
+-        assert_eq!(report.status(), DagRunStatus::Completed, "the diamond should complete");
++        assert_eq!(
++            report.status(),
++            DagRunStatus::Completed,
++            "the diamond should complete"
++        );
+         for (id, calls) in [
+             (root_id, root_calls),
+             (left_id, left_calls),
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1137:
+             (join_id, join_calls),
+         ] {
+             assert!(
+-                matches!(report.result(id), Some(NodeResult::Succeeded { attempts: 1, .. })),
++                matches!(
++                    report.result(id),
++                    Some(NodeResult::Succeeded { attempts: 1, .. })
++                ),
+                 "every diamond node should succeed once"
+             );
+-            assert_eq!(calls.load(Ordering::SeqCst), 1, "each task closure should run once");
++            assert_eq!(
++                calls.load(Ordering::SeqCst),
++                1,
++                "each task closure should run once"
++            );
+         }
+         Ok(())
+     }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1160:
+             RunOptions::default(),
+         )
+         .await?;
+-        assert_eq!(report.status(), DagRunStatus::Cancelled, "caller cancellation remains global");
+-        assert!(matches!(report.result(id), Some(NodeResult::Cancelled)), "unstarted node is canceled");
+-        assert_eq!(calls.load(Ordering::SeqCst), 0, "a pre-canceled run must not start operators");
++        assert_eq!(
++            report.status(),
++            DagRunStatus::Cancelled,
++            "caller cancellation remains global"
++        );
++        assert!(
++            matches!(report.result(id), Some(NodeResult::Cancelled)),
++            "unstarted node is canceled"
++        );
++        assert_eq!(
++            calls.load(Ordering::SeqCst),
++            0,
++            "a pre-canceled run must not start operators"
++        );
+         Ok(())
+     }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1172:
+         let unknown_id = NodeId::new(2);
+         let (task, calls) = TestTask::new(Behavior::Succeed);
+         let mut builder = DagBuilder::new();
+-        assert!(builder.node(known_id, Pool::Web, task).is_ok(), "the node should be accepted");
+-        assert!(builder.edge(unknown_id, known_id).is_ok(), "edge ids resolve during build");
+         assert!(
++            builder.node(known_id, Pool::Web, task).is_ok(),
++            "the node should be accepted"
++        );
++        assert!(
++            builder.edge(unknown_id, known_id).is_ok(),
++            "edge ids resolve during build"
++        );
++        assert!(
+             matches!(builder.build(), Err(DagError::UnknownNode(id)) if id == unknown_id),
+             "build must reject unknown dependency ids"
+         );
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\src\graph.rs:1181:
+-        assert_eq!(calls.load(Ordering::SeqCst), 0, "invalid graphs must not execute tasks");
++        assert_eq!(
++            calls.load(Ordering::SeqCst),
++            0,
++            "invalid graphs must not execute tasks"
++        );
+     }
+ }
+ 

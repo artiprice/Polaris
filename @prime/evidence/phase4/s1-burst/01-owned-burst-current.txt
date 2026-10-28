@@ -1,0 +1,13 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Finished `test` profile [unoptimized] target(s) in 4.24s
+     Running tests\owned_burst.rs (target\debug\deps\owned_burst-7cae12699a931134.exe)
+
+running 4 tests
+test cancellation_drains_every_owned_task ... ok
+test malformed_engine_results_are_not_success ... ok
+test timeouts_are_measured_and_not_answers ... ok
+test burst_records_observed_calls_and_latency ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+

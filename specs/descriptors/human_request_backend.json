@@ -1,0 +1,76 @@
+{
+  "type_of": "module",
+  "name": "HumanRequestService",
+  "file_path": "crates/polaris-kernel/src/human_requests.rs",
+  "logic_name": "Durable Human Request and Answer Protocol",
+  "test_list": [
+    {
+      "test_name": "optional_questions_require_an_explicit_unanswered_record",
+      "description": "Every question is represented in the atomic answer batch; optional omissions use an explicit Unanswered response rather than a default."
+    },
+    {
+      "test_name": "required_questions_have_no_default_and_reject_explicit_unanswered",
+      "description": "Required choice questions cannot inherit a preselection or be submitted unanswered."
+    },
+    {
+      "test_name": "none_of_the_above_is_exclusive_in_multichoice",
+      "description": "The typed NoneOfTheAbove sentinel cannot be combined with provider-defined option ids."
+    },
+    {
+      "test_name": "rejects_stale_revision_unknown_ids_and_wrong_answer_kinds",
+      "description": "Answer validation rejects a stale immutable digest, unknown question ids, and a response kind that differs from its question."
+    },
+    {
+      "test_name": "validates_choice_count_and_aggregate_request_bytes",
+      "description": "Request construction enforces the question count and encoded payload bounds before persistence."
+    },
+    {
+      "test_name": "human_request_answer_is_atomic_and_durable",
+      "description": "A valid verified command stores one full answer batch in CAS, appends a durable answered event, and resolves the waiting request only after persistence."
+    },
+    {
+      "test_name": "human_request_rejects_invalid_stale_and_duplicate_answers",
+      "description": "Unknown ids, missing required answers, stale revisions, cross-session/frame answers, and conflicting command reuse are rejected without a partial terminal transition."
+    },
+    {
+      "test_name": "human_request_answer_cancel_race_has_one_winner",
+      "description": "Concurrent answer and requester interruption serialize under the writer lock; exactly one terminal event is durable."
+    },
+    {
+      "test_name": "human_request_rehydrates_pending_and_terminal_states",
+      "description": "Reopening a kernel reconstructs pending requests and preserves answered/interrupted terminal outcomes without reviving them."
+    },
+    {
+      "test_name": "host_answer_resumes_only_its_pending_request",
+      "description": "host answer resumes only its pending request"
+    },
+    {
+      "test_name": "host_answer_rejects_untrusted_control_token",
+      "description": "host answer rejects untrusted control token"
+    },
+    {
+      "test_name": "human_request_rejects_missing_durable_witness_before_terminal_event",
+      "description": "human request rejects missing durable witness before terminal event"
+    }
+  ],
+  "dependencies": [
+    "polaris-sdk::human::{HumanRequestPayload, HumanAnswerPayload, HumanRequestId}",
+    "polaris-sdk::contracts::{Event, Command<Verified>}",
+    "KernelCtx::lock_writer / cas / publish / records"
+  ],
+  "libraries": [
+    "tokio",
+    "tokio-util",
+    "serde_json",
+    "tempfile (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "request / answer / interrupt",
+      "type": "validated request document, verified answer command, requester frame cancellation",
+      "description": "Untrusted bounded request or answer payload plus actual session/frame binding supplied by the kernel composition root."
+    }
+  ],
+  "output_type": "Result<DurableRequestOutcome, HumanRequestError>",
+  "output_description": "Durable request state and waiter outcome, or a typed rejection that leaves the prior state unchanged."
+}

@@ -9,8 +9,9 @@
 //! | [`effort`] | `Effort` (`low`…`max` or `1`–`5`) |
 //! | [`error`] | `ErrorKind` + `HasKind` (supervision taxonomy), `ParseError` |
 //! | [`system_one`] | Choice / Score / Noul questions and answers, `Probability`, `Decision`, validated `DecisionSchema` snapshots and `DecisionSchemaCatalog` |
-//! | [`contracts`] | `TokenBytes`, `Command<Unverified \| Verified>` typestate, `ApprovalWitness`, `Event` v1, `EventRecord` |
-//! | [`registry`] | API-registry traits (prompt.md §6.2): `ChatModel`, `EmbeddingProvider`, `DecisionEngine`, `SandboxBackend`, `WebSearch`, `DocParser`, `VectorStore`, `EventStore`, `KernelApi`, `PlatformOps`, `Redactor`, `FunctionalOperator`, `ExactCacheStore`, `Tool` |
+//! | [`contracts`] | `TokenBytes`, `Command<Unverified \| Verified>` typestate, `ApprovalWitness`, `Event` v5, `EventRecord` |
+//! | [`registry`] | API-registry traits (prompt.md §6.2): `ChatModel`, `PromptTokenizer`, `EmbeddingProvider`, `DecisionEngine`, `SandboxBackend`, `WebSearch`, `DocParser`, `VectorStore`, `EventStore`, `KernelApi`, `PlatformOps`, `Redactor`, `FunctionalOperator`, `ExactCacheStore`, `Tool` |
+//! | [`human`] | Bounded human question and atomic answer contracts; event schema v5 |
 //! | [`secrets`] | Validated secret locations and the credential-source registry contract |
 //! | [`backends`] | `Backends` bundle (composition root, PLAN ADR-002) and `OneOf2` / `OneOf3` enum dispatch |
 //!
@@ -28,6 +29,7 @@ pub mod contracts;
 pub mod effort;
 pub mod error;
 mod hex;
+pub mod human;
 pub mod ids;
 pub mod interactive;
 #[cfg(feature = "kani")]

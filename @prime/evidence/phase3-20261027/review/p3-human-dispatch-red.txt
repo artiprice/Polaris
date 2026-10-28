@@ -1,0 +1,201 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+   Compiling polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+   Compiling polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+   Compiling polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+   Compiling polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `WriteTicket`
+ --> crates\polaris-kernel\src\frame_mutation.rs:9:120
+  |
+9 | use polaris_runtime::{frames::FrameToolBinding, leases::{LeaseKey, LeaseManager, LeaseRequest, LeaseScope, LeaseGuard, WriteTicket}};
+  |                                                                                                                        ^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0700]: hidden type for `impl Future<Output = Result<SafetyAssessment, VerifierError>> + Send` captures lifetime that does not appear in bounds
+   --> crates\polaris-kernel\src\frame_mutation.rs:327:9
+    |
+326 | ...n assess(&self, request: &SafetyRequest<'_>) -> impl std::future::Future<Output = Result<polaris_system_one::verifier::SafetyAssessment, polaris_system_one::verifier::VerifierError>> + Send {
+    |                                                    --------------------------------------------------------------------------------------------------------------------------------------------- opaque type defined here
+327 | ...   self.0.assess_owned(request)
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: hidden type `Pin<Box<dyn Future<Output = _> + Send>>` captures lifetime `'_`
+    = note: the full name for the type has been written to 'C:\mDev\Polaris\target\debug\deps\polaris_kernel-7b608554e0fd9662.long-type-16495239014866620923.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> crates\polaris-kernel\src\human_requests.rs:477:16
+    |
+477 |               Ok((
+    |  _____________--_^
+    | |             |
+    | |             arguments to this enum variant are incorrect
+478 | |                 HumanRequestOutcome::Interrupted { seq: record.seq() },
+479 | |                 request_id,
+480 | |             ))
+    | |_____________^ expected `Result<(HumanRequestOutcome, _), _>`, found `(HumanRequestOutcome, HumanRequestId)`
+    |
+    = note: expected enum `Result<(HumanRequestOutcome, HumanRequestId), _>`
+              found tuple `(HumanRequestOutcome, HumanRequestId)`
+help: the type constructed contains `(HumanRequestOutcome, HumanRequestId)` due to the type of the argument passed
+   --> crates\polaris-kernel\src\human_requests.rs:477:13
+    |
+477 |                Ok((
+    |   _____________^  -
+    |  |________________|
+478 | ||                 HumanRequestOutcome::Interrupted { seq: record.seq() },
+479 | ||                 request_id,
+480 | ||             ))
+    | ||_____________-^
+    | |______________|
+    |                this argument influences the type of `Ok`
+note: tuple variant defined here
+   --> /rustc/b940084d7eb6a299eb4bfeb8e34901bc051e7ac4/library\core\src\result.rs:562:4
+help: try wrapping the expression in a variant of `Result`
+    |
+477 ~             Ok(Ok((
+478 |                 HumanRequestOutcome::Interrupted { seq: record.seq() },
+479 |                 request_id,
+480 ~             )))
+    |
+477 ~             Ok(Err((
+478 |                 HumanRequestOutcome::Interrupted { seq: record.seq() },
+479 |                 request_id,
+480 ~             )))
+    |
+
+error[E0609]: no field `1` on type `Result<(HumanRequestOutcome, HumanRequestId), _>`
+   --> crates\polaris-kernel\src\human_requests.rs:483:28
+    |
+483 |         self.notify(result.1)?;
+    |                            ^ unknown field
+    |
+help: one of the expressions' fields has a field of the same name
+    |
+483 |         self.notify(result.unwrap().1)?;
+    |                            +++++++++
+
+error[E0609]: no field `0` on type `Result<(HumanRequestOutcome, HumanRequestId), _>`
+   --> crates\polaris-kernel\src\human_requests.rs:484:19
+    |
+484 |         Ok(result.0)
+    |                   ^ unknown field
+    |
+help: one of the expressions' fields has a field of the same name
+    |
+484 |         Ok(result.unwrap().0)
+    |                   +++++++++
+
+error[E0277]: `LeaseManager` doesn't implement `std::fmt::Debug`
+  --> crates\polaris-kernel\src\frame_mutation.rs:90:5
+   |
+85 | #[derive(Debug)]
+   |          ----- in this derive macro expansion
+...
+90 |     leases: LeaseManager,
+   |     ^^^^^^^^^^^^^^^^^^^^ the trait `std::fmt::Debug` is not implemented for `LeaseManager`
+
+warning: unused variable: `path`
+   --> crates\polaris-kernel\src\frame_mutation.rs:185:10
+    |
+185 |     let (path, base, old, new) = snapshot_candidate(&root, &target, expected_base, old_text, new_text, mode)?;
+    |          ^^^^ help: if this is intentional, prefix it with an underscore: `_path`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `diff`
+   --> crates\polaris-kernel\src\frame_mutation.rs:296:17
+    |
+296 |             let diff = content_id(&prepared.diff_bytes);
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_diff`
+
+error[E0505]: cannot move out of `context` because it is borrowed
+   --> crates\polaris-kernel\src\human_requests.rs:170:13
+    |
+147 |         context: Arc<KernelCtx>,
+    |         ------- binding `context` declared here
+...
+152 |         let _writer = context.lock_writer()?;
+    |                       ------- borrow of `context` occurs here
+...
+170 |             context,
+    |             ^^^^^^^ move out of `context` occurs here
+...
+176 |     }
+    |     - borrow might be used here, when `_writer` is dropped and runs the `Drop` code for type `std::sync::MutexGuard`
+
+warning: unused variable: `record`
+   --> crates\polaris-kernel\src\human_requests.rs:246:17
+    |
+246 |             let record = context.publish(
+    |                 ^^^^^^ help: if this is intentional, prefix it with an underscore: `_record`
+
+Some errors have detailed explanations: E0277, E0308, E0505, E0609, E0700.
+For more information about an error, try `rustc --explain E0277`.
+warning: `polaris-kernel` (lib) generated 4 warnings
+error: could not compile `polaris-kernel` (lib) due to 6 previous errors; 4 warnings emitted

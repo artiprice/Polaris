@@ -14,9 +14,14 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-system-one-client = { workspace = true }
 polaris-system-one-schemas = { workspace = true }
 polaris-system-one-router = { workspace = true }
 polaris-system-one-verifier = { workspace = true }
 polaris-system-one-watchdog = { workspace = true }
+polaris-sdk = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }

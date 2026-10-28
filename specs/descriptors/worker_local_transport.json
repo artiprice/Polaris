@@ -4,7 +4,7 @@
   "file_path": "apps/polaris-worker/tests/local_transport.rs",
   "logic_name": "Private Local Worker Transport Acceptance",
   "test_list": [
-    {"test_name": "windows_pipe_ingest_handshake_content_and_shutdown", "description": "A real Windows named-pipe client negotiates the Ingest worker, reads/writes real CAS content, shuts it down, and observes endpoint removal."},
+    {"test_name": "windows_pipe_ingest_handshake_content_and_shutdown", "description": "A real Windows named-pipe client verifies missing/wrong worker credentials are rejected, authenticates the Ingest handshake and CAS request, then shuts it down and observes endpoint removal."},
     {"test_name": "windows_pipe_collision_fails_before_serve_returns_success", "description": "A second first-instance pipe listener for the same name fails synchronously rather than returning a successful but unserved endpoint."}
   ],
   "dependencies": ["IngestWorker", "WorkerService", "Cas"],
@@ -14,5 +14,5 @@
     {"name": "cas_root", "type": "PathBuf", "description": "Temporary bounded CAS root for round-trip ingest."}
   ],
   "output_type": "Result<(), TestError>",
-  "output_description": "Verified local transport handshake, real CAS-backed ingest, lifecycle shutdown, and endpoint teardown without an authorization token."
+  "output_description": "Verified authenticated local transport handshake, real CAS-backed ingest, lifecycle shutdown, and endpoint teardown."
 }

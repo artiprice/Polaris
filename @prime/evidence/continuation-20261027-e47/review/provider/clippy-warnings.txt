@@ -1,0 +1,3 @@
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Finished `dev` profile [unoptimized] target(s) in 2.01s
+Exit code: 0

@@ -1,0 +1,186 @@
+[
+  {
+    "path": "review/context/baseline.txt",
+    "sha256": "f58473ee684d52e87ff8f2a446788e82861a05d157b47c547c00a15d5b4b559f"
+  },
+  {
+    "path": "review/context/clippy.txt",
+    "sha256": "40045e5a4bd98224408b3d75655fc9095c95d41ab4d5d7cbe50a1962a7e37da9"
+  },
+  {
+    "path": "review/context/clippy_safety.txt",
+    "sha256": "375f3cc74fd3e3db8576f5e939a7150abc524a221fd70033f9c4b7d4594457d9"
+  },
+  {
+    "path": "review/context/clippy_scoped.txt",
+    "sha256": "4940d09f234437facd6eff114606ca11bfd2545c627b427ab7f5c9481b8fbdf3"
+  },
+  {
+    "path": "review/context/descriptor_parse.txt",
+    "sha256": "36489150d50afaedf10cc44b20df00c83d8a7f06c3a4ed01c5dc9832f34d2aac"
+  },
+  {
+    "path": "review/context/expand_bytecap_fixed.txt",
+    "sha256": "1dabc02b54acd27ada118c792174b5765c6f137b887df04f67304d832f59ffa3"
+  },
+  {
+    "path": "review/context/expand_bytecap_red.txt",
+    "sha256": "9df2e8ad205c96cc349c85edd6071b9935cb8a30478accde0cb9e6bc6a514945"
+  },
+  {
+    "path": "review/context/fmt_check.txt",
+    "sha256": "b9b5d8e4cb1f697533c297c086fd9e711a08b67c3b4f2045e963c83cc3cd70ba"
+  },
+  {
+    "path": "review/context/fmt_scoped.txt",
+    "sha256": "bb6763747dfb9e30ea90ee7204a9212c38768cd75d384e2b12e694d3c8478854"
+  },
+  {
+    "path": "review/context/focused_test.txt",
+    "sha256": "89fd1c891af39408702af638c1e0a947d21a80d9307152bca1ad5e276e7586ad"
+  },
+  {
+    "path": "review/context/pre_fix_red.txt",
+    "sha256": "839e285afefd2e6ebd4d6a0929b346c1561b7f4bf0b67b1155b45e695ea8bf54"
+  },
+  {
+    "path": "review/context/test_all_targets.txt",
+    "sha256": "5957042d672a325cdf1c68b0f31696006b74f262dccb452ef52fa603030212ff"
+  },
+  {
+    "path": "review/operators/clippy.meta.txt",
+    "sha256": "cf75b81f75b09db66a713c5d2afac71b7062cabab8e553f474379549b4199d4a"
+  },
+  {
+    "path": "review/operators/clippy.raw.txt",
+    "sha256": "0a869c8ca88033647efb6454d8d35c000dac6f66b534176f1637bc540defd28c"
+  },
+  {
+    "path": "review/operators/fmt-workspace.meta.txt",
+    "sha256": "718e8b45bd18508f417736752eabb32ec339ee392107df5f7e77cec70ffae690"
+  },
+  {
+    "path": "review/operators/fmt-workspace.raw.txt",
+    "sha256": "5edd4cb8e51bf816ddf6dda637823d0b1cfbaa85b4440082fb033b9fdfc7899e"
+  },
+  {
+    "path": "review/operators/fmt.meta.txt",
+    "sha256": "357ae48cd09106cf51fb8fd65934c53e552373e3054137c1b0bc9fffb8876599"
+  },
+  {
+    "path": "review/operators/red.meta.txt",
+    "sha256": "b928907ac5e03753c82fa8cde1498722d95e4ad6163b21d53aef4578e51ed799"
+  },
+  {
+    "path": "review/operators/red.raw.txt",
+    "sha256": "4578dcd2185956aaf7e4edcb2fe67103eae41207071bc6c52f63a14ff0abbe6e"
+  },
+  {
+    "path": "review/operators/tests.meta.txt",
+    "sha256": "41a93dcb2b884a22026d5fc1ec6ded0ca361bc08d43df8c3aa25ac99fcc2fa5d"
+  },
+  {
+    "path": "review/operators/tests.raw.txt",
+    "sha256": "cdc389a7e88ee125859288c66200e225d2233b4f8f0c96ced7d7dc1059a22211"
+  },
+  {
+    "path": "review/sbom/cargo-test-xtask.exit",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "path": "review/sbom/cargo-test-xtask.log",
+    "sha256": "4de4f66d9ac92ac96a9d485adf3d0e0c8cfabc3b07b6a6e30f52f890c85c0b5d"
+  },
+  {
+    "path": "review/sbom/clippy-xtask.exit",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "path": "review/sbom/clippy-xtask.log",
+    "sha256": "92e0677ae85bc53c78a7ee20effff5272c337f423f01aa9729717fcd6127be18"
+  },
+  {
+    "path": "review/sbom/evidence.json",
+    "sha256": "c464586706490fb2f080ee04868b303ea99fa3f47f6526b0c3821d817ebd4c81"
+  },
+  {
+    "path": "review/sbom/lock-change-red.log",
+    "sha256": "246cd380b170e0f9a241b5dffbf397a88a106931d424df99e4b31df8450a0463"
+  },
+  {
+    "path": "review/sbom/metadata-validation-red.log",
+    "sha256": "255cf69bd15d68b9942056b0fbe0db1e0576dc44646bd7ab2ff89c61321735b8"
+  },
+  {
+    "path": "review/sbom/rename-probe/destination.txt",
+    "sha256": "11507a0e2f5e69d5dfa40a62a1bd7b6ee57e6bcd85c67c9b8431b36fff21c437"
+  },
+  {
+    "path": "review/sbom/rename-probe.rs",
+    "sha256": "c0021ac5ec4af699d1806aa444b6d372f63d60d4696bb5998a1a229aefcd7ce9"
+  },
+  {
+    "path": "review/sbom/schema-validation.txt",
+    "sha256": "892a43bd103893bcd30f069fe3a0e97f35e97144fd658fcc04bdd02e1f47f826"
+  },
+  {
+    "path": "review/sbom/spdx-schema.json",
+    "sha256": "239208b7ac287b3cf5d9a9af23f9d69863971102a5e1587a27a398b43490b89b"
+  },
+  {
+    "path": "review/sbom/windows-std-rename.exit",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "path": "review/sbom/windows-std-rename.log",
+    "sha256": "13718572cc0f01854e138621b43d8ad528b8c0a75e98ff272459cda6488b6b0f"
+  },
+  {
+    "path": "review/sbom-validator/Cargo.lock",
+    "sha256": "b996af9658bc2e37e2ee61284db4bedde72f59ed26d9969baa54f2728637d666"
+  },
+  {
+    "path": "review/sbom-validator/Cargo.toml",
+    "sha256": "bacfda77f1f8dcae4a5e0a84795aba28803a9b1456df4865ce5c97b6794c3aaa"
+  },
+  {
+    "path": "review/sbom-validator/src/main.rs",
+    "sha256": "75b65109da42e40a78670f5b8705b74775fc2623dc50f598e35338cc18e8e476"
+  },
+  {
+    "path": "review/sdk/sdk-schema-green.txt",
+    "sha256": "6f26efe20bcd60aa0a451c066380d3875d200bc6238d9a81c2ecd5f7721329d4"
+  },
+  {
+    "path": "review/sdk-schema-proposal/Cargo.lock",
+    "sha256": "3e03a52cff240f073708942ebd9e91f93f873ca18bd1871683ed5f57a507300a"
+  },
+  {
+    "path": "review/sdk-schema-proposal/Cargo.toml",
+    "sha256": "2fa9380ac842eeeef5f1dd292d29355f5ae2c7b217ffccf1292b6701593ae03a"
+  },
+  {
+    "path": "review/sdk-schema-proposal/proposed-tests.diff",
+    "sha256": "84522663ddfe6ae86b4c1de6ec8935ffd81e3d2c98c7c71523e41dd6b02bbc21"
+  },
+  {
+    "path": "review/sdk-schema-proposal/tests/blast_alert_schema.rs",
+    "sha256": "56a397b93131134a75055e3a9759e17622cd4b3ba71c69ddd604b25d8aef05df"
+  },
+  {
+    "path": "review/sdk-schema-proposal/tests/session_lifecycle.rs",
+    "sha256": "f6e81bb624caabc56edd753ff1516eca6759bf8f80e28d50fbfedf45fd0cbcff"
+  },
+  {
+    "path": "review/sdk-schema-proposal/verification.txt",
+    "sha256": "076dcf72c35fdc25828c471e9e91e3d798775ad03919636917a8e9d23d516e72"
+  },
+  {
+    "path": "review/seal-run.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/verification-run.txt",
+    "sha256": "80217e38b9fc50dd05c9ddacd6bc05ca94df9b8bfae034133d3c533662cb822b"
+  }
+]

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\mDev\Polaris\@prime\tmp\p2\check_e45_integrity.py", line 47, in <module>
+    assert (root/descriptor['file_path']).is_file()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+AssertionError

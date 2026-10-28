@@ -111,6 +111,17 @@ impl WorkerCredential {
         Ok(Self { secret })
     }
 
+    /// Copy this credential into a zeroizing secret for the platform bootstrap channel.
+    ///
+    /// The parent retains this credential for authenticated IPC. The returned secret is consumed
+    /// by `polaris_sdk::registry::WorkerBootstrapPlatform::bootstrap_tree`; callers must never put
+    /// it in process arguments, environment variables, diagnostics, or an uncontrolled writer.
+    /// This explicit copy does not expose an unwrapped string or byte buffer.
+    #[must_use]
+    pub fn bootstrap_secret(&self) -> SecretString {
+        self.secret.clone()
+    }
+
     /// Write the credential bytes to a parent-controlled transfer channel.
     ///
     /// The caller is responsible for controlling the destination and never logging its contents.

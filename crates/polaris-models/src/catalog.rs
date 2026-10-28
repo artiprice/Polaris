@@ -340,8 +340,13 @@ impl ModelRegistry {
 
     /// Select only within an explicit session/frame effort and model allowlist.
     ///
+    /// `allowed_efforts` is mandatory. An empty `allowed_models` slice means no additional model
+    /// filter; callers requiring a model-specific policy must supply that filter. This selects
+    /// configuration and does not issue an authorization witness or establish provider support.
+    ///
     /// # Errors
-    /// Empty/denied effort or model constraints; no automatic escalation outside the allowlist.
+    /// Empty/denied effort constraints, a denied model filter, or an observed unavailable model;
+    /// no automatic escalation outside the supplied constraints.
     pub fn constrained_model(
         &self,
         effort: Effort,

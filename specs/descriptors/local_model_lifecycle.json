@@ -1,0 +1,67 @@
+{
+  "type_of": "struct",
+  "name": "LocalModelRuntime",
+  "file_path": "crates/polaris-kernel/src/model_lifecycle.rs",
+  "logic_name": "Local Model Process Lifecycle",
+  "test_list": [
+    {
+      "test_name": "loader_rejects_non_loopback_and_mismatched_url_authority",
+      "description": "Configuration rejects wildcard and DNS authorities, credentials, query strings, and a URL whose literal loopback host or port differs from the configured endpoint."
+    },
+    {
+      "test_name": "retained_root_owns_only_its_exact_loopback_listener",
+      "description": "The native ownership adapter observes only the exact listener owned by the retained root process; a different port is rejected."
+    },
+    {
+      "test_name": "helper_process_listener_fails_closed_and_tree_cleanup_reaps_both",
+      "description": "A listener held by a descendant fails the root-only startup ownership check, and failed startup cleanup reaps both processes in the retained tree."
+    },
+    {
+      "test_name": "load_keeps_one_exact_adapter_and_lease_through_count_and_stream",
+      "description": "Loading validates the pinned llama.cpp endpoint; one adapter serves counting and chat while a live stream retains its lease. Clean EOF releases the lease even if the drained stream value remains alive, and aborting an acquisition waiter leaves shared slot loading owned."
+    },
+    {
+      "test_name": "failed_profile_startup_stops_the_owned_process_tree",
+      "description": "A mismatched advertised model profile fails startup and the exact spawned process is observed exited afterward."
+    },
+    {
+      "test_name": "configured_subagent_override_uses_the_existing_model_registry",
+      "description": "Subagent effort overrides are resolved by the existing registry and exact model allowlist without creating a parallel catalog."
+    },
+    {
+      "test_name": "pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile",
+      "description": "An opt-in ignored Windows acceptance test starts the provenance-pinned llama.cpp process on port 18932, validates real exact prompt tokenization and structured tool-call usage under one selected lease, then closes only its owned process and observes its listener gone."
+    }
+  ],
+  "dependencies": ["polaris_models::EvictableSlot", "polaris_models::ModelRegistry", "polaris_sdk::registry::PlatformOps", "polaris_sdk::registry::LocalEndpointOwnership", "polaris_nebius_cloud::token_factory::LlamaCppChatClient"],
+  "libraries": ["std::net", "std::time", "tokio::time"],
+  "inputs": [
+    {
+      "name": "platform",
+      "type": "Arc<P>",
+      "description": "Process supervisor implementing PlatformOps and the optional LocalEndpointOwnership capability."
+    },
+    {
+      "name": "process_spec",
+      "type": "SpawnSpec",
+      "description": "Explicit trusted server executable, arguments, working directory, and non-secret environment allowlist."
+    },
+    {
+      "name": "endpoint",
+      "type": "SocketAddr",
+      "description": "Literal loopback listener address and port; non-loopback or wildcard addresses are rejected, and the API URL must encode the same literal IP and port."
+    },
+    {
+      "name": "expected_model",
+      "type": "ModelId",
+      "description": "Exact configured model identifier, equal to the pinned llama.cpp model alias required in the live endpoint catalog."
+    },
+    {
+      "name": "bounds",
+      "type": "LocalModelLifecycleConfig",
+      "description": "Finite readiness deadline, per-probe deadline, retry interval, process stop grace, slot lease limit, and eviction timeouts."
+    }
+  ],
+  "output_type": "LocalModelRuntime<P>",
+  "output_description": "A bounded local-process loader and model-slot composition that publishes leases only after retained-process listener ownership and exact advertised model id are observed; it never claims authenticated endpoint identity."
+}

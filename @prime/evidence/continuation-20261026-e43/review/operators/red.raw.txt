@@ -1,0 +1,20 @@
+   Compiling regex-automata v0.4.18
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling tokio-util v0.7.20
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+error[E0432]: unresolved import `polaris_kernel_operators::RateLimitOp`
+ --> crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:1:5
+  |
+1 | use polaris_kernel_operators::RateLimitOp;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^-----------
+  |                               |
+  |                               no `RateLimitOp` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-kernel-operators` (test "rate_limit_operator") due to 1 previous error

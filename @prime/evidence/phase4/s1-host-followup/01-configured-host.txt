@@ -1,0 +1,21 @@
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+error[E0308]: mismatched types
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:342:56
+    |
+342 |             let package = renamed.map_or(alias, |name| name);
+    |                                                        ^^^^ expected `&String`, found `&str`
+    |
+    = note: expected reference `&std::string::String`
+               found reference `&str`
+
+error[E0308]: mismatched types
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:369:61
+    |
+369 |             let package = alias_target.map_or(alias, |name| name);
+    |                                                             ^^^^ expected `&String`, found `&str`
+    |
+    = note: expected reference `&std::string::String`
+               found reference `&str`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `polaris-security-rules` (lib) due to 2 previous errors

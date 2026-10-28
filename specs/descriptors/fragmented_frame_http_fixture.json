@@ -1,0 +1,25 @@
+{
+  "type_of": "function",
+  "name": "serve_two_requests",
+  "file_path": "crates/polaris-kernel/tests/frame_prompt_http.rs",
+  "logic_name": "Fragmented loopback HTTP fixture",
+  "test_list": [
+    {
+      "test_name": "loopback_fixture_reads_deliberately_fragmented_request_bodies",
+      "description": "Delay body arrival after headers, preserving exact request count/content and bounded I/O."
+    }
+  ],
+  "dependencies": [
+    "read_bounded_request"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "listener",
+      "type": "TcpListener",
+      "description": "Nonblocking accept listener with blocking accepted request sockets."
+    }
+  ],
+  "output_type": "io::Result<Vec<CapturedRequest>>",
+  "output_description": "Two exact bounded requests or an observable failure; no retry or assertion weakening."
+}

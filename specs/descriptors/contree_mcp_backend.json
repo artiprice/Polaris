@@ -1,0 +1,25 @@
+{
+  "type_of": "struct",
+  "name": "ContreeBackend",
+  "file_path": "crates/polaris-nebius-cloud/crates/sandboxes/src/lib.rs",
+  "logic_name": "Stateless Contree MCP adapter for immutable image execution",
+  "test_list": [
+    {"test_name": "contree_checks_inventory_and_verified_tool_shapes", "description": "Connection accepts the exact pinned upstream MCP tool inventory and validates the critical run, rsync, image, file, and operation schemas before exposing typed calls."},
+    {"test_name": "contree_bounds_operations_and_preserves_branch_identity", "description": "Typed calls apply finite input/output and fan-out bounds, retain each source image and directory_state_id, and return each immutable result image or pending operation identity without conflating branches."},
+    {"test_name": "contree_rejects_non_loopback_sidecar_and_missing_egress_consent", "description": "Configuration rejects non-loopback sidecars and local-to-remote sync without explicit egress consent before any MCP call."},
+    {"test_name": "contree_sanitizes_secrets_and_bounds_tool_responses", "description": "Secrets are never included in debug/error output, tool responses are bounded before typed decoding, and malformed or oversized output fails closed."},
+    {"test_name": "contree_cancellation_joins_local_calls_and_cancels_owned_operations", "description": "Cancellation stops the local request and invokes the upstream cancellation tool for each operation id created and owned by the cancelled call."},
+    {"test_name": "contree_sync_projects_only_approved_sync_plan_paths", "description": "Sync requests can transfer only paths explicitly present in the existing storage sync plan after secret and policy filtering."},
+    {"test_name": "contree_inventory_fixtures_match_upstream_source_revision", "description": "The checked-in synthetic MCP fixture documents the exact upstream source revision and rejects missing, extra, or shape-drifted advertised tools."}
+  ],
+  "dependencies": ["polaris-ext-mcp::McpHub", "ContreeEgressConsent", "SyncPlan"],
+  "libraries": ["rmcp 3.5.1", "tokio", "serde", "serde_json", "thiserror"],
+  "inputs": [
+    {"name": "endpoint", "type": "SidecarEndpoint", "description": "Explicit loopback streamable-HTTP endpoint for the supervised contree-mcp sidecar."},
+    {"name": "request", "type": "RunRequest", "description": "Bounded command, selected immutable image, optional directory_state_id and explicit run options matching the verified upstream schema."},
+    {"name": "sync", "type": "SyncPlan", "description": "Existing storage sync plan projected to an allowlisted, secret-filtered transfer set with explicit egress consent."},
+    {"name": "cancellation", "type": "CancellationToken", "description": "Structured local cancellation; any detached upstream operation remains explicitly owned and is cancelled before return."}
+  ],
+  "output_type": "ContreeRunOutcome / typed inspection and operation results",
+  "output_description": "Stateless immutable-image run outcomes with exact source and branch identity, or typed pending operation identities; no persistent SDK SandboxBackend create/exec/destroy semantics are claimed."
+}

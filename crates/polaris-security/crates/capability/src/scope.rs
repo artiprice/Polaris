@@ -62,9 +62,14 @@ impl ResourcePath {
         &self.0
     }
 }
-/// Path or exact AST-symbol scope; symbol identity comes from trusted code analysis.
+/// Workspace, path, or exact AST-symbol scope; symbol identity comes from trusted code analysis.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResourceScope {
+    /// Every lexical resource supplied at an authorization boundary.
+    ///
+    /// This deliberately broad scope is for trusted callers that explicitly need workspace-wide
+    /// access. It still enforces rights, time, churn, unsafe-change, and exact-diff constraints.
+    Workspace,
     /// Exactly one relative path.
     Exact(ResourcePath),
     /// A directory and component-bounded descendants.
@@ -88,14 +93,17 @@ pub enum Right {
     ExecuteTool,
     /// Delegate through the runtime frame boundary.
     SpawnSubagent,
+    /// Cancel one exact runtime frame and its registered descendants.
+    CancelFrame,
 }
 impl Right {
     /// Every supported right in stable vocabulary order.
-    pub const ALL: [Self; 4] = [
+    pub const ALL: [Self; 5] = [
         Self::Read,
         Self::ProposeDiff,
         Self::ExecuteTool,
         Self::SpawnSubagent,
+        Self::CancelFrame,
     ];
     pub(crate) const fn name(self) -> &'static str {
         match self {
@@ -103,12 +111,13 @@ impl Right {
             Self::ProposeDiff => "propose_diff",
             Self::ExecuteTool => "execute_tool",
             Self::SpawnSubagent => "spawn_subagent",
+            Self::CancelFrame => "cancel_frame",
         }
     }
 }
 /// Fixed-size right set; unknown/reserved bits cannot be introduced.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Rights([bool; 4]);
+pub struct Rights([bool; 5]);
 impl Rights {
     /// Construct an explicit set; duplicates have no effect.
     #[must_use]
@@ -151,9 +160,23 @@ pub(crate) fn expiry(issued: i64, lifetime_micros: u128) -> Result<i64, Capabili
 pub(crate) fn checks(scope: &Scope, clock: &impl Clock) -> Result<BlockBuilder, CapabilityError> {
     let issued = clock.now().as_microsecond();
     let expiry = expiry(issued, scope.ttl.as_micros())?;
-    let (path, symbol, prefix) = match &scope.resource {
-        ResourceScope::Exact(path) => (path, None, false),
-        ResourceScope::Prefix(path) => (path, None, true),
+    let mut params: HashMap<String, Term> = HashMap::from([
+        ("churn".to_owned(), int(i64::from(scope.max_churn_lines))),
+        ("issued".to_owned(), int(issued)),
+        ("expiry".to_owned(), int(expiry)),
+    ]);
+    let mut code = match &scope.resource {
+        ResourceScope::Workspace => "check if resource($resource) trusting authority;\n".to_owned(),
+        ResourceScope::Exact(path) => {
+            let _previous = params.insert("path".to_owned(), string(path.as_str()));
+            "check if resource({path}) trusting authority;\n".to_owned()
+        }
+        ResourceScope::Prefix(path) => {
+            let _previous = params.insert("path".to_owned(), string(path.as_str()));
+            let _previous =
+                params.insert("prefix".to_owned(), string(&format!("{}/", path.as_str())));
+            "check if resource({path}) trusting authority or resource($p), $p.starts_with({prefix}) trusting authority;\n".to_owned()
+        }
         ResourceScope::Symbol { path, symbol } => {
             if symbol.trim().is_empty()
                 || symbol.len() > 1024
@@ -161,20 +184,10 @@ pub(crate) fn checks(scope: &Scope, clock: &impl Clock) -> Result<BlockBuilder, 
             {
                 return Err(CapabilityError::InvalidScope);
             }
-            (path, Some(symbol), false)
+            let _previous = params.insert("path".to_owned(), string(path.as_str()));
+            let _previous = params.insert("symbol".to_owned(), string(symbol));
+            "check if resource({path}) trusting authority;\ncheck if symbol({symbol}) trusting authority;\n".to_owned()
         }
-    };
-    let mut params: HashMap<String, Term> = HashMap::from([
-        ("path".to_owned(), string(path.as_str())),
-        ("prefix".to_owned(), string(&format!("{}/", path.as_str()))),
-        ("churn".to_owned(), int(i64::from(scope.max_churn_lines))),
-        ("issued".to_owned(), int(issued)),
-        ("expiry".to_owned(), int(expiry)),
-    ]);
-    let mut code = if prefix {
-        "check if resource({path}) trusting authority or resource($p), $p.starts_with({prefix}) trusting authority;\n".to_owned()
-    } else {
-        "check if resource({path}) trusting authority;\n".to_owned()
     };
     code.push_str("check if churn($c), $c <= {churn} trusting authority;\ncheck if time($t), $t >= {issued}, $t < {expiry} trusting authority;\n");
     if !scope.allow_unsafe {
@@ -183,10 +196,6 @@ pub(crate) fn checks(scope: &Scope, clock: &impl Clock) -> Result<BlockBuilder, 
     if let Some(hash) = scope.diff_blake3 {
         let _previous = params.insert("hash".to_owned(), bytes(hash.as_bytes()));
         code.push_str("check if diff_blake3({hash}) trusting authority;\n");
-    }
-    if let Some(symbol) = symbol {
-        let _previous = params.insert("symbol".to_owned(), string(symbol));
-        code.push_str("check if symbol({symbol}) trusting authority;\n");
     }
     let choices = Right::ALL
         .into_iter()

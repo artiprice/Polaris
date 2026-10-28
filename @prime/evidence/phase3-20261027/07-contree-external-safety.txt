@@ -1,0 +1,28 @@
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+warning: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:1217:20
+     |
+1217 |           timed_out: match value.get("timed_out").and_then(Value::as_bool) {
+     |  ____________________^
+1218 | |             Some(value) => value,
+1219 | |             None => false,
+1220 | |         },
+     | |_________^ help: replace it with: `value.get("timed_out").and_then(Value::as_bool).unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+     = note: `#[warn(clippy::manual_unwrap_or_default)]` on by default
+
+warning: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:1227:16
+     |
+1227 |       let text = match value.get(field).and_then(Value::as_str) {
+     |  ________________^
+1228 | |         Some(text) => text,
+1229 | |         None => "",
+1230 | |     };
+     | |_____^ help: replace it with: `value.get(field).and_then(Value::as_str).unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: `polaris-nebius-cloud-sandboxes` (lib) generated 2 warnings (run `cargo clippy --fix --lib -p polaris-nebius-cloud-sandboxes -- --no-deps --forbid unsafe_code --forbid clippy::unwrap_used --forbid clippy::expect_used --forbid clippy::panic --forbid clippy::indexing_slicing --forbid clippy::as_conversions --forbid clippy::todo --forbid clippy::unimplemented` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized] target(s) in 1.42s

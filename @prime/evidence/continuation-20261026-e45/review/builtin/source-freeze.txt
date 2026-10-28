@@ -1,0 +1,8 @@
+4A4DF7C37C1F893A7194EA8B3A33C8A07E70D5F270DBBB08FF620BB1F5E32AB8  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\src\registry.rs
+683821014149BBEEF798516A09D0D076D4D4CE9C6AC6617FE7853FE9BF6824C2  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\src\search.rs
+969AB4EE13B3A1D692AFF976C65763A34113E55E3F2A5E42AA41C96AA2117E0F  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\src\read.rs
+82F16450110159FD89735FA9E22E47A153520BC750BF8DA5BB08989EB7004784  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\src\proposal.rs
+9E0EF6AAC3F4B370A86944D752A7BEE9A304CAF6AB278695D7A473E9DD56B775  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\src\lib.rs
+1F843F52F9C0FB9613FB7108D690B40C2531065D4D8D8CAC42B30DF199A9FC28  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs
+0736CD5095B8DB9F0A40928458ECE5CD029902AA76DA1F509722862DB1F08203  C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\builtin_contracts.rs
+D8704C1BAE87E30A3E373AF5CF426CEC30C88FA544670EEC7703C287934C5438  C:\mDev\Polaris\specs\descriptors\authorized_builtin_invocation.json

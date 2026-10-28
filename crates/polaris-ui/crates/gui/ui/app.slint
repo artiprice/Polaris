@@ -1,0 +1,441 @@
+// Polaris desktop window. Two screens share one window state:
+// - welcome: a native port of the design demo's welcome page with the ASCII aurora behind it
+//   (`aurora-frame`, rendered by `polaris-ui-ascii-aurora`);
+// - session: sidebar of real sessions, conversation and docked composer (no aurora).
+// Only the visible screen is instantiated, so each control exists once.
+
+import "../assets/fonts/Inter-Regular.ttf";
+import "../assets/fonts/Inter-Medium.ttf";
+import "../assets/fonts/space-grotesk.ttf";
+import "../assets/fonts/jetbrains-mono.ttf";
+
+import { AboutSlint, Palette } from "std-widgets.slint";
+import { Tokens } from "tokens.slint";
+import { Icon, IconPaths } from "icons.slint";
+import { Brand, NavButton, Motion } from "parts.slint";
+import { Composer, DirectiveChip } from "composer.slint";
+import { SessionScreen, EntryRow, SessionRowUi, SessionGroup, SearchHitUi } from "session.slint";
+
+export { Tokens, DirectiveChip, EntryRow, SessionRowUi, SessionGroup, SearchHitUi }
+
+export component AppWindow inherits Window {
+    title: "Polaris";
+    preferred-width: 1280px;
+    preferred-height: 800px;
+    min-width: 760px;
+    min-height: 520px;
+    background: Tokens.canvas;
+    default-font-family: Tokens.font-body;
+    default-font-size: 14px;
+
+    // The shell is always dark; std-widgets (AboutSlint, ListView) must use the dark palette too.
+    init => {
+        Palette.color-scheme = ColorScheme.dark;
+    }
+
+    // ---- data from Rust -------------------------------------------------------------------
+    in property <image> aurora-frame;
+    in property <string> app-version;
+    in property <string> workspace-path;
+    in property <string> state-dir;
+    in property <[string]> model-names;
+    in property <[string]> model-short-names;
+    in property <[DirectiveChip]> directives;
+    in property <bool> motion-static;
+    in property <string> notice;
+    in property <bool> pending;
+    in property <bool> starting;
+    in property <string> session-title;
+    in property <[EntryRow]> entries;
+    in property <[SessionGroup]> groups;
+    in property <[SearchHitUi]> hits;
+    in property <string> status-workspace;
+    in property <string> status-branch;
+    in property <string> status-connection: "Offline · no model replies";
+
+    // ---- window state, readable and writable from Rust -------------------------------------
+    in-out property <bool> in-session;
+    in-out property <string> draft;
+    in-out property <int> model-index: 0;
+    in-out property <int> mode-index: 0;
+    in-out property <int> effort-index: 2;
+    in-out property <bool> popover-open;
+    in-out property <bool> context-open;
+    in-out property <bool> about-open;
+    in-out property <string> search-text;
+
+    // Size of the aurora area, derived from window geometry (the welcome layer is conditional).
+    out property <length> atmosphere-width: root.in-session ? 0px : root.width - root.sidebar-width - (root.context-docked ? 344px : 0px);
+    out property <length> atmosphere-height: root.in-session ? 0px : root.height - root.topbar-height;
+
+    callback draft-edited(string);
+    callback submit();
+    callback new-conversation();
+    callback open-session(string);
+    callback search-edited(string);
+    callback show-sessions();
+
+    property <length> sidebar-width: 68px;
+    property <length> topbar-height: 56px;
+    property <bool> context-docked: root.context-open && root.width >= 1280px;
+
+    // ---- welcome screen ---------------------------------------------------------------------
+    if !root.in-session: Rectangle {
+        // Ready to type as soon as the screen appears.
+        init => {
+            welcome-composer.focus-input();
+        }
+        // workspace column: aurora + stage
+        Rectangle {
+            x: root.sidebar-width;
+            y: root.topbar-height;
+            width: root.atmosphere-width;
+            height: root.atmosphere-height;
+            background: Tokens.canvas;
+            clip: true;
+
+            Image {
+                width: parent.width;
+                height: parent.height;
+                source: root.aurora-frame;
+                image-fit: fill;
+                image-rendering: smooth;
+                accessible-role: none;
+            }
+
+            // Clicking the empty welcome area closes the model menu.
+            TouchArea {
+                enabled: root.popover-open;
+                clicked => { root.popover-open = false; }
+            }
+
+            stage := Rectangle {
+                width: min(680px, parent.width - 64px);
+                height: heading.preferred-height + 40px + welcome-composer.height;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2 - 30px;
+
+                Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: -12px;
+                    width: min(parent.width, heading.preferred-width + 40px);
+                    height: heading.preferred-height + 24px;
+                    border-radius: self.height / 2;
+                    background: @radial-gradient(circle, Tokens.heading-backing 0%, Tokens.scrim 100%);
+                }
+                heading := Text {
+                    y: 0;
+                    width: parent.width;
+                    text: "What’s on your mind for Polaris?";
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                    font-family: Tokens.font-display;
+                    font-size: 30px;
+                    font-weight: 400;
+                    letter-spacing: -0.8px;
+                    color: Tokens.heading;
+                    accessible-role: text;
+                }
+
+                welcome-composer := Composer {
+                    y: heading.preferred-height + 40px;
+                    width: parent.width;
+                    text <=> root.draft;
+                    pending: root.pending;
+                    notice: root.notice;
+                    model-names: root.model-names;
+                    model-short-names: root.model-short-names;
+                    directives: root.directives;
+                    menu-up: false;
+                    model-index <=> root.model-index;
+                    mode-index <=> root.mode-index;
+                    effort-index <=> root.effort-index;
+                    menu-open <=> root.popover-open;
+                    edited(text) => { root.draft-edited(text); }
+                    submit => { root.submit(); }
+                }
+            }
+        }
+
+        // topbar background (toggle drawn at window level)
+        Rectangle {
+            x: root.sidebar-width;
+            y: 0;
+            width: root.width - root.sidebar-width;
+            height: root.topbar-height;
+            background: Tokens.canvas;
+        }
+
+        // narrow sidebar, after the workspace so its tooltips draw on top
+        Rectangle {
+            x: 0;
+            width: root.sidebar-width;
+            height: root.height;
+            background: Tokens.canvas;
+
+            VerticalLayout {
+                padding-top: 20px;
+                padding-bottom: 14px;
+                alignment: start;
+                HorizontalLayout {
+                    alignment: center;
+                    Brand { }
+                }
+                Rectangle { height: 18px; }
+                HorizontalLayout {
+                    alignment: center;
+                    NavButton {
+                        icon: IconPaths.plus;
+                        tip: "New conversation";
+                        clicked => { root.new-conversation(); }
+                    }
+                }
+                Rectangle { height: 14px; }
+                HorizontalLayout {
+                    alignment: center;
+                    padding-bottom: 7px;
+                    NavButton {
+                        icon: IconPaths.history;
+                        tip: "Sessions";
+                        clicked => { root.show-sessions(); }
+                    }
+                }
+                for item in [
+                    { icon: IconPaths.models, tip: "Models · not in the desktop shell yet" },
+                    { icon: IconPaths.usage, tip: "Usage · not in the desktop shell yet" },
+                    { icon: IconPaths.settings, tip: "Settings · not in the desktop shell yet" },
+                ]: HorizontalLayout {
+                    alignment: center;
+                    padding-bottom: 7px;
+                    NavButton {
+                        icon: item.icon;
+                        tip: item.tip;
+                    }
+                }
+            }
+
+            Rectangle {
+                y: parent.height - self.height - 14px;
+                height: about-col.preferred-height + 8px;
+                accessible-role: button;
+                accessible-label: "About Polaris";
+                accessible-action-default => { root.about-open = !root.about-open; }
+                about-touch := TouchArea {
+                    clicked => { root.about-open = !root.about-open; }
+                }
+                about-col := VerticalLayout {
+                    alignment: center;
+                    spacing: 5px;
+                    HorizontalLayout {
+                        alignment: center;
+                        Icon {
+                            width: 15px;
+                            height: 15px;
+                            commands: IconPaths.sparkle;
+                            color: about-touch.has-hover || root.about-open ? Tokens.text : Tokens.muted;
+                        }
+                    }
+                    Text {
+                        text: "About";
+                        horizontal-alignment: center;
+                        font-size: 9px;
+                        color: about-touch.has-hover || root.about-open ? Tokens.text : Tokens.muted;
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- session screen ---------------------------------------------------------------------
+    if root.in-session: SessionScreen {
+        width: root.width - (root.context-docked ? 344px : 0px);
+        height: root.height;
+        title: root.session-title;
+        entries: root.entries;
+        groups: root.groups;
+        hits: root.hits;
+        status-workspace: root.status-workspace;
+        status-branch: root.status-branch;
+        status-connection: root.status-connection;
+        state-dir: root.state-dir;
+        starting: root.starting;
+        notice: root.notice;
+        model-names: root.model-names;
+        model-short-names: root.model-short-names;
+        directives: root.directives;
+        draft <=> root.draft;
+        pending: root.pending;
+        model-index <=> root.model-index;
+        mode-index <=> root.mode-index;
+        effort-index <=> root.effort-index;
+        menu-open <=> root.popover-open;
+        search-text <=> root.search-text;
+        draft-edited(text) => { root.draft-edited(text); }
+        submit => { root.submit(); }
+        new-session => { root.new-conversation(); }
+        open-session(id) => { root.open-session(id); }
+        search-edited(query) => { root.search-edited(query); }
+        about => { root.about-open = !root.about-open; }
+    }
+
+    // ---- context toggle (both screens) ------------------------------------------------------------
+    Rectangle {
+        x: root.width - self.width - 22px;
+        y: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        background: ctx-touch.has-hover || root.context-open ? Tokens.topbar-hover : transparent;
+        accessible-role: button;
+        accessible-label: "Session context";
+        accessible-action-default => { root.context-open = !root.context-open; }
+        ctx-touch := TouchArea {
+            clicked => { root.context-open = !root.context-open; }
+        }
+        Icon {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            commands: IconPaths.panel-right;
+            color: ctx-touch.has-hover || root.context-open ? Tokens.text : Tokens.muted-web;
+        }
+    }
+
+    // ---- context panel ------------------------------------------------------------------------------
+    Rectangle {
+        x: root.width - self.width - 24px;
+        y: 58px;
+        width: 320px;
+        height: root.height - self.y - 24px;
+        opacity: root.context-open ? 1 : 0;
+        visible: root.context-open || self.opacity > 0.01;
+        animate opacity { duration: Motion.fast; }
+        background: Tokens.context-bg;
+        border-width: 1px;
+        border-color: Tokens.line-strong;
+        border-radius: 14px;
+        drop-shadow-blur: 48px;
+        drop-shadow-offset-y: 16px;
+        drop-shadow-color: Tokens.popover-shadow;
+        clip: true;
+        TouchArea { }
+        VerticalLayout {
+            padding: 22px;
+            spacing: 8px;
+            alignment: start;
+            Text {
+                text: "Session context";
+                font-family: Tokens.font-display;
+                font-weight: 500;
+                font-size: 19px;
+                color: Tokens.text;
+            }
+            Text {
+                text: "The useful things, close at hand.";
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+            Rectangle { height: 14px; }
+            Text {
+                text: "WORKSPACE";
+                font-family: Tokens.font-mono;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                color: Tokens.muted-web;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Icon {
+                    width: 15px;
+                    height: 15px;
+                    commands: IconPaths.folder;
+                    color: Tokens.mode-plan;
+                }
+                Text {
+                    text: root.workspace-path;
+                    wrap: word-wrap;
+                    font-family: Tokens.font-mono;
+                    font-size: 11px;
+                    color: Tokens.context-file;
+                }
+            }
+            Rectangle { height: 14px; }
+            Text {
+                text: "KERNEL";
+                font-family: Tokens.font-mono;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                color: Tokens.muted-web;
+            }
+            Text {
+                text: "Local offline session. Messages and $directives are recorded in the session store; model execution is unavailable until the P3 model path exists, so nothing replies.";
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.directive;
+            }
+            Rectangle { height: 14px; }
+            Text {
+                text: "MOTION";
+                font-family: Tokens.font-mono;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                color: Tokens.muted-web;
+            }
+            Text {
+                text: root.motion-static ? "Reduced motion: the aurora is a still frame." : "The welcome aurora animates at 20 fps and pauses while the window is minimised or a session is open.";
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+        }
+    }
+
+    // ---- about panel (Slint royalty-free licence attribution, ADR-014) ---------------------------
+    Rectangle {
+        x: root.in-session ? 12px : root.sidebar-width + 10px;
+        y: root.height - self.height - 22px;
+        width: 290px;
+        height: about-layout.preferred-height;
+        opacity: root.about-open ? 1 : 0;
+        visible: root.about-open || self.opacity > 0.01;
+        animate opacity { duration: Motion.fast; }
+        background: Tokens.surface;
+        border-width: 1px;
+        border-color: Tokens.line-strong;
+        border-radius: 12px;
+        drop-shadow-blur: 50px;
+        drop-shadow-offset-y: 12px;
+        drop-shadow-color: Tokens.panel-shadow;
+        TouchArea { }
+        about-layout := VerticalLayout {
+            padding: 20px;
+            spacing: 8px;
+            Text {
+                text: "Polaris";
+                font-family: Tokens.font-display;
+                font-weight: 500;
+                font-size: 16px;
+                color: Tokens.text;
+            }
+            Text {
+                text: "Version " + root.app-version + " · Apache-2.0";
+                font-family: Tokens.font-mono;
+                font-size: 11px;
+                color: Tokens.muted-web;
+            }
+            Text {
+                text: "Desktop shell. Sessions are recorded locally; model execution, uploads and speech input are not connected yet.";
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+            Rectangle {
+                height: 1px;
+                background: Tokens.line;
+            }
+            Rectangle {
+                height: 140px;
+                AboutSlint { }
+            }
+        }
+    }
+}

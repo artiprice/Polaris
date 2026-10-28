@@ -1,0 +1,3 @@
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `dev` profile [unoptimized] target(s) in 5.90s

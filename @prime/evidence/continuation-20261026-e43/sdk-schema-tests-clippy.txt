@@ -1,0 +1,2 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Finished `dev` profile [unoptimized] target(s) in 1.29s

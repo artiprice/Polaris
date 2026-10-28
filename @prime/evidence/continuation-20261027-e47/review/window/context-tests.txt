@@ -1,0 +1,40 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Finished `test` profile [unoptimized] target(s) in 15.68s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_context-61721459e9914f3b.exe)
+
+running 12 tests
+test assemble::lossless_window_tests::archive_byte_cap_fails_assembly_without_claiming_recovery ... ok
+test assemble::lossless_window_tests::no_omission_emits_no_archive_marker ... ok
+test assemble::lossless_window_tests::archive_reference_is_exposed_by_context_map ... ok
+test assemble::lossless_window_tests::archive_cid_version_and_message_count_are_validated ... ok
+test assemble::lossless_window_tests::archived_messages_expand_byte_exactly_and_preserve_tool_correlation ... ok
+test assemble::lossless_window_tests::archive_notice_is_included_in_the_context_budget ... ok
+test assemble::lossless_window_tests::tool_call_groups_are_archived_and_retained_atomically ... ok
+test assemble::lossless_window_tests::expand_rejects_archives_larger_than_the_receiving_virtualizer_cap ... ok
+test assemble::lossless_window_tests::archive_metadata_tampering_is_rejected_on_recovery ... ok
+test assemble::lossless_window_tests::identical_omitted_windows_produce_identical_archive_references ... ok
+test assemble::lossless_window_tests::prefix_scratchpad_and_active_scope_order_remains_stable ... ok
+test assemble::lossless_window_tests::malformed_archived_tool_group_is_rejected ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\window.rs (target\debug\deps\window-1c5c7713564f09d5.exe)
+
+running 3 tests
+test window_preserves_complete_tool_groups ... ok
+test window_rejects_malformed_history ... ok
+test window_archive_roundtrip_is_bounded_and_verified ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_runtime_context
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

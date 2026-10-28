@@ -1,0 +1,64 @@
+{
+  "type_of": "pipeline",
+  "name": "reconcile_tpm_reservation",
+  "file_path": "crates/polaris-ratelimit/src/permit.rs",
+  "logic_name": "TPM Reservation Refund",
+  "test_list": [
+    {
+      "test_name": "reconciliation_returns_unused_tokens",
+      "description": "A dispatched request reserving more tokens than actual usage releases exactly the unused weighted TPM budget for immediate later admission."
+    },
+    {
+      "test_name": "tail_reconciliation_reports_partial_refund_exactly",
+      "description": "A successful tail reconciliation replaces the reservation with actual usage and reports the exact unused amount released."
+    },
+    {
+      "test_name": "concurrent_refund_preserves_other_reservations",
+      "description": "Full acceptance requires returning one overlapping reservation's unused amount while preserving the other; the current safe tail-only implementation retains unused tokens when later state exists, so this assertion remains RED."
+    },
+    {
+      "test_name": "undispatched_drop_refunds_reservation",
+      "description": "Dropping a permit before mark_dispatched releases the request and token reservation once."
+    },
+    {
+      "test_name": "dispatched_drop_keeps_reservation_charged",
+      "description": "Dropping a permit after mark_dispatched retains the full reservation because transport visibility is uncertain."
+    },
+    {
+      "test_name": "overrun_charges_actual_usage_before_return",
+      "description": "Reconciliation above the reservation charges the full actual usage to TPM before returning."
+    },
+    {
+      "test_name": "late_refund_never_erases_another_request_charge",
+      "description": "The acceptance test requires a late refund to recover unused capacity without reducing newer debt; tail-only settlement retains the unused amount when the reservation is no longer the exact tail, so full acceptance remains RED."
+    },
+    {
+      "test_name": "expired_older_reservation_cannot_refund_newer_live_debt",
+      "description": "An older reservation whose own TAT endpoint has elapsed cannot refund across the newer live tail reservation."
+    },
+    {
+      "test_name": "aba_after_zero_usage_settlement_leaves_no_other_debt",
+      "description": "A scalar TAT returning to an earlier value after a later zero-usage tail settlement may settle the older permit because the intervening reservation carries no retained usage debt."
+    }
+  ],
+  "dependencies": [
+    "DualLimiter",
+    "Permit",
+    "GcraCell"
+  ],
+  "libraries": ["tokio"],
+  "inputs": [
+    {
+      "name": "permit",
+      "type": "Permit<C>",
+      "description": "A unique request reservation returned by DualLimiter::try_acquire."
+    },
+    {
+      "name": "actual_tokens",
+      "type": "u64",
+      "description": "Provider-reported prompt plus completion token usage."
+    }
+  ],
+  "output_type": "Result<Reconciliation, RateLimitError>",
+  "output_description": "The reserved and actual token counts, overrun flag, unused token count removed by exact tail settlement, and unused token count retained when newer TAT state prevented settlement. These counters describe reservation settlement; natural GCRA time decay is independent."
+}

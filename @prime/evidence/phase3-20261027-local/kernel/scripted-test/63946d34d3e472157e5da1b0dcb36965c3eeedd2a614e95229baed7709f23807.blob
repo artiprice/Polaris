@@ -1,0 +1,3 @@
+   Compiling polaris-p2-acceptance v0.1.0 (/sandbox/ws)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running unittests src/lib.rs (/sandbox/build/debug/deps/polaris_p2_acceptance-52a737afb549eb3b)

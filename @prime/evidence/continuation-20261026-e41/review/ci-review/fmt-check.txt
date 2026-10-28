@@ -1,0 +1,3 @@
+$ cargo fmt --package polaris-devenv-cicd -- --check
+
+[exit=0]

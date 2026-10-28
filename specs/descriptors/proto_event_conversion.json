@@ -6,7 +6,7 @@
   "test_list": [
     {
       "test_name": "every_event_variant_roundtrips",
-      "description": "One sample of each of the 21 sdk Event variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
+      "description": "One sample of each of the 29 sdk Event variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
     },
     {
       "test_name": "event_record_roundtrips_with_timestamp_edges",

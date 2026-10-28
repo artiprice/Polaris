@@ -1,0 +1,9 @@
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Finished `test` profile [unoptimized] target(s) in 2.65s
+     Running tests\capability_contract.rs (target\debug\deps\capability_contract-026c63c0f85ab7ae.exe)
+
+running 1 test
+test workspace_scope_attenuates_without_widening ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.00s
+

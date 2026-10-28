@@ -3,6 +3,9 @@
 /// Failure while loading the crate table, scanning the tree or querying cargo.
 #[derive(Debug, thiserror::Error)]
 pub enum XtaskError {
+    /// Calibration source, measured threshold, encoding or artifact creation failed.
+    #[error(transparent)]
+    Calibration(#[from] crate::calibration::CalibrationRunError),
     /// Filesystem access failed.
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),

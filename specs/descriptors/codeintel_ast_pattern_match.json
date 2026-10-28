@@ -1,0 +1,21 @@
+{
+  "type_of": "method",
+  "name": "Parsed::find_ast_pattern",
+  "file_path": "crates/polaris-code-intel/src/parse.rs",
+  "logic_name": "codeintel_ast_pattern_match",
+  "test_list": [
+    {"test_name": "matches_structural_pattern", "description": "A real ast-grep pattern returns its bounded syntax-node byte span."},
+    {"test_name": "ignores_text_inside_literals", "description": "Pattern-shaped text inside a string literal is not a syntax match."},
+    {"test_name": "match_limit_fails_closed", "description": "The matcher reports a bound error instead of truncating excess results."},
+    {"test_name": "invalid_utf8_is_rejected", "description": "Byte sources that cannot be represented as AST-grep text return a typed error."}
+  ],
+  "dependencies": ["Parsed", "Lang", "ByteSpan"],
+  "libraries": ["ast-grep-core", "tree-sitter"],
+  "inputs": [
+    {"name": "pattern", "type": "&str", "description": "Bounded ast-grep syntax pattern."},
+    {"name": "max_matches", "type": "usize", "description": "Hard maximum number of returned matches."},
+    {"name": "max_nodes", "type": "usize", "description": "Hard maximum syntax nodes traversed by the query."}
+  ],
+  "output_type": "Result<Vec<ByteSpan>, CodeIntelError>",
+  "output_description": "AST pattern byte ranges over the already parsed code-intel tree."
+}

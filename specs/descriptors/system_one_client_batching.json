@@ -1,0 +1,20 @@
+{
+  "type_of": "struct",
+  "name": "S1ClientBatcher",
+  "file_path": "crates/polaris-system-one/crates/client/src/batch.rs",
+  "logic_name": "Bounded System-One Cross-Call Batching",
+  "test_list": [
+    { "test_name": "concurrent_decisions_share_one_worker_batch", "description": "A burst exercises the eight-item maximum and routes each result to its correct caller." },
+    { "test_name": "cancelled_caller_does_not_stall_other_items_in_the_batch", "description": "Cancelling one caller while the worker RPC is pending does not block the remaining callers." },
+    { "test_name": "worker_without_loaded_identity_never_serves_cached_answers", "description": "Repeated requests are not served from a cache when authenticated health has no loaded-model identity." },
+    { "test_name": "result_from_prior_model_generation_is_not_cached_under_reloaded_identity", "description": "A response spanning a worker identity change is not cached under the later generation." }
+  ],
+  "dependencies": ["polaris_proto::pb::DecideRequest", "polaris_sdk::registry::DecisionEngine", "tokio::sync::mpsc"],
+  "libraries": ["tokio", "tonic"],
+  "inputs": [
+    { "name": "request", "type": "DecisionRequest", "description": "One validated SDK schema and input, with a caller-specific response channel and deadline." },
+    { "name": "worker_contract", "type": "WorkerService.Decide", "description": "Existing repeated-items RPC with a worker maximum of eight items." }
+  ],
+  "output_type": "Bounded batch dispatch",
+  "output_description": "A single bounded queue coalesces concurrent calls for at most three milliseconds, flushes at eight calls, enforces caller deadlines and routes each result to its own waiter. Cache entries require a fresh authenticated loaded-model digest and generation."
+}

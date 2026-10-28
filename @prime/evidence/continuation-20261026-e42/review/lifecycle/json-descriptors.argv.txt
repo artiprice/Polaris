@@ -1,0 +1,4 @@
+argv: powershell -NoProfile -Command "Get-Content specs/descriptors/model_slot_contract.json | ConvertFrom-Json | Out-Null; Get-Content specs/descriptors/model_eviction_manager_contract.json | ConvertFrom-Json | Out-Null; Write-Output 'both descriptors parse as JSON'"
+working_directory: C:\mDev\Polaris
+shell: powershell (login=false)
+exit_code: 0

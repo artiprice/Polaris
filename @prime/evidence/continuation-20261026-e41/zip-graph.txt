@@ -1,0 +1,7 @@
+zip v9.1.1
+├── calamine v0.37.0
+│   └── polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+│       └── polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+├── docx-rs v0.4.22 (C:\mDev\Polaris\vendor\docx-rs)
+│   └── polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest) (*)
+└── polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest) (*)

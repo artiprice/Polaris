@@ -1,0 +1,12 @@
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Finished `test` profile [unoptimized] target(s) in 2.20s
+     Running tests\calibration.rs (target\debug\deps\calibration-d9167583f01bfee5.exe)
+
+running 4 tests
+test calibration_joins_exact_ids_and_computes_confusion ... ok
+test calibration_rejects_missing_duplicate_and_foreign_outputs ... ok
+test calibration_threshold_selection_respects_precision_and_support ... ok
+test calibration_is_permutation_invariant_and_bounds_inputs ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

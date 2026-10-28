@@ -1,0 +1,81 @@
+ARGV: cargo clippy -p polaris-runtime-context --all-targets -- -D warnings
+EXIT: 101
+RAW OUTPUT:
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+error: using `chunks_exact` with a constant chunk size
+  --> crates\polaris-tools\crates\rtk\src\input.rs:27:23
+   |
+27 |     let units = bytes.chunks_exact(2).filter_map(|pair| match *pair {
+   |                       ^^^^^^^^^^^^^^^ help: consider using `as_chunks` instead: `as_chunks::<2>().0.iter()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#chunks_exact_to_as_chunks
+   = note: `-D clippy::chunks-exact-to-as-chunks` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::chunks_exact_to_as_chunks)]`
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-tools\crates\rtk\src\input.rs:104:5
+    |
+104 | /     if let Ok(text) = std::str::from_utf8(utf8_body) {
+105 | |         if !has_controls_or_escape(text.as_bytes()) {
+106 | |             return text.to_owned();
+107 | |         }
+108 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+104 ~     if let Ok(text) = std::str::from_utf8(utf8_body)
+105 ~         && !has_controls_or_escape(text.as_bytes()) {
+106 |             return text.to_owned();
+107 ~         }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-tools\crates\rtk\src\ledger.rs:262:13
+    |
+262 | /             if let LedgerLine::Issue(issue) = line {
+263 | |                 if issue.is_open() {
+264 | |                     if seen.contains(&issue.id) {
+265 | |                         still_open.insert(issue.id.clone());
+...   |
+271 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+262 ~             if let LedgerLine::Issue(issue) = line
+263 ~                 && issue.is_open() {
+264 |                     if seen.contains(&issue.id) {
+...
+269 |                     }
+270 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+  --> crates\polaris-tools\crates\rtk\src\text.rs:31:9
+   |
+31 | /         if let Some(message) = rest.strip_prefix(':') {
+32 | |             if message.is_empty() || message.starts_with(char::is_whitespace) {
+33 | |                 return Some((level, None, message.trim()));
+34 | |             }
+35 | |         }
+   | |_________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+   |
+31 ~         if let Some(message) = rest.strip_prefix(':')
+32 ~             && (message.is_empty() || message.starts_with(char::is_whitespace)) {
+33 |                 return Some((level, None, message.trim()));
+34 ~             }
+   |
+
+error: could not compile `polaris-tools-rtk` (lib) due to 4 previous errors
+

@@ -1,0 +1,30 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Finished `test` profile [unoptimized] target(s) in 1.54s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_dag-3e0f8f42c772e3de.exe)
+
+running 3 tests
+test graph::tests::unknown_completion_fails_closed ... ok
+test graph::tests::aborted_join_retains_node_identity ... ok
+test graph::tests::interrupted_completion_records_failure_and_preserves_sibling_readiness ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\runtime_dag_scheduler.rs (target\debug\deps\runtime_dag_scheduler-bd2ce928f74faa92.exe)
+
+running 7 tests
+test invalid_graph_is_rejected_before_run ... ok
+test pre_cancelled_run_reports_global_cancellation ... ok
+test dropping_run_after_start_drops_owned_task_future ... ok
+test caller_cancellation_drains_started_tasks ... ok
+test continue_independent_skips_failed_descendants ... ok
+test fail_fast_drains_owned_tasks ... ok
+test successful_diamond_runs_each_node_once ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_runtime_dag
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -13,8 +13,8 @@ pub enum ContextError {
     /// A compiler diagnostic stream could not be interpreted by RTK.
     #[error(transparent)]
     Rtk(#[from] RtkError),
-    /// The requested prompt cannot fit while preserving its immutable prefix and scratchpad.
-    #[error("context budget cannot fit immutable prefix and scratchpad")]
+    /// The non-window prompt content cannot fit within its configured token budget.
+    #[error("non-window context content cannot fit the configured budget")]
     Budget,
     /// The caller supplied an invalid byte range.
     #[error("byte range is outside the referenced content")]
@@ -40,6 +40,18 @@ pub enum ContextError {
     /// A context state lock was poisoned by a prior panic.
     #[error("context state lock is poisoned")]
     StatePoisoned,
+    /// A lossless archived conversation exceeds its configured byte cap.
+    #[error("lossless conversation archive exceeds its configured byte cap")]
+    WindowArchiveTooLarge,
+    /// A stored conversation archive failed content-id or size verification.
+    #[error("lossless conversation archive failed integrity verification")]
+    WindowArchiveIntegrity,
+    /// A stored conversation archive has an unsupported version or invalid message count.
+    #[error("lossless conversation archive has an unsupported format or invalid contents")]
+    InvalidWindowArchive,
+    /// Structured conversation archive JSON could not be encoded or decoded.
+    #[error("lossless conversation archive serialization failed: {0}")]
+    WindowArchiveSerialization(#[from] serde_json::Error),
 }
 
 impl HasKind for ContextError {
@@ -52,7 +64,11 @@ impl HasKind for ContextError {
             | Self::PrefixTooLarge
             | Self::DuplicateToolName
             | Self::InvalidUtf8
-            | Self::ToolHistory => ErrorKind::Permanent,
+            | Self::ToolHistory
+            | Self::WindowArchiveTooLarge
+            | Self::WindowArchiveIntegrity
+            | Self::InvalidWindowArchive
+            | Self::WindowArchiveSerialization(_) => ErrorKind::Permanent,
             Self::Budget | Self::EstimateOverflow => ErrorKind::Permanent,
             Self::StatePoisoned => ErrorKind::Fatal,
         }

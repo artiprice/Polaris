@@ -1,0 +1,19 @@
+{
+  "type_of": "pipeline",
+  "name": "serve_host_control",
+  "file_path": "crates/polaris-kernel/src/host_control.rs",
+  "logic_name": "Bounded trusted host control stream and private directory",
+  "test_list": [
+    {"test_name":"host_control_bounds_lines_and_rejects_unknown_fields","description":"Reject oversized or ambiguous requests before dispatch."},
+    {"test_name":"host_control_answers_exact_pending_revision","description":"Use the actual signed human-answer command path."},
+    {"test_name":"host_control_requires_exact_review_digest","description":"Never approve a review from a model claim or mismatched digest."},
+    {"test_name":"host_control_cancellation_closes_idle_stream","description":"End a cancellable idle transport through the retained cancellation token."},
+    {"test_name":"host_control_directory_claims_once_and_retains_uncertain_operations","description":"Claim immutable requests and never replay abandoned processing files."},
+    {"test_name":"host_control_directory_excludes_workspace_and_competing_owner","description":"Reject workspace paths and a second live directory lock owner."}
+  ],
+  "dependencies":["KernelHandle","HumanRequestService","SandboxExecution"],
+  "libraries":["tokio","tokio-util","serde","serde_json","thiserror"],
+  "inputs":[{"name":"transport","type":"host-owned async streams or private directory","description":"Explicit trusted authority surface outside the model workspace."}],
+  "output_type":"Result<(), HostControlError>",
+  "output_description":"Bounded responses from actual kernel operations. Implementation verification deferred by user instruction."
+}

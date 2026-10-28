@@ -1,0 +1,23 @@
+    Checking xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-runtime\crates\dag\src\pools.rs:256:41
+    |
+256 |             inner.semaphore.add_permits(target - current_usize);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-runtime\crates\dag\src\pools.rs:258:28
+    |
+258 |             let decrease = current_usize - target;
+    |                            ^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-runtime-dag` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-runtime-dag` (lib test) due to 2 previous errors

@@ -1,0 +1,11 @@
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+    Finished `test` profile [unoptimized] target(s) in 2.47s
+     Running tests\watchdog_contract.rs (target\debug\deps\watchdog_contract-906785c668bfa5fe.exe)
+
+running 3 tests
+test distinct_nonoverlapping_steps_do_not_match_at_positive_threshold ... ok
+test matching_rejected_hypothesis_survives_newer_unproductive_match ... ok
+test watchdog_rejects_zero_near_duplicate_threshold ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

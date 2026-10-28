@@ -326,7 +326,9 @@ proptest! {
         let mut bytes = pb::Decision::from(&decision).encode_to_vec();
         for (pos, value) in flips {
             let len = bytes.len();
-            if let Some(slot) = bytes.get_mut(pos % len.max(1)) {
+            let position = pos.checked_rem(len.max(1))
+                .ok_or_else(|| TestCaseError::fail("nonzero mutation span invariant"))?;
+            if let Some(slot) = bytes.get_mut(position) {
                 *slot = value;
             }
         }

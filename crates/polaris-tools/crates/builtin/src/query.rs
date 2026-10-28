@@ -7,6 +7,7 @@ use serde_json::Value;
 
 /// Input for selecting a JSON Pointer from caller-provided JSON text.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JsonQueryInput {
     /// JSON document text.
     pub json: String,
@@ -24,6 +25,7 @@ pub struct JsonQueryOutput {
 
 /// Input for matching a bounded regex against caller-provided text.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RegexQueryInput {
     /// Input text, bounded by the registry's max input size.
     pub text: String,

@@ -1,0 +1,12 @@
+{
+  "name": "percentages",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tmp/p2/validate_phase_percentages.py"
+  ],
+  "started_utc": "2026-10-26T17:45:28.036408+00:00",
+  "elapsed_seconds": 0.159,
+  "exit_code": 0,
+  "raw": "27-percentages.txt"
+}

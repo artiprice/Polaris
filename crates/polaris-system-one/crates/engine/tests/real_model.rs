@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use polaris_sdk::system_one::{Answer, DecisionInput, Label, Question, QuestionId, QuestionKind};
 use polaris_system_one_engine::{EngineConfig, GlinerEngine, TextNormalization};
 
-/// Runs against the locally installed fp32 checkpoint and ORT DLL when explicitly configured.
+/// Runs against the locally installed fp32 checkpoint and ORT DLL with `GLINER2_DEVICE=cpu`.
 #[test]
 #[ignore = "requires explicit local GLiNER model and ORT DLL paths"]
 fn real_model_returns_bounded_choice_probabilities() -> Result<(), Box<dyn Error>> {

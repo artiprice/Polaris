@@ -134,7 +134,7 @@ impl WebSearch for Searxng {
             .resolve_to_addrs(target.host.as_str(), target.addresses.as_slice())
             .build()
             .map_err(|_| search_error(SearchProviderError::Unavailable))?;
-        admission.mark_dispatched().map_err(search_error)?;
+        admission.mark_dispatched().await.map_err(search_error)?;
         let mut parameters = vec![
             ("q", redacted.as_str()),
             ("format", "json"),

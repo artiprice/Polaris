@@ -1,0 +1,35 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:486:13
+    |
+486 |       joined: Result<
+    |  _____________^
+487 | |         (TokioTaskId, (usize, NodeId, Pool, Result<NodeResult<O>, DagError>)),
+488 | |         JoinError,
+489 | |     >,
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#type_complexity
+    = note: `-D clippy::type-complexity` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: this function has too many arguments (8/7)
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:516:1
+    |
+516 | / fn record_node_result<T: NodeTask>(
+517 | |     dag: &Dag<T>,
+518 | |     index: usize,
+519 | |     id: NodeId,
+...   |
+524 | |     ready: &mut BTreeSet<(NodeId, usize)>,
+525 | | ) -> Result<(bool, bool), DagError> {
+    | |___________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#too_many_arguments
+    = note: `-D clippy::too-many-arguments` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_arguments)]`
+
+error: could not compile `polaris-runtime-dag` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-runtime-dag` (lib test) due to 2 previous errors

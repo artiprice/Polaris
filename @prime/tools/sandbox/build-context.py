@@ -12,6 +12,9 @@ from pathlib import Path
 
 ROOT_INPUTS = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml")
 PACKAGE_INPUTS = ("src", "proto")
+GUEST_BUILD_SUPPORT_FILES = {
+    Path("crates/polaris-proto"): ("build_support.rs",),
+}
 EXPECTED_GUEST_PACKAGES = {
     "apps/polaris-guest",
     "crates/polaris-browser",
@@ -68,6 +71,64 @@ def copy_tree(root: Path, relative: Path, destination: Path) -> None:
             target = destination / relative_file
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
+
+
+def copy_workspace_vendor_packages(
+    root: Path, workspace: dict, destination: Path
+) -> set[Path]:
+    """Copy only vendor roots named by workspace path dependencies.
+
+    Cargo resolves every workspace member manifest even when the Docker target is one package.
+    The allowlisted context therefore needs the package source for path dependencies referenced
+    by those manifests. Do not copy the entire vendor tree: derive roots from the workspace
+    dependency table and verify each copied package's declared name.
+    """
+    dependencies = workspace.get("workspace", {}).get("dependencies", {})
+    if not isinstance(dependencies, dict):
+        raise RuntimeError("workspace dependencies must be a table")
+
+    copied: set[Path] = set()
+    for dependency_name, specification in sorted(dependencies.items()):
+        if not isinstance(specification, dict):
+            continue
+        dependency_path = specification.get("path")
+        if not isinstance(dependency_path, str):
+            continue
+        resolved = (root / dependency_path).resolve(strict=True)
+        try:
+            relative = resolved.relative_to(root)
+        except ValueError as error:
+            raise RuntimeError(
+                f"workspace path dependency escapes workspace root: {dependency_name}"
+            ) from error
+        if not relative.parts or relative.parts[0] != "vendor":
+            continue
+        if relative in copied:
+            continue
+        manifest_path = resolved / "Cargo.toml"
+        inside(root, manifest_path)
+        if not resolved.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink():
+            raise RuntimeError(
+                f"workspace vendor path dependency is not a package: {dependency_name}"
+            )
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+        package_name = manifest.get("package", {}).get("name")
+        if package_name != dependency_name:
+            raise RuntimeError(
+                f"vendor package {relative} name {package_name!r} does not match workspace dependency {dependency_name!r}"
+            )
+        copy_tree(root, relative, destination)
+        copied.add(relative)
+    return copied
+
+
+def copy_guest_build_support(root: Path, guest_packages: set[Path], destination: Path) -> None:
+    """Copy explicitly inventoried sibling modules imported by guest build scripts."""
+    for package_dir, filenames in sorted(GUEST_BUILD_SUPPORT_FILES.items()):
+        if package_dir not in guest_packages:
+            continue
+        for filename in filenames:
+            copy_file(root, package_dir / filename, destination)
 
 
 def dependency_specs(manifest: dict) -> list[tuple[str, dict]]:
@@ -188,8 +249,12 @@ def main() -> int:
                 if source.is_file():
                     copy_file(root, source.relative_to(root), destination)
 
+    copy_guest_build_support(root, guest_packages, destination)
+    vendored_packages = copy_workspace_vendor_packages(root, workspace, destination)
+
     print("guest_packages=" + ",".join(sorted(actual_guest_packages)))
     print("workspace_manifests=" + str(len(all_packages)))
+    print("vendored_path_packages=" + ",".join(sorted(path.as_posix() for path in vendored_packages)))
     copied = sorted(
         path.relative_to(destination).as_posix()
         for path in destination.rglob("*")

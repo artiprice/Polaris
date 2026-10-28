@@ -1,12 +1,15 @@
 //! Version boundary for durable approval alerts; old versions retain their original rules.
 use polaris_sdk::{
-    contracts::{Event, EventRecord, Timestamp},
+    contracts::{EVENT_SCHEMA_VERSION, Event, EventRecord, Timestamp},
     ids::{Cid, FrameId, Seq, SessionId},
 };
 
 #[test]
-fn blast_alert_requires_schema_three() {
-    for schema in 0_u16..=5 {
+fn blast_alert_requires_schema_three() -> Result<(), Box<dyn std::error::Error>> {
+    let future = EVENT_SCHEMA_VERSION
+        .checked_add(1)
+        .ok_or("schema overflow")?;
+    for schema in 0_u16..=future {
         let record = EventRecord::from_versioned(
             schema,
             Seq::ZERO,
@@ -19,8 +22,9 @@ fn blast_alert_requires_schema_three() {
         );
         assert_eq!(
             record.is_ok(),
-            schema == 3,
+            (3..=EVENT_SCHEMA_VERSION).contains(&schema),
             "exact alert minimum and maximum schema"
         );
     }
+    Ok(())
 }

@@ -1,0 +1,106 @@
+{
+  "attempts": 2,
+  "events": [
+    {
+      "at": "2026-10-27T09:29:33.164578Z",
+      "event": {
+        "configuration": "8817fffd586f1985325ee053834c19bfdfdf20f72f12d71a1270cf169092f7b9",
+        "type": "session_configured"
+      },
+      "schema": 6,
+      "seq": 1,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:33.167046Z",
+      "event": {
+        "type": "session_started",
+        "workspace": "11af8e78b0f6fe9b50fca73bc2c6d636f27536305cdac4ce4ecd5ed45de17bdd"
+      },
+      "schema": 6,
+      "seq": 2,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:33.173781Z",
+      "event": {
+        "binding": "892e59e737a5d2eabdb67c84850cbabb69deefbf1499295f3e70c455c54113dc",
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "parent": null,
+        "role": "orchestrator",
+        "root": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "type": "frame_registered"
+      },
+      "schema": 6,
+      "seq": 3,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:42.259957Z",
+      "event": {
+        "call": "3cf70e58ef5a8c52e267bbc1b44163ecf576c625cb9241b4c0288c50f63b356e",
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "type": "tool_execution_started"
+      },
+      "schema": 6,
+      "seq": 4,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:42.301297Z",
+      "event": {
+        "call": "3cf70e58ef5a8c52e267bbc1b44163ecf576c625cb9241b4c0288c50f63b356e",
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "result": "5665b7b20ce9cd951ff5c2ce7957a1b3fd5ccc50c57a3971b432af18a5d1fa9b",
+        "type": "frame_tool_result_recorded"
+      },
+      "schema": 6,
+      "seq": 5,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:42.304088Z",
+      "event": {
+        "call": "3cf70e58ef5a8c52e267bbc1b44163ecf576c625cb9241b4c0288c50f63b356e",
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "latency_us": 60577,
+        "ok": true,
+        "type": "tool_execution_completed"
+      },
+      "schema": 6,
+      "seq": 6,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:42.339624Z",
+      "event": {
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "outcome": "accepted",
+        "step": 1,
+        "transcript": "534fb61a61cb707088090e965a2623d411edacfade2ba217f82afbfa764cb6bd",
+        "type": "frame_step_recorded"
+      },
+      "schema": 6,
+      "seq": 7,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    },
+    {
+      "at": "2026-10-27T09:29:56.679597Z",
+      "event": {
+        "frame": "01a17cb1-8cb1-741e-b8ea-ed9a5a1553ac",
+        "outcome": "accepted",
+        "step": 2,
+        "transcript": "6f3ae2b91b3f81fe1c8d7c9da542c27a2471bedf9e2df31dbfbbf56a834ba30e",
+        "type": "frame_step_recorded"
+      },
+      "schema": 6,
+      "seq": 8,
+      "session": "01a17cb1-8cb1-741e-b8ea-ed9bd32e670b"
+    }
+  ],
+  "scope": "actual pinned local model, exact tokenizer, real readonly kernel tool and continuation; no mutation or sandbox acceptance",
+  "transcripts": [
+    "534fb61a61cb707088090e965a2623d411edacfade2ba217f82afbfa764cb6bd",
+    "6f3ae2b91b3f81fe1c8d7c9da542c27a2471bedf9e2df31dbfbbf56a834ba30e"
+  ]
+}

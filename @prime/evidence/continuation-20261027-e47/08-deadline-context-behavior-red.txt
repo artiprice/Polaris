@@ -1,0 +1,32 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 8.44s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-9d4b5cae7650a748.exe)
+
+running 7 tests
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... FAILED
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_run_rejects_replaced_frame_selection ... ok
+test assembler_enforces_deadline_and_cumulative_archive_bound ... FAILED
+
+failures:
+
+---- assembler_rejects_sensitive_protocol_identity_and_oversized_context stdout ----
+
+thread 'assembler_rejects_sensitive_protocol_identity_and_oversized_context' (7088) panicked at crates\polaris-kernel\tests\frame_prompt.rs:355:5:
+encoded context must be bounded during construction
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- assembler_enforces_deadline_and_cumulative_archive_bound stdout ----
+Error: Elapsed(())
+
+
+failures:
+    assembler_enforces_deadline_and_cumulative_archive_bound
+    assembler_rejects_sensitive_protocol_identity_and_oversized_context
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.15s
+
+error: test failed, to rerun pass `-p polaris-kernel --test frame_prompt`

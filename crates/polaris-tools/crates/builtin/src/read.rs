@@ -16,6 +16,7 @@ use crate::{
 
 /// Read-file tool input. Offsets and limits are measured in original source bytes.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ReadFileInput {
     /// Workspace-relative file path.
     pub path: String,
@@ -56,7 +57,27 @@ pub fn read_file(
     input: &ReadFileInput,
     limits: &ToolLimits,
 ) -> Result<ReadFileOutput, polaris_sdk::registry::ToolError> {
+    read_file_authorized(root, input, limits, |_| Ok(()))
+}
+
+pub(crate) fn read_file_authorized<F>(
+    root: &Path,
+    input: &ReadFileInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+) -> Result<ReadFileOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    authorize(&input.path)?;
     let resolved = resolve_in_workspace(root, &input.path).map_err(path_tool_error)?;
+    let metadata = std::fs::symlink_metadata(&resolved)
+        .map_err(|_| polaris_sdk::registry::ToolError::Io("file metadata failed".to_owned()))?;
+    if !metadata.file_type().is_file() {
+        return Err(polaris_sdk::registry::ToolError::InvalidInput(
+            "path is not a regular file".to_owned(),
+        ));
+    }
     let mut file = File::open(&resolved)
         .map_err(|_| polaris_sdk::registry::ToolError::Io("file open failed".to_owned()))?;
     let metadata = file
@@ -68,8 +89,11 @@ pub fn read_file(
         ));
     }
     let size = metadata.len();
-    let mut prefix =
-        vec![0_u8; usize::try_from(size.min(8_192)).map_err(|_| too_large(limits.max_read_bytes))?];
+    let mut prefix = vec![
+        0_u8;
+        usize::try_from(size.min(8_192).min(limits.max_read_bytes))
+            .map_err(|_| too_large(limits.max_read_bytes))?
+    ];
     file.read_exact(&mut prefix)
         .map_err(|_| polaris_sdk::registry::ToolError::Io("file read failed".to_owned()))?;
     let encoding = detect_encoding(&prefix);
@@ -87,10 +111,10 @@ pub fn read_file(
             cr_lines: 0,
         });
     }
-    let requested = input
-        .limit
-        .unwrap_or(limits.max_read_bytes)
-        .min(limits.max_read_bytes);
+    let requested = match input.limit {
+        Some(limit) => limit.min(limits.max_read_bytes),
+        None => limits.max_read_bytes,
+    };
     let available = size.saturating_sub(input.offset);
     let take = available.min(requested);
     let capacity = usize::try_from(take).map_err(|_| too_large(limits.max_read_bytes))?;

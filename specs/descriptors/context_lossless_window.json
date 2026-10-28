@@ -1,0 +1,73 @@
+{
+  "type_of": "method",
+  "name": "ContextVirtualizer::assemble",
+  "file_path": "crates/polaris-runtime/crates/context/src/assemble.rs",
+  "logic_name": "Lossless Conversation Window Compaction",
+  "test_list": [
+    {
+      "test_name": "archived_messages_expand_byte_exactly_and_preserve_tool_correlation",
+      "description": "Expanding an archive reference restores all omitted ChatMessage fields, tool calls, tool result call ids, reasoning and original message order exactly."
+    },
+    {
+      "test_name": "tool_call_groups_are_archived_and_retained_atomically",
+      "description": "Compaction never splits an assistant tool-call message from its correlated tool-result messages, whether the complete group is archived or retained."
+    },
+    {
+      "test_name": "archive_reference_is_exposed_by_context_map",
+      "description": "The context-map report carries the same full archive recovery reference exposed by the assembled prompt."
+    },
+    {
+      "test_name": "prefix_scratchpad_and_active_scope_order_remains_stable",
+      "description": "Lossless window compaction leaves prefix, scratchpad and active-scope ordering unchanged."
+    },
+    {
+      "test_name": "archive_byte_cap_fails_assembly_without_claiming_recovery",
+      "description": "If the serialized complete archive exceeds the configured byte cap, assembly fails instead of returning an omitted-message count without a recoverable reference."
+    },
+    {
+      "test_name": "expand_rejects_archives_larger_than_the_receiving_virtualizer_cap",
+      "description": "A reference to an existing archive larger than the receiving virtualizer's configured byte cap is rejected by early metadata checks and by the bounded CAS read when supplied metadata understates its size."
+    },
+    {
+      "test_name": "archive_metadata_tampering_is_rejected_on_recovery",
+      "description": "Recovery rejects an archive reference whose declared original byte count does not match the content-addressed blob."
+    },
+    {
+      "test_name": "archive_cid_version_and_message_count_are_validated",
+      "description": "Recovery rejects a full content-id mismatch, unsupported archive version, or incorrect message count."
+    },
+    {
+      "test_name": "malformed_archived_tool_group_is_rejected",
+      "description": "Recovery validates restored history structure and rejects a tool result without its correlated assistant call."
+    },
+    {
+      "test_name": "identical_omitted_windows_produce_identical_archive_references",
+      "description": "Identical structured omitted messages serialize deterministically to the same CAS content id, short reference, and prompt notice."
+    },
+    {
+      "test_name": "archive_notice_is_included_in_the_context_budget",
+      "description": "The non-authoritative archive notice is included in token accounting, and the returned prompt does not exceed the configured estimated context cap."
+    },
+    {
+      "test_name": "no_omission_emits_no_archive_marker",
+      "description": "When all conversation messages fit, the returned prompt contains no false archive reference or notice, and its estimate does not charge for a nonexistent marker."
+    }
+  ],
+  "dependencies": [
+    "polaris-sdk::registry::ChatMessage",
+    "polaris-storage-cas::Cas"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json"
+  ],
+  "inputs": [
+    {
+      "name": "request",
+      "type": "&AssembleRequest",
+      "description": "Stable prefix inputs, scratchpad, active scope, and oldest-first structured conversation history."
+    }
+  ],
+  "output_type": "Result<AssembledPrompt, ContextError>",
+      "output_description": "Budget-bounded prompt retaining the newest complete conversation groups and explicit checked CAS references to every omitted full structured message; the provider-facing untrusted JSON notice names the registered polaris_expand tool, and native typed recovery remains available through the context virtualizer API."
+}

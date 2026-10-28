@@ -1,0 +1,16 @@
+{
+  "type_of": "pipeline",
+  "name": "run_agent_frame",
+  "file_path": "crates/polaris-kernel/src/configured_frame.rs",
+  "logic_name": "Configured Agent Frame",
+  "test_list": [
+    {"test_name": "configured_agent_frame_requires_s1_before_provider", "description": "Missing configured S1 rejects before tokenizer or model calls and before a frame step is reserved."},
+    {"test_name": "configured_agent_frame_rejects_foreign_root_before_provider", "description": "A foreign root is rejected without provider access or frame work reservation."},
+    {"test_name": "configured_host_runs_bound_frame_without_inventing_completion_proof", "description": "Real configured worker, authorized runner, privacy, journal and verifier compose; absent proof stays explicitly unverified."}
+  ],
+  "dependencies": ["KernelHandle", "KernelPromptAssembler", "KernelFrameJournal", "KernelFrameVerifier", "FrameToolAccess"],
+  "libraries": ["tokio", "thiserror"],
+  "inputs": [{"name": "services", "type": "ConfiguredFrameServices<M,T>", "description": "Caller-authorized token/runner, exact model/tokenizer owner, context and advisory policy."}],
+  "output_type": "Result<ConfiguredFrameOutcome, ConfiguredFrameError>",
+  "output_description": "Actual frame execution and independent current-tree completion proof check; a finished model response is not proof."
+}

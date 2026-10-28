@@ -1,0 +1,25 @@
+{
+  "type_of": "async_function",
+  "name": "Router::rank_env_images",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "Environment Image Ranking",
+  "test_list": [
+    {"test_name": "exact_repo_commit_or_lockfile_match_skips_engine", "description": "Exact repository plus full commit or exact lockfile hash returns trusted catalog entries without S1 calls."},
+    {"test_name": "foreign_repo_same_lockfile_hash_is_not_exact", "description": "A matching lockfile hash from a different repository goes through near-miss S1 ranking."},
+    {"test_name": "near_miss_is_scored_and_not_treated_as_exact", "description": "A repository-only or abbreviated commit match is a near miss and is considered only by bounded lexical filtering and S1."},
+    {"test_name": "tied_candidates_have_stable_order", "description": "Tied rankings are deterministic by image ID."},
+    {"test_name": "duplicate_ids_are_rejected", "description": "Duplicate catalog IDs fail before exact selection or S1 scoring."},
+    {"test_name": "candidate_count_and_text_sizes_obey_hard_bounds", "description": "Candidate count, query, IDs, commit and hash identity fields, and metadata obey hard ceilings before scoring."},
+    {"test_name": "engine_outage_uses_deterministic_near_miss_fallback", "description": "An S1 error returns bounded lexical candidates with fallback reasons."},
+    {"test_name": "engine_timeout_uses_deterministic_fallback", "description": "An S1 timeout returns bounded lexical candidates with fallback reasons."},
+    {"test_name": "semantic_scoring_respects_candidate_cap", "description": "Only candidates inside the configured shortlist are submitted to S1."}
+  ],
+  "dependencies": ["DecisionEngine", "SchemaCatalog", "RouterConfig"],
+  "libraries": ["thiserror", "tokio"],
+  "inputs": [
+    {"name": "manifest", "type": "&RepoManifestFacts", "description": "Trusted repository identity and bounded environment requirements."},
+    {"name": "images", "type": "&[EnvImageCandidate]", "description": "Trusted catalog metadata joined to real listed image IDs."}
+  ],
+  "output_type": "Result<Vec<Ranked<ImageId>>, RouterError>",
+  "output_description": "Exact matches or bounded semantically ranked near misses whose IDs come only from the supplied catalog."
+}

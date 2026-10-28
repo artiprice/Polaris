@@ -1,0 +1,17 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 8.57s
+     Running tests\frame_mutation.rs (target\debug\deps\frame_mutation-ddef15ffd2f57a77.exe)
+
+running 9 tests
+test traversal_secret_and_git_targets_are_rejected ... ok
+test changed_base_after_prepare_is_rejected_without_overwrite ... ok
+test capability_without_propose_diff_is_rejected_before_workspace_change ... ok
+test oversized_source_is_rejected_before_hashing_the_candidate ... ok
+test needs_approval_returns_without_changing_workspace ... ok
+test mutation_diff_reconstructs_exact_missing_final_newline ... ok
+test create_new_file_records_no_base_and_never_uses_empty_file_identity ... ok
+test create_new_file_keeps_absence_as_base_and_records_actual_bytes ... ok
+test edit_and_patch_requests_produce_and_commit_exact_candidates ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+

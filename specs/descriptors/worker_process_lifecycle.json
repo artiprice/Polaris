@@ -1,0 +1,17 @@
+{
+  "type_of": "module",
+  "name": "worker_process_lifecycle",
+  "file_path": "apps/polaris-worker/src/main.rs",
+  "logic_name": "Bounded Worker Process Shutdown Wait",
+  "test_list": [
+    { "test_name": "runtime_shutdown_wait_is_bounded_while_blocking_work_remains", "description": "The worker's final Tokio runtime wait returns within its configured bound while an already-started blocking task remains gated, without claiming that task was preempted." }
+  ],
+  "dependencies": ["tokio::runtime::Runtime::shutdown_timeout", "tokio::task::spawn_blocking"],
+  "libraries": ["tokio", "std::sync::mpsc"],
+  "inputs": [
+    { "name": "grace", "type": "Duration", "description": "Maximum time the process waits for already-started blocking tasks after asynchronous service shutdown." },
+    { "name": "blocking_task", "type": "spawn_blocking work", "description": "A non-preemptible task that may continue in the background after the shutdown wait expires." }
+  ],
+  "output_type": "bounded process wait",
+  "output_description": "The worker bounds runtime-drop waiting but does not claim to cancel in-process blocking work; process termination remains the final isolation boundary."
+}

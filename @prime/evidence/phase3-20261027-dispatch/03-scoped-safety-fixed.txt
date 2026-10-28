@@ -1,0 +1,515 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-ratelimit\src\gcra.rs:84:25
+   |
+84 |           let period_ns = NANOS_PER_MINUTE
+   |  _________________________^
+85 | |             .checked_add(rate - 1)
+86 | |             .ok_or(RateLimitError::InvalidQuota)?
+87 | |             / rate;
+   | |__________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-ratelimit\src\gcra.rs:89:36
+   |
+89 |             .checked_mul(u64::from(burst - 1))
+   |                                    ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-ratelimit\src\gcra.rs:110:42
+    |
+110 |                     Duration::from_nanos(old - threshold),
+    |                                          ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-ratelimit\src\gcra.rs:175:21
+    |
+175 |         let ratio = debt.saturating_mul(100) / horizon;
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-ratelimit\src\retry.rs:23:9
+   |
+23 |         hasher.finish() % jitter_range.saturating_add(1)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: indexing may panic
+  --> crates\polaris-ratelimit\src\window.rs:52:27
+   |
+52 |         let bucket = &mut buckets[index];
+   |                           ^^^^^^^^^^^^^^
+   |
+   = help: consider using `.get(n)` or `.get_mut(n)` instead
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+   = note: requested on the command line with `-D clippy::indexing-slicing`
+
+error: indexing may panic
+  --> crates\polaris-ratelimit\src\window.rs:76:27
+   |
+76 |         let bucket = &mut buckets[bucket_index(minute)];
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: consider using `.get(n)` or `.get_mut(n)` instead
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-ratelimit\src\window.rs:94:43
+   |
+94 |             if minute > current_minute || current_minute - minute >= 15 {
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-ratelimit\src\lib.rs:202:38
+    |
+202 |                 Duration::from_nanos(penalty - now_ns),
+    |                                      ^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\cas\src\lib.rs:88:9
+   |
+88 |         b'0' + nibble
+   |         ^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\cas\src\lib.rs:90:9
+   |
+90 |         b'a' + (nibble - 10)
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:19:15
+   |
+19 |     let int = 63 - x.leading_zeros();
+   |               ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:22:26
+   |
+22 |         u128::from(x) << (62 - int)
+   |                          ^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:24:26
+   |
+24 |         u128::from(x) >> (int - 62)
+   |                          ^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:28:13
+   |
+28 |         y = (y * y) >> 62;
+   |             ^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-ratelimit` (lib) due to 9 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:51:13
+   |
+51 |             *c += 1;
+   |             ^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:62:13
+   |
+62 |             sum += u128::from(*count) * log2_q32(*count);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:65:44
+   |
+65 |     let h_q32 = log2_q32(n).saturating_sub(sum / u128::from(n));
+   |                                            ^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-security\crates\automata\src\entropy.rs:66:17
+   |
+66 |     let milli = (h_q32 * 1000 + (1 << (FRAC_BITS - 1))) >> FRAC_BITS;
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-security\crates\automata\src\entropy.rs:120:25
+    |
+120 |             let start = self.pos + rest.iter().position(|b| is_run_byte(*b))?;
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-security\crates\automata\src\entropy.rs:126:27
+    |
+126 |             let mut end = start + run_end;
+    |                           ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-security\crates\automata\src\entropy.rs:130:21
+    |
+130 |                     end += 1;
+    |                     ^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-storage-cas` (lib) due to 2 previous errors
+warning: the `Err`-variant returned from this function is very large
+   --> crates\polaris-kernel\crates\bus\src\bus.rs:148:57
+    |
+148 |     pub fn try_send(&self, cmd: Command<Unverified>) -> Result<(), TrySendError> {
+    |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\polaris-kernel\crates\bus\src\error.rs:50:5
+    |
+ 50 |     Full(Command<Unverified>),
+    |     ------------------------- the largest variant contains at least 152 bytes
+...
+ 53 |     Closed(Command<Unverified>),
+    |     --------------------------- the variant `Closed` contains at least 152 bytes
+    |
+    = help: try reducing the size of `error::TrySendError`, for example by boxing large elements or replacing it with `Box<error::TrySendError>`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#result_large_err
+    = note: `#[warn(clippy::result_large_err)]` on by default
+
+warning: the `Err`-variant returned from this function is very large
+   --> crates\polaris-kernel\crates\bus\src\bus.rs:166:59
+    |
+166 |     pub async fn send(&self, cmd: Command<Unverified>) -> Result<(), SendError> {
+    |                                                           ^^^^^^^^^^^^^^^^^^^^^ the `Err`-variant is at least 152 bytes
+    |
+    = help: try reducing the size of `error::SendError`, for example by boxing large elements or replacing it with `Box<error::SendError>`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#result_large_err
+
+error: could not compile `polaris-security-automata` (lib) due to 11 previous errors
+warning: `polaris-kernel-bus` (lib) generated 2 warnings
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-config\src\sources.rs:112:17
+    |
+112 |                 attempt += 1;
+    |                 ^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: indexing may panic
+   --> crates\polaris-openshell\crates\policy\src\implementation.rs:244:16
+    |
+244 |             && label.as_bytes()[0].is_ascii_alphanumeric()
+    |                ^^^^^^^^^^^^^^^^^^^
+    |
+    = help: consider using `.get(n)` or `.get_mut(n)` instead
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+    = note: requested on the command line with `-D clippy::indexing-slicing`
+
+error: indexing may panic
+   --> crates\polaris-openshell\crates\policy\src\implementation.rs:245:16
+    |
+245 |             && label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: consider using `.get(n)` or `.get_mut(n)` instead
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#indexing_slicing
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-openshell\crates\policy\src\implementation.rs:245:33
+    |
+245 |             && label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+    |                                 ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: could not compile `polaris-config` (lib) due to 1 previous error
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-log\src\entry.rs:68:45
+   |
+68 |         let mut out = String::with_capacity(self.message.len() + self.target.len() + 80);
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: could not compile `polaris-openshell-policy` (lib) due to 3 previous errors
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:121:13
+    |
+121 |     let z = days + 719_468;
+    |             ^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:124:15
+    |
+124 |     let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:125:15
+    |
+125 |     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:126:14
+    |
+126 |     let mp = (5 * doy + 2) / 153;
+    |              ^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:127:15
+    |
+127 |     let day = doy - (153 * mp + 2) / 5 + 1;
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:128:30
+    |
+128 |     let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    |                              ^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:128:46
+    |
+128 |     let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    |                                              ^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:129:16
+    |
+129 |     let year = yoe + era * 400 + u64::from(month <= 2);
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\entry.rs:140:9
+    |
+140 |         end -= 1;
+    |         ^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-log\src\file.rs:95:48
+   |
+95 |                     self.dir.join(rotated_name(index - 1))
+   |                                                ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\registry\src\search.rs:50:41
+   |
+50 |     let mut out = String::with_capacity(query.len() + 2);
+   |                                         ^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\registry\src\search.rs:66:41
+   |
+66 |     let mut out = String::with_capacity(query.len() + 2);
+   |                                         ^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\queue.rs:132:24
+    |
+132 |         let deadline = Instant::now() + timeout.min(Duration::from_secs(86_400));
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\queue.rs:142:38
+    |
+142 |                 .wait_timeout(state, deadline - now)
+    |                                      ^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-log\src\ring.rs:78:22
+   |
+78 |             *start = (*start + 1) % self.capacity;
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-log\src\ring.rs:82:24
+   |
+82 |             let free = (*start + *len) % self.capacity;
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-log\src\ring.rs:83:13
+   |
+83 |             *len += 1;
+   |             ^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-log\src\ring.rs:100:45
+    |
+100 |             .filter_map(|i| inner.slots.get((inner.start + i) % self.capacity))
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-storage-registry` (lib) due to 2 previous errors
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\cursor.rs:19:9
+   |
+19 |         self.base + self.pos
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\cursor.rs:52:9
+   |
+52 |         self.pos += c.len_utf8();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\cursor.rs:59:13
+   |
+59 |             self.pos += c.len_utf8();
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\cursor.rs:69:13
+   |
+69 |             self.pos += prefix.len();
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\cursor.rs:83:13
+   |
+83 |             self.pos += c.len_utf8();
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-kernel\crates\directives\src\mention.rs:114:23
+    |
+114 |             cur.reset(start + trimmed.len());
+    |                       ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\parser.rs:82:39
+   |
+82 |         .map_or(cur.rest().len(), |i| i + fence.len());
+   |                                       ^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-kernel\crates\directives\src\parser.rs:83:15
+   |
+83 |     cur.reset(cur.pos() + close);
+   |               ^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-log` (lib) due to 17 previous errors
+error: could not compile `polaris-kernel-directives` (lib) due to 8 previous errors
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-storage\crates\sync\src\scan.rs:465:17
+    |
+465 |                 out.stats.reused += 1;
+    |                 ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-storage\crates\sync\src\scan.rs:469:17
+    |
+469 |                 out.stats.hashed += 1;
+    |                 ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-storage-sync` (lib) due to 2 previous errors

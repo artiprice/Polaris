@@ -1,0 +1,14 @@
+    Finished `test` profile [unoptimized] target(s) in 0.66s
+     Running tests\catalog_contract.rs (target\debug\deps\catalog_contract-3af156a7b6ef3b14.exe)
+
+running 7 tests
+test cascade_uses_lower_effort_draft_and_requested_verification ... ok
+test availability_observations_validate_atomically_and_monotonically ... ok
+test constrained_selection_enforces_effort_model_and_availability ... ok
+test builtin_contains_dated_snapshot_ids_and_effort_mapping ... ok
+test invalid_override_is_atomic ... ok
+test overrides_are_first_wins_and_report_gaps ... ok
+test custom_registry_is_bounded_and_rejects_unsafe_aliases ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

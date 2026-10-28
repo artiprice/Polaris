@@ -99,6 +99,15 @@ impl pb::worker_service_server::WorkerService for IngestWorker {
         ))
     }
 
+    async fn detect_pii(
+        &self,
+        _request: Request<pb::DetectPiiRequest>,
+    ) -> Result<Response<pb::DetectPiiResponse>, Status> {
+        Err(Status::unimplemented(
+            "ingest mode does not provide PII detection",
+        ))
+    }
+
     async fn embed(
         &self,
         _request: Request<pb::EmbedRequest>,
@@ -141,7 +150,10 @@ impl pb::worker_service_server::WorkerService for IngestWorker {
         &self,
         _request: Request<pb::EvictModelsRequest>,
     ) -> Result<Response<pb::EvictModelsResponse>, Status> {
-        Ok(Response::new(pb::EvictModelsResponse { evicted: 0 }))
+        Ok(Response::new(pb::EvictModelsResponse {
+            evicted: 0,
+            ..Default::default()
+        }))
     }
 
     async fn health(
@@ -152,6 +164,11 @@ impl pb::worker_service_server::WorkerService for IngestWorker {
             protocol_version: Some(PROTOCOL_VERSION.into()),
             build_version: env!("CARGO_PKG_VERSION").to_owned(),
             ready: !self.closed.load(Ordering::Acquire),
+            loaded_model_identity_blake3: Vec::new(),
+            loaded_model_generation: 0,
+            worker_incarnation: Vec::new(),
+            loaded_pii_model_identity_blake3: Vec::new(),
+            loaded_pii_model_generation: 0,
         }))
     }
 

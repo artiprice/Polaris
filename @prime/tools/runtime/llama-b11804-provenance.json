@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "purpose": "M3 local exact-token-count and structured-tool smoke runtime provenance",
+  "server": {
+    "project": "ggml-org/llama.cpp",
+    "release": "b11804",
+    "commit": "c7fc50941",
+    "archive": "llama-b11804-bin-win-cpu-x64.zip",
+    "archive_url": "https://github.com/ggml-org/llama.cpp/releases/download/b11804/llama-b11804-bin-win-cpu-x64.zip",
+    "archive_bytes": 24067910,
+    "archive_sha256": "3a3e417a0816329829081bdd443e3045ff3b2dbe866fcef89a1d919e941ce23f",
+    "executable_relative_path": "llama-b11804/llama-server.exe",
+    "ignored_artifact_paths": [
+      "@prime/tools/runtime/llama-b11804-bin-win-cpu-x64.zip",
+      "@prime/tools/runtime/llama-b11804/"
+    ]
+  },
+  "model": {
+    "repository": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+    "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+    "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "bytes": 1117320736,
+    "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    "ignored_artifact_path": "@prime/tools/runtime/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+  },
+  "smoke": {
+    "date": "2026-10-27",
+    "endpoint": "http://127.0.0.1:18931",
+    "server_pid_at_recording": 15100,
+    "options": ["--threads 2", "--threads-batch 2", "--ctx-size 4096", "--parallel 1", "--jinja", "--no-webui", "--alias qwen2.5-1.5b-instruct"],
+    "trials": 3,
+    "exact_input_tokens_each": 207,
+    "chat_usage_prompt_tokens_each": 207,
+    "chat_usage_completion_tokens_each": 25,
+    "structured_tool_call_each": "p3_local_probe",
+    "evidence": "@prime/tmp/p3-local-m3/qwen-smoke-manifest.json"
+  },
+  "limitations": [
+    "Inference-only smoke; tools were not executed.",
+    "No workspace mutation, sandbox test, or proof-of-done occurred.",
+    "Manifest records provenance and one-session evidence; it does not attest persistent server liveness."
+  ]
+}

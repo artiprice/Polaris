@@ -1,0 +1,14 @@
+Command: cargo test -p polaris-system-one-client --test client_batching identical_concurrent_requests_infer_once -- --exact --nocapture
+
+Observed before implementation:
+running 1 test
+
+thread 'identical_concurrent_requests_infer_once' (15888) panicked at crates\polaris-system-one\crates\client\tests\client_batching.rs:318:5:
+assertion `left == right` failed: duplicate inference observed: [2]
+  left: 2
+ right: 1
+test identical_concurrent_requests_infer_once ... FAILED
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.02s
+
+This was a behavioral RED: one Decide RPC carried two identical inference items. After implementation, the same test passes with one inference item.

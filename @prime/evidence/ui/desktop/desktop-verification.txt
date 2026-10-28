@@ -1,0 +1,101 @@
+Polaris desktop welcome shell — verification evidence, 2026-10-28
+Host: AMD Ryzen 7 2700 (16 logical), NVIDIA GeForce GTX 1650, Windows 11 LTSC 2024, Slint 1.18.1 (femtovg renderer for live runs).
+
+== Tests (cargo test -p polaris-ui-ascii-aurora -p polaris-ui-gui -p polaris-desktop) ==
+polaris-desktop tests\args.rs        ok. 5 passed
+polaris-ui-ascii-aurora lib          ok. 2 passed
+  tests\atlas.rs                     ok. 7 passed
+  tests\blit.rs                      ok. 12 passed; 2 ignored (render_perf, write_preview_ppm: manual)
+  tests\clock.rs                     ok. 8 passed
+  tests\field.rs                     ok. 8 passed
+  tests\ramp.rs                      ok. 8 passed
+polaris-ui-gui tests\render.rs       ok. 1 passed  (software renderer, 1280x800)
+  tests\tokens.rs                    ok. 4 passed
+  tests\welcome.rs                   ok. 8 passed  (headless i-slint-backend-testing)
+Total: 63 passed, 0 failed, 2 ignored.
+
+== Repo gates ==
+python -I @prime/tools/workspace.py check-layers  -> check-layers: 94 packages, 285 edges -> OK
+python -I @prime/tools/workspace.py check-members -> check-members: 94 members matched, table has 94 -> OK
+python -I @prime/tools/workspace.py check-docs    -> check-docs: 94 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK
+cargo deny check licenses                         -> licenses ok
+cargo fmt --check (3 crates)                      -> exit 0
+cargo clippy (3 crates, lib+bin, -W unwrap_used expect_used panic indexing_slicing as_conversions integer_division print_stdout print_stderr todo unimplemented)
+  -> 2 warnings in hand-written code, both `manual_unwrap_or` on explicit `match` blocks in gui/src/aurora_driver.rs
+     (kept: prompt.md disallows unwrap_or). Slint-generated module is allow-listed.
+
+== Engine timing (release, aurora crate perf test, reported by the implementing subagent) ==
+render_rgba at 1920x1080: 9.424 / 9.358 / 9.372 ms per frame (3 runs).
+
+== Live CPU, release build, window 1280x800 default (atmosphere ~1212x744 px) ==
+Method: Get-Counter '\Process(polaris-desktop)\% Processor Time' -SampleInterval 1 -MaxSamples 20 (100 = one core).
+Minimise via user32 ShowWindow(SW_MINIMIZE), confirmed IsIconic=True.
+Iteration history (same machine):
+  30 fps, straight RGBA               mean 28.38  (20 samples)
+  20 fps, straight RGBA               mean 26.54  (15 samples)
+  20 fps, premultiplied (final)       mean 19.77  (20 samples)
+Final binary:
+  animated samples: 24.7 17 24.7 9.3 21.5 24.7 15.6 23.1 13.9 23.1 15.4 23.1 21.6 12.5 17 20 17 23.1 20.1 20
+  animated mean % of one core: 19.36 (max 24.7)
+  minimized: 20 samples all 0 -> mean 0
+  --static : 20 samples all 0 -> mean 0
+  working set 108.1 MB; CloseMainWindow exit=0 for both runs
+App frame-time histogram (render_rgba + hand-off to Slint; GPU upload/present not included):
+  animated: frames=510 mean_us=4881 max_us=16088 4-8ms:497 8-16ms:12 16-33ms:1
+  static  : frames=1   mean_us=4987
+Interpretation: ~9.8% of a core is the ASCII engine (20 fps x 4.9 ms); the rest is Slint/femtovg
+repainting the window and uploading a new texture each frame. Not compared against the web demo
+in a browser (not measured).
+
+== Screenshots ==
+software-welcome-1280x800.png        software renderer, still frame (tests\render.rs, POLARIS_RENDER_OUT)
+software-welcome-menus-1280x800.png  model/mode/effort menu + docked Context panel
+software-welcome-about-1280x800.png  About panel with AboutSlint (licence ADR-014)
+live-welcome-animated.png            real window (femtovg), captured with ffmpeg gdigrab while animating
+
+== Style reference ==
+Reference video frames + params: @prime/tmp/20261028-ascii/ (params.md, frames-full/, crops/, refs/ from ascii-magic free styles).
+Fonts: Inter 4.1 TTF (github.com/rsms/inter release zip sha256 9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e,
+no publisher checksum available), Space Grotesk + JetBrains Mono copied from dist/demo-design-preview-slop/webui/assets/fonts (sha256 match sources.json).
+
+======================================================================================
+2026-10-28 (second round) — composer v2, session view, offline kernel session, configured models
+======================================================================================
+Scope: composer v2 (input + toolbar + $directive tray), session view (sidebar/search/conversation/
+docked composer/status line), real offline kernel session via new SubmitUserInput support,
+model list from polaris-config [nebius.effort] (no hardcoded names).
+
+== Tests (cargo test -p polaris-ui-gui -p polaris-desktop -p polaris-ui-session -p polaris-ui-model -p polaris-ui-ascii-aurora) ==
+All "test result" lines ok; 0 failed. Relevant suites:
+  polaris-ui-gui   composer 10, welcome(window) 8, session_view(controller) 13, tokens 4, render 1  = 36
+  polaris-desktop  args 5, bridge 8 (real kernel in tempdir), models 4                              = 17
+  polaris-ui-session / kernel SubmitUserInput suites: run by the implementing subagent
+    (752 passed, 1 failed across 11 packages; the failure is below).
+Known failing test NOT caused by this work: polaris-kernel --test frame_prompt_http
+  counted_prompt_matches_dispatched_http_and_durable_frame -> "durable transcript did not retain the
+  input goal". frame_prompt.rs:185-194 now stores the PII-masked goal (untracked file, mtime
+  10-28 00:06, before this session's kernel edits at 09:02); the test expects the raw goal.
+
+== Gates ==
+check-layers: 95 packages, 293 edges -> OK
+check-members: 95 members matched, table has 95 -> OK
+check-docs: 95 packages x (PLAN section, PHASES task, STATUS row) + 13 spikes + 26 member-setup rows -> OK
+cargo deny check licenses -> licenses ok
+cargo fmt --check (gui, desktop, session) -> exit 0
+clippy (safety lints) on gui/desktop/session lib+bin: remaining warnings are only clippy suggesting
+  unwrap_or / unwrap_or_default (banned by prompt.md; explicit match kept).
+
+== Live run (release, Windows 11, Ryzen 7 2700 + GTX 1650, workspace @prime/tmp/20261028-live/work) ==
+Input via SendKeys after forcing the window to the foreground (verified GetForegroundWindow == hwnd).
+Run 1: typed "hello from the live run" + Enter, then "second message {$}websearch(on)" + Enter
+  (SendKeys drops the parentheses, so the second message was recorded as "second message $websearchon").
+  log: "offline session opened open_ms=31"
+  state dir after run: cas, run, events.redb, registry.db
+  session view CPU (Get-Counter, 10 x 1 s): 0 0 0 0 4.7 3.1 3.1 0 3.1 0 -> mean 1.39 % of one core
+  aurora histogram at exit: frames=118 (welcome only; paused in the session view)
+Run 2 (restart): clicked "Sessions", then the listed session.
+  log: "offline session opened open_ms=13"; both messages replayed (screenshot live-4).
+Screenshots: live-1-welcome-typed.png, live-2-session-after-send.png, live-3-relaunch-sessions-list.png,
+  live-4-resumed-session.png, software-v2-welcome-1280x800.png, software-v2-session-1280x800.png
+Discarded: two earlier live attempts where keystrokes never reached the window (foreground lock);
+  their CPU readings (34 %, 28 %) measured the animated welcome screen, not the session view.

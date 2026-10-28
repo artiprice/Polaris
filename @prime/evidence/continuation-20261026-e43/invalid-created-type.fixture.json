@@ -1,0 +1,14 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "comment": "Cargo workspace root: C:\\mDev\\Polaris; Cargo.lock BLAKE3: bfeb5dc77d660d65e10bf4e82ba8440a512f0d5bcaf389646499715de5413480. Generated from cargo metadata --locked --offline. Scope: full resolved workspace graph, including build, development and platform dependencies; not a target-binary inventory. This inventory is not a license audit or vulnerability assessment.",
+  "creationInfo": {
+    "created": 42,
+    "creators": [
+      "Tool: cargo-xtask-release-sbom"
+    ]
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://spdx.org/spdxdocs/polaris-9487a4875405a694fda8534a090ce504a0627b5d19b039d0dbb9f7ec00c3b9bb",
+  "name": "Polaris Cargo workspace release SBOM",
+  "spdxVersion": "SPDX-2.3"
+}

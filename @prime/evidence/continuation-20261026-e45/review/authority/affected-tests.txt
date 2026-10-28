@@ -1,0 +1,86 @@
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Finished `test` profile [unoptimized] target(s) in 4.31s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_frames-2f4c49a9d14c320a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\frame_execution.rs (target\debug\deps\frame_execution-b89bc20fedcde017.exe)
+
+running 22 tests
+test content_reference_failures_are_fatal_integrity_errors ... ok
+test journal_persists_transcript_before_publishing_event ... ok
+test durable_journal_requires_tool_content_to_exist_and_match ... ok
+test empty_message_overhead_counts_toward_prompt_byte_limit ... ok
+test oversized_prior_reasoning_and_tool_arguments_fail_before_model_dispatch ... ok
+test only_verifier_accepted_diff_references_enter_history ... ok
+test duplicate_finish_is_rejected_and_captured_as_incomplete ... ok
+test mismatched_tool_content_cid_is_rejected_before_verification ... ok
+test child_scope_only_narrows_and_only_unused_quota_returns ... ok
+test claimed_done_remains_unproven_and_keeps_frame_active ... ok
+test cancellation_after_tool_execution_journals_the_partial_result ... ok
+test cancellation_after_finish_before_eof_keeps_response_partial ... ok
+test tool_runner_receives_result_ceiling_and_oversize_is_not_replayed ... ok
+test text_after_finish_is_rejected_and_captured_as_incomplete ... ok
+test tool_loop_stops_before_an_attempt_beyond_round_bound ... ok
+test tool_transcript_is_replayed_with_cas_reference_and_call_identity ... ok
+test cancellation_records_an_incomplete_assistant_stream_as_partial_and_keeps_reserved_quota ... ok
+test stop_finish_with_tool_calls_fails_before_authorization ... ok
+test usage_after_finish_is_retained_after_clean_end_of_stream ... ok
+test usage_before_finish_does_not_stop_stream_collection ... ok
+test verifier_retries_stop_at_bound_and_keep_quota_spent ... ok
+test real_cas_and_event_log_reopen_the_versioned_frame_transcript ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\frame_tool_authority.rs (target\debug\deps\frame_tool_authority-095cf55843d5343b.exe)
+
+running 3 tests
+test workspace_scope_attenuates_without_widening ... ok
+test binding_matches_only_actual_frame_token ... ok
+test child_binding_preserves_root_identity ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_security_capability-99a34000a43ea735.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\capability_contract.rs (target\debug\deps\capability_contract-52b608e7ef32e47d.exe)
+
+running 22 tests
+test resource_paths_reject_aliases_and_escapes ... ok
+test invalid_ttl_and_overflow_are_rejected ... ok
+test authority_and_token_debug_are_redacted ... ok
+test root_token_wrong_key_rejected ... ok
+test revoking_an_ancestor_denies_all_descendants ... ok
+test tampered_delegation_proof_is_rejected ... ok
+test root_token_verifies_with_public_key ... ok
+test root_scope_grants_listed_rights_only ... ok
+test unknown_vocabulary_cannot_be_repaired_by_descendant_facts ... ok
+test symbol_scope_requires_exact_path_and_symbol ... ok
+test invalid_capability_inputs_are_not_component_fatal ... ok
+test scope_limits_and_diff_binding_are_enforced ... ok
+test expiry_uses_injected_clock_and_is_exclusive ... ok
+test resource_scope_is_component_bounded ... ok
+test widening_child_never_escapes_ancestor_checks ... ok
+test token_facts_cannot_spoof_ambient_facts_or_grants ... ok
+test chain_of_three_attenuations_monotone ... ok
+test workspace_scope_attenuates_without_widening ... ok
+test bounded_tokens_and_evaluation_fail_closed ... ok
+test prop_arbitrary_token_bytes_never_authorize ... ok
+test datalog_fact_explosion_exhausts_budget_without_granting ... ok
+test prop_attenuation_is_monotone ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+     Running unittests examples\capability_latency.rs (target\debug\examples\capability_latency-9faf75b1e309f717.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

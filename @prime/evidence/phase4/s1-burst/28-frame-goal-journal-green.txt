@@ -1,0 +1,33 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 44.10s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-1a4995e04870fbdf.exe)
+
+running 16 tests
+test assembler_masks_semantic_names_before_tokenizer ... ok
+test assembler_reports_semantic_degradation_without_skipping_dfa ... ok
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_restores_exact_private_marker_map ... ok
+test assembler_filters_role_tools_before_counting ... ok
+test configured_agent_frame_requires_s1_before_provider ... ok
+test assembler_enforces_deadline_and_cumulative_archive_bound ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_bounds_semantic_field_work ... ok
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... ok
+test assembler_rejects_foreign_or_weaker_privacy_vault ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_masks_goal_before_failed_attempt_journal ... ok
+test configured_agent_frame_rejects_foreign_root_before_provider ... ok
+test assembler_run_rejects_replaced_frame_selection ... ok
+test assembler_masks_structured_arguments_and_rejects_unreadable_archive ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+

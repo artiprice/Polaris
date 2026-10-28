@@ -4,6 +4,7 @@ use std::error::Error;
 
 use polaris_sdk::contracts::{Event, EventRecord, Timestamp};
 use polaris_sdk::ids::{Cid, Seq, SessionId};
+use polaris_storage_eventlog::codec::SUPPORTED_SCHEMA;
 use polaris_storage_eventlog::{EVENTS_TABLE, EventLog, EventLogConfig, EventLogError};
 use redb::TableDefinition;
 
@@ -82,12 +83,12 @@ fn replay_rejects_newer_schema() -> TestResult {
         log.append(&record(1))?;
     }
     {
-        // A record written by a future version: schema prefix 3.
+        // A record written by a future version: one schema above the supported one.
         let db = redb::Database::open(&path)?;
         let txn = db.begin_write()?;
         {
             let mut table = txn.open_table(TableDefinition::<u64, &[u8]>::new(EVENTS_TABLE))?;
-            let mut future = 4u16.to_le_bytes().to_vec();
+            let mut future = (SUPPORTED_SCHEMA + 1).to_le_bytes().to_vec();
             future.extend_from_slice(b"{\"from\":\"the future\"}");
             table.insert(2u64, future.as_slice())?;
         }
@@ -96,10 +97,8 @@ fn replay_rejects_newer_schema() -> TestResult {
     let log = EventLog::open(EventLogConfig::new(&path))?;
     assert!(matches!(
         log.replay(Seq::new(2)),
-        Err(EventLogError::SchemaTooNew {
-            found: 4,
-            supported: 3
-        })
+        Err(EventLogError::SchemaTooNew { found, supported })
+            if found == SUPPORTED_SCHEMA + 1 && supported == SUPPORTED_SCHEMA
     ));
     assert_eq!(
         log.replay(Seq::new(1))?.len(),

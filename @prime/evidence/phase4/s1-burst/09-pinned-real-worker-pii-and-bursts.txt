@@ -1,0 +1,34 @@
+    Blocking waiting for file lock on package cache
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 1m 57s
+     Running tests\s1_process.rs (target\debug\deps\s1_process-c2563b4f518c65e8.exe)
+
+running 3 tests
+test real_worker_pii_spans_then_decide_reloads_independent_model ... OBSERVED PII IPC spans=3 raw_utf8_bytes=62
+ok
+test real_worker_reloads_after_idle_eviction ... ok
+test real_worker_runs_warm_and_post_eviction_fifty_request_bursts ... OBSERVED S1 burst warm: requested=50 answered=50 peak_owned=8 elapsed_us=290502 p95_ns=Some(280756223)
+OBSERVED S1 burst post_eviction: requested=50 answered=50 peak_owned=8 elapsed_us=16991473 p95_ns=Some(16735272959)
+ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 114.03s
+

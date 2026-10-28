@@ -1,0 +1,110 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1042:
+         let channel = Endpoint::from_shared(format!("http://{address}"))?
+             .connect()
+             .await?;
+-        let client = S1Client::new(
+-            channel,
+-            ClientConfig::new(timeout, 64)?,
+-            credential,
+-        )?;
+-        Ok((
+-            client,
+-            shutdown_sender,
+-            handshakes,
+-            eviction_calls,
+-            server,
+-        ))
++        let client = S1Client::new(channel, ClientConfig::new(timeout, 64)?, credential)?;
++        Ok((client, shutdown_sender, handshakes, eviction_calls, server))
+     }
+ 
+     #[tokio::test]
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1060:
+     async fn eviction_authenticates_handshake_and_rpc_and_returns_drop_acknowledgement()
+     -> Result<(), Box<dyn std::error::Error>> {
+         let (client, shutdown, handshakes, eviction_calls, server) =
+-            eviction_client(
+-                Duration::from_secs(2),
+-                1,
+-                Duration::ZERO,
+-                None,
+-            )
+-            .await?;
++            eviction_client(Duration::from_secs(2), 1, Duration::ZERO, None).await?;
+         assert_eq!(client.evict_models().await?, 1);
+         assert_eq!(handshakes.load(Ordering::Relaxed), 1);
+         assert_eq!(eviction_calls.load(Ordering::Relaxed), 1);
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1079:
+     async fn eviction_rejects_acknowledgement_above_native_engine_capacity()
+     -> Result<(), Box<dyn std::error::Error>> {
+         let (client, shutdown, _, _, server) =
+-            eviction_client(
+-                Duration::from_secs(2),
+-                2,
+-                Duration::ZERO,
+-                None,
+-            )
+-            .await?;
++            eviction_client(Duration::from_secs(2), 2, Duration::ZERO, None).await?;
+         assert!(matches!(
+             client.evict_models().await,
+             Err(DecisionError::Model(_))
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1097:
+ 
+     #[tokio::test]
+     async fn eviction_obeys_configured_deadline() -> Result<(), Box<dyn std::error::Error>> {
+-        let (client, shutdown, _, _, server) =
+-            eviction_client(
+-                Duration::from_millis(20),
+-                1,
+-                Duration::from_millis(100),
+-                None,
+-            )
+-            .await?;
++        let (client, shutdown, _, _, server) = eviction_client(
++            Duration::from_millis(20),
++            1,
++            Duration::from_millis(100),
++            None,
++        )
++        .await?;
+         assert!(matches!(
+             client.evict_models().await,
+             Err(DecisionError::Timeout)
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1120:
+             (tonic::Code::Unavailable, true),
+             (tonic::Code::PermissionDenied, false),
+         ] {
+-            let (client, shutdown, _, _, server) =
+-                eviction_client(
+-                    Duration::from_secs(2),
+-                    0,
+-                    Duration::ZERO,
+-                    Some((code, "test failure".to_owned())),
+-                )
+-                .await?;
++            let (client, shutdown, _, _, server) = eviction_client(
++                Duration::from_secs(2),
++                0,
++                Duration::ZERO,
++                Some((code, "test failure".to_owned())),
++            )
++            .await?;
+             let result = client.evict_models().await;
+             if expected_unavailable {
+                 assert!(matches!(result, Err(DecisionError::Unavailable(_))));
+Diff in \\?\C:\mDev\Polaris\crates\polaris-system-one\crates\client\src\lib.rs:1143:
+     #[tokio::test]
+     async fn eviction_rejects_missing_authentication() -> Result<(), Box<dyn std::error::Error>> {
+         let (mut client, shutdown, handshakes, eviction_calls, server) =
+-            eviction_client(
+-                Duration::from_secs(2),
+-                1,
+-                Duration::ZERO,
+-                None,
+-            )
+-            .await?;
++            eviction_client(Duration::from_secs(2), 1, Duration::ZERO, None).await?;
+         client.credential = WorkerCredential::generate()?;
+         if client.handshake.set(()).is_err() {
+             return Err("test could not bypass the handshake to exercise EvictModels auth".into());

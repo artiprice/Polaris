@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on build directory
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Finished `dev` profile [unoptimized] target(s) in 8.44s

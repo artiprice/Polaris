@@ -1,0 +1,23 @@
+{
+  "type_of": "pipeline",
+  "name": "bounded_local_model_readiness_probe",
+  "file_path": "crates/polaris-kernel/src/model_lifecycle.rs",
+  "logic_name": "Local Model Readiness Probe Deadline",
+  "test_list": [
+    {
+      "test_name": "stalled_profile_probe_retries_within_probe_timeout",
+      "description": "A stalled first metadata response must time out independently, allowing a later healthy probe before the full startup deadline."
+    }
+  ],
+  "dependencies": ["LocalModelRuntime", "LocalEndpointOwnership", "LlamaCppChatClient"],
+  "libraries": ["tokio"],
+  "inputs": [
+    {
+      "name": "config",
+      "type": "LocalModelLifecycleConfig",
+      "description": "Independent startup and per-probe timeout bounds."
+    }
+  ],
+  "output_type": "Result<OwnedLocalModel<P>, LoadError>",
+  "output_description": "A model with an observed owned listener and validated profile, or a bounded startup failure."
+}

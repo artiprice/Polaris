@@ -1,0 +1,57 @@
+[
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\classifier_fp32.onnx",
+    "bytes": 8405906,
+    "sha256": "aa94942215d4925803ffc5b86fcc42ef6d66858fae4a2a132b9a033fe26e9247"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\count_lstm_fixed_fp32.onnx",
+    "bytes": 75771816,
+    "sha256": "fccb6d0e7281bbd0e1a8151d74338ff4b3299b10dcbb4d359540c48542b1982b"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\count_pred_argmax_fp32.onnx",
+    "bytes": 8561595,
+    "sha256": "ddfc80750c5d7c633bcf90bb10eb8e57ddb1514627bd9311c39299bcc1971c9e"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\encoder_fp32.onnx",
+    "bytes": 1737503821,
+    "sha256": "2b5c8739fc691586ebdcf29cab0f0196ff225eec59b011a3681f8ae7567b6644"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\schema_gather_fp32.onnx",
+    "bytes": 1335,
+    "sha256": "a94b3774decd7eebf98ea013580f8fc221f06cbdb44124b2425d8e3842595961"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\scorer_fp32.onnx",
+    "bytes": 3832,
+    "sha256": "124886e33513cc27f24fa9abc5e97047f0849469f7c8bfa0727f8d48a5a8718b"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\span_rep_fp32.onnx",
+    "bytes": 117517371,
+    "sha256": "e710d0296a196199171c353b21e5593fde8be2603bb1d80ab953854f86fd3e7c"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\token_gather_fp32.onnx",
+    "bytes": 253,
+    "sha256": "ed85f0cfb1880f33fc34d44ca44be35ae734f30c61c8496c1e5d550a80b46664"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx\\tokenizer.json",
+    "bytes": 8333952,
+    "sha256": "3ad87d9ffe669147063e70850927dd2da90249e2acc5c8527f1eb65df467bcc8"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+    "bytes": 14186016,
+    "sha256": "dec964ab1ee36cc9b0ae247d13b376627992fc57dec0454354017ab8fd84f1ea"
+  },
+  {
+    "path": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime_providers_shared.dll",
+    "bytes": 22088,
+    "sha256": "a2b3a50956aa75a9879c8472bc7df4f7a8072bcd2db19a1b7d988e7688f293ef"
+  }
+]

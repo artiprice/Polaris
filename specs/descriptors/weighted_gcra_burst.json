@@ -1,0 +1,31 @@
+{
+  "type_of": "method",
+  "name": "GcraCell::reserve",
+  "file_path": "crates/polaris-ratelimit/src/gcra.rs",
+  "logic_name": "Weighted GCRA Burst Admission",
+  "test_list": [
+    {
+      "test_name": "weighted_request_cannot_overfill_remaining_burst",
+      "description": "Eight of ten tokens reserved leaves only two; a three-token request must be denied."
+    },
+    {
+      "test_name": "weighted_retry_accounts_for_the_entire_request",
+      "description": "Retry delay covers the full weighted deficit and admits at the exact boundary."
+    }
+  ],
+  "dependencies": [
+    "DualLimiter",
+    "Clock",
+    "Permit"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "cost",
+      "type": "u64",
+      "description": "Full prompt plus maximum-output reservation."
+    }
+  ],
+  "output_type": "Result<GcraReservation, Denied>",
+  "output_description": "Atomic weighted burst reservation or conservative exact deficit delay."
+}

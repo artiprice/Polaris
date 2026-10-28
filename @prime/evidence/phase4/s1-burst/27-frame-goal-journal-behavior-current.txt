@@ -1,0 +1,25 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 29.66s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-1a4995e04870fbdf.exe)
+
+running 1 test
+
+thread 'assembler_masks_goal_before_failed_attempt_journal' (12808) panicked at crates\polaris-kernel\tests\frame_prompt.rs:104:5:
+the raw goal must not leak through the failed-attempt journal path
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test assembler_masks_goal_before_failed_attempt_journal ... FAILED
+
+failures:
+
+failures:
+    assembler_masks_goal_before_failed_attempt_journal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `-p polaris-kernel --test frame_prompt`

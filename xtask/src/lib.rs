@@ -11,8 +11,10 @@
 //! `specs/descriptors/xtask_check_layers.json`.
 
 pub mod error;
+pub mod calibration;
 pub mod layers;
 pub mod members;
 pub mod metadata;
 pub mod policy;
+pub mod release_sbom;
 pub mod table;

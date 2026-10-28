@@ -1,0 +1,151 @@
+{
+  "type_of": "module",
+  "name": "FrameMutationService",
+  "file_path": "crates/polaris-kernel/src/frame_mutation.rs",
+  "logic_name": "Kernel Frame Mutation Service",
+  "test_list": [
+    {
+      "test_name": "prepare_binds_exact_token_frame_target_diff_and_churn_before_side_effects",
+      "description": "Preparation validates the sealed frame/token binding and actual ProposeDiff right over the exact target, diff digest, and observed churn; denial leaves workspace and CAS unchanged."
+    },
+    {
+      "test_name": "prepare_new_file_uses_absence_as_base_without_empty_file_substitution",
+      "description": "A create-new request with expected_base None prepares against an absent target; the public base remains None while verifier snapshots use the actual empty old bytes."
+    },
+    {
+      "test_name": "prepare_write_edit_and_patch_produce_exact_candidates",
+      "description": "Bounded typed write_file, unique or replace-all edit_file, and single-file apply_patch requests produce byte-exact candidates and a single path-bound diff."
+    },
+    {
+      "test_name": "apply_runs_hybrid_verifier_and_records_actual_committed_bytes",
+      "description": "An approved actual hybrid-verifier result is committed only while holding the shared write lease and valid OCC ticket; the durable CAS receipt matches the bytes read from the workspace and its diff/evidence identities."
+    },
+    {
+      "test_name": "apply_rejects_changed_base_and_create_new_race_without_overwriting",
+      "description": "A base changed after prepare, or a target created after a create-new prepare, is rejected before replacing or truncating the workspace file."
+    },
+    {
+      "test_name": "apply_persists_needs_approval_report_without_mutating_file",
+      "description": "A real HybridMutationVerifier NeedsApproval result is durably reported and returns an explicit NeedsApproval error; no file write or approval event occurs."
+    },
+    {
+      "test_name": "apply_rejects_capability_and_frame_binding_mismatch",
+      "description": "A token from another issuer/frame, a modified token, or a prepared mutation applied with a different token is rejected without workspace or CAS mutation."
+    },
+    {
+      "test_name": "prepare_rejects_secret_git_internal_symlink_and_escape_targets",
+      "description": "Secret-bearing, .git/.polaris internal, traversal, symlink/reparse-point, and outside-workspace targets fail closed for existing and create-new operations."
+    },
+    {
+      "test_name": "concurrent_prepared_mutations_allow_only_one_base_commit",
+      "description": "Two preparations against the same base cannot both commit: the real shared lease and OCC recheck allow one update and reject the stale second mutation."
+    },
+    {
+      "test_name": "dropping_apply_waiter_retains_inspection_owner_and_lease_until_commit_finishes",
+      "description": "Dropping the caller future after blocking application starts does not release its kernel inspection owner or shared lease while filesystem/verifier work is still executing."
+    },
+    {
+      "test_name": "post_write_receipt_failure_returns_applied_but_unrecorded_with_actual_digest",
+      "description": "If a failure occurs after the atomic workspace replacement but before durable receipt/event publication, the typed error reports the sanitized target and digest of the bytes actually present, without claiming rollback."
+    },
+    {
+      "test_name": "create_new_file_keeps_absence_as_base_and_records_actual_bytes",
+      "description": "create new file keeps absence as base and records actual bytes"
+    },
+    {
+      "test_name": "create_new_file_records_no_base_and_never_uses_empty_file_identity",
+      "description": "create new file records no base and never uses empty file identity"
+    },
+    {
+      "test_name": "needs_approval_returns_without_changing_workspace",
+      "description": "needs approval returns without changing workspace"
+    },
+    {
+      "test_name": "capability_without_propose_diff_is_rejected_before_workspace_change",
+      "description": "capability without propose diff is rejected before workspace change"
+    },
+    {
+      "test_name": "changed_base_after_prepare_is_rejected_without_overwrite",
+      "description": "changed base after prepare is rejected without overwrite"
+    },
+    {
+      "test_name": "edit_and_patch_requests_produce_and_commit_exact_candidates",
+      "description": "edit and patch requests produce and commit exact candidates"
+    },
+    {
+      "test_name": "traversal_secret_and_git_targets_are_rejected",
+      "description": "traversal secret and git targets are rejected"
+    },
+    {
+      "test_name": "mutation_diff_reconstructs_exact_missing_final_newline",
+      "description": "mutation diff reconstructs exact missing final newline"
+    },
+    {
+      "test_name": "oversized_source_is_rejected_before_hashing_the_candidate",
+      "description": "oversized source is rejected before hashing the candidate"
+    },
+    {
+      "test_name": "cancellation_during_verification_prevents_commit",
+      "description": "cancellation during verification prevents commit"
+    },
+    {
+      "test_name": "readonly_frame_roles_cannot_construct_a_mutation_service",
+      "description": "readonly frame roles cannot construct a mutation service"
+    }
+  ],
+  "dependencies": [
+    "KernelHandle",
+    "KernelCtx",
+    "FrameToolBinding",
+    "Token",
+    "FrameMutationRequest",
+    "PreparedFrameMutation",
+    "FrameMutationReceipt",
+    "LeaseManager",
+    "HybridMutationVerifier",
+    "MutationSafety",
+    "KernelEvidence",
+    "WorkspacePath",
+    "CAS",
+    "EventLog"
+  ],
+  "libraries": [
+    "polaris-sdk",
+    "polaris-runtime",
+    "polaris-runtime-leases",
+    "polaris-code-intel",
+    "polaris-kernel-verifier",
+    "polaris-system-one-verifier",
+    "polaris-security-capability",
+    "polaris-storage-cas",
+    "cap-std",
+    "tokio",
+    "serde",
+    "blake3",
+    "tempfile"
+  ],
+  "inputs": [
+    {
+      "name": "service",
+      "type": "FrameMutationService<S>",
+      "description": "Trusted service pinned to one actual KernelHandle, sealed FrameToolBinding, capability issuer, shared LeaseManager, real MutationSafety assessor, verifier limits and trusted task intent."
+    },
+    {
+      "name": "token",
+      "type": "&Token",
+      "description": "Actual frame capability; it must match the sealed binding and authorize Right::ProposeDiff over observed facts."
+    },
+    {
+      "name": "request",
+      "type": "FrameMutationRequest",
+      "description": "Bounded typed write_file, edit_file or single-file apply_patch request with an expected base Cid or explicit absence."
+    },
+    {
+      "name": "prepared",
+      "type": "PreparedFrameMutation",
+      "description": "Opaque, non-cloneable prepared snapshot binding exact target, base/absence, proposed source, diff, command, frame and token."
+    }
+  ],
+  "output_type": "Result<FrameMutationReceipt, FrameMutationError>",
+  "output_description": "An exact durable CAS receipt for actual committed bytes, returned only after capability authorization, hybrid verification, shared lease/OCC validation, atomic workspace commit, and durable publication. Rejection, NeedsApproval, stale-base, cancellation, and post-write recording failures remain explicit typed outcomes; no approval is synthesized."
+}

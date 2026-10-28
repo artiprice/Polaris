@@ -1,0 +1,13 @@
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Finished `test` profile [unoptimized] target(s) in 2.06s
+     Running tests\worker_bootstrap.rs (target\debug\deps\worker_bootstrap-7bf9cd44b4bc4d9f.exe)
+
+running 5 tests
+test failed_bootstrap_is_retired_and_never_probed ... ok
+test unconfirmed_cleanup_never_starts_another_generation ... ok
+test startup_deadline_and_cancellation_retain_process_ownership ... ok
+test bootstrap_precedes_health_and_restarts ... ok
+test pending_stop_is_bounded_and_retires_before_supervisor_abort ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+

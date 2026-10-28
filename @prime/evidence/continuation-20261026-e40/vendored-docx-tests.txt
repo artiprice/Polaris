@@ -1,0 +1,9 @@
+test_only_authorized_zip_backport_changes_are_accepted (__main__.VendoredDocxIntegrityTests.test_only_authorized_zip_backport_changes_are_accepted) ... ok
+test_published_archive_hash_and_file_set_are_pinned (__main__.VendoredDocxIntegrityTests.test_published_archive_hash_and_file_set_are_pinned) ... ok
+test_tampered_upstream_source_is_rejected (__main__.VendoredDocxIntegrityTests.test_tampered_upstream_source_is_rejected) ... ok
+test_unexpected_source_file_or_manifest_is_rejected (__main__.VendoredDocxIntegrityTests.test_unexpected_source_file_or_manifest_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 6.645s
+
+OK

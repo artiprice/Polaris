@@ -1,0 +1,367 @@
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 23.73s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-aa29fd7abde753e4.exe)
+
+running 12 tests
+test sandbox_recovery::tests::locator_encoding_is_versioned_scoped_and_strict ... ok
+test worker_lifecycle::tests::retiring_an_old_generation_does_not_clear_the_new_generation ... ok
+test worker_lifecycle::tests::initialization_bootstraps_before_connect_and_never_publishes_failure ... ok
+test worker_lifecycle::tests::bootstrap_errors_are_sanitized_and_do_not_publish_connections ... ok
+test skill_status::tests::invalid_skill_root_is_reported_unavailable_without_fabricated_entries ... ok
+test docker_pool::tests::live_pool_is_not_reported_as_orphan_and_release_removes_registration ... ok
+test docker_pool::tests::active_pool_registration_cannot_be_acknowledged_as_an_orphan ... ok
+test docker_pool::tests::failed_backend_cleanup_keeps_the_orphan_journaled ... ok
+test skill_status::tests::status_compares_requirements_to_the_real_local_builtin_catalog ... ok
+test docker_pool::tests::restart_recovers_only_orphaned_docker_pool_locators ... ok
+test sandbox_recovery::tests::recovery_acknowledges_only_absent_matching_scoped_records ... ok
+test context::tests::startup_recovers_docker_orphans_before_the_generic_reaper_sweep ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\error_taxonomy.rs (target\debug\deps\error_taxonomy-f0677cdcd7e3c8f2.exe)
+
+running 1 test
+test storage_error_kinds_are_preserved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\lifecycle_stress.rs (target\debug\deps\lifecycle_stress-5d2cf05f69edfc21.exe)
+
+running 5 tests
+test reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes ... ignored, 1000-directory and 20-process durable teardown workload; run explicitly
+test two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots ... ignored, native 200-process crash/kill stress; run explicitly
+test native_sleeper_fixture ... ok
+test timed_out_health_probe_kills_owned_native_worker ... ok
+test dropping_reaper_stops_process_even_when_native_adapter_is_shared ... ok
+
+test result: ok. 3 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests\local_runtime.rs (target\debug\deps\local_runtime-a115fe51c37c03a6.exe)
+
+running 2 tests
+test invalid_token_appends_no_event ... ok
+test directive_receipt_matches_committed_event ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\local_tools.rs (target\debug\deps\local_tools-f2715bbe657e1407.exe)
+
+running 1 test
+test local_tools_use_actual_workspace_cas_and_scoped_history ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\runtime_safety.rs (target\debug\deps\runtime_safety-d034857b3a39e64e.exe)
+
+running 5 tests
+test canceled_shutdown_waiter_does_not_cancel_owner_cleanup ... ok
+test failed_startup_releases_session_claim_and_writes_no_lifecycle_event ... ok
+test dropping_last_handle_drains_and_closes_event_stream ... ok
+test missing_registry_projection_is_rebuilt_from_durable_lifecycle_records ... ok
+test durable_replay_bridges_delayed_subscription_to_live_events_without_duplicates ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests\sandbox_execution.rs (target\debug\deps\sandbox_execution-8aa8a4871fc318b1.exe)
+
+running 5 tests
+test cancellation_retains_cleanup_ownership ... ok
+test changed_review_environment_and_remote_root_are_rejected_before_create ... ok
+test failed_run_does_not_publish_proof ... ok
+test stale_or_replayed_review_is_rejected_before_create ... ok
+test zero_tests_tampered_source_and_name_collision_never_complete ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.05s
+
+     Running tests\session_typestate.rs (target\debug\deps\session_typestate-fb3b49b04c8f1c40.exe)
+
+running 18 tests
+test invalid_configuration_commits_nothing ... ok
+test corrupt_configuration_cas_fails_recovery ... ok
+test configured_but_never_started_is_not_resumed ... ok
+test one_live_owner_per_session ... ok
+test shutdown_closes_session_mutations ... ok
+test created_configures_to_configured ... ok
+test running_session_is_recovered_as_paused ... ok
+test committed_projection_failure_is_explicit_and_recoverable ... ok
+test paused_resumes_to_running ... ok
+test startup_failure_releases_previously_opened_databases ... ok
+test live_publication_is_already_in_the_durable_log ... ok
+test invalid_lifecycle_order_is_not_silently_replayed ... ok
+test session_defaults_do_not_leak_to_other_sessions ... ok
+test unresolved_orphans_block_startup ... ok
+test registry_can_be_rebuilt_after_its_file_is_lost ... ok
+test reopen_replays_directives_in_order ... ok
+test replay_crosses_page_boundary_and_filters_other_sessions ... ok
+test prop_replayed_directive_fold_matches_last_override ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.05s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel_supervisor-0bbebd53b5b00313.exe)
+
+running 1 test
+test worker::exit_tests::clean_worker_exit_is_success_and_signal_or_ntstatus_is_a_crash ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\circuit_breaker.rs (target\debug\deps\circuit_breaker-2a3407f2a8fc1df5.exe)
+
+running 11 tests
+test half_open_after_cooldown ... ok
+test half_open_failure_reopens ... ok
+test half_open_success_closes ... ok
+test late_results_while_open_are_ignored ... ok
+test old_failures_age_out_of_window ... ok
+test open_rejects_until_cooldown ... ok
+test opens_after_n_failures_in_window ... ok
+test handle_publishes_circuit_tripped_once ... ok
+test handle_half_open_probe_under_paused_time ... ok
+test prop_never_closed_to_half_open ... ok
+test prop_matches_reference_model ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\dead_letter_queue.rs (target\debug\deps\dead_letter_queue-67b404880433b6ae.exe)
+
+running 6 tests
+test drain_empties_and_keeps_drop_counter ... ok
+test bounded_drops_oldest_and_counts ... ok
+test fifo_order_within_capacity ... ok
+test supervisor_dead_letter_publishes_event ... ok
+test supervisor_reports_drops_in_snapshot ... ok
+test prop_len_bounded_and_accounted ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\restart_intensity.rs (target\debug\deps\restart_intensity-40d05330db6809e0.exe)
+
+running 7 tests
+test allows_up_to_max_then_exceeds ... ok
+test default_is_three_per_ten_seconds ... ok
+test exceeded_requests_are_not_recorded ... ok
+test exact_window_age_is_outside ... ok
+test window_slides ... ok
+test zero_max_never_restarts ... ok
+test prop_restarts_per_window_bounded ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\task_supervision.rs (target\debug\deps\task_supervision-f1840cdad9b4176c.exe)
+
+running 19 tests
+test temporary_child_not_restarted ... ok
+test stop_aborts_child_that_ignores_cancel ... ok
+test cancel_token_stops_child ... ok
+test panic_does_not_poison_supervisor ... ok
+test backoff_grows_between_restarts ... ok
+test fatal_error_gives_up_immediately ... ok
+test transient_child_stays_down_after_clean_exit ... ok
+test exhausted_escalation_cancels_root ... ok
+test shutdown_stops_all_children_without_leaks ... ok
+test restart_is_published_as_worker_restarted ... ok
+test panicking_task_is_restarted ... ok
+test intensity_exceeded_routes_to_dlq ... ok
+test publish_failure_does_not_stop_supervision ... ok
+test unknown_child_is_error ... ok
+test no_restart_storm_after_give_up ... ok
+test worker_stop_terminates_the_owned_process_tree ... ok
+test worker_process_crashes_restart_at_one_millisecond_backoff_and_stop_at_intensity ... ok
+test telemetry_folds_supervisor_events ... ok
+test aborted_worker_stop_force_kills_the_tree_from_its_drop_guard ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\worker_bootstrap.rs (target\debug\deps\worker_bootstrap-e7eb75ef872517f9.exe)
+
+running 6 tests
+test failed_bootstrap_is_retired_and_never_probed ... ok
+test unconfirmed_cleanup_never_starts_another_generation ... ok
+test startup_deadline_and_cancellation_retain_process_ownership ... ok
+test bootstrap_precedes_health_and_restarts ... ok
+test retirement_precedes_slow_stop ... ok
+test pending_stop_is_bounded_and_retires_before_supervisor_abort ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_models-b7b789d4757f1db1.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\catalog_contract.rs (target\debug\deps\catalog_contract-84cf1428ad457a50.exe)
+
+running 7 tests
+test cascade_uses_lower_effort_draft_and_requested_verification ... ok
+test invalid_override_is_atomic ... ok
+test constrained_selection_enforces_effort_model_and_availability ... ok
+test availability_observations_validate_atomically_and_monotonically ... ok
+test builtin_contains_dated_snapshot_ids_and_effort_mapping ... ok
+test overrides_are_first_wins_and_report_gaps ... ok
+test custom_registry_is_bounded_and_rejects_unsafe_aliases ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\eviction_manager_contract.rs (target\debug\deps\eviction_manager_contract-b90a68fa91b69b2e.exe)
+
+running 5 tests
+test invalid_or_duplicate_slot_names_are_rejected ... ok
+test shutdown_requests_every_slot_even_after_budget ... ok
+test elevated_pressure_only_evicts_idle_slots ... ok
+test critical_pressure_drains_and_pauses_all_slots ... ok
+test evict_all_orders_longest_idle_first ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\lifecycle_contract.rs (target\debug\deps\lifecycle_contract-e1b3def988ba1fa6.exe)
+
+running 8 tests
+test concurrent_acquire_loads_once ... ok
+test lease_bound_rejects_excess_acquisitions ... ok
+test canceled_waiter_keeps_owner_load_alive ... ok
+test force_evict_deadline_pauses_then_resume_reopens ... ok
+test close_and_unload_failure_are_reported ... ok
+test unload_timeout_keeps_shared_drain_owned ... ok
+test eviction_during_load_drains_the_completed_load ... ok
+test idle_ttl_evicts_and_reload_uses_real_loader ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_client-b5149163f4a17fd4.exe)
+
+running 17 tests
+test tests::client_input_bound_matches_worker_cap ... ok
+test tests::health_response_validation_rejects_missing_and_incompatible_versions ... ok
+test tests::health_response_validation_distinguishes_admission_from_model_readiness ... ok
+test tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial ... ok
+test tests::response_validation_rejects_answers_for_another_question ... ok
+test tests::response_validation_rejects_unselected_or_unsorted_choice_scores ... ok
+test tests::request_validation_rejects_empty_schema_without_transport ... ok
+test tests::request_validation_counts_context_separator_and_utf8_bytes ... ok
+test tests::schema_bound_counts_derived_ordinal_labels ... ok
+test tests::readiness_does_not_report_ready_when_authenticated_rpc_cannot_connect ... ok
+test tests::eviction_rejects_missing_authentication ... ok
+test tests::readiness_authenticates_handshake_and_health_and_reports_admission_only ... ok
+test tests::eviction_authenticates_handshake_and_rpc_and_returns_drop_acknowledgement ... ok
+test tests::eviction_rejects_acknowledgement_above_native_engine_capacity ... ok
+test tests::readiness_rejects_invalid_health_protocol_versions ... ok
+test tests::eviction_maps_worker_status_errors ... ok
+test tests::eviction_obeys_configured_deadline ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_worker-0d3de45913a6ecf7.exe)
+
+running 11 tests
+test idle::tests::eviction_acknowledges_completed_destruction_and_is_idempotent ... ok
+test idle::tests::only_completed_work_moves_the_idle_deadline ... ok
+test idle::tests::failed_loading_keeps_the_session_cold ... ok
+test tests::ingest_and_embedding_do_not_claim_s1_results ... ok
+test tests::empty_decision_batch_is_rejected_before_model_loading ... ok
+test tests::canceled_shutdown_still_signals_transport_stop ... ok
+test ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped ... ok
+test ingest::tests::provenance_writer_rejects_growth_and_parser_errors_are_private ... ok
+test ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission ... ok
+test tests::transport_shutdown_wait_is_bounded ... ok
+test tests::drain_lock_wait_observes_requested_grace ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\main.rs (target\debug\deps\polaris_worker-827d701a7582738b.exe)
+
+running 3 tests
+test tests::bootstrap_rejects_short_and_non_utf8_secrets ... ok
+test tests::idle_cli_policy_is_bounded_and_does_not_echo_bad_values ... ok
+test tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests\idle_eviction.rs (target\debug\deps\idle_eviction-a04b1dc7c34d57e9.exe)
+
+running 2 tests
+test default_worker_drops_real_model_after_idle_ttl ... ignored, requires explicit installed model/runtime paths and 46 seconds of real idle time
+test configured_idle_policy_rejects_invalid_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\ingest_service.rs (target\debug\deps\ingest_service-bac6c976764dc7c0.exe)
+
+running 5 tests
+test ingest_worker_protocol_and_lifecycle ... ok
+test invalid_or_missing_source_is_rejected ... ok
+test unsupported_ocr_remains_an_error ... ok
+test ingest_persists_text_and_untrusted_provenance ... ok
+test corrupt_and_oversized_sources_fail_before_parsing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\local_transport.rs (target\debug\deps\local_transport-6740f5da91beabde.exe)
+
+running 2 tests
+test windows_pipe_collision_fails_before_serve_returns_success ... ok
+test windows_pipe_ingest_handshake_content_and_shutdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\s1_process.rs (target\debug\deps\s1_process-f8b31b163b751665.exe)
+
+running 2 tests
+test configured_windows_worker_process_returns_real_decision ... ignored, requires explicit local GLiNER model and ORT DLL paths
+test real_worker_reloads_after_idle_eviction ... ignored, requires explicit installed GLiNER/ORT artifacts
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\supervised_worker.rs (target\debug\deps\supervised_worker-151c8a086cbf58ed.exe)
+
+running 2 tests
+test supervised_worker_returns_real_decision ... ignored, requires explicit installed GLiNER/ORT artifact paths
+test supervised_worker_bootstraps_authenticated_health_and_retires ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.01s
+
+   Doc-tests polaris_kernel
+
+running 1 test
+test crates\polaris-kernel\src\lib.rs - (line 31) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 2 tests
+test crates\polaris-kernel\src\session.rs - session (line 12) - compile fail ... ok
+test crates\polaris-kernel\src\session.rs - session (line 5) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+all doctests ran in 4.41s; merged doctests compilation took 2.92s
+   Doc-tests polaris_kernel_supervisor
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_models
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_system_one_client
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_worker
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

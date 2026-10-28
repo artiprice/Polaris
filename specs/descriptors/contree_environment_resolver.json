@@ -1,0 +1,104 @@
+{
+  "type_of": "function",
+  "name": "resolve_environment",
+  "file_path": "crates/polaris-nebius-cloud/crates/sandboxes/src/env_resolver.rs",
+  "logic_name": "Contree Environment Resolution",
+  "test_list": [
+    {
+      "test_name": "exact_commit_match_wins",
+      "description": "A trusted host annotation for the exact canonical repository and full commit wins without invoking the ranker when requested runtime, architecture, language, and toolchain constraints also match."
+    },
+    {
+      "test_name": "exact_commit_incompatible_runtime_is_not_selected",
+      "description": "An exact repository and commit image is excluded when a requested runtime or architecture constraint does not match."
+    },
+    {
+      "test_name": "exact_commit_incompatible_toolchain_is_not_selected",
+      "description": "An exact repository and commit image is excluded when its declared toolchain version differs from the manifest requirement."
+    },
+    {
+      "test_name": "compatible_metadata_selects_unique_candidate",
+      "description": "A unique image whose trusted language and exact toolchain metadata satisfy a nonempty manifest requirement is selected deterministically."
+    },
+    {
+      "test_name": "ambiguous_candidates_use_ranker",
+      "description": "Multiple exact candidates are passed in stable image-id order to the injected ranker, whose unique highest valid score selects the image."
+    },
+    {
+      "test_name": "injected_ranker_can_inspect_manifest_metadata_and_actual_image_record",
+      "description": "An external ranker can inspect manifest constraints, trusted annotations, and actual upstream ImageRecord fields through typed getters and use a real record tag to rank eligible candidates."
+    },
+    {
+      "test_name": "tied_highest_scores_remain_ambiguous",
+      "description": "Equal highest ranker scores remain an explicit ambiguity rather than being selected by input or sort order."
+    },
+    {
+      "test_name": "manifest_requires_canonical_repo_and_full_git_oid",
+      "description": "Manifest construction rejects repository URLs and abbreviated Git object IDs."
+    },
+    {
+      "test_name": "ranker_omitted_scores_are_rejected",
+      "description": "The ranker must score every candidate exactly once; an omitted candidate produces a typed invalid-ranker-output error."
+    },
+    {
+      "test_name": "ranker_duplicate_or_invented_ids_are_rejected",
+      "description": "Duplicate score IDs and IDs absent from actual list_images records are rejected."
+    },
+    {
+      "test_name": "ranker_invalid_scores_are_rejected",
+      "description": "A score outside the integer basis-point range 0 through 10000 is rejected."
+    },
+    {
+      "test_name": "duplicate_catalog_or_annotation_ids_are_rejected",
+      "description": "Duplicate upstream image IDs or duplicate trusted host annotation IDs fail closed."
+    },
+    {
+      "test_name": "annotation_for_unlisted_image_is_rejected",
+      "description": "Trusted metadata cannot introduce an image identity that was absent from the actual list_images result."
+    },
+    {
+      "test_name": "no_match_and_unconstrained_fallback_are_rejected",
+      "description": "No compatible candidate and arbitrary metadata without a repo match or positive compatibility requirement both return a typed no-match error."
+    },
+    {
+      "test_name": "resolver_is_deterministic_for_permuted_inputs",
+      "description": "Permuting equivalent image and annotation input order does not change the stable ranked result."
+    },
+    {
+      "test_name": "oversized_catalog_is_rejected",
+      "description": "Catalog and annotation input counts above configured bounds are rejected before ranking."
+    }
+  ],
+  "dependencies": [
+    "ImageRecord",
+    "ImageId",
+    "ContreeError"
+  ],
+  "libraries": [
+    "std"
+  ],
+  "inputs": [
+    {
+      "name": "manifest",
+      "type": "&RepoManifest",
+      "description": "Validated repository, full Git object ID, and declared runtime/language/toolchain/architecture requirements."
+    },
+    {
+      "name": "images",
+      "type": "&[ImageRecord]",
+      "description": "Actual image identities returned by the Contree list_images API; upstream records are not extended with guessed fields."
+    },
+    {
+      "name": "metadata",
+      "type": "&[TrustedImageMetadata]",
+      "description": "Explicit host-trusted annotations keyed by actual ImageId values."
+    },
+    {
+      "name": "ranker",
+      "type": "&impl ImageRanker",
+      "description": "Injected ambiguity resolver, called only with a bounded stable candidate set."
+    }
+  ],
+  "output_type": "Result<ResolvedImage, ResolverError>",
+  "output_description": "The selected actual Contree image ID and match reason, or a typed error for invalid inputs, no match, or invalid/ambiguous ranker output."
+}

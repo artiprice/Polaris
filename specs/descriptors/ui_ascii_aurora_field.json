@@ -1,0 +1,67 @@
+{
+  "type_of": "function",
+  "name": "field::sample / FieldFrame",
+  "file_path": "crates/polaris-ui/crates/ascii-aurora/src/field.rs",
+  "logic_name": "Aurora Field Sampling",
+  "test_list": [
+    {
+      "test_name": "deterministic_for_same_seed_and_time",
+      "description": "The same (seed, t, u, v) always yields a bit-identical Sample."
+    },
+    {
+      "test_name": "different_seed_changes_stars",
+      "description": "Two seeds place stars on different lattice cells."
+    },
+    {
+      "test_name": "prop_values_finite_and_in_range",
+      "description": "For t in [0,600] and u,v in [0,1] luminance and star are finite and within 0..=1 and every tint channel is finite within 0..=1."
+    },
+    {
+      "test_name": "edge_mask_zero_at_borders",
+      "description": "Luminance and star are exactly 0 on all four borders of the frame and the edge mask is 1 in the interior."
+    },
+    {
+      "test_name": "ribbon_brightest_near_curve",
+      "description": "At t=0 the mean luminance on the animated S-curve ribbon is far larger than the mean luminance of points offset 0.2 away from it."
+    },
+    {
+      "test_name": "stars_seeded_sparse_and_palette_bound",
+      "description": "The fraction of star cells is inside (0.002, 0.02), twinkle opacity stays in 0.38..=0.88 and star colours come only from the star palette."
+    },
+    {
+      "test_name": "animation_is_smooth",
+      "description": "Luminance changes by less than 0.03 everywhere between t and t+1/30 s (no per-frame flicker)."
+    },
+    {
+      "test_name": "tint_stays_inside_palette_range",
+      "description": "The sampled tint is always a convex mix of the demo sage palette stops (within the per-channel palette bounds times the tint gain)."
+    }
+  ],
+  "dependencies": [
+    "crate::params",
+    "crate::math",
+    "crate::conv"
+  ],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "seed",
+      "type": "u64",
+      "description": "Seeds the star lattice, texture jitter, noise lattice and tint phase."
+    },
+    {
+      "name": "t",
+      "type": "f32",
+      "description": "Simulation time in seconds."
+    },
+    {
+      "name": "u, v",
+      "type": "f32",
+      "description": "Normalised frame coordinates in [0,1]."
+    }
+  ],
+  "output_type": "Sample",
+  "output_description": "Luminance 0..=1 (already edge-masked), a sage tint (rgb 0..=1) and a star twinkle opacity (0 when the lattice cell is not a star)."
+}

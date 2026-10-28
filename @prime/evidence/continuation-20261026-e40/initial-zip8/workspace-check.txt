@@ -1,0 +1,344 @@
+    Blocking waiting for file lock on package cache
+    Checking windows-sys v0.61.2
+    Checking uuid v1.28.0
+    Checking regex-automata v0.4.18
+    Checking crypto-common v0.2.2
+    Checking ring v0.17.14
+    Checking bytemuck v1.25.2
+   Compiling zerocopy-derive v0.8.63
+    Checking flate2 v1.1.10
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking atomic v0.6.1
+   Compiling matrixmultiply v0.3.11
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking safe_arch v1.2.0
+    Checking spdlog-rs v0.5.3
+    Checking hdrhistogram v7.6.0
+    Checking compact_str v0.9.1
+    Checking unicode-truncate v2.0.1
+    Checking block-padding v0.3.3
+   Compiling darling_core v0.20.11
+    Checking socks v0.3.4
+    Checking ureq-proto v0.6.5
+    Checking inout v0.1.4
+    Checking webpki-roots v1.0.10
+    Checking cipher v0.5.2
+    Checking universal-hash v0.6.1
+    Checking aead v0.6.1
+    Checking ratatui-core v0.1.2
+    Checking wide v1.7.1
+    Checking cipher v0.4.4
+    Checking poly1305 v0.9.1
+   Compiling monostate-impl v0.1.18
+    Checking ndarray v0.17.2
+    Checking spm_precompiled v0.1.4
+    Checking chacha20 v0.10.2
+    Checking dary_heap v0.3.9
+    Checking rustls-webpki v0.103.16
+    Checking unicode-normalization-alignments v0.1.12
+    Checking moxcms v0.8.1
+    Checking png v0.18.1
+    Checking cbc v0.1.2
+    Checking ecb v0.1.2
+    Checking rand v0.10.3
+    Checking chacha20poly1305 v0.11.0
+    Checking aes v0.8.4
+    Checking md-5 v0.10.6
+    Checking rustls v0.23.46
+    Checking cfb v0.14.0
+    Checking zip v8.6.0
+    Checking euclid v0.20.14
+    Checking lopdf v0.42.0
+    Checking csv v1.4.0
+    Checking monostate v0.1.18
+    Checking regex v1.13.1
+    Checking matchers v0.2.0
+    Checking bstr v1.13.1
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking tree-sitter v0.27.1
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking exmex v0.21.0
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking fancy-regex v0.19.2
+    Checking polaris-ui-model v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\model)
+    Checking polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking ratatui-widgets v0.3.2
+    Checking ratatui-crossterm v0.1.2
+    Checking gix-error v0.5.1
+    Checking globset v0.4.20
+    Checking gix-imara-diff v0.3.1
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking fancy-regex v0.17.0
+    Checking infer v0.22.0
+    Checking polaris-ui-web v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\web)
+    Checking polaris-ui-gui v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\gui)
+    Checking polaris-spike-web v0.1.0-alpha (C:\mDev\Polaris\tests\spike\web)
+    Checking gix-utils v0.5.1
+    Checking gix-validate v0.13.0
+    Checking gix-date v0.18.0
+    Checking gix-chunk v0.10.0
+    Checking gix-bitmap v0.6.0
+    Checking gix-packetline v0.24.0
+    Checking gix-zlib v0.3.0
+    Checking gix-path v0.14.0
+    Checking gix-hash v0.28.0
+    Checking gix-quote v0.10.0
+    Checking gix-actor v0.44.0
+    Checking gix-command v0.12.0
+    Checking gix-hashtable v0.18.0
+    Checking gix-commitgraph v0.41.0
+    Checking gix-config-value v0.21.0
+    Checking gix-url v0.40.0
+    Checking gix-refspec v0.47.0
+    Checking ratatui-macros v0.7.2
+    Checking ratatui v0.30.2
+    Checking ureq v3.4.2
+    Checking polaris-ui-cli v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui\crates\cli)
+    Checking polaris-ui v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ui)
+    Checking pdf-extract v0.12.1
+    Checking simba v0.10.2
+    Checking zerocopy v0.8.63
+    Checking tempfile v3.27.0
+    Checking mio v1.2.4
+    Checking socket2 v0.6.5
+    Checking schannel v0.1.30
+    Checking nu-ansi-term v0.50.3
+    Checking etcetera v0.11.0
+    Checking winapi-util v0.1.11
+    Checking console v0.16.6
+    Checking rustls-platform-verifier v0.7.1
+    Checking gix-sec v0.16.0
+    Checking terminal_size v0.4.4
+    Checking dua-core v4.2.0
+    Checking miette v7.6.0
+    Checking serial2 v0.2.38
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking same-file v1.0.6
+    Checking cap-primitives v4.0.3
+    Checking rusty-fork v0.3.1
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking gix-transport v0.61.0
+    Checking rustls-native-certs v0.8.5
+    Checking tracing-subscriber v0.3.23
+    Checking windows-native-keyring-store v1.1.0
+    Checking walkdir v2.5.0
+    Checking tokio v1.54.1
+    Checking proptest v1.12.0
+    Checking insta v1.49.0
+    Checking home v0.5.12
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking anstyle-wincon v3.0.11
+    Checking portable-pty v0.9.0
+    Checking polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking keyring v4.2.0
+    Checking gix-fs v0.24.0
+    Checking ignore v0.4.33
+    Checking notify v8.2.0
+    Checking anstyle-query v1.1.5
+    Checking cap-std v4.0.3
+    Checking polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Checking anstream v1.0.0
+   Compiling darling_macro v0.20.11
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking indicatif v0.18.6
+    Checking dirs-sys v0.5.0
+    Checking gix-tempfile v26.0.0
+    Checking gix-glob v0.29.0
+    Checking dirs v6.0.0
+    Checking zip v9.1.1
+    Checking fs4 v1.1.0
+    Checking clap_builder v4.6.7
+    Checking gix-object v0.66.0
+    Checking gix-lock v26.0.0
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking gix-attributes v0.37.0
+    Checking gix-ignore v0.24.0
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking gix-shallow v0.15.0
+    Checking loom v0.7.2
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+    Checking gix-pathspec v0.22.0
+    Checking nalgebra v0.35.0
+    Checking gix-revwalk v0.37.0
+    Checking gix-ref v0.69.0
+    Checking gix-filter v0.36.0
+    Checking gix-pack v0.76.0
+    Checking ppv-lite86 v0.2.21
+    Checking ahash v0.8.12
+    Checking half v2.7.1
+    Checking calamine v0.37.0
+    Checking gix-traverse v0.63.0
+    Checking gix-revision v0.51.0
+    Checking jsonschema-value v0.59.0
+    Checking referencing v0.59.0
+    Checking rand_chacha v0.3.1
+    Checking rand_chacha v0.9.0
+    Checking tiff v0.11.3
+    Checking gix-index v0.57.0
+    Checking ort v2.0.0-rc.13
+    Checking rand v0.8.8
+    Checking rand v0.9.5
+    Checking openshell-policy-schema v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking gix-discover v0.57.0
+    Checking gix-config v0.62.0
+    Checking gix-odb v0.86.0
+    Checking gix-protocol v0.67.0
+    Checking clap v4.6.7
+    Checking tungstenite v0.26.2
+    Checking hf-hub v0.5.0
+    Checking gix-worktree v0.58.0
+    Checking biscuit-auth v6.0.0 (C:\mDev\Polaris\vendor\biscuit-auth)
+    Checking jsonschema v0.59.0
+    Checking image v0.25.10
+    Checking gix-diff v0.69.0
+    Checking gix-dir v0.31.0
+    Checking gix-worktree-state v0.36.0
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking gix-submodule v0.36.0
+    Checking tokio-util v0.7.20
+    Checking tokio-rustls v0.26.6
+    Checking tokio-stream v0.1.19
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking process-wrap v10.0.1
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+    Checking tokio-tungstenite v0.26.2
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking gix-status v0.36.0
+    Checking backon v1.6.0
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+    Checking polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+    Checking polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+    Checking polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+    Checking polaris-spike-bus v0.1.0-alpha (C:\mDev\Polaris\tests\spike\bus)
+    Checking gix v0.89.0
+    Checking h2 v0.4.20
+    Checking tower v0.5.3
+    Checking polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+    Checking polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Checking polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+    Checking docx-rs v0.4.22
+   Compiling darling v0.20.11
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+   Compiling derive_builder_core v0.20.2
+    Checking axum v0.8.9
+    Checking tower-http v0.6.11
+    Checking polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+    Checking polaris-spike-ratelimit v0.1.0-alpha (C:\mDev\Polaris\tests\spike\ratelimit)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+    Checking statrs v0.19.1
+    Checking hyper v1.12.0
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking hyper-util v0.1.21
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+    Checking hyper-timeout v0.5.2
+    Checking hyper-rustls v0.27.10
+    Checking hyper-named-pipe v0.1.1
+    Checking tonic v0.14.6
+    Checking reqwest v0.13.5
+    Checking reqwest v0.12.28
+    Checking rmcp v3.5.1
+    Checking oauth2 v5.0.0
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking tonic-prost v0.14.6
+    Checking openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking tonic-types v0.14.6
+    Checking polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Checking bollard-buildkit-proto v0.8.1
+    Checking polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+    Checking polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+    Checking openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling derive_builder_macro v0.20.2
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+    Checking polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+    Checking polaris-system-one-nano v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\nano)
+    Checking polaris-guest v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-guest)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Checking bollard-stubs v1.53.1-rc.29.3.1
+    Checking derive_builder v0.20.2
+    Checking tokenizers v0.23.2
+    Checking gliner2-rs v0.9.6
+    Checking polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Checking bollard v0.21.1
+    Checking polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Checking openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+    Checking polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+    Checking polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+    Checking polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Checking polaris-spike-sandbox v0.1.0-alpha (C:\mDev\Polaris\tests\spike\sandbox)
+    Checking polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Checking polaris-daemon v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-daemon)
+    Checking polaris-tests v0.1.0-alpha (C:\mDev\Polaris\tests)
+    Checking polaris-web v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-web)
+    Checking polaris-desktop v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-desktop)
+warning: method `is_consumed` is never used
+   --> apps\polaris-cli\src\demo_gallery.rs:316:18
+    |
+315 | impl GalleryEffect {
+    | ------------------ method in this implementation
+316 |     pub const fn is_consumed(&self) -> bool {
+    |                  ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple methods are never used
+    --> apps\polaris-cli\src\demo_gallery.rs:1332:12
+     |
+1164 | impl DemoGallery {
+     | ---------------- methods in this implementation
+...
+1332 |     pub fn stats_tab_label(&self) -> &'static str {
+     |            ^^^^^^^^^^^^^^^
+...
+1350 |     pub fn stats_summary(&self) -> StatsSummary {
+     |            ^^^^^^^^^^^^^
+...
+1359 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+     |            ^^^^^^^^^^^^^^^^^^^
+...
+1368 |     pub const fn stats_details_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+1371 |     pub const fn stats_bucket(&self) -> Option<usize> {
+     |                  ^^^^^^^^^^^^
+...
+1374 |     pub const fn usage_demo_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^
+...
+1440 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+     |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized] target(s) in 1m 37s

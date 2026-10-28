@@ -6,7 +6,7 @@
   "test_list": [
     {
       "test_name": "every_command_body_roundtrips",
-      "description": "One sample of each of the 9 sdk CommandBody variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
+      "description": "One sample of each of the 10 sdk CommandBody variants survives sdk -> pb -> bytes -> pb -> sdk unchanged; an exhaustive match in the test fails to compile when the sdk adds a variant."
     },
     {
       "test_name": "verified_command_serialises_without_witness",

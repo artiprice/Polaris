@@ -14,7 +14,7 @@ use crate::error::ProtoError;
 use crate::pb;
 
 /// The wire-protocol version this build speaks.
-pub const PROTOCOL_VERSION: ProtocolVersion = ProtocolVersion::new(1, 0);
+pub const PROTOCOL_VERSION: ProtocolVersion = ProtocolVersion::new(1, 2);
 
 /// A wire-protocol version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

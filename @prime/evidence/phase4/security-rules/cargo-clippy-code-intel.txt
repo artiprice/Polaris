@@ -1,0 +1,39 @@
+    Blocking waiting for file lock on build directory
+    Checking regex v1.13.1
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking tree-sitter v0.27.1
+    Checking ast-grep-core v0.51.0
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+error: items after a test module
+   --> crates\polaris-code-intel\src\walk.rs:44:1
+    |
+ 44 | mod tests {
+    | ^^^^^^^^^
+...
+114 | pub(crate) fn node_text<'a>(node: Node<'_>, src: &'a [u8]) -> Cow<'a, str> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+121 | pub(crate) fn field_text(node: Node<'_>, field: &str, src: &[u8]) -> Option<String> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+127 | pub(crate) fn named_children<'t>(node: Node<'t>) -> Vec<Node<'t>> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#items_after_test_module
+    = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+    = help: move the items to before the test module was defined
+
+error: could not compile `polaris-code-intel` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: very complex type used. Consider factoring parts into `type` definitions
+  --> crates\polaris-code-intel\tests\subtree_fingerprints.rs:13:6
+   |
+13 | ) -> Result<Vec<(usize, usize, FastFingerprint)>, Box<dyn std::error::Error>> {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#type_complexity
+   = note: `-D clippy::type-complexity` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: could not compile `polaris-code-intel` (test "subtree_fingerprints") due to 1 previous error

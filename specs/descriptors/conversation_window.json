@@ -1,0 +1,36 @@
+{
+  "type_of": "struct",
+  "name": "ConversationWindow",
+  "file_path": "crates/polaris-runtime/crates/context/src/window.rs",
+  "logic_name": "Conversation Window",
+  "test_list": [
+    {
+      "test_name": "window_preserves_complete_tool_groups",
+      "description": "ConversationWindow exposes message-end boundaries that retain every assistant tool call with all matching tool results as one indivisible group."
+    },
+    {
+      "test_name": "window_rejects_malformed_history",
+      "description": "ConversationWindow rejects orphan, missing, duplicate, reused, mismatched tool results and tool calls attached to non-assistant messages."
+    },
+    {
+      "test_name": "window_archive_roundtrip_is_bounded_and_verified",
+      "description": "archive_window validates before writing, serializes losslessly under the requested cap, and returns a reference that expands to exactly the original messages with verified integrity."
+    }
+  ],
+  "dependencies": ["ContextError", "WindowArchiveRef", "polaris_sdk::registry::ChatMessage", "polaris_storage_cas::Cas"],
+  "libraries": ["serde", "serde_json", "bytes"],
+  "inputs": [
+    {
+      "name": "messages",
+      "type": "&[ChatMessage]",
+      "description": "Structured conversation history whose tool-call groups must remain complete."
+    },
+    {
+      "name": "max_bytes",
+      "type": "usize",
+      "description": "Maximum serialized archive size, capped at 16 MiB."
+    }
+  ],
+  "output_type": "Result<ConversationWindow, ContextError>",
+  "output_description": "Validated complete-group message boundaries, or a typed error for malformed history."
+}

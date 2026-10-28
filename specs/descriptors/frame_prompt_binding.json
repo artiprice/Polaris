@@ -1,0 +1,27 @@
+{
+  "type_of": "method",
+  "name": "AgentContextFrame<Active>::prompt_binding",
+  "file_path": "crates/polaris-runtime/crates/frames/src/state.rs",
+  "logic_name": "Frame Prompt Binding",
+  "test_list": [
+    {
+      "test_name": "prompt_binding_captures_the_active_frame_selection",
+      "description": "A binding created from an active frame exposes that frame's id, root id, role, selected model, and selected effort through read-only getters."
+    },
+    {
+      "test_name": "prompt_binding_keeps_child_and_foreign_frame_identity_distinct",
+      "description": "A child binding preserves the root frame id while retaining its own frame id and selected model; an unrelated frame retains its own identity and selection."
+    }
+  ],
+  "dependencies": ["AgentContextFrame<Active>", "ModelId", "Effort", "FrameError"],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "&AgentContextFrame<Active>",
+      "description": "An actual active frame with model and effort selected during activation."
+    }
+  ],
+  "output_type": "Result<FramePromptBinding, FrameError>",
+  "output_description": "A sealed, secret-free binding whose private fields associate frame identity, role, selected model, and effort; missing model state reports the existing accounting invariant error."
+}

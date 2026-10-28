@@ -1,0 +1,21 @@
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 18.16s
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)
+
+running 1 test
+test truncated_human_answer_is_retrievable_only_by_its_runner ... FAILED
+
+failures:
+
+---- truncated_human_answer_is_retrievable_only_by_its_runner stdout ----
+Error: Forbidden("content reference is not visible to this frame")
+
+
+failures:
+    truncated_human_answer_is_retrievable_only_by_its_runner
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.22s
+
+error: test failed, to rerun pass `-p polaris-kernel --test agent_tools`

@@ -1,0 +1,758 @@
+[
+  {
+    "name": "owned-burst-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-spike-s1",
+      "--test",
+      "owned_burst"
+    ],
+    "started_utc": "2026-10-27T14:21:35.737506+00:00",
+    "elapsed_seconds": 4.588,
+    "exit_code": 0,
+    "raw": "01-owned-burst-current.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "owned-burst-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-spike-s1",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "unsafe-code",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T14:22:21.781070+00:00",
+    "elapsed_seconds": 16.551,
+    "exit_code": 0,
+    "raw": "02-owned-burst-safety.txt"
+  },
+  {
+    "name": "worker-burst-contract-compile",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--no-run"
+    ],
+    "started_utc": "2026-10-27T14:24:42.962411+00:00",
+    "elapsed_seconds": 24.145,
+    "exit_code": 101,
+    "raw": "03-worker-burst-contract-compile.txt"
+  },
+  {
+    "name": "worker-burst-contract-compile",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--offline",
+      "--no-run"
+    ],
+    "started_utc": "2026-10-27T20:38:03.483740+00:00",
+    "elapsed_seconds": 58.73,
+    "exit_code": 101,
+    "raw": "04-worker-burst-contract-compile.txt"
+  },
+  {
+    "name": "answer-integrity-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-spike-s1",
+      "--test",
+      "answer_integrity",
+      "--offline"
+    ],
+    "started_utc": "2026-10-27T20:41:45.200615+00:00",
+    "elapsed_seconds": 4.862,
+    "exit_code": 101,
+    "raw": "05-answer-integrity-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 3,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "answer-integrity-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-spike-s1",
+      "--offline"
+    ],
+    "started_utc": "2026-10-27T20:42:06.581817+00:00",
+    "elapsed_seconds": 3.764,
+    "exit_code": 0,
+    "raw": "06-answer-integrity-green.txt",
+    "test_result_totals": {
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "answer-integrity-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-spike-s1",
+      "--all-targets",
+      "--no-deps",
+      "--offline",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "unsafe_code",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T20:42:22.970814+00:00",
+    "elapsed_seconds": 12.625,
+    "exit_code": 0,
+    "raw": "07-answer-integrity-safety.txt"
+  },
+  {
+    "name": "pinned-real-pii-native",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-system-one-engine",
+      "--test",
+      "real_pii_model",
+      "--",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T20:45:59.633165+00:00",
+    "elapsed_seconds": 58.979,
+    "exit_code": 0,
+    "raw": "08-pinned-real-pii-native.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "pinned-real-worker-pii-and-bursts",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "real_worker_",
+      "--",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T20:48:29.996398+00:00",
+    "elapsed_seconds": 233.354,
+    "exit_code": 0,
+    "raw": "09-pinned-real-worker-pii-and-bursts.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "supervised-worker-owned-faults",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "supervised_worker",
+      "supervised_worker_replaces_killed_generation_without_orphan",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T20:53:14.854298+00:00",
+    "elapsed_seconds": 46.884,
+    "exit_code": 101,
+    "raw": "10-supervised-worker-owned-faults.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "supervised-worker-owned-faults-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "supervised_worker",
+      "supervised_worker_replaces_killed_generation_without_orphan",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T20:55:33.340518+00:00",
+    "elapsed_seconds": 15.393,
+    "exit_code": 0,
+    "raw": "11-supervised-worker-owned-faults-green.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "supervisor-regression",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel-supervisor",
+      "--offline"
+    ],
+    "started_utc": "2026-10-27T20:56:59.723598+00:00",
+    "elapsed_seconds": 38.728,
+    "exit_code": 0,
+    "raw": "12-supervisor-regression.txt",
+    "test_result_totals": {
+      "passed": 50,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "supervisor-library-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-kernel-supervisor",
+      "--lib",
+      "--no-deps",
+      "--offline",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "unsafe_code",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T20:58:18.825553+00:00",
+    "elapsed_seconds": 6.913,
+    "exit_code": 0,
+    "raw": "13-supervisor-library-safety.txt"
+  },
+  {
+    "name": "worker-test-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--test",
+      "supervised_worker",
+      "--no-deps",
+      "--offline",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "unsafe_code",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T21:00:44.754281+00:00",
+    "elapsed_seconds": 29.398,
+    "exit_code": 101,
+    "raw": "14-worker-test-safety.txt"
+  },
+  {
+    "name": "host-current-compile",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "supervised_worker",
+      "--offline",
+      "--locked",
+      "--no-run"
+    ],
+    "started_utc": "2026-10-27T21:48:36.082719+00:00",
+    "elapsed_seconds": 65.836,
+    "exit_code": 0,
+    "raw": "15-host-current-compile.txt"
+  },
+  {
+    "name": "watchdog-privacy-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:50:26.229132+00:00",
+    "elapsed_seconds": 28.975,
+    "exit_code": 101,
+    "raw": "16-watchdog-privacy-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "watchdog-privacy-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:51:28.868171+00:00",
+    "elapsed_seconds": 16.458,
+    "exit_code": 0,
+    "raw": "17-watchdog-privacy-green.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "configured-frame-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "configured_agent_frame",
+      "--offline",
+      "--locked"
+    ],
+    "started_utc": "2026-10-27T21:54:18.008662+00:00",
+    "elapsed_seconds": 14.209,
+    "exit_code": 101,
+    "raw": "18-configured-frame-api-red.txt"
+  },
+  {
+    "name": "configured-frame-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "--offline",
+      "--locked"
+    ],
+    "started_utc": "2026-10-27T21:55:21.760056+00:00",
+    "elapsed_seconds": 21.991,
+    "exit_code": 0,
+    "raw": "19-configured-frame-green.txt",
+    "test_result_totals": {
+      "passed": 15,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "watchdog-semantic-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:56:36.269516+00:00",
+    "elapsed_seconds": 0.844,
+    "exit_code": 101,
+    "raw": "20-watchdog-semantic-red.txt"
+  },
+  {
+    "name": "watchdog-semantic-behavior-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:56:47.435516+00:00",
+    "elapsed_seconds": 17.782,
+    "exit_code": 101,
+    "raw": "21-watchdog-semantic-behavior-red.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "watchdog-semantic-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:57:51.491664+00:00",
+    "elapsed_seconds": 0.662,
+    "exit_code": 101,
+    "raw": "22-watchdog-semantic-green.txt"
+  },
+  {
+    "name": "watchdog-semantic-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T21:58:01.494575+00:00",
+    "elapsed_seconds": 2.433,
+    "exit_code": 101,
+    "raw": "23-watchdog-semantic-current.txt"
+  },
+  {
+    "name": "watchdog-semantic-verified",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:01:36.308212+00:00",
+    "elapsed_seconds": 4.018,
+    "exit_code": 101,
+    "raw": "24-watchdog-semantic-verified.txt"
+  },
+  {
+    "name": "frame-goal-journal-privacy-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "assembler_masks_goal_before_failed_attempt_journal",
+      "--offline",
+      "--locked",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:03:53.585575+00:00",
+    "elapsed_seconds": 0.982,
+    "exit_code": 101,
+    "raw": "25-frame-goal-journal-privacy-red.txt"
+  },
+  {
+    "name": "frame-goal-journal-behavior-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "assembler_masks_goal_before_failed_attempt_journal",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:04:06.666081+00:00",
+    "elapsed_seconds": 3.213,
+    "exit_code": 101,
+    "raw": "26-frame-goal-journal-behavior-red.txt"
+  },
+  {
+    "name": "frame-goal-journal-behavior-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "assembler_masks_goal_before_failed_attempt_journal",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:04:55.986152+00:00",
+    "elapsed_seconds": 31.804,
+    "exit_code": 101,
+    "raw": "27-frame-goal-journal-behavior-current.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "frame-goal-journal-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:06:01.630012+00:00",
+    "elapsed_seconds": 45.951,
+    "exit_code": 0,
+    "raw": "28-frame-goal-journal-green.txt",
+    "test_result_totals": {
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "watchdog-semantic-green-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:07:30.028072+00:00",
+    "elapsed_seconds": 4.125,
+    "exit_code": 101,
+    "raw": "29-watchdog-semantic-green-current.txt"
+  },
+  {
+    "name": "watchdog-semantic-final",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:08:52.892851+00:00",
+    "elapsed_seconds": 75.168,
+    "exit_code": 101,
+    "raw": "30-watchdog-semantic-final.txt"
+  },
+  {
+    "name": "watchdog-semantic-checked",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "watchdog_privacy_tests",
+      "--offline",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T22:11:21.196770+00:00",
+    "elapsed_seconds": 17.743,
+    "exit_code": 0,
+    "raw": "31-watchdog-semantic-checked.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "configured-kernel-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--no-deps",
+      "--offline",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "unsafe_code",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T22:12:46.550447+00:00",
+    "elapsed_seconds": 55.874,
+    "exit_code": 101,
+    "raw": "32-configured-kernel-safety.txt"
+  },
+  {
+    "name": "pinned-real-worker-distinct-burst",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "real_worker_runs_warm_and_post_eviction_fifty_request_bursts",
+      "--",
+      "--ignored",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T22:15:16.857454+00:00",
+    "elapsed_seconds": 174.87,
+    "exit_code": 101,
+    "raw": "33-pinned-real-worker-distinct-burst.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  }
+]

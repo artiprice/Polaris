@@ -10,7 +10,7 @@ use polaris_security_capability::{
 };
 use std::time::Duration;
 
-/// Fail-closed control authorization; errors never contain credentials.
+/// Fail-closed control authorization for `ApplyDirective` and `SubmitUserInput`; errors never contain credentials.
 #[derive(Debug, thiserror::Error)]
 pub enum LocalVerificationError {
     /// Bad signature, expired token, wrong frame, or unsupported command.
@@ -76,7 +76,10 @@ impl LocalDirectiveVerifier {
     ) -> Result<Command<Verified>, LocalVerificationError> {
         let token = Token::from_bytes(command.token().as_bytes(), &self.authority.public_key())?;
         if command.frame() != self.frame
-            || !matches!(command.body(), CommandBody::ApplyDirective { .. })
+            || !matches!(
+                command.body(),
+                CommandBody::ApplyDirective { .. } | CommandBody::SubmitUserInput { .. }
+            )
         {
             return Err(LocalVerificationError::Rejected);
         }

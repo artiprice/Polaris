@@ -1,0 +1,25 @@
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Finished `test` profile [unoptimized] target(s) in 1.16s
+     Running tests\rust_unsafe_coverage.rs (target\debug\deps\rust_unsafe_coverage-030540a1fc67f512.exe)
+
+running 2 tests
+test rust_expansion_and_invalid_syntax_keep_incomplete_coverage ... ok
+test rust_without_expansion_has_complete_unsafe_inventory ... FAILED
+
+failures:
+
+---- rust_without_expansion_has_complete_unsafe_inventory stdout ----
+
+thread 'rust_without_expansion_has_complete_unsafe_inventory' (8884) panicked at crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:18:9:
+assertion `left == right` failed: 
+  left: Incomplete
+ right: Complete
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    rust_without_expansion_has_complete_unsafe_inventory
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-code-intel --test rust_unsafe_coverage`

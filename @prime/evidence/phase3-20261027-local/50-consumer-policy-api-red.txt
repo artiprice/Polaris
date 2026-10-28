@@ -1,0 +1,67 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling tonic v0.14.6
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+error[E0433]: cannot find module or crate `polaris_sdk` in this scope
+ --> crates\polaris-system-one\tests\consumer_policy.rs:3:5
+  |
+3 | use polaris_sdk::{registry::{DecisionEngine,DecisionError},system_one::{Answer,Decision,DecisionInput,Question,QuestionAnswer,Questio...
+  |     ^^^^^^^^^^^ use of unresolved module or unlinked crate `polaris_sdk`
+  |
+  = help: if you wanted to use a crate named `polaris_sdk`, use `cargo add polaris_sdk` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+ --> crates\polaris-system-one\tests\consumer_policy.rs:5:5
+  |
+5 | use tokio::sync::Notify;
+  |     ^^^^^ use of unresolved module or unlinked crate `tokio`
+  |
+  = help: if you wanted to use a crate named `tokio`, use `cargo add tokio` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `polaris_system_one::policy`
+ --> crates\polaris-system-one\tests\consumer_policy.rs:2:26
+  |
+2 | use polaris_system_one::{policy::*, schemas::{Consumer, FailMode, SchemaSet, Verdict}};
+  |                          ^^^^^^ could not find `policy` in `polaris_system_one`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+  --> crates\polaris-system-one\tests\consumer_policy.rs:42:3
+   |
+42 | #[tokio::test]
+   |   ^^^^^ use of unresolved module or unlinked crate `tokio`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+  --> crates\polaris-system-one\tests\consumer_policy.rs:51:3
+   |
+51 | #[tokio::test]
+   |   ^^^^^ use of unresolved module or unlinked crate `tokio`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+  --> crates\polaris-system-one\tests\consumer_policy.rs:62:3
+   |
+62 | #[tokio::test]
+   |   ^^^^^ use of unresolved module or unlinked crate `tokio`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+  --> crates\polaris-system-one\tests\consumer_policy.rs:70:3
+   |
+70 | #[tokio::test]
+   |   ^^^^^ use of unresolved module or unlinked crate `tokio`
+
+error[E0433]: cannot find module or crate `tokio` in this scope
+  --> crates\polaris-system-one\tests\consumer_policy.rs:79:3
+   |
+79 | #[tokio::test]
+   |   ^^^^^ use of unresolved module or unlinked crate `tokio`
+
+Some errors have detailed explanations: E0432, E0433.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-system-one` (test "consumer_policy") due to 8 previous errors

@@ -1,0 +1,23 @@
+{
+  "type_of": "method",
+  "name": "RuleEngine::audit_manifest",
+  "file_path": "crates/polaris-security/crates/rules/src/supply_chain.rs",
+  "logic_name": "manifest_typosquat_audit",
+  "test_list": [
+    {"test_name": "missing_trusted_baseline_is_explicit_and_scans_nothing", "description": "No registry or invented package list is substituted when the caller supplies no trusted baseline."},
+    {"test_name": "exact_known_package_is_excluded", "description": "An exact normalized match to a caller-supplied baseline never reports as a typo."},
+    {"test_name": "near_package_name_reports_without_cwe", "description": "A bounded near-name heuristic counts a common adjacent transposition as one edit and reports provenance with no CWE."},
+    {"test_name": "ambiguous_equal_distance_candidates_are_sorted_and_marked", "description": "Tied nearest baseline names are returned in deterministic order and marked ambiguous."},
+    {"test_name": "cargo_renamed_dependency_uses_declared_package_name", "description": "Cargo dependency aliases resolve to the declared upstream package name."},
+    {"test_name": "npm_and_python_manifests_extract_dependency_names", "description": "Bounded package.json and Python requirement inputs use their supported dependency sections."},
+    {"test_name": "python_distribution_name_separators_normalize_to_one_dash", "description": "PEP 503 case and separator runs normalize consistently for exact exclusions."},
+    {"test_name": "oversized_inputs_and_baselines_fail_before_partial_output", "description": "Manifest, package-count, name-length and comparison budgets reject work without partial findings."},
+    {"test_name": "overlong_manifest_path_is_rejected_before_findings_copy_it", "description": "Path length is bounded before finding path copies are allocated."},
+    {"test_name": "unsupported_manifest_has_explicit_status", "description": "Unknown file formats report unsupported coverage without parsing arbitrary text."}
+  ],
+  "dependencies": ["RuleEngine", "PackageEcosystem", "TrustedPackageBaseline", "ManifestAuditReport"],
+  "libraries": ["toml", "serde_json", "thiserror"],
+  "inputs": [{"name": "manifest_baseline", "type": "(&Path, &[u8], Option<&TrustedPackageBaseline>)", "description": "A bounded caller-owned Cargo, npm, or Python manifest and optional trusted known-package baseline; no network lookup is performed."}],
+  "output_type": "Result<ManifestAuditReport, RulesError>",
+  "output_description": "Deterministic informational near-name review findings with exact-package exclusions, explicit baseline status, bounded restricted Damerau-Levenshtein distance (adjacent transpositions count as one), ambiguity, and no CWE mapping."
+}

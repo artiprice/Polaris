@@ -1,0 +1,9 @@
+   Compiling polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Finished `test` profile [unoptimized] target(s) in 19.85s
+     Running tests\real_pii_model.rs (target\debug\deps\real_pii_model-06928f2dcc7f8e2b.exe)
+
+running 1 test
+test real_pii_model_returns_bounded_raw_utf8_spans ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.05s
+

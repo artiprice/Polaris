@@ -106,7 +106,7 @@ fn truncate_on_boundary(mut text: String) -> String {
     }
     let mut cut = MAX_SIGNATURE_BYTES;
     while cut > 0 && !text.is_char_boundary(cut) {
-        cut -= 1;
+        cut = cut.saturating_sub(1);
     }
     text.truncate(cut);
     text.push_str("...");

@@ -71,5 +71,15 @@ message HealthResponse {
   string build_version = 2;
   // `true` once the peer accepts work.
   bool ready = 3;
+  // Set only by S1 while its native model is loaded. Binds cache entries to actual loaded inputs.
+  bytes loaded_model_identity_blake3 = 4;
+  // Incremented by S1 whenever the native model is loaded after eviction.
+  uint64 loaded_model_generation = 5;
+  // Fresh cryptographic nonce for this worker process; required to scope loaded-model caches.
+  bytes worker_incarnation = 6;
+  // Independent PII companion model digest. Empty means it is not loaded.
+  bytes loaded_pii_model_identity_blake3 = 7;
+  // Incremented whenever the independent PII model is loaded after eviction.
+  uint64 loaded_pii_model_generation = 8;
   reserved 100 to 199;
 }

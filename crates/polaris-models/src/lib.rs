@@ -3,7 +3,9 @@
 //! The built-in catalog records the PLAN's dated snapshot; it is not a fresh availability or
 //! capability check. Providers and credentials are supplied at the composition root. Shared slot
 //! loads survive cancellation of one waiter, leases prevent unloading active users, and forced
-//! eviction pauses new admission until explicitly resumed. New code is unverified.
+//! eviction pauses new admission until explicitly resumed. Focused catalog and lifecycle contracts
+//! are exercised with test-only loaders; each real loader must uphold the documented resource
+//! ownership contract. This crate does not itself provision or unload the native S1 engine.
 
 mod catalog;
 mod error;

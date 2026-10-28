@@ -1,0 +1,43 @@
+{
+  "type_of": "pipeline",
+  "name": "SharedHumanRequestOwner",
+  "file_path": "crates/polaris-kernel/src/human_requests.rs",
+  "logic_name": "Shared durable human lifecycle",
+  "test_list": [
+    {
+      "test_name": "independent_service_handles_cannot_commit_two_answers",
+      "description": "Separate service handles cannot commit two terminal answers."
+    },
+    {
+      "test_name": "durable_cancel_prevents_later_question_and_answer",
+      "description": "Durable cancellation prevents later question creation and staged answer commit."
+    },
+    {
+      "test_name": "restart_interrupts_request_left_after_durable_cancel_intent",
+      "description": "A fresh context completes request interruption after a cancellation-intent crash window."
+    }
+  ],
+  "dependencies": [
+    "KernelCtx",
+    "FrameCancellationService",
+    "HumanRequestVerifier"
+  ],
+  "libraries": [
+    "tokio",
+    "tokio-util"
+  ],
+  "inputs": [
+    {
+      "name": "binding",
+      "type": "FrameToolBinding",
+      "description": "Sealed identity captured from the actual runtime frame."
+    },
+    {
+      "name": "call",
+      "type": "ToolCall",
+      "description": "Untrusted model call, fully admitted before any call in the batch executes."
+    }
+  ],
+  "output_type": "Result<HumanRequestOutcome, HumanRequestError>",
+  "output_description": "One bounded context-owned session state and notification map, reconstructed on actual context reopen."
+}

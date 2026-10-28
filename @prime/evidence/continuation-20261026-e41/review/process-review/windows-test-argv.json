@@ -1,0 +1,9 @@
+[
+  "cargo",
+  "test",
+  "--offline",
+  "--locked",
+  "-p",
+  "polaris-platform-process",
+  "--all-targets"
+]

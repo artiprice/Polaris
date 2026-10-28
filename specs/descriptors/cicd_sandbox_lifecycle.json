@@ -1,0 +1,43 @@
+{
+  "type_of": "module",
+  "name": "SandboxEngine",
+  "file_path": "crates/polaris-devenv/crates/cicd/src/lib.rs",
+  "logic_name": "CI sandbox lifecycle and request bounds",
+  "test_list": [
+    {
+      "test_name": "caller_abort_during_exec_keeps_cleanup_owned",
+      "description": "Aborting the public run future while the first of multiple steps is pending stops later steps and destroys the created sandbox."
+    },
+    {
+      "test_name": "caller_abort_during_create_destroys_late_handle_without_exec",
+      "description": "Aborting while create is pending waits for its ambiguous result, destroys any returned sandbox handle, and never starts an exec step."
+    },
+    {
+      "test_name": "create_timeout_preserves_late_create_result_for_cleanup",
+      "description": "A create that exceeds its caller deadline remains supervised; if it later returns a sandbox, that exact handle is destroyed, while a failed create records no cleanup attempt."
+    },
+    {
+      "test_name": "cleanup_timeout_is_reported_without_claiming_destruction",
+      "description": "Destroy timeout/failure is surfaced as cleanup failure, including alongside a primary execution failure."
+    },
+    {
+      "test_name": "exec_requests_have_finite_output_caps",
+      "description": "Each backend ExecRequest sets an explicit finite output limit and over-limit backend output is rejected before logs are stored."
+    },
+    {
+      "test_name": "pipeline_matrix_argv_and_env_limits_fail_closed",
+      "description": "Oversized step counts, matrix counts, argument vectors/bytes, and environment entry/byte totals are rejected before sandbox creation."
+    }
+  ],
+  "dependencies": ["SandboxBackend", "ExecRequest", "Redactor", "CiLogStore"],
+  "libraries": ["tokio", "thiserror"],
+  "inputs": [
+    {
+      "name": "pipeline, matrix, sandbox config",
+      "type": "Pipeline<Validated>, Matrix, SandboxEngineConfig",
+      "description": "Caller-defined bounded pipeline and explicit matrix executed by the injected SDK backend."
+    }
+  ],
+  "output_type": "Result<CiReport, CiError>",
+  "output_description": "Observed CI outcomes with finite requests and owned cleanup for created or late-created sandbox identities. Cleanup that outlives the lifecycle deadline remains explicitly unresolved; backend cancellation, host isolation, and runtime-shutdown cleanup are not claimed."
+}

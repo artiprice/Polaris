@@ -338,6 +338,21 @@ impl Session<Running> {
         self.project(Phase::Running)?;
         Ok(self.last_seq)
     }
+    /// Commit one already-validated user message (text in CAS) before updating memory. The text
+    /// is stored verbatim; nothing is parsed or executed. Blocking API like [`Self::apply`].
+    ///
+    /// # Errors
+    /// Append failure, closed context, or committed projection failure.
+    pub fn record_user_input(&mut self, text: Cid) -> Result<Seq, KernelError> {
+        let ctx = Arc::clone(&self.ctx);
+        let _writer = ctx.lock_writer()?;
+        ctx.ensure_open()?;
+        let record = ctx.publish(self.id, Event::UserInputSubmitted { text })?;
+        self.last_seq = record.seq();
+        self.last_at = record.at();
+        self.project(Phase::Running)?;
+        Ok(self.last_seq)
+    }
     /// Persist pause before returning a non-mutating owner.
     ///
     /// # Errors
@@ -549,6 +564,12 @@ fn fold(
                 .map_err(|_| KernelError::Integrity("directive CAS document is not UTF-8"))?;
             let _previous = directives.apply(parse_one(text)?);
         }
+        Event::UserInputSubmitted { text } => {
+            if *phase != Some(Phase::Running) {
+                return Err(KernelError::Integrity("user input outside running session"));
+            }
+            let _verified = ctx.cas.get(&text)?;
+        }
         Event::ModelRequestCompleted {
             prompt_tokens,
             completion_tokens,
@@ -582,7 +603,13 @@ fn fold(
         | Event::CircuitTripped { .. }
         | Event::DeadLettered { .. }
         | Event::BlastRadiusAlert { .. }
-        | Event::FrameStepRecorded { .. } => {}
+        | Event::FrameStepRecorded { .. }
+        | Event::HumanRequestCreated { .. }
+        | Event::HumanRequestAnswered { .. }
+        | Event::HumanRequestInterrupted { .. }
+        | Event::FrameRegistered { .. }
+        | Event::FrameTreeCancellationRequested { .. }
+        | Event::FrameToolResultRecorded { .. } => {}
     }
     Ok(())
 }

@@ -1,0 +1,26 @@
+Build command (WSL):
+POLARIS_SANDBOX_TAG=polaris-sandbox:p3-e50 CARGO_BUILD_JOBS=2 bash @prime/tools/sandbox/build-wsl.sh
+
+Successful build inputs and outputs:
+tag=polaris-sandbox:p3-e50
+image_id=sha256:b7a2dc2a53a71c5695242dd890d2705aa5d0e3b45dafcd885ae6a3ea2bbba4b2
+base_image=nvcr.io/nvidia/base/ubuntu@sha256:d9461f428eea54e553add3a5158a0f245c6e1ea73efc59fff8e98e3d4a38e378
+successful_build_context_sha256=31f7660c34f3f5b80378f5e3d1316ac1c9bbac6d37ce277eb04b145a44c07ac6
+successful_build_context_files=784
+successful_vendored_roots=vendor/biscuit-auth,vendor/docx-rs
+build_context_helper_sha256=9535028d489bd9c19832fe8905b1a7daa59e7e03c19787e3d5bca59b9e857410
+full_build_log_sha256=1f2e78e10f579fc31744c4dd7eb40b5cc2336c8c071f12a998bd47e5fdbb5ac2
+
+Immutable-tag verification command:
+docker image inspect polaris-sandbox:p3-e50 --format '{{.Id}}'
+docker run --rm --entrypoint /usr/bin/polaris-guest polaris-sandbox:p3-e50 --help
+docker run --rm --entrypoint /usr/bin/polaris-guest polaris-sandbox:p3-e50 --protocol-version
+
+Observed verification output:
+image_id=sha256:b7a2dc2a53a71c5695242dd890d2705aa5d0e3b45dafcd885ae6a3ea2bbba4b2
+guest_help=polaris-guest --protocol-version | --version | sync-init ROOT | sync-batch ROOT ARCHIVE | sync-snapshot ROOT GENERATION OFFSET LIMIT | sync-cas | --help
+guest_protocol=1
+
+Production sync backend verification against same digest:
+local_paths=4 planned_uploads=4
+uploaded=4 failed=0 changed=0 conflicts=0 rescan_required=false

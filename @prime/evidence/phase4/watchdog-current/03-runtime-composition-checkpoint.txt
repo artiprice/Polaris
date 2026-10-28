@@ -1,0 +1,37 @@
+Phase 4 watchdog runtime composition checkpoint
+Date: 2026-10-27
+
+Commands and observed results
+=============================
+
+`cargo test -p polaris-kernel --no-run`
+Observed before scoped formatting: `Finished test profile [unoptimized] target(s) in 51.95s` and emitted the kernel lib plus 21 integration-test executables. This caught a private error-type path in the local S1 adapter; the signature was changed to `polaris_sdk::registry::DecisionError` and the build completed.
+
+`cargo test -p polaris-system-one-watchdog`
+Observed: watchdog contract integration tests: 4 passed, 0 failed; doc tests: 0 failed.
+
+`cargo test -p polaris-system-one-schemas --test watchdog_config -- --nocapture`
+Observed: `builtin_watchdog_config_is_explicit_and_bounded` and `invalid_deterministic_watchdog_config_is_rejected` passed; 2 passed, 0 failed.
+
+`cargo test -p polaris-runtime-frames --test watchdog_frame_recovery -- --nocapture`
+Observed: `watchdog_memory_roundtrips_and_rejects_foreign_frame` and `legacy_frame_records_without_watchdog_memory_remain_replayable` passed; 2 passed, 0 failed.
+
+`cargo test -p polaris-runtime-frames --test frame_execution watchdog_observation_is_advisory_and_survives_journal_recovery -- --nocapture`
+Observed: 1 passed, 0 failed, 22 filtered out.
+
+`cargo test -p polaris-kernel --test frame_prompt`
+Observed: 13 passed, 0 failed.
+
+`rustfmt --edition 2024 --check` over the changed watchdog, schema, runtime-frames, and kernel adapter Rust files
+Observed: exit 0, no output.
+
+Post-format compile reconfirmation
+==================================
+
+`cargo test -p polaris-kernel --no-run`
+Post-format reconfirmation completed: `Finished test profile [unoptimized] target(s) in 2m 02s` and emitted the kernel lib plus 21 integration-test executables. Cargo reported an unrelated existing `unused import: PlatformOps` warning in `worker_lifecycle.rs`; no compile errors.
+
+Scope and limits
+================
+
+These are deterministic watchdog and synthetic runtime-composition tests. They do not establish calibrated S1 drift detection, live local-model inference, or an application-level production caller for `KernelPromptAssembler::with_current_watchdog`. Current watchdog path-level advisories also lack a trusted canonical workspace path; actual tool role/capability/lease authorization remains separately enforced.

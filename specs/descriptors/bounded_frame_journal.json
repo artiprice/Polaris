@@ -1,0 +1,65 @@
+{
+  "type_of": "module",
+  "name": "PreparedFrameStep",
+  "file_path": "crates/polaris-runtime/crates/frames/src/journal.rs",
+  "logic_name": "Bounded Frame Journal",
+  "test_list": [
+    {
+      "test_name": "limits_default_and_reject_invalid_or_over_ceiling_values",
+      "description": "Default limits are finite and valid; zero, over-ceiling, and result-greater-than-record configurations fail."
+    },
+    {
+      "test_name": "prepare_rejects_invalid_schema_zero_step_and_result_count",
+      "description": "Preparation rejects unsupported schema, step zero, and result counts beyond the configured bound."
+    },
+    {
+      "test_name": "prepare_rejects_tool_text_and_serialized_record_over_bounds",
+      "description": "Preparation rejects oversized model-visible tool content and escaped serialized records without emitting an oversized encoding."
+    },
+    {
+      "test_name": "bounded_writer_accepts_exact_size_and_rejects_one_byte_less",
+      "description": "The maximum serialized record size is inclusive at the exact encoded boundary and rejects a bound one byte smaller."
+    },
+    {
+      "test_name": "bounded_writer_matches_json_size_for_escaped_input_family",
+      "description": "Across ordinary and JSON-escaped goal strings, preparation accepts precisely when the canonical encoded bytes fit the configured bound."
+    },
+    {
+      "test_name": "prepared_debug_redacts_payload_and_persist_verifies_exact_cas_bytes",
+      "description": "A prepared record exposes only safe metadata in Debug and persistence returns only after exact, hash-matched CAS readback."
+    },
+    {
+      "test_name": "persist_rejects_missing_and_corrupt_receipt_blobs",
+      "description": "Every raw tool receipt must exist, fit its read bound, and hash to its referenced CID before the transcript is stored."
+    },
+    {
+      "test_name": "persist_rejects_valid_hash_oversized_receipt_from_bound_violating_store",
+      "description": "A store that ignores the requested read bound cannot smuggle an oversized receipt through with a valid content hash."
+    },
+    {
+      "test_name": "persist_rejects_model_visible_content_mismatch",
+      "description": "The model-visible content CID must resolve to the exact bounded expected text and matching content hash."
+    },
+    {
+      "test_name": "persist_rejects_wrong_put_cid_and_corrupt_readback",
+      "description": "A store returning a CID for other bytes or corrupt bytes on transcript readback cannot produce a successful persistence result."
+    },
+    {
+      "test_name": "journal_adapter_appends_only_after_verified_persistence",
+      "description": "The event is appended after transcript verification; CAS failure appends no event, while event failure leaves the already stored transcript as an orphan."
+    },
+    {
+      "test_name": "prepared_persist_roundtrips_through_real_cas",
+      "description": "The prepared transcript survives bounded persistence and hash verification through the production CAS implementation."
+    }
+  ],
+  "dependencies": ["FrameStepRecord", "ContentStore", "EventStore", "FrameJournal"],
+  "libraries": ["serde_json", "blake3", "polaris-sdk"],
+  "inputs": [
+    { "name": "record", "type": "&FrameStepRecord", "description": "Complete one-based frame step transcript and terminal outcome." },
+    { "name": "limits", "type": "FrameJournalLimits", "description": "Validated record, tool result byte, and result count bounds." },
+    { "name": "content", "type": "&impl ContentStore", "description": "Synchronous CAS backend; calls may block and must run off latency-sensitive executors." }
+  ],
+  "output_type": "Result<Cid, FrameJournalError>",
+  "output_description": "A content identifier only after bounded encoding, referenced-content verification, CAS storage, and exact hash-checked readback."
+}

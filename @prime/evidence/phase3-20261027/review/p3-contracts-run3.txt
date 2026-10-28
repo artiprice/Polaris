@@ -1,0 +1,87 @@
+   Compiling hyper-timeout v0.5.2
+   Compiling hyper-rustls v0.27.10
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+   Compiling reqwest v0.13.5
+   Compiling tonic v0.14.6
+   Compiling rmcp v3.5.1
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Finished `test` profile [unoptimized] target(s) in 59.37s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ext_mcp-993e7cdbb1a12533.exe)
+
+running 11 tests
+test call::tests::truncates_tool_text_at_utf8_boundary ... ok
+test call::tests::result_byte_limit_applies_across_text_and_structured_content ... ok
+test hub::validation_tests::loopback_detection_accepts_local_hosts_only ... ok
+test frame::tests::accepts_multiple_bounded_frames ... ok
+test frame::tests::rejects_oversized_frame_before_returning_its_bytes ... ok
+test hub::validation_tests::transport_limits_enforce_documented_inclusive_bounds ... ok
+test http_client::tests::sse_event_limit_spans_fragmented_chunks ... ok
+test hub::validation_tests::plaintext_http_is_limited_to_loopback_even_without_headers ... ok
+test http_client::tests::sse_parser_accepts_split_crlf_and_multiline_events ... ok
+test http_client::tests::oversized_http_json_body_is_rejected_before_parsing ... ok
+test http_client::tests::oversized_chunked_http_json_body_is_rejected_without_content_length ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\protocol_contract.rs (target\debug\deps\protocol_contract-4fade5070653d76c.exe)
+
+running 4 tests
+test mcp_stdio_fixture_server_process ... ok
+test connect_repo_unapproved_is_denied_before_launcher ... ok
+test connect_stdio_fixture_lists_and_calls_tool_then_reaps_child ... ok
+test connect_http_fixture_lists_and_calls_tool ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\schema_contract.rs (target\debug\deps\schema_contract-39d67cff7cb064a9.exe)
+
+running 8 tests
+test namespaced_ids_prevent_server_collisions ... ok
+test ref_cycles_rejected ... ok
+test invalid_schema_rejected ... ok
+test unsupported_assertion_keywords_are_rejected ... ok
+test literal_default_enum_and_const_objects_are_not_traversed_as_schemas ... ok
+test harmless_annotation_keywords_are_dropped_and_recorded ... ok
+test property_names_and_nested_schemas_are_preserved ... ok
+test valid_schema_passes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\summary_contract.rs (target\debug\deps\summary_contract-fa995b619aa24a8f.exe)
+
+running 5 tests
+test summary_deterministic ... ok
+test summary_strips_markdown_and_html_markup ... ok
+test summary_strips_control_and_zero_width ... ok
+test summary_neutralizes_instruction_prefix ... ok
+test summary_truncates_to_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_nebius_cloud_sandboxes-a9c38a18b0720964.exe)
+
+running 6 tests
+test tests::contree_rejects_non_loopback_sidecar_and_missing_egress_consent ... ok
+test tests::contree_sanitizes_secrets_and_bounds_tool_responses ... ok
+test tests::contree_cancellation_joins_local_calls_and_cancels_owned_operations ... FAILED
+test tests::contree_bounds_operations_and_preserves_branch_identity ... ok
+test tests::contree_checks_inventory_and_verified_tool_shapes ... ok
+test tests::contree_sync_projects_only_approved_sync_plan_paths ... ok
+
+failures:
+
+---- tests::contree_cancellation_joins_local_calls_and_cancels_owned_operations stdout ----
+
+thread 'tests::contree_cancellation_joins_local_calls_and_cancels_owned_operations' (1796) panicked at crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:337:5:
+assertion failed: matches!(result, Err(ContreeError::Cancelled))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::contree_cancellation_joins_local_calls_and_cancels_owned_operations
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p polaris-nebius-cloud-sandboxes --lib`

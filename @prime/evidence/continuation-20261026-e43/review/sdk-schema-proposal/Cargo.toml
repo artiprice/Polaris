@@ -1,0 +1,11 @@
+[workspace]
+[package]
+name = "polaris-sdk-schema-proposal"
+version = "0.0.0"
+edition = "2024"
+publish = false
+[dependencies]
+polaris-sdk = { path = "C:/mDev/Polaris/crates/polaris-sdk" }
+[dev-dependencies]
+proptest = "1.12.0"
+serde_json = "1.0.154"

@@ -18,4 +18,4 @@ pub use task::{
     OnExhausted, RestartPolicy, StopOutcome, Supervisor, SupervisorConfig, SupervisorError,
     SupervisorSnapshot, TaskError, TaskSpec,
 };
-pub use worker::{HealthPolicy, HealthProbe, WorkerSpec};
+pub use worker::{HealthPolicy, HealthProbe, WorkerLifecycle, WorkerSpec};

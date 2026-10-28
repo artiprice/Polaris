@@ -1,0 +1,16 @@
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 13.88s
+     Running tests\supervised_worker.rs (target\debug\deps\supervised_worker-86095b0d4dc90e4a.exe)
+
+running 1 test
+test supervised_worker_replaces_killed_generation_without_orphan ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.36s
+

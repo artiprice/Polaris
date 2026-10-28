@@ -1,0 +1,7 @@
+Command:
+& '@prime/spikes/s0-4-gliner/.venv/Scripts/python.exe' -X utf8 -P @prime/tools/system-one/gliner_export.py export C:/Users/Admin/.polaris/models/gliner2.5-decide-onnx-p4
+
+Observed output:
+gliner-export: insufficient available RAM for export: 8159432704 bytes; need 10737418240
+export_exit=2
+target_exists=False

@@ -1,0 +1,496 @@
+   Compiling tokio v1.54.1
+   Compiling gix-object v0.66.0
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling gix-glob v0.29.0
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling tracing-subscriber v0.3.23
+   Compiling proptest v1.12.0
+   Compiling gix-sec v0.16.0
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling openshell-policy-schema v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling cap-primitives v4.0.3
+   Compiling insta v1.49.0
+   Compiling portable-pty v0.9.0
+   Compiling notify v8.2.0
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling gix-attributes v0.37.0
+   Compiling gix-ignore v0.24.0
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling gix-transport v0.61.0
+   Compiling gix-pathspec v0.22.0
+   Compiling cap-std v4.0.3
+   Compiling gix-revwalk v0.37.0
+   Compiling gix-ref v0.69.0
+   Compiling gix-filter v0.36.0
+   Compiling gix-traverse v0.63.0
+   Compiling gix-pack v0.76.0
+   Compiling gix-revision v0.51.0
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling gix-index v0.57.0
+   Compiling gix-discover v0.57.0
+   Compiling gix-config v0.62.0
+   Compiling gix-odb v0.86.0
+   Compiling gix-protocol v0.67.0
+   Compiling gix-worktree v0.58.0
+   Compiling gix-submodule v0.36.0
+   Compiling polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling gix-dir v0.31.0
+   Compiling gix-diff v0.69.0
+   Compiling tokio-util v0.7.20
+   Compiling tokio-rustls v0.26.6
+   Compiling tokio-stream v0.1.19
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling tokio-tungstenite v0.26.2
+   Compiling gix-status v0.36.0
+   Compiling gix-worktree-state v0.36.0
+   Compiling h2 v0.4.20
+   Compiling tower v0.5.3
+   Compiling process-wrap v10.0.1
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling gix v0.89.0
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling axum v0.8.9
+   Compiling tower-http v0.6.11
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+   Compiling polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+   Compiling polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling hyper v1.12.0
+   Compiling backon v1.6.0
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+   Compiling hyper-util v0.1.21
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling hyper-rustls v0.27.10
+   Compiling hyper-timeout v0.5.2
+   Compiling hyper-named-pipe v0.1.1
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling tonic v0.14.6
+   Compiling reqwest v0.13.5
+   Compiling reqwest v0.12.28
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling rmcp v3.5.1
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling oauth2 v5.0.0
+   Compiling tonic-prost v0.14.6
+   Compiling openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling tonic-types v0.14.6
+   Compiling bollard-buildkit-proto v0.8.1
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling bollard v0.21.1
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 2m 33s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-e5f40931a0f969ef.exe)
+
+running 12 tests
+test sandbox_recovery::tests::locator_encoding_is_versioned_scoped_and_strict ... ok
+test worker_lifecycle::tests::retiring_an_old_generation_does_not_clear_the_new_generation ... ok
+test worker_lifecycle::tests::bootstrap_errors_are_sanitized_and_do_not_publish_connections ... ok
+test worker_lifecycle::tests::initialization_bootstraps_before_connect_and_never_publishes_failure ... ok
+test skill_status::tests::invalid_skill_root_is_reported_unavailable_without_fabricated_entries ... ok
+test docker_pool::tests::live_pool_is_not_reported_as_orphan_and_release_removes_registration ... ok
+test docker_pool::tests::active_pool_registration_cannot_be_acknowledged_as_an_orphan ... ok
+test docker_pool::tests::failed_backend_cleanup_keeps_the_orphan_journaled ... ok
+test skill_status::tests::status_compares_requirements_to_the_real_local_builtin_catalog ... ok
+test docker_pool::tests::restart_recovers_only_orphaned_docker_pool_locators ... ok
+test sandbox_recovery::tests::recovery_acknowledges_only_absent_matching_scoped_records ... ok
+test context::tests::startup_recovers_docker_orphans_before_the_generic_reaper_sweep ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests\error_taxonomy.rs (target\debug\deps\error_taxonomy-c8e48fd66251cb86.exe)
+
+running 1 test
+test storage_error_kinds_are_preserved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\lifecycle_stress.rs (target\debug\deps\lifecycle_stress-0d51d9367f0f5285.exe)
+
+running 5 tests
+test reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes ... ignored, 1000-directory and 20-process durable teardown workload; run explicitly
+test two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots ... ignored, native 200-process crash/kill stress; run explicitly
+test native_sleeper_fixture ... ok
+test dropping_reaper_stops_process_even_when_native_adapter_is_shared ... ok
+test timed_out_health_probe_kills_owned_native_worker ... ok
+
+test result: ok. 3 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests\local_runtime.rs (target\debug\deps\local_runtime-f588570b15397470.exe)
+
+running 2 tests
+test invalid_token_appends_no_event ... ok
+test directive_receipt_matches_committed_event ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\local_tools.rs (target\debug\deps\local_tools-75cfc2417cbb3969.exe)
+
+running 1 test
+test local_tools_use_actual_workspace_cas_and_scoped_history ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\runtime_safety.rs (target\debug\deps\runtime_safety-a5ee6761b3ea5ffd.exe)
+
+running 5 tests
+test canceled_shutdown_waiter_does_not_cancel_owner_cleanup ... ok
+test failed_startup_releases_session_claim_and_writes_no_lifecycle_event ... ok
+test dropping_last_handle_drains_and_closes_event_stream ... ok
+test missing_registry_projection_is_rebuilt_from_durable_lifecycle_records ... ok
+test durable_replay_bridges_delayed_subscription_to_live_events_without_duplicates ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.75s
+
+     Running tests\sandbox_execution.rs (target\debug\deps\sandbox_execution-9d916d360fd0c143.exe)
+
+running 5 tests
+test cancellation_retains_cleanup_ownership ... ok
+test changed_review_environment_and_remote_root_are_rejected_before_create ... ok
+test failed_run_does_not_publish_proof ... ok
+test stale_or_replayed_review_is_rejected_before_create ... ok
+test zero_tests_tampered_source_and_name_collision_never_complete ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+
+     Running tests\session_typestate.rs (target\debug\deps\session_typestate-d9e1948b4cea9b28.exe)
+
+running 18 tests
+test invalid_configuration_commits_nothing ... ok
+test shutdown_closes_session_mutations ... ok
+test configured_but_never_started_is_not_resumed ... ok
+test one_live_owner_per_session ... ok
+test running_session_is_recovered_as_paused ... ok
+test committed_projection_failure_is_explicit_and_recoverable ... ok
+test corrupt_configuration_cas_fails_recovery ... ok
+test created_configures_to_configured ... ok
+test paused_resumes_to_running ... ok
+test live_publication_is_already_in_the_durable_log ... ok
+test session_defaults_do_not_leak_to_other_sessions ... ok
+test invalid_lifecycle_order_is_not_silently_replayed ... ok
+test startup_failure_releases_previously_opened_databases ... ok
+test unresolved_orphans_block_startup ... ok
+test registry_can_be_rebuilt_after_its_file_is_lost ... ok
+test reopen_replays_directives_in_order ... ok
+test replay_crosses_page_boundary_and_filters_other_sessions ... ok
+test prop_replayed_directive_fold_matches_last_override ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.02s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel_operators-47422268648645e8.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\rate_limit_operator.rs (target\debug\deps\rate_limit_operator-6d93001015868dd7.exe)
+
+running 6 tests
+test zero_timeout_is_rejected ... ok
+test denies_background_when_shed_by_pressure ... ok
+test reservation_requires_dispatch_before_reconciliation ... ok
+test admits_and_carries_single_use_reservation ... ok
+test rejects_estimates_above_token_burst ... ok
+test wait_obeys_cancellation_and_timeout ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_context-e5bf31f68b2629ff.exe)
+
+running 12 tests
+test assemble::lossless_window_tests::archive_byte_cap_fails_assembly_without_claiming_recovery ... ok
+test assemble::lossless_window_tests::no_omission_emits_no_archive_marker ... ok
+test assemble::lossless_window_tests::archive_cid_version_and_message_count_are_validated ... ok
+test assemble::lossless_window_tests::archive_reference_is_exposed_by_context_map ... ok
+test assemble::lossless_window_tests::archived_messages_expand_byte_exactly_and_preserve_tool_correlation ... ok
+test assemble::lossless_window_tests::archive_metadata_tampering_is_rejected_on_recovery ... ok
+test assemble::lossless_window_tests::archive_notice_is_included_in_the_context_budget ... ok
+test assemble::lossless_window_tests::tool_call_groups_are_archived_and_retained_atomically ... ok
+test assemble::lossless_window_tests::identical_omitted_windows_produce_identical_archive_references ... ok
+test assemble::lossless_window_tests::expand_rejects_archives_larger_than_the_receiving_virtualizer_cap ... ok
+test assemble::lossless_window_tests::prefix_scratchpad_and_active_scope_order_remains_stable ... ok
+test assemble::lossless_window_tests::malformed_archived_tool_group_is_rejected ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_sdk-e57f3894b2161ff8.exe)
+
+running 3 tests
+test hex::tests::every_byte_matches_ascii_hex_contract ... ok
+test system_one::decision_schema_tests::validated_schema_snapshot_preserves_version_policy_and_calibration_state ... ok
+test system_one::decision_schema_tests::schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\blast_alert_schema.rs (target\debug\deps\blast_alert_schema-5145a9c0c2d61b88.exe)
+
+running 1 test
+test blast_alert_requires_schema_three ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\command_typestate.rs (target\debug\deps\command_typestate-71ed5d76d1a1bdb0.exe)
+
+running 3 tests
+test token_bytes_debug_is_redacted ... ok
+test verified_requires_approval_witness ... ok
+test command_serde_roundtrip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_identifiers.rs (target\debug\deps\content_identifiers-a8f5b139ce1745ad.exe)
+
+running 6 tests
+test cid_rejects_wrong_length_hex ... ok
+test short_ref_is_first_48_bits ... ok
+test cid_hex_roundtrip ... ok
+test short_ref_parse_accepts_marker_and_bare_hex ... ok
+test short_ref_renders_12_lowercase_hex ... ok
+test prop_cid_shortref_hex_roundtrip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\content_store_dispatch.rs (target\debug\deps\content_store_dispatch-3442018411a45bff.exe)
+
+running 3 tests
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_three_content_store_forwards_every_variant ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\effort_parsing.rs (target\debug\deps\effort_parsing-e0c67a51b97d30f0.exe)
+
+running 6 tests
+test parses_names_case_insensitively ... ok
+test display_roundtrips_name ... ok
+test parses_numeric_1_to_5 ... ok
+test rejects_zero_and_six ... ok
+test try_from_u8_is_total ... ok
+test prop_order_matches_numeric_form ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-6a66b84a9654066a.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests\interactive_contract.rs (target\debug\deps\interactive_contract-0d720fb9935d9784.exe)
+
+running 2 tests
+test interactive_debug_never_exposes_arguments_or_environment ... ok
+test interactive_enum_and_arc_preserve_dispatch_and_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\probability_validation.rs (target\debug\deps\probability_validation-3df2360e621ed816.exe)
+
+running 5 tests
+test accepts_bounds ... ok
+test rejects_above_one_and_below_zero ... ok
+test ordering_is_total_for_valid_values ... ok
+test rejects_nan ... ok
+test serde_rejects_out_of_range ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\registry_dispatch.rs (target\debug\deps\registry_dispatch-e0d4bafbb07f96b2.exe)
+
+running 5 tests
+test error_kinds_cover_taxonomy ... ok
+test arc_forwards_sync_registry_traits ... ok
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_source_contract.rs (target\debug\deps\secret_source_contract-e8f259772f819a5d.exe)
+
+running 7 tests
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test has_kind_maps_transient_and_permanent_failures ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+test validated_locations_contain_identifiers_only ... ok
+test source_error_display_is_sanitized ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\session_lifecycle.rs (target\debug\deps\session_lifecycle-098f7eccc5cfd718.exe)
+
+running 5 tests
+test versioned_constructor_validates_schema ... ok
+test schema_one_records_remain_readable ... ok
+test new_lifecycle_events_cannot_claim_schema_one ... ok
+test lifecycle_records_use_current_schema ... ok
+test prop_schema_acceptance_matches_lifecycle_minimum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\xtask-e738308f38012da9.exe)
+
+running 5 tests
+test release_sbom::tests::cargo_lock_change_during_metadata_is_rejected ... ok
+test release_sbom::tests::atomic_output_preserves_existing_file_without_force ... ok
+test release_sbom::tests::failed_atomic_replacement_preserves_locked_existing_file ... ok
+test release_sbom::tests::atomic_output_replaces_existing_file_only_when_forced ... ok
+test release_sbom::tests::failed_atomic_replacement_preserves_existing_path ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\main.rs (target\debug\deps\xtask-bc338e9da4df20f4.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\check_layers.rs (target\debug\deps\check_layers-cf5faff7adbeff38.exe)
+
+running 6 tests
+test child_to_parent_edge_is_rejected ... ok
+test downward_cross_group_edge_is_ok ... ok
+test sibling_edge_upward_is_rejected ... ok
+test facade_to_child_same_layer_is_ok ... ok
+test manifest_edges_must_equal_table_edges ... ok
+test same_layer_cross_group_edge_is_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\check_members.rs (target\debug\deps\check_members-dacc5dd28d05262f.exe)
+
+running 5 tests
+test all_table_packages_present_is_ok ... ok
+test stray_file_at_glob_level_is_reported ... ok
+test member_not_in_table_is_reported ... ok
+test glob_dir_without_manifest_is_reported ... ok
+test table_package_missing_on_disk_is_reported ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\check_witness.rs (target\debug\deps\check_witness-774b7c4e87863e60.exe)
+
+running 4 tests
+test build_output_is_ignored ... ok
+test verifier_and_sdk_may_construct_witnesses ... ok
+test clean_tree_has_no_violations ... ok
+test other_crates_are_reported_with_line ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\release_sbom.rs (target\debug\deps\release_sbom-b0d37a655827bebc.exe)
+
+running 10 tests
+test non_leap_year_february_29_is_rejected ... ok
+test impossible_calendar_timestamp_is_rejected ... ok
+test unknown_resolve_node_id_is_rejected ... ok
+test duplicate_cargo_package_id_is_rejected ... ok
+test unknown_dependency_package_id_is_rejected ... ok
+test workspace_packages_have_root_provenance_and_lock_hash ... ok
+test spdx_document_contains_resolved_packages_and_dependency_relationships ... ok
+test leap_day_timestamp_is_accepted ... ok
+test unknown_license_is_not_invented ... ok
+test serialization_is_deterministic_for_same_inputs ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_kernel
+
+running 1 test
+test crates\polaris-kernel\src\lib.rs - (line 31) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test crates\polaris-kernel\src\session.rs - session (line 12) - compile fail ... ok
+test crates\polaris-kernel\src\session.rs - session (line 5) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+all doctests ran in 4.46s; merged doctests compilation took 3.12s
+   Doc-tests polaris_kernel_operators
+
+running 1 test
+test crates\polaris-kernel\crates\operators\src\rate_limit.rs - rate_limit::RateLimitInput (line 20) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+   Doc-tests polaris_runtime_context
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_sdk
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 321) ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 290) ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 265) ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 315) - compile fail ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 260) - compile fail ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 304) - compile fail ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+all doctests ran in 1.33s; merged doctests compilation took 0.89s
+   Doc-tests xtask
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

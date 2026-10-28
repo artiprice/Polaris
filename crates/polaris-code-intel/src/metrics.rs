@@ -76,8 +76,10 @@ pub fn metrics_with(
     }
     let old_complexity = i64::from(cyclomatic_complexity(old));
     let new_complexity = i64::from(cyclomatic_complexity(new));
-    let delta = new_complexity - old_complexity;
-    let (distance, exact) = tree_edit_distance(old, new, cfg.ted_node_cap);
+    let delta = new_complexity
+        .checked_sub(old_complexity)
+        .ok_or(CodeIntelError::ArithmeticInvariant("cyclomatic delta"))?;
+    let (distance, exact) = tree_edit_distance(old, new, cfg.ted_node_cap)?;
     Ok(MutationMetrics {
         churn_lines: churn_lines(old.source(), new.source()),
         cyclomatic_delta: i32::try_from(delta).unwrap_or(if delta < 0 {
@@ -214,16 +216,20 @@ fn significant_tree(p: &Parsed) -> SigTree {
 }
 
 /// Tree-edit distance with unit costs, or a lower bound above `cap`.
-fn tree_edit_distance(old: &Parsed, new: &Parsed, cap: usize) -> (u32, bool) {
+fn tree_edit_distance(
+    old: &Parsed,
+    new: &Parsed,
+    cap: usize,
+) -> Result<(u32, bool), CodeIntelError> {
     let a = significant_tree(old);
     let b = significant_tree(new);
     if a.labels == b.labels && a.parents == b.parents {
-        return (0, true);
+        return Ok((0, true));
     }
     if a.labels.len().max(b.labels.len()) <= cap {
-        (saturate(zhang_shasha(&a, &b)), true)
+        Ok((saturate(zhang_shasha(&a, &b)?), true))
     } else {
-        (saturate(label_lower_bound(&a.labels, &b.labels)), false)
+        Ok((saturate(label_lower_bound(&a.labels, &b.labels)), false))
     }
 }
 
@@ -241,12 +247,12 @@ fn label_lower_bound(a: &[u64], b: &[u64]) -> usize {
     let (mut i, mut j, mut common) = (0usize, 0usize, 0usize);
     while let (Some(x), Some(y)) = (a.get(i), b.get(j)) {
         match x.cmp(y) {
-            std::cmp::Ordering::Less => i += 1,
-            std::cmp::Ordering::Greater => j += 1,
+            std::cmp::Ordering::Less => i = i.saturating_add(1),
+            std::cmp::Ordering::Greater => j = j.saturating_add(1),
             std::cmp::Ordering::Equal => {
-                common += 1;
-                i += 1;
-                j += 1;
+                common = common.saturating_add(1);
+                i = i.saturating_add(1);
+                j = j.saturating_add(1);
             }
         }
     }
@@ -255,32 +261,54 @@ fn label_lower_bound(a: &[u64], b: &[u64]) -> usize {
 
 /// A dense `rows x cols` matrix of `u32` with bounds-checked, non-panicking access.
 struct Grid {
+    rows: usize,
     cols: usize,
     data: Vec<u32>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GridError {
+    DimensionOverflow,
+    AllocationFailed,
+    OutOfBounds,
+}
+
 impl Grid {
-    fn new(rows: usize, cols: usize) -> Self {
-        Self {
-            cols,
-            data: vec![0; rows.saturating_mul(cols)],
-        }
+    fn new(rows: usize, cols: usize) -> Result<Self, GridError> {
+        let size = rows.checked_mul(cols).ok_or(GridError::DimensionOverflow)?;
+        let mut data = Vec::new();
+        data.try_reserve_exact(size)
+            .map_err(|_| GridError::AllocationFailed)?;
+        data.resize(size, 0);
+        Ok(Self { rows, cols, data })
     }
 
-    fn get(&self, row: usize, col: usize) -> u32 {
+    fn address(&self, row: usize, col: usize) -> Result<usize, GridError> {
+        if row >= self.rows || col >= self.cols {
+            return Err(GridError::OutOfBounds);
+        }
+        let address = row
+            .checked_mul(self.cols)
+            .and_then(|base| base.checked_add(col))
+            .ok_or(GridError::OutOfBounds)?;
+        (address < self.data.len())
+            .then_some(address)
+            .ok_or(GridError::OutOfBounds)
+    }
+
+    fn get(&self, row: usize, col: usize) -> Result<u32, GridError> {
+        let address = self.address(row, col)?;
         self.data
-            .get(row.saturating_mul(self.cols).saturating_add(col))
+            .get(address)
             .copied()
-            .unwrap_or(0)
+            .ok_or(GridError::OutOfBounds)
     }
 
-    fn set(&mut self, row: usize, col: usize, value: u32) {
-        if let Some(slot) = self
-            .data
-            .get_mut(row.saturating_mul(self.cols).saturating_add(col))
-        {
-            *slot = value;
-        }
+    fn set(&mut self, row: usize, col: usize, value: u32) -> Result<(), GridError> {
+        let address = self.address(row, col)?;
+        let slot = self.data.get_mut(address).ok_or(GridError::OutOfBounds)?;
+        *slot = value;
+        Ok(())
     }
 }
 
@@ -357,53 +385,147 @@ fn post_tree(t: &SigTree) -> PostTree {
 }
 
 /// Zhang-Shasha tree-edit distance with unit insert / delete / relabel costs.
-fn zhang_shasha(a: &SigTree, b: &SigTree) -> usize {
+fn zhang_shasha(a: &SigTree, b: &SigTree) -> Result<usize, CodeIntelError> {
     let t1 = post_tree(a);
     let t2 = post_tree(b);
     let (m, n) = (t1.labels.len(), t2.labels.len());
     if m == 0 || n == 0 {
-        return m.max(n);
+        return Ok(m.max(n));
     }
-    let mut treedist = Grid::new(m, n);
-    let mut forest = Grid::new(m + 1, n + 1);
+    let treedist = Grid::new(m, n);
+    let rows = m
+        .checked_add(1)
+        .ok_or(CodeIntelError::ArithmeticInvariant("forest rows"))?;
+    let cols = n
+        .checked_add(1)
+        .ok_or(CodeIntelError::ArithmeticInvariant("forest columns"))?;
+    let mut treedist = treedist.map_err(|_| CodeIntelError::TooLarge { limit: m })?;
+    let mut forest = Grid::new(rows, cols).map_err(|_| CodeIntelError::TooLarge {
+        limit: rows.max(cols),
+    })?;
     for &i in &t1.keyroots {
         for &j in &t2.keyroots {
             let (li, lj) = (t1.leftmost(i), t2.leftmost(j));
-            let (rows, cols) = (i - li + 2, j - lj + 2);
-            forest.set(0, 0, 0);
+            let rows = i
+                .checked_sub(li)
+                .and_then(|value| value.checked_add(2))
+                .ok_or(CodeIntelError::ArithmeticInvariant("forest row range"))?;
+            let cols = j
+                .checked_sub(lj)
+                .and_then(|value| value.checked_add(2))
+                .ok_or(CodeIntelError::ArithmeticInvariant("forest column range"))?;
+            forest
+                .set(0, 0, 0)
+                .map_err(|_| CodeIntelError::ArithmeticInvariant("forest origin"))?;
             for di in 1..rows {
-                forest.set(di, 0, forest.get(di - 1, 0) + 1);
+                let previous = di
+                    .checked_sub(1)
+                    .ok_or(CodeIntelError::ArithmeticInvariant(
+                        "forest row predecessor",
+                    ))?;
+                let value = forest
+                    .get(previous, 0)
+                    .map_err(|_| CodeIntelError::ArithmeticInvariant("forest row read"))?
+                    .checked_add(1)
+                    .ok_or(CodeIntelError::ArithmeticInvariant("forest row cost"))?;
+                forest
+                    .set(di, 0, value)
+                    .map_err(|_| CodeIntelError::ArithmeticInvariant("forest row write"))?;
             }
             for dj in 1..cols {
-                forest.set(0, dj, forest.get(0, dj - 1) + 1);
+                let previous = dj
+                    .checked_sub(1)
+                    .ok_or(CodeIntelError::ArithmeticInvariant(
+                        "forest column predecessor",
+                    ))?;
+                let value = forest
+                    .get(0, previous)
+                    .map_err(|_| CodeIntelError::ArithmeticInvariant("forest column read"))?
+                    .checked_add(1)
+                    .ok_or(CodeIntelError::ArithmeticInvariant("forest column cost"))?;
+                forest
+                    .set(0, dj, value)
+                    .map_err(|_| CodeIntelError::ArithmeticInvariant("forest column write"))?;
             }
             for di in 1..rows {
                 for dj in 1..cols {
-                    let (i1, j1) = (li + di - 1, lj + dj - 1);
-                    let delete = forest.get(di - 1, dj) + 1;
-                    let insert = forest.get(di, dj - 1) + 1;
+                    let i1 = li
+                        .checked_add(di)
+                        .and_then(|value| value.checked_sub(1))
+                        .ok_or(CodeIntelError::ArithmeticInvariant("tree row index"))?;
+                    let j1 = lj
+                        .checked_add(dj)
+                        .and_then(|value| value.checked_sub(1))
+                        .ok_or(CodeIntelError::ArithmeticInvariant("tree column index"))?;
+                    let prev_di = di
+                        .checked_sub(1)
+                        .ok_or(CodeIntelError::ArithmeticInvariant("tree row predecessor"))?;
+                    let prev_dj = dj
+                        .checked_sub(1)
+                        .ok_or(CodeIntelError::ArithmeticInvariant(
+                            "tree column predecessor",
+                        ))?;
+                    let delete = forest
+                        .get(prev_di, dj)
+                        .map_err(|_| CodeIntelError::ArithmeticInvariant("delete read"))?
+                        .checked_add(1)
+                        .ok_or(CodeIntelError::ArithmeticInvariant("delete cost"))?;
+                    let insert = forest
+                        .get(di, prev_dj)
+                        .map_err(|_| CodeIntelError::ArithmeticInvariant("insert read"))?
+                        .checked_add(1)
+                        .ok_or(CodeIntelError::ArithmeticInvariant("insert cost"))?;
                     if t1.leftmost(i1) == li && t2.leftmost(j1) == lj {
                         let relabel = u32::from(t1.label(i1) != t2.label(j1));
-                        let value = delete.min(insert).min(forest.get(di - 1, dj - 1) + relabel);
-                        forest.set(di, dj, value);
-                        treedist.set(i1, j1, value);
+                        let relabel_cost = forest
+                            .get(prev_di, prev_dj)
+                            .map_err(|_| CodeIntelError::ArithmeticInvariant("relabel read"))?
+                            .checked_add(relabel)
+                            .ok_or(CodeIntelError::ArithmeticInvariant("relabel cost"))?;
+                        let value = delete.min(insert).min(relabel_cost);
+                        forest.set(di, dj, value).map_err(|_| {
+                            CodeIntelError::ArithmeticInvariant("forest cell write")
+                        })?;
+                        treedist.set(i1, j1, value).map_err(|_| {
+                            CodeIntelError::ArithmeticInvariant("tree distance write")
+                        })?;
                     } else {
-                        let (p, q) = (t1.leftmost(i1) - li, t2.leftmost(j1) - lj);
-                        let value = delete
-                            .min(insert)
-                            .min(forest.get(p, q) + treedist.get(i1, j1));
-                        forest.set(di, dj, value);
+                        let p = t1
+                            .leftmost(i1)
+                            .checked_sub(li)
+                            .ok_or(CodeIntelError::ArithmeticInvariant("leftmost row offset"))?;
+                        let q = t2.leftmost(j1).checked_sub(lj).ok_or(
+                            CodeIntelError::ArithmeticInvariant("leftmost column offset"),
+                        )?;
+                        let subtree = treedist.get(i1, j1).map_err(|_| {
+                            CodeIntelError::ArithmeticInvariant("subtree distance read")
+                        })?;
+                        let prefix = forest.get(p, q).map_err(|_| {
+                            CodeIntelError::ArithmeticInvariant("forest prefix read")
+                        })?;
+                        let combined = prefix
+                            .checked_add(subtree)
+                            .ok_or(CodeIntelError::ArithmeticInvariant("subtree distance cost"))?;
+                        let value = delete.min(insert).min(combined);
+                        forest.set(di, dj, value).map_err(|_| {
+                            CodeIntelError::ArithmeticInvariant("forest subtree write")
+                        })?;
                     }
                 }
             }
         }
     }
-    match usize::try_from(treedist.get(m - 1, n - 1)) {
-        Ok(distance) => distance,
-        // The trees are node-capped below u32::MAX. On an unusually narrow target a capped
-        // approximation is safer than truncating the distance.
-        Err(_) => usize::MAX,
-    }
+    let last_row = m.checked_sub(1).ok_or(CodeIntelError::ArithmeticInvariant(
+        "tree distance last row",
+    ))?;
+    let last_col = n.checked_sub(1).ok_or(CodeIntelError::ArithmeticInvariant(
+        "tree distance last column",
+    ))?;
+    let distance = treedist
+        .get(last_row, last_col)
+        .map_err(|_| CodeIntelError::ArithmeticInvariant("tree distance result read"))?;
+    usize::try_from(distance)
+        .map_err(|_| CodeIntelError::ArithmeticInvariant("tree distance conversion"))
 }
 
 /// The identity of a declaration within a file: qualified name, kind and occurrence number
@@ -430,7 +552,7 @@ fn keyed_fingerprints(p: &Parsed) -> Result<BTreeMap<DeclKey, u64>, CodeIntelErr
     for d in declarations(p, MAX_SKELETON_ITEMS)? {
         let counter = seen.entry((d.qualified.clone(), d.kind)).or_insert(0);
         let key = (d.qualified.clone(), d.kind, *counter);
-        *counter += 1;
+        *counter = counter.saturating_add(1);
         out.insert(key, own_fingerprint(&d, p.source()));
     }
     Ok(out)
@@ -482,5 +604,91 @@ pub fn subtree_fingerprints(p: &Parsed) -> Vec<(ByteSpan, FastFingerprint)> {
             })
             .collect(),
         Err(_) => Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod arithmetic_regressions {
+    use super::{Grid, GridError, SigTree, zhang_shasha};
+
+    #[test]
+    fn grid_rejects_invalid_coordinates_and_addresses() {
+        let result = Grid::new(2, 3);
+        assert!(result.is_ok());
+        let mut grid = match result {
+            Ok(grid) => grid,
+            Err(_) => return,
+        };
+        assert_eq!(grid.get(1, 2), Ok(0));
+        assert_eq!(grid.set(1, 2, 7), Ok(()));
+        assert_eq!(grid.get(1, 2), Ok(7));
+        assert_eq!(grid.get(2, 0), Err(GridError::OutOfBounds));
+        assert_eq!(grid.get(0, 3), Err(GridError::OutOfBounds));
+        assert_eq!(
+            grid.get(usize::MAX, usize::MAX),
+            Err(GridError::OutOfBounds)
+        );
+        assert_eq!(grid.set(2, 0, 9), Err(GridError::OutOfBounds));
+        assert!(matches!(
+            Grid::new(usize::MAX, 2),
+            Err(GridError::DimensionOverflow)
+        ));
+        assert!(matches!(
+            Grid::new(usize::MAX, 1),
+            Err(GridError::AllocationFailed)
+        ));
+    }
+
+    #[test]
+    fn single_node_tree_distance_matches_independent_edit_cost() {
+        let left = SigTree {
+            labels: vec![11],
+            parents: vec![None],
+        };
+        let same = SigTree {
+            labels: vec![11],
+            parents: vec![None],
+        };
+        let relabeled = SigTree {
+            labels: vec![19],
+            parents: vec![None],
+        };
+        let empty = SigTree {
+            labels: Vec::new(),
+            parents: Vec::new(),
+        };
+        assert_eq!(zhang_shasha(&left, &same), Ok(0));
+        assert_eq!(zhang_shasha(&left, &relabeled), Ok(1));
+        assert_eq!(zhang_shasha(&left, &empty), Ok(1));
+        assert_eq!(zhang_shasha(&empty, &left), Ok(1));
+    }
+
+    proptest::proptest! {
+        #[test]
+        fn unary_tree_distance_matches_independent_levenshtein(
+            left in proptest::collection::vec(0_u64..4, 0..6),
+            right in proptest::collection::vec(0_u64..4, 0..6),
+        ) {
+            let left_tree = SigTree { labels: left.clone(), parents: chain_parents(left.len()) };
+            let right_tree = SigTree { labels: right.clone(), parents: chain_parents(right.len()) };
+            let mut previous: Vec<usize> = (0..=right.len()).collect();
+            for (left_index, left_label) in left.iter().enumerate() {
+                let mut current = vec![left_index.saturating_add(1)];
+                for (right_index, right_label) in right.iter().enumerate() {
+                    let deletion = previous.get(right_index.saturating_add(1)).copied().unwrap_or(usize::MAX).saturating_add(1);
+                    let insertion = current.last().copied().unwrap_or(usize::MAX).saturating_add(1);
+                    let relabel = previous.get(right_index).copied().unwrap_or(usize::MAX).saturating_add(usize::from(left_label != right_label));
+                    current.push(deletion.min(insertion).min(relabel));
+                }
+                previous = current;
+            }
+            let expected = previous.last().copied().unwrap_or(0);
+            proptest::prop_assert_eq!(zhang_shasha(&left_tree, &right_tree), Ok(expected));
+            proptest::prop_assert_eq!(zhang_shasha(&right_tree, &left_tree), Ok(expected));
+        }
+    }
+
+    fn chain_parents(length: usize) -> Vec<Option<usize>> {
+        (0..length).map(|index| index.checked_sub(1)).collect()
     }
 }

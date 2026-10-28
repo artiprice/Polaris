@@ -1,0 +1,10 @@
+[
+  "ingest-worker-shutdown-red.txt",
+  "ingest-worker-shutdown-green.txt",
+  "generated-status-red.txt",
+  "generated-status-green.txt",
+  "worker-engine-red.txt",
+  "hacker-red.log",
+  "ingest-test-final.txt",
+  "hacker-tests-final.log"
+]

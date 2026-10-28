@@ -1,0 +1,73 @@
+{
+  "type_of": "module",
+  "name": "release_sbom",
+  "file_path": "xtask/src/release_sbom.rs",
+  "logic_name": "Release SBOM",
+  "test_list": [
+    {
+      "test_name": "spdx_document_contains_resolved_packages_and_dependency_relationships",
+      "description": "A Cargo metadata graph emits every resolved package once and preserves dependency edges as SPDX DEPENDS_ON relationships."
+    },
+    {
+      "test_name": "workspace_packages_have_root_provenance_and_lock_hash",
+      "description": "Workspace members are identified and document provenance carries the workspace root and BLAKE3 Cargo.lock digest in the SPDX-supported checksum field."
+    },
+    {
+      "test_name": "unknown_license_is_not_invented",
+      "description": "Missing Cargo license metadata is represented as NOASSERTION rather than a guessed license."
+    },
+    {
+      "test_name": "serialization_is_deterministic_for_same_inputs",
+      "description": "Repeated serialization of identical Cargo metadata and lock bytes produces byte-identical SPDX JSON without generated timestamps."
+    },
+    {
+      "test_name": "atomic_output_refuses_existing_file_without_force",
+      "description": "Writing an SBOM does not replace an existing output file unless the caller explicitly requests replacement."
+    },
+    {
+      "test_name": "failed_atomic_replacement_preserves_existing_path",
+      "description": "If replacement fails, the existing destination remains intact and the temporary output does not replace it."
+    },
+    {
+      "test_name": "invalid_calendar_timestamp_is_rejected",
+      "description": "Impossible month, day, hour, minute, or second values cannot be serialized as an SPDX creation timestamp."
+    },
+    {
+      "test_name": "duplicate_cargo_package_id_is_rejected",
+      "description": "Duplicate package identities fail closed instead of overwriting an earlier package."
+    },
+    {
+      "test_name": "unknown_resolve_node_id_is_rejected",
+      "description": "A dependency graph node without a corresponding Cargo package fails closed."
+    },
+    {
+      "test_name": "unknown_dependency_package_id_is_rejected",
+      "description": "A dependency edge to a missing Cargo package fails closed instead of being omitted."
+    },
+    {
+      "test_name": "cargo_lock_change_during_metadata_is_rejected",
+      "description": "The release artifact is rejected if exact Cargo.lock bytes differ before and after cargo metadata runs."
+    }
+  ],
+  "dependencies": ["xtask::error::XtaskError"],
+  "libraries": ["serde_json", "blake3", "std::process", "std::fs", "tempfile (dev)"],
+  "inputs": [
+    {
+      "name": "cargo_metadata",
+      "type": "&serde_json::Value",
+      "description": "Full cargo metadata output generated with --locked --offline."
+    },
+    {
+      "name": "lock_bytes",
+      "type": "&[u8]",
+      "description": "Exact bytes of the workspace Cargo.lock used to derive the BLAKE3 checksum."
+    },
+    {
+      "name": "created",
+      "type": "&str",
+      "description": "Explicit real UTC creation timestamp included as an input so output remains deterministic for identical inputs."
+    }
+  ],
+  "output_type": "Result<Vec<u8>, XtaskError>",
+  "output_description": "Deterministic SPDX 2.3 JSON bytes describing the resolved Cargo dependency graph, package source and workspace provenance."
+}

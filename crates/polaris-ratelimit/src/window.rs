@@ -1,6 +1,5 @@
 //! Fixed-size conservative 15-minute usage ledger.
 
-use crate::RateLimitError;
 use std::sync::{Mutex, MutexGuard};
 
 const WINDOW_BUCKETS: usize = 15;
@@ -37,74 +36,74 @@ pub struct WindowSnapshot {
 }
 
 #[derive(Default)]
+struct WindowData {
+    buckets: [Bucket; WINDOW_BUCKETS],
+    saturated: bool,
+}
+
+#[derive(Default)]
 pub(crate) struct WindowTracker {
-    buckets: Mutex<[Bucket; WINDOW_BUCKETS]>,
+    data: Mutex<WindowData>,
 }
 
 impl WindowTracker {
-    pub(crate) fn record_dispatch(
-        &self,
-        minute: u64,
-        reserved_tokens: u64,
-    ) -> Result<(), RateLimitError> {
-        let mut buckets = lock_recover(&self.buckets);
-        let index = bucket_index(minute);
-        let bucket = &mut buckets[index];
+    pub(crate) fn record_dispatch(&self, minute: u64, reserved_tokens: u64) {
+        let mut data = lock_recover(&self.data);
+        let Some(bucket) = data.buckets.get_mut(bucket_index(minute)) else {
+            data.saturated = true;
+            return;
+        };
         if bucket.minute != Some(minute) {
             *bucket = Bucket {
                 minute: Some(minute),
                 ..Bucket::EMPTY
             };
         }
-        bucket.requests = bucket
-            .requests
-            .checked_add(1)
-            .ok_or(RateLimitError::Accounting)?;
-        bucket.reserved_tokens = bucket
-            .reserved_tokens
-            .checked_add(reserved_tokens)
-            .ok_or(RateLimitError::Accounting)?;
-        Ok(())
+        let (requests, request_overflow) = add_saturating(bucket.requests, 1);
+        let (reserved, reserved_overflow) = add_saturating(bucket.reserved_tokens, reserved_tokens);
+        bucket.requests = requests;
+        bucket.reserved_tokens = reserved;
+        data.saturated |= request_overflow || reserved_overflow;
     }
 
-    pub(crate) fn record_actual(
-        &self,
-        minute: u64,
-        actual_tokens: u64,
-    ) -> Result<(), RateLimitError> {
-        let mut buckets = lock_recover(&self.buckets);
-        let bucket = &mut buckets[bucket_index(minute)];
+    pub(crate) fn record_actual(&self, minute: u64, actual_tokens: u64) {
+        let mut data = lock_recover(&self.data);
+        let Some(bucket) = data.buckets.get_mut(bucket_index(minute)) else {
+            data.saturated = true;
+            return;
+        };
         // A response older than the retained 15-minute horizon does not belong in the current view.
         if bucket.minute == Some(minute) {
-            bucket.actual_tokens = bucket
-                .actual_tokens
-                .checked_add(actual_tokens)
-                .ok_or(RateLimitError::Accounting)?;
+            let (actual, overflow) = add_saturating(bucket.actual_tokens, actual_tokens);
+            bucket.actual_tokens = actual;
+            data.saturated |= overflow;
         }
-        Ok(())
     }
 
     pub(crate) fn snapshot(&self, current_minute: u64) -> WindowSnapshot {
-        let buckets = lock_recover(&self.buckets);
-        let mut snapshot = WindowSnapshot::default();
-        for bucket in buckets.iter() {
+        let data = lock_recover(&self.data);
+        let mut snapshot = WindowSnapshot {
+            accounting_saturated: data.saturated,
+            ..WindowSnapshot::default()
+        };
+        for bucket in data.buckets.iter() {
             let Some(minute) = bucket.minute else {
                 continue;
             };
-            if minute > current_minute || current_minute - minute >= 15 {
+            if minute > current_minute || current_minute.saturating_sub(minute) >= 15 {
                 continue;
             }
-            snapshot.requests = add_saturating(
+            snapshot.requests = add_snapshot_saturating(
                 &mut snapshot.accounting_saturated,
                 snapshot.requests,
                 bucket.requests,
             );
-            snapshot.reserved_tokens = add_saturating(
+            snapshot.reserved_tokens = add_snapshot_saturating(
                 &mut snapshot.accounting_saturated,
                 snapshot.reserved_tokens,
                 bucket.reserved_tokens,
             );
-            snapshot.actual_tokens = add_saturating(
+            snapshot.actual_tokens = add_snapshot_saturating(
                 &mut snapshot.accounting_saturated,
                 snapshot.actual_tokens,
                 bucket.actual_tokens,
@@ -115,25 +114,54 @@ impl WindowTracker {
 }
 
 fn bucket_index(minute: u64) -> usize {
-    let Ok(index) = usize::try_from(minute % 15) else {
-        return 0;
-    };
-    index
+    match usize::try_from(minute.rem_euclid(15)) {
+        Ok(index) => index,
+        Err(_) => 0,
+    }
 }
 
-fn add_saturating(saturated: &mut bool, left: u64, right: u64) -> u64 {
+fn add_saturating(left: u64, right: u64) -> (u64, bool) {
     match left.checked_add(right) {
-        Some(value) => value,
-        None => {
-            *saturated = true;
-            u64::MAX
-        }
+        Some(value) => (value, false),
+        None => (u64::MAX, true),
     }
+}
+
+fn add_snapshot_saturating(saturated: &mut bool, left: u64, right: u64) -> u64 {
+    let (value, overflow) = add_saturating(left, right);
+    *saturated |= overflow;
+    value
 }
 
 fn lock_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     match mutex.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn counter_overflow_saturates_without_partial_dispatch() {
+        let tracker = WindowTracker::default();
+        let mut data = lock_recover(&tracker.data);
+        let Some(bucket) = data.buckets.get_mut(bucket_index(0)) else {
+            return;
+        };
+        *bucket = Bucket {
+            minute: Some(0),
+            requests: u64::MAX,
+            reserved_tokens: u64::MAX,
+            actual_tokens: 0,
+        };
+        drop(data);
+        tracker.record_dispatch(0, 1);
+        let snapshot = tracker.snapshot(0);
+        assert_eq!(snapshot.requests, u64::MAX);
+        assert_eq!(snapshot.reserved_tokens, u64::MAX);
+        assert!(snapshot.accounting_saturated);
     }
 }

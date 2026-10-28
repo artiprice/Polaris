@@ -1,0 +1,88 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+error[E0453]: allow(clippy::expect_used) incompatible with previous forbid
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:243:7
+    |
+243 |     Ok(())
+    |       ^^^^ overruled by previous forbid
+    |
+   ::: crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:9:11
+    |
+  9 | #![forbid(clippy::expect_used)]
+    |           ------------------- `forbid` level set here
+
+error[E0453]: allow(clippy::expect_used) incompatible with previous forbid
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:297:7
+    |
+297 |     Ok(())
+    |       ^^^^ overruled by previous forbid
+    |
+   ::: crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:9:11
+    |
+  9 | #![forbid(clippy::expect_used)]
+    |           ------------------- `forbid` level set here
+
+error[E0453]: allow(clippy::expect_used) incompatible with previous forbid
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:330:7
+    |
+330 |     Ok(())
+    |       ^^^^ overruled by previous forbid
+    |
+   ::: crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:9:11
+    |
+  9 | #![forbid(clippy::expect_used)]
+    |           ------------------- `forbid` level set here
+
+error[E0453]: allow(clippy::expect_used) incompatible with previous forbid
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:345:7
+    |
+345 |     Ok(())
+    |       ^^^^ overruled by previous forbid
+    |
+   ::: crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:9:11
+    |
+  9 | #![forbid(clippy::expect_used)]
+    |           ------------------- `forbid` level set here
+
+error[E0453]: allow(clippy::expect_used) incompatible with previous forbid
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:413:7
+    |
+413 |     Ok(())
+    |       ^^^^ overruled by previous forbid
+    |
+   ::: crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:9:11
+    |
+  9 | #![forbid(clippy::expect_used)]
+    |           ------------------- `forbid` level set here
+
+warning: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:1225:20
+     |
+1225 |           timed_out: match value.get("timed_out").and_then(Value::as_bool) {
+     |  ____________________^
+1226 | |             Some(value) => value,
+1227 | |             None => false,
+1228 | |         },
+     | |_________^ help: replace it with: `value.get("timed_out").and_then(Value::as_bool).unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+     = note: `#[warn(clippy::manual_unwrap_or_default)]` on by default
+
+warning: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-nebius-cloud\crates\sandboxes\src\lib.rs:1235:16
+     |
+1235 |       let text = match value.get(field).and_then(Value::as_str) {
+     |  ________________^
+1236 | |         Some(text) => text,
+1237 | |         None => "",
+1238 | |     };
+     | |_____^ help: replace it with: `value.get(field).and_then(Value::as_str).unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+
+warning: `polaris-nebius-cloud-sandboxes` (lib) generated 2 warnings (run `cargo clippy --fix --lib -p polaris-nebius-cloud-sandboxes -- --no-deps --forbid unsafe_code --forbid clippy::unwrap_used --forbid clippy::expect_used --forbid clippy::panic --forbid clippy::indexing_slicing --forbid clippy::as_conversions --forbid clippy::todo --forbid clippy::unimplemented` to apply 2 suggestions)
+For more information about this error, try `rustc --explain E0453`.
+error: could not compile `polaris-nebius-cloud-sandboxes` (lib test) due to 5 previous errors

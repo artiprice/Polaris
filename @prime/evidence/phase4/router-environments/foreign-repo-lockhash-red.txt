@@ -1,0 +1,24 @@
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Finished `test` profile [unoptimized] target(s) in 1.48s
+     Running tests\environment_images.rs (target\debug\deps\environment_images-f6d333c05697d29e.exe)
+
+running 1 test
+test foreign_repo_same_lockfile_hash_is_not_exact ... FAILED
+
+failures:
+
+---- foreign_repo_same_lockfile_hash_is_not_exact stdout ----
+
+thread 'foreign_repo_same_lockfile_hash_is_not_exact' (13652) panicked at crates\polaris-system-one\crates\router\tests\environment_images.rs:153:5:
+assertion `left == right` failed
+  left: Some(ExactIdentity)
+ right: Some(Semantic)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    foreign_repo_same_lockfile_hash_is_not_exact
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-system-one-router --test environment_images`

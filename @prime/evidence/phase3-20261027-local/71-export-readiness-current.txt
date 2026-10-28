@@ -1,0 +1,26 @@
+{
+  "available_ram_bytes": 10253230080,
+  "checkpoint_snapshot": "C:\\Users\\Admin\\.polaris\\models\\hf\\hub\\models--fastino--GLiNER2.5-Decide\\snapshots\\9d1bfb848cd16d93ee56ccbc59cd92bf0f284d90",
+  "export_memory_ready": false,
+  "export_output": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx-p4",
+  "exporter_sha256": "88c9f6ccfe3064806b4c1ccb46c55e881a06106682925354775cfd9d13637f24",
+  "golden_output": "C:\\mDev\\Polaris\\crates\\polaris-system-one\\crates\\engine\\tests\\fixtures\\s1\\decide",
+  "hf_home": "C:\\Users\\Admin\\.polaris\\models\\hf",
+  "model_repo": "fastino/GLiNER2.5-Decide",
+  "model_revision": "9d1bfb848cd16d93ee56ccbc59cd92bf0f284d90",
+  "network_fetch_enabled": false,
+  "outputs_must_be_new": true,
+  "python_versions": {
+    "gliner2": "2.1.0",
+    "numpy": "2.5.4",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.31.0",
+    "onnxscript": "0.7.2",
+    "psutil": "7.2.2",
+    "python": "3.12.15",
+    "torch": "2.14.1+cpu",
+    "transformers": "5.20.2"
+  },
+  "required_ram_bytes": 10737418240,
+  "status": "READY_INPUTS_BLOCKED_RAM"
+}

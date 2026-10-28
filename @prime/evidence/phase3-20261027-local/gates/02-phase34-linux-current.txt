@@ -1,0 +1,210 @@
+
+running 6 tests
+test synthetic_llama_server_fixture ... ok
+test loader_rejects_non_loopback_and_mismatched_url_authority ... ok
+test configured_subagent_override_uses_the_existing_model_registry ... ok
+test load_keeps_one_exact_adapter_and_lease_through_count_and_stream ... ok
+test failed_profile_startup_stops_the_owned_process_tree ... ok
+test helper_process_listener_fails_closed_and_tree_cleanup_reaps_both ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.05s
+
+
+running 4 tests
+test snapshot_rejects_wrong_owner_key_tamper_and_capacity ... ok
+test sealed_snapshot_restores_exact_markers_with_real_aead ... ok
+test kernel_snapshot_cas_roundtrip_is_private_and_owner_bound ... ok
+test snapshot_reopens_kernel_cas_using_explicit_recovered_key ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 2 tests
+test synthetic_listener_fixture ... ok
+test retained_root_owns_only_its_exact_loopback_listener ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test calibration_joins_exact_ids_and_computes_confusion ... ok
+test calibration_rejects_missing_duplicate_and_foreign_outputs ... ok
+test calibration_threshold_selection_respects_precision_and_support ... ok
+test calibration_is_permutation_invariant_and_bounds_inputs ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 3 tests
+test sdk_adapter_distinguishes_absence_from_invalid_conversion ... ok
+test sdk_adapter_returns_the_canonical_versioned_skill_schema ... ok
+test sdk_adapter_preserves_calibration_provenance ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 3 tests
+test tool::tests::invalid_decimal_string_returns_typed_error ... ok
+test tool::tests::typed_dispatch_preserves_decimal_output ... ok
+test tool::tests::tool_spec_is_pure_and_has_a_real_operation_schema ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.37s
+
+
+running 1 test
+test hostile_expression_shapes_are_rejected_at_configured_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 11 tests
+test bandwidth_is_decimal_gigabytes_per_second ... ok
+test summary_is_finite_ordered_and_singleton_stddev_zero ... ok
+test signed_zero_is_not_a_strictly_increasing_knot_interval ... ok
+test linear_hits_knots_and_rejects_outside_domain ... ok
+test catmull_rom_uniformity_tolerance_scales_with_small_coordinates ... ok
+test catmull_rom_returns_knots_and_rejects_nonuniform_spacing ... ok
+test bilinear_reproduces_corners_and_bezier_stays_bounded ... ok
+test gpu_rows_reject_non_nvidia_source_domains ... ok
+test gpu_occupancy_identifies_resource_and_rejects_unknown_capability ... ok
+test gpu_rows_require_valid_source_and_limits ... ok
+test curated_nvidia_reference_has_sourced_rows_for_supported_capabilities ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test bounded_integer_decimal_addition_matches_decimal ... ok
+test generated_bezier_points_remain_in_control_bounds ... ok
+test generated_linear_knots_are_reproduced ... ok
+test generated_finite_summaries_keep_order ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 14 tests
+test float_zero_max_depth_is_rejected ... ok
+test deep_nesting_rejected ... ok
+test negative_power_and_precedence_are_correct ... ok
+test point_one_plus_point_two_is_exact ... ok
+test negative_integer_power_is_checked_decimal ... ok
+test float_max_depth_limits_unparenthesized_power_chains ... ok
+test overflow_is_error_not_wrap ... ok
+test huge_exponent_rejected ... ok
+test divide_by_zero_is_error ... ok
+test float_max_depth_limits_unparenthesized_prefix_functions ... ok
+test unknown_identifier_rejected ... ok
+test float_power_limit_cannot_be_bypassed_with_parenthesized_exponent ... ok
+test float_path_supports_whitelisted_transcendentals_and_rejects_unknown_names ... ok
+test float_power_guard_preserves_unparenthesized_unary_function_operands ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+m/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling process-wrap v10.0.1
+   Compiling htmd v0.5.6
+   Compiling polaris-telemetry v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-telemetry)
+   Compiling polaris-storage-sync v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/sync)
+   Compiling polaris-openshell-policy v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/policy)
+   Compiling polaris-models v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-models)
+   Compiling hyperlocal v0.9.1
+   Compiling sse-stream v0.2.6
+   Compiling email_address v0.2.9
+   Compiling bollard v0.21.1
+   Compiling jsonschema v0.59.0
+   Compiling rmcp v3.5.1
+   Compiling polaris-runtime-frames v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/frames)
+   Compiling polaris-openshell-client v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/client)
+   Compiling polaris-search-providers v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-search/crates/providers)
+   Compiling polaris-vcs v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-vcs)
+   Compiling polaris-storage-vector v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/vector)
+   Compiling keyring v4.2.0
+   Compiling rust_decimal v1.43.0
+   Compiling polaris-storage-registry v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/registry)
+   Compiling polaris-runtime-context v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/context)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/verifier)
+   Compiling polaris-system-one-router v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/router)
+   Compiling polaris-security-pii v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/pii)
+   Compiling polaris-kernel-bus v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/bus)
+   Compiling polaris-tools-math v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools/crates/math)
+   Compiling polaris-platform-process v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-platform/crates/process)
+   Compiling polaris-storage-cache v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/cache)
+   Compiling polaris-runtime-research v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/research)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/eventlog)
+   Compiling polaris-security-secrets v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/secrets)
+   Compiling polaris-search-sift v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-search/crates/sift)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/nemoclaw)
+   Compiling polaris-ext-skills v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ext/crates/skills)
+   Compiling polaris-ext-mcp v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ext/crates/mcp)
+   Compiling polaris-devenv-docker v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-devenv/crates/docker)
+   Compiling polaris-platform-wsl v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-platform/crates/wsl)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud/crates/sandboxes)
+   Compiling polaris-system-one-client v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/client)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud/crates/token-factory)
+   Compiling polaris-tools-builtin v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools/crates/builtin)
+   Compiling polaris-runtime-guards v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/guards)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/watchdog)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud/crates/data-lab)
+   Compiling polaris-security-rules v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/rules)
+   Compiling polaris-runtime-leases v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/leases)
+   Compiling polaris-devenv-nix v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-devenv/crates/nix)
+   Compiling polaris-kernel-directives v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/directives)
+   Compiling polaris-runtime-dag v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/dag)
+   Compiling polaris-devenv-cicd v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-devenv/crates/cicd)
+   Compiling backon v1.6.0
+   Compiling polaris-nebius-cloud-ai-cloud v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud/crates/ai-cloud)
+   Compiling rusty-fork v0.3.1
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/supervisor)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud)
+   Compiling polaris-devenv v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-devenv)
+   Compiling polaris-runtime v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime)
+   Compiling polaris-kernel-operators v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/operators)
+   Compiling polaris-security v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security)
+   Compiling polaris-system-one v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one)
+   Compiling polaris-tools v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools)
+   Compiling polaris-platform v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-platform)
+   Compiling polaris-ext v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ext)
+   Compiling polaris-openshell v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell)
+   Compiling polaris-search v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-search)
+   Compiling polaris-storage v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage)
+   Compiling polaris-kernel-reaper v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/reaper)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/verifier)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nvidia-docs)
+   Compiling polaris-browser v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-browser)
+   Compiling polaris-hacker v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-hacker)
+   Compiling proptest v1.12.0
+   Compiling polaris-kernel v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 11m 04s
+     Running tests/model_lifecycle.rs (target/debug/deps/model_lifecycle-cae289b217a67282)
+     Running tests/privacy_snapshot.rs (target/debug/deps/privacy_snapshot-d6d9ce8aba834f50)
+    Finished `test` profile [unoptimized] target(s) in 6.55s
+     Running tests/local_endpoint_ownership.rs (target/debug/deps/local_endpoint_ownership-aeef75d3a317e573)
+   Compiling polaris-tools-math v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools/crates/math)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/schemas)
+    Finished `test` profile [unoptimized] target(s) in 21.16s
+     Running unittests src/lib.rs (target/debug/deps/polaris_system_one_schemas-5bb4803b872363ab)
+     Running tests/calibration.rs (target/debug/deps/calibration-072913773d53e8c9)
+     Running tests/sdk_catalog.rs (target/debug/deps/sdk_catalog-129238d63db376aa)
+     Running unittests src/lib.rs (target/debug/deps/polaris_tools_math-d92b8ef2bb598cb8)
+     Running tests/math_adversarial.rs (target/debug/deps/math_adversarial-ab0a2d5344b08f7b)
+     Running tests/math_ops.rs (target/debug/deps/math_ops-905b34d1abc827d1)
+     Running tests/math_properties.rs (target/debug/deps/math_properties-d31419e9ff133656)
+     Running tests/math_spec.rs (target/debug/deps/math_spec-5c25ca99ded52f28)
+   Doc-tests polaris_system_one_schemas
+   Doc-tests polaris_tools_math

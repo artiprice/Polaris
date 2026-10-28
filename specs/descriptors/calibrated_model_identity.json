@@ -1,0 +1,17 @@
+{
+  "type_of":"pipeline",
+  "name":"decide_pinned",
+  "file_path":"crates/polaris-system-one/crates/client/src/lib.rs",
+  "logic_name":"Calibrated native model identity fencing",
+  "test_list":[
+    {"test_name":"pinned_decision_rejects_foreign_loaded_checkpoint","description":"Discard any warmup and reject a model whose actual native digest differs from calibration."},
+    {"test_name":"pinned_decision_rejects_generation_change","description":"Reject eviction/reload or incarnation changes across accepted inference."},
+    {"test_name":"pinned_decision_warms_decide_after_pii_swap","description":"Discard a warmup to establish the actual Decide identity after a PII companion operation."},
+    {"test_name":"calibration_bindings_require_one_exact_checkpoint","description":"Reject malformed or contradictory checkpoint identities."}
+  ],
+  "dependencies":["S1Client","CurrentS1Engine","CalibrationBindings","ConfiguredDecisionEngine"],
+  "libraries":["tokio"],
+  "inputs":[{"name":"identity","type":"[u8; 32]","description":"Exact native engine hash including its model artifacts, runtime and configuration."}],
+  "output_type":"Result<Decision, DecisionError>",
+  "output_description":"Decision fenced by actual authenticated worker model identity and generation. Verification deferred by user instruction."
+}

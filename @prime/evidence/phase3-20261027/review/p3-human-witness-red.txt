@@ -1,0 +1,22 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 5.49s
+     Running tests\human_requests.rs (target\debug\deps\human_requests-35b1e5980cad373b.exe)
+
+running 1 test
+test human_request_rejects_unbound_witness_before_terminal_event ... FAILED
+
+failures:
+
+---- human_request_rejects_unbound_witness_before_terminal_event stdout ----
+
+thread 'human_request_rejects_unbound_witness_before_terminal_event' (13156) panicked at crates\polaris-kernel\tests\human_requests.rs:418:5:
+unbound witness must not resolve request
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    human_request_rejects_unbound_witness_before_terminal_event
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p polaris-kernel --test human_requests`

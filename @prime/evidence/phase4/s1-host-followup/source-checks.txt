@@ -1,0 +1,7 @@
+Command: rustfmt --edition 2024 --check crates/polaris-system-one/crates/client/src/lib.rs apps/polaris-worker/tests/configured_host.rs crates/polaris-kernel/src/s1_host.rs crates/polaris-kernel/src/worker_lifecycle.rs crates/polaris-kernel/src/runtime.rs
+Output: rustfmt scoped check: exit 0
+Command: parse phase4/s1-host-composition/descriptor.json with Python json.loads
+Output: descriptor JSON: valid
+Command: scoped text scan for unsafe blocks, unwrap, unchecked access, numeric casts, and allow attributes
+Output: Scoped source scan: no listed unsafe/unwrap/unchecked/cast/allow patterns found.
+Note: this is a scoped text scan, not Clippy; host target compile/test and Clippy remain pending.

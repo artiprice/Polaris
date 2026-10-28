@@ -1,0 +1,19 @@
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 1m 12s
+     Running tests\additional_rule_coverage.rs (target\debug\deps\additional_rule_coverage-09b90b2a96a6af88.exe)
+
+running 1 test
+test freed_pointer_use_in_same_compound_statement_is_reported_as_potential ... FAILED
+
+failures:
+
+---- freed_pointer_use_in_same_compound_statement_is_reported_as_potential stdout ----
+Error: "missing potential use-after-free indicator"
+
+
+failures:
+    freed_pointer_use_in_same_compound_statement_is_reported_as_potential
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p polaris-security-rules --test additional_rule_coverage`

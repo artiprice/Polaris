@@ -1,0 +1,12 @@
+{
+  "type_of": "pipeline",
+  "name": "frame_goal_journal_privacy",
+  "file_path": "crates/polaris-kernel/src/frame_prompt.rs",
+  "logic_name": "Frame Goal Journal Privacy",
+  "test_list": [{"test_name": "assembler_masks_goal_before_failed_attempt_journal", "description": "After deliberate provider failure the actual CAS transcript contains a vault marker, never the planted goal email, and still matches its recorded content ID."}],
+  "dependencies": ["KernelPromptAssembler", "KernelFrameJournal", "PiiVault"],
+  "libraries": ["tokio"],
+  "inputs": [{"name": "goal", "type": "&str", "description": "Original caller frame goal."}],
+  "output_type": "Result<FrameRunOutcome, FrameError>",
+  "output_description": "Existing bounded run with the same masked goal on provider and durable transcript paths."
+}

@@ -1,0 +1,92 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+error: use Option::map_or instead of an if let/else
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:342:27
+    |
+342 |               let package = if let Some(name) = renamed {
+    |  ___________________________^
+343 | |                 name
+344 | |             } else {
+345 | |                 alias
+346 | |             };
+    | |_____________^ help: try: `renamed.map_or(alias, |name| name)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#option_if_let_else
+    = note: `-D clippy::option-if-let-else` implied by `-D clippy::nursery`
+    = help: to override `-D clippy::nursery` add `#[allow(clippy::option_if_let_else)]`
+
+error: use Option::map_or instead of an if let/else
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:373:27
+    |
+373 |               let package = if let Some(name) = alias_target {
+    |  ___________________________^
+374 | |                 name
+375 | |             } else {
+376 | |                 alias
+377 | |             };
+    | |_____________^ help: try: `alias_target.map_or(alias, |name| name)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#option_if_let_else
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:425:5
+    |
+425 | /     if let Some(tool) = root.get("tool").and_then(toml::Value::as_table) {
+426 | |         if let Some(poetry) = tool.get("poetry").and_then(toml::Value::as_table) {
+427 | |             if let Some(dependencies) = poetry.get("dependencies").and_then(toml::Value::as_table) {
+428 | |                 collect_python_dependency_keys(dependencies, &mut names)?;
+...   |
+440 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+425 ~     if let Some(tool) = root.get("tool").and_then(toml::Value::as_table)
+426 ~         && let Some(poetry) = tool.get("poetry").and_then(toml::Value::as_table) {
+427 |             if let Some(dependencies) = poetry.get("dependencies").and_then(toml::Value::as_table) {
+...
+438 |             }
+439 ~         }
+    |
+
+error: this could be a `const fn`
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:615:1
+    |
+615 | / fn distance_threshold(name_length: usize) -> u8 {
+616 | |     if name_length < 5 {
+617 | |         1
+618 | |     } else {
+...   |
+621 | | }
+    | |_^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#missing_const_for_fn
+    = note: `-D clippy::missing-const-for-fn` implied by `-D clippy::nursery`
+    = help: to override `-D clippy::nursery` add `#[allow(clippy::missing_const_for_fn)]`
+help: make the function `const`
+    |
+615 | const fn distance_threshold(name_length: usize) -> u8 {
+    | +++++
+
+error: this function has too many lines (134/100)
+   --> crates\polaris-security\crates\rules\src\supply_chain.rs:623:1
+    |
+623 | / fn edit_distance_at_most(
+624 | |     left: &str,
+625 | |     right: &str,
+626 | |     max_distance: u8,
+627 | | ) -> Result<Option<u8>, RulesError> {
+    | |___________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#too_many_lines
+    = note: `-D clippy::too-many-lines` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::too_many_lines)]`
+
+error: could not compile `polaris-security-rules` (lib) due to 5 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-security-rules` (lib test) due to 5 previous errors

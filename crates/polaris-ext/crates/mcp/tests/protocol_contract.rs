@@ -11,13 +11,14 @@ use std::{
 use bytes::Bytes;
 use polaris_ext_mcp::{
     CancelToken, EffectAuthorization, EffectAuthorizer, LaunchFuture, LaunchedStdio, McpHub,
-    McpServerSpec, McpTransport, ProcessLauncher, ServerName, ToolContent, ToolSpec, TrustLevel,
+    McpHubToolClient, McpServerSpec, McpTransport, ProcessLauncher, ServerName, ToolContent,
+    ToolSpec, TrustLevel,
 };
 use polaris_sdk::{
     interactive::{
         InteractiveSession, StdioChunk, StdioControl, StdioFuture, StdioInput, StdioOutput,
     },
-    registry::{SandboxError, SandboxHandle, SecretSource, SecretSourceError},
+    registry::{McpToolClient, SandboxError, SandboxHandle, SecretSource, SecretSourceError},
     secrets::SecretLocation,
 };
 use rmcp::{
@@ -198,7 +199,7 @@ async fn connect_repo_unapproved_is_denied_before_launcher()
 async fn connect_http_fixture_lists_and_calls_tool() -> Result<(), Box<dyn std::error::Error>> {
     let (url, server_task) = start_http_fixture().await?;
     let launcher = Arc::new(UnexpectedLauncher);
-    let hub = McpHub::new(launcher, Arc::new(NoSecrets));
+    let hub = Arc::new(McpHub::new(launcher, Arc::new(NoSecrets)));
     let server = server_name("http-fixture")?;
     hub.connect(server_spec(
         server.clone(),
@@ -227,6 +228,21 @@ async fn connect_http_fixture_lists_and_calls_tool() -> Result<(), Box<dyn std::
         outcome.content,
         vec![ToolContent::Text("hello from http".to_owned())]
     );
+    let adapter = McpHubToolClient::new(Arc::clone(&hub), server.clone(), Arc::new(AllowEffects));
+    let definitions = adapter.list_tools(server.as_str()).await?;
+    assert_eq!(definitions.len(), 1);
+    let arguments = serde_json::to_vec(&serde_json::json!({"message": "hello through SDK port"}))?;
+    let result = adapter
+        .call_tool(server.as_str(), "echo", &arguments, &CancelToken::new())
+        .await?;
+    let value: serde_json::Value = serde_json::from_slice(&result.result_json)?;
+    let text = value
+        .get("content")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|content| content.first())
+        .and_then(|item| item.get("text"))
+        .and_then(serde_json::Value::as_str);
+    assert_eq!(text, Some("hello through SDK port"));
     hub.disconnect(&server).await?;
     server_task.abort();
     let _server_result = server_task.await;

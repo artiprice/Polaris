@@ -1,0 +1,35 @@
+{
+  "type_of": "pipeline",
+  "name": "FrameToolBindingAncestry",
+  "file_path": "crates/polaris-runtime/crates/frames/src/state.rs",
+  "logic_name": "Sealed parent lineage",
+  "test_list": [
+    {
+      "test_name": "child_loop_reads_only_its_exact_path_and_parent_scope_remains_available",
+      "description": "Child-first runner construction registers actual sealed ancestry without widening scope."
+    },
+    {
+      "test_name": "cancelling_ancestor_after_child_replays_without_reviving_any_frame",
+      "description": "Overlapping subtree cancellation stays cancelled during replay."
+    }
+  ],
+  "dependencies": [
+    "AgentContextFrame",
+    "FrameCancellationService"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "binding",
+      "type": "FrameToolBinding",
+      "description": "Sealed identity captured from the actual runtime frame."
+    },
+    {
+      "name": "call",
+      "type": "ToolCall",
+      "description": "Untrusted model call, fully admitted before any call in the batch executes."
+    }
+  ],
+  "output_type": "FrameToolBinding",
+  "output_description": "Opaque token-digest identities and a bounded parent binding chain, with no bearer token bytes."
+}

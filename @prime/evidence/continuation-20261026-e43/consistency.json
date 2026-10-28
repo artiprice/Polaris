@@ -1,0 +1,13 @@
+{
+  "observed_utc": "2026-10-26T16:21:08.942389+00:00",
+  "root_manifest_matches_metadata": true,
+  "workspace_packages": 93,
+  "external_aliases": 167,
+  "source_files_rehashed": 1195,
+  "retained_review_files": 46,
+  "source_fingerprint_sha256": "aee2ec16846303b5420c95586e2ce1506c8481b5e5112af1c9ceca00afedb874",
+  "scope": "Mechanical source/config/spec hash snapshot plus named docs and Cargo.lock. This does not imply all files were tested or reviewed line by line.",
+  "sdk_schema_patch": "Explicitly approved by user before application; no production schema change.",
+  "schema_control": "Original false date acceptance preserved; supplemental RFC3339 and official structural negatives reject.",
+  "phase_acceptance": "Open; P1 historical acceptance retained, broader P2 paused, UI deferred."
+}

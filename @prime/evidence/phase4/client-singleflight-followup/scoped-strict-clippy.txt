@@ -1,0 +1,4 @@
+    Checking regex-automata v0.4.18
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Finished `dev` profile [unoptimized] target(s) in 3.92s

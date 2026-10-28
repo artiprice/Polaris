@@ -1,0 +1,32 @@
+$ cargo test -p polaris-devenv-cicd
+    Blocking waiting for file lock on build directory
+   Compiling polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+    Finished `test` profile [unoptimized] target(s) in 2.92s
+     Running unittests src\lib.rs (target\debug\deps\polaris_devenv_cicd-e873e76108293b08.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\cicd_sandbox_lifecycle.rs (target\debug\deps\cicd_sandbox_lifecycle-752852bbb2b8d7d6.exe)
+
+running 8 tests
+test oversized_matrix_is_rejected_before_sandbox_creation ... ok
+test exec_requests_have_finite_output_caps_and_overflow_is_rejected ... ok
+test cleanup_failure_is_not_reported_as_success ... ok
+test caller_abort_during_create_destroys_late_handle_without_exec ... ok
+test caller_abort_during_exec_keeps_cleanup_owned ... ok
+test oversized_pipeline_and_argv_are_rejected ... ok
+test cleanup_timeout_is_reported_without_claiming_destruction ... ok
+test create_timeout_preserves_late_create_result_for_cleanup ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests polaris_devenv_cicd
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+[exit=0]

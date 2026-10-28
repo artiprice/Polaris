@@ -82,6 +82,121 @@ fn root_token_wrong_key_rejected() -> TestResult {
     ));
     Ok(())
 }
+
+#[test]
+fn workspace_scope_attenuates_without_widening() -> TestResult {
+    let authority = Authority::new_session()?;
+    let root_scope = Scope {
+        resource: ResourceScope::Workspace,
+        max_churn_lines: 150,
+        ttl: Duration::from_secs(60),
+        allow_unsafe: false,
+        diff_blake3: Some(Cid::from_bytes([1; 32])),
+        rights: Rights::new(&[Right::Read, Right::ProposeDiff]),
+    };
+    let clock = fake_clock(1000)?;
+    let token = authority.issue_root(FrameId::from_u128(7), &root_scope, &clock)?;
+    let workspace_resource = ResourcePath::new("arbitrary/lexical/resource")?;
+    let workspace_facts = Facts {
+        resource: &workspace_resource,
+        symbol: None,
+        churn_lines: 10,
+        touches_unsafe: false,
+        diff_blake3: Some(Cid::from_bytes([1; 32])),
+        right: Right::ProposeDiff,
+    };
+    assert_eq!(
+        authorize(&token, &workspace_facts, &authority.public_key(), &clock)?,
+        Authorization::Allowed
+    );
+    let excessive_churn = Facts {
+        churn_lines: 151,
+        ..workspace_facts
+    };
+    assert!(matches!(
+        authorize(&token, &excessive_churn, &authority.public_key(), &clock)?,
+        Authorization::Denied { .. }
+    ));
+    let unsafe_change = Facts {
+        touches_unsafe: true,
+        ..workspace_facts
+    };
+    assert!(matches!(
+        authorize(&token, &unsafe_change, &authority.public_key(), &clock)?,
+        Authorization::Denied { .. }
+    ));
+    let missing_diff = Facts {
+        diff_blake3: None,
+        ..workspace_facts
+    };
+    assert!(matches!(
+        authorize(&token, &missing_diff, &authority.public_key(), &clock)?,
+        Authorization::Denied { .. }
+    ));
+    let wrong_right = Facts {
+        right: Right::ExecuteTool,
+        ..workspace_facts
+    };
+    assert!(matches!(
+        authorize(&token, &wrong_right, &authority.public_key(), &clock)?,
+        Authorization::Denied { .. }
+    ));
+    let expired_clock = fake_clock(1060)?;
+    assert!(matches!(
+        authorize(
+            &token,
+            &workspace_facts,
+            &authority.public_key(),
+            &expired_clock
+        )?,
+        Authorization::Denied { .. }
+    ));
+    let child_scope = Scope {
+        resource: ResourceScope::Prefix(ResourcePath::new("src")?),
+        max_churn_lines: 100,
+        ttl: Duration::from_secs(30),
+        allow_unsafe: false,
+        diff_blake3: Some(Cid::from_bytes([1; 32])),
+        rights: Rights::new(&[Right::Read]),
+    };
+    let child = attenuate(&token, &child_scope, &clock)?;
+    let in_scope = ResourcePath::new("src/file.rs")?;
+    let outside_scope = ResourcePath::new("assets/file.rs")?;
+    let child_facts = Facts {
+        resource: &in_scope,
+        symbol: None,
+        churn_lines: 10,
+        touches_unsafe: false,
+        diff_blake3: Some(Cid::from_bytes([1; 32])),
+        right: Right::Read,
+    };
+    assert_eq!(
+        authorize(&child, &child_facts, &authority.public_key(), &clock)?,
+        Authorization::Allowed
+    );
+    let outside_facts = Facts {
+        resource: &outside_scope,
+        ..child_facts
+    };
+    assert!(matches!(
+        authorize(&child, &outside_facts, &authority.public_key(), &clock)?,
+        Authorization::Denied { .. }
+    ));
+
+    let mut widened = child_scope;
+    widened.resource = ResourceScope::Workspace;
+    let widened_token = attenuate(&child, &widened, &clock)?;
+    assert!(matches!(
+        authorize(
+            &widened_token,
+            &outside_facts,
+            &authority.public_key(),
+            &clock
+        )?,
+        Authorization::Denied { .. }
+    ));
+    Ok(())
+}
 #[test]
 fn authority_and_token_debug_are_redacted() -> TestResult {
     let (authority, token) = issue(&scope()?)?;

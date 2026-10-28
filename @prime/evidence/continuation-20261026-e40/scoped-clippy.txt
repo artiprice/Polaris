@@ -1,0 +1,8 @@
+    Checking proptest v1.12.0
+    Checking polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Checking polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Finished `dev` profile [unoptimized] target(s) in 4.98s

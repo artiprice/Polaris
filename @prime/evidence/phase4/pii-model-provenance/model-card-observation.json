@@ -1,0 +1,13 @@
+{
+  "observed_utc": "2026-10-27T20:50:53.716508+00:00",
+  "url": "https://huggingface.co/jugaadsrl/gliner2-privacy-filter-PII-multi-onnx/raw/3bbf02b190a2bbc674f649aa5c65e6579af360c7/README.md",
+  "revision": "3bbf02b190a2bbc674f649aa5c65e6579af360c7",
+  "sha256": "a076f3fe84eed57b2e4c0492e5d28e4004dbe853b3fdc8356ddbc8d708139388",
+  "bytes": 7293,
+  "license_metadata": [
+    "license: apache-2.0",
+    "`government_id`, `national_id_number`, `passport_number`, `drivers_license_number`, `license_number`, `tax_id`, `tax_number`",
+    "## \ud83e\udeaa License"
+  ],
+  "verdict": "Metadata retained only; upstream checkpoint/license inheritance and release approval remain unverified"
+}

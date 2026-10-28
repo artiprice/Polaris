@@ -1,0 +1,19 @@
+{
+  "type_of": "module",
+  "name": "consumer_failure_policy",
+  "file_path": "crates/polaris-system-one/src/policy.rs",
+  "logic_name": "System One Consumer Failure Policy",
+  "test_list": [
+    {"test_name":"consumer_matrix_preserves_closed_safety_boundaries","description":"Every consumer has an explicit failure mode; safety, PII, postflight and strict arbitration never fail open."},
+    {"test_name":"deadline_and_invalid_answers_return_typed_failure","description":"Timeouts and malformed decisions produce degradation without invented answers."},
+    {"test_name":"circuit_opens_and_requires_host_readiness","description":"Repeated transport failures stop admission until a trusted host reports worker readiness."},
+    {"test_name":"retired_worker_response_cannot_cross_recovery_epoch","description":"An in-flight result from a retired worker is discarded after host recovery."},
+    {"test_name":"strict_uncalibrated_answer_still_needs_approval","description":"A valid high-confidence answer cannot bypass calibration."},
+    {"test_name":"saturation_and_cancel_release_admission","description":"Bounded admission rejects excess work and releases its permit when canceled."}
+  ],
+  "dependencies":["DecisionEngine","SchemaCatalog","CalibrationContext"],
+  "libraries":["tokio","thiserror"],
+  "inputs":[{"name":"request","type":"consumer, schema id/version, masked DecisionInput","description":"Host-selected policy identity and bounded masked input."}],
+  "output_type":"PolicyOutcome",
+  "output_description":"Validated answers and threshold verdicts, or explicit failure mode and sanitized reason."
+}

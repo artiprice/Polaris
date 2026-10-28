@@ -1,0 +1,1502 @@
+[
+  {
+    "name": "receipt-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "receipt_tests"
+    ],
+    "started_utc": "2026-10-27T09:08:41.569922+00:00",
+    "elapsed_seconds": 28.801,
+    "exit_code": 101,
+    "raw": "01-receipt-red.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "receipt-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "receipt_tests"
+    ],
+    "started_utc": "2026-10-27T09:10:01.155116+00:00",
+    "elapsed_seconds": 12.91,
+    "exit_code": 0,
+    "raw": "02-receipt-green.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "receipt-library-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T09:11:20.922331+00:00",
+    "elapsed_seconds": 13.729,
+    "exit_code": 0,
+    "raw": "03-receipt-library-safety.txt"
+  },
+  {
+    "name": "limiter-workload-refund",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-spike-ratelimit"
+    ],
+    "started_utc": "2026-10-27T09:14:11.733039+00:00",
+    "elapsed_seconds": 1.841,
+    "exit_code": 101,
+    "raw": "04-limiter-workload-refund.txt",
+    "test_result_totals": {
+      "passed": 5,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "limiter-workload-dispatched",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-spike-ratelimit"
+    ],
+    "started_utc": "2026-10-27T09:14:45.645324+00:00",
+    "elapsed_seconds": 1.67,
+    "exit_code": 0,
+    "raw": "05-limiter-workload-dispatched.txt",
+    "test_result_totals": {
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "configured-tool-compile",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "--no-run"
+    ],
+    "started_utc": "2026-10-27T09:18:03.234394+00:00",
+    "elapsed_seconds": 8.436,
+    "exit_code": 101,
+    "raw": "06-configured-tool-compile.txt"
+  },
+  {
+    "name": "configured-tool-live",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "configured_test_tool_waits_for_host_then_proves_actual_source",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:18:32.631358+00:00",
+    "elapsed_seconds": 22.028,
+    "exit_code": 101,
+    "raw": "07-configured-tool-live.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "configured-tool-owned-wsl",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "configured_test_tool_waits_for_host_then_proves_actual_source",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:19:59.929582+00:00",
+    "elapsed_seconds": 24.632,
+    "exit_code": 101,
+    "raw": "08-configured-tool-owned-wsl.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "configured-tool-sync-diagnostic",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "configured_test_tool_waits_for_host_then_proves_actual_source",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:22:05.950853+00:00",
+    "elapsed_seconds": 29.657,
+    "exit_code": 101,
+    "raw": "09-configured-tool-sync-diagnostic.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "local-model-kernel-live",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "local_model_drives_real_revision_tool_and_continuation",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:25:15.316968+00:00",
+    "elapsed_seconds": 55.961,
+    "exit_code": 0,
+    "raw": "10-local-model-kernel-live.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "local-model-retained-transcript",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "local_model_drives_real_revision_tool_and_continuation",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:28:59.183074+00:00",
+    "elapsed_seconds": 57.589,
+    "exit_code": 0,
+    "raw": "11-local-model-retained-transcript.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "human-answer-ref-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "truncated_human_answer_is_retrievable_only_by_its_runner"
+    ],
+    "started_utc": "2026-10-27T09:33:36.965939+00:00",
+    "elapsed_seconds": 19.65,
+    "exit_code": 101,
+    "raw": "12-human-answer-ref-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "human-answer-ref-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "truncated_human_answer_is_retrievable_only_by_its_runner"
+    ],
+    "started_utc": "2026-10-27T09:35:27.152879+00:00",
+    "elapsed_seconds": 18.498,
+    "exit_code": 0,
+    "raw": "13-human-answer-ref-green.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "human-authority-expiry-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "human_wait_rechecks_expired_execute_authority"
+    ],
+    "started_utc": "2026-10-27T09:36:55.330617+00:00",
+    "elapsed_seconds": 36.891,
+    "exit_code": 101,
+    "raw": "14-human-authority-expiry-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "human-authority-expiry-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "human_wait_rechecks_expired_execute_authority"
+    ],
+    "started_utc": "2026-10-27T09:37:52.551183+00:00",
+    "elapsed_seconds": 18.057,
+    "exit_code": 0,
+    "raw": "15-human-authority-expiry-green.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "kernel-current-regression",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--test",
+      "agent_tools",
+      "--test",
+      "human_requests",
+      "--test",
+      "frame_cancellation",
+      "--test",
+      "sandbox_execution",
+      "--test",
+      "frame_tools"
+    ],
+    "started_utc": "2026-10-27T09:40:20.575799+00:00",
+    "elapsed_seconds": 25.329,
+    "exit_code": 0,
+    "raw": "16-kernel-current-regression.txt",
+    "test_result_totals": {
+      "passed": 75,
+      "failed": 0,
+      "ignored": 2
+    }
+  },
+  {
+    "name": "configured-real-model-compile",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "--no-run"
+    ],
+    "started_utc": "2026-10-27T09:44:09.132331+00:00",
+    "elapsed_seconds": 17.943,
+    "exit_code": 0,
+    "raw": "17-configured-real-model-compile.txt"
+  },
+  {
+    "name": "configured-tool-current-image",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "configured_test_tool_waits_for_host_then_proves_actual_source",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:44:32.693042+00:00",
+    "elapsed_seconds": 14.152,
+    "exit_code": 0,
+    "raw": "18-configured-tool-current-image.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "local-model-edit-sandbox-live",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "local_model_edits_and_runs_real_sandbox_with_fixture_safety",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:45:55.576701+00:00",
+    "elapsed_seconds": 152.738,
+    "exit_code": 101,
+    "raw": "19-local-model-edit-sandbox-live.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "current-kernel-test-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--test",
+      "agent_tools",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T09:46:24.757188+00:00",
+    "elapsed_seconds": 15.562,
+    "exit_code": 101,
+    "raw": "19-current-kernel-test-safety.txt",
+    "capture_note": "Recovered from the completed tool result after two unsealed command-manifest writers raced; both raw outputs retained. Subsequent captures are serialized."
+  },
+  {
+    "name": "local-model-edit-proof-gated",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "local_model_edits_and_runs_real_sandbox_with_fixture_safety",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:50:05.860760+00:00",
+    "elapsed_seconds": 19.917,
+    "exit_code": 101,
+    "raw": "21-local-model-edit-proof-gated.txt"
+  },
+  {
+    "name": "local-model-edit-proof-diagnostic",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "agent_tools",
+      "local_model_edits_and_runs_real_sandbox_with_fixture_safety",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T09:56:41.627922+00:00",
+    "elapsed_seconds": 31.907,
+    "exit_code": 101,
+    "raw": "22-local-model-edit-proof-diagnostic.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "p4-domain-baseline",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-schemas",
+      "-p",
+      "polaris-system-one-router",
+      "-p",
+      "polaris-system-one-verifier",
+      "-p",
+      "polaris-system-one-watchdog",
+      "-p",
+      "polaris-security-pii",
+      "-p",
+      "polaris-security-rules"
+    ],
+    "started_utc": "2026-10-27T09:57:45.020713+00:00",
+    "elapsed_seconds": 10.634,
+    "exit_code": 0,
+    "raw": "23-p4-domain-baseline.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "p4-calibration-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-schemas",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T09:59:51.316417+00:00",
+    "elapsed_seconds": 5.057,
+    "exit_code": 101,
+    "raw": "24-p4-calibration-api-red.txt"
+  },
+  {
+    "name": "p4-calibration-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-schemas",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T10:00:47.367610+00:00",
+    "elapsed_seconds": 2.446,
+    "exit_code": 0,
+    "raw": "25-p4-calibration-green.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "p4-calibration-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-system-one-schemas",
+      "--lib",
+      "--test",
+      "calibration",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T10:01:48.447009+00:00",
+    "elapsed_seconds": 4.397,
+    "exit_code": 0,
+    "raw": "26-p4-calibration-safety.txt"
+  },
+  {
+    "name": "live-owned-model-loader",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle",
+      "pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T10:02:39.851533+00:00",
+    "elapsed_seconds": 11.579,
+    "exit_code": 101,
+    "raw": "27-live-owned-model-loader.txt"
+  },
+  {
+    "name": "p4-calibration-runner-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "xtask",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T10:04:04.371685+00:00",
+    "elapsed_seconds": 2.391,
+    "exit_code": 101,
+    "raw": "28-p4-calibration-runner-api-red.txt"
+  },
+  {
+    "name": "p4-calibration-runner-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "xtask",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T10:04:57.133496+00:00",
+    "elapsed_seconds": 1.205,
+    "exit_code": 101,
+    "raw": "29-p4-calibration-runner-green.txt"
+  },
+  {
+    "name": "p4-calibration-runner-fixed",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "xtask",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T10:05:10.963577+00:00",
+    "elapsed_seconds": 3.238,
+    "exit_code": 0,
+    "raw": "30-p4-calibration-runner-fixed.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "p4-calibration-cli",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "xtask",
+      "--test",
+      "calibration"
+    ],
+    "started_utc": "2026-10-27T10:05:46.192360+00:00",
+    "elapsed_seconds": 2.681,
+    "exit_code": 0,
+    "raw": "31-p4-calibration-cli.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "live-owned-model-loader-fixed",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle",
+      "pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T10:06:17.324548+00:00",
+    "elapsed_seconds": 2.689,
+    "exit_code": 101,
+    "raw": "32-live-owned-model-loader-fixed.txt"
+  },
+  {
+    "name": "live-owned-model-loader-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle",
+      "pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-27T10:06:44.002817+00:00",
+    "elapsed_seconds": 20.915,
+    "exit_code": 0,
+    "raw": "33-live-owned-model-loader-current.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "pii-snapshot-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:10:03.588866+00:00",
+    "elapsed_seconds": 2.486,
+    "exit_code": 101,
+    "raw": "34-pii-snapshot-api-red.txt"
+  },
+  {
+    "name": "pii-snapshot-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:11:08.449614+00:00",
+    "elapsed_seconds": 10.747,
+    "exit_code": 0,
+    "raw": "35-pii-snapshot-green.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "phase34-scoped-code-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "polaris-kernel",
+      "-p",
+      "polaris-system-one-schemas",
+      "-p",
+      "xtask",
+      "--lib",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-27T10:12:26.688487+00:00",
+    "elapsed_seconds": 14.733,
+    "exit_code": 0,
+    "raw": "36-phase34-scoped-code-safety.txt"
+  },
+  {
+    "name": "seal-key-recovery-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-security-secrets",
+      "--test",
+      "key_recovery"
+    ],
+    "started_utc": "2026-10-27T10:14:48.693227+00:00",
+    "elapsed_seconds": 4.804,
+    "exit_code": 101,
+    "raw": "37-seal-key-recovery-api-red.txt"
+  },
+  {
+    "name": "seal-key-recovery-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-security-secrets",
+      "--test",
+      "key_recovery"
+    ],
+    "started_utc": "2026-10-27T10:15:26.761533+00:00",
+    "elapsed_seconds": 1.897,
+    "exit_code": 0,
+    "raw": "38-seal-key-recovery-green.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "pii-snapshot-cas-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:16:16.336820+00:00",
+    "elapsed_seconds": 8.458,
+    "exit_code": 101,
+    "raw": "39-pii-snapshot-cas-api-red.txt"
+  },
+  {
+    "name": "pii-snapshot-cas-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:17:06.389980+00:00",
+    "elapsed_seconds": 2.365,
+    "exit_code": 101,
+    "raw": "40-pii-snapshot-cas-green.txt"
+  },
+  {
+    "name": "pii-snapshot-cas-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:18:06.023024+00:00",
+    "elapsed_seconds": 13.225,
+    "exit_code": 0,
+    "raw": "41-pii-snapshot-cas-current.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "pii-snapshot-reopened-key",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "privacy_snapshot"
+    ],
+    "started_utc": "2026-10-27T10:20:14.449400+00:00",
+    "elapsed_seconds": 16.065,
+    "exit_code": 0,
+    "raw": "42-pii-snapshot-reopened-key.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "phase34-current-compile",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-27T10:26:53.749580+00:00",
+    "elapsed_seconds": 47.561,
+    "exit_code": 0,
+    "raw": "43-phase34-current-compile.txt"
+  },
+  {
+    "name": "prompt-privacy-restore-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "assembler_restore"
+    ],
+    "started_utc": "2026-10-27T10:31:57.802626+00:00",
+    "elapsed_seconds": 8.954,
+    "exit_code": 101,
+    "raw": "44-prompt-privacy-restore-api-red.txt"
+  },
+  {
+    "name": "prompt-privacy-restored",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-27T10:32:59.528497+00:00",
+    "elapsed_seconds": 2.74,
+    "exit_code": 101,
+    "raw": "45-prompt-privacy-restored.txt"
+  },
+  {
+    "name": "prompt-privacy-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-27T10:34:12.000021+00:00",
+    "elapsed_seconds": 14.841,
+    "exit_code": 101,
+    "raw": "46-prompt-privacy-current.txt",
+    "test_result_totals": {
+      "passed": 9,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "prompt-privacy-restored-matching-capacity",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-27T10:39:23.807341+00:00",
+    "elapsed_seconds": 7.961,
+    "exit_code": 0,
+    "raw": "47-prompt-privacy-restored-matching-capacity.txt",
+    "test_result_totals": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "model-probe-timeout-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle",
+      "stalled_profile_probe_retries_within_probe_timeout"
+    ],
+    "started_utc": "2026-10-27T10:42:12.158791+00:00",
+    "elapsed_seconds": 10.026,
+    "exit_code": 101,
+    "raw": "48-model-probe-timeout-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "model-probe-timeout-green",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle",
+      "stalled_profile_probe_retries_within_probe_timeout"
+    ],
+    "started_utc": "2026-10-27T10:42:50.211331+00:00",
+    "elapsed_seconds": 9.198,
+    "exit_code": 101,
+    "raw": "49-model-probe-timeout-green.txt"
+  },
+  {
+    "name": "consumer-policy-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one",
+      "--test",
+      "consumer_policy"
+    ],
+    "started_utc": "2026-10-27T10:47:20.304489+00:00",
+    "elapsed_seconds": 11.582,
+    "exit_code": 101,
+    "raw": "50-consumer-policy-api-red.txt"
+  },
+  {
+    "name": "consumer-policy-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one",
+      "--test",
+      "consumer_policy"
+    ],
+    "started_utc": "2026-10-27T10:49:02.646492+00:00",
+    "elapsed_seconds": 76.585,
+    "exit_code": 0,
+    "raw": "51-consumer-policy-current.txt",
+    "test_result_totals": {
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "semantic-prompt-api-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "assembler_masks_semantic_names_before_tokenizer"
+    ],
+    "started_utc": "2026-10-27T10:53:39.850880+00:00",
+    "elapsed_seconds": 41.516,
+    "exit_code": 101,
+    "raw": "52-semantic-prompt-api-red.txt"
+  },
+  {
+    "name": "semantic-prompt-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-27T10:54:52.274713+00:00",
+    "elapsed_seconds": 48.005,
+    "exit_code": 0,
+    "raw": "53-semantic-prompt-current.txt",
+    "test_result_totals": {
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "model-probe-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle"
+    ],
+    "started_utc": "2026-10-27T10:56:22.532940+00:00",
+    "elapsed_seconds": 24.079,
+    "exit_code": 101,
+    "raw": "54-model-probe-current.txt",
+    "test_result_totals": {
+      "passed": 6,
+      "failed": 1,
+      "ignored": 1
+    }
+  },
+  {
+    "name": "model-probe-independent-deadlines",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "model_lifecycle"
+    ],
+    "started_utc": "2026-10-27T10:57:41.975239+00:00",
+    "elapsed_seconds": 19.792,
+    "exit_code": 0,
+    "raw": "55-model-probe-independent-deadlines.txt",
+    "test_result_totals": {
+      "passed": 7,
+      "failed": 0,
+      "ignored": 1
+    }
+  },
+  {
+    "name": "task-routing-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-router",
+      "--test",
+      "task_route"
+    ],
+    "started_utc": "2026-10-27T11:01:13.683275+00:00",
+    "elapsed_seconds": 5.778,
+    "exit_code": 101,
+    "raw": "56-task-routing-red.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 3,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "task-routing-combined",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-router",
+      "--test",
+      "task_route"
+    ],
+    "started_utc": "2026-10-27T11:02:20.163567+00:00",
+    "elapsed_seconds": 3.397,
+    "exit_code": 101,
+    "raw": "57-task-routing-combined.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "task-routing-valid-distribution",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-system-one-router",
+      "--test",
+      "task_route"
+    ],
+    "started_utc": "2026-10-27T11:03:15.594057+00:00",
+    "elapsed_seconds": 1.526,
+    "exit_code": 0,
+    "raw": "58-task-routing-valid-distribution.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "phase34-native-complete-selection-interrupted",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/verify_phase34_current.py"
+    ],
+    "started_utc": null,
+    "exit_code": null,
+    "raw": "59-phase34-native-complete-selection.txt",
+    "observation": "Capture process handle is missing; no cargo/rustc processes were present. Raw ends at compilation, with no terminal test result; no pass/fail conclusion."
+  },
+  {
+    "name": "phase34-native-complete-selection",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "polaris-worker",
+      "-p",
+      "polaris-ratelimit",
+      "-p",
+      "polaris-security-capability",
+      "-p",
+      "polaris-security-secrets",
+      "-p",
+      "polaris-nebius-cloud-token-factory",
+      "-p",
+      "polaris-nebius-cloud-sandboxes",
+      "-p",
+      "polaris-nebius-cloud",
+      "-p",
+      "polaris-system-one-engine",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-security-pii",
+      "-p",
+      "polaris-security-rules",
+      "-p",
+      "polaris-system-one-schemas",
+      "-p",
+      "polaris-system-one-router",
+      "-p",
+      "polaris-system-one-verifier",
+      "-p",
+      "polaris-system-one-watchdog",
+      "-p",
+      "polaris-system-one",
+      "-p",
+      "polaris-models",
+      "-p",
+      "polaris-tools-math",
+      "-p",
+      "polaris-runtime-frames",
+      "-p",
+      "polaris-runtime-context",
+      "-p",
+      "polaris-kernel-operators",
+      "-p",
+      "polaris-kernel-verifier",
+      "-p",
+      "polaris-spike-ratelimit",
+      "-p",
+      "polaris-spike-s1",
+      "-p",
+      "polaris-kernel",
+      "-p",
+      "polaris-sdk",
+      "-p",
+      "polaris-proto"
+    ],
+    "started_utc": "2026-10-27T14:01:50.147922+00:00",
+    "elapsed_seconds": 96.995,
+    "exit_code": 101,
+    "raw": "60-phase34-native-complete-selection.txt",
+    "test_result_totals": {
+      "passed": 620,
+      "failed": 2,
+      "ignored": 16
+    }
+  },
+  {
+    "name": "root-policy-routing-regression",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-system-one",
+      "-p",
+      "polaris-system-one-router",
+      "-p",
+      "polaris-security-secrets",
+      "-p",
+      "polaris-rpc"
+    ],
+    "started_utc": "2026-10-27T14:05:41.502125+00:00",
+    "elapsed_seconds": 29.009,
+    "exit_code": 0,
+    "raw": "61-root-policy-routing-regression.txt",
+    "test_result_totals": {
+      "passed": 41,
+      "failed": 0,
+      "ignored": 2
+    }
+  },
+  {
+    "name": "weighted-burst-red",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-ratelimit",
+      "--test",
+      "weighted_burst"
+    ],
+    "started_utc": "2026-10-27T14:07:42.828073+00:00",
+    "elapsed_seconds": 4.091,
+    "exit_code": 101,
+    "raw": "62-weighted-burst-red.txt",
+    "test_result_totals": {
+      "passed": 0,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "weighted-burst-current",
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "polaris-ratelimit",
+      "--test",
+      "weighted_burst"
+    ],
+    "started_utc": "2026-10-27T14:08:00.815529+00:00",
+    "elapsed_seconds": 1.313,
+    "exit_code": 0,
+    "raw": "63-weighted-burst-current.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "limiter-weighted-and-refund-current",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "polaris-ratelimit",
+      "-p",
+      "polaris-spike-ratelimit"
+    ],
+    "started_utc": "2026-10-27T14:08:24.176405+00:00",
+    "elapsed_seconds": 1.873,
+    "exit_code": 101,
+    "raw": "64-limiter-weighted-and-refund-current.txt",
+    "test_result_totals": {
+      "passed": 16,
+      "failed": 3,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "installed-decide-real-inference",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-system-one-engine",
+      "--test",
+      "real_model",
+      "--",
+      "--ignored",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T14:09:33.638220+00:00",
+    "elapsed_seconds": 20.116,
+    "exit_code": 0,
+    "raw": "65-installed-decide-real-inference.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "installed-s1-process-real-inference",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--",
+      "--ignored",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T14:09:53.757614+00:00",
+    "elapsed_seconds": 56.271,
+    "exit_code": 0,
+    "raw": "66-installed-s1-process-real-inference.txt",
+    "test_result_totals": {
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "installed-s1-supervised-real-inference",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "supervised_worker",
+      "--",
+      "--ignored",
+      "--test-threads=1"
+    ],
+    "started_utc": "2026-10-27T14:10:50.034117+00:00",
+    "elapsed_seconds": 16.426,
+    "exit_code": 0,
+    "raw": "67-installed-s1-supervised-real-inference.txt",
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "pinned-pii-download-interrupted",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/download_pii_pinned.py"
+    ],
+    "started_utc": "2026-10-27T14:18:41.353190+00:00",
+    "elapsed_seconds": null,
+    "exit_code": null,
+    "raw": "68-pinned-pii-download.txt",
+    "observation": "2026-10-27: exact session 82825 missing and process inventory contains no downloader; three files verified, encoder partial; terminal exit unknown. Start copied from artifact provenance, not exact capture timing."
+  },
+  {
+    "name": "pinned-pii-reviewed-resume",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/download_pii_pinned.py",
+      "--resume-reviewed-partials"
+    ],
+    "started_utc": "2026-10-27T20:39:35.483375+00:00",
+    "elapsed_seconds": 148.316,
+    "exit_code": 1,
+    "raw": "69-pinned-pii-reviewed-resume.txt"
+  },
+  {
+    "name": "pinned-pii-fresh-after-rejected-partial",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/download_pii_pinned.py"
+    ],
+    "started_utc": "2026-10-27T20:43:28.191482+00:00",
+    "elapsed_seconds": 56.09,
+    "exit_code": 0,
+    "raw": "70-pinned-pii-fresh-after-rejected-partial.txt"
+  },
+  {
+    "name": "export-readiness-current",
+    "argv": [
+      "@prime/spikes/s0-4-gliner/.venv/Scripts/python.exe",
+      "-X",
+      "utf8",
+      "-P",
+      "@prime/tools/system-one/gliner_export.py",
+      "validate"
+    ],
+    "started_utc": "2026-10-27T21:01:31.222405+00:00",
+    "elapsed_seconds": 51.895,
+    "exit_code": 3,
+    "raw": "71-export-readiness-current.txt"
+  }
+]

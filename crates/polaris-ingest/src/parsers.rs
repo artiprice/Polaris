@@ -144,18 +144,16 @@ pub(super) fn output_size(blocks: &[LocatedBlock]) -> Result<u64, IngestError> {
 }
 
 fn zip_kind(bytes: &[u8]) -> Result<DocKind, IngestError> {
-    let mut archive = ZipArchive::new(Cursor::new(bytes))
+    let archive = ZipArchive::new(Cursor::new(bytes))
         .map_err(|error| malformed("invalid ZIP container", error))?;
-    let has = |archive: &mut ZipArchive<Cursor<&[u8]>>, name: &str| {
-        archive.file_names().any(|member| member == name)
-    };
-    if has(&mut archive, "word/document.xml") {
+    let names = archive_names(&archive)?;
+    if names.iter().any(|name| name == "word/document.xml") {
         return Ok(DocKind::Docx);
     }
-    if has(&mut archive, "xl/workbook.xml") {
+    if names.iter().any(|name| name == "xl/workbook.xml") {
         return Ok(DocKind::Xlsx);
     }
-    if has(&mut archive, "ppt/presentation.xml") {
+    if names.iter().any(|name| name == "ppt/presentation.xml") {
         return Ok(DocKind::Pptx);
     }
     Err(IngestError::Unsupported(
@@ -163,13 +161,22 @@ fn zip_kind(bytes: &[u8]) -> Result<DocKind, IngestError> {
     ))
 }
 
+fn archive_names(archive: &ZipArchive<Cursor<&[u8]>>) -> Result<Vec<String>, IngestError> {
+    archive
+        .file_names()
+        .map(|name| {
+            name.map(|name| name.into_owned())
+                .map_err(|error| malformed("invalid OOXML member name", error))
+        })
+        .collect()
+}
+
 fn validate_ooxml_xml_parts(bytes: &[u8], limits: IngestLimits) -> Result<(), IngestError> {
     let mut archive = ZipArchive::new(Cursor::new(bytes))
         .map_err(|error| malformed("invalid OOXML archive", error))?;
-    let mut parts = archive
-        .file_names()
+    let mut parts = archive_names(&archive)?
+        .into_iter()
         .filter(|name| name.ends_with(".xml") || name.ends_with(".rels"))
-        .map(str::to_owned)
         .collect::<Vec<_>>();
     parts.sort();
     for part in parts {
@@ -612,7 +619,9 @@ fn parse_csv(bytes: &[u8], delimiter: u8) -> Result<Vec<LocatedBlock>, IngestErr
 }
 
 fn parse_docx(bytes: &[u8]) -> Result<Vec<LocatedBlock>, IngestError> {
-    let docx = docx_rs::read_docx(bytes).map_err(|error| malformed("invalid DOCX", error))?;
+    let options = docx_rs::ReadDocxOptions::default().with_image_previews(false);
+    let docx = docx_rs::read_docx_with_options(bytes, options)
+        .map_err(|error| malformed("invalid DOCX", error))?;
     let mut blocks = Vec::new();
     for child in &docx.document.children {
         match child {
@@ -733,10 +742,9 @@ fn parse_xlsx(bytes: &[u8], limits: IngestLimits) -> Result<Vec<LocatedBlock>, I
 fn validate_xlsx_layout(bytes: &[u8], limits: IngestLimits) -> Result<(), IngestError> {
     let mut archive = ZipArchive::new(Cursor::new(bytes))
         .map_err(|error| malformed("invalid XLSX archive", error))?;
-    let mut sheet_parts = archive
-        .file_names()
+    let mut sheet_parts = archive_names(&archive)?
+        .into_iter()
         .filter(|name| name.starts_with("xl/worksheets/") && name.ends_with(".xml"))
-        .map(str::to_owned)
         .collect::<Vec<_>>();
     sheet_parts.sort();
     for part in sheet_parts {
@@ -920,10 +928,9 @@ fn parse_cell_ref(value: &str) -> Option<(u64, u64)> {
 fn parse_pptx(bytes: &[u8]) -> Result<Vec<LocatedBlock>, IngestError> {
     let mut archive =
         ZipArchive::new(Cursor::new(bytes)).map_err(|error| malformed("invalid PPTX", error))?;
-    let mut slide_names = archive
-        .file_names()
+    let mut slide_names = archive_names(&archive)?
+        .into_iter()
         .filter(|name| name.starts_with("ppt/slides/slide") && name.ends_with(".xml"))
-        .map(str::to_owned)
         .collect::<Vec<_>>();
     slide_names.sort_by(|left, right| {
         let number = |name: &str| {

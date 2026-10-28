@@ -1,0 +1,65 @@
+{
+  "type_of": "pipeline",
+  "name": "run_ratelimit_workloads",
+  "file_path": "tests/spike/ratelimit/tests/burst.rs",
+  "logic_name": "Rate Limit Workloads",
+  "test_list": [
+    {
+      "test_name": "fifty_agents_priority_order_and_rate_bound",
+      "description": "Drive fifty same-tick requests through DualLimiter, schedule higher priorities first, and verify the measured admissions and 60-second RPM bound including configured burst."
+    },
+    {
+      "test_name": "background_shed_first_under_pressure",
+      "description": "At a fixed pressure point, verify Background is shed while InteractiveUser remains admissible when both are otherwise within quota."
+    },
+    {
+      "test_name": "retry_after_storm_respects_floor_and_shared_penalty",
+      "description": "Apply changing parsed Retry-After floors during a fake-clock storm and record the resulting delay spread; this does not prove fixed-floor anti-herd behavior."
+    },
+    {
+      "test_name": "tpm_reservation_reconciliation_and_overshoot",
+      "description": "Exhaust weighted TPM with reservations, reconcile actual usage below and above reservations, and verify unused reservation remains conservatively charged while overrun is charged and later admission resumes after clock advance."
+    },
+    {
+      "test_name": "retry_after_flood_is_status_gated_and_checked",
+      "description": "Exercise duplicate and contradictory parsed Retry-After durations through the real response API; verify 429 penalties are shared, non-429 responses do not penalize, and unrepresentable durations return a typed error."
+    },
+    {
+      "test_name": "canceled_waiters_are_drained_without_task_leaks",
+      "description": "Spawn blocked acquire waiters, cancel half, and verify all task handles finish and the remaining waiters complete after capacity advances."
+    },
+    {
+      "test_name": "report_latency_samples_are_observed_and_real_clock_can_be_sampled",
+      "description": "Real-clock admission latency samples produce observed percentiles."
+    }
+  ],
+  "dependencies": [
+    "polaris_ratelimit::DualLimiter",
+    "polaris_ratelimit::Permit",
+    "polaris_ratelimit::Clock",
+    "polaris_ratelimit::jittered_backoff",
+    "tokio"
+  ],
+  "libraries": [
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "quota",
+      "type": "polaris_ratelimit::Quota",
+      "description": "Explicit local RPM, TPM, and burst settings for a deterministic workload."
+    },
+    {
+      "name": "clock",
+      "type": "impl Clock",
+      "description": "Monotonic fake clock for deterministic workload scenarios."
+    },
+    {
+      "name": "events",
+      "type": "&[WorkloadEvent]",
+      "description": "Scripted admission attempts, response statuses, retry hints, usage reports, and cancellation actions."
+    }
+  ],
+  "output_type": "Result<WorkloadReport, SpikeError>",
+  "output_description": "Measured deterministic workload results including admission order, sheds, retry spread, reconciliation outcomes, task drain, and observed latency samples."
+}

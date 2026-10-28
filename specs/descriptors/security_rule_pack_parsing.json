@@ -1,0 +1,18 @@
+{
+  "type_of": "function",
+  "name": "parse_pack",
+  "file_path": "crates/polaris-security/crates/rules/src/pack.rs",
+  "logic_name": "rule_pack_parsing",
+  "test_list": [
+    {"test_name": "valid_pack_parses", "description": "A bounded versioned YAML pack loads with typed metadata."},
+    {"test_name": "unknown_cwe_rejected", "description": "An unmapped CWE identifier is rejected."},
+    {"test_name": "duplicate_rule_id_rejected", "description": "Duplicate rule identifiers fail validation."},
+    {"test_name": "bad_pattern_reports_rule_id", "description": "An invalid DFA or AST pattern reports its rule ID."},
+    {"test_name": "malformed_ast_pattern_is_rejected_during_pack_loading", "description": "A malformed structural AST pattern fails pack validation before audit."}
+  ],
+  "dependencies": ["RulePack", "Cwe", "RuleEngine"],
+  "libraries": ["serde", "serde-saphyr", "ast-grep-core", "thiserror"],
+  "inputs": [{"name": "yaml", "type": "&str", "description": "Untrusted bounded rule pack YAML."}],
+  "output_type": "Result<RulePack, RulesError>",
+  "output_description": "Validated rule pack with explicit version, language and pattern metadata."
+}

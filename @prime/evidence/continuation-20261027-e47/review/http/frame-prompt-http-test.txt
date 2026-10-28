@@ -1,0 +1,9 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 5.72s
+     Running tests\frame_prompt_http.rs (target\debug\deps\frame_prompt_http-698c2112a08cdd6c.exe)
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+

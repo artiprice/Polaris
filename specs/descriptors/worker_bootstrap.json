@@ -1,0 +1,17 @@
+{
+  "type_of": "module",
+  "name": "worker_bootstrap",
+  "file_path": "apps/polaris-worker/src/main.rs",
+  "logic_name": "Parent-Controlled Worker Bootstrap",
+  "test_list": [
+    { "test_name": "bootstrap_rejects_short_and_non_utf8_secrets", "description": "The worker rejects short, invalid UTF-8, and non-hex parent credentials before binding a local endpoint." }
+  ],
+  "dependencies": ["polaris_proto::worker_auth::WorkerCredential", "secrecy::SecretString", "zeroize::Zeroizing"],
+  "libraries": ["std::io", "std::thread"],
+  "inputs": [
+    { "name": "parent_credential", "type": "64-byte lowercase hexadecimal stdin prefix", "description": "A parent-issued worker secret transferred through inherited stdin before any endpoint is bound." },
+    { "name": "stdin_lifecycle", "type": "inherited pipe EOF", "description": "After credential bytes, an extra byte or EOF requests graceful worker shutdown." }
+  ],
+  "output_type": "WorkerCredential",
+  "output_description": "A zeroizing bootstrap reader validates the secret before server startup without putting credentials in argv or environment variables."
+}

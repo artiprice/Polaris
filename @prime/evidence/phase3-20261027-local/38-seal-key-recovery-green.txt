@@ -1,0 +1,10 @@
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Finished `test` profile [unoptimized] target(s) in 1.63s
+     Running tests\key_recovery.rs (target\debug\deps\key_recovery-2c2428d81e76d5d5.exe)
+
+running 2 tests
+test explicit_source_key_recovers_ciphertext_in_a_new_vault ... ok
+test invalid_or_missing_recovery_key_fails_without_writes ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

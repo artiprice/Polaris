@@ -1,0 +1,33 @@
+{
+  "type_of": "pipeline",
+  "name": "HumanRequestVerifier",
+  "file_path": "crates/polaris-kernel/crates/verifier/src/human.rs",
+  "logic_name": "Dedicated human answer authority",
+  "test_list": [
+    {
+      "test_name": "host_answer_rejects_untrusted_control_token",
+      "description": "host answer rejects untrusted control token"
+    },
+    {
+      "test_name": "human_request_rejects_missing_durable_witness_before_terminal_event",
+      "description": "human request rejects missing durable witness before terminal event"
+    }
+  ],
+  "dependencies": [
+    "Authority",
+    "EvidenceStore",
+    "ApprovalWitness"
+  ],
+  "libraries": [
+    "serde_json"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "Command<Unverified>",
+      "description": "Bounded input to the named implementation."
+    }
+  ],
+  "output_type": "Result<Command<Verified>, HumanRequestVerifierError>",
+  "output_description": "Validated observations or authority with explicit failure; see retained acceptance evidence and limitations."
+}

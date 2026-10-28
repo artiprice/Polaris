@@ -1,0 +1,15 @@
+{
+  "type_of": "function",
+  "name": "rewrite_generated_status_casts",
+  "file_path": "crates/polaris-proto/build_support.rs",
+  "logic_name": "Generated RPC status conversion guard",
+  "test_list": [
+    {"test_name": "rewrites_exact_expected_status_casts", "description": "Replace only the three known tonic unimplemented-status casts with the identical From<Code> conversion."},
+    {"test_name": "unexpected_generator_shape_fails_closed", "description": "Reject absent, additional or unexpected numeric casts instead of silently accepting generator drift."}
+  ],
+  "dependencies": ["tonic_prost_build"],
+  "libraries": [],
+  "inputs": [{"name": "source", "type": "&str", "description": "Generated Rust for the three versioned service definitions."}],
+  "output_type": "Result<String, std::io::Error>",
+  "output_description": "Semantically identical generated code using checked trait conversion, or a deterministic build failure on code-generation drift."
+}

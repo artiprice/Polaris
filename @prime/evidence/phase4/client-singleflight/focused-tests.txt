@@ -1,0 +1,48 @@
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Finished `test` profile [unoptimized] target(s) in 5.22s
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_client-8c6631ce7e6eadef.exe)
+
+running 27 tests
+test cache::tests::health_identity_requires_a_complete_digest_and_nonzero_generation ... ok
+test cache::tests::cache_digest_collision_with_different_request_bytes_is_a_miss ... ok
+test cache::tests::worker_restart_changes_cache_identity_even_for_same_model_digest_and_generation ... ok
+test tests::client_input_bound_matches_worker_cap ... ok
+test cache::tests::cache_key_binds_model_generation_schema_and_masked_context ... ok
+test singleflight::tests::identity_and_request_must_both_match ... ok
+test singleflight::tests::waiter_count_is_bounded ... ok
+test singleflight::tests::owner_drop_wakes_waiter_to_recompute ... ok
+test singleflight::tests::flight_entries_are_bounded ... ok
+test tests::health_response_validation_distinguishes_admission_from_model_readiness ... ok
+test tests::health_response_validation_rejects_missing_and_incompatible_versions ... ok
+test tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial ... ok
+test tests::request_validation_counts_context_separator_and_utf8_bytes ... ok
+test tests::request_validation_rejects_empty_schema_without_transport ... ok
+test tests::response_validation_rejects_answers_for_another_question ... ok
+test tests::response_validation_rejects_unselected_or_unsorted_choice_scores ... ok
+test cache::tests::cache_capacity_and_identity_change_clear_old_entries ... ok
+test tests::readiness_does_not_report_ready_when_authenticated_rpc_cannot_connect ... ok
+test tests::schema_bound_counts_derived_ordinal_labels ... ok
+test tests::eviction_rejects_missing_authentication ... ok
+test tests::readiness_authenticates_handshake_and_health_and_reports_admission_only ... ok
+test singleflight::tests::waiter_deadline_does_not_remove_owner ... ok
+test tests::eviction_rejects_acknowledgement_above_two_native_models ... ok
+test tests::eviction_authenticates_handshake_and_rpc_and_returns_drop_acknowledgement ... ok
+test tests::readiness_rejects_invalid_health_protocol_versions ... ok
+test tests::eviction_obeys_configured_deadline ... ok
+test tests::eviction_maps_worker_status_errors ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\client_batching.rs (target\debug\deps\client_batching-19b551d6d8f05c08.exe)
+
+running 7 tests
+test cancelled_caller_does_not_stall_other_items_in_the_batch ... ok
+test identical_concurrent_requests_infer_once ... ok
+test pii_span_rpc_obeys_client_deadline ... ok
+test worker_without_loaded_identity_never_serves_cached_answers ... ok
+test result_from_prior_model_generation_is_not_cached_under_reloaded_identity ... ok
+test canceled_singleflight_owner_wakes_waiter_to_recompute ... ok
+test concurrent_decisions_share_one_worker_batch ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+

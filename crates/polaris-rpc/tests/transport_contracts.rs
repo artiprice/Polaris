@@ -282,7 +282,15 @@ async fn replay_includes_zero_cursor_and_isolates_other_session_sequences()
         record(SessionId::from_u128(99), 100),
         record(SESSION, 1),
         record(SESSION, 1),
-        record(SESSION, 2),
+        // Typed user input streams like any other schema-7 record.
+        EventRecord::new(
+            Seq::new(2),
+            Timestamp::UNIX_EPOCH,
+            SESSION,
+            Event::UserInputSubmitted {
+                text: polaris_sdk::ids::Cid::from_bytes([2; 32]),
+            },
+        ),
     ];
     let server = BoundServer::bind(Transport::Tcp {
         addr: "127.0.0.1:0".parse()?,

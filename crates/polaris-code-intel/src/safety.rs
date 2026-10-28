@@ -156,7 +156,10 @@ pub struct SafetyAnalysis {
 /// Rust, Python, and TypeScript use explicit AST patterns. C++ and CUDA report call and unsafe
 /// constructs but mark test inventory as unsupported. TypeScript's grammar also parses much
 /// JavaScript, but the result does not distinguish the two dialects. This crate has no Java
-/// grammar, so Java source must not be passed as a parsed value. Any tree exceeding
+/// grammar, so Java source must not be passed as a parsed value. Rust unsafe inventory is
+/// complete only for syntactically valid source without macro invocations/definitions, attributes
+/// or opaque token trees. Expansion and external code remain outside a file's syntax inventory;
+/// other observation families retain their independent conservative coverage. Any tree exceeding
 /// [`MAX_SAFETY_NODES`] is rejected before traversal.
 ///
 /// # Errors
@@ -247,6 +250,22 @@ pub fn analyze_safety(parsed: &Parsed) -> Result<SafetyAnalysis, CodeIntelError>
             AnalysisCoverage::Incomplete
         }
     };
+    let unsafe_coverage = if lang == Lang::Rust
+        && !parsed.has_syntax_error()
+        && !nodes.iter().any(|node| {
+            matches!(
+                node.kind(),
+                "macro_invocation"
+                    | "macro_definition"
+                    | "attribute_item"
+                    | "inner_attribute_item"
+                    | "token_tree"
+            )
+        }) {
+        AnalysisCoverage::Complete
+    } else {
+        general_coverage
+    };
     let counts = SafetyCounts {
         tests: tests.len(),
         assertions: assertions.len(),
@@ -259,7 +278,7 @@ pub fn analyze_safety(parsed: &Parsed) -> Result<SafetyAnalysis, CodeIntelError>
         lang,
         syntax_error: parsed.has_syntax_error(),
         test_coverage,
-        unsafe_coverage: general_coverage,
+        unsafe_coverage,
         call_coverage: general_coverage,
         assertion_coverage: general_coverage,
         tests,
@@ -448,7 +467,30 @@ fn is_skip_name(name: &str) -> bool {
 
 fn is_unsafe_node(node: Node<'_>, lang: Lang, source: &[u8]) -> bool {
     match lang {
-        Lang::Rust => matches!(node.kind(), "unsafe_block" | "unsafe_function_item"),
+        Lang::Rust => {
+            if matches!(node.kind(), "unsafe_block" | "foreign_mod_item") {
+                return true;
+            }
+            if !matches!(
+                node.kind(),
+                "function_item"
+                    | "function_signature_item"
+                    | "impl_item"
+                    | "trait_item"
+                    | "static_item"
+            ) {
+                return false;
+            }
+            let mut cursor = node.walk();
+            node.children(&mut cursor).any(|child| {
+                child.kind() == "unsafe"
+                    || (child.kind() == "mutable_specifier" && node.kind() == "static_item")
+                    || (matches!(child.kind(), "function_modifiers" | "extern_modifier")
+                        && text(child, source)
+                            .split_whitespace()
+                            .any(|part| matches!(part, "unsafe" | "extern")))
+            })
+        }
         Lang::Python => {
             node.kind() == "call"
                 && call_name(node, source)

@@ -18,6 +18,7 @@ mod http_client;
 mod hub;
 mod launcher;
 mod model;
+mod registry_adapter;
 mod schema;
 mod summary;
 
@@ -29,6 +30,7 @@ pub use model::{
     EffectAuthorization, EffectAuthorizer, McpServerSpec, McpTransport, NamespacedToolId,
     ServerName, ToolContent, ToolEffect, ToolOutcome, ToolSpec, TrustLevel,
 };
+pub use registry_adapter::McpHubToolClient;
 pub use schema::{NormalizedSchema, normalize_schema};
 pub use summary::prune_summary;
 pub use tokio_util::sync::CancellationToken as CancelToken;

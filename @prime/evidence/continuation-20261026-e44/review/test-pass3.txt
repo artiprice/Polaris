@@ -1,0 +1,52 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+error[E0597]: `pool_set` does not live long enough
+   --> crates\polaris-runtime\crates\dag\tests\runtime_dag_scheduler.rs:243:9
+    |
+239 |       let pool_set = pools()?;
+    |           -------- binding `pool_set` declared here
+240 |       let cancellation = CancellationToken::new();
+241 |       let run_task = tokio::spawn(run(
+    |  ____________________-
+242 | |         builder.build()?,
+243 | |         &pool_set,
+    | |         ^^^^^^^^^ borrowed value does not live long enough
+244 | |         cancellation.clone(),
+245 | |         default_options(),
+246 | |     ));
+    | |______- argument requires that `pool_set` is borrowed for `'static`
+...
+275 |   }
+    |   - `pool_set` dropped here while still borrowed
+    |
+note: requirement that the value outlives `'static` introduced here
+   --> C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.54.1\src\task\spawn.rs:176:28
+    |
+176 |         F: Future + Send + 'static,
+    |                            ^^^^^^^
+
+error[E0597]: `pool_set` does not live long enough
+   --> crates\polaris-runtime\crates\dag\tests\runtime_dag_scheduler.rs:292:9
+    |
+289 |       let pool_set = pools()?;
+    |           -------- binding `pool_set` declared here
+290 |       let run_task = tokio::spawn(run(
+    |  ____________________-
+291 | |         builder.build()?,
+292 | |         &pool_set,
+    | |         ^^^^^^^^^ borrowed value does not live long enough
+293 | |         CancellationToken::new(),
+294 | |         default_options(),
+295 | |     ));
+    | |______- argument requires that `pool_set` is borrowed for `'static`
+...
+324 |   }
+    |   - `pool_set` dropped here while still borrowed
+    |
+note: requirement that the value outlives `'static` introduced here
+   --> C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.54.1\src\task\spawn.rs:176:28
+    |
+176 |         F: Future + Send + 'static,
+    |                            ^^^^^^^
+
+For more information about this error, try `rustc --explain E0597`.
+error: could not compile `polaris-runtime-dag` (test "runtime_dag_scheduler") due to 2 previous errors

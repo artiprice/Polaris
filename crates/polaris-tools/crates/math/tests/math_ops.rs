@@ -28,6 +28,21 @@ fn linear_hits_knots_and_rejects_outside_domain() {
 }
 
 #[test]
+fn signed_zero_is_not_a_strictly_increasing_knot_interval() {
+    let knots = [
+        Knot {
+            x: f(-0.0),
+            y: f(1.0),
+        },
+        Knot {
+            x: f(0.0),
+            y: f(2.0),
+        },
+    ];
+    assert!(interpolate(&knots, Interp::Linear, f(0.0)).is_err());
+}
+
+#[test]
 fn catmull_rom_returns_knots_and_rejects_nonuniform_spacing() {
     let knots = [0.0, 1.0, 2.0, 3.0].map(|x| Knot {
         x: f(x),
@@ -39,6 +54,12 @@ fn catmull_rom_returns_knots_and_rejects_nonuniform_spacing() {
     );
     let uneven = [0.0, 1.0, 2.2, 3.0].map(|x| Knot { x: f(x), y: f(x) });
     assert!(interpolate(&uneven, Interp::CatmullRom, f(1.5)).is_err());
+}
+
+#[test]
+fn catmull_rom_uniformity_tolerance_scales_with_small_coordinates() {
+    let uneven = [0.0, 1e-15, 3e-15, 6e-15].map(|x| Knot { x: f(x), y: f(x) });
+    assert!(interpolate(&uneven, Interp::CatmullRom, f(2e-15)).is_err());
 }
 
 #[test]
@@ -122,6 +143,13 @@ fn gpu_rows_require_valid_source_and_limits() {
     assert!(GpuSpecTable::from_toml(&missing).is_err());
     let invalid_date = include_str!("../src/gpu_specs.toml").replace("2026-10-23", "2026-02-31");
     assert!(GpuSpecTable::from_toml(&invalid_date).is_err());
+}
+
+#[test]
+fn gpu_rows_reject_non_nvidia_source_domains() {
+    let table = include_str!("../src/gpu_specs.toml")
+        .replace("https://docs.nvidia.com", "https://example.org");
+    assert!(GpuSpecTable::from_toml(&table).is_err());
 }
 
 #[test]

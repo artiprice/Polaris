@@ -108,6 +108,7 @@ fn descriptor_set_lists_the_three_services() -> TestResult {
         vec![
             row("Handshake", false, false),
             row("Decide", false, false),
+            row("DetectPii", false, false),
             row("Embed", false, false),
             row("Ingest", false, false),
             row("EvictModels", false, false),
@@ -162,7 +163,16 @@ fn field_numbers_are_frozen() -> TestResult {
         ("ProtocolVersion", vec![("major", 1), ("minor", 2)]),
         (
             "HealthResponse",
-            vec![("protocol_version", 1), ("build_version", 2), ("ready", 3)],
+            vec![
+                ("protocol_version", 1),
+                ("build_version", 2),
+                ("ready", 3),
+                ("loaded_model_identity_blake3", 4),
+                ("loaded_model_generation", 5),
+                ("worker_incarnation", 6),
+                ("loaded_pii_model_identity_blake3", 7),
+                ("loaded_pii_model_generation", 8),
+            ],
         ),
         (
             "Command",
@@ -184,6 +194,7 @@ fn field_numbers_are_frozen() -> TestResult {
                 ("rollback_to", 7),
                 ("cancel_frame", 8),
                 ("apply_directive", 9),
+                ("answer_human_request", 10),
             ],
         ),
         (
@@ -223,6 +234,13 @@ fn field_numbers_are_frozen() -> TestResult {
                 ("blast_radius_alert", 22),
                 ("frame_step_recorded", 23),
                 ("diff_needs_approval", 24),
+                ("human_request_created", 25),
+                ("human_request_answered", 26),
+                ("human_request_interrupted", 27),
+                ("frame_registered", 28),
+                ("frame_tree_cancellation_requested", 29),
+                ("frame_tool_result_recorded", 30),
+                ("user_input_submitted", 31),
             ],
         ),
         (
@@ -333,7 +351,7 @@ fn blobs_are_cid_references() -> TestResult {
             for field in &payload.field {
                 assert_ne!(
                     field.r#type,
-                    Some(Type::Bytes as i32),
+                    Some(i32::from(Type::Bytes)),
                     "{outer}.{}.{} is inline bytes",
                     payload.name(),
                     field.name()
@@ -345,7 +363,7 @@ fn blobs_are_cid_references() -> TestResult {
     let mut inline: Vec<String> = Vec::new();
     for (name, message) in &all {
         for field in &message.field {
-            if field.r#type == Some(Type::Bytes as i32) {
+            if field.r#type == Some(i32::from(Type::Bytes)) {
                 inline.push(format!("{name}.{}", field.name()));
             }
         }
@@ -359,6 +377,9 @@ fn blobs_are_cid_references() -> TestResult {
             "ExecClientFrame.stdin",
             "ExecServerFrame.stderr",
             "ExecServerFrame.stdout",
+            "HealthResponse.loaded_model_identity_blake3",
+            "HealthResponse.loaded_pii_model_identity_blake3",
+            "HealthResponse.worker_incarnation",
             "TerminalClientFrame.input",
             "TerminalServerFrame.output",
         ]

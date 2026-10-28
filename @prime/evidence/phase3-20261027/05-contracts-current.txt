@@ -1,0 +1,365 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Finished `test` profile [unoptimized] target(s) in 14.60s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ext_mcp-993e7cdbb1a12533.exe)
+
+running 11 tests
+test call::tests::truncates_tool_text_at_utf8_boundary ... ok
+test call::tests::result_byte_limit_applies_across_text_and_structured_content ... ok
+test hub::validation_tests::loopback_detection_accepts_local_hosts_only ... ok
+test frame::tests::accepts_multiple_bounded_frames ... ok
+test hub::validation_tests::transport_limits_enforce_documented_inclusive_bounds ... ok
+test frame::tests::rejects_oversized_frame_before_returning_its_bytes ... ok
+test http_client::tests::sse_event_limit_spans_fragmented_chunks ... ok
+test http_client::tests::sse_parser_accepts_split_crlf_and_multiline_events ... ok
+test hub::validation_tests::plaintext_http_is_limited_to_loopback_even_without_headers ... ok
+test http_client::tests::oversized_http_json_body_is_rejected_before_parsing ... ok
+test http_client::tests::oversized_chunked_http_json_body_is_rejected_without_content_length ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\protocol_contract.rs (target\debug\deps\protocol_contract-4fade5070653d76c.exe)
+
+running 4 tests
+test mcp_stdio_fixture_server_process ... ok
+test connect_repo_unapproved_is_denied_before_launcher ... ok
+test connect_stdio_fixture_lists_and_calls_tool_then_reaps_child ... ok
+test connect_http_fixture_lists_and_calls_tool ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\schema_contract.rs (target\debug\deps\schema_contract-39d67cff7cb064a9.exe)
+
+running 8 tests
+test namespaced_ids_prevent_server_collisions ... ok
+test ref_cycles_rejected ... ok
+test harmless_annotation_keywords_are_dropped_and_recorded ... ok
+test invalid_schema_rejected ... ok
+test property_names_and_nested_schemas_are_preserved ... ok
+test literal_default_enum_and_const_objects_are_not_traversed_as_schemas ... ok
+test unsupported_assertion_keywords_are_rejected ... ok
+test valid_schema_passes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\summary_contract.rs (target\debug\deps\summary_contract-fa995b619aa24a8f.exe)
+
+running 5 tests
+test summary_deterministic ... ok
+test summary_strips_markdown_and_html_markup ... ok
+test summary_strips_control_and_zero_width ... ok
+test summary_neutralizes_instruction_prefix ... ok
+test summary_truncates_to_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_nebius_cloud_sandboxes-a9c38a18b0720964.exe)
+
+running 6 tests
+test tests::contree_rejects_non_loopback_sidecar_and_missing_egress_consent ... ok
+test tests::contree_sanitizes_secrets_and_bounds_tool_responses ... ok
+test tests::contree_cancellation_joins_local_calls_and_cancels_owned_operations ... ok
+test tests::contree_checks_inventory_and_verified_tool_shapes ... ok
+test tests::contree_bounds_operations_and_preserves_branch_identity ... ok
+test tests::contree_sync_projects_only_approved_sync_plan_paths ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_proto-8bc430a13fa74c3a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\command_conversion.rs (target\debug\deps\command_conversion-229674f10c6e65eb.exe)
+
+running 6 tests
+test conversion_never_panics_on_default_message ... ok
+test missing_fields_are_errors ... ok
+test unknown_role_and_effort_are_errors ... ok
+test every_command_body_roundtrips ... ok
+test prop_command_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\decision_conversion.rs (target\debug\deps\decision_conversion-b8c174b772c48070.exe)
+
+running 9 tests
+test missing_answer_is_error ... ok
+test conversion_never_panics_on_default_message ... ok
+test invalid_names_are_errors ... ok
+test invalid_probability_is_error ... ok
+test decision_with_all_answer_kinds_roundtrips ... ok
+test questions_and_input_roundtrip ... ok
+test prop_question_roundtrip ... ok
+test prop_decision_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\event_conversion.rs (target\debug\deps\event_conversion-13bab1e79e05d7e5.exe)
+
+running 11 tests
+test conversion_never_panics_on_default_message ... ok
+test human_request_events_require_schema_v5 ... ok
+test malformed_cid_and_schema_are_errors ... ok
+test missing_oneof_body_is_error ... ok
+test unknown_enum_value_is_error ... ok
+test event_record_roundtrips_with_timestamp_edges ... ok
+test old_envelope_version_is_preserved_and_new_variants_require_v4 ... ok
+test every_event_variant_roundtrips ... ok
+test prop_event_roundtrip ... ok
+test prop_event_record_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\generated_status.rs (target\debug\deps\generated_status-441a4e1f04017a79.exe)
+
+running 3 tests
+test rewrites_exact_expected_status_casts ... ok
+test unexpected_generator_shape_fails_closed ... ok
+test generated_status_uses_typed_conversion ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\message_size_guard.rs (target\debug\deps\message_size_guard-daab7a42fc1456de.exe)
+
+running 7 tests
+test at_limit_is_accepted ... ok
+test limit_is_configurable ... ok
+test over_limit_is_rejected ... ok
+test zero_length_is_accepted ... ok
+test gateway_constants_match_pitfall_w22 ... ok
+test decode_checked_rejects_before_decoding ... ok
+test encode_checked_rejects_before_encoding ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\protocol_version_negotiation.rs (target\debug\deps\protocol_version_negotiation-1730471154980baa.exe)
+
+running 8 tests
+test different_major_is_rejected ... ok
+test negotiation_is_symmetric_on_success ... ok
+test display_is_major_dot_minor ... ok
+test guest_spike_handshake_still_holds ... ok
+test wire_version_out_of_range_is_error ... ok
+test same_major_negotiates_to_min_minor ... ok
+test zero_major_is_rejected ... ok
+test prop_negotiation_matches_the_rule ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\wire_schema_contract.rs (target\debug\deps\wire_schema_contract-77f85ae6b7283cc7.exe)
+
+running 8 tests
+test generated_stubs_exist_for_every_service ... ok
+test golden_bytes_are_stable ... ok
+test descriptor_set_lists_the_three_services ... ok
+test enums_start_with_unspecified ... ok
+test blobs_are_cid_references ... ok
+test guest_handshake_keeps_the_spike_fields ... ok
+test growing_messages_reserve_a_range ... ok
+test field_numbers_are_frozen ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\worker_auth.rs (target\debug\deps\worker_auth-6538d42ec9313ea6.exe)
+
+running 7 tests
+test credential_export_propagates_writer_errors ... ok
+test bootstrap_copy_preserves_authorization_without_exporting_plain_bytes ... ok
+test generated_credentials_are_fixed_lowercase_hex_and_round_trip ... ok
+test independently_issued_credentials_do_not_authenticate_each_other ... ok
+test client_authorization_replaces_existing_duplicate_header_values ... ok
+test valid_worker_token_authorizes_sensitive_metadata ... ok
+test missing_malformed_duplicate_and_wrong_tokens_are_rejected ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_sdk-5828bca7a771bbc2.exe)
+
+running 3 tests
+test hex::tests::every_byte_matches_ascii_hex_contract ... ok
+test system_one::decision_schema_tests::validated_schema_snapshot_preserves_version_policy_and_calibration_state ... ok
+test system_one::decision_schema_tests::schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\blast_alert_schema.rs (target\debug\deps\blast_alert_schema-124addd2b19638c7.exe)
+
+running 1 test
+test blast_alert_requires_schema_three ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\command_typestate.rs (target\debug\deps\command_typestate-b780979ae849bb14.exe)
+
+running 3 tests
+test verified_requires_approval_witness ... ok
+test token_bytes_debug_is_redacted ... ok
+test command_serde_roundtrip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_identifiers.rs (target\debug\deps\content_identifiers-f879dadf93ad7727.exe)
+
+running 6 tests
+test cid_hex_roundtrip ... ok
+test cid_rejects_wrong_length_hex ... ok
+test short_ref_is_first_48_bits ... ok
+test short_ref_parse_accepts_marker_and_bare_hex ... ok
+test short_ref_renders_12_lowercase_hex ... ok
+test prop_cid_shortref_hex_roundtrip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_store_dispatch.rs (target\debug\deps\content_store_dispatch-d48531ce37445df2.exe)
+
+running 3 tests
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_three_content_store_forwards_every_variant ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\effort_parsing.rs (target\debug\deps\effort_parsing-c69094e70454027f.exe)
+
+running 6 tests
+test parses_numeric_1_to_5 ... ok
+test parses_names_case_insensitively ... ok
+test display_roundtrips_name ... ok
+test try_from_u8_is_total ... ok
+test rejects_zero_and_six ... ok
+test prop_order_matches_numeric_form ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-803873fcd274b4da.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\human_contract.rs (target\debug\deps\human_contract-18032642b6ebd09c.exe)
+
+running 5 tests
+test validates_choice_count_and_aggregate_request_bytes ... ok
+test required_questions_have_no_default_and_reject_explicit_unanswered ... ok
+test optional_questions_require_an_explicit_unanswered_record ... ok
+test none_of_the_above_is_exclusive_in_multichoice ... ok
+test rejects_stale_revision_unknown_ids_and_wrong_answer_kinds ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\interactive_contract.rs (target\debug\deps\interactive_contract-e1e2c4419d994232.exe)
+
+running 2 tests
+test interactive_debug_never_exposes_arguments_or_environment ... ok
+test interactive_enum_and_arc_preserve_dispatch_and_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\probability_validation.rs (target\debug\deps\probability_validation-18ccbb77580bb16f.exe)
+
+running 5 tests
+test accepts_bounds ... ok
+test rejects_nan ... ok
+test ordering_is_total_for_valid_values ... ok
+test rejects_above_one_and_below_zero ... ok
+test serde_rejects_out_of_range ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\prompt_tokenizer.rs (target\debug\deps\prompt_tokenizer-6c7bb8f1c9d10719.exe)
+
+running 3 tests
+test prompt_tokenizer_reports_exact_prompt_and_model_capacity ... ok
+test prompt_tokenizer_errors_when_counting_is_unavailable ... ok
+test prompt_token_count_can_exceed_context_for_trimming ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\registry_dispatch.rs (target\debug\deps\registry_dispatch-5690b132a1224730.exe)
+
+running 5 tests
+test error_kinds_cover_taxonomy ... ok
+test arc_forwards_sync_registry_traits ... ok
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_source_contract.rs (target\debug\deps\secret_source_contract-a6574fcd543aed2d.exe)
+
+running 7 tests
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test has_kind_maps_transient_and_permanent_failures ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+test validated_locations_contain_identifiers_only ... ok
+test source_error_display_is_sanitized ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\session_lifecycle.rs (target\debug\deps\session_lifecycle-cab89d4f5f3182a2.exe)
+
+running 5 tests
+test versioned_constructor_validates_schema ... ok
+test schema_one_records_remain_readable ... ok
+test lifecycle_records_use_current_schema ... ok
+test new_lifecycle_events_cannot_claim_schema_one ... ok
+test prop_schema_acceptance_matches_lifecycle_minimum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_ext_mcp
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_nebius_cloud_sandboxes
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_proto
+
+running 2 tests
+test crates\polaris-proto\src\worker_auth.rs - worker_auth::WorkerCredential (line 58) - compile fail ... ok
+test crates\polaris-proto\src\worker_auth.rs - worker_auth::WorkerCredential (line 50) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+   Doc-tests polaris_sdk
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 331) ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 300) ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 265) ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 325) - compile fail ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 314) - compile fail ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 260) - compile fail ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+all doctests ran in 1.08s; merged doctests compilation took 0.76s

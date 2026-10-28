@@ -1,0 +1,20 @@
+{
+  "type_of": "async_function",
+  "name": "Router::route_sandbox",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "Sandbox Tier Selection",
+  "test_list": [
+    {"test_name": "no_kvm_never_selects_e2", "description": "E2 is selected only when nested KVM is available."},
+    {"test_name": "explicit_directive_overrides_auto", "description": "An available and safe required tier takes precedence over auto selection."},
+    {"test_name": "untrusted_code_prefers_most_isolated_tier", "description": "Untrusted code selects an available permitted isolated tier."},
+    {"test_name": "s1_timeout_selects_conservative_tier", "description": "S1 uncertainty preserves deterministic sandbox selection."}
+  ],
+  "dependencies": ["DecisionEngine", "SchemaCatalog", "RouterConfig"],
+  "libraries": ["thiserror", "tokio"],
+  "inputs": [
+    {"name": "facts", "type": "&SandboxFacts", "description": "Execution facts and available isolation tiers."},
+    {"name": "directive", "type": "SandboxDirective", "description": "Automatic or explicitly required sandbox tier."}
+  ],
+  "output_type": "Result<SandboxTier, RouterError>",
+  "output_description": "A deterministic sandbox tier that satisfies availability and isolation constraints."
+}

@@ -1,0 +1,63 @@
+{
+  "type_of": "struct",
+  "name": "GlyphAtlas::bake",
+  "file_path": "crates/polaris-ui/crates/ascii-aurora/src/atlas.rs",
+  "logic_name": "Aurora Glyph Atlas Baking",
+  "test_list": [
+    {
+      "test_name": "bakes_every_ramp_glyph",
+      "description": "Baking RAMP with JetBrains Mono yields one bitmap per ramp glyph."
+    },
+    {
+      "test_name": "missing_glyph_reports_char",
+      "description": "A character absent from the font (U+E000) fails with AuroraError::MissingGlyph carrying that character."
+    },
+    {
+      "test_name": "invalid_font_bytes_rejected",
+      "description": "Garbage font bytes fail with AuroraError::Font."
+    },
+    {
+      "test_name": "coverage_bitmaps_are_cell_sized",
+      "description": "Every glyph bitmap is exactly cell_w * cell_h bytes and rows are cell_w wide."
+    },
+    {
+      "test_name": "bake_is_deterministic",
+      "description": "Baking twice produces byte-identical coverage."
+    },
+    {
+      "test_name": "zero_cell_size_rejected",
+      "description": "A zero cell width or height fails with AuroraError::Size."
+    },
+    {
+      "test_name": "space_is_blank_and_dense_glyph_has_ink",
+      "description": "The space glyph has zero coverage; the densest glyph has ink, ink is centred inside the cell and the glyph height is about 0.62 of the cell height."
+    }
+  ],
+  "dependencies": [
+    "crate::error::AuroraError",
+    "crate::ramp::RAMP"
+  ],
+  "libraries": [
+    "ab_glyph",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "font",
+      "type": "&[u8]",
+      "description": "TrueType/OpenType font bytes."
+    },
+    {
+      "name": "ramp",
+      "type": "&str",
+      "description": "Glyph characters to rasterise."
+    },
+    {
+      "name": "cell_w, cell_h",
+      "type": "u16",
+      "description": "Cell size in pixels."
+    }
+  ],
+  "output_type": "Result<GlyphAtlas, AuroraError>",
+  "output_description": "One u8 coverage bitmap per ramp glyph, cell-sized, glyph centred by advance and baseline."
+}

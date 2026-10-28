@@ -40,8 +40,9 @@ mod error;
 mod sse;
 
 pub use client::{
-    ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig, ModelInfo,
-    PromptTokenEstimator, ProviderStream, RateLimitPolicy, ReasoningReplay, TokenFactoryClient,
+    ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig,
+    LlamaCppChatClient, LlamaCppExpectedProfile, ModelInfo, PromptTokenEstimator, ProviderStream,
+    RateLimitPolicy, ReasoningReplay, TokenFactoryClient, VllmChatClient,
 };
 pub use error::{CredentialError, TfError};
 pub use sse::{SseEvent, SseEventRef, SseParser};

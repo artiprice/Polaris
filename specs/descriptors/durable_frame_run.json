@@ -1,0 +1,55 @@
+{
+  "type_of": "pipeline",
+  "name": "durable_frame_run",
+  "file_path": "crates/polaris-runtime/crates/frames/src/step.rs",
+  "logic_name": "Durable Multi Turn Frame Run",
+  "test_list": [
+    {
+      "test_name": "scripted_tool_turn_and_ordinary_final_turn_are_durably_journaled",
+      "description": "run_frame executes an actual read through KernelToolRunner, replays the exact provider tool-call id and output in the second request, and persists two monotonic FrameStepRecorded events with CAS transcripts."
+    },
+    {
+      "test_name": "second_model_turn_failure_is_journaled_as_failed_without_completion_claim",
+      "description": "After a successful tool round, a synthetic provider failure on the second attempt persists a distinct failed event and transcript containing its captured request; no proof-of-done or terminal completion is asserted."
+    }
+  ],
+  "dependencies": [
+    "run_frame",
+    "KernelToolRunner",
+    "KernelFrameJournal",
+    "FrameJournal",
+    "temporary workspace CAS",
+    "durable event bus"
+  ],
+  "libraries": [
+    "polaris-kernel",
+    "polaris-runtime",
+    "polaris-sdk",
+    "polaris-security",
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "AgentContextFrame<Active>",
+      "description": "Active capability-bound frame backed by an actual temporary Kernel session."
+    },
+    {
+      "name": "model",
+      "type": "synthetic ChatModel fixture",
+      "description": "Deterministic fixture stream for one actual read_file tool call and then either ordinary text or a provider failure."
+    },
+    {
+      "name": "tools",
+      "type": "KernelToolRunner",
+      "description": "Production authorizer and executor wired to the actual kernel filesystem and CAS."
+    },
+    {
+      "name": "journal",
+      "type": "KernelFrameJournal",
+      "description": "Production frame journal wired to the same session, CAS and durable event bus."
+    }
+  ],
+  "output_type": "Result<FrameRunOutcome, FrameError> or persisted failure",
+  "output_description": "A bounded multi-turn run whose step records, actual tool result, replayed provider-call history, CAS transcript ids, and event sequence are inspectable. Tokenizer upper bounds and verifier fingerprints are explicitly synthetic fixture values; no proof-of-done is established."
+}

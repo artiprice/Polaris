@@ -1,0 +1,244 @@
+    Checking tokio v1.54.1
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking regex-automata v0.4.18
+    Checking proptest v1.12.0
+    Checking insta v1.49.0
+    Checking pem v4.0.0
+    Checking rcgen v0.14.10
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking matchers v0.2.0
+    Checking regex v1.13.1
+    Checking tracing-subscriber v0.3.23
+    Checking biscuit-auth v6.0.0 (C:\mDev\Polaris\vendor\biscuit-auth)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking tokio-util v0.7.20
+    Checking tokio-rustls v0.26.6
+    Checking tokio-stream v0.1.19
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking h2 v0.4.20
+    Checking tower v0.5.3
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking axum v0.8.9
+    Checking tower-http v0.6.11
+    Checking hyper v1.12.0
+    Checking hyper-util v0.1.21
+    Checking hyper-timeout v0.5.2
+    Checking hyper-rustls v0.27.10
+    Checking tonic v0.14.6
+    Checking reqwest v0.13.5
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking tonic-prost v0.14.6
+error: this `if` statement can be collapsed
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:604:13
+    |
+604 | /             if status == StatusCode::TOO_MANY_REQUESTS {
+605 | |                 if let Some(policy) = &self.rate_limit {
+606 | |                     policy
+607 | |                         .limiter
+...   |
+611 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+604 ~             if status == StatusCode::TOO_MANY_REQUESTS
+605 ~                 && let Some(policy) = &self.rate_limit {
+606 |                     policy
+...
+609 |                         .map_err(rate_limit_error)?;
+610 ~                 }
+    |
+
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:651:5
+    |
+651 | /     fn stream(
+652 | |         &self,
+653 | |         req: ChatRequest,
+654 | |     ) -> impl Future<Output = Result<Self::Stream, ModelError>> + Send {
+    | |______________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+    = note: `-D clippy::manual-async-fn` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_async_fn)]`
+
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:752:5
+    |
+752 | /     fn embed(
+753 | |         &self,
+754 | |         batch: &[&str],
+755 | |     ) -> impl Future<Output = Result<Vec<Vec<f32>>, ModelError>> + Send {
+    | |_______________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:796:5
+    |
+796 |     fn next_chunk(&mut self) -> impl Future<Output = Option<Result<ChatChunk, ModelError>>> + Send {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:897:57
+    |
+897 |                     return self.consume_responses_event(&data);
+    |                                                         ^^^^^ help: change this to: `data`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#needless_borrow
+    = note: `-D clippy::needless-borrow` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_borrow)]`
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:900:42
+    |
+900 |                     serde_json::from_str(&data).map_err(|_| TfError::Json)?;
+    |                                          ^^^^^ help: change this to: `data`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#needless_borrow
+
+error: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1287:22
+     |
+1287 |           let cached = value
+     |  ______________________^
+1288 | |             .prompt_tokens_details
+1289 | |             .and_then(|details| details.cached_tokens)
+1290 | |             .map_or(0, |tokens| tokens);
+     | |_______________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+     = note: `-D clippy::map-or-identity` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::map_or_identity)]`
+help: consider using `unwrap_or`
+     |
+1290 -             .map_or(0, |tokens| tokens);
+1290 +             .unwrap_or(0);
+     |
+
+error: match can be simplified with `.unwrap_or_default()`
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1315:30
+     |
+1315 |               Some(details) => match details.cached_tokens {
+     |  ______________________________^
+1316 | |                 Some(tokens) => tokens,
+1317 | |                 None => 0,
+1318 | |             },
+     | |_____________^ help: ascribe the type u32 and replace your expression with: `details.cached_tokens.unwrap_or_default()`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+     = note: `-D clippy::manual-unwrap-or-default` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or_default)]`
+
+error: this `if` statement can be collapsed
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1418:13
+     |
+1418 | /             if reasoning_replay == ReasoningReplay::ReasoningContent {
+1419 | |                 if let Some(reasoning) = &message.reasoning {
+1420 | |                     wire.insert("reasoning_content".to_owned(), json!(reasoning));
+1421 | |                 }
+1422 | |             }
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+     |
+1418 ~             if reasoning_replay == ReasoningReplay::ReasoningContent
+1419 ~                 && let Some(reasoning) = &message.reasoning {
+1420 |                     wire.insert("reasoning_content".to_owned(), json!(reasoning));
+1421 ~                 }
+     |
+
+error: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1690:22
+     |
+1690 |       let multiplier = 1_u32
+     |  ______________________^
+1691 | |         .checked_shl(u32::from(retry))
+1692 | |         .map_or(u32::MAX, |value| value);
+     | |________________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1692 -         .map_or(u32::MAX, |value| value);
+1692 +         .unwrap_or(u32::MAX);
+     |
+
+error: this pattern reimplements `Result::unwrap_or`
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1697:22
+     |
+1697 |       let ceiling_ms = match u64::try_from(ceiling.as_millis()) {
+     |  ______________________^
+1698 | |         Ok(value) => value,
+1699 | |         Err(_) => u64::MAX,
+1700 | |     };
+     | |_____^ help: replace with: `u64::try_from(ceiling.as_millis()).unwrap_or(u64::MAX)`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+     = note: `-D clippy::manual-unwrap-or` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or)]`
+
+error: can be more succinctly written as a byte str
+   --> crates\polaris-nebius-cloud\crates\token-factory\src\sse.rs:178:50
+    |
+178 |             let value = match value.strip_prefix(&[b' ']) {
+    |                                                  ^^^^^^^ help: try: `b" "`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#byte_char_slices
+    = note: `-D clippy::byte-char-slices` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::byte_char_slices)]`
+
+error: could not compile `polaris-nebius-cloud-token-factory` (lib) due to 12 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: very complex type used. Consider factoring parts into `type` definitions
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1742:20
+     |
+1742 |         responses: Vec<(u16, Vec<(&'static str, &'static str)>, String)>,
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#type_complexity
+     = note: `-D clippy::type-complexity` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: this `if` statement can be collapsed
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1786:13
+     |
+1786 | /             if expected.is_none() {
+1787 | |                 if let Some(header_end) =
+1788 | |                     request.windows(4).position(|window| window == b"\r\n\r\n")
+...    |
+1806 | |             }
+     | |_____________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+     |
+1786 ~             if expected.is_none()
+1787 ~                 && let Some(header_end) =
+1788 |                     request.windows(4).position(|window| window == b"\r\n\r\n")
+ ...
+1804 |                         .and_then(|length| length.checked_add(body_length));
+1805 ~                 }
+     |
+
+error: expression can be simplified using `Option::unwrap_or()`
+    --> crates\polaris-nebius-cloud\crates\token-factory\src\client.rs:1860:33
+     |
+1860 |                 .saturating_mul(1_u32.checked_shl(u32::from(retry)).map_or(u32::MAX, |v| v));
+     |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#map_or_identity
+help: consider using `unwrap_or`
+     |
+1860 -                 .saturating_mul(1_u32.checked_shl(u32::from(retry)).map_or(u32::MAX, |v| v));
+1860 +                 .saturating_mul(1_u32.checked_shl(u32::from(retry)).unwrap_or(u32::MAX));
+     |
+
+error: could not compile `polaris-nebius-cloud-token-factory` (lib test) due to 15 previous errors

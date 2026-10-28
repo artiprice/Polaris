@@ -1,0 +1,24 @@
+{
+  "type_of": "module",
+  "name": "bridge::spawn / Bridge",
+  "file_path": "apps/polaris-desktop/src/bridge.rs",
+  "logic_name": "Desktop Bridge",
+  "test_list": [
+    { "test_name": "list_without_kernel_returns_sessions", "description": "List on a fresh state dir returns Sessions(empty) without opening a kernel." },
+    { "test_name": "open_submit_commits_and_streams_message", "description": "Open{resume:None} yields Starting then Opened; Submit{'plan tomorrow'} yields Committed and a Message{UserInput, 'plan tomorrow'} for the open session." },
+    { "test_name": "directive_submit_streams_directive_message", "description": "Submit{'$websearch(on)'} commits and streams Message{Directive, canonical text}." },
+    { "test_name": "blank_submit_is_rejected", "description": "Submit{'   '} yields Rejected with the kernel's reason and no Message." },
+    { "test_name": "submit_without_session_is_rejected", "description": "Submit before Open yields Rejected('no session is open')." },
+    { "test_name": "resume_replays_messages", "description": "Close then Open{resume: Some(id)} replays the earlier Message for that session." },
+    { "test_name": "listed_session_has_workspace_and_recent_time", "description": "After a submit, List includes the session with the workspace path and an updated time within the last minute." },
+    { "test_name": "dropping_the_link_shuts_down_cleanly", "description": "Dropping the request sender closes the open session and the bridge thread joins without error." }
+  ],
+  "dependencies": ["polaris_ui_session::OfflineSession", "polaris_ui_gui::backend"],
+  "libraries": ["tokio"],
+  "inputs": [
+    { "name": "state_dir", "type": "PathBuf", "description": "Session store root (default <workspace>/.polaris/state, shared with the TUI)." },
+    { "name": "workspace", "type": "PathBuf", "description": "Workspace recorded with new sessions." }
+  ],
+  "output_type": "Result<(BackendLink, Bridge), DesktopError>",
+  "output_description": "Channel ends for the window and a handle that joins the bridge thread."
+}

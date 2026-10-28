@@ -152,7 +152,7 @@ impl WebSearch for Tavily {
             };
             body["time_range"] = json!(range);
         }
-        admission.mark_dispatched().map_err(search_error)?;
+        admission.mark_dispatched().await.map_err(search_error)?;
         let response = match client
             .post(target.url)
             .header(header::CONTENT_TYPE, "application/json")

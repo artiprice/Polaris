@@ -1,0 +1,16 @@
+{
+  "type_of": "function",
+  "name": "validate_burst_decision",
+  "file_path": "tests/spike/s1/src/lib.rs",
+  "logic_name": "Burst Answer Integrity",
+  "test_list": [
+    {"test_name": "out_of_range_scores_are_not_success", "description": "Reject score values outside the exact requested range."},
+    {"test_name": "malformed_choice_distributions_are_not_success", "description": "Reject duplicate/foreign/missing labels, invalid normalization, nonmaximum selected labels and unsorted distributions."},
+    {"test_name": "duplicate_choice_options_reject_before_dispatch", "description": "Reject ambiguous option identities before any engine invocation."}
+  ],
+  "dependencies": ["DecisionEngine", "Question", "Decision"],
+  "libraries": ["tokio"],
+  "inputs": [{"name": "decision", "type": "Decision", "description": "Actual engine output for the submitted bounded questions."}],
+  "output_type": "bool",
+  "output_description": "Whether the actual result satisfies the requested answer contract."
+}

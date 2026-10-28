@@ -1,0 +1,3 @@
+    Checking polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Finished `dev` profile [unoptimized] target(s) in 1.89s

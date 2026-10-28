@@ -1,5 +1,5 @@
 {
-  "snapshot_utc": "2026-10-26T02:51:07.593262+00:00",
+  "snapshot_utc": "2026-10-27T21:07:24.670085+00:00",
   "package_estimates": {
     "polaris-sdk": {
       "code": 100,
@@ -249,14 +249,14 @@
     },
     "polaris-ratelimit": {
       "code": 65,
-      "verified": 20,
-      "reason": "Dual RPM/TPM/GCRA reservation/reconciliation source; complete behavioral/load verification missing.",
+      "verified": 25,
+      "reason": "E50 fixes weighted burst over-admission; preserved refund acceptance remains RED, including independently valid non-tail refund cases. No production refund completion is claimed.",
       "ui": false
     },
     "polaris-security-capability": {
       "code": 85,
       "verified": 75,
-      "reason": "Real signed Biscuit scopes/attenuation/expiry plus tests/fuzz/proofs; full mutation assembly/security audit open.",
+      "reason": "E49 adds separately scoped host cancellation authority alongside real mutation/read authorization; full revocation/security/load audit remains open.",
       "ui": false
     },
     "polaris-security-secrets": {
@@ -266,87 +266,87 @@
       "ui": false
     },
     "polaris-nebius-cloud-token-factory": {
-      "code": 70,
-      "verified": 50,
-      "reason": "Actual HTTP/SSE/tools/models/embeddings and injected SDK credentials; local protocol/security fixtures pass. Live keyed provider and full loop remain open; E32.",
+      "code": 85,
+      "verified": 65,
+      "reason": "E50 expands exact tool-call/usage handling and exercised synthetic provider contracts; keyed provider acceptance remains unavailable.",
       "ui": false
     },
     "polaris-nebius-cloud-sandboxes": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only Contree adapter; access also missing.",
+      "code": 75,
+      "verified": 50,
+      "reason": "E50 resolves trusted exact catalog repo/commit identities and validates near-miss results; actual credentialed Contree acceptance remains unavailable.",
       "ui": false
     },
     "polaris-nebius-cloud": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only facade; child implementations do not implement its own exports.",
+      "code": 60,
+      "verified": 35,
+      "reason": "Nebius facade now exports the implemented AI Cloud surface. Provider transport and live remote execution remain absent; E41.",
       "ui": false
     },
     "polaris-models": {
-      "code": 65,
-      "verified": 25,
-      "reason": "Catalog/effort/cancellable lifecycle source; real model assembly/eviction and validation incomplete.",
+      "code": 80,
+      "verified": 60,
+      "reason": "E50 adds exact loopback local-model ownership/profile validation and actual pinned runtime counting/chat evidence; full registry/remote-provider matrices remain open.",
       "ui": false
     },
     "polaris-tools-math": {
-      "code": 80,
-      "verified": 55,
-      "reason": "Decimal/interpolation/statistics/GPU logic with 25 contracts; full requirements/performance/fuzz audit incomplete.",
+      "code": 85,
+      "verified": 60,
+      "reason": "E50 adds bounded compound exponent handling and numeric edge cases with focused native/Linux evidence; complete workload/formal acceptance remains open.",
       "ui": false
     },
     "polaris-runtime-frames": {
-      "code": 85,
-      "verified": 65,
-      "reason": "Bounded multi-turn model/tool/verifier driver, quota accounting, CAS-bound results and durable step journal. Focused contracts pass; production local edit/test/proof assembly remains open; E32.",
+      "code": 90,
+      "verified": 75,
+      "reason": "E49 adds actual sealed step/ancestry admission, owned model tool dispatch and durable scoped cancellation; live/full stress/formal acceptance remains open.",
       "ui": false
     },
     "polaris-runtime-context": {
-      "code": 65,
-      "verified": 20,
-      "reason": "Folding/assembly/scratchpad/prefix logic; end-to-end context lifecycle not verified.",
+      "code": 85,
+      "verified": 60,
+      "reason": "Production frame assembly now masks before provider counting, preserves complete groups and exposes verified archives only under actual CAS Read authority. Local HTTP/CAS fixtures and domain regression pass; live full-context lifecycle remains open; E47.",
       "ui": false
     },
     "polaris-kernel-operators": {
-      "code": 65,
-      "verified": 20,
-      "reason": "Typed operators/retry/cancel policies exist; production agent-loop composition and validation open.",
+      "code": 70,
+      "verified": 30,
+      "reason": "RateLimitOp uses the real dual limiter, bounded cancellation-aware admission and noncloneable permits with dispatch/usage reconciliation; six cases and a compile-fail contract pass. Complete production pipeline composition remains open; E43.",
       "ui": false
     },
     "polaris-kernel-verifier": {
-      "code": 60,
-      "verified": 20,
-      "reason": "Hybrid mutation/evidence logic exists; only narrower authority/terminal cases verified, full mutation route open.",
+      "code": 75,
+      "verified": 50,
+      "reason": "E49 wires real mutation evidence and latest current-tree ordinary/independent proof validation; S1 calibration and full hybrid matrices remain open.",
       "ui": false
     },
     "polaris-spike-ratelimit": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documented workload only; actual phase spike not implemented.",
+      "code": 35,
+      "verified": 25,
+      "reason": "E49 implements seven real limiter workloads with measured reports; full A\u2013D repetition/load/stress matrix and unused refund acceptance remain open.",
       "ui": false
     },
     "polaris-worker": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only supervised inference worker.",
+      "code": 80,
+      "verified": 65,
+      "reason": "E50 actual authenticated PII/Decide reload and warm/post-eviction decision bursts pass; full ingest/nano/pressure/crash matrices remain open.",
       "ui": false
     },
     "polaris-system-one-engine": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only inference engine; spike results are not this adapter.",
+      "code": 75,
+      "verified": 55,
+      "reason": "E50 includes actual pinned Decide and PII CPU inference; fresh export/Python parity, fallback sidecar, precision/CUDA/resource matrices remain open.",
       "ui": false
     },
     "polaris-system-one-client": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only worker client.",
+      "code": 85,
+      "verified": 65,
+      "reason": "E50 bounded batching, exact cache/single-flight, model generation/incarnation fences and actual worker IPC are checked; full workload/formal acceptance remains open.",
       "ui": false
     },
     "polaris-security-pii": {
-      "code": 55,
-      "verified": 20,
-      "reason": "Bounded reversible vault/sealing logic; NER and sealed persistence/runtime integration incomplete.",
+      "code": 85,
+      "verified": 60,
+      "reason": "E50 adds actual PII spans, bounded degradation, sealed reversible snapshots and semantic prompt masking; corpus, performance, fuzz and complete host key lifecycle remain open.",
       "ui": false
     },
     "polaris-security-rules": {
@@ -356,15 +356,15 @@
       "ui": false
     },
     "polaris-system-one-schemas": {
-      "code": 60,
-      "verified": 20,
-      "reason": "Schema/catalog/threshold validation exists; full calibration and consumers incomplete.",
+      "code": 80,
+      "verified": 45,
+      "reason": "E50 implements bounded binary calibration metrics and measured-candidate output; held-out real labels and production threshold evidence remain open.",
       "ui": false
     },
     "polaris-system-one-router": {
-      "code": 65,
-      "verified": 20,
-      "reason": "Routing/effort/tool/file/sandbox ranking source; engine/calibrated runtime validation absent.",
+      "code": 75,
+      "verified": 50,
+      "reason": "E50 includes combined task routing, exact environment identity short-circuits, bounded unique candidate sets and 16 focused tests; actual app triage wiring, calibration, injection/load matrices and catalogs remain open.",
       "ui": false
     },
     "polaris-system-one-verifier": {
@@ -380,15 +380,15 @@
       "ui": false
     },
     "polaris-system-one": {
-      "code": 45,
-      "verified": 15,
-      "reason": "Exports exist; complete worker/inference/calibration composition missing.",
+      "code": 65,
+      "verified": 40,
+      "reason": "E50 checks consumer fail policy, bounded admission, circuit and host epoch fencing; real host/consumer composition is being implemented and full phase acceptance remains open.",
       "ui": false
     },
     "polaris-spike-s1": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documented synthetic workload only; real phase harness absent.",
+      "code": 50,
+      "verified": 30,
+      "reason": "E50 implements owned bounded burst dispatch, answer integrity and actual repeated-input CPU worker bursts; full A-D fault/load/stampede/policy matrix remains open.",
       "ui": false
     },
     "polaris-storage-vector": {
@@ -398,9 +398,9 @@
       "ui": false
     },
     "polaris-ingest": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only document/OCR ingestion.",
+      "code": 65,
+      "verified": 40,
+      "reason": "Concrete text/Markdown/HTML/CSV/TSV/OOXML/text-layer PDF parsers, bounded preflight and available provenance; actual worker CAS flow passes. OCR, broader malformed-format matrix, preemptive resource isolation and complete knowledge/PII integration remain open; E40.",
       "ui": false
     },
     "polaris-search-providers": {
@@ -434,9 +434,9 @@
       "ui": false
     },
     "polaris-nebius-cloud-ai-cloud": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only AI Cloud/E4 adapter.",
+      "code": 25,
+      "verified": 20,
+      "reason": "Checked budget reservations, terminal TTL, strict mTLS/IP ingress checks and owner-label selection. Provider transport and live cloud integration remain absent; E41.",
       "ui": false
     },
     "polaris-ext": {
@@ -464,15 +464,15 @@
       "ui": false
     },
     "polaris-hacker": {
-      "code": 0,
-      "verified": 0,
-      "reason": "Documentation-only zero-token scanner/fuzzer/stress pipeline.",
+      "code": 40,
+      "verified": 30,
+      "reason": "Bounded metadata-only AST/DFA observations, deterministic boundary corpus and cancellation-owned SDK sandbox stress. Seeded/local lifecycle tests pass; live sanitizers, race/CUDA/performance analysis and runtime command assembly remain open; E40.",
       "ui": false
     },
     "polaris-runtime-dag": {
-      "code": 65,
-      "verified": 15,
-      "reason": "Bounded scheduler/pool/race/cancel source; composed concurrent runtime/model checks incomplete.",
+      "code": 70,
+      "verified": 30,
+      "reason": "Task-ID-correlated completions, explicit interruptions, dependency skipping and cancellation/drop contracts now have post-implementation evidence. Full-scheduler join interruption, actual panic, snapshots, race/pool stress and production integration remain open; E44.",
       "ui": false
     },
     "polaris-runtime-research": {
@@ -506,9 +506,9 @@
       "ui": false
     },
     "polaris-devenv-cicd": {
-      "code": 50,
-      "verified": 15,
-      "reason": "Typed pipeline/matrix/sandbox engine; Dagger and complete execution validation incomplete.",
+      "code": 60,
+      "verified": 35,
+      "reason": "Bounded CI caps, owned cancellation cleanup and late cleanup after ambiguous create outcomes. Live isolation, Dagger and persistent cache acceptance remain open; E41.",
       "ui": false
     },
     "polaris-system-one-nano": {
@@ -878,7 +878,7 @@
       "id": "P2-EXT-TOOLS",
       "code": 50,
       "verified": 20,
-      "reason": "New proposal/shell registry routes and focused tests; create-new write and kernel async/hybrid proposal wiring missing.",
+      "reason": "P3 adds create-new/OCC/hybrid mutation service APIs. Model-visible proposal/shell/blueprint integration remains incomplete; paused P2 scores are retained.",
       "ui": false
     },
     {
@@ -892,9 +892,9 @@
     {
       "phase": "P3",
       "id": "P3-X-1",
-      "code": 0,
-      "verified": 0,
-      "reason": "No composed local plan/edit/sandbox-test/proof transcript.",
+      "code": 60,
+      "verified": 40,
+      "reason": "E50 actual read-only local Qwen and scripted edit/test pipelines are retained; combined live model edit/test/proof remains RED and keyed acceptance unavailable.",
       "ui": false
     },
     {
@@ -910,7 +910,7 @@
       "id": "P3-X-3",
       "code": 0,
       "verified": 0,
-      "reason": "Contree sidecar/SWE task unavailable and adapter remains skeleton.",
+      "reason": "The stateless typed adapter exists, but deployed sidecar/SWE acceptance has not run. Contree access is unavailable.",
       "ui": false
     },
     {
@@ -924,17 +924,17 @@
     {
       "phase": "P4",
       "id": "P4-X-1",
-      "code": 25,
-      "verified": 15,
-      "reason": "Spike export artifacts exist, but reproducible production export/golden pipeline not delivered.",
+      "code": 70,
+      "verified": 25,
+      "reason": "E50 pinned guarded exporter/golden tooling and actual existing CPU artifacts are checked; fresh export/Python goldens/parity remain open.",
       "ui": false
     },
     {
       "phase": "P4",
       "id": "P4-X-2",
-      "code": 0,
-      "verified": 0,
-      "reason": "No validated precision/recall calibration table for the production routes.",
+      "code": 55,
+      "verified": 20,
+      "reason": "E50 bounded binary calibration and measured-candidate tooling are checked; real labelled held-out production threshold evidence remains open.",
       "ui": false
     },
     {
@@ -1012,9 +1012,9 @@
     {
       "phase": "P7",
       "id": "P7-X-2",
-      "code": 0,
-      "verified": 0,
-      "reason": "No seeded-bug hacker pipeline run.",
+      "code": 25,
+      "verified": 15,
+      "reason": "Bounded seeded static positives/negatives and SDK cleanup/cancellation fixtures exist. Actual sandbox sanitizer workloads, seeded race/CUDA acceptance and complete /hack composition remain open; E40.",
       "ui": false
     },
     {
@@ -1052,9 +1052,9 @@
     {
       "phase": "P10",
       "id": "P10-2",
-      "code": 30,
-      "verified": 10,
-      "reason": "Threat/policy tooling exists; current deny/vet fail, full audit/unsafe/licence review incomplete.",
+      "code": 35,
+      "verified": 15,
+      "reason": "Locked/offline full Cargo-graph SPDX inventory, lockfile digest, deterministic bytes, official schema and negative checks now have evidence. This is not a licence/security audit; current deny/vet and full unsafe/licence review remain open; E43.",
       "ui": false
     },
     {
@@ -1092,9 +1092,9 @@
     {
       "phase": "P3",
       "id": "P3-X-5",
-      "code": 0,
-      "verified": 0,
-      "reason": "Durable human ask/answer and targeted frame cancellation is a non-UI backend follow-on. SDK/proto/kernel/frame ownership, atomic answers and restart/race acceptance remain planned; UI question fixtures do not implement this protocol.",
+      "code": 85,
+      "verified": 75,
+      "reason": "E49 adds model-visible durable ask/answer, scoped cancellation, sibling/requester and restart/race evidence; full stress/UI acceptance remains open.",
       "ui": false
     }
   ],
@@ -1115,33 +1115,33 @@
       "leaf_count": 19
     },
     "P3": {
-      "code": 40,
-      "verified": 24,
+      "code": 62,
+      "verified": 44,
       "leaf_count": 18
     },
     "P4": {
-      "code": 28,
-      "verified": 10,
+      "code": 65,
+      "verified": 38,
       "leaf_count": 13
     },
     "P5": {
-      "code": 34,
-      "verified": 26,
+      "code": 41,
+      "verified": 30,
       "leaf_count": 10
     },
     "P6": {
-      "code": 18,
-      "verified": 5,
+      "code": 23,
+      "verified": 9,
       "leaf_count": 5
     },
     "P7": {
-      "code": 44,
-      "verified": 30,
+      "code": 50,
+      "verified": 35,
       "leaf_count": 11
     },
     "P8": {
-      "code": 44,
-      "verified": 26,
+      "code": 46,
+      "verified": 30,
       "leaf_count": 5
     },
     "P9": {
@@ -1150,29 +1150,161 @@
       "leaf_count": 4
     },
     "P10": {
-      "code": 33,
-      "verified": 18,
+      "code": 34,
+      "verified": 19,
       "leaf_count": 5
     }
   },
   "scoped_refresh": {
     "packages": [
-      "polaris-search-providers",
-      "polaris-search-sift",
-      "polaris-search",
-      "polaris-ext",
-      "polaris-ext-mcp",
-      "polaris-ext-skills",
-      "polaris-runtime-research",
-      "polaris-daemon"
+      "polaris-nebius-cloud-token-factory",
+      "polaris-models",
+      "polaris-tools-math",
+      "polaris-nebius-cloud-sandboxes",
+      "polaris-worker",
+      "polaris-system-one-client",
+      "polaris-system-one-engine",
+      "polaris-security-pii",
+      "polaris-system-one-schemas",
+      "polaris-system-one-router",
+      "polaris-system-one",
+      "polaris-ratelimit",
+      "polaris-spike-s1"
     ],
     "tasks": [
-      "P3-X-5",
-      "P5-X-1",
-      "P5-X-2",
-      "P7-X-1"
+      "P3-X-1",
+      "P4-X-1",
+      "P4-X-2"
     ],
-    "evidence": "@prime/evidence/continuation-20261026/README.md",
-    "other_estimates": "retained from earlier audit, not freshly reassessed"
-  }
+    "evidence": "@prime/evidence/phase3-20261027-local/README.md",
+    "other_estimates": "retained; all phase gates open; unsealed ongoing evidence"
+  },
+  "refresh_history": [
+    {
+      "packages": [
+        "polaris-search-providers",
+        "polaris-search-sift",
+        "polaris-search",
+        "polaris-ext",
+        "polaris-ext-mcp",
+        "polaris-ext-skills",
+        "polaris-runtime-research",
+        "polaris-daemon"
+      ],
+      "tasks": [
+        "P3-X-5",
+        "P5-X-1",
+        "P5-X-2",
+        "P7-X-1"
+      ],
+      "evidence": "@prime/evidence/continuation-20261026/README.md",
+      "other_estimates": "retained from earlier audit, not freshly reassessed"
+    },
+    {
+      "packages": [
+        "polaris-worker",
+        "polaris-system-one-engine",
+        "polaris-system-one-client",
+        "polaris-ingest",
+        "polaris-hacker"
+      ],
+      "tasks": [
+        "P7-X-2"
+      ],
+      "evidence": "@prime/evidence/continuation-20261026-e40/README.md",
+      "other_estimates": "retained from earlier audit, not freshly reassessed"
+    },
+    {
+      "packages": [
+        "polaris-system-one-client",
+        "polaris-worker",
+        "polaris-devenv-cicd",
+        "polaris-nebius-cloud-ai-cloud",
+        "polaris-nebius-cloud"
+      ],
+      "tasks": [],
+      "evidence": "@prime/evidence/continuation-20261026-e41/README.md",
+      "other_estimates": "retained from earlier audit, not freshly reassessed"
+    },
+    {
+      "packages": [
+        "polaris-models",
+        "polaris-worker",
+        "polaris-system-one-client",
+        "polaris-runtime-context",
+        "polaris-kernel-operators"
+      ],
+      "tasks": [
+        "P10-2"
+      ],
+      "evidence": "@prime/evidence/continuation-20261026-e43/README.md",
+      "additional_evidence": "@prime/evidence/continuation-20261026-e42/README.md",
+      "other_estimates": "retained from earlier audit, not freshly reassessed"
+    },
+    {
+      "packages": [
+        "polaris-runtime-dag"
+      ],
+      "tasks": [],
+      "evidence": "@prime/evidence/continuation-20261026-e44/README.md",
+      "other_estimates": "retained from earlier audit, not freshly reassessed"
+    },
+    {
+      "packages": [
+        "polaris-runtime-frames",
+        "polaris-security-capability"
+      ],
+      "tasks": [
+        "P3-X-1"
+      ],
+      "evidence": "@prime/evidence/continuation-20261026-e45/README.md",
+      "other_estimates": "retained; scoped review only"
+    },
+    {
+      "packages": [
+        "polaris-runtime-frames"
+      ],
+      "tasks": [
+        "P3-X-1"
+      ],
+      "evidence": "@prime/evidence/continuation-20261026-e46/README.md",
+      "other_estimates": "retained from prior audit; no complete phase recertification"
+    },
+    {
+      "packages": [
+        "polaris-runtime-context",
+        "polaris-nebius-cloud-token-factory"
+      ],
+      "tasks": [
+        "P3-X-1"
+      ],
+      "evidence": "@prime/evidence/continuation-20261027-e47/README.md",
+      "other_estimates": "retained from earlier audit; full phase gates remain open"
+    },
+    {
+      "packages": [
+        "polaris-nebius-cloud-sandboxes"
+      ],
+      "tasks": [
+        "P3-X-5",
+        "P3-X-3"
+      ],
+      "evidence": "@prime/evidence/phase3-20261027/README.md",
+      "other_estimates": "retained; P2 remains paused, UI deferred, full phase gates open"
+    },
+    {
+      "packages": [
+        "polaris-runtime-frames",
+        "polaris-kernel-verifier",
+        "polaris-security-capability",
+        "polaris-spike-ratelimit"
+      ],
+      "tasks": [
+        "P3-X-1",
+        "P3-X-5"
+      ],
+      "evidence": "@prime/evidence/phase3-20261027-dispatch/README.md",
+      "other_estimates": "retained; full phase gates open"
+    }
+  ]
 }

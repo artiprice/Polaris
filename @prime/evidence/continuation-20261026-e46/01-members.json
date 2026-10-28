@@ -1,0 +1,13 @@
+{
+  "name": "members",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tools/workspace.py",
+    "check-members"
+  ],
+  "started_utc": "2026-10-26T22:31:52.143906+00:00",
+  "elapsed_seconds": 0.328,
+  "exit_code": 0,
+  "raw": "01-members.txt"
+}

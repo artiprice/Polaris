@@ -1,0 +1,4 @@
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `dev` profile [unoptimized] target(s) in 4.60s

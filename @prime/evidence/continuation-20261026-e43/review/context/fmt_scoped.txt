@@ -1,0 +1,4 @@
+ARGV: cargo fmt -p polaris-runtime-context -- --check
+EXIT: 0
+RAW OUTPUT:
+

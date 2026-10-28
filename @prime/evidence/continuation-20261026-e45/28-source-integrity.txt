@@ -1,0 +1,7 @@
+PASS: 27 observed command records; exits and raw test totals agree.
+PASS: final native 205 passed / 0 failed / 2 ignored; Linux domain 84 / 0 / 0.
+PASS: 1208 source/config/document hashes and retained review hashes match.
+PASS: five canonical descriptors identify 38 actual test definitions.
+PASS: generated manifest agrees with 93-package / 167-alias metadata; report snapshot agrees.
+PASS: compiled role-policy RED and identical targeted GREEN retained.
+LIMIT: scoped mechanical evidence only; full system acceptance remains open.

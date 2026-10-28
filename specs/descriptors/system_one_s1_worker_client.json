@@ -9,14 +9,15 @@
     { "test_name": "response_validation_rejects_answers_for_another_question", "description": "Worker results must return exactly the requested question IDs." },
     { "test_name": "response_validation_rejects_unselected_or_unsorted_choice_scores", "description": "Choice results must use the selected top label and descending scores." },
     { "test_name": "schema_bound_counts_derived_ordinal_labels", "description": "Score labels derived from integer ranges count toward the aggregate schema byte limit." },
-    { "test_name": "client_input_bound_matches_worker_cap", "description": "Client configuration cannot exceed the worker's 262144-byte input limit." }
+    { "test_name": "client_input_bound_matches_worker_cap", "description": "Client configuration rejects input limits above 262144 bytes and deadlines above 120 seconds." },
+    { "test_name": "pipe_retry_classifies_pipe_busy_without_retrying_acl_denial", "description": "The public named-pipe connector retries Windows ERROR_PIPE_BUSY while propagating access-denied errors immediately." }
   ],
   "dependencies": ["polaris_sdk::registry::DecisionEngine", "polaris_proto"],
   "libraries": ["tonic", "tokio"],
   "inputs": [
-    { "name": "transport", "type": "tonic::transport::Channel", "description": "A bounded configured local named pipe or private Unix-domain socket connection to the worker." },
+    { "name": "transport", "type": "tonic::transport::Channel", "description": "A bounded configured local named pipe or private Unix-domain socket connection, with a required parent-issued worker credential." },
     { "name": "request", "type": "DecisionInput", "description": "SDK decision input forwarded to the isolated inference process." }
   ],
   "output_type": "impl DecisionEngine",
-  "output_description": "A kernel-side client that communicates only through the worker RPC contract, applies protocol and input bounds, and does not cache answers without model identity on the wire."
+  "output_description": "A kernel-side authenticated client that communicates only through the worker RPC contract, applies protocol/input/deadline bounds, and does not cache answers without model identity on the wire."
 }

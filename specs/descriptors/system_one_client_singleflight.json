@@ -1,0 +1,50 @@
+{
+  "type_of": "async_function",
+  "name": "Bounded System-One exact-request single-flight",
+  "file_path": "crates/polaris-system-one/crates/client/src/singleflight.rs",
+  "logic_name": "Decision sharing keyed by full request and authenticated worker model identity",
+  "test_list": [
+    {
+      "test_name": "identical_concurrent_requests_infer_once",
+      "description": "Concurrent identical requests produce one inference item and return the same validated decision."
+    },
+    {
+      "test_name": "canceled_singleflight_owner_wakes_waiter_to_recompute",
+      "description": "Dropping the owner wakes a follower, which retries and returns a fresh worker result."
+    },
+    {
+      "test_name": "owner_drop_wakes_waiter_to_recompute",
+      "description": "The in-flight state transitions to retry after owner cancellation."
+    },
+    {
+      "test_name": "waiter_deadline_does_not_remove_owner",
+      "description": "A timed-out waiter leaves the still-active owner available to complete."
+    },
+    {
+      "test_name": "identity_and_request_must_both_match",
+      "description": "Different worker incarnations or request bytes elect separate owners."
+    },
+    {
+      "test_name": "flight_entries_are_bounded",
+      "description": "The registry bypasses flight coordination when its 32-key limit is reached."
+    },
+    {
+      "test_name": "waiter_count_is_bounded",
+      "description": "The registry bypasses coordination once 32 waiters are already admitted."
+    },
+    {
+      "test_name": "worker_restart_changes_cache_identity_even_for_same_model_digest_and_generation",
+      "description": "A process incarnation change produces a distinct cache identity."
+    }
+  ],
+  "dependencies": ["polaris-sdk", "polaris-proto", "tokio"],
+  "inputs": [
+    {
+      "name": "model_identity_and_request",
+      "type": "ModelIdentity + encoded DecisionRequest",
+      "description": "Exact request bytes and fresh worker digest, generation, and process incarnation."
+    }
+  ],
+  "output_type": "Role",
+  "output_description": "Owner, bounded waiter, or bypass role; only successful stable-identity results are shared."
+}

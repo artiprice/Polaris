@@ -1,0 +1,98 @@
+[
+  {
+    "name": "workspace-check",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-27T14:02:03.178522+00:00",
+    "elapsed_seconds": 58.309,
+    "exit_code": 101,
+    "raw": "01-workspace-check.txt"
+  },
+  {
+    "name": "members",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "started_utc": "2026-10-27T14:03:01.494335+00:00",
+    "elapsed_seconds": 0.32,
+    "exit_code": 0,
+    "raw": "02-members.txt"
+  },
+  {
+    "name": "layers",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "started_utc": "2026-10-27T14:03:01.814767+00:00",
+    "elapsed_seconds": 0.343,
+    "exit_code": 0,
+    "raw": "03-layers.txt"
+  },
+  {
+    "name": "witness",
+    "argv": [
+      "cargo",
+      "xtask",
+      "check-witness"
+    ],
+    "started_utc": "2026-10-27T14:03:02.158234+00:00",
+    "elapsed_seconds": 6.302,
+    "exit_code": 0,
+    "raw": "04-witness.txt"
+  },
+  {
+    "name": "render-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs"
+    ],
+    "started_utc": "2026-10-27T14:03:08.461928+00:00",
+    "elapsed_seconds": 0.275,
+    "exit_code": 0,
+    "raw": "05-render-docs.txt"
+  },
+  {
+    "name": "check-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-docs"
+    ],
+    "started_utc": "2026-10-27T14:03:08.737943+00:00",
+    "elapsed_seconds": 0.252,
+    "exit_code": 0,
+    "raw": "06-check-docs.txt"
+  },
+  {
+    "name": "generator-preservation",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "@prime/tools/tests",
+      "-p",
+      "test_workspace_ownership.py"
+    ],
+    "started_utc": "2026-10-27T14:03:08.990430+00:00",
+    "elapsed_seconds": 0.24,
+    "exit_code": 0,
+    "raw": "07-generator-preservation.txt"
+  }
+]

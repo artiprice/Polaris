@@ -1,0 +1,197 @@
+// Small controls of the welcome screen, styled after the design demo's welcome page.
+// Every colour comes from the generated `Tokens` global.
+
+import { Tokens } from "tokens.slint";
+import { Icon, IconPaths } from "icons.slint";
+
+// Shared easing of the demo's menus: 160ms cubic-bezier(.16,1,.3,1).
+export global Motion {
+    out property <duration> fast: Tokens.speed;
+}
+
+// The North Star mark of `polaris_ui_model::logo` (star, rays, grey tips).
+export component Brand {
+    width: 44px;
+    height: 38px;
+    Path {
+        x: (parent.width - self.width) / 2;
+        width: 28px;
+        height: 28px;
+        viewbox-width: 64;
+        viewbox-height: 64;
+        commands: "M32 2v8M32 54v8M2 32h8M54 32h8";
+        stroke: Tokens.logo-tips;
+        stroke-width: 2px;
+        stroke-line-cap: round;
+        fill: transparent;
+    }
+    Path {
+        x: (parent.width - self.width) / 2;
+        width: 28px;
+        height: 28px;
+        viewbox-width: 64;
+        viewbox-height: 64;
+        commands: "M32 13v9M32 42v9M13 32h9M42 32h9";
+        stroke: Tokens.logo-trace;
+        stroke-width: 2px;
+        stroke-line-cap: round;
+        fill: transparent;
+    }
+    Path {
+        x: (parent.width - self.width) / 2;
+        width: 28px;
+        height: 28px;
+        viewbox-width: 64;
+        viewbox-height: 64;
+        commands: "M32 21L35.2 28.8L43 32L35.2 35.2L32 43L28.8 35.2L21 32L28.8 28.8Z";
+        fill: Tokens.logo-star;
+    }
+}
+
+// Round 42px sidebar button with a tooltip to its right.
+export component NavButton {
+    in property <string> icon;
+    in property <string> tip;
+    in property <bool> active;
+    callback clicked();
+    width: 42px;
+    height: 42px;
+    accessible-role: button;
+    accessible-label: root.tip;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    Rectangle {
+        border-radius: self.height / 2;
+        background: touch.has-hover || root.active ? Tokens.nav-hover : transparent;
+        animate background { duration: Motion.fast; }
+    }
+    Icon {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        commands: root.icon;
+        color: touch.has-hover || root.active ? Tokens.text : Tokens.muted-web;
+    }
+    tooltip := Rectangle {
+        x: parent.width + 12px;
+        y: (parent.height - self.height) / 2;
+        width: label.preferred-width + 20px;
+        height: label.preferred-height + 10px;
+        background: Tokens.tooltip-bg;
+        border-width: 1px;
+        border-color: Tokens.line;
+        border-radius: 6px;
+        opacity: touch.has-hover ? 1 : 0;
+        visible: self.opacity > 0.01;
+        animate opacity { duration: Motion.fast; }
+        label := Text {
+            text: root.tip;
+            font-size: 11px;
+            color: Tokens.text;
+        }
+    }
+}
+
+// One option of a segmented control (mode, effort).
+export component Segment {
+    in property <string> label;
+    in property <bool> selected;
+    in property <brush> selected-color: Tokens.text;
+    in property <bool> mono;
+    callback clicked();
+    min-height: 26px;
+    horizontal-stretch: 1;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-checked: root.selected;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    Rectangle {
+        border-radius: 4px;
+        background: root.selected ? Tokens.segment-selected-bg : (touch.has-hover ? Tokens.segment-hover-bg : transparent);
+        border-width: root.selected ? 1px : 0px;
+        border-color: Tokens.segment-selected-ring;
+    }
+    Text {
+        text: root.label;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        font-size: root.mono ? 9px : 10px;
+        font-family: root.mono ? Tokens.font-mono : Tokens.font-body;
+        color: root.selected ? root.selected-color : (touch.has-hover ? Tokens.row-hover-fg : Tokens.muted-web);
+    }
+}
+
+// A row of the model list with a trailing check.
+export component ModelRow {
+    in property <string> label;
+    in property <bool> selected;
+    callback clicked();
+    min-height: 32px;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-checked: root.selected;
+    accessible-action-default => { root.clicked(); }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    Rectangle {
+        border-radius: 6px;
+        background: touch.has-hover ? Tokens.row-hover-bg : (root.selected ? Tokens.row-checked-bg : transparent);
+    }
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        alignment: space-between;
+        Text {
+            text: root.label;
+            vertical-alignment: center;
+            font-size: 12px;
+            color: touch.has-hover ? Tokens.row-hover-fg : (root.selected ? Tokens.row-checked-fg : Tokens.row-fg);
+        }
+        Icon {
+            y: (parent.height - self.height) / 2;
+            width: 14px;
+            height: 14px;
+            commands: IconPaths.check;
+            color: Tokens.check;
+            opacity: root.selected ? 1 : 0;
+            animate opacity { duration: 140ms; }
+        }
+    }
+}
+
+// Small text link with a trailing arrow.
+export component ArrowLink {
+    in property <string> label;
+    in property <length> font-size: 10px;
+    callback clicked();
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+    HorizontalLayout {
+        spacing: 4px;
+        Text {
+            text: root.label;
+            font-size: root.font-size;
+            vertical-alignment: center;
+            color: touch.has-hover ? Tokens.row-hover-fg : Tokens.footer-link;
+        }
+        Icon {
+            y: (parent.height - self.height) / 2;
+            width: 12px;
+            height: 12px;
+            commands: IconPaths.arrow-right;
+            color: touch.has-hover ? Tokens.row-hover-fg : Tokens.footer-link;
+        }
+    }
+}

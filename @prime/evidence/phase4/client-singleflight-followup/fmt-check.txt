@@ -1,0 +1,2 @@
+Command: cargo fmt -p polaris-system-one-client -p polaris-security-pii -- --check
+Result: exit 0; formatter emitted no diff/output.

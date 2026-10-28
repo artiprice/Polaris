@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\mDev\Polaris\@prime\tmp\p2\check_e47_integrity.py", line 35, in <module>
+    assert (root/crate['path']/'Cargo.toml').read_text(encoding='utf-8')==workspace.render_package_manifest(crate,template),crate['name']+' generated manifest'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: polaris-cli generated manifest

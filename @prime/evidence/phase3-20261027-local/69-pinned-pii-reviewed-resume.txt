@@ -1,0 +1,10 @@
+RECHECKED fp32_v2/classifier_fp32.onnx
+RECHECKED fp32_v2/count_lstm_fixed_fp32.onnx
+RECHECKED fp32_v2/count_pred_argmax_fp32.onnx
+RESUME REVIEWED PARTIAL fp32_v2/encoder_fp32.onnx offset=916455424
+FETCH fp32_v2/encoder_fp32.onnx 1111055954
+Traceback (most recent call last):
+  File "C:\mDev\Polaris\@prime\tmp\p2\download_pii_pinned.py", line 47, in <module>
+    if size!=row["bytes"] or digest.hexdigest()!=row["sha256"]: raise RuntimeError("artifact length/hash mismatch")
+                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: artifact length/hash mismatch

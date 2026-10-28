@@ -1,0 +1,45 @@
+{
+  "type_of": "async method",
+  "name": "S1Client::evict_models",
+  "file_path": "crates/polaris-system-one/crates/client/src/lib.rs",
+  "logic_name": "Authenticated S1 Model Eviction",
+  "test_list": [
+    {
+      "test_name": "eviction_authenticates_handshake_and_rpc_and_returns_drop_acknowledgement",
+      "description": "The client completes the S1 handshake, authenticates EvictModels, and returns the worker's model-drop acknowledgement count."
+    },
+    {
+      "test_name": "eviction_rejects_acknowledgement_above_native_engine_capacity",
+      "description": "A response claiming more than one evicted model is rejected as a protocol failure because the S1 worker has one native engine."
+    },
+    {
+      "test_name": "eviction_obeys_configured_deadline",
+      "description": "The EvictModels RPC is bounded by the client's configured timeout."
+    },
+    {
+      "test_name": "eviction_maps_worker_status_errors",
+      "description": "Worker unavailability maps to DecisionError::Unavailable and other RPC failures map to DecisionError::Model."
+    },
+    {
+      "test_name": "eviction_rejects_missing_authentication",
+      "description": "The authenticated worker rejects EvictModels when the client does not present the expected worker credential."
+    }
+  ],
+  "dependencies": [
+    "S1Client",
+    "WorkerCredential",
+    "WorkerService.EvictModels",
+    "WorkerService.Handshake",
+    "DecisionError"
+  ],
+  "libraries": ["tokio", "tonic"],
+  "inputs": [
+    {
+      "name": "self",
+      "type": "&S1Client",
+      "description": "Authenticated client configured for one local S1 worker endpoint."
+    }
+  ],
+  "output_type": "Result<u32, DecisionError>",
+  "output_description": "The worker's serialized model-drop acknowledgement count, limited to zero or one; this does not pause heavy-build admission, preempt active work, or prove an RSS reduction."
+}

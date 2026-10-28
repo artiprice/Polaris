@@ -1,0 +1,122 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+    Checking polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+    Checking polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+    Checking polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+    Checking polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Checking polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Checking polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+    Checking polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+    Checking polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+    Checking polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+    Checking polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+    Checking polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+    Checking polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+    Checking polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+    Checking polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+    Checking polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error: using a potentially dangerous silent `as` conversion
+   --> crates\polaris-kernel\src\runtime.rs:101:50
+    |
+101 |         let recovery: Arc<dyn SandboxRecovery> = Arc::clone(&backend) as Arc<dyn SandboxRecovery>;
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: consider using a safe wrapper for this conversion
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#as_conversions
+    = note: requested on the command line with `-D clippy::as-conversions`
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-kernel\src\runtime.rs:564:13
+    |
+564 | /             if let Ok(mut pending) = shared.pending.lock() {
+565 | |                 if let Some(reply) = pending.remove(&id) {
+566 | |                     let _delivered = reply.send(result);
+567 | |                 }
+568 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+564 ~             if let Ok(mut pending) = shared.pending.lock()
+565 ~                 && let Some(reply) = pending.remove(&id) {
+566 |                     let _delivered = reply.send(result);
+567 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-kernel\src\runtime.rs:580:17
+    |
+580 | /                 if let Ok(mut pending) = shared.pending.lock() {
+581 | |                     if let Some(reply) = pending.remove(&id) {
+582 | |                         let _delivered = reply.send(result);
+583 | |                     }
+584 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+580 ~                 if let Ok(mut pending) = shared.pending.lock()
+581 ~                     && let Some(reply) = pending.remove(&id) {
+582 |                         let _delivered = reply.send(result);
+583 ~                     }
+    |
+
+error: could not compile `polaris-kernel` (lib) due to 3 previous errors

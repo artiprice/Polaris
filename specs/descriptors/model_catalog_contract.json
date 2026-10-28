@@ -1,0 +1,25 @@
+{
+  "type_of": "module",
+  "name": "ModelRegistry catalog, selection, and policy methods",
+  "file_path": "crates/polaris-models/src/catalog.rs",
+  "logic_name": "Model Catalog Contract",
+  "test_list": [
+    { "test_name": "builtin_contains_dated_snapshot_ids_and_effort_mapping", "description": "The built-in catalog contains exactly the six PLAN snapshot ids, records snapshot date 2026-10-20 with unknown live availability/capabilities and no invented price/context values, resolves aliases, and maps low through max as documented including xhigh reasoning." },
+    { "test_name": "overrides_are_first_wins_and_report_gaps", "description": "Overlapping inclusive declarations use the first declaration, report overlap efforts, and uncovered efforts retain the configured base mapping." },
+    { "test_name": "invalid_override_is_atomic", "description": "A bad declaration rejects the whole update and preserves the previously active override layer." },
+    { "test_name": "custom_registry_is_bounded_and_rejects_unsafe_aliases", "description": "Explicit metadata supports configured custom chat/vision/embedding models; catalog and alias bounds, malformed aliases, duplicate identities, and embedding effort targets are rejected." },
+    { "test_name": "constrained_selection_enforces_effort_model_and_availability", "description": "Selection requires the effort and model allowlists and rejects explicitly unavailable choices while unknown availability remains selectable." },
+    { "test_name": "availability_observations_validate_atomically_and_monotonically", "description": "Unknown ids, duplicates, and stale timestamps reject the whole observation batch without partial mutation; fresh observations update availability and timestamp." },
+    { "test_name": "cascade_uses_lower_effort_draft_and_requested_verification", "description": "Cascade planning selects the configured lower-effort draft and requested verification choice and marks identical selections accurately." }
+  ],
+  "dependencies": ["polaris_sdk::effort::Effort", "polaris_sdk::ids::ModelId", "polaris_config::EffortModels", "ModelsError"],
+  "libraries": ["serde", "thiserror"],
+  "inputs": [
+    { "name": "registry", "type": "ModelRegistry", "description": "Explicitly configured model metadata and effort mappings." },
+    { "name": "declarations", "type": "&[ModelEffort]", "description": "Ordered inclusive effort override declarations." },
+    { "name": "observations", "type": "&[(ModelId, Availability)]", "description": "Provider observations to apply atomically with their observation timestamp." }
+  ],
+  "output_type": "Result<ModelRegistry policy result, ModelsError>",
+  "output_description": "A deterministic dated catalog and configured selection policy with explicit errors for invalid or disallowed inputs.",
+  "public_commentary": "This contract describes only the dated repository snapshot and configured behavior. It does not claim live provider availability, current prices, token context limits, capability support, or cascade speedups."
+}

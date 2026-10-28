@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-kernel-supervisor",
+    "--test",
+    "worker_bootstrap",
+    "unconfirmed_cleanup_never_starts_another_generation",
+    "--",
+    "--nocapture"
+  ],
+  "exit_code": 101
+}

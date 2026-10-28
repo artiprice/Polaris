@@ -1,0 +1,23 @@
+[package]
+name = "polaris-ui-session"
+description = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+tokio = { workspace = true }
+# Internal edges (layer-checked by `workspace.py check-layers`).
+polaris-sdk = { workspace = true }
+polaris-kernel = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }

@@ -1,0 +1,2 @@
+argv: cargo fmt --all -- --check
+exit: 1

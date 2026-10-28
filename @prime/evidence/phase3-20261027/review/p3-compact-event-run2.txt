@@ -1,0 +1,50 @@
+warning: unused import: `CommandId`
+  --> crates\polaris-proto\tests\event_conversion.rs:10:29
+   |
+10 | use polaris_sdk::ids::{Cid, CommandId, FrameId, MicroUsd, Seq, SessionId, TokenCount};
+   |                             ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-proto` (test "event_conversion") generated 1 warning (run `cargo fix --test "event_conversion" -p polaris-proto` to apply 1 suggestion)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 5.50s
+     Running tests\human_requests.rs (target\debug\deps\human_requests-d23fce4b1e012ba7.exe)
+
+running 6 tests
+test host_answer_rejects_untrusted_control_token ... ok
+test human_request_answer_is_atomic_and_durable ... ok
+test host_answer_resumes_only_its_pending_request ... ok
+test human_request_answer_cancel_race_has_one_winner ... ok
+test human_request_rejects_invalid_stale_and_duplicate_answers ... ok
+test human_request_rehydrates_pending_and_terminal_states ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running tests\event_conversion.rs (target\debug\deps\event_conversion-5e4c3e889b29aba9.exe)
+
+running 11 tests
+test conversion_never_panics_on_default_message ... ok
+test missing_oneof_body_is_error ... ok
+test malformed_cid_and_schema_are_errors ... ok
+test old_envelope_version_is_preserved_and_new_variants_require_v4 ... ok
+test event_record_roundtrips_with_timestamp_edges ... ok
+test unknown_enum_value_is_error ... ok
+test human_request_events_require_schema_v5 ... ok
+test every_event_variant_roundtrips ... ok
+test prop_event_roundtrip ... ok
+test prop_event_record_roundtrip ... ok
+test prop_garbage_bytes_never_panic ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-060a754851579d14.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+

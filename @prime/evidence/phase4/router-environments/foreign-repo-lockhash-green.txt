@@ -1,0 +1,9 @@
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Finished `test` profile [unoptimized] target(s) in 2.57s
+     Running tests\environment_images.rs (target\debug\deps\environment_images-f6d333c05697d29e.exe)
+
+running 1 test
+test foreign_repo_same_lockfile_hash_is_not_exact ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+

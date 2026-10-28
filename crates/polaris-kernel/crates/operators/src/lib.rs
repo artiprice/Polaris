@@ -4,6 +4,7 @@
 //! crates; the composition root must inject real operators for every stage it claims to execute.
 mod pipeline;
 mod policy;
+mod rate_limit;
 mod sanitize;
 mod triage;
 
@@ -14,6 +15,9 @@ pub use pipeline::{
 pub use policy::{
     ClosedOp, ClosedOpError, FailureOpenObserver, FailureOpenReason, Fallback, OpenOp, OpenOpError,
     RaceOp, RetryOp, RetryOpError,
+};
+pub use rate_limit::{
+    RateLimitInput, RateLimitOp, RateLimitOpConfigError, RateLimitOpError, RateLimited,
 };
 pub use sanitize::{
     MAX_SANITIZE_BYTES, MaskedText, SanitizeConfigError, SanitizeError, SanitizePiiOp,

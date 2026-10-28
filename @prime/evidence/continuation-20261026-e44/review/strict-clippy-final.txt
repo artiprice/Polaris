@@ -1,0 +1,2 @@
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Finished `dev` profile [unoptimized] target(s) in 1.49s

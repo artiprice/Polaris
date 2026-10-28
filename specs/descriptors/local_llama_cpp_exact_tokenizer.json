@@ -1,0 +1,85 @@
+{
+  "type_of": "adapter",
+  "name": "LlamaCppChatClient",
+  "file_path": "crates/polaris-nebius-cloud/crates/token-factory/src/client.rs",
+  "logic_name": "Pinned llama.cpp exact chat counting and structured-tool chat",
+  "test_list": [
+    {
+      "test_name": "connect_validates_build_model_context_and_tool_template_capabilities",
+      "description": "Construction verifies /props build, alias, context and tool-call flags plus /v1/models identity and context against the caller-pinned profile."
+    },
+    {
+      "test_name": "count_and_chat_dispatch_byte_identical_serialized_body",
+      "description": "The same production chat serializer and pinned alias feed exact JSON request bytes to /v1/chat/completions/input_tokens and /v1/chat/completions, including tools, tool history, stream, n, output-token fields, and stream_options.include_usage."
+    },
+    {
+      "test_name": "separate_count_and_chat_requests_keep_their_own_generation_options",
+      "description": "Changing max output tokens between separate SDK requests changes each wire body accordingly; the adapter does not reuse stale serialized options from an earlier count."
+    },
+    {
+      "test_name": "token_count_response_is_strict_and_uses_pinned_context",
+      "description": "Only a positive input_tokens integer with the expected response object is accepted; PromptTokenCount uses the startup-validated context, with no estimate fallback."
+    },
+    {
+      "test_name": "startup_rejects_wrong_build_and_missing_tool_call_capability",
+      "description": "Any mismatch between configured and live server metadata fails closed before a prompt is dispatched."
+    },
+    {
+      "test_name": "startup_rejects_alias_and_context_mismatches_in_props_and_model_catalog",
+      "description": "A mismatched /v1/models id or metadata context is rejected even if /props looks compatible."
+    },
+    {
+      "test_name": "startup_rejects_malformed_props_and_model_schemas",
+      "description": "Required /props and /v1/models schema fields are strict and malformed metadata fails before prompt dispatch."
+    },
+    {
+      "test_name": "tokenizer_rejects_malformed_counts_without_estimate_fallback",
+      "description": "A zero input token count is rejected rather than replaced with a local estimate."
+    },
+    {
+      "test_name": "oversized_chat_is_rejected_before_post_dispatch",
+      "description": "A request that exceeds configured request bounds fails before the llama.cpp chat endpoint receives a POST."
+    },
+    {
+      "test_name": "tool_count_limit_is_rejected_before_post_dispatch",
+      "description": "Requests that exceed the configured tool-call bound fail before the llama.cpp chat endpoint receives a POST."
+    },
+    {
+      "test_name": "local_adapter_does_not_follow_redirect_to_remote_authority",
+      "description": "A loopback metadata endpoint redirecting to a remote authority is rejected without following the redirect."
+    },
+    {
+      "test_name": "loopback_socket_authority_requires_literal_ip_and_explicit_port",
+      "description": "The public socket-address extractor accepts explicit nonzero-port numeric IPv4/IPv6 loopback and rejects DNS names or implicit/zero ports for process ownership checks."
+    },
+    {
+      "test_name": "adapter_rejects_non_http_or_non_v1_base_before_network_dispatch",
+      "description": "The llama.cpp adapter accepts only the direct HTTP `/v1/` loopback API base and rejects TLS proxy or custom path variants before any network request."
+    },
+    {
+      "test_name": "real_llama_cpp_exact_count_and_chat_usage_parity",
+      "description": "An opt-in local integration probe connects through a capture proxy to the pinned loopback server, generates a structured function call through this production adapter, checks prompt-token parity, and retains byte-exact request/response transcripts under the local phase evidence directory."
+    }
+  ],
+  "dependencies": ["TokenFactoryClient", "chat_request_json", "ChatModel", "PromptTokenizer", "read_bounded"],
+  "libraries": ["reqwest", "serde", "serde_json", "tokio"],
+  "inputs": [
+    {
+      "name": "base",
+      "type": "BaseUrl",
+      "description": "Literal loopback OpenAI-compatible llama.cpp base URL, normally http://127.0.0.1:<port>/v1."
+    },
+    {
+      "name": "expected_profile",
+      "type": "LlamaCppExpectedProfile",
+      "description": "Pinned build_info, model alias, and context length that must match both /props and /v1/models; tool-call template capability is mandatory."
+    },
+    {
+      "name": "request",
+      "type": "ChatRequest",
+      "description": "SDK chat request serialized by the same production chat serializer for exact preflight tokenization and subsequent chat dispatch."
+    }
+  ],
+  "output_type": "ChatModel + PromptTokenizer",
+  "output_description": "Loopback-only llama.cpp adapter that reports the server's exact rendered prompt token count and validated context. It has no heuristic fallback and refuses servers whose build, alias, context, model identity, or structured tool capability differ from the pinned profile."
+}

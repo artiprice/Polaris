@@ -1,0 +1,129 @@
+    Blocking waiting for file lock on build directory
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Checking polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+    Checking polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+    Checking polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+    Checking polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+    Checking polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Checking polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+    Checking polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+    Checking polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+    Checking polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+    Checking polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+    Checking polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+    Checking polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Checking polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+    Checking polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+    Checking polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+    Checking polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+    Checking polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+    Checking polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+    Checking polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+    Checking polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+    Checking polaris-system-one-nano v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\nano)
+    Checking polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Checking polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Checking polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-kernel\src\worker_lifecycle.rs:519:9
+    |
+519 | /         fn graceful_stop(
+520 | |             &self,
+521 | |             _tree: &ProcessTree,
+522 | |             _grace: Duration,
+523 | |         ) -> impl std::future::Future<Output = Result<PlatformStopOutcome, PlatformError>> + Send
+    | |_________________________________________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+    = note: `-D clippy::manual-async-fn` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_async_fn)]`
+
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-kernel\src\worker_lifecycle.rs:532:9
+    |
+532 | /         fn try_wait_tree(
+533 | |             &self,
+534 | |             _tree: &ProcessTree,
+535 | |         ) -> impl std::future::Future<Output = Result<Option<ProcessExit>, PlatformError>> + Send
+    | |_________________________________________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+
+error: this function can be simplified using the `async fn` syntax
+   --> crates\polaris-kernel\src\sandbox_recovery.rs:100:9
+    |
+100 | /         fn graceful(
+101 | |             &mut self,
+102 | |             _ctx: TeardownContext,
+103 | |         ) -> impl Future<Output = Result<Disposition, TeardownError>> + Send {
+    | |____________________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_async_fn
+
+error: could not compile `polaris-kernel` (lib test) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: called `.err().expect()` on a `Result` value
+   --> crates\polaris-kernel\tests\sandbox_execution.rs:671:22
+    |
+671 |                       .err()
+    |  ______________________^
+672 | |                     .expect("release must fail")
+    | |___________________________^ help: try: `expect_err`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#err_expect
+    = note: `-D clippy::err-expect` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::err_expect)]`
+
+error: could not compile `polaris-kernel` (test "sandbox_execution") due to 1 previous error

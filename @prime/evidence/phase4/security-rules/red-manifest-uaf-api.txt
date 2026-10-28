@@ -1,0 +1,133 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+     Locking 4 packages to highest Rust 1.99 compatible versions
+      Adding doctest-file v1.1.1
+      Adding interprocess v2.4.5
+      Adding recvmsg v1.0.0
+      Adding widestring v1.2.1
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+error[E0432]: unresolved imports `polaris_security_rules::ManifestAuditStatus`, `polaris_security_rules::PackageEcosystem`, `polaris_security_rules::TrustedPackageBaseline`
+ --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:6:5
+  |
+6 |     ManifestAuditStatus, PackageEcosystem, RuleEngine, TrustedPackageBaseline,
+  |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^              ^^^^^^^^^^^^^^^^^^^^^^ no `TrustedPackageBaseline` in the root
+  |     |                    |
+  |     |                    no `PackageEcosystem` in the root
+  |     no `ManifestAuditStatus` in the root
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:21:25
+   |
+21 |     let report = engine.audit_manifest(Path::new("Cargo.toml"), b"not valid TOML", None)?;
+   |                         ^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:34:25
+   |
+34 |     let report = engine.audit_manifest(
+   |                  -------^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:48:25
+   |
+48 |     let report = engine.audit_manifest(
+   |                  -------^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:66:25
+   |
+66 |     let report = engine.audit_manifest(
+   |                  -------^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:85:25
+   |
+85 |     let report = engine.audit_manifest(
+   |                  -------^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+  --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:99:22
+   |
+99 |     let npm = engine.audit_manifest(
+   |               -------^^^^^^^^^^^^^^
+   |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+  --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+   |
+86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+   --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:107:25
+    |
+107 |     let python = engine.audit_manifest(
+    |                  -------^^^^^^^^^^^^^^
+    |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+   --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+    |
+ 86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+   --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:124:25
+    |
+124 |     let result = engine.audit_manifest(Path::new("Cargo.toml"), &oversized, Some(&trusted));
+    |                         ^^^^^^^^^^^^^^
+    |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+   --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+    |
+ 86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `audit_manifest` found for struct `RuleEngine` in the current scope
+   --> crates\polaris-security\crates\rules\tests\manifest_typosquat.rs:138:25
+    |
+138 |     let report = engine.audit_manifest(Path::new("notes.txt"), b"arbitrary text", Some(&trusted))?;
+    |                         ^^^^^^^^^^^^^^
+    |
+help: there is a method `audit_diff` with a similar name, but with different arguments
+   --> crates\polaris-security\crates\rules\src\audit.rs:86:5
+    |
+ 86 |     pub fn audit_diff(&self, request: &DiffAuditRequest<'_>) -> Result<RuleScanReport, RulesError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-security-rules` (test "manifest_typosquat") due to 10 previous errors
+warning: build failed, waiting for other jobs to finish...

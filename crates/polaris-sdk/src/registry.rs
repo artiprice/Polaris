@@ -24,6 +24,78 @@ pub use crate::secrets::{
     EnvName, KeyringLocation, SecretLocation, SecretSource, SecretSourceError,
 };
 
+// ------------------------------------------------------------------------------------------- MCP
+
+/// Sanitized failures from an MCP tool client.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum McpToolClientError {
+    /// The configured server or requested tool is unavailable.
+    #[error("MCP tool is unavailable")]
+    Unavailable,
+    /// The request exceeded its configured deadline.
+    #[error("MCP request timed out")]
+    Timeout,
+    /// The request was cancelled by its owner.
+    #[error("MCP request cancelled")]
+    Cancelled,
+    /// The tool call was refused by the caller's effect authorizer.
+    #[error("MCP tool effects were denied")]
+    Denied,
+    /// The MCP protocol response was invalid or exceeded a configured bound.
+    #[error("MCP response was invalid or exceeded its bound")]
+    Protocol,
+}
+
+impl HasKind for McpToolClientError {
+    fn kind(&self) -> ErrorKind {
+        match self {
+            Self::Unavailable | Self::Timeout | Self::Cancelled => ErrorKind::Transient,
+            Self::Denied => ErrorKind::Policy,
+            Self::Protocol => ErrorKind::Permanent,
+        }
+    }
+}
+
+/// A remote MCP tool definition with its bounded JSON input schema.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct McpToolDefinition {
+    /// Exact tool name advertised by the remote server.
+    pub name: String,
+    /// UTF-8 JSON encoding of the input schema, bounded by the adapter.
+    pub input_schema_json: Vec<u8>,
+}
+
+/// Bounded result from an MCP tool invocation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct McpToolResult {
+    /// UTF-8 JSON encoding of the structured result, bounded by the adapter.
+    pub result_json: Vec<u8>,
+    /// Whether the remote server marked the tool result as an error.
+    pub is_error: bool,
+}
+
+/// Minimal API-registry port for an already configured and authorized MCP server.
+///
+/// Concrete clients own transport framing, authentication and process lifecycle. Callers provide
+/// an explicit server namespace and cancellation token; implementations must return sanitized,
+/// bounded JSON payloads and must not detach request futures on cancellation.
+pub trait McpToolClient: Send + Sync {
+    /// Lists the configured server's remote tools in stable name order.
+    fn list_tools(
+        &self,
+        server: &str,
+    ) -> impl Future<Output = Result<Vec<McpToolDefinition>, McpToolClientError>> + Send;
+
+    /// Calls one exact tool name with a bounded JSON object payload.
+    fn call_tool(
+        &self,
+        server: &str,
+        tool: &str,
+        arguments_json: &[u8],
+        cancellation: &tokio_util::sync::CancellationToken,
+    ) -> impl Future<Output = Result<McpToolResult, McpToolClientError>> + Send;
+}
+
 // ----------------------------------------------------------------------------------------- tools
 
 /// Side effects a tool may have; used for permission prompts, sandbox routing and tool pruning.
@@ -313,6 +385,35 @@ pub trait ChatModel: Send + Sync {
         &self,
         req: ChatRequest,
     ) -> impl Future<Output = Result<Self::Stream, ModelError>> + Send;
+}
+
+/// Actual chat-template token count and the selected model's total context capacity.
+///
+/// `max_context_tokens` is the model capacity and must be positive. `input_tokens` may exceed that
+/// capacity so callers can trim a prompt before sending it. Callers validate the estimate against
+/// their own output reservation and policy before invoking [`ChatModel::stream`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PromptTokenCount {
+    /// Count for the complete input prompt.
+    pub input_tokens: TokenCount,
+    /// Maximum context capacity, including input and reserved output, for the selected model.
+    pub max_context_tokens: TokenCount,
+}
+
+/// Counts prompts using the same tokenizer and model configuration as its paired [`ChatModel`].
+///
+/// Implementations count the provider's actual full chat template, enabled tool schemas, and
+/// reasoning replay fields. They must not estimate from bytes or text length. If the tokenizer or
+/// model capacity is unavailable, implementations return an error instead of fabricating counts.
+pub trait PromptTokenizer: Send + Sync {
+    /// Count the complete prompt and report the selected model's positive context capacity.
+    ///
+    /// The input count may exceed the capacity, allowing callers to trim before sending. Callers
+    /// must validate the returned counts against output-token and frame-budget constraints.
+    fn count_prompt(
+        &self,
+        request: &ChatRequest,
+    ) -> impl Future<Output = Result<PromptTokenCount, ModelError>> + Send;
 }
 
 /// Model-provider failures.
@@ -1276,6 +1377,56 @@ pub trait PlatformOps: Send + Sync {
     /// # Errors
     /// [`PlatformError`] when the OS query fails.
     fn memory_pressure(&self) -> Result<MemoryPressure, PlatformError>;
+}
+
+/// Optional platform capability for a one-time secret bootstrap over retained worker stdin.
+///
+/// This capability is separate from [`PlatformOps`] so platforms that cannot provide a private
+/// inherited stdin channel never claim to support credential provisioning. A successful call
+/// writes exactly the supplied bytes and leaves stdin open for the process lifetime. Implementors
+/// must reject a second attempt on the same process and validate the retained handle and root PID.
+/// Secret bytes must never enter arguments, environment variables, diagnostics, or error strings.
+pub trait WorkerBootstrapPlatform: PlatformOps {
+    /// Transfer a nonempty secret prefix of at most 4096 bytes once to an owned process.
+    ///
+    /// The deadline covers lock acquisition and the complete write. Once transfer starts, a
+    /// failure or cancellation makes the process terminal: retain force-stop intent and attempt
+    /// termination through its owned OS handle, including an owned cleanup path if the handle is
+    /// contended. A timeout does not prove OS termination; callers must retain supervision until
+    /// exit is observed. Invalid input and duplicate attempts must not kill a healthy process.
+    ///
+    /// # Errors
+    /// [`PlatformError`] for invalid input, a stale or mismatched process handle, an attempted
+    /// second transfer, a deadline, or an operating-system write/termination failure. Errors must
+    /// contain no supplied secret bytes. The secret is zeroized when this future releases it.
+    fn bootstrap_tree(
+        &self,
+        tree: &ProcessTree,
+        secret: secrecy::SecretString,
+        timeout: Duration,
+    ) -> impl Future<Output = Result<(), PlatformError>> + Send;
+}
+
+/// Optional, read-only proof that an owned root process currently owns one exact local listener.
+///
+/// This capability is an operational startup observation, not endpoint authentication. It must
+/// reject wildcard/non-loopback addresses and return true only when the retained root process is
+/// the sole observed owner of the exact listener. Implementations must validate the opaque process
+/// handle before and after observation and must never signal a PID learned from the endpoint.
+pub trait LocalEndpointOwnership: PlatformOps {
+    /// Check whether the exact retained root process owns the exact literal-loopback TCP listener.
+    ///
+    /// Helper/fork listeners, ambiguous ownership, unsupported transports, and incomplete OS
+    /// observations must return false or an error. The method does not authenticate HTTP responses
+    /// from the listener and callers must continue to validate the endpoint's advertised identity.
+    ///
+    /// # Errors
+    /// [`PlatformError`] for stale/mismatched handles, incomplete OS queries, bounds, or I/O.
+    fn owns_loopback_tcp_listener(
+        &self,
+        tree: &ProcessTree,
+        address: std::net::SocketAddr,
+    ) -> impl Future<Output = Result<bool, PlatformError>> + Send;
 }
 
 /// Platform failures.

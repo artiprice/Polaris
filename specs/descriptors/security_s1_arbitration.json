@@ -1,0 +1,22 @@
+{
+  "type_of": "method",
+  "name": "RuleEngine::arbitrate",
+  "file_path": "crates/polaris-security/crates/rules/src/arbitrate.rs",
+  "logic_name": "s1_arbitration",
+  "test_list": [
+    {"test_name": "timeout_keeps_findings", "description": "S1 timeout retains every disputed security finding."},
+    {"test_name": "calibrated_confident_false_positive_removes_disputed_finding", "description": "Only calibrated high-confidence rejection of finding support removes disputed findings using the canonical question."},
+    {"test_name": "engine_error_and_uncalibrated_schema_keep_findings", "description": "Unavailable engine results and uncalibrated schemas retain findings."},
+    {"test_name": "undisputed_finding_is_never_removed", "description": "Undisputed findings are never removed by S1."},
+    {"test_name": "foreign_schema_and_missing_evidence_keep_findings", "description": "Unrelated schema identities and missing masked evidence preserve findings."},
+    {"test_name": "calibration_mismatch_and_foreign_finding_evidence_keep_findings", "description": "Host-pinned fixture/checkpoint mismatches and foreign CID/span evidence preserve findings."},
+    {"test_name": "only_masked_evidence_reaches_s1_and_evidence_debug_is_redacted", "description": "Only masked evidence reaches the decision engine and Debug output redacts excerpt/context text."},
+    {"test_name": "over_cap_findings_return_typed_bound_before_s1_or_schema_work", "description": "An oversized finding slice is rejected before cloning, evidence scans, or model work."},
+    {"test_name": "schema_deadline_caps_longer_caller_timeout", "description": "A canonical schema's shorter fail-policy deadline bounds the decision call."}
+  ],
+  "dependencies": ["DecisionEngine", "Finding", "ArbitrationEvidence", "ArbitrationTrust", "DecisionSchema"],
+  "libraries": ["polaris-sdk", "tokio"],
+  "inputs": [{"name": "findings_evidence_schema_trust_timeout", "type": "(&[Finding], &[ArbitrationEvidence], &DecisionSchema, &ArbitrationTrust, Duration)", "description": "Findings, CID/span-bound caller-masked evidence, canonical S1 schema, host-pinned calibration digests and bounded timeout."}],
+  "output_type": "Result<ArbitrationReport, RulesError>",
+  "output_description": "Findings preserved unless calibrated S1 explicitly clears a disputed finding above threshold."
+}

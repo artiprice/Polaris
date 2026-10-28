@@ -1,13 +1,15 @@
 //! # polaris-security-pii
 //!
-//! Bounded, session-local PII masking using the pinned security automata DFA and entropy
-//! scanner. The crate does not claim semantic name detection: the SDK decision engine exposes
-//! text classification but no trusted entity offsets, so NER coverage is unavailable here.
-//! Masking reports DFA-plus-entropy-only degraded coverage and never treats that as complete DLP.
+//! Bounded, session-local PII masking using the pinned security automata DFA and entropy scanner,
+//! with optional separately supplied semantic spans from the local PII companion model. The
+//! semantic path consumes validated raw UTF-8 byte offsets only and does not receive or persist
+//! model labels. Unavailable, timed-out, or malformed detection falls back to deterministic
+//! masking and reports degraded coverage; this is not a complete DLP guarantee.
 //!
 //! Unmasking requires an injected [`SandboxUnmaskAuthorizer`] and returns zeroizing plaintext.
-//! The default authorizer always denies. This crate does not persist vault contents; a sealed
-//! resume adapter remains deferred until a real sealer is wired by the composition root.
+//! The default authorizer always denies. Bounded sealed map export/import requires an explicit
+//! authenticated sealer; the kernel supplies actual AEAD and private CAS snapshot storage. Keys
+//! are never generated, persisted or recovered implicitly by this crate.
 
 mod error;
 mod vault;

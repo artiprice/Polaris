@@ -1,0 +1,17 @@
+{
+  "type_of": "function",
+  "name": "models::model_options",
+  "file_path": "apps/polaris-desktop/src/models.rs",
+  "logic_name": "Desktop Model Options",
+  "test_list": [
+    { "test_name": "options_follow_config_effort_order_without_duplicates", "description": "The [nebius.effort] map low..max becomes model options in that order; a model used by several efforts (high and xhigh in the defaults) appears once." },
+    { "test_name": "default_is_the_high_effort_model", "description": "The default option index points at the model configured for effort high." },
+    { "test_name": "labels_are_the_last_path_segment", "description": "Label is the id after its last '/', or the whole id when it has none." },
+    { "test_name": "user_override_changes_the_list", "description": "A config layer that overrides nebius.effort.max replaces that model in the list (the GUI never adds names of its own)." }
+  ],
+  "dependencies": ["polaris_config::EffortModels"],
+  "libraries": [],
+  "inputs": [ { "name": "effort", "type": "&EffortModels", "description": "Effort to model map from the loaded configuration." } ],
+  "output_type": "(Vec<ModelOption>, usize)",
+  "output_description": "Model options for the composer menu and the index of the default (high effort) model."
+}

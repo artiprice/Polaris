@@ -1,0 +1,45 @@
+   Compiling tokio v1.54.1
+   Compiling tokio-util v0.7.20
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+error: prefix `extern` is unknown
+ --> crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:8:43
+  |
+8 |         ("fn text() { let value = "unsafe extern"; }", 0),
+  |                                           ^^^^^^ unknown prefix
+  |
+  = note: prefixed identifiers and literals are reserved since Rust 2021
+help: consider inserting whitespace here
+  |
+8 |         ("fn text() { let value = "unsafe extern "; }", 0),
+  |                                                 +
+
+error: expected one of `)`, `,`, `.`, `?`, or an operator, found keyword `extern`
+ --> crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:8:43
+  |
+8 |         ("fn text() { let value = "unsafe extern"; }", 0),
+  |                                           ^^^^^^ expected one of `)`, `,`, `.`, `?`, or an operator
+
+error: expected one of `)`, `,`, `.`, `?`, or an operator, found `" { fn operation(); }"`
+  --> crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:13:27
+   |
+13 |         ("unsafe extern "C" { fn operation(); }", 1),
+   |                           -^^^^^^^^^^^^^^^^^^^^^
+   |                           |
+   |                           expected one of `)`, `,`, `.`, `?`, or an operator
+   |                           help: missing `,`
+
+error: suffixes on string literals are invalid
+  --> crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:13:10
+   |
+13 |         ("unsafe extern "C" { fn operation(); }", 1),
+   |          ^^^^^^^^^^^^^^^^^ invalid suffix `C`
+
+error[E0308]: mismatched types
+  --> crates\polaris-code-intel\tests\rust_unsafe_coverage.rs:13:27
+   |
+13 |         ("unsafe extern "C" { fn operation(); }", 1),
+   |                           ^^^^^^^^^^^^^^^^^^^^^^ expected integer, found `&str`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `polaris-code-intel` (test "rust_unsafe_coverage") due to 5 previous errors

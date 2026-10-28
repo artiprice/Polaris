@@ -1,0 +1,100 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+error[E0433]: cannot find type `PoolLimits` in this scope
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:887:20
+    |
+887 |         Pools::new(PoolLimits::default())
+    |                    ^^^^^^^^^^ use of undeclared type `PoolLimits`
+    |
+help: consider importing this struct through its public re-export
+    |
+828 +     use crate::PoolLimits;
+    |
+
+warning: unused variable: `id`
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:676:22
+    |
+676 |                 let (id, failed, cancelled) = match recorded {
+    |                      ^^ help: if this is intentional, prefix it with an underscore: `_id`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error[E0308]: mismatched types
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:908:36
+    |
+908 |         let event = normalize_join(joined, &mut in_flight)?;
+    |                     -------------- ^^^^^^ expected `Result<(Id, _), _>`, found `Result<(Id, ()), JoinError>`
+    |                     |
+    |                     arguments to this function are incorrect
+    |
+    = note: expected enum `Result<(Id, (usize, graph::NodeId, pools::Pool, Result<graph::NodeResult<_>, DagError>)), _>`
+               found enum `Result<(Id, ()), _>`
+note: function defined here
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:485:4
+    |
+485 |   fn normalize_join<O>(
+    |      ^^^^^^^^^^^^^^
+486 | /     joined: Result<
+487 | |         (TokioTaskId, (usize, NodeId, Pool, Result<NodeResult<O>, DagError>)),
+488 | |         JoinError,
+489 | |     >,
+    | |_____-
+
+error[E0609]: no field `indices` on type `Dag<TestTask>`
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:945:31
+    |
+945 |         let root_index = *dag.indices.get(&root_id).ok_or(DagError::GraphInvariant)?;
+    |                               ^^^^^^^ unknown field
+    |
+    = note: available field is: `nodes`
+
+error[E0308]: mismatched types
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:961:36
+    |
+961 |         let event = normalize_join(joined, &mut in_flight)?;
+    |                     -------------- ^^^^^^ expected `Result<(Id, _), _>`, found `Result<(Id, ()), JoinError>`
+    |                     |
+    |                     arguments to this function are incorrect
+    |
+    = note: expected enum `Result<(Id, (usize, graph::NodeId, pools::Pool, Result<graph::NodeResult<_>, DagError>)), _>`
+               found enum `Result<(Id, ()), _>`
+note: function defined here
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:485:4
+    |
+485 |   fn normalize_join<O>(
+    |      ^^^^^^^^^^^^^^
+486 | /     joined: Result<
+487 | |         (TokioTaskId, (usize, NodeId, Pool, Result<NodeResult<O>, DagError>)),
+488 | |         JoinError,
+489 | |     >,
+    | |_____-
+
+error[E0308]: mismatched types
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:970:29
+    |
+970 |         assert_eq!(failure, (true, false), "interruption is failure, not global cancellation");
+    |                             ^^^^^^^^^^^^^ expected a tuple with 3 elements, found one with 2 elements
+    |
+    = note: expected tuple `(graph::NodeId, bool, bool)`
+               found tuple `(bool, bool)`
+
+error[E0609]: no field `indices` on type `Dag<TestTask>`
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:971:32
+    |
+971 |         let child_index = *dag.indices.get(&child_id).ok_or(DagError::GraphInvariant)?;
+    |                                ^^^^^^^ unknown field
+    |
+    = note: available field is: `nodes`
+
+error[E0609]: no field `indices` on type `Dag<TestTask>`
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:973:14
+    |
+973 |             .indices
+    |              ^^^^^^^ unknown field
+    |
+    = note: available field is: `nodes`
+
+warning: `polaris-runtime-dag` (lib) generated 1 warning (run `cargo fix --lib -p polaris-runtime-dag` to apply 1 suggestion)
+Some errors have detailed explanations: E0308, E0433, E0609.
+For more information about an error, try `rustc --explain E0308`.
+warning: `polaris-runtime-dag` (lib test) generated 1 warning (1 duplicate)
+error: could not compile `polaris-runtime-dag` (lib test) due to 7 previous errors; 1 warning emitted

@@ -1,0 +1,25 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Finished `test` profile [unoptimized] target(s) in 5.41s
+     Running tests\generated_status.rs (target\debug\deps\generated_status-a4e17d8d408d272b.exe)
+
+running 1 test
+test generated_status_uses_typed_conversion ... FAILED
+
+failures:
+
+---- generated_status_uses_typed_conversion stdout ----
+
+thread 'generated_status_uses_typed_conversion' (7796) panicked at crates\polaris-proto\tests\generated_status.rs:4:5:
+assertion `left == right` failed: all three generated service fallbacks use the typed conversion
+  left: 0
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    generated_status_uses_typed_conversion
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-proto --test generated_status`

@@ -93,7 +93,7 @@ pub struct ToolOutput {
 }
 
 pub use patch::{PatchError, apply_unified_patch};
-pub use path::{PathError, WorkspacePath, resolve_in_workspace};
+pub use path::{PathError, WorkspacePath, is_secret_path, resolve_in_workspace};
 pub use proposal::{
     CasKernelProposalBackend, DiffProposal, EditFileRequest, NoProposalBackend, PreparedDiff,
     ProposalTokenSource, ProposalToolBackend, prepare_workspace_diff,
@@ -103,7 +103,8 @@ pub use query::{
 };
 pub use read::{ReadFileInput, ReadFileOutput, read_file};
 pub use registry::{
-    CasRefResolver, RecallBackend, RefResolver, ToolRegistry, builtin_specs, p2_builtin_specs,
+    AccessResource, CasRefResolver, RecallBackend, RefResolver, ToolAccessPolicy, ToolRegistry,
+    builtin_specs, p2_builtin_specs, validate_readonly_arguments,
 };
 pub use search::{
     GlobInput, GrepInput, ListDirInput, SearchOutput, SearchRow, glob, grep, list_dir,

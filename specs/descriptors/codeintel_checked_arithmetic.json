@@ -1,0 +1,23 @@
+{
+  "type_of": "module",
+  "name": "checked_arithmetic_invariants",
+  "file_path": "crates/polaris-code-intel/src/metrics.rs",
+  "logic_name": "Code Intel checked arithmetic invariants",
+  "test_list": [
+    {"test_name":"grid_rejects_invalid_coordinates_and_addresses","description":"Grid construction and access reject overflow and out-of-range coordinates rather than returning zero or ignoring writes."},
+    {"test_name":"single_node_tree_distance_matches_independent_edit_cost","description":"Known independent insert, delete and relabel costs remain exact."},
+    {"test_name":"unary_tree_distance_matches_independent_levenshtein","description":"Bounded property-generated unary trees match an independent Levenshtein oracle and remain symmetric."},
+    {"test_name":"ted_rename_costs_one_and_insert_costs_the_subtree_size","description":"The public exact metric preserves known declaration rename and subtree insertion distances."},
+    {"test_name":"budget_is_respected","description":"The existing independent repo-map budget regression confirms rendered map estimates do not exceed the requested budget."},
+    {"test_name":"oversized_signature_is_truncated_on_a_char_boundary","description":"The existing skeleton property regression confirms bounded signatures remain valid UTF-8."}
+  ],
+  "dependencies": ["ParserPool", "MutationMetrics", "SymbolGraph", "RepoMapBudget", "CodeIntelError"],
+  "libraries": ["proptest"],
+  "inputs": [
+    {"name":"tree_pair","type":"bounded synthetic syntax trees","description":"Small valid source trees with known unit edit costs."},
+    {"name":"dimensions","type":"usize row/column pairs","description":"Valid and invalid dense grid coordinates including overflow-sized values."},
+    {"name":"budgets","type":"bounded token and signature limits","description":"Zero, one, and exact-fit budgets used to verify output contracts."}
+  ],
+  "output_type": "Result<(), CodeIntelError>",
+  "output_description": "Exact arithmetic and indexed state preserve semantic results or fail closed on invariant violations."
+}

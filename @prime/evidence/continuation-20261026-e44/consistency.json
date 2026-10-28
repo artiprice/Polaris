@@ -1,0 +1,12 @@
+{
+  "observed_utc": "2026-10-26T16:51:15.830862+00:00",
+  "root_manifest_matches_metadata": true,
+  "workspace_packages": 93,
+  "external_aliases": 167,
+  "source_files_rehashed": 1198,
+  "source_fingerprint_sha256": "7e1bba2f147f0b7efdf9a2b6b37095459caccb875a478616b668b2169aa9fe3f",
+  "retained_review_files": 22,
+  "scope": "Mechanical source snapshot and named docs, not all-source testing or line-by-line security audit.",
+  "process_limit": "E44 tests authored after implementation; full-scheduler join interruption and actual panic unverified.",
+  "phase_acceptance": "Open; P1 historical, broader P2 paused, UI deferred."
+}

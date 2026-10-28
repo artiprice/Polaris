@@ -1,0 +1,2 @@
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Finished `dev` profile [unoptimized] target(s) in 1.08s

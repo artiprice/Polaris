@@ -1,0 +1,53 @@
+--- a/crates/polaris-sdk/tests/blast_alert_schema.rs
++++ b/crates/polaris-sdk/tests/blast_alert_schema.rs
+@@ -1,12 +1,13 @@
+ //! Version boundary for durable approval alerts; old versions retain their original rules.
+ use polaris_sdk::{
+-    contracts::{Event, EventRecord, Timestamp},
++    contracts::{EVENT_SCHEMA_VERSION, Event, EventRecord, Timestamp},
+     ids::{Cid, FrameId, Seq, SessionId},
+ };
+ 
+ #[test]
+-fn blast_alert_requires_schema_three() {
+-    for schema in 0_u16..=5 {
++fn blast_alert_requires_schema_three() -> Result<(), Box<dyn std::error::Error>> {
++    let future = EVENT_SCHEMA_VERSION.checked_add(1).ok_or("schema overflow")?;
++    for schema in 0_u16..=future {
+         let record = EventRecord::from_versioned(
+             schema,
+             Seq::ZERO,
+@@ -19,8 +20,9 @@
+         );
+         assert_eq!(
+             record.is_ok(),
+-            schema == 3,
++            (3..=EVENT_SCHEMA_VERSION).contains(&schema),
+             "exact alert minimum and maximum schema"
+         );
+     }
++    Ok(())
+ }
+--- a/crates/polaris-sdk/tests/session_lifecycle.rs
++++ b/crates/polaris-sdk/tests/session_lifecycle.rs
+@@ -96,7 +96,7 @@
+         "zero schema refused"
+     );
+     assert!(
+-        make(4, Event::SessionClosed).is_err(),
++        make(EVENT_SCHEMA_VERSION.checked_add(1).ok_or("schema overflow")?, Event::SessionClosed).is_err(),
+         "future schema refused"
+     );
+     assert!(
+@@ -111,9 +111,9 @@
+     fn prop_schema_acceptance_matches_lifecycle_minimum(schema in any::<u16>(), configuration in any::<[u8; 32]>()) {
+         for event in [Event::SessionConfigured { configuration: Cid::from_bytes(configuration) }, Event::SessionPaused, Event::SessionResumed] {
+             let result = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), event);
+-            prop_assert_eq!(result.is_ok(), schema == 2 || schema == 3);
++            prop_assert_eq!(result.is_ok(), (2..=EVENT_SCHEMA_VERSION).contains(&schema));
+         }
+         let legacy = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), Event::SessionClosed);
+-        prop_assert_eq!(legacy.is_ok(), schema == 1 || schema == 2 || schema == 3);
++        prop_assert_eq!(legacy.is_ok(), (1..=EVENT_SCHEMA_VERSION).contains(&schema));
+     }
+ }

@@ -1,0 +1,21 @@
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+error: right curly brace `}` before `else` in a `let...else` statement not allowed
+  --> crates\polaris-system-one\crates\client\src\batch.rs:37:9
+   |
+37 |         } else { return };
+   |         ^
+   |
+help: wrap the expression in parentheses
+   |
+34 ~         let Some(first) = (match carry.take() {
+35 |             Some(item) => Some(item),
+36 |             None => receiver.recv().await,
+37 ~         }) else { return };
+   |
+
+error: could not compile `polaris-system-one-client` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

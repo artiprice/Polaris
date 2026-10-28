@@ -1,0 +1,38 @@
+{
+  "type_of": "pipeline",
+  "name": "semantic_prompt_privacy",
+  "file_path": "crates/polaris-kernel/src/prompt_privacy.rs",
+  "logic_name": "Semantic Privacy Before Tokenization",
+  "test_list": [
+    {
+      "test_name": "assembler_masks_semantic_names_before_tokenizer",
+      "description": "Mask context, goals, history and structured arguments before counting while preserving protocol IDs."
+    },
+    {
+      "test_name": "assembler_reports_semantic_degradation_without_skipping_dfa",
+      "description": "Unavailable detection reports degraded coverage and retains deterministic protection."
+    },
+    {
+      "test_name": "assembler_bounds_semantic_field_work",
+      "description": "Bound inference field calls and preserve deterministic masking for remaining fields."
+    }
+  ],
+  "dependencies": [
+    "KernelPromptAssembler",
+    "PiiVault",
+    "PiiSpanDetector"
+  ],
+  "libraries": [
+    "tokio",
+    "serde_json"
+  ],
+  "inputs": [
+    {
+      "name": "prompt",
+      "type": "ChatRequest and history",
+      "description": "Actual frame-bound prompt before provider token counting."
+    }
+  ],
+  "output_type": "Result<SemanticPrivacyReport, KernelPromptError>",
+  "output_description": "Masked prompt and explicit semantic coverage counts."
+}

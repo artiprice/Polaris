@@ -1,0 +1,20 @@
+{
+  "type_of": "module",
+  "name": "build.rs tokens generation + src/palette.rs",
+  "file_path": "crates/polaris-ui/crates/gui/build.rs",
+  "logic_name": "GUI Tokens",
+  "test_list": [
+    { "test_name": "slint_tokens_match_model_roles", "description": "Every role of polaris_ui_model::tokens::ROLES and palette::WELCOME_ROLES appears in the generated tokens.slint with exactly its hex value." },
+    { "test_name": "welcome_roles_do_not_shadow_shared_roles", "description": "No welcome-only role reuses a name of the shared ROLES table, and names are unique." },
+    { "test_name": "every_color_in_slint_comes_from_tokens", "description": "The hand-written ui/*.slint files contain no '#RGB..' colour literal; colours come from the Tokens global." },
+    { "test_name": "radius_and_speed_match_model_constants", "description": "tokens.slint states radius RADIUS_PX px and speed SPEED_MS ms, and one font property per FONTS entry." }
+  ],
+  "dependencies": ["polaris_ui_model::tokens", "palette::WELCOME_ROLES"],
+  "libraries": ["slint-build"],
+  "inputs": [
+    { "name": "ROLES", "type": "&[ColorRole]", "description": "Shared colour roles." },
+    { "name": "WELCOME_ROLES", "type": "&[ColorRole]", "description": "Desktop welcome-only colour roles." }
+  ],
+  "output_type": "OUT_DIR/slint-tokens/tokens.slint",
+  "output_description": "A Slint `export global Tokens` with one out property per role, radius, speed and font families."
+}

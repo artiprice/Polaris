@@ -1,0 +1,22 @@
+{
+  "type_of": "pipeline",
+  "name": "KernelPromptAssembler",
+  "file_path": "crates/polaris-kernel/src/frame_prompt.rs",
+  "logic_name": "Production model-bound frame prompt assembly",
+  "test_list": [
+    {"test_name":"assembler_masks_before_counting_and_dispatch","description":"Real PII vault masks goal, history and context before any tokenizer request; dispatch receives the counted request."},
+    {"test_name":"assembler_filters_role_tools_before_counting","description":"Count only tools permitted by the actual frame role, including conservative CAS-read classification."},
+    {"test_name":"assembler_archives_whole_groups_and_recounts","description":"Trim complete old exchanges, persist retrievable archives and count the final notice."},
+    {"test_name":"assembler_rejects_identity_budget_and_protocol_failures","description":"Fail closed for foreign frame, malformed history, unavailable tokenizer and mandatory-prefix overflow."},
+    {"test_name":"assembler_run_rejects_replaced_frame_selection","description":"Bound execution rejects a same-ID active frame with a different selected model or token before reserving a step."},
+    {"test_name":"assembler_enforces_deadline_and_cumulative_archive_bound","description":"Stalled tokenizers time out; individually fitting candidate archives cannot exceed the cumulative per-assembly byte allowance."},
+    {"test_name":"assembler_rejects_sensitive_protocol_identity_and_oversized_context","description":"Reject detected sensitive correlation identities and encoded-context expansion before counting."},
+    {"test_name":"assembler_masks_structured_arguments_and_rejects_unreadable_archive","description":"Mask structured argument values, reasoning and tool results; frame visibility does not grant missing CAS Read rights."},
+    {"test_name":"prompt_encoded_limit_matches_exact_escaped_json","description":"Property-check exact JSON byte accounting including escaped strings and cap boundaries."}
+  ],
+  "dependencies":["FramePromptBinding","PromptTokenizer","PiiVault","ConversationWindow","KernelToolRunner","KernelHandle"],
+  "libraries":["tokio","serde_json","thiserror"],
+  "inputs":[{"name":"request","type":"frames::AssembleRequest","description":"Goal and prior transcript for the bound active frame."}],
+  "output_type":"Result<FramePrompt, KernelPromptError>",
+  "output_description":"Sanitized role-filtered prompt with actual model input-token count and bounded output budget."
+}

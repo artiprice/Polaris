@@ -131,19 +131,19 @@ impl FoldState {
                     entries.insert(path.clone(), (cid, read.turn));
                     prior
                 };
-                if let Some((previous, since_turn)) = prior {
-                    if previous == cid {
-                        return Ok(Folded {
-                            view: format!(
-                                "[FILE: {path} | {} | unchanged since turn {since_turn}]",
-                                reference.to_marker()
-                            ),
-                            reference: Some(reference),
-                            content_id: Some(cid),
-                            original_bytes,
-                            kind: FoldKind::UnchangedFile { since_turn },
-                        });
-                    }
+                if let Some((previous, since_turn)) = prior
+                    && previous == cid
+                {
+                    return Ok(Folded {
+                        view: format!(
+                            "[FILE: {path} | {} | unchanged since turn {since_turn}]",
+                            reference.to_marker()
+                        ),
+                        reference: Some(reference),
+                        content_id: Some(cid),
+                        original_bytes,
+                        kind: FoldKind::UnchangedFile { since_turn },
+                    });
                 }
                 Some((path, cid, reference))
             } else {
@@ -152,20 +152,20 @@ impl FoldState {
         } else {
             None
         };
-        if request.output.len() <= config.inline_threshold {
-            if let Ok(text) = std::str::from_utf8(request.output) {
-                let (content_id, reference) = match tracked_file.as_ref() {
-                    Some((_, cid, short)) => (Some(*cid), Some(*short)),
-                    None => (None, None),
-                };
-                return Ok(Folded {
-                    view: text.to_owned(),
-                    reference,
-                    content_id,
-                    original_bytes,
-                    kind: FoldKind::Inline,
-                });
-            }
+        if request.output.len() <= config.inline_threshold
+            && let Ok(text) = std::str::from_utf8(request.output)
+        {
+            let (content_id, reference) = match tracked_file.as_ref() {
+                Some((_, cid, short)) => (Some(*cid), Some(*short)),
+                None => (None, None),
+            };
+            return Ok(Folded {
+                view: text.to_owned(),
+                reference,
+                content_id,
+                original_bytes,
+                kind: FoldKind::Inline,
+            });
         }
 
         let (cid, reference) = match tracked_file.as_ref() {
@@ -239,8 +239,13 @@ pub(crate) fn expand(
         return Err(ContextError::InvalidRange);
     }
     let start = usize::try_from(range.start).map_err(|_| ContextError::InvalidRange)?;
-    let length =
-        usize::try_from(range.end - range.start).map_err(|_| ContextError::InvalidRange)?;
+    let length = usize::try_from(
+        range
+            .end
+            .checked_sub(range.start)
+            .ok_or(ContextError::InvalidRange)?,
+    )
+    .map_err(|_| ContextError::InvalidRange)?;
     let selected: Vec<u8> = bytes.iter().skip(start).take(length).copied().collect();
     Ok(Bytes::from(selected))
 }
@@ -273,7 +278,17 @@ fn head_tail(text: &str, head_count: usize, tail_count: usize) -> (String, u32, 
         out.push_str(line);
         out.push('\n');
     }
-    let head = u32::try_from(head_len).map_or(u32::MAX, |value| value);
-    let tail = u32::try_from(tail_len).map_or(u32::MAX, |value| value);
+    let head = match u32::try_from(head_len) {
+        Ok(value) => value,
+        Err(_) => maximum_line_count(),
+    };
+    let tail = match u32::try_from(tail_len) {
+        Ok(value) => value,
+        Err(_) => maximum_line_count(),
+    };
     (out, head, tail)
+}
+
+const fn maximum_line_count() -> u32 {
+    u32::MAX
 }

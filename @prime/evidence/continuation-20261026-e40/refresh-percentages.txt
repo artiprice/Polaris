@@ -1,0 +1,1 @@
+E40 scoped percentage rows refreshed; every phase arithmetic recomputed without fresh all-phase acceptance.

@@ -253,9 +253,14 @@ impl Pools {
             return Err(DagError::PoolBusy);
         }
         if target > current_usize {
-            inner.semaphore.add_permits(target - current_usize);
+            let increase = target
+                .checked_sub(current_usize)
+                .ok_or(DagError::InvalidLimits)?;
+            inner.semaphore.add_permits(increase);
         } else if target < current_usize {
-            let decrease = current_usize - target;
+            let decrease = current_usize
+                .checked_sub(target)
+                .ok_or(DagError::InvalidLimits)?;
             let removed = inner.semaphore.forget_permits(decrease);
             if removed != decrease {
                 return Err(DagError::PoolBusy);

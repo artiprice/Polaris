@@ -157,6 +157,17 @@ fn independently_issued_credentials_do_not_authenticate_each_other()
 }
 
 #[test]
+fn bootstrap_copy_preserves_authorization_without_exporting_plain_bytes()
+-> Result<(), Box<dyn std::error::Error>> {
+    let credential = WorkerCredential::generate()?;
+    let receiver = WorkerCredential::from_secret(credential.bootstrap_secret())?;
+    let mut auth = WorkerAuthenticator::new(&receiver);
+    let request = credential.authorize_request(Request::new(()))?;
+    assert!(auth.call(request).is_ok());
+    Ok(())
+}
+
+#[test]
 fn credential_export_propagates_writer_errors() -> Result<(), Box<dyn std::error::Error>> {
     struct RejectWriter;
 

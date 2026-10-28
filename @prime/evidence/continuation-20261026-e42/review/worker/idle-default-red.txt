@@ -1,0 +1,26 @@
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 9.07s
+     Running tests\idle_eviction.rs (target\debug\deps\idle_eviction-60d4636b23d70676.exe)
+
+running 1 test
+
+thread 'default_worker_drops_real_model_after_idle_ttl' (15544) panicked at apps\polaris-worker\tests\idle_eviction.rs:50:5:
+assertion `left == right` failed: the idle owner must have dropped the model before explicit eviction
+  left: 1
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test default_worker_drops_real_model_after_idle_ttl ... FAILED
+
+failures:
+
+failures:
+    default_worker_drops_real_model_after_idle_ttl
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 57.66s
+
+error: test failed, to rerun pass `-p polaris-worker --test idle_eviction`

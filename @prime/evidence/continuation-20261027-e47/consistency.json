@@ -1,0 +1,18 @@
+{
+  "observed_utc": "2026-10-26T23:46:40.678716+00:00",
+  "workspace_packages": 93,
+  "external_aliases": 167,
+  "source_files_rehashed": 1229,
+  "source_fingerprint_sha256": "e988b6ffc38925c0aef6dd5e17e81043c4b8502126a5f951695ed1d57ed973f5",
+  "native_tests": {
+    "passed": 288,
+    "failed": 0,
+    "ignored": 3
+  },
+  "linux_domain_tests": {
+    "passed": 176,
+    "failed": 0,
+    "ignored": 1
+  },
+  "scope": "Scoped production prompt/tokenizer composition; no full phase acceptance; P2 paused, UI deferred."
+}

@@ -1,0 +1,27 @@
+     Locking 1 package to highest Rust 1.99 compatible version
+      Adding docx-rs v0.4.22 (C:\mDev\Polaris\vendor\docx-rs)
+   Compiling tower v0.5.3
+   Compiling tokio-rustls v0.26.6
+   Compiling axum v0.8.9
+   Compiling tonic v0.14.6
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Finished `test` profile [unoptimized] target(s) in 12.28s
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_client-252d843dfbb35c91.exe)
+
+running 1 test
+
+thread 'tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial' (17544) panicked at crates\polaris-system-one\crates\client\src\lib.rs:646:9:
+assertion failed: super::retryable_pipe_open_error(&pipe_busy)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial ... FAILED
+
+failures:
+
+failures:
+    tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-system-one-client --lib`

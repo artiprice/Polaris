@@ -3,7 +3,7 @@
 use std::{
     borrow::Cow,
     collections::{BTreeMap, BTreeSet, VecDeque},
-    net::IpAddr,
+    net::{IpAddr, SocketAddr},
     pin::Pin,
     sync::Arc,
     time::Duration,
@@ -16,7 +16,8 @@ use polaris_sdk::{
     ids::{ModelId, TokenCount},
     registry::{
         ChatChunk, ChatChunkSource, ChatModel, ChatRequest, ChatRole, ChatToolCall,
-        EmbeddingProvider, FinishReason, ModelError, ToolSpec, Usage,
+        EmbeddingProvider, FinishReason, ModelError, PromptTokenCount, PromptTokenizer, ToolSpec,
+        Usage,
     },
 };
 use rand::RngExt;
@@ -62,8 +63,39 @@ impl BaseUrl {
         Ok(Self(url))
     }
 
+    /// Return the numeric loopback socket authority with an explicit port.
+    ///
+    /// This deliberately rejects DNS names (including `localhost`) so process supervision can
+    /// prove the configured endpoint targets the owned local listener without DNS resolution.
+    /// # Errors
+    /// Returns Configuration unless the URL has an explicit port and literal loopback IP host.
+    pub fn literal_loopback_socket_addr(&self) -> Result<SocketAddr, TfError> {
+        let host = self.0.host().ok_or(TfError::Configuration)?;
+        let ip = match host {
+            url::Host::Ipv4(address) => IpAddr::V4(address),
+            url::Host::Ipv6(address) => IpAddr::V6(address),
+            url::Host::Domain(_) => return Err(TfError::Configuration),
+        };
+        if !ip.is_loopback() {
+            return Err(TfError::Configuration);
+        }
+        let port = self.0.port().ok_or(TfError::Configuration)?;
+        if port == 0 {
+            return Err(TfError::Configuration);
+        }
+        Ok(SocketAddr::new(ip, port))
+    }
+
     fn endpoint(&self, endpoint: &str) -> Result<Url, TfError> {
         self.0.join(endpoint).map_err(|_| TfError::Configuration)
+    }
+
+    fn origin_endpoint(&self, endpoint: &str) -> Result<Url, TfError> {
+        let mut origin_root = self.0.clone();
+        origin_root.set_path("/");
+        origin_root
+            .join(endpoint)
+            .map_err(|_| TfError::Configuration)
     }
 
     fn is_literal_loopback_ip(&self) -> bool {
@@ -162,7 +194,8 @@ pub struct ClientConfig {
     pub max_tool_argument_bytes: usize,
     /// Maximum number of tool calls accepted in one request or response.
     pub max_tool_calls: usize,
-    /// Maximum response bytes for model-list and embedding JSON.
+    /// Maximum response bytes for model-list, embedding, and vLLM `/tokenize` JSON, including its
+    /// full token-ID array. Callers must size this for the largest prompt they intend to count.
     pub max_json_response_bytes: usize,
     /// Maximum serialized request bytes.
     pub max_request_bytes: usize,
@@ -279,6 +312,158 @@ pub struct TokenFactoryClient {
     rate_limit: Option<Arc<RateLimitPolicy>>,
 }
 
+/// Explicit vLLM-compatible chat wrapper with provider-backed prompt tokenization.
+///
+/// Construction opts into the same-origin `/tokenize` endpoint. Token Factory deployments do
+/// not necessarily expose this vLLM endpoint; unsupported endpoints return their HTTP error.
+pub struct VllmChatClient {
+    client: TokenFactoryClient,
+}
+
+/// Startup-pinned llama.cpp server identity required for exact local chat counting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LlamaCppExpectedProfile {
+    build_info: String,
+    model_alias: String,
+    max_context_tokens: TokenCount,
+}
+
+impl LlamaCppExpectedProfile {
+    /// Build an expected server profile; every field must identify one concrete loaded model.
+    /// # Errors
+    /// Returns Configuration when a profile field is empty or context is zero.
+    pub fn new(
+        build_info: impl Into<String>,
+        model_alias: impl Into<String>,
+        max_context_tokens: TokenCount,
+    ) -> Result<Self, TfError> {
+        let build_info = build_info.into();
+        let model_alias = model_alias.into();
+        if build_info.is_empty() || model_alias.is_empty() || max_context_tokens.get() == 0 {
+            return Err(TfError::Configuration);
+        }
+        Ok(Self {
+            build_info,
+            model_alias,
+            max_context_tokens,
+        })
+    }
+
+    /// Pinned llama.cpp build identifier, including release and commit.
+    #[must_use]
+    pub fn build_info(&self) -> &str {
+        &self.build_info
+    }
+
+    /// Pinned model alias exposed by both `/props` and `/v1/models`.
+    #[must_use]
+    pub fn model_alias(&self) -> &str {
+        &self.model_alias
+    }
+
+    /// Validated model context capacity.
+    #[must_use]
+    pub const fn max_context_tokens(&self) -> TokenCount {
+        self.max_context_tokens
+    }
+}
+
+/// Exact-tokenized chat client for a pinned llama.cpp loopback server.
+pub struct LlamaCppChatClient {
+    client: TokenFactoryClient,
+    profile: LlamaCppExpectedProfile,
+}
+
+impl std::fmt::Debug for LlamaCppChatClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LlamaCppChatClient")
+            .field("profile", &self.profile)
+            .field("client", &"[REDACTED]")
+            .finish()
+    }
+}
+
+impl LlamaCppChatClient {
+    /// Connect to a literal loopback server and validate its pinned build/model/template profile.
+    /// # Errors
+    /// Returns a typed model error if the local endpoint is unavailable or mismatches the profile.
+    pub async fn connect(
+        base: BaseUrl,
+        profile: LlamaCppExpectedProfile,
+        config: ClientConfig,
+    ) -> Result<Self, ModelError> {
+        if base.0.scheme() != "http" || base.0.path() != "/v1/" {
+            return Err(ModelError::from(TfError::Configuration));
+        }
+        let client =
+            TokenFactoryClient::anonymous_loopback(base, config).map_err(ModelError::from)?;
+        client.validate_llama_cpp_profile(&profile).await?;
+        Ok(Self { client, profile })
+    }
+
+    /// The build, alias, and context verified against the live server at construction.
+    #[must_use]
+    pub const fn profile(&self) -> &LlamaCppExpectedProfile {
+        &self.profile
+    }
+}
+
+impl ChatModel for LlamaCppChatClient {
+    type Stream = ProviderStream;
+
+    async fn stream(&self, req: ChatRequest) -> Result<Self::Stream, ModelError> {
+        if req.tools.len() > self.client.inner.config.max_tool_calls
+            || chat_request_input_bound(&req)? > self.client.inner.config.max_request_bytes
+        {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        let request_body = llama_chat_request_json(
+            &req,
+            self.client.inner.config.reasoning_replay,
+            &self.profile.model_alias,
+        )?;
+        self.client
+            .start_stream_with_body(req, StreamProtocol::ChatCompletions, request_body)
+            .await
+    }
+}
+
+impl PromptTokenizer for LlamaCppChatClient {
+    async fn count_prompt(&self, request: &ChatRequest) -> Result<PromptTokenCount, ModelError> {
+        self.client.count_llama_prompt(request, &self.profile).await
+    }
+}
+
+impl VllmChatClient {
+    /// Wrap a configured OpenAI-compatible client and opt into its same-origin `/tokenize` route.
+    #[must_use]
+    pub fn new(client: TokenFactoryClient) -> Self {
+        Self { client }
+    }
+}
+
+impl std::fmt::Debug for VllmChatClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("VllmChatClient")
+            .field("client", &"[REDACTED]")
+            .finish()
+    }
+}
+
+impl ChatModel for VllmChatClient {
+    type Stream = ProviderStream;
+
+    async fn stream(&self, req: ChatRequest) -> Result<Self::Stream, ModelError> {
+        self.client.stream(req).await
+    }
+}
+
+impl PromptTokenizer for VllmChatClient {
+    async fn count_prompt(&self, request: &ChatRequest) -> Result<PromptTokenCount, ModelError> {
+        self.client.count_prompt(request).await
+    }
+}
+
 impl TokenFactoryClient {
     /// Create a client with an explicitly injected credential and bounded HTTP policy.
     /// # Errors
@@ -319,14 +504,71 @@ impl TokenFactoryClient {
         self.start_stream(req, StreamProtocol::Responses).await
     }
 
+    async fn count_prompt(&self, request: &ChatRequest) -> Result<PromptTokenCount, ModelError> {
+        if request.tools.len() > self.inner.config.max_tool_calls {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        if chat_request_input_bound(request)? > self.inner.config.max_request_bytes {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        let mut body = chat_request_json(request, self.inner.config.reasoning_replay)?;
+        let body_object = body.as_object_mut().ok_or(TfError::Protocol)?;
+        drop(body_object.remove("stream"));
+        drop(body_object.remove("n"));
+        drop(body_object.remove("max_tokens"));
+        body_object.insert("add_generation_prompt".to_owned(), json!(true));
+        body_object.insert("continue_final_message".to_owned(), json!(false));
+        body_object.insert("add_special_tokens".to_owned(), json!(false));
+        body_object.insert("return_token_strs".to_owned(), json!(false));
+        if serde_json::to_vec(&body).map_err(|_| TfError::Json)?.len()
+            > self.inner.config.max_request_bytes
+        {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        let url = self
+            .inner
+            .base
+            .origin_endpoint("tokenize")
+            .map_err(ModelError::from)?;
+        let response = self
+            .send_with_429_retry(Method::POST, url, Some(body))
+            .await
+            .map_err(ModelError::from)?;
+        let bytes = read_bounded(
+            response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await
+        .map_err(ModelError::from)?;
+        let response: TokenizeResponseWire =
+            serde_json::from_slice(&bytes).map_err(|_| ModelError::from(TfError::Protocol))?;
+        let token_length = u64::try_from(response.tokens.len())
+            .map_err(|_| ModelError::from(TfError::Protocol))?;
+        if response.count == 0 || response.max_model_len == 0 || response.count != token_length {
+            return Err(ModelError::from(TfError::Protocol));
+        }
+        let input_tokens = u32::try_from(response.count)
+            .map(TokenCount::new)
+            .map_err(|_| ModelError::from(TfError::Protocol))?;
+        let max_context_tokens = u32::try_from(response.max_model_len)
+            .map(TokenCount::new)
+            .map_err(|_| ModelError::from(TfError::Protocol))?;
+        for token in response.tokens {
+            let _token_id =
+                u32::try_from(token).map_err(|_| ModelError::from(TfError::Protocol))?;
+        }
+        Ok(PromptTokenCount {
+            input_tokens,
+            max_context_tokens,
+        })
+    }
+
     async fn start_stream(
         &self,
         req: ChatRequest,
         protocol: StreamProtocol,
     ) -> Result<ProviderStream, ModelError> {
-        let stream_deadline = tokio::time::Instant::now()
-            .checked_add(self.inner.config.request_timeout)
-            .ok_or_else(|| ModelError::from(TfError::Configuration))?;
         if req.tools.len() > self.inner.config.max_tool_calls {
             return Err(ModelError::from(TfError::TooLarge));
         }
@@ -340,6 +582,25 @@ impl TokenFactoryClient {
             StreamProtocol::Responses => responses_request_json(&req),
         }
         .map_err(ModelError::from)?;
+        self.start_stream_with_body(req, protocol, request_body)
+            .await
+    }
+
+    async fn start_stream_with_body(
+        &self,
+        req: ChatRequest,
+        protocol: StreamProtocol,
+        request_body: Value,
+    ) -> Result<ProviderStream, ModelError> {
+        let stream_deadline = tokio::time::Instant::now()
+            .checked_add(self.inner.config.request_timeout)
+            .ok_or_else(|| ModelError::from(TfError::Configuration))?;
+        if req.tools.len() > self.inner.config.max_tool_calls {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        if chat_request_input_bound(&req)? > self.inner.config.max_request_bytes {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
         if serde_json::to_vec(&request_body)
             .map_err(|_| TfError::Json)
             .map_err(ModelError::from)?
@@ -362,7 +623,20 @@ impl TokenFactoryClient {
             .await
             .map_err(ModelError::from)?;
         if let Some(admission) = permit.as_mut() {
-            admission.mark_dispatched().map_err(rate_limit_error)?;
+            tokio::time::timeout(self.inner.config.request_timeout, async {
+                loop {
+                    match admission.mark_dispatched() {
+                        Ok(()) => return Ok(()),
+                        Err(RateLimitError::Busy) => {
+                            tokio::time::sleep(Duration::from_millis(1)).await;
+                        }
+                        Err(error) => return Err(error),
+                    }
+                }
+            })
+            .await
+            .map_err(|_| ModelError::from(TfError::Timeout))?
+            .map_err(rate_limit_error)?;
         }
         let response = self
             .send_with_429_retry(Method::POST, url, Some(request_body))
@@ -390,6 +664,122 @@ impl TokenFactoryClient {
             saw_done: false,
             terminal: false,
             eof_flushed: false,
+        })
+    }
+
+    async fn validate_llama_cpp_profile(
+        &self,
+        expected: &LlamaCppExpectedProfile,
+    ) -> Result<(), ModelError> {
+        let props_url = self
+            .inner
+            .base
+            .origin_endpoint("props")
+            .map_err(ModelError::from)?;
+        let props_response = self
+            .send_with_429_retry(Method::GET, props_url, None)
+            .await
+            .map_err(ModelError::from)?;
+        let props_bytes = read_bounded(
+            props_response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await
+        .map_err(ModelError::from)?;
+        let props: LlamaPropsWire = serde_json::from_slice(&props_bytes)
+            .map_err(|_| ModelError::from(TfError::Protocol))?;
+        if props.build_info != expected.build_info
+            || props.model_alias != expected.model_alias
+            || props.default_generation_settings.n_ctx != expected.max_context_tokens.get()
+            || !props.chat_template_caps.supports_tools
+            || !props.chat_template_caps.supports_tool_calls
+        {
+            return Err(ModelError::from(TfError::Protocol));
+        }
+
+        let models_url = self
+            .inner
+            .base
+            .endpoint("models")
+            .map_err(ModelError::from)?;
+        let models_response = self
+            .send_with_429_retry(Method::GET, models_url, None)
+            .await
+            .map_err(ModelError::from)?;
+        let models_bytes = read_bounded(
+            models_response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await
+        .map_err(ModelError::from)?;
+        let models: LlamaModelListWire = serde_json::from_slice(&models_bytes)
+            .map_err(|_| ModelError::from(TfError::Protocol))?;
+        if models.data.len() != 1 {
+            return Err(ModelError::from(TfError::Protocol));
+        }
+        let model = models
+            .data
+            .first()
+            .ok_or_else(|| ModelError::from(TfError::Protocol))?;
+        if model.id != expected.model_alias
+            || model.meta.n_ctx != expected.max_context_tokens.get()
+            || model.architecture.input_modalities.as_slice() != ["text"]
+            || model.architecture.output_modalities.as_slice() != ["text"]
+        {
+            return Err(ModelError::from(TfError::Protocol));
+        }
+        Ok(())
+    }
+
+    async fn count_llama_prompt(
+        &self,
+        request: &ChatRequest,
+        profile: &LlamaCppExpectedProfile,
+    ) -> Result<PromptTokenCount, ModelError> {
+        if request.tools.len() > self.inner.config.max_tool_calls
+            || chat_request_input_bound(request)? > self.inner.config.max_request_bytes
+        {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        let body = llama_chat_request_json(
+            request,
+            self.inner.config.reasoning_replay,
+            &profile.model_alias,
+        )?;
+        if serde_json::to_vec(&body)
+            .map_err(|_| TfError::Json)
+            .map_err(ModelError::from)?
+            .len()
+            > self.inner.config.max_request_bytes
+        {
+            return Err(ModelError::from(TfError::TooLarge));
+        }
+        let url = self
+            .inner
+            .base
+            .endpoint("chat/completions/input_tokens")
+            .map_err(ModelError::from)?;
+        let response = self
+            .send_with_429_retry(Method::POST, url, Some(body))
+            .await
+            .map_err(ModelError::from)?;
+        let bytes = read_bounded(
+            response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await
+        .map_err(ModelError::from)?;
+        let wire: LlamaInputTokensWire =
+            serde_json::from_slice(&bytes).map_err(|_| ModelError::from(TfError::Protocol))?;
+        if wire.object != "response.input_tokens" || wire.input_tokens == 0 {
+            return Err(ModelError::from(TfError::Protocol));
+        }
+        Ok(PromptTokenCount {
+            input_tokens: TokenCount::new(wire.input_tokens),
+            max_context_tokens: profile.max_context_tokens,
         })
     }
 
@@ -664,6 +1054,62 @@ pub struct ModelInfo {
 struct ModelListWire {
     data: Vec<ModelListEntryWire>,
 }
+
+#[derive(Deserialize)]
+struct TokenizeResponseWire {
+    count: u64,
+    max_model_len: u64,
+    tokens: Vec<u64>,
+}
+
+#[derive(Deserialize)]
+struct LlamaPropsWire {
+    build_info: String,
+    model_alias: String,
+    default_generation_settings: LlamaGenerationSettingsWire,
+    chat_template_caps: LlamaChatTemplateCapsWire,
+}
+
+#[derive(Deserialize)]
+struct LlamaGenerationSettingsWire {
+    n_ctx: u32,
+}
+
+#[derive(Deserialize)]
+struct LlamaChatTemplateCapsWire {
+    supports_tools: bool,
+    supports_tool_calls: bool,
+}
+
+#[derive(Deserialize)]
+struct LlamaModelListWire {
+    data: Vec<LlamaModelWire>,
+}
+
+#[derive(Deserialize)]
+struct LlamaModelWire {
+    id: String,
+    meta: LlamaModelMetaWire,
+    architecture: LlamaModelArchitectureWire,
+}
+
+#[derive(Deserialize)]
+struct LlamaModelMetaWire {
+    n_ctx: u32,
+}
+
+#[derive(Deserialize)]
+struct LlamaModelArchitectureWire {
+    input_modalities: Vec<String>,
+    output_modalities: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct LlamaInputTokensWire {
+    input_tokens: u32,
+    object: String,
+}
+
 #[derive(Deserialize)]
 struct ModelListEntryWire {
     id: String,
@@ -1437,6 +1883,20 @@ fn chat_request_json(
     Ok(Value::Object(body))
 }
 
+fn llama_chat_request_json(
+    req: &ChatRequest,
+    reasoning_replay: ReasoningReplay,
+    model_alias: &str,
+) -> Result<Value, ModelError> {
+    let mut body = chat_request_json(req, reasoning_replay).map_err(ModelError::from)?;
+    let body_object = body
+        .as_object_mut()
+        .ok_or_else(|| ModelError::from(TfError::Protocol))?;
+    body_object.insert("model".to_owned(), json!(model_alias));
+    body_object.insert("stream_options".to_owned(), json!({"include_usage": true}));
+    Ok(body)
+}
+
 fn responses_request_json(req: &ChatRequest) -> Result<Value, TfError> {
     if req.messages.is_empty() {
         return Err(TfError::BadRequest);
@@ -1657,7 +2117,8 @@ fn rate_limit_error(error: RateLimitError) -> TfError {
         RateLimitError::Cancelled => TfError::Timeout,
         RateLimitError::InvalidQuota
         | RateLimitError::Accounting
-        | RateLimitError::Undispatched => TfError::RateLimit,
+        | RateLimitError::Undispatched
+        | RateLimitError::Busy => TfError::RateLimit,
     }
 }
 
@@ -1768,12 +2229,18 @@ mod tests {
             if count == 0 {
                 break;
             }
-            request.extend_from_slice(&buffer[..count]);
+            let received = buffer.get(..count).ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "invalid fixture read length")
+            })?;
+            request.extend_from_slice(received);
             if expected.is_none()
                 && let Some(header_end) =
                     request.windows(4).position(|window| window == b"\r\n\r\n")
             {
-                let headers = String::from_utf8_lossy(&request[..header_end]);
+                let header_bytes = request.get(..header_end).ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::InvalidData, "invalid fixture header length")
+                })?;
+                let headers = String::from_utf8_lossy(header_bytes);
                 let content_length = headers.lines().find_map(|line| {
                     let (name, value) = line.split_once(':')?;
                     name.eq_ignore_ascii_case("content-length")

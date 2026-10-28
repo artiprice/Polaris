@@ -1,0 +1,10 @@
+[
+  "cargo",
+  "test",
+  "--offline",
+  "--locked",
+  "-p",
+  "polaris-platform-process",
+  "--lib",
+  "kill_tree_reports_pending_when_lock_contended_and_cleanup_stops_process"
+]

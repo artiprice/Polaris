@@ -1,0 +1,14 @@
+{
+  "name": "render-docs-check",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tools/workspace.py",
+    "render-docs",
+    "--check"
+  ],
+  "started_utc": "2026-10-26T22:38:48.612515+00:00",
+  "elapsed_seconds": 0.295,
+  "exit_code": 0,
+  "raw": "18-render-docs-check.txt"
+}

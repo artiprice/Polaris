@@ -35,6 +35,38 @@ impl CalibrationBindings {
     pub fn get(&self, id: &str) -> Option<&CalibrationContext> {
         self.contexts.get(id)
     }
+
+    /// Resolve the common exact native checkpoint identity expected by these calibrations.
+    /// Configured production consumers use this to fence inference against actual worker health.
+    /// # Errors
+    /// Rejects malformed digests or contexts referring to different native checkpoints.
+    pub fn checkpoint_identity(&self) -> Result<Option<[u8; 32]>, VerifierError> {
+        let mut expected = None;
+        for context in self.contexts.values() {
+            let text = &context.checkpoint_blake3;
+            if text.len() != 64 || !text.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                return Err(VerifierError::InvalidInput {
+                    reason: "invalid calibration checkpoint identity",
+                });
+            }
+            let mut digest = [0; 32];
+            for (slot, pair) in digest.iter_mut().zip(text.as_bytes().chunks_exact(2)) {
+                let pair = std::str::from_utf8(pair).map_err(|_| VerifierError::InvalidInput {
+                    reason: "invalid calibration checkpoint identity",
+                })?;
+                *slot = u8::from_str_radix(pair, 16).map_err(|_| VerifierError::InvalidInput {
+                    reason: "invalid calibration checkpoint identity",
+                })?;
+            }
+            if expected.is_some_and(|previous| previous != digest) {
+                return Err(VerifierError::InvalidInput {
+                    reason: "calibration checkpoints differ",
+                });
+            }
+            expected = Some(digest);
+        }
+        Ok(expected)
+    }
 }
 
 /// Processing bounds. Defaults are operational limits, not measured performance claims.

@@ -1,0 +1,27 @@
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error: crate `tonic` required to be available in rlib format, but was not found in this form
+
+error: crate `reqwest` required to be available in rlib format, but was not found in this form
+
+error: crate `openshell_extension_core` required to be available in rlib format, but was not found in this form
+
+error: could not compile `polaris-kernel` (test "error_taxonomy") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-kernel` (test "lifecycle_stress") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "session_typestate") due to 3 previous errors
+error: could not compile `polaris-kernel` (lib test) due to 3 previous errors
+error: could not compile `polaris-kernel` (test "local_runtime") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "runtime_safety") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "local_tools") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "sandbox_execution") due to 3 previous errors

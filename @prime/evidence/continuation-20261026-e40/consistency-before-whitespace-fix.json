@@ -1,0 +1,102 @@
+[
+  {
+    "name": "record-checkpoint",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/finalize_e40.py"
+    ],
+    "started_utc": "2026-10-26T06:41:24.190384+00:00",
+    "elapsed_seconds": 0.294,
+    "exit_code": 0,
+    "raw": "record-checkpoint.txt"
+  },
+  {
+    "name": "render-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs"
+    ],
+    "started_utc": "2026-10-26T06:41:24.485104+00:00",
+    "elapsed_seconds": 0.34,
+    "exit_code": 0,
+    "raw": "render-docs.txt"
+  },
+  {
+    "name": "check-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-docs"
+    ],
+    "started_utc": "2026-10-26T06:41:24.825473+00:00",
+    "elapsed_seconds": 0.334,
+    "exit_code": 0,
+    "raw": "check-docs.txt"
+  },
+  {
+    "name": "render-docs-check",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T06:41:25.159946+00:00",
+    "elapsed_seconds": 0.296,
+    "exit_code": 0,
+    "raw": "render-docs-check.txt"
+  },
+  {
+    "name": "inventory",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/inventory_phase_sources.py"
+    ],
+    "started_utc": "2026-10-26T06:41:25.457016+00:00",
+    "elapsed_seconds": 1.424,
+    "exit_code": 0,
+    "raw": "inventory.txt"
+  },
+  {
+    "name": "refresh-percentages",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/refresh_e40_percentages.py"
+    ],
+    "started_utc": "2026-10-26T06:41:26.881332+00:00",
+    "elapsed_seconds": 0.145,
+    "exit_code": 0,
+    "raw": "refresh-percentages.txt"
+  },
+  {
+    "name": "validate-percentages",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/validate_phase_percentages.py"
+    ],
+    "started_utc": "2026-10-26T06:41:27.027262+00:00",
+    "elapsed_seconds": 0.15,
+    "exit_code": 0,
+    "raw": "validate-percentages.txt"
+  },
+  {
+    "name": "whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T06:41:27.177859+00:00",
+    "elapsed_seconds": 0.163,
+    "exit_code": 2,
+    "raw": "whitespace.txt"
+  }
+]

@@ -6,6 +6,7 @@ use std::error::Error;
 use polaris_proto::{ProtoError, pb};
 use polaris_sdk::contracts::{Event, EventRecord, FrameStepOutcome, Timestamp, WorkerKind};
 use polaris_sdk::error::ParseError;
+use polaris_sdk::human::HumanRequestId;
 use polaris_sdk::ids::{Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 use proptest::collection::vec;
 use proptest::prelude::*;
@@ -49,10 +50,17 @@ const fn variant_index(event: &Event) -> usize {
         Event::BlastRadiusAlert { .. } => 21,
         Event::DiffNeedsApproval { .. } => 22,
         Event::FrameStepRecorded { .. } => 23,
+        Event::HumanRequestCreated { .. } => 24,
+        Event::HumanRequestAnswered { .. } => 25,
+        Event::HumanRequestInterrupted { .. } => 26,
+        Event::FrameRegistered { .. } => 27,
+        Event::FrameTreeCancellationRequested { .. } => 28,
+        Event::FrameToolResultRecorded { .. } => 29,
+        Event::UserInputSubmitted { .. } => 30,
     }
 }
 
-const VARIANT_COUNT: usize = 24;
+const VARIANT_COUNT: usize = 31;
 
 #[test]
 fn old_envelope_version_is_preserved_and_new_variants_require_v4() -> TestResult {
@@ -118,10 +126,121 @@ fn old_envelope_version_is_preserved_and_new_variants_require_v4() -> TestResult
     Ok(())
 }
 
+#[test]
+fn human_request_events_require_schema_v5() -> TestResult {
+    let events = [
+        Event::HumanRequestCreated {
+            request_id: HumanRequestId::from_u128(1),
+            frame: frame(2),
+            origin_step: 3,
+            request: cid(4),
+        },
+        Event::HumanRequestAnswered {
+            request_id: HumanRequestId::from_u128(1),
+            frame: frame(2),
+            receipt: cid(5),
+        },
+        Event::HumanRequestInterrupted {
+            request_id: HumanRequestId::from_u128(1),
+            frame: frame(2),
+            revision: cid(4),
+        },
+    ];
+    for event in events {
+        let record = EventRecord::new(
+            Seq::new(1),
+            Timestamp::UNIX_EPOCH,
+            SessionId::from_u128(3),
+            event,
+        );
+        let mut wire = pb::EventRecord::from(&record);
+        wire.schema = 4;
+        assert!(EventRecord::try_from(wire).is_err());
+    }
+    Ok(())
+}
+
+#[test]
+fn frame_registry_and_cancellation_events_require_schema_v6() -> TestResult {
+    let events = [
+        Event::FrameToolResultRecorded {
+            frame: frame(1),
+            call: cid(1),
+            result: cid(2),
+        },
+        Event::FrameRegistered {
+            frame: frame(31),
+            parent: Some(frame(30)),
+            root: frame(1),
+            role: polaris_sdk::ids::AgentRole::SubAgent,
+            binding: cid(31),
+        },
+        Event::FrameTreeCancellationRequested {
+            target: frame(31),
+            receipt: cid(32),
+            command: polaris_sdk::ids::CommandId::from_u128(33),
+        },
+    ];
+    for event in events {
+        let record = EventRecord::new(
+            Seq::new(1),
+            Timestamp::UNIX_EPOCH,
+            SessionId::from_u128(3),
+            event,
+        );
+        let mut wire = pb::EventRecord::from(&record);
+        wire.schema = 5;
+        assert!(EventRecord::try_from(wire).is_err());
+        assert!(
+            EventRecord::from_versioned(
+                6,
+                Seq::new(1),
+                Timestamp::UNIX_EPOCH,
+                SessionId::from_u128(3),
+                event,
+            )
+            .is_ok()
+        );
+    }
+    assert!(
+        EventRecord::from_versioned(
+            8,
+            Seq::new(1),
+            Timestamp::UNIX_EPOCH,
+            SessionId::from_u128(3),
+            Event::SessionClosed,
+        )
+        .is_err()
+    );
+    assert!(std::mem::size_of::<Event>() <= 96);
+    Ok(())
+}
+
+#[test]
+fn user_input_submitted_converts_to_proto_and_back() -> TestResult {
+    let event = Event::UserInputSubmitted { text: cid(40) };
+    assert_eq!(event_roundtrip(event)?, event);
+    let record = EventRecord::new(
+        Seq::new(1),
+        Timestamp::UNIX_EPOCH,
+        SessionId::from_u128(3),
+        event,
+    );
+    assert_eq!(record_roundtrip(record)?, record);
+    let mut wire = pb::EventRecord::from(&record);
+    wire.schema = 6;
+    assert!(
+        EventRecord::try_from(wire).is_err(),
+        "typed user input mislabeled below schema 7 must be refused"
+    );
+    Ok(())
+}
+
 fn samples() -> Vec<Event> {
     vec![
         Event::SessionStarted { workspace: cid(1) },
         Event::DirectiveApplied { directive: cid(2) },
+        Event::UserInputSubmitted { text: cid(41) },
         Event::DecisionMade {
             frame: frame(3),
             decision: cid(3),
@@ -229,6 +348,39 @@ fn samples() -> Vec<Event> {
             step: 3,
             transcript: cid(20),
             outcome: FrameStepOutcome::Cancelled,
+        },
+        Event::HumanRequestCreated {
+            request_id: HumanRequestId::from_u128(24),
+            frame: frame(24),
+            origin_step: 25,
+            request: cid(25),
+        },
+        Event::HumanRequestAnswered {
+            request_id: HumanRequestId::from_u128(25),
+            frame: frame(25),
+            receipt: cid(27),
+        },
+        Event::HumanRequestInterrupted {
+            request_id: HumanRequestId::from_u128(26),
+            frame: frame(27),
+            revision: cid(28),
+        },
+        Event::FrameRegistered {
+            frame: frame(28),
+            parent: Some(frame(27)),
+            root: frame(1),
+            role: polaris_sdk::ids::AgentRole::Verifier,
+            binding: cid(29),
+        },
+        Event::FrameToolResultRecorded {
+            frame: frame(1),
+            call: cid(1),
+            result: cid(2),
+        },
+        Event::FrameTreeCancellationRequested {
+            target: frame(28),
+            receipt: cid(30),
+            command: polaris_sdk::ids::CommandId::from_u128(31),
         },
     ]
 }
@@ -379,10 +531,12 @@ fn malformed_cid_and_schema_are_errors() -> TestResult {
         Err(ProtoError::Invalid(ParseError::UnsupportedSchema(0)))
     );
     let mut future = pb::EventRecord::from(&record);
-    future.schema = 5;
+    future.schema = u32::from(polaris_sdk::contracts::EVENT_SCHEMA_VERSION.saturating_add(1));
     assert_eq!(
         EventRecord::try_from(future),
-        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(5)))
+        Err(ProtoError::Invalid(ParseError::UnsupportedSchema(
+            polaris_sdk::contracts::EVENT_SCHEMA_VERSION.saturating_add(1)
+        )))
     );
     let mut huge = pb::EventRecord::from(&record);
     huge.schema = u32::from(u16::MAX) + 1;
@@ -446,6 +600,9 @@ fn arb_event() -> impl Strategy<Value = Event> {
             .boxed(),
         arb_cid()
             .prop_map(|directive| Event::DirectiveApplied { directive })
+            .boxed(),
+        arb_cid()
+            .prop_map(|text| Event::UserInputSubmitted { text })
             .boxed(),
         (arb_frame(), arb_cid(), any::<u64>())
             .prop_map(|(frame, decision, latency_us)| Event::DecisionMade {
@@ -569,6 +726,73 @@ fn arb_event() -> impl Strategy<Value = Event> {
                 }
             })
             .boxed(),
+        (any::<u128>(), arb_frame(), any::<u32>(), arb_cid())
+            .prop_map(
+                |(request_id, frame, origin_step, request)| Event::HumanRequestCreated {
+                    request_id: HumanRequestId::from_u128(request_id),
+                    frame,
+                    origin_step,
+                    request,
+                },
+            )
+            .boxed(),
+        (any::<u128>(), arb_frame(), arb_cid())
+            .prop_map(|(request_id, frame, receipt)| Event::HumanRequestAnswered {
+                request_id: HumanRequestId::from_u128(request_id),
+                frame,
+                receipt,
+            })
+            .boxed(),
+        (any::<u128>(), arb_frame(), arb_cid())
+            .prop_map(
+                |(request_id, frame, revision)| Event::HumanRequestInterrupted {
+                    request_id: HumanRequestId::from_u128(request_id),
+                    frame,
+                    revision,
+                },
+            )
+            .boxed(),
+        (
+            arb_frame(),
+            proptest::option::of(arb_frame()),
+            arb_frame(),
+            any::<u8>(),
+            arb_cid(),
+        )
+            .prop_map(|(frame, parent, root, role, binding)| {
+                let role = match role % 6 {
+                    0 => polaris_sdk::ids::AgentRole::Orchestrator,
+                    1 => polaris_sdk::ids::AgentRole::SubAgent,
+                    2 => polaris_sdk::ids::AgentRole::Verifier,
+                    3 => polaris_sdk::ids::AgentRole::Researcher,
+                    4 => polaris_sdk::ids::AgentRole::Hacker,
+                    _ => polaris_sdk::ids::AgentRole::Watchdog,
+                };
+                Event::FrameRegistered {
+                    frame,
+                    parent,
+                    root,
+                    role,
+                    binding,
+                }
+            })
+            .boxed(),
+        (arb_frame(), arb_cid(), any::<u128>())
+            .prop_map(
+                |(target, receipt, command)| Event::FrameTreeCancellationRequested {
+                    target,
+                    receipt,
+                    command: polaris_sdk::ids::CommandId::from_u128(command),
+                },
+            )
+            .boxed(),
+        (arb_frame(), arb_cid(), arb_cid())
+            .prop_map(|(frame, call, result)| Event::FrameToolResultRecorded {
+                frame,
+                call,
+                result,
+            })
+            .boxed(),
     ];
     assert_eq!(arms.len(), VARIANT_COUNT);
     Union::new(arms)
@@ -621,7 +845,9 @@ proptest! {
         let mut bytes = pb::Event::from(&event).encode_to_vec();
         for (pos, value) in flips {
             let len = bytes.len();
-            if let Some(slot) = bytes.get_mut(pos % len.max(1)) {
+            let position = pos.checked_rem(len.max(1))
+                .ok_or_else(|| TestCaseError::fail("nonzero mutation span invariant"))?;
+            if let Some(slot) = bytes.get_mut(position) {
                 *slot = value;
             }
         }

@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::task::JoinSet;
+use tokio::task::{AbortHandle, Id as TokioTaskId, JoinError, JoinSet};
 use tokio_util::sync::CancellationToken;
 
 /// Absolute upper bound for nodes in one graph.
@@ -79,6 +79,18 @@ pub enum NodeError {
     Rejected,
     /// The operator observed cooperative cancellation.
     Cancelled,
+}
+
+/// Why a scheduler task ended before returning a structured node result.
+///
+/// An interruption has an unknown attempt count. The scheduler does not retry an interrupted
+/// task, even when `OnFailure::Retry` is selected, because its side-effect state is unknown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeInterruption {
+    /// The operator task panicked. Panic payloads are intentionally not exposed.
+    Panicked,
+    /// The operator task was aborted before it returned a structured result.
+    Aborted,
 }
 
 /// Context supplied to every node attempt.
@@ -229,6 +241,11 @@ pub enum NodeResult<O> {
         /// Number of attempts used.
         attempts: u32,
     },
+    /// The operator task ended without a structured result; its attempt count is unknown.
+    Interrupted {
+        /// Scheduler-observed interruption category.
+        reason: NodeInterruption,
+    },
     /// A prerequisite failed, so this node was never started.
     DependencyFailed {
         /// Failed prerequisite that first blocked this dependency chain.
@@ -249,7 +266,7 @@ pub enum DagRunStatus {
     Cancelled,
 }
 
-/// Per-run results and actual start order.
+/// Per-run results and scheduler dispatch order.
 #[derive(Debug, PartialEq, Eq)]
 pub struct DagReport<O> {
     status: DagRunStatus,
@@ -270,7 +287,7 @@ impl<O> DagReport<O> {
         &self.results
     }
 
-    /// Nodes in the order the scheduler started them.
+    /// Nodes in scheduler dispatch order. Operators may enter their futures later.
     #[must_use]
     pub fn order_started(&self) -> &[NodeId] {
         &self.order_started
@@ -445,6 +462,186 @@ impl Drop for RunCancellationGuard {
     }
 }
 
+struct TrackedTask {
+    index: usize,
+    id: NodeId,
+    pool: Pool,
+    abort_handle: AbortHandle,
+}
+
+type NodeCompletion<O> = (usize, NodeId, Pool, Result<NodeResult<O>, DagError>);
+type JoinedTask<O> = Result<(TokioTaskId, NodeCompletion<O>), JoinError>;
+
+struct SchedulerState<O> {
+    indegree: Vec<usize>,
+    ready: BTreeSet<(NodeId, usize)>,
+    started: BTreeSet<usize>,
+    results: Vec<Option<NodeResult<O>>>,
+}
+
+enum JoinedNode<O> {
+    Completed {
+        index: usize,
+        id: NodeId,
+        result: Result<NodeResult<O>, DagError>,
+    },
+    Interrupted {
+        index: usize,
+        id: NodeId,
+        reason: NodeInterruption,
+    },
+}
+
+fn normalize_join<O>(
+    joined: JoinedTask<O>,
+    in_flight: &mut BTreeMap<TokioTaskId, TrackedTask>,
+) -> Result<JoinedNode<O>, DagError> {
+    match joined {
+        Ok((task_id, (index, id, pool, result))) => {
+            let tracked = in_flight.remove(&task_id).ok_or(DagError::JoinFailed)?;
+            if tracked.index != index || tracked.id != id || tracked.pool != pool {
+                return Err(DagError::JoinFailed);
+            }
+            Ok(JoinedNode::Completed { index, id, result })
+        }
+        Err(error) => {
+            let reason = if error.is_panic() {
+                NodeInterruption::Panicked
+            } else {
+                NodeInterruption::Aborted
+            };
+            let tracked = in_flight.remove(&error.id()).ok_or(DagError::JoinFailed)?;
+            Ok(JoinedNode::Interrupted {
+                index: tracked.index,
+                id: tracked.id,
+                reason,
+            })
+        }
+    }
+}
+
+fn record_node_result<T: NodeTask>(
+    dag: &Dag<T>,
+    index: usize,
+    id: NodeId,
+    node_result: NodeResult<T::Output>,
+    state: &mut SchedulerState<T::Output>,
+) -> Result<(bool, bool), DagError> {
+    let success = matches!(node_result, NodeResult::Succeeded { .. });
+    let failed = matches!(
+        node_result,
+        NodeResult::Failed { .. } | NodeResult::Interrupted { .. }
+    );
+    let cancelled = matches!(node_result, NodeResult::Cancelled);
+    *state
+        .results
+        .get_mut(index)
+        .ok_or(DagError::GraphInvariant)? = Some(node_result);
+    if success {
+        let node = dag.nodes.get(index).ok_or(DagError::GraphInvariant)?;
+        for dependent in &node.dependents {
+            let degree = state
+                .indegree
+                .get_mut(*dependent)
+                .ok_or(DagError::GraphInvariant)?;
+            *degree = degree.checked_sub(1).ok_or(DagError::GraphInvariant)?;
+            if *degree == 0 && !state.started.contains(dependent) {
+                let dependent_node = dag.nodes.get(*dependent).ok_or(DagError::GraphInvariant)?;
+                state.ready.insert((dependent_node.id, *dependent));
+            }
+        }
+    } else if failed || cancelled {
+        skip_descendants(
+            dag,
+            index,
+            id,
+            &mut state.results,
+            &mut state.started,
+            &mut state.ready,
+        )?;
+    }
+    Ok((failed, cancelled))
+}
+
+fn record_joined_node<T: NodeTask>(
+    dag: &Dag<T>,
+    event: JoinedNode<T::Output>,
+    state: &mut SchedulerState<T::Output>,
+) -> Result<(NodeId, bool, bool), DagError> {
+    let (index, id, node_result) = match event {
+        JoinedNode::Completed { index, id, result } => (index, id, result?),
+        JoinedNode::Interrupted { index, id, reason } => {
+            (index, id, NodeResult::Interrupted { reason })
+        }
+    };
+    let (failed, cancelled) = record_node_result(dag, index, id, node_result, state)?;
+    Ok((id, failed, cancelled))
+}
+
+fn store_drained_result<O>(
+    index: usize,
+    result: NodeResult<O>,
+    state: &mut SchedulerState<O>,
+) -> Result<(), DagError> {
+    let slot = state
+        .results
+        .get_mut(index)
+        .ok_or(DagError::GraphInvariant)?;
+    if slot.is_some() {
+        return Err(DagError::JoinFailed);
+    }
+    *slot = Some(result);
+    Ok(())
+}
+
+async fn abort_and_drain<O: Send + 'static>(
+    join_set: &mut JoinSet<NodeCompletion<O>>,
+    in_flight: &mut BTreeMap<TokioTaskId, TrackedTask>,
+    state: &mut SchedulerState<O>,
+) -> Result<(), DagError> {
+    join_set.abort_all();
+    let mut drain_error = None;
+    while let Some(joined) = join_set.join_next_with_id().await {
+        let event = match normalize_join(joined, in_flight) {
+            Ok(event) => event,
+            Err(error) => {
+                if drain_error.is_none() {
+                    drain_error = Some(error);
+                }
+                continue;
+            }
+        };
+        let stored = match event {
+            JoinedNode::Completed { index, result, .. } => match result {
+                Ok(node_result) => store_drained_result(index, node_result, state),
+                Err(error) => {
+                    if drain_error.is_none() {
+                        drain_error = Some(error);
+                    }
+                    continue;
+                }
+            },
+            JoinedNode::Interrupted { index, reason, .. } => {
+                let node_result = match reason {
+                    NodeInterruption::Panicked => NodeResult::Interrupted { reason },
+                    NodeInterruption::Aborted => NodeResult::Cancelled,
+                };
+                store_drained_result(index, node_result, state)
+            }
+        };
+        if drain_error.is_none() {
+            drain_error = stored.err();
+        }
+    }
+    if !in_flight.is_empty() && drain_error.is_none() {
+        drain_error = Some(DagError::JoinFailed);
+    }
+    match drain_error {
+        Some(error) => Err(error),
+        None => Ok(()),
+    }
+}
+
 /// Runs a validated graph with readiness scheduling, bounded parallelism and structured abort.
 pub async fn run<T: NodeTask>(
     dag: Dag<T>,
@@ -461,28 +658,30 @@ pub async fn run<T: NodeTask>(
         None => count.max(1),
     };
     let run_token = cancellation.child_token();
-    let mut indegree: Vec<usize> = dag
+    let indegree: Vec<usize> = dag
         .nodes
         .iter()
         .map(|node| node.dependencies.len())
         .collect();
-    let mut ready: BTreeSet<(NodeId, usize)> = dag
+    let ready: BTreeSet<(NodeId, usize)> = dag
         .nodes
         .iter()
         .zip(indegree.iter())
         .enumerate()
         .filter_map(|(index, (node, degree))| (*degree == 0).then_some((node.id, index)))
         .collect();
-    let mut started = BTreeSet::new();
+    let mut state = SchedulerState {
+        indegree,
+        ready,
+        started: BTreeSet::new(),
+        results: std::iter::repeat_with(|| None).take(count).collect(),
+    };
     let mut order_started = Vec::with_capacity(count);
-    let mut results: Vec<Option<NodeResult<T::Output>>> =
-        std::iter::repeat_with(|| None).take(count).collect();
     let mut join_set = JoinSet::new();
     let _cancel_on_drop = RunCancellationGuard(run_token.clone());
-    let mut in_flight: BTreeMap<usize, Pool> = BTreeMap::new();
+    let mut in_flight: BTreeMap<TokioTaskId, TrackedTask> = BTreeMap::new();
     let mut status = DagRunStatus::Completed;
     let mut had_failure = false;
-    let mut join_failed = false;
 
     loop {
         if run_token.is_cancelled() {
@@ -490,10 +689,10 @@ pub async fn run<T: NodeTask>(
             break;
         }
         while join_set.len() < parallelism {
-            let Some((_, index)) = ready.pop_first() else {
+            let Some((_, index)) = state.ready.pop_first() else {
                 break;
             };
-            if !started.insert(index) {
+            if !state.started.insert(index) {
                 continue;
             }
             let node = dag.nodes.get(index).ok_or(DagError::GraphInvariant)?;
@@ -503,15 +702,24 @@ pub async fn run<T: NodeTask>(
             let token = run_token.child_token();
             let pools = pools.clone();
             let id = node.id;
-            join_set.spawn(async move {
+            let abort_handle = join_set.spawn(async move {
                 let result = execute_node(task, pool, id, pools, token, options.on_failure).await;
                 (index, id, pool, result)
             });
-            in_flight.insert(index, pool);
+            let task_id = abort_handle.id();
+            in_flight.insert(
+                task_id,
+                TrackedTask {
+                    index,
+                    id,
+                    pool,
+                    abort_handle,
+                },
+            );
         }
 
         if join_set.is_empty() {
-            if ready.is_empty() {
+            if state.ready.is_empty() {
                 break;
             }
             // An acyclic validated graph cannot reach this state unless its dependency state was
@@ -524,34 +732,40 @@ pub async fn run<T: NodeTask>(
                 status = DagRunStatus::Cancelled;
                 break;
             }
-            joined = join_set.join_next() => {
+            joined = join_set.join_next_with_id() => {
                 let Some(joined) = joined else { break; };
-                let (index, id, _pool, result) = match joined {
-                    Ok(value) => value,
-                    Err(_) => {
-                        join_failed = true;
-                        run_token.cancel();
-                        break;
-                    }
-                };
-                in_flight.remove(&index);
-                let node_result = match result {
-                    Ok(node_result) => node_result,
+                let event = match normalize_join(joined, &mut in_flight) {
+                    Ok(event) => event,
                     Err(error) => {
                         run_token.cancel();
-                        for pool in in_flight.values() {
-                            pools.note_aborted(*pool);
+                        for tracked in in_flight.values() {
+                            if !tracked.abort_handle.is_finished() {
+                                pools.note_aborted(tracked.pool);
+                            }
                         }
-                        join_set.abort_all();
-                        while join_set.join_next().await.is_some() {}
+                        abort_and_drain(&mut join_set, &mut in_flight, &mut state).await?;
                         return Err(error);
                     }
                 };
-                let success = matches!(node_result, NodeResult::Succeeded { .. });
-                let failed = matches!(node_result, NodeResult::Failed { .. });
-                let cancelled = matches!(node_result, NodeResult::Cancelled);
+                let recorded = record_joined_node(
+                    &dag,
+                    event,
+                    &mut state,
+                );
+                let (_, failed, cancelled) = match recorded {
+                    Ok(recorded) => recorded,
+                    Err(error) => {
+                        run_token.cancel();
+                        for tracked in in_flight.values() {
+                            if !tracked.abort_handle.is_finished() {
+                                pools.note_aborted(tracked.pool);
+                            }
+                        }
+                        abort_and_drain(&mut join_set, &mut in_flight, &mut state).await?;
+                        return Err(error);
+                    }
+                };
                 had_failure |= failed || cancelled;
-                *results.get_mut(index).ok_or(DagError::GraphInvariant)? = Some(node_result);
                 if (failed || cancelled) && options.on_failure == OnFailure::FailFast {
                     status = if cancelled {
                         DagRunStatus::Cancelled
@@ -560,24 +774,6 @@ pub async fn run<T: NodeTask>(
                     };
                     run_token.cancel();
                     break;
-                }
-                if success {
-                    let node = dag.nodes.get(index).ok_or(DagError::GraphInvariant)?;
-                    for dependent in &node.dependents {
-                        let degree = indegree
-                            .get_mut(*dependent)
-                            .ok_or(DagError::GraphInvariant)?;
-                        *degree = degree.checked_sub(1).ok_or(DagError::GraphInvariant)?;
-                        if *degree == 0 && !started.contains(dependent) {
-                            let dependent_node = dag
-                                .nodes
-                                .get(*dependent)
-                                .ok_or(DagError::GraphInvariant)?;
-                            ready.insert((dependent_node.id, *dependent));
-                        }
-                    }
-                } else if failed || cancelled {
-                    skip_descendants(&dag, index, id, &mut results, &mut started, &mut ready)?;
                 }
             }
         }
@@ -588,21 +784,18 @@ pub async fn run<T: NodeTask>(
     }
     if status != DagRunStatus::Completed || !join_set.is_empty() {
         run_token.cancel();
-        for pool in in_flight.values() {
-            pools.note_aborted(*pool);
+        for tracked in in_flight.values() {
+            if !tracked.abort_handle.is_finished() {
+                pools.note_aborted(tracked.pool);
+            }
         }
-        join_set.abort_all();
-        while join_set.join_next().await.is_some() {}
+        abort_and_drain(&mut join_set, &mut in_flight, &mut state).await?;
     }
-    if join_failed {
-        return Err(DagError::JoinFailed);
-    }
-
-    for (index, slot) in results.iter_mut().enumerate() {
+    for (index, slot) in state.results.iter_mut().enumerate() {
         if slot.is_none() {
             let _node = dag.nodes.get(index).ok_or(DagError::GraphInvariant)?;
             *slot = Some(NodeResult::Cancelled);
-            if started.contains(&index) && status == DagRunStatus::Completed {
+            if state.started.contains(&index) && status == DagRunStatus::Completed {
                 status = DagRunStatus::Cancelled;
             }
         }
@@ -615,7 +808,8 @@ pub async fn run<T: NodeTask>(
         .iter()
         .enumerate()
         .filter_map(|(index, node)| {
-            results
+            state
+                .results
                 .get_mut(index)
                 .and_then(Option::take)
                 .map(|result| (node.id, result))
@@ -709,4 +903,301 @@ fn skip_descendants<T: NodeTask>(
         started.insert(index);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::future::Future;
+    use std::pin::Pin;
+    use std::time::Duration;
+    use tokio::task::JoinSet;
+
+    struct SuccessTask;
+
+    impl NodeTask for SuccessTask {
+        type Output = ();
+
+        fn run<'a>(
+            &'a self,
+            _context: NodeCtx,
+        ) -> Pin<Box<dyn Future<Output = Result<Self::Output, NodeError>> + Send + 'a>> {
+            Box::pin(std::future::ready(Ok(())))
+        }
+    }
+
+    #[tokio::test]
+    async fn aborted_join_retains_node_identity() -> Result<(), DagError> {
+        let mut join_set = JoinSet::new();
+        let abort_handle = join_set.spawn(std::future::pending::<(
+            usize,
+            NodeId,
+            Pool,
+            Result<NodeResult<usize>, DagError>,
+        )>());
+        let task_id = abort_handle.id();
+        abort_handle.abort();
+        let mut in_flight = BTreeMap::new();
+        in_flight.insert(
+            task_id,
+            TrackedTask {
+                index: 4,
+                id: NodeId::new(41),
+                pool: Pool::Web,
+                abort_handle,
+            },
+        );
+        let Some(joined) = join_set.join_next_with_id().await else {
+            return Err(DagError::JoinFailed);
+        };
+        let event = normalize_join(joined, &mut in_flight)?;
+        match event {
+            JoinedNode::Interrupted { index, id, reason } => {
+                assert_eq!(index, 4, "the interrupted task must retain its graph index");
+                assert_eq!(
+                    id,
+                    NodeId::new(41),
+                    "the interrupted task must retain its node id"
+                );
+                assert_eq!(
+                    reason,
+                    NodeInterruption::Aborted,
+                    "Tokio cancellation is Aborted"
+                );
+            }
+            JoinedNode::Completed { .. } => return Err(DagError::JoinFailed),
+        }
+        assert!(
+            in_flight.is_empty(),
+            "the exact completion must remove its tracking entry"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn abort_drain_retains_a_task_that_finished_before_cleanup() -> Result<(), DagError> {
+        let node_id = NodeId::new(19);
+        let mut join_set = JoinSet::new();
+        let abort_handle = join_set.spawn(async move {
+            (
+                0,
+                node_id,
+                Pool::Web,
+                Ok(NodeResult::Succeeded {
+                    value: 19_usize,
+                    attempts: 1,
+                }),
+            )
+        });
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !abort_handle.is_finished() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .map_err(|_| DagError::JoinFailed)?;
+        let mut state = SchedulerState {
+            indegree: vec![0],
+            ready: BTreeSet::new(),
+            started: BTreeSet::new(),
+            results: vec![None],
+        };
+        let mut in_flight = BTreeMap::new();
+        in_flight.insert(
+            abort_handle.id(),
+            TrackedTask {
+                index: 0,
+                id: NodeId::new(19),
+                pool: Pool::Web,
+                abort_handle,
+            },
+        );
+        abort_and_drain(&mut join_set, &mut in_flight, &mut state).await?;
+        assert!(
+            matches!(
+                state.results.first(),
+                Some(Some(NodeResult::Succeeded {
+                    value: 19,
+                    attempts: 1
+                }))
+            ),
+            "cleanup must retain a result completed before abort"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn interrupted_completion_records_failure_and_preserves_sibling_readiness()
+    -> Result<(), DagError> {
+        let root_id = NodeId::new(1);
+        let child_id = NodeId::new(2);
+        let sibling_id = NodeId::new(3);
+        let mut builder = DagBuilder::new();
+        builder.node(root_id, Pool::Web, SuccessTask)?;
+        builder.node(child_id, Pool::Web, SuccessTask)?;
+        builder.node(sibling_id, Pool::Disk, SuccessTask)?;
+        builder.edge(root_id, child_id)?;
+        let dag = builder.build()?;
+        let indegree = dag
+            .nodes
+            .iter()
+            .map(|node| node.dependencies.len())
+            .collect::<Vec<_>>();
+        let ready = dag
+            .nodes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, node)| node.dependencies.is_empty().then_some((node.id, index)))
+            .collect::<BTreeSet<_>>();
+        let mut state = SchedulerState {
+            indegree,
+            ready,
+            started: BTreeSet::new(),
+            results: std::iter::repeat_with(|| None)
+                .take(dag.nodes.len())
+                .collect(),
+        };
+        let root_index = dag
+            .nodes
+            .iter()
+            .position(|node| node.id == root_id)
+            .ok_or(DagError::GraphInvariant)?;
+        let mut join_set = JoinSet::new();
+        let abort_handle = join_set.spawn(std::future::pending::<(
+            usize,
+            NodeId,
+            Pool,
+            Result<NodeResult<()>, DagError>,
+        )>());
+        let task_id = abort_handle.id();
+        abort_handle.abort();
+        let mut in_flight = BTreeMap::new();
+        in_flight.insert(
+            task_id,
+            TrackedTask {
+                index: root_index,
+                id: root_id,
+                pool: Pool::Web,
+                abort_handle,
+            },
+        );
+        let Some(joined) = join_set.join_next_with_id().await else {
+            return Err(DagError::JoinFailed);
+        };
+        let event = normalize_join(joined, &mut in_flight)?;
+        let outcome = record_joined_node(&dag, event, &mut state)?;
+        assert_eq!(
+            outcome,
+            (root_id, true, false),
+            "interruption records failure without global cancellation"
+        );
+        let child_index = dag
+            .nodes
+            .iter()
+            .position(|node| node.id == child_id)
+            .ok_or(DagError::GraphInvariant)?;
+        let sibling_index = dag
+            .nodes
+            .iter()
+            .position(|node| node.id == sibling_id)
+            .ok_or(DagError::GraphInvariant)?;
+        assert!(
+            matches!(
+                state.results.get(child_index),
+                Some(Some(NodeResult::DependencyFailed { caused_by })) if *caused_by == root_id
+            ),
+            "the interrupted prerequisite must skip its descendant"
+        );
+        assert!(
+            state.results.get(root_index).is_some_and(|result| matches!(
+                result,
+                Some(NodeResult::Interrupted {
+                    reason: NodeInterruption::Aborted
+                })
+            )),
+            "the interrupted node result must retain its category"
+        );
+        assert!(
+            state
+                .results
+                .get(sibling_index)
+                .is_some_and(Option::is_none),
+            "an independent sibling remains unstarted"
+        );
+        assert!(
+            state.ready.contains(&(sibling_id, sibling_index)),
+            "the independent sibling remains ready for ContinueIndependent"
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn unknown_completion_fails_closed() -> Result<(), DagError> {
+        let mut join_set = JoinSet::new();
+        let tracked_handle = join_set.spawn(std::future::pending::<(
+            usize,
+            NodeId,
+            Pool,
+            Result<NodeResult<usize>, DagError>,
+        )>());
+        let unknown_handle = join_set.spawn(std::future::pending::<(
+            usize,
+            NodeId,
+            Pool,
+            Result<NodeResult<usize>, DagError>,
+        )>());
+        let mut in_flight = BTreeMap::new();
+        let tracked_id = tracked_handle.id();
+        in_flight.insert(
+            tracked_id,
+            TrackedTask {
+                index: 0,
+                id: NodeId::new(10),
+                pool: Pool::Disk,
+                abort_handle: tracked_handle,
+            },
+        );
+        let unknown = normalize_join(
+            Ok((
+                unknown_handle.id(),
+                (
+                    0,
+                    NodeId::new(10),
+                    Pool::Disk,
+                    Ok(NodeResult::Succeeded {
+                        value: 1,
+                        attempts: 1,
+                    }),
+                ),
+            )),
+            &mut in_flight,
+        );
+        assert!(
+            matches!(unknown, Err(DagError::JoinFailed)),
+            "unknown task IDs must fail closed"
+        );
+
+        let mismatch = normalize_join(
+            Ok((
+                tracked_id,
+                (
+                    1,
+                    NodeId::new(11),
+                    Pool::Web,
+                    Ok(NodeResult::Succeeded {
+                        value: 2,
+                        attempts: 1,
+                    }),
+                ),
+            )),
+            &mut in_flight,
+        );
+        assert!(
+            matches!(mismatch, Err(DagError::JoinFailed)),
+            "mismatched identity must fail closed"
+        );
+        join_set.abort_all();
+        while join_set.join_next().await.is_some() {}
+        Ok(())
+    }
 }

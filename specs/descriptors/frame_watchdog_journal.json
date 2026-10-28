@@ -1,0 +1,26 @@
+{
+  "type_of": "method",
+  "name": "Frame watchdog advisory recovery",
+  "file_path": "crates/polaris-runtime/crates/frames/src/journal.rs",
+  "logic_name": "Persist and reconstruct bounded hash-only watchdog state per exact frame",
+  "test_list": [
+    {
+      "test_name": "watchdog_memory_roundtrips_and_rejects_foreign_frame",
+      "description": "The latest watchdog snapshot reconstructs from durable JSON and foreign-frame replay is rejected."
+    },
+    {
+      "test_name": "legacy_frame_records_without_watchdog_memory_remain_replayable",
+      "description": "Older frame records without the optional watchdog field produce no snapshot and remain parseable."
+    }
+  ],
+  "dependencies": ["polaris-runtime-frames", "polaris-system-one-watchdog"],
+  "inputs": [
+    {
+      "name": "frame_step_records",
+      "type": "bounded serialized frame journal records",
+      "description": "Newest first, bounded by FrameJournalLimits and checked against expected frame identity."
+    }
+  ],
+  "output_type": "Option<WatchdogFrameMemory> or FrameJournalError",
+  "output_description": "Hash-only records and negative fingerprints are recovered for the exact owning frame."
+}

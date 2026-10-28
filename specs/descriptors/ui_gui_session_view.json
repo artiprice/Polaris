@@ -1,0 +1,29 @@
+{
+  "type_of": "struct",
+  "name": "SessionController",
+  "file_path": "crates/polaris-ui/crates/gui/src/session_view.rs",
+  "logic_name": "GUI Session View",
+  "test_list": [
+    { "test_name": "submit_without_session_opens_then_submits", "description": "The first send from the welcome screen issues Open{resume: None} then Submit{text}, switches to the session screen and marks the submit pending." },
+    { "test_name": "submit_blank_draft_is_ignored", "description": "An empty or whitespace-only draft issues no request and stays on the current screen." },
+    { "test_name": "second_submit_while_pending_is_refused", "description": "While a submit awaits Committed/Rejected, another submit issues nothing and sets a notice; the draft is kept." },
+    { "test_name": "committed_clears_draft_and_pending", "description": "Committed commits the prepared composer submission: draft becomes empty, pending false." },
+    { "test_name": "rejected_keeps_draft_and_shows_reason", "description": "Rejected(reason) cancels the prepared submission: draft unchanged, pending false, notice shows the reason." },
+    { "test_name": "message_events_append_user_entries", "description": "Message{kind: UserInput or Directive, text} events append user entries in order; the view's capacity errors become a notice, not a panic." },
+    { "test_name": "opened_resets_view_and_adds_offline_note", "description": "Opened clears the previous conversation, records title/workspace/branch and adds exactly one local system entry stating that model execution is unavailable." },
+    { "test_name": "sessions_group_by_workspace_newest_first", "description": "Sessions are grouped by workspace folder (group order by newest session), rows newest first; the open session row is active." },
+    { "test_name": "relative_time_labels", "description": "Updated times render as 'now', 'Nm', 'Nh', 'Nd' relative to the supplied clock; future or missing times render 'now'." },
+    { "test_name": "search_query_requests_search_and_empty_clears_hits", "description": "A non-blank query issues Search{query}; a blank query issues nothing and clears hits." },
+    { "test_name": "new_session_closes_current_and_returns_to_welcome", "description": "New session with an open session issues Close, clears the conversation and returns to the welcome screen; without one it only returns." },
+    { "test_name": "open_session_requests_resume", "description": "Opening a listed session issues Open{resume: Some(id)} and switches to the session screen; opening the already-open session issues nothing." },
+    { "test_name": "failed_event_surfaces_notice_and_clears_pending", "description": "Failed(reason) (e.g. store in use by another process) shows the reason, ends the starting state and cancels a pending submit keeping the draft." }
+  ],
+  "dependencies": ["polaris_ui_model::view::ViewState", "polaris_ui_model::composer::Composer", "backend::{BackendRequest, BackendEvent}"],
+  "libraries": [],
+  "inputs": [
+    { "name": "event", "type": "BackendEvent", "description": "Events from the desktop bridge (session opened, committed records, rejections, listings)." },
+    { "name": "draft", "type": "&str", "description": "Composer text mirrored from the UI." }
+  ],
+  "output_type": "Vec<BackendRequest> + view snapshots (entries, groups, notice, flags)",
+  "output_description": "Requests to send to the bridge and the state the Slint window shows."
+}

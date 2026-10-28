@@ -20,9 +20,10 @@ use crate::registry::{
     CommandReceipt, DecisionEngine, DecisionError, DocParser, DocSource, Document,
     EmbeddingProvider, EventSource, EventStore, EventStoreError, ExactCacheStore, ExecOutput,
     ExecRequest, FunctionalOperator, IngestError, KernelApi, KernelError, MemoryPressure,
-    ModelError, PlatformError, PlatformOps, ProcessExit, ProcessTree, RedactStats, Redactor,
-    SandboxBackend, SandboxError, SandboxHandle, SandboxSpec, SearchError, SearchHit, SearchQuery,
-    SpawnSpec, StopOutcome, VectorChunk, VectorError, VectorHit, VectorStore, WebSearch,
+    ModelError, PlatformError, PlatformOps, ProcessExit, ProcessTree, PromptTokenCount,
+    PromptTokenizer, RedactStats, Redactor, SandboxBackend, SandboxError, SandboxHandle,
+    SandboxSpec, SearchError, SearchHit, SearchQuery, SpawnSpec, StopOutcome, VectorChunk,
+    VectorError, VectorHit, VectorStore, WebSearch, WorkerBootstrapPlatform,
 };
 use crate::secrets::{SecretLocation, SecretSource, SecretSourceError};
 use crate::system_one::{Decision, DecisionInput, Question};
@@ -112,6 +113,12 @@ macro_rules! forward_all {
                         $($wrapper::$p(v) => v.stream(req).await.map($wrapper::$p),)+
                     }
                 }
+            }
+        }
+
+        impl<$($p: PromptTokenizer),+> PromptTokenizer for $wrapper<$($p),+> {
+            fn count_prompt(&self, request: &ChatRequest) -> impl Future<Output = Result<PromptTokenCount, ModelError>> + Send {
+                async move { $each!(self, v => v.count_prompt(request).await) }
             }
         }
 
@@ -249,6 +256,12 @@ macro_rules! forward_all {
             }
         }
 
+        impl<$($p: WorkerBootstrapPlatform),+> WorkerBootstrapPlatform for $wrapper<$($p),+> {
+            fn bootstrap_tree(&self, tree: &ProcessTree, secret: SecretString, timeout: Duration) -> impl Future<Output = Result<(), PlatformError>> + Send {
+                async move { $each!(self, v => v.bootstrap_tree(tree, secret, timeout).await) }
+            }
+        }
+
         impl<$($p: Redactor),+> Redactor for $wrapper<$($p),+> {
             fn redact_into(&self, input: &[u8], out: &mut Vec<u8>) -> RedactStats {
                 $each!(self, v => v.redact_into(input, out))
@@ -353,7 +366,17 @@ mod shared {
         SandboxHandle, SandboxSpec, Seq, VectorChunk, VectorError, VectorHit, VectorStore,
     };
     use crate::registry::SandboxSnapshotPage;
+    use crate::registry::{ChatRequest, ModelError, PromptTokenCount, PromptTokenizer};
     use bytes::Bytes;
+
+    impl<T: PromptTokenizer + ?Sized> PromptTokenizer for Arc<T> {
+        async fn count_prompt(
+            &self,
+            request: &ChatRequest,
+        ) -> Result<PromptTokenCount, ModelError> {
+            (**self).count_prompt(request).await
+        }
+    }
 
     impl<T: EventStore + ?Sized> EventStore for Arc<T> {
         fn append(&self, record: &EventRecord) -> Result<Seq, EventStoreError> {

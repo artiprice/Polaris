@@ -1,0 +1,24 @@
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Finished `test` profile [unoptimized] target(s) in 3.69s
+     Running tests\worker_bootstrap.rs (target\debug\deps\worker_bootstrap-7bf9cd44b4bc4d9f.exe)
+
+running 1 test
+test pending_stop_is_bounded_and_retires_before_supervisor_abort ... FAILED
+
+failures:
+
+---- pending_stop_is_bounded_and_retires_before_supervisor_abort stdout ----
+
+thread 'pending_stop_is_bounded_and_retires_before_supervisor_abort' (10332) panicked at crates\polaris-kernel\crates\supervisor\tests\worker_bootstrap.rs:381:5:
+assertion `left == right` failed: generation must retire within its own cleanup bound before supervisor abort
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pending_stop_is_bounded_and_retires_before_supervisor_abort
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 2.03s
+
+error: test failed, to rerun pass `-p polaris-kernel-supervisor --test worker_bootstrap`

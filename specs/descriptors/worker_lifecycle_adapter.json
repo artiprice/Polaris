@@ -1,0 +1,65 @@
+{
+  "type_of": "struct and trait implementation",
+  "name": "S1WorkerLifecycle<P>",
+  "file_path": "crates/polaris-kernel/src/worker_lifecycle.rs",
+  "logic_name": "Authenticated S1 Worker Bootstrap Lifecycle",
+  "test_list": [
+    {
+      "test_name": "initialize_bootstraps_a_fresh_credential_before_health_and_publishes_ready_client",
+      "description": "Initialization generates a per-process credential, transfers its bootstrap secret through WorkerBootstrapPlatform, connects through the public local client, verifies readiness, then publishes the exact process tree and client."
+    },
+    {
+      "test_name": "failed_bootstrap_or_readiness_does_not_publish_connection",
+      "description": "Any bootstrap, connect, handshake, or readiness failure leaves no published connection and returns a sanitized supervisor error."
+    },
+    {
+      "test_name": "health_check_rejects_nonmatching_or_unpublished_tree",
+      "description": "Health checks only the exact retained process tree and do not probe a different generation."
+    },
+    {
+      "test_name": "retire_old_generation_cannot_clear_new_connection",
+      "description": "Retiring a stale tree leaves the newer generation's ready connection intact."
+    },
+    {
+      "test_name": "retire_matching_generation_clears_client_and_tree",
+      "description": "Retiring the exact retained tree drops the associated client and tree without retaining credentials."
+    },
+    {
+      "test_name": "debug_and_task_errors_never_expose_worker_credentials_or_platform_details",
+      "description": "Debug and public TaskError messages contain only fixed sanitized text and never include credential or private bootstrap error contents."
+    }
+  ],
+  "dependencies": [
+    "WorkerLifecycle",
+    "WorkerBootstrapPlatform",
+    "ProcessTree",
+    "S1Client",
+    "WorkerCredential",
+    "HealthProbe"
+  ],
+  "libraries": ["secrecy", "tokio", "std::sync::Mutex"],
+  "inputs": [
+    {
+      "name": "platform",
+      "type": "Arc<P>",
+      "description": "Platform capable of securely bootstrapping a retained owned worker process."
+    },
+    {
+      "name": "endpoint",
+      "type": "PathBuf",
+      "description": "Configured private local endpoint owned by the worker process composition root."
+    },
+    {
+      "name": "client_config",
+      "type": "ClientConfig",
+      "description": "Validated S1 client connection, handshake, readiness, and request bounds."
+    },
+    {
+      "name": "bootstrap_timeout",
+      "type": "Duration",
+      "description": "Maximum time for one credential transfer to the retained child stdin."
+    }
+  ],
+  "output_type": "S1WorkerLifecycle<P>",
+  "output_description": "A supervisor lifecycle and authenticated health probe that publishes a client only after exact-tree secret bootstrap, local connection, protocol handshake, and readiness succeed. Retire only clears the matching process tree."
+}

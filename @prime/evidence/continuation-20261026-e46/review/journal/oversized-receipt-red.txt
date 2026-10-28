@@ -1,0 +1,15 @@
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+error[E0599]: no variant named `ReferencedContentTooLarge` found for enum `FrameJournalError`
+   --> crates\polaris-runtime\crates\frames\tests\bounded_frame_journal.rs:453:32
+    |
+453 |         Err(FrameJournalError::ReferencedContentTooLarge { limit: 12 })
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: there is a variant with a similar name
+    |
+453 -         Err(FrameJournalError::ReferencedContentTooLarge { limit: 12 })
+453 +         Err(FrameJournalError::ReferencedContentMissing { limit: 12 })
+    |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-runtime-frames` (test "bounded_frame_journal") due to 1 previous error

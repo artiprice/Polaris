@@ -1,0 +1,3 @@
+PASS: Root manifest exactly matches metadata rendering.
+PASS: 241 descriptor JSON files parse.
+PASS: 323 final input SHA256 values retained.

@@ -132,7 +132,7 @@ fn units_of<'a>(parent: Node<'a>, src: &'a [u8], lang: Lang, in_type_scope: bool
             };
             let counter = seen.entry((kind, c.name.clone())).or_insert(0);
             let ordinal = *counter;
-            *counter += 1;
+            *counter = counter.saturating_add(1);
             (kind, c.name, ordinal)
         });
         let sep_before = i
@@ -140,7 +140,7 @@ fn units_of<'a>(parent: Node<'a>, src: &'a [u8], lang: Lang, in_type_scope: bool
             .and_then(|p| kids.get(p))
             .and_then(|prev| src.get(prev.end_byte()..node.start_byte()));
         let sep_after = kids
-            .get(i + 1)
+            .get(i.saturating_add(1))
             .and_then(|next| src.get(node.end_byte()..next.start_byte()));
         units.push(Unit {
             node: *node,
@@ -390,10 +390,10 @@ fn merge_seq<'u, 'a>(
         let mut theirs_in: Vec<&Edit> = Vec::new();
         if take_ours {
             ours_in.push(first);
-            oi += 1;
+            oi = oi.saturating_add(1);
         } else {
             theirs_in.push(first);
-            ti += 1;
+            ti = ti.saturating_add(1);
         }
         loop {
             let mut grew = false;
@@ -403,7 +403,7 @@ fn merge_seq<'u, 'a>(
             {
                 (cs, ce) = (cs.min(e.start), ce.max(e.end));
                 ours_in.push(e);
-                oi += 1;
+                oi = oi.saturating_add(1);
                 grew = true;
             }
             if let Some(e) = theirs_edits
@@ -412,7 +412,7 @@ fn merge_seq<'u, 'a>(
             {
                 (cs, ce) = (cs.min(e.start), ce.max(e.end));
                 theirs_in.push(e);
-                ti += 1;
+                ti = ti.saturating_add(1);
                 grew = true;
             }
             if !grew {
@@ -559,7 +559,7 @@ fn merge_container<'a>(
     scope: &str,
     conflicts: &mut Vec<SymbolRef>,
 ) -> Option<Emit<'a>> {
-    if depth >= MAX_MERGE_DEPTH || base_range.0 + 1 != base_range.1 {
+    if depth >= MAX_MERGE_DEPTH || base_range.0.checked_add(1) != Some(base_range.1) {
         return None;
     }
     let ([Pick::Side(_, oi)], [Pick::Side(_, ti)]) = picks else {
@@ -599,7 +599,8 @@ fn merge_container<'a>(
         theirs: &lt,
     };
     let child_scope = qualify(scope, &key.1);
-    let emits = merge_seq(&sub, lang, depth + 1, &child_scope, conflicts);
+    let child_depth = depth.checked_add(1)?;
+    let emits = merge_seq(&sub, lang, child_depth, &child_scope, conflicts);
     let mut bytes = Vec::with_capacity(ou.text.len().max(tu.text.len()));
     bytes.extend_from_slice(header);
     bytes.extend_from_slice(&render(&emits, &sub));
@@ -628,7 +629,7 @@ fn render(emits: &[Emit<'_>], t: &Triple<'_, '_>) -> Vec<u8> {
 fn gap_between<'a>(a: &Emit<'_>, b: &Emit<'_>, t: &Triple<'_, 'a>) -> Option<&'a [u8]> {
     let before = |e: &Emit<'_>| t.unit(e.side, e.idx).and_then(|u| u.sep_before);
     let after = |e: &Emit<'_>| t.unit(e.side, e.idx).and_then(|u| u.sep_after);
-    if a.side == b.side && b.idx == a.idx + 1 {
+    if a.side == b.side && a.idx.checked_add(1) == Some(b.idx) {
         return before(b);
     }
     if a.side != Side::Base
@@ -665,7 +666,7 @@ fn default_gap(t: &Triple<'_, '_>) -> Vec<u8> {
     let line_start = before
         .iter()
         .rposition(|&b| b == b'\n')
-        .map_or(0, |i| i + 1);
+        .map_or(0, |i| i.saturating_add(1));
     let indent = before.get(line_start..).unwrap_or_default();
     if indent.iter().all(|b| *b == b' ' || *b == b'\t') {
         gap.extend_from_slice(indent);

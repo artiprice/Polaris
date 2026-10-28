@@ -23,6 +23,7 @@ serde_json = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-security-capability = { workspace = true }
 polaris-models = { workspace = true }
+polaris-system-one-watchdog = { workspace = true }
 
 [dev-dependencies]
 bytes = { workspace = true }

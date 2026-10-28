@@ -16,8 +16,26 @@ fn cid(b: u8) -> Cid {
 fn all_events() -> Vec<Event> {
     let frame = FrameId::from_u128(0x0192_0000_0000_7000_8000_0000_0000_00f1);
     vec![
+        Event::FrameToolResultRecorded {
+            frame,
+            call: cid(30),
+            result: cid(31),
+        },
+        Event::FrameRegistered {
+            frame,
+            parent: None,
+            root: frame,
+            role: polaris_sdk::ids::AgentRole::Orchestrator,
+            binding: cid(29),
+        },
+        Event::FrameTreeCancellationRequested {
+            target: frame,
+            receipt: cid(28),
+            command: polaris_sdk::ids::CommandId::from_u128(29),
+        },
         Event::SessionStarted { workspace: cid(1) },
         Event::DirectiveApplied { directive: cid(2) },
+        Event::UserInputSubmitted { text: cid(32) },
         Event::DecisionMade {
             frame,
             decision: cid(3),
@@ -129,8 +147,15 @@ fn event_record_json_roundtrip() -> TestResult {
 
 #[test]
 fn schema_version_is_current() -> TestResult {
-    assert_eq!(EVENT_SCHEMA_VERSION, 4);
-    assert_eq!(record(Event::SessionClosed)?.schema(), 4);
+    assert_eq!(
+        EVENT_SCHEMA_VERSION, 7,
+        "typed user input events require schema v7"
+    );
+    assert_eq!(
+        record(Event::SessionClosed)?.schema(),
+        EVENT_SCHEMA_VERSION,
+        "new envelopes use the current schema"
+    );
     Ok(())
 }
 
@@ -157,5 +182,32 @@ fn event_record_json_snapshot() -> TestResult {
     let legacy_record =
         EventRecord::from_versioned(1, rec.seq(), rec.at(), rec.session(), *rec.event())?;
     insta::assert_json_snapshot!("event_record_v1_model_request_completed", legacy_record);
+    Ok(())
+}
+
+#[test]
+fn user_input_event_json_roundtrips_at_schema_7() -> TestResult {
+    let rec = record(Event::UserInputSubmitted { text: cid(9) })?;
+    let json = serde_json::to_string(&rec)?;
+    assert!(
+        json.contains("\"type\":\"user_input_submitted\""),
+        "snake_case tag: {json}"
+    );
+    assert_eq!(serde_json::from_str::<EventRecord>(&json)?, rec);
+    let at: Timestamp = "2026-10-20T12:00:00Z".parse()?;
+    for schema in 0_u16..=EVENT_SCHEMA_VERSION.saturating_add(1) {
+        let result = EventRecord::from_versioned(
+            schema,
+            Seq::new(1),
+            at,
+            SessionId::from_u128(1),
+            Event::UserInputSubmitted { text: cid(9) },
+        );
+        assert_eq!(
+            result.is_ok(),
+            (7..=EVENT_SCHEMA_VERSION).contains(&schema),
+            "schema {schema}: exact minimum and maximum"
+        );
+    }
     Ok(())
 }

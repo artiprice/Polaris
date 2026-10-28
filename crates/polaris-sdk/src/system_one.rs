@@ -9,6 +9,66 @@ use core::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 
 use crate::error::ParseError;
+use crate::registry::DecisionError;
+
+/// One semantic PII range in the exact UTF-8 request text.
+///
+/// Offsets are half-open byte positions, not character counts. The matched text and model label
+/// are intentionally absent so local worker diagnostics cannot accidentally echo entity values.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PiiEntitySpan {
+    start: u32,
+    end: u32,
+    confidence: Probability,
+}
+
+impl PiiEntitySpan {
+    /// Validates a nonempty half-open byte range and a finite confidence in `0.0..=1.0`.
+    ///
+    /// # Errors
+    /// Returns `InvalidValue` for empty/reversed ranges and `InvalidProbability` for invalid
+    /// confidence values. UTF-8 bounds are validated by the consumer against the original text.
+    pub fn new(start: u32, end: u32, confidence: f32) -> Result<Self, ParseError> {
+        if start >= end {
+            return Err(ParseError::InvalidValue {
+                what: "PII entity span",
+                reason: "range must be nonempty and ordered",
+            });
+        }
+        Ok(Self {
+            start,
+            end,
+            confidence: Probability::new(confidence)?,
+        })
+    }
+
+    /// Start byte offset in the exact raw request text.
+    #[must_use]
+    pub const fn start(self) -> u32 {
+        self.start
+    }
+
+    /// Exclusive end byte offset in the exact raw request text.
+    #[must_use]
+    pub const fn end(self) -> u32 {
+        self.end
+    }
+
+    /// Model confidence for this candidate span.
+    #[must_use]
+    pub const fn confidence(self) -> f32 {
+        self.confidence.get()
+    }
+}
+
+/// Async local model port that returns semantic PII byte spans for exact raw text.
+pub trait PiiSpanDetector: Send + Sync {
+    /// Returns bounded entity spans without returning matched text or labels.
+    fn detect_pii_spans(
+        &self,
+        raw_text: &str,
+    ) -> impl core::future::Future<Output = Result<Vec<PiiEntitySpan>, DecisionError>> + Send;
+}
 
 /// A probability: finite and within `0.0..=1.0` (NaN rejected), with a total order.
 #[derive(Clone, Copy, Serialize, Deserialize)]

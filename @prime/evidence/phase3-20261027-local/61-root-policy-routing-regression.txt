@@ -1,0 +1,157 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling hyper v1.12.0
+   Compiling tower v0.5.3
+   Compiling rustls v0.23.46
+   Compiling tokio-stream v0.1.19
+   Compiling sec1 v0.7.3
+   Compiling tree-sitter v0.27.1
+   Compiling windows-native-keyring-store v1.1.0
+   Compiling chacha20poly1305 v0.11.0
+   Compiling proptest v1.12.0
+   Compiling rcgen v0.14.10
+   Compiling elliptic-curve v0.13.8
+   Compiling keyring v4.2.0
+   Compiling primeorder v0.13.6
+   Compiling ecdsa v0.16.9
+   Compiling axum v0.8.9
+   Compiling p256 v0.13.2
+   Compiling hyper-util v0.1.21
+   Compiling biscuit-auth v6.0.0 (C:\mDev\Polaris\vendor\biscuit-auth)
+   Compiling hyper-timeout v0.5.2
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling tokio-rustls v0.26.6
+   Compiling tonic v0.14.6
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-rpc v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-rpc)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Finished `test` profile [unoptimized] target(s) in 27.52s
+     Running unittests src\lib.rs (target\debug\deps\polaris_rpc-ab466e8ad2566575.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\transport_contracts.rs (target\debug\deps\transport_contracts-9be5fab165937488.exe)
+
+running 8 tests
+test local_endpoint_rejects_remote_or_ambiguous_names ... ok
+test public_plaintext_bind_is_refused ... ok
+test replay_includes_zero_cursor_and_isolates_other_session_sequences ... ok
+test tcp_authentication_and_receipt_roundtrip ... ok
+test idle_stream_revocation_is_enforced_and_failure_is_retained ... ok
+test mtls_rejects_missing_or_wrong_client_identity ... ok
+test named_pipe_name_ownership_and_grpc_roundtrip ... ok
+test shutdown_closes_idle_streams_within_grace ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_security_secrets-eccd68d9590d16e8.exe)
+
+running 2 tests
+test vault::tests::session_key_and_ciphertext_use_distinct_allocations ... ok
+test vault::tests::associated_secret_name_prevents_ciphertext_relabeling ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\key_recovery.rs (target\debug\deps\key_recovery-535ac5b2a4d9c358.exe)
+
+running 2 tests
+test explicit_source_key_recovers_ciphertext_in_a_new_vault ... ok
+test invalid_or_missing_recovery_key_fails_without_writes ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_contract.rs (target\debug\deps\secret_contract-1fefffc5cd231c9d.exe)
+
+running 17 tests
+test direct_system_keyring_store_rejects_oversized_value_before_backend_access ... ok
+test missing_source_is_typed_and_closure_is_not_called ... ok
+test keyring_store_load_and_delete_use_the_injected_fixture_provider ... ok
+test system_environment_adapter_reads_only_the_explicit_fixture_name ... ignored, run only with POLARIS_SECRET_FIXTURE set to an isolated synthetic value
+test production_environment_adapter_rejects_mutation_without_reading_values ... ok
+test system_keyring_store_load_delete_use_only_a_fresh_test_owned_location ... ignored, opt in with POLARIS_TEST_KEYRING=1; creates and removes one random synthetic credential
+test debug_output_redacts_vault_ciphertext_and_secret_wrapper ... ok
+test system_environment_adapter_reports_a_missing_synthetic_name ... ok
+test configured_vault_capacity_accounts_replacements_and_forget ... ok
+test seal_open_roundtrip_and_nonce_uniqueness ... ok
+test provider_failure_is_typed_and_does_not_echo_backend_text ... ok
+test oversized_secret_is_rejected ... ok
+test tampered_ciphertext_is_rejected ... ok
+test fixture_source_loads_into_scoped_decryption ... ok
+test vault_aggregate_plaintext_limit_rejects_without_replacing_existing_entry ... ok
+test oversized_ciphertext_is_rejected_before_decryption ... ok
+test prop_secret_names_are_bounded_and_restricted ... ok
+
+test result: ok. 15 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one-8a3b3244d0db7b54.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\consumer_policy.rs (target\debug\deps\consumer_policy-84a93410071be182.exe)
+
+running 6 tests
+test consumer_matrix_preserves_closed_safety_boundaries ... ok
+test circuit_opens_and_requires_host_readiness ... ok
+test retired_worker_response_cannot_cross_recovery_epoch ... ok
+test strict_uncalibrated_answer_still_needs_approval ... ok
+test saturation_and_cancel_release_admission ... ok
+test deadline_and_invalid_answers_return_typed_failure ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_router-8870de08206afabd.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\task_route.rs (target\debug\deps\task_route-7178dff1fb134b72.exe)
+
+running 4 tests
+test route_preserves_hard_facts_and_explicit_direct_tool ... ok
+test route_rejects_oversize_input_before_inference ... ok
+test route_timeout_defaults_to_medium_within_allowlist ... ok
+test route_combines_intent_effort_parallel_and_vision_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_rpc
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_security_secrets
+
+running 4 tests
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 128) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SecretVault::with_secret (line 334) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 122) - compile fail ... ok
+test crates\polaris-security\crates\secrets\src\vault.rs - vault::SessionSealKey (line 134) - compile fail ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+   Doc-tests polaris_system_one
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_system_one_router
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

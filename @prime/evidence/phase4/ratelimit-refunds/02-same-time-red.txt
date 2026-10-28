@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized] target(s) in 1.87s
+     Running tests\reservation_refund.rs (target\debug\deps\reservation_refund-8c859539cc3f316a.exe)
+
+running 1 test
+
+thread 'same_time_non_tail_refund_preserves_newer_reservation' (2632) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:161:5:
+assertion `left == right` failed
+  left: 0
+ right: 4
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test same_time_non_tail_refund_preserves_newer_reservation ... FAILED
+
+failures:
+
+failures:
+    same_time_non_tail_refund_preserves_newer_reservation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p polaris-ratelimit --test reservation_refund`

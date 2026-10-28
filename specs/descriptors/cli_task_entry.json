@@ -1,0 +1,21 @@
+{
+  "type_of": "pipeline",
+  "name": "polaris_cli_task_entry",
+  "file_path": "apps/polaris-cli/src/task.rs",
+  "logic_name": "Configured local model task entry",
+  "test_list": [
+    {"test_name": "task_profile_rejects_unknown_fields_before_host_start", "description": "The explicit host TOML profile denies unknown fields before any model process starts."},
+    {"test_name": "task_profile_rejects_oversized_toml_before_parse", "description": "Profile bytes are bounded before TOML parsing."},
+    {"test_name": "task_profile_accepts_existing_pinned_local_assets", "description": "Existing absolute llama and S1 executable/model/ORT paths and matching llama BLAKE3 pins are accepted."},
+    {"test_name": "task_profile_rejects_changed_pinned_model_bytes", "description": "A model file changed after pin creation is rejected before process startup."},
+    {"test_name": "task_profile_rejects_missing_host_paths", "description": "A missing local host asset is rejected before model access."},
+    {"test_name": "task_cli_parses_profile_and_goal_without_ui_dispatch", "description": "The non-UI task command accepts an explicit profile and task goal."},
+    {"test_name": "task_summary_serializes_only_sanitized_metadata", "description": "The result JSON contains only bounded execution, proof, privacy-coverage and new-session lifecycle metadata."},
+    {"test_name": "task_entry_uses_local_model_and_reports_independent_proof", "description": "Ignored acceptance with explicitly supplied pinned host files exercises actual S1, llama, read-only frame authority and owner cleanup."}
+  ],
+  "dependencies": ["Kernel", "LocalS1Config", "LocalModelRuntime", "KernelToolRunner", "ConfiguredFrameServices", "AgentContextFrame"],
+  "libraries": ["clap", "toml", "serde", "tokio", "tokio-util"],
+  "inputs": [{"name": "profile", "type": "TaskProfile", "description": "Explicit trusted host configuration with bounded local process paths and a literal loopback model endpoint."}, {"name": "goal", "type": "String", "description": "One bounded untrusted task goal, masked by the configured S1 host before provider access."}],
+  "output_type": "Result<TaskSummary, TaskError>",
+  "output_description": "Sanitized JSON-safe execution metadata and independent proof status, with runtime and kernel cleanup on every started-owner path."
+}

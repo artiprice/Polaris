@@ -1,0 +1,34 @@
+ARGV: cargo clippy -p polaris-runtime-context --all-targets --no-deps -- -D warnings
+EXIT: 101
+RAW OUTPUT:
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+error: this pattern reimplements `Result::unwrap_or`
+   --> crates\polaris-runtime\crates\context\src\fold.rs:276:16
+    |
+276 |       let head = match u32::try_from(head_len) {
+    |  ________________^
+277 | |         Ok(value) => value,
+278 | |         Err(_) => u32::MAX,
+279 | |     };
+    | |_____^ help: replace with: `u32::try_from(head_len).unwrap_or(u32::MAX)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+    = note: `-D clippy::manual-unwrap-or` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or)]`
+
+error: this pattern reimplements `Result::unwrap_or`
+   --> crates\polaris-runtime\crates\context\src\fold.rs:280:16
+    |
+280 |       let tail = match u32::try_from(tail_len) {
+    |  ________________^
+281 | |         Ok(value) => value,
+282 | |         Err(_) => u32::MAX,
+283 | |     };
+    | |_____^ help: replace with: `u32::try_from(tail_len).unwrap_or(u32::MAX)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+
+error: could not compile `polaris-runtime-context` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-runtime-context` (lib test) due to 2 previous errors
+

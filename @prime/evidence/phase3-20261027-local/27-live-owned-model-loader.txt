@@ -1,0 +1,21 @@
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0425]: cannot find type `Usage` in this scope
+   --> crates\polaris-kernel\tests\model_lifecycle.rs:657:27
+    |
+657 |     let mut usage: Option<Usage> = None;
+    |                           ^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+537 | async fn pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile<Usage>() -> Result<(), Box<dyn Error>>
+    |                                                                     +++++++
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `polaris-kernel` (test "model_lifecycle") due to 1 previous error

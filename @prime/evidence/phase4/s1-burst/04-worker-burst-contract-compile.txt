@@ -1,0 +1,36 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+error: unknown start of token: \u{0}
+ --> crates\polaris-security\crates\rules\src\audit.rs:1:1
+  |
+1 | ␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀...␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀␀
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: source files must contain UTF-8 encoded text, unexpected null bytes might occur when a different encoding is used
+  = note: character appears 9845 more times
+
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+error[E0432]: unresolved import `crate::audit::push_finding`
+ --> crates\polaris-security\crates\rules\src\command.rs:3:5
+  |
+3 | use crate::audit::push_finding;
+  |     ^^^^^^^^^^^^^^------------
+  |                   |
+  |                   no `push_finding` in `audit`
+
+error[E0432]: unresolved imports `audit::DiffAuditRequest`, `audit::LanguageCoverage`, `audit::RuleScanReport`
+  --> crates\polaris-security\crates\rules\src\lib.rs:15:17
+   |
+15 | pub use audit::{DiffAuditRequest, LanguageCoverage, RuleScanReport};
+   |                 ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^ no `RuleScanReport` in `audit`
+   |                 |                 |
+   |                 |                 no `LanguageCoverage` in `audit`
+   |                 no `DiffAuditRequest` in `audit`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-security-rules` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...

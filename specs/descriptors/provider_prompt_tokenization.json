@@ -1,0 +1,52 @@
+{
+  "type_of": "struct",
+  "name": "VllmChatClient",
+  "file_path": "crates/polaris-nebius-cloud/crates/token-factory/src/client.rs",
+  "logic_name": "Provider Prompt Tokenization",
+  "test_list": [
+    {
+      "test_name": "tokenizer_sends_chat_equivalent_prompt_and_returns_server_counts",
+      "description": "POST /tokenize carries the same model, messages, tools, and reasoning projection as Chat Completions with the required vLLM chat flags, and returns validated count and context length."
+    },
+    {
+      "test_name": "tokenizer_preserves_oversized_prompt_count_for_trimming",
+      "description": "A provider count greater than max_model_len is returned so callers can trim oversized candidate prompts."
+    },
+    {
+      "test_name": "tokenizer_rejects_malformed_counts_and_token_ids",
+      "description": "Reject zero counts/context lengths, count-token-list mismatches, and token ids that do not fit TokenCount-compatible u32 values."
+    },
+    {
+      "test_name": "tokenizer_rejects_oversized_input_before_network_dispatch",
+      "description": "Reject raw or encoded prompts beyond configured request bounds without dispatching a request."
+    },
+    {
+      "test_name": "tokenizer_bounds_response_and_deadline_and_redacts_failures",
+      "description": "Bound response bytes and wait time; reject unsupported endpoint statuses without exposing response bodies, credentials, or request content in errors/debug output."
+    },
+    {
+      "test_name": "tokenizer_omits_empty_tools",
+      "description": "Match the chat serializer's omission of empty tool arrays."
+    },
+    {
+      "test_name": "chat_model_wrapper_forwards_stream_to_same_client",
+      "description": "The tokenizer wrapper dispatches chat through its same configured HTTP owner."
+    }
+  ],
+  "dependencies": ["TokenFactoryClient", "chat_request_json", "ChatModel", "PromptTokenizer", "read_bounded"],
+  "libraries": ["reqwest", "serde", "serde_json", "tokio"],
+  "inputs": [
+    {
+      "name": "client",
+      "type": "TokenFactoryClient",
+      "description": "Configured transport providing the origin, auth, request bounds, deadlines, retries, and bounded body reader."
+    },
+    {
+      "name": "request",
+      "type": "&ChatRequest",
+      "description": "The same structured chat prompt used for streaming, including tools and supported reasoning replay."
+    }
+  ],
+  "output_type": "Result<PromptTokenCount, ModelError>",
+  "output_description": "Provider-reported prompt token count and maximum model context length, with strict protocol and size validation."
+}

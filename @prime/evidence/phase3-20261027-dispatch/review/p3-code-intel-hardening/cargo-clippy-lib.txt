@@ -1,0 +1,2 @@
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Finished `dev` profile [unoptimized] target(s) in 1.37s

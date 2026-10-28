@@ -1,0 +1,48 @@
+{
+  "type_of": "function",
+  "name": "calc_f64",
+  "file_path": "crates/polaris-tools/crates/math/src/calc.rs",
+  "logic_name": "bounded_float_expression_evaluation",
+  "test_list": [
+    {
+      "test_name": "float_path_supports_whitelisted_transcendentals_and_rejects_unknown_names",
+      "description": "The float evaluator permits documented transcendental operators, rejects unknown identifiers, and applies the configured power exponent bound."
+    },
+    {
+      "test_name": "float_power_limit_cannot_be_bypassed_with_parenthesized_exponent",
+      "description": "The floating-point calculator enforces the configured exponent magnitude bound for parenthesized arithmetic and right-associative power expressions while retaining valid in-range exponents."
+    },
+    {
+      "test_name": "float_power_guard_preserves_unparenthesized_unary_function_operands",
+      "description": "Exponent validation preserves supported whitespace-separated unary function syntax and Unicode constants."
+    },
+    {
+      "test_name": "float_max_depth_limits_unparenthesized_prefix_functions",
+      "description": "The configured nesting bound also limits recursive whitespace-separated prefix functions inside an exponent."
+    },
+    {
+      "test_name": "float_max_depth_limits_unparenthesized_power_chains",
+      "description": "The configured nesting bound limits right-associative exponent chains even without parentheses."
+    },
+    {
+      "test_name": "float_zero_max_depth_is_rejected",
+      "description": "A zero parser depth bound rejects float expressions consistently with the decimal evaluator."
+    }
+  ],
+  "dependencies": [],
+  "libraries": ["exmex"],
+  "inputs": [
+    {
+      "name": "expr",
+      "type": "&str",
+      "description": "A bounded expression containing only documented constants, operators, and functions."
+    },
+    {
+      "name": "limits",
+      "type": "&CalcLimits",
+      "description": "Expression length, nesting, and power exponent limits."
+    }
+  ],
+  "output_type": "Result<f64, MathError>",
+  "output_description": "A finite floating-point result or a typed parse, range, exponent, or nonfinite error."
+}

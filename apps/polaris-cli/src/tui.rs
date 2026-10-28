@@ -635,7 +635,7 @@ pub async fn run(
       drop(session.take());
       match OfflineSession::open(&root,&config_workspace,target).await {
        Ok(next)=>{let workspace=next.workspace().display().to_string();session=Some(next);send_message(&events_tx,BackendMessage::Resumed{id:target,workspace})?;},
-       Err(error)=>break Err(error),
+       Err(error)=>break Err(CliError::from(error)),
       }
      },
     }
@@ -644,7 +644,7 @@ pub async fn run(
  }}.await;
     stop_tx.send_replace(true);
     let cleanup = match session.as_mut() {
-        Some(session) => session.close().await,
+        Some(session) => session.close().await.map_err(CliError::from),
         None => Ok(()),
     };
     let ui_cleanup = if !ui_observed {
@@ -675,7 +675,7 @@ async fn next_offline_record(
     session: &mut Option<OfflineSession>,
 ) -> Result<Option<ResolvedRecord>, CliError> {
     match session.as_mut() {
-        Some(active) => active.next_record().await,
+        Some(active) => active.next_record().await.map_err(CliError::from),
         None => std::future::pending().await,
     }
 }

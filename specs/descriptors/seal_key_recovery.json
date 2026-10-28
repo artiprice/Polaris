@@ -1,0 +1,33 @@
+{
+  "type_of": "method",
+  "name": "SecretVault::with_seal_key_from_source",
+  "file_path": "crates/polaris-security/crates/secrets/src/vault.rs",
+  "logic_name": "Explicit sealing key recovery",
+  "test_list": [
+    {
+      "test_name": "explicit_source_key_recovers_ciphertext_in_a_new_vault",
+      "description": "New key owners restore using explicit same source key."
+    },
+    {
+      "test_name": "invalid_or_missing_recovery_key_fails_without_writes",
+      "description": "Malformed/missing/wrong key fails without any store calls."
+    }
+  ],
+  "dependencies": [
+    "SecretSource",
+    "SecretLocation"
+  ],
+  "libraries": [
+    "secrecy",
+    "zeroize"
+  ],
+  "inputs": [
+    {
+      "name": "source",
+      "type": "impl SecretSource",
+      "description": "Explicit host credential source."
+    }
+  ],
+  "output_type": "Result<SecretVault,SecretsError>",
+  "output_description": "Explicit recovered key in bounded AEAD vault, no provisioning or persistence."
+}

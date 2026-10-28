@@ -1,0 +1,16 @@
+    Finished `test` profile [unoptimized] target(s) in 1.70s
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)
+
+running 1 test
+test local_model_edits_and_runs_real_sandbox_with_fixture_safety has been running for over 60 seconds
+Error: Elapsed(())
+test local_model_edits_and_runs_real_sandbox_with_fixture_safety ... FAILED
+
+failures:
+
+failures:
+    local_model_edits_and_runs_real_sandbox_with_fixture_safety
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 20 filtered out; finished in 150.87s
+
+error: test failed, to rerun pass `-p polaris-kernel --test agent_tools`

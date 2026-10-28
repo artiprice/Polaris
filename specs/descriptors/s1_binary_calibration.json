@@ -1,0 +1,45 @@
+{
+  "type_of": "module",
+  "name": "calibration",
+  "file_path": "crates/polaris-system-one/crates/schemas/src/calibration.rs",
+  "logic_name": "Measured binary schema calibration",
+  "test_list": [
+    {
+      "test_name": "calibration_joins_exact_ids_and_computes_confusion",
+      "description": "Exact ID join and metrics."
+    },
+    {
+      "test_name": "calibration_rejects_missing_duplicate_and_foreign_outputs",
+      "description": "Reject incomplete or ambiguous coverage."
+    },
+    {
+      "test_name": "calibration_threshold_selection_respects_precision_and_support",
+      "description": "Meet precision and support."
+    },
+    {
+      "test_name": "calibration_is_permutation_invariant_and_bounds_inputs",
+      "description": "Determinism and bounded malformed input."
+    }
+  ],
+  "dependencies": [
+    "polaris_sdk::ids::Cid"
+  ],
+  "libraries": [
+    "serde",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "fixtures",
+      "type": "&[CalibrationLabel]",
+      "description": "Truth labels."
+    },
+    {
+      "name": "outputs",
+      "type": "&[CalibrationPrediction]",
+      "description": "Measured scores in integer parts per million."
+    }
+  ],
+  "output_type": "Result<CalibrationReport,CalibrationError>",
+  "output_description": "Exact rational confusion/precision/recall/Brier/ECE, retaining provenance; no certification."
+}

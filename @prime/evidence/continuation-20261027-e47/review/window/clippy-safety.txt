@@ -1,0 +1,2 @@
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Finished `dev` profile [unoptimized] target(s) in 0.76s

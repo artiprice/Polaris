@@ -14,5 +14,12 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt", "time", "sync"] }
+tokio-util = { workspace = true }
+hdrhistogram = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-system-one-client = { workspace = true }
+polaris-sdk = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }

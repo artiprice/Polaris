@@ -1,0 +1,15 @@
+{
+  "type_of": "function",
+  "name": "frame_tool_effects",
+  "file_path": "crates/polaris-kernel/src/frame_tools.rs",
+  "logic_name": "Frame Tool Effects",
+  "test_list": [{"test_name":"pure_only_role_cannot_read_persistent_cas_or_history","description":"Reject persistent CAS/history reads for a pure-only role while allowing an authorized pure query."}],
+  "dependencies": ["role_allows_tool", "ToolSpec"],
+  "libraries": [],
+  "inputs": [
+    {"name":"name","type":"&str","description":"Builtin name."},
+    {"name":"declared","type":"Effects","description":"Catalog effects."}
+  ],
+  "output_type": "Effects",
+  "output_description": "Conservative effects that classify CAS/history access as reads."
+}

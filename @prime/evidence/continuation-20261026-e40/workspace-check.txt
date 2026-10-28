@@ -1,0 +1,88 @@
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking flate2 v1.1.10
+    Checking hdrhistogram v7.6.0
+    Checking polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking gix-imara-diff v0.3.1
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+    Checking gix-diff v0.69.0
+    Checking nalgebra v0.35.0
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+    Checking polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking ureq v3.4.2
+    Checking zip v9.1.1
+    Checking lopdf v0.42.0
+    Checking polaris-spike-bus v0.1.0-alpha (C:\mDev\Polaris\tests\spike\bus)
+    Checking polaris-guest v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-guest)
+    Checking polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking gix-status v0.36.0
+    Checking polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Checking polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+    Checking polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+    Checking polaris-spike-sandbox v0.1.0-alpha (C:\mDev\Polaris\tests\spike\sandbox)
+    Checking gix v0.89.0
+    Checking hf-hub v0.5.0
+    Checking docx-rs v0.4.22 (C:\mDev\Polaris\vendor\docx-rs)
+    Checking calamine v0.37.0
+    Checking gliner2-rs v0.9.6
+    Checking polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking pdf-extract v0.12.1
+    Checking statrs v0.19.1
+    Checking polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Checking polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+    Checking polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Checking polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Checking polaris-daemon v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-daemon)
+    Checking polaris-tests v0.1.0-alpha (C:\mDev\Polaris\tests)
+    Checking polaris-desktop v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-desktop)
+    Checking polaris-web v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-web)
+warning: method `is_consumed` is never used
+   --> apps\polaris-cli\src\demo_gallery.rs:316:18
+    |
+315 | impl GalleryEffect {
+    | ------------------ method in this implementation
+316 |     pub const fn is_consumed(&self) -> bool {
+    |                  ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple methods are never used
+    --> apps\polaris-cli\src\demo_gallery.rs:1332:12
+     |
+1164 | impl DemoGallery {
+     | ---------------- methods in this implementation
+...
+1332 |     pub fn stats_tab_label(&self) -> &'static str {
+     |            ^^^^^^^^^^^^^^^
+...
+1350 |     pub fn stats_summary(&self) -> StatsSummary {
+     |            ^^^^^^^^^^^^^
+...
+1359 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+     |            ^^^^^^^^^^^^^^^^^^^
+...
+1368 |     pub const fn stats_details_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+1371 |     pub const fn stats_bucket(&self) -> Option<usize> {
+     |                  ^^^^^^^^^^^^
+...
+1374 |     pub const fn usage_demo_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^
+...
+1440 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+     |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized] target(s) in 22.61s

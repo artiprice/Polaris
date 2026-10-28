@@ -10,6 +10,10 @@ use polaris_sdk::{
     },
 };
 use polaris_security_capability::Token;
+use polaris_system_one_watchdog::{
+    FrameSnapshot, HealthVerdict, NegativeConstraint, ProposedStep, StepIndex,
+    StepOutcome as WatchdogStepOutcome, StepRecord, ToolCallFacts,
+};
 use std::{
     collections::{BTreeMap, BTreeSet},
     future::Future,
@@ -38,6 +42,8 @@ pub struct FramePrompt {
     pub tools: Vec<ToolSpec>,
     /// Upper bound from the assembler's actual tokenizer, not a byte heuristic.
     pub input_token_upper_bound: TokenCount,
+    /// Actual tokenizer context budget supplied by the assembler's current model binding.
+    pub context_token_budget: TokenCount,
     /// Requested output cap; frame quota clamps this value.
     pub max_output_tokens: Option<TokenCount>,
 }
@@ -54,7 +60,7 @@ pub struct ToolCall {
 }
 
 /// One streamed provider tool call as preserved in the durable assistant response.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CapturedToolCall {
     /// Provider ordering index.
     pub index: u32,
@@ -67,7 +73,7 @@ pub struct CapturedToolCall {
 }
 
 /// Bounded response state captured from the provider stream for audit and recovery.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct AssistantResponseCapture {
     /// Model-visible text accumulated so far.
     pub text: String,
@@ -84,7 +90,7 @@ pub struct AssistantResponseCapture {
 }
 
 /// A tool result returned by the real tool runner. `content` is model-visible data, not proof.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ToolResultRef {
     /// CAS reference to the persisted result, created by the tool runner.
     pub cid: Cid,
@@ -96,7 +102,7 @@ pub struct ToolResultRef {
 
 /// A tool result linked to the call identifier issued by the model. The frame creates this
 /// binding from the streamed assistant call; tool backends cannot choose or replace the ID.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ExecutedToolResult {
     /// Exact provider call ID that must be used when replaying this result.
     pub tool_call_id: String,
@@ -113,12 +119,30 @@ pub trait ToolRunner: Send + Sync {
     /// Tool backend error.
     type Error: HasKind + Send;
 
+    /// Return trusted, metadata-only advisory facts from this runner's actual tool binding.
+    /// Implementations must not derive effects or authority from model-supplied JSON. The
+    /// default deliberately withholds facts for runners that cannot provide them.
+    fn advisory_facts(&self, _call: &ToolCall) -> Option<ToolCallFacts> {
+        None
+    }
+
     /// Authorize an untrusted model call. No side effect may happen in this method.
     fn authorize(
         &self,
         token: &Token,
         call: ToolCall,
     ) -> impl Future<Output = Result<Self::Authorized, Self::Error>> + Send;
+    /// Authorize using the actual driver-reserved origin. Read-only adapters may use ordinary
+    /// authorization; context-sensitive adapters validate the sealed binding before admission.
+    fn authorize_at_step(
+        &self,
+        token: &Token,
+        _origin: &crate::FrameStepBinding,
+        call: ToolCall,
+    ) -> impl Future<Output = Result<Self::Authorized, Self::Error>> + Send {
+        self.authorize(token, call)
+    }
+
     /// Execute only the permit returned by `authorize`.
     /// Implementations must stop collecting model-visible content at `max_result_bytes` and
     /// return a typed error when the result exceeds that bound. The frame checks returned content
@@ -170,10 +194,30 @@ pub trait StepVerifier: Send + Sync {
         frame: &FrameView,
         output: &StepTool,
     ) -> impl Future<Output = Result<Verification, Self::Error>> + Send;
+
+    /// Observe a fully validated proposal before any tool authorization or execution.
+    /// Returned findings are advisory; the runtime always proceeds through the ordinary
+    /// role, capability, lease, and verifier checks. Default implementations disable watchdogs.
+    fn inspect_proposal(
+        &self,
+        _snapshot: &FrameSnapshot,
+        _step: &ProposedStep,
+    ) -> impl Future<Output = Option<WatchdogObservation>> + Send {
+        async { None }
+    }
+}
+
+/// Hashed step record and advisory watchdog result produced before tool admission.
+#[derive(Debug, Clone)]
+pub struct WatchdogObservation {
+    /// Bounded hashes only; thought and tool arguments are not retained.
+    pub record: StepRecord,
+    /// Advisory status that never grants or denies capability authority.
+    pub verdict: HealthVerdict,
 }
 
 /// Step result. ClaimedDone deliberately leaves the frame active and creates no proof.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum StepOutcome {
     /// The model returned an ordinary turn without tools.
     Continue {
@@ -461,16 +505,56 @@ where
         validated_calls.push(tool_call);
     }
 
+    let advisory_facts = if validated_calls.is_empty() {
+        Some(Vec::new())
+    } else {
+        validated_calls
+            .iter()
+            .map(|call| tools.advisory_facts(call))
+            .collect::<Option<Vec<_>>>()
+    };
+    let advisory_has_write = advisory_facts
+        .as_ref()
+        .is_some_and(|facts| facts.iter().any(|facts| facts.writes_workspace));
+    let mut watchdog_observation = if let Some(tool_calls) = advisory_facts {
+        let view = frame.view();
+        let snapshot = FrameSnapshot {
+            frame: view.id,
+            current_step: step.get(),
+            role: view.role,
+            root_goal: goal.to_owned(),
+            recent: view.watchdog_recent,
+            negative_constraints: view.negative_constraints,
+            context_tokens: prompt.input_token_upper_bound.get(),
+            context_budget: prompt.context_token_budget.get(),
+        };
+        let proposal = ProposedStep {
+            thought: text.clone(),
+            tool_calls,
+        };
+        tokio::select! {
+            biased;
+            _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
+            observation = verify.inspect_proposal(&snapshot, &proposal) => observation,
+        }
+    } else {
+        None
+    };
+    if let Some(observation) = watchdog_observation.as_ref() {
+        frame.record_watchdog_step(observation.record.clone())?;
+    }
+
     // Authorize the complete call set before executing any member. This prevents a malformed or
     // disallowed later call from causing partial side effects from an earlier call.
     let mut permits = Vec::with_capacity(validated_calls.len());
     for call in validated_calls {
         check_cancel(cancellation)?;
         let call_id = call.id.clone();
+        let origin = frame.step_binding(max_tool_result_bytes)?;
         let permit = tokio::select! {
             biased;
             _ = cancellation.cancelled() => return Err(FrameError::Cancelled),
-            result = tools.authorize(&frame.token, call) => result.map_err(|error| FrameError::Backend(error.kind(), "tool authorization"))?,
+            result = tools.authorize_at_step(&frame.token, &origin, call) => result.map_err(|error| FrameError::Backend(error.kind(), "tool authorization"))?,
         };
         permits.push((call_id, permit));
     }
@@ -513,6 +597,25 @@ where
         result = verify.verify(&verification_frame, &output) => result.map_err(|error| FrameError::Backend(error.kind(), "step verification"))?,
     };
     check_cancel(cancellation)?;
+    if let Some(observation) = watchdog_observation.as_mut() {
+        let next_outcome = match &decision {
+            Verification::Accepted { .. } | Verification::ClaimedDone => {
+                WatchdogStepOutcome::Completed
+            }
+            Verification::Rejected if advisory_has_write => WatchdogStepOutcome::RejectedPatch {
+                hypothesis: observation.record.fingerprint,
+            },
+            Verification::Rejected => WatchdogStepOutcome::Failed,
+        };
+        observation.record.outcome = next_outcome;
+        frame.record_watchdog_step(observation.record.clone())?;
+        if matches!(next_outcome, WatchdogStepOutcome::RejectedPatch { .. }) {
+            frame.record_negative_constraint(NegativeConstraint {
+                hypothesis: observation.record.fingerprint,
+                rejected_at: StepIndex::new(step.get()),
+            })?;
+        }
+    }
     match decision {
         Verification::Accepted {
             fingerprint,
@@ -751,6 +854,7 @@ where
                         assistant_response: assistant_response_capture,
                         result: None,
                         executed_tool_results: executed_tool_results_capture,
+                        watchdog_memory: crate::WatchdogFrameMemory::from_view(&frame.view()),
                         outcome,
                     };
                     let _transcript = journal.record(&record).await.map_err(|journal_error| {
@@ -784,6 +888,7 @@ where
             } else {
                 executed_tool_results_capture
             },
+            watchdog_memory: crate::WatchdogFrameMemory::from_view(&frame.view()),
             outcome: journal_outcome,
         };
         let _transcript = journal
@@ -882,7 +987,9 @@ fn append_optional(
     Ok(())
 }
 
-fn role_allows_tool(role: AgentRole, effects: Effects) -> bool {
+/// Whether the trusted role policy permits a tool with these declared effects.
+#[must_use]
+pub fn role_allows_tool(role: AgentRole, effects: Effects) -> bool {
     match role {
         AgentRole::Verifier | AgentRole::Watchdog => {
             !effects.writes_workspace && !effects.network && !effects.executes

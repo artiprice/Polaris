@@ -1,0 +1,10 @@
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 2.30s
+     Running tests\frame_prompt_binding.rs (target\debug\deps\frame_prompt_binding-6c85b738b1d81aef.exe)
+
+running 2 tests
+test prompt_binding_captures_the_active_frame_selection ... ok
+test prompt_binding_keeps_child_and_foreign_frame_identity_distinct ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

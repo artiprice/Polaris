@@ -1,0 +1,12 @@
+    Finished `test` profile [unoptimized] target(s) in 0.61s
+     Running tests\registry_dispatch.rs (target\debug\deps\registry_dispatch-cb06074eec8e7742.exe)
+
+running 5 tests
+test error_kinds_cover_taxonomy ... ok
+test arc_forwards_sync_registry_traits ... ok
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

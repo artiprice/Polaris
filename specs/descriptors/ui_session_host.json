@@ -1,0 +1,27 @@
+{
+  "type_of": "pipeline",
+  "name": "polaris_ui_session_host",
+  "file_path": "crates/polaris-ui/crates/session/src/offline.rs",
+  "logic_name": "Frontend-neutral offline session host (OfflineSession, routed submit, kernel-free queries)",
+  "test_list": [
+    {"test_name": "plain_prose_commits", "description": "submit(\"plan tomorrow\") records UserInputSubmitted and next_record resolves its exact text with RecordTextKind::UserInput."},
+    {"test_name": "directive_routes_to_apply_directive", "description": "submit(\"$websearch(on)\") commits DirectiveApplied (RecordTextKind::Directive), never a user input record."},
+    {"test_name": "directive_with_prose_is_recorded_as_user_input", "description": "A directive mixed with prose, a mention or a slash command is not a lone directive and is recorded verbatim as user input."},
+    {"test_name": "rejected_directive_text_is_recorded_as_user_input", "description": "Text the directive grammar rejects is treated as prose and recorded verbatim; apply_directive itself still rejects it."},
+    {"test_name": "blank_submit_is_rejected", "description": "Whitespace-only input is rejected by the kernel and leaves no user input record."},
+    {"test_name": "list_sessions_without_kernel_includes_new_session", "description": "After the owning kernel shuts down, the standalone list_sessions reads the registry and includes the session; limit is honoured."},
+    {"test_name": "session_exists_without_kernel", "description": "session_exists is true for a created session and false for an unknown id, with no kernel running."},
+    {"test_name": "resume_replays_user_input", "description": "Close, reopen the same id and the typed text replays through next_record in order with the directive."},
+    {"test_name": "search_history_reports_only_indexed_messages", "description": "A recorded user message is not indexed yet so search finds nothing; a message indexed directly in the registry is found; an oversize query is an error."},
+    {"test_name": "host_error_messages_are_preserved", "description": "SessionHostError displays exactly the underlying message for Ui and Unavailable."},
+    {"test_name": "cancelled_payload_poll_retains_record_and_joins_one_cas_job", "description": "Moved from polaris-cli: a cancelled next_record keeps the pending record and joins one CAS read."},
+    {"test_name": "failed_payload_owner_is_consumed_once_before_close", "description": "Moved from polaris-cli: a failed CAS owner is reported once and close does not await it again."},
+    {"test_name": "unrelated_session_payload_is_not_materialized", "description": "Moved from polaris-cli: other-session payloads stay unresolved even when their blob is missing."},
+    {"test_name": "open_latency_is_measured_over_five_runs", "description": "Debug-build wall time of OfflineSession::open over five runs is printed as min/median/max; it asserts only that every open succeeds."}
+  ],
+  "dependencies": ["polaris-sdk", "polaris-kernel"],
+  "libraries": ["tokio", "thiserror"],
+  "inputs": [{"name": "text", "type": "&str", "description": "One submitted line: a lone directive or free typed text."}],
+  "output_type": "Result<CommandReceipt, SessionHostError>",
+  "output_description": "Receipt for the committed record; ordered resolved records carry bounded UTF-8 text and its kind."
+}

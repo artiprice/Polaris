@@ -1,0 +1,37 @@
+{
+  "type_of": "module",
+  "name": "frame_tool_authority",
+  "file_path": "crates/polaris-runtime/crates/frames/src/state.rs",
+  "logic_name": "Frame Tool Authority",
+  "test_list": [
+    {
+      "test_name": "workspace_scope_attenuates_without_widening",
+      "description": "A Workspace capability may be attenuated to a narrower path scope, but a child cannot widen an Exact, Prefix, or Symbol parent to Workspace; all other ancestor restrictions remain effective."
+    },
+    {
+      "test_name": "binding_matches_only_actual_frame_token",
+      "description": "An active frame issues a sealed local binding that matches its actual token and rejects a different token; the binding exposes only frame identity, root identity, role, and a boolean match result."
+    },
+    {
+      "test_name": "child_binding_preserves_root_identity",
+      "description": "A spawned child binding reports its own frame id, preserves the root frame id, and does not match the parent's token."
+    }
+  ],
+  "dependencies": [
+    "AgentContextFrame",
+    "Token",
+    "ResourceScope"
+  ],
+  "libraries": [
+    "blake3"
+  ],
+  "inputs": [
+    {
+      "name": "active_frame",
+      "type": "&AgentContextFrame<Active>",
+      "description": "The actual active runtime frame containing its own id, root id, role, and token."
+    }
+  ],
+  "output_type": "FrameToolBinding",
+  "output_description": "A sealed local runtime-object witness with private fields, redacted Debug output, frame_id/root_frame_id/role getters, and matches_token(&Token); it is not a signed holder binding or a replacement for Biscuit authorization."
+}

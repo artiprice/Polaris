@@ -1,0 +1,19 @@
+[
+  "ingest-worker-shutdown-red.txt",
+  "ingest-worker-shutdown-green.txt",
+  "generated-status-red.txt",
+  "generated-status-green.txt",
+  "worker-engine-red.txt",
+  "hacker-red.log",
+  "ingest-test-final.txt",
+  "hacker-tests-final.log",
+  "ingest-nul-name-red.txt",
+  "ingest-nul-name-green.txt",
+  "worker-pipebusy-red.txt",
+  "worker-pipebusy-green.txt",
+  "worker-runtime-shutdown-red.txt",
+  "worker-runtime-shutdown-green.txt",
+  "hacker-s1-red-transcript.log",
+  "hacker-s1-green-transcript.log",
+  "worker-client-linux-final.txt"
+]

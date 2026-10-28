@@ -1,0 +1,41 @@
+{
+  "type_of": "function",
+  "name": "read_test_receipt",
+  "file_path": "crates/polaris-kernel/src/agent_tools.rs",
+  "logic_name": "Exact execution receipt lookup",
+  "test_list": [
+    {
+      "test_name": "test_receipt_rejects_foreign_frame",
+      "description": "A sibling proof cannot satisfy this call."
+    },
+    {
+      "test_name": "test_receipt_rejects_wrong_review",
+      "description": "The report must name the requested review."
+    },
+    {
+      "test_name": "test_receipt_requires_matching_terminal_status",
+      "description": "Proof and completion status must agree."
+    },
+    {
+      "test_name": "test_receipt_accepts_exact_pass_and_cleanup_failure",
+      "description": "Return exact bound passed and blocked receipts."
+    }
+  ],
+  "dependencies": [
+    "KernelCtx",
+    "ExecutionReview"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json"
+  ],
+  "inputs": [
+    {
+      "name": "review",
+      "type": "ExecutionReview",
+      "description": "Exact prepared request and tree."
+    }
+  ],
+  "output_type": "Result<Option<(bool,Cid)>,ToolError>",
+  "output_description": "Bound durable result or a fail-closed error."
+}

@@ -1,0 +1,18 @@
+{
+  "observed_utc": "2026-10-26T14:49:50.576284+00:00",
+  "root_manifest_matches_metadata": true,
+  "descriptors": [
+    "specs/descriptors/authenticated_worker_startup.json",
+    "specs/descriptors/process_bootstrap.json",
+    "specs/descriptors/s1_client_authenticated_readiness.json",
+    "specs/descriptors/worker_lifecycle_adapter.json",
+    "specs/descriptors/cicd_sandbox_lifecycle.json",
+    "specs/descriptors/cloud_budget_guard.json",
+    "specs/descriptors/cloud_lifetime_guard.json",
+    "specs/descriptors/cloud_orphan_sweep_ownership.json",
+    "specs/descriptors/cloud_vm_spec_validation.json"
+  ],
+  "source_files_rehashed": 1175,
+  "retained_review_logs": 77,
+  "source_fingerprint_sha256": "08c8e14a24992d598ee6a11499f7bb7555e811a397392cc1a7f4839d078d2a1c"
+}

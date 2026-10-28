@@ -1,0 +1,16 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 13.28s
+     Running tests\s1_process.rs (target\debug\deps\s1_process-5bd28ff2d55da539.exe)
+
+running 2 tests
+test configured_windows_worker_process_returns_real_decision ... ok
+test real_worker_reloads_after_idle_eviction ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 49.38s
+

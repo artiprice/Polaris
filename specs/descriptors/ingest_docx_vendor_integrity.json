@@ -1,0 +1,19 @@
+{
+  "type_of": "function",
+  "name": "check_vendored_docx",
+  "file_path": "@prime/tools/check-vendored-docx.py",
+  "logic_name": "DOCX Published Source Provenance And Narrow ZIP Security Backport",
+  "test_list": [
+    { "test_name": "published_archive_hash_and_file_set_are_pinned", "description": "The exact docx-rs 0.4.22 published archive and every source file are hashed, the omitted MIT license is pinned to the upstream revision, and no source files may be added or missing." },
+    { "test_name": "only_authorized_zip_backport_changes_are_accepted", "description": "Only the two ZIP requirement edits and the ZIP 9 FileOptions lifetime edit may differ from published crate bytes." },
+    { "test_name": "tampered_upstream_source_is_rejected", "description": "Changing an unpatched source file fails provenance verification." },
+    { "test_name": "unexpected_source_file_or_manifest_is_rejected", "description": "Unexpected or missing files, symlinks, license changes, or manifest edits fail closed." }
+  ],
+  "dependencies": [],
+  "libraries": ["python stdlib", "sha256"],
+  "inputs": [
+    { "name": "vendor_root", "type": "Path", "description": "The vendored docx-rs 0.4.22 source directory." }
+  ],
+  "output_type": "Result<(), VerificationError>",
+  "output_description": "Only the published crate bytes plus the narrowly authorized ZIP 9 security backport are accepted."
+}

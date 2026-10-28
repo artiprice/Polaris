@@ -17,3 +17,6 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
+
+[dev-dependencies]
+bytes = { workspace = true }

@@ -1,0 +1,60 @@
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Finished `test` profile [unoptimized] target(s) in 10.30s
+     Running tests\reservation_refund.rs (target\debug\deps\reservation_refund-8c859539cc3f316a.exe)
+
+running 14 tests
+Error: "second reservation denied: Denied { retry_after: 5s, reason: TpmExhausted }
+thread 'earlier_refund_respects_multiple_later_time_floors' (13324) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:265:5:
+assertion `left == right` failed
+  left: 0
+ right: 5
+"
+Error: "second reservation denied: Denied { retry_after: 5s, reason: TpmExhausted }"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'staggered_non_tail_refund_preserves_later_admission_floor' (4632) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:193:5:
+assertion `left == right` failed
+  left: 0
+ right: 3
+
+thread 'out_of_order_same_time_refunds_recover_only_settled_capacity' (6500) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:227:5:
+assertion `left == right` failed
+  left: 0
+ right: 2
+
+thread 'concurrent_refund_preserves_other_reservations' (6216) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:134:5:
+first permit returns only its four unused tokens
+
+thread 'same_time_non_tail_refund_preserves_newer_reservation' (2568) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:161:5:
+assertion `left == right` failed
+  left: 0
+ right: 4
+test dispatched_drop_keeps_reservation_charged ... ok
+test tail_reconciliation_reports_partial_refund_exactly ... ok
+test overrun_charges_actual_usage_before_return ... ok
+test aba_after_zero_usage_settlement_leaves_no_other_debt ... ok
+test reconciliation_returns_unused_tokens ... ok
+test expired_older_reservation_cannot_refund_newer_live_debt ... FAILED
+test naive_scalar_refund_erases_fresh_request_debt ... ok
+test late_refund_never_erases_another_request_charge ... FAILED
+test undispatched_drop_refunds_reservation ... ok
+test staggered_non_tail_refund_preserves_later_admission_floor ... FAILED
+test earlier_refund_respects_multiple_later_time_floors ... FAILED
+test concurrent_refund_preserves_other_reservations ... FAILED
+test same_time_non_tail_refund_preserves_newer_reservation ... FAILED
+test out_of_order_same_time_refunds_recover_only_settled_capacity ... FAILED
+
+failures:
+
+failures:
+    concurrent_refund_preserves_other_reservations
+    earlier_refund_respects_multiple_later_time_floors
+    expired_older_reservation_cannot_refund_newer_live_debt
+    late_refund_never_erases_another_request_charge
+    out_of_order_same_time_refunds_recover_only_settled_capacity
+    same_time_non_tail_refund_preserves_newer_reservation
+    staggered_non_tail_refund_preserves_later_admission_floor
+
+test result: FAILED. 7 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+error: test failed, to rerun pass `-p polaris-ratelimit --test reservation_refund`

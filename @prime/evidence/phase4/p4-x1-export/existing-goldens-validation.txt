@@ -1,0 +1,5 @@
+Existing-output acceptance check (no inference/model load):
+The final validate_golden_tree gate was run against the already-generated @prime/spikes/s0-4-gliner artifacts.
+Raw output:
+accepted_inputs=200
+accepted_python_outputs=200

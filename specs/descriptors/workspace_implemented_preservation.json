@@ -1,0 +1,12 @@
+{
+  "type_of":"function",
+  "name":"remove_generated",
+  "file_path":"@prime/tools/workspace.py",
+  "logic_name":"Implemented package preservation",
+  "test_list":[{"test_name":"test_generation_preserves_implemented_test_package","description":"Generated-marker files in an implemented tests package survive cleanup byte-for-byte."}],
+  "dependencies":["implemented_dirs","under_implemented"],
+  "libraries":[],
+  "inputs":[{"name":"workspace","type":"temporary fixture directory","description":"An implemented tests package containing generated-marker files."}],
+  "output_type":"None",
+  "output_description":"Only generator-owned files may be removed; implemented packages remain intact."
+}

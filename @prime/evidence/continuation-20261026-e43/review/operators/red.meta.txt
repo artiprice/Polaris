@@ -1,0 +1,2 @@
+argv: cargo test -p polaris-kernel-operators --test rate_limit_operator --no-run
+exit: 101

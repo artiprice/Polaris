@@ -1,0 +1,387 @@
+[
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/clippy-argv.json",
+    "retained": "review/process-review/clippy-argv.json",
+    "sha256": "57064c237aad8e23b9e82dde5543b4f2f0c6269def4c0e2c988977060aea82b7"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/clippy-exit.txt",
+    "retained": "review/process-review/clippy-exit.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/clippy-stderr.log",
+    "retained": "review/process-review/clippy-stderr.log",
+    "sha256": "748f1b811e7a7dfb2e97e7ac1b5919b3e19e7330fee2b96a7026624085e9be1e"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/clippy-stdout.log",
+    "retained": "review/process-review/clippy-stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/format-argv.json",
+    "retained": "review/process-review/format-argv.json",
+    "sha256": "7bb7489773ba50b5cc7e0c382ab1519eb4d4377e8458dc27a5a6da8280ded776"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/format-exit.txt",
+    "retained": "review/process-review/format-exit.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/format-stderr.log",
+    "retained": "review/process-review/format-stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/format-stdout.log",
+    "retained": "review/process-review/format-stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-green-argv.json",
+    "retained": "review/process-review/kill-green-argv.json",
+    "sha256": "0424db111bcb4e752c54c9a5090beca1ff09ee3b52bcbba155a90cf2d7438ea2"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-green-exit.txt",
+    "retained": "review/process-review/kill-green-exit.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-green-stderr.log",
+    "retained": "review/process-review/kill-green-stderr.log",
+    "sha256": "12aafeadec178332ae98ad65b271e53d150d24c9dafe3b01f036cb9af9435b3b"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-green-stdout.log",
+    "retained": "review/process-review/kill-green-stdout.log",
+    "sha256": "7741cbfac9134da34d4b7aae6a70302ce0632fa6633cf11dca6d92b98c9f05e6"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-red-argv.json",
+    "retained": "review/process-review/kill-red-argv.json",
+    "sha256": "0424db111bcb4e752c54c9a5090beca1ff09ee3b52bcbba155a90cf2d7438ea2"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-red-exit.txt",
+    "retained": "review/process-review/kill-red-exit.txt",
+    "sha256": "bdc830287616dae1818ced3e7c186e1387155900ad30d5983ec02da1519c4a95"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-red-stderr.log",
+    "retained": "review/process-review/kill-red-stderr.log",
+    "sha256": "e3e0e52b583e46092ef564153f47137632f1397c6fde7a7d08a8d720b1637498"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/kill-red-stdout.log",
+    "retained": "review/process-review/kill-red-stdout.log",
+    "sha256": "e7751ad85c4b79a91e7adfd3e4b3b666a8760e8ba87a1458b66dc172d728d4a6"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/windows-test-argv.json",
+    "retained": "review/process-review/windows-test-argv.json",
+    "sha256": "ebaaed490fceb34cd2d182db617aecbd39cdebce4adfaa006cf8774589b143ce"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/windows-test-exit.txt",
+    "retained": "review/process-review/windows-test-exit.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/windows-test-stderr.log",
+    "retained": "review/process-review/windows-test-stderr.log",
+    "sha256": "ea2f0b32381120f41b64f4111f29734a26b1f09fdf395d641f1188bc49c8b116"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/windows-test-stdout.log",
+    "retained": "review/process-review/windows-test-stdout.log",
+    "sha256": "0ed76957cc27d85718510d95f7525cda5bdcaaf81495b1a7c3c07fd09aa9f791"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-fixed-argv.json",
+    "retained": "review/process-review/wsl-fixed-argv.json",
+    "sha256": "4eb5e97c8714c16adf678872d1efff39121c4ee0fcfd7f8c6b4669a8a99e7d52"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-fixed-exit.txt",
+    "retained": "review/process-review/wsl-fixed-exit.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-fixed-stderr.log",
+    "retained": "review/process-review/wsl-fixed-stderr.log",
+    "sha256": "eaf5ac0f29f6d646ab74fadf1de09b46da819a3a6af5380b1dc50e1ccec884fb"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-fixed-stdout.log",
+    "retained": "review/process-review/wsl-fixed-stdout.log",
+    "sha256": "f5413c9784873c4e0b835dafb1b35544ce202a696ab425e82d5b29ab1e81130a"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-initial-failure-argv.json",
+    "retained": "review/process-review/wsl-initial-failure-argv.json",
+    "sha256": "4eb5e97c8714c16adf678872d1efff39121c4ee0fcfd7f8c6b4669a8a99e7d52"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-initial-failure-exit.txt",
+    "retained": "review/process-review/wsl-initial-failure-exit.txt",
+    "sha256": "bdc830287616dae1818ced3e7c186e1387155900ad30d5983ec02da1519c4a95"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-initial-failure-stderr.log",
+    "retained": "review/process-review/wsl-initial-failure-stderr.log",
+    "sha256": "b6379e70d14b6de79ed8c8cc99fd0517702948a5554e9ca19bee28d83e412a78"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-initial-failure-stdout.log",
+    "retained": "review/process-review/wsl-initial-failure-stdout.log",
+    "sha256": "c6ed45c13deaae5df28b8fe0780e09fe782fa7fc96c3e65d60e4576c379638d4"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-test-argv.json",
+    "retained": "review/process-review/wsl-test-argv.json",
+    "sha256": "4eb5e97c8714c16adf678872d1efff39121c4ee0fcfd7f8c6b4669a8a99e7d52"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-test-exit.txt",
+    "retained": "review/process-review/wsl-test-exit.txt",
+    "sha256": "bdc830287616dae1818ced3e7c186e1387155900ad30d5983ec02da1519c4a95"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-test-stderr.log",
+    "retained": "review/process-review/wsl-test-stderr.log",
+    "sha256": "b6379e70d14b6de79ed8c8cc99fd0517702948a5554e9ca19bee28d83e412a78"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/process-review/wsl-test-stdout.log",
+    "retained": "review/process-review/wsl-test-stdout.log",
+    "sha256": "c6ed45c13deaae5df28b8fe0780e09fe782fa7fc96c3e65d60e4576c379638d4"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/clippy-argv.txt",
+    "retained": "review/cloud-review/clippy-argv.txt",
+    "sha256": "d7f3ba51363dc4e2afac466df9e7c26064da25fc623ecf21d5cb3322333f1574"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/clippy-exit-code.txt",
+    "retained": "review/cloud-review/clippy-exit-code.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/clippy-stderr.log",
+    "retained": "review/cloud-review/clippy-stderr.log",
+    "sha256": "5ae62e296be2afb9c6b9496f5a288f691d373f482b7608e4e7e140ea1d9b60d0"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/clippy-stdout.log",
+    "retained": "review/cloud-review/clippy-stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/final-test-argv.txt",
+    "retained": "review/cloud-review/final-test-argv.txt",
+    "sha256": "2900052488f4f3a13c265c870401add7e6a697611b6ac91c6aea520465b20430"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/final-test-exit-code.txt",
+    "retained": "review/cloud-review/final-test-exit-code.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/final-test-stderr.log",
+    "retained": "review/cloud-review/final-test-stderr.log",
+    "sha256": "fc201cbc0dcb3c60c275c5388b9bd1173b2e2e3ad016beb05505bec9940644a8"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/final-test-stdout.log",
+    "retained": "review/cloud-review/final-test-stdout.log",
+    "sha256": "f9ab2492926298ab025de4fb3dfb7894715611114ed5ceb12034fa7037701446"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/ingress-red-argv.txt",
+    "retained": "review/cloud-review/ingress-red-argv.txt",
+    "sha256": "6b7c616a434515e706d73a12714da4e8ee8fc7916f34331aedbe2735b6cabe41"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/ingress-red-exit-code.txt",
+    "retained": "review/cloud-review/ingress-red-exit-code.txt",
+    "sha256": "bdc830287616dae1818ced3e7c186e1387155900ad30d5983ec02da1519c4a95"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/ingress-red-stderr.log",
+    "retained": "review/cloud-review/ingress-red-stderr.log",
+    "sha256": "4368b70216d2824cb0e1eaa8fdeafc056be1c594fa7e0d743cb2f9ff7b4d01ed"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/cloud-review/ingress-red-stdout.log",
+    "retained": "review/cloud-review/ingress-red-stdout.log",
+    "sha256": "6f64f294dc4e6b5a8d8e8dc0c3e43882805ec00ea25111b27cc05c8ba9b3a27b"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/baseline-red-create-abort.txt",
+    "retained": "review/ci-review/baseline-red-create-abort.txt",
+    "sha256": "7cac9ee0f7041f31efd9e3a1d9a84d088ec14f6c0af9b1ce18edba8e3a5ef898"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/baseline-red-multi-step-exec-abort.txt",
+    "retained": "review/ci-review/baseline-red-multi-step-exec-abort.txt",
+    "sha256": "e8670532f75618fbe694f2f3f44f9e91069c865e49798861280b00ad6cbaddd4"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/descriptor-json.txt",
+    "retained": "review/ci-review/descriptor-json.txt",
+    "sha256": "a0633d2c629179ff1542a40637853526fac1e5ec760a95b93589e9e91835f450"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/diff-check.txt",
+    "retained": "review/ci-review/diff-check.txt",
+    "sha256": "6267bcf16a03a53e523949b05a220d158a8f8fb20c67deec2aaffcde264a57c0"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/final-test.txt",
+    "retained": "review/ci-review/final-test.txt",
+    "sha256": "4674d1478ca5b664fe2649d965b41fb17787fdd393113596fc081f88c1ef3299"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/fmt-check.txt",
+    "retained": "review/ci-review/fmt-check.txt",
+    "sha256": "db180b79a1947a24cba744a1f5f82dbca427a777b5aa9218d2c4de38302a2d9c"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/ci-review/strict-clippy.txt",
+    "retained": "review/ci-review/strict-clippy.txt",
+    "sha256": "23fa9e78c476b07f11b73bbbd42084aeef1d96d5724fc18376dee15872940dab"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/client-readiness-api-red.txt",
+    "retained": "review/s1-lifecycle/client-readiness-api-red.txt",
+    "sha256": "b51e1a90aec7daae8690c15749b5dce31042f9a3b4c55dcd8f3be24664f5c4e1"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/client-readiness-green.txt",
+    "retained": "review/s1-lifecycle/client-readiness-green.txt",
+    "sha256": "58876f02023f25b92a9292ccc8cf60257d80785658daea38a2c13901a1a45601"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/client-strict-clippy.txt",
+    "retained": "review/s1-lifecycle/client-strict-clippy.txt",
+    "sha256": "92bc960acdc068b143f016ee275801fc4bed5e75db2c280a6ccb9c08255e47d5"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/kernel-lifecycle-api-red.txt",
+    "retained": "review/s1-lifecycle/kernel-lifecycle-api-red.txt",
+    "sha256": "c502c88ffa6f39636ee9c33867199e4e10b103ee164abcc4b788443de54ac10d"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/kernel-lifecycle-check.txt",
+    "retained": "review/s1-lifecycle/kernel-lifecycle-check.txt",
+    "sha256": "362e92f3ea7a2517ad9ee502a5f44c2f0ab60d4499be04d137f033b0c1b4611e"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/kernel-lifecycle-focused.txt",
+    "retained": "review/s1-lifecycle/kernel-lifecycle-focused.txt",
+    "sha256": "7432592f482f575fe073d1300ac09336570731d7324c34cd6b016073bd7b95ab"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/s1-lifecycle/kernel-strict-clippy.txt",
+    "retained": "review/s1-lifecycle/kernel-strict-clippy.txt",
+    "sha256": "aa15eca9a63664226ab7fc0f38b527dcc9be50b16ce5f998afed4d37eb70eb60"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/credential-api-red.json",
+    "retained": "review/credential-api-red.json",
+    "sha256": "2ace7808b2cc2bde207c47f959d43f850b03faf90fbf9f47ae65ae3ca8cb4752"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/credential-api-red.txt",
+    "retained": "review/credential-api-red.txt",
+    "sha256": "9d84e416a3618996c87dee253ecfbff2ca59f87eb884b24d79d3e565e0b07ea7"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-api-red.json",
+    "retained": "review/supervisor-api-red.json",
+    "sha256": "aadf1f7f0160434ae46d10fd4f95b6d447b4af89258b21050d76f974282e9fc9"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-api-red.txt",
+    "retained": "review/supervisor-api-red.txt",
+    "sha256": "f21395e5481b46eac5ca7248f16475125b3e7ca15298b4d1582eaef2170b65dd"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-unconfirmed-red.json",
+    "retained": "review/supervisor-unconfirmed-red.json",
+    "sha256": "709e5e07b224ffe3f88b4f70374d36605fd5ab63fee79a47f971a221b3b2d045"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-unconfirmed-red.txt",
+    "retained": "review/supervisor-unconfirmed-red.txt",
+    "sha256": "309aa33491bfae06dac45381bd3ae01329914fd9dae0018af6df1e087a5bcf1d"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-bootstrap-green.json",
+    "retained": "review/supervisor-bootstrap-green.json",
+    "sha256": "b4e66ecd02591fe14a8716aa932cd8f705b381afce5e9fa827692496cd12abd0"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervisor-bootstrap-green.txt",
+    "retained": "review/supervisor-bootstrap-green.txt",
+    "sha256": "0481d24f28a35430be10078db4d4e23698ded26e3d92ac1fac44c185b83f3fe7"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/bounded-stop-red.txt",
+    "retained": "review/bounded-stop-red.txt",
+    "sha256": "79b0aa7f8490a3852c1698be03fb3711d2ee4b35ccfe0a7c2307b9dee10cded3"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/bounded-stop-green.txt",
+    "retained": "review/bounded-stop-green.txt",
+    "sha256": "f9cb01fc47589761cc96c131a3a5601af082774c88076a19fc24fdf2c7a5fbef"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/retirement-order-red.txt",
+    "retained": "review/retirement-order-red.txt",
+    "sha256": "dfbc823b4c6f4250350899794c914b900b0f23590a37db3d4ddd71f136fb7e59"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/retirement-order-green.txt",
+    "retained": "review/retirement-order-green.txt",
+    "sha256": "0cd973bab34e03f76d3736e8b82188bd89959c1c7f9867cb22312089574f5ab0"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/regression-red-argv.txt",
+    "retained": "review/regression-red-argv.txt",
+    "sha256": "6b7c616a434515e706d73a12714da4e8ee8fc7916f34331aedbe2735b6cabe41"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/regression-red-exit-code.txt",
+    "retained": "review/regression-red-exit-code.txt",
+    "sha256": "bdc830287616dae1818ced3e7c186e1387155900ad30d5983ec02da1519c4a95"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/regression-red-stderr.log",
+    "retained": "review/regression-red-stderr.log",
+    "sha256": "6645015bcbfaf5b818b911823bd0e42be024169e231ec86cbb36cc82a91cda13"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/regression-red-stdout.log",
+    "retained": "review/regression-red-stdout.log",
+    "sha256": "4e1bda247bf4de82bcdb393060c8952878e28ac7a73fc2192ba2cfdb50d5f5bc"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervised-worker-first-run.json",
+    "retained": "review/supervised-worker-first-run.json",
+    "sha256": "a5647c8bdd5819f76762627370cf1e7e23a6803fed87fb557dab19f397d22977"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervised-worker-first-run.txt",
+    "retained": "review/supervised-worker-first-run.txt",
+    "sha256": "4acc188035604231be5af55ed745848521235d83ab35acb1d1be6eed72f94fdc"
+  },
+  {
+    "source": "@prime/tmp/20261026-e41/supervised-worker-current.txt",
+    "retained": "review/supervised-worker-current.txt",
+    "sha256": "191430e35c9eedaab3e8dd8b4ca6195c49e9d59de1140045dca98c2d9e580376"
+  }
+]

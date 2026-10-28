@@ -1,0 +1,25 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Finished `test` profile [unoptimized] target(s) in 39.18s
+     Running tests\worker_bootstrap.rs (target\debug\deps\worker_bootstrap-7bf9cd44b4bc4d9f.exe)
+
+running 1 test
+test retirement_precedes_slow_stop ... FAILED
+
+failures:
+
+---- retirement_precedes_slow_stop stdout ----
+
+thread 'retirement_precedes_slow_stop' (2104) panicked at crates\polaris-kernel\crates\supervisor\tests\worker_bootstrap.rs:411:5:
+assertion `left == right` failed: stopping generation must be retired before platform cleanup starts
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    retirement_precedes_slow_stop
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.26s
+
+error: test failed, to rerun pass `-p polaris-kernel-supervisor --test worker_bootstrap`

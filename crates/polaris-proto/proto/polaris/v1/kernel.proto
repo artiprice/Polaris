@@ -61,6 +61,7 @@ message CommandBody {
     RollbackTo rollback_to = 7;
     CancelFrame cancel_frame = 8;
     ApplyDirective apply_directive = 9;
+    AnswerHumanRequest answer_human_request = 10;
   }
   reserved 100 to 199;
 
@@ -80,6 +81,11 @@ message CommandBody {
   message RollbackTo { uint64 seq = 1; }
   message CancelFrame { Uuid frame = 1; }
   message ApplyDirective { Cid directive = 1; }
+  message AnswerHumanRequest {
+    Uuid request_id = 1;
+    Cid revision = 2;
+    Cid answer = 3;
+  }
 }
 
 // Versioned envelope appended to the event log (sdk `EventRecord`).
@@ -93,7 +99,7 @@ message EventRecord {
   reserved 100 to 199;
 }
 
-// A domain event (sdk `Event`, schema v4). Existing field numbers remain stable.
+// A domain event (sdk `Event`, schema v7). Existing field numbers remain stable.
 message Event {
   oneof kind {
     SessionStarted session_started = 1;
@@ -120,11 +126,19 @@ message Event {
     BlastRadiusAlert blast_radius_alert = 22;
     FrameStepRecorded frame_step_recorded = 23;
     DiffNeedsApproval diff_needs_approval = 24;
+    HumanRequestCreated human_request_created = 25;
+    HumanRequestAnswered human_request_answered = 26;
+    HumanRequestInterrupted human_request_interrupted = 27;
+    FrameRegistered frame_registered = 28;
+    FrameTreeCancellationRequested frame_tree_cancellation_requested = 29;
+    FrameToolResultRecorded frame_tool_result_recorded = 30;
+    UserInputSubmitted user_input_submitted = 31;
   }
   reserved 100 to 199;
 
   message SessionStarted { Cid workspace = 1; }
   message DirectiveApplied { Cid directive = 1; }
+  message UserInputSubmitted { Cid text = 1; }
   message DecisionMade {
     Uuid frame = 1;
     Cid decision = 2;
@@ -204,6 +218,37 @@ message Event {
     uint32 step = 2;
     Cid transcript = 3;
     FrameStepOutcome outcome = 4;
+  }
+  message HumanRequestCreated {
+    Uuid request_id = 1;
+    Uuid frame = 2;
+    uint32 origin_step = 3;
+    reserved 4;
+    Cid request = 5;
+  }
+  message HumanRequestAnswered {
+    Uuid request_id = 1;
+    Uuid frame = 2;
+    reserved 3, 4, 5, 6;
+    Cid receipt = 7;
+  }
+  message HumanRequestInterrupted {
+    Uuid request_id = 1;
+    Uuid frame = 2;
+    Cid revision = 3;
+  }
+  message FrameToolResultRecorded { Uuid frame = 1; Cid call = 2; Cid result = 3; }
+  message FrameRegistered {
+    Uuid frame = 1;
+    optional Uuid parent = 2;
+    Uuid root = 3;
+    AgentRole role = 4;
+    Cid binding = 5;
+  }
+  message FrameTreeCancellationRequested {
+    Uuid target = 1;
+    Cid receipt = 2;
+    Uuid command = 3;
   }
 }
 

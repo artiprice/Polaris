@@ -308,8 +308,8 @@ fn p2_registry_advertises_only_explicitly_bound_proposal_and_sandbox_services()
     for spec in registry.specs() {
         let schema: serde_json::Value = serde_json::from_str(spec.input_schema_json.as_ref())?;
         assert_eq!(
-            schema["additionalProperties"],
-            serde_json::Value::Bool(false)
+            schema.get("additionalProperties"),
+            Some(&serde_json::Value::Bool(false))
         );
     }
     let root = tempfile::tempdir()?;

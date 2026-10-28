@@ -1,0 +1,21 @@
+Pinned artifact metadata for the PII companion model
+
+VERIFIED repository: https://huggingface.co/jugaadsrl/gliner2-privacy-filter-PII-multi-onnx
+VERIFIED revision: 3bbf02b190a2bbc674f649aa5c65e6579af360c7
+VERIFIED upstream checkpoint: fastino/gliner2-privacy-filter-PII-multi
+VERIFIED layout: fp32_v2/; pass that subdirectory as PiiEngineConfig.model_directory (engine expects the listed `_fp32.onnx` files plus tokenizer.json).
+VERIFIED source metadata: official Hugging Face tree API at `/api/models/jugaadsrl/gliner2-privacy-filter-PII-multi-onnx/tree/3bbf02b190a2bbc674f649aa5c65e6579af360c7/fp32_v2?recursive=false&expand=true`; commit record identifies restructuring commit 3bbf02b190a2bbc674f649aa5c65e6579af360c7.
+
+Path | Exact bytes | LFS SHA-256
+fp32_v2/classifier_fp32.onnx | 4731777 | a59406b58c7bb448174c8df32b46d82e1b77b64bcb497da5b481836600ff3ad9
+fp32_v2/count_lstm_fixed_fp32.onnx | 42567350 | 17710c32f639f28f3193ea286226b92757dbfa4a67d86432cf252d479ed86f7d
+fp32_v2/count_pred_argmax_fp32.onnx | 4848570 | c67fe0b5b1d1d6b1832a82ccb88153e571033e39f7d46434e661e7befd38294c
+fp32_v2/encoder_fp32.onnx | 1111055954 | 7cd07f04235f5c9e879f69e361088be3b07bb6930bf05340050088f7994f638e
+fp32_v2/schema_gather_fp32.onnx | 1334 | 24ceb4ae477e36a4291f8a29636e56cfe435d857c71b9248245d4eed62d67ab7
+fp32_v2/scorer_fp32.onnx | 3831 | 8fd9305a1d393d0eb9551c2dabaf7707aeea80910d246588b6ff8576bcab8cce
+fp32_v2/span_rep_fp32.onnx | 66121780 | a526d00a3ef794223b8683f2ede9b15bda6a5190485539ecec661ef78194d4a1
+fp32_v2/token_gather_fp32.onnx | 252 | 739b66e91492ba6cdcf779497bdc9c322eaa141a9a1e2200c1db1c02ef63133b
+fp32_v2/tokenizer.json | 16020604 | f6df10ec83bea993035b2dd7c39345a3d4fcf23421c2adb6cb4ffc1e6d1bc4b5
+
+Total bytes: 1,245,351,452 (1.245 GB decimal; 1.1598 GiB).
+

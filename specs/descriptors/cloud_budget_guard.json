@@ -1,0 +1,26 @@
+{
+  "type_of": "struct",
+  "name": "BudgetGuard",
+  "file_path": "crates/polaris-nebius-cloud/crates/ai-cloud/src/budget.rs",
+  "logic_name": "Cloud Budget Guard",
+  "test_list": [
+    {"test_name": "ceil_estimate_rounds_any_partial_hour_up", "description": "Exact integer hourly-rate estimation rounds fractional hours upward without floating point."},
+    {"test_name": "concurrent_reservations_cannot_exceed_budget", "description": "Simultaneous reservations account for outstanding reservations before admission."},
+    {"test_name": "reservation_settlement_is_terminal_and_never_refunds_spend", "description": "Settling a reservation moves actual spend into monotonic spent cost; settled spend cannot be refunded or settled again."},
+    {"test_name": "zero_budget_denies_all", "description": "A zero aggregate budget denies admission even when computed cost is zero."},
+    {"test_name": "oversettlement_fails_closed", "description": "Actual cost above the reserved cap is recorded, reported, and permanently halts further admission."},
+    {"test_name": "overrun_records_actual_cost_and_halts_admission", "description": "A terminal provider cost above its reservation is recorded and permanently blocks future admission."},
+    {"test_name": "overrun_above_budget_records_actual_and_halts_admission", "description": "An actual charge above the aggregate cap is recorded when representable and permanently blocks future admission."},
+    {"test_name": "unrepresentable_overrun_halts_admission", "description": "When actual cost cannot be added without overflow, accounting remains intact and future admission is permanently blocked."},
+    {"test_name": "arithmetic_overflow_is_rejected", "description": "Checked multiplication, addition, and ceiling calculations return an error on overflow."}
+  ],
+  "dependencies": [],
+  "libraries": ["thiserror", "std::sync"],
+  "inputs": [
+    {"name": "hourly_rate_micros", "type": "u64", "description": "Exact cost rate in integer micro-USD per hour."},
+    {"name": "duration", "type": "std::time::Duration", "description": "Maximum billable lifetime used for conservative admission."},
+    {"name": "budget_micros", "type": "u64", "description": "Hard aggregate spend limit in micro-USD."}
+  ],
+  "output_type": "Result<Reservation, BudgetError>",
+  "output_description": "A reservation backed by shared synchronized accounting, or a typed denial/error."
+}

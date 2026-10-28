@@ -1,0 +1,18 @@
+   Compiling bollard-buildkit-proto v0.8.1
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling bollard v0.21.1
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 1m 23s
+     Running tests\supervised_worker.rs (target\debug\deps\supervised_worker-16990dfac1bff2c9.exe)
+
+running 2 tests
+test supervised_worker_returns_real_decision ... ignored, requires explicit installed GLiNER/ORT artifact paths
+test supervised_worker_bootstraps_authenticated_health_and_retires ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.87s
+

@@ -1,0 +1,22 @@
+{
+  "type_of": "method",
+  "name": "Advisory watchdog runtime hook",
+  "file_path": "crates/polaris-runtime/crates/frames/src/step.rs",
+  "logic_name": "Inspect a validated proposal before authorization while leaving ordinary execution checks authoritative",
+  "test_list": [
+    {
+      "test_name": "watchdog_observation_is_advisory_and_survives_journal_recovery",
+      "description": "A synthetic warning does not prevent independent verification; hash-only observation survives journal reconstruction."
+    }
+  ],
+  "dependencies": ["polaris-runtime-frames", "polaris-system-one-watchdog"],
+  "inputs": [
+    {
+      "name": "validated_proposal",
+      "type": "FrameSnapshot + ProposedStep",
+      "description": "Observed only after stream validation and before tool authorization."
+    }
+  ],
+  "output_type": "WatchdogObservation or None",
+  "output_description": "Advisory verdict plus bounded hash-only record; authorization and verification continue independently."
+}

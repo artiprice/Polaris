@@ -1,0 +1,87 @@
+id: polaris-core
+version: 1
+rules:
+  - id: python-os-system
+    language: python
+    cwe: 78
+    severity: high
+    disputed: true
+    message: Review shell execution for command injection.
+    ast_pattern: "os.system($ARG)"
+  - id: python-open-path
+    language: python
+    cwe: null
+    severity: info
+    disputed: true
+    message: Review file path provenance and containment; this broad informational hint also matches ordinary opens.
+    ast_pattern: "open($PATH)"
+  - id: rust-transmute
+    language: rust
+    cwe: null
+    severity: high
+    disputed: true
+    message: Review transmute invariants for memory safety.
+    ast_pattern: "std::mem::transmute($VALUE)"
+  - id: cpp-memcpy
+    language: cpp
+    cwe: null
+    severity: high
+    disputed: true
+    message: Review copy bounds and destination capacity.
+    ast_pattern: "memcpy($DST, $SRC, $LEN)"
+  - id: cuda-conditional-barrier
+    language: cuda
+    cwe: null
+    severity: high
+    disputed: true
+    message: Review barrier reachability for divergent thread control flow.
+    ast_pattern: "if ($COND) { __syncthreads(); }"
+  - id: python-parent-path-component
+    language: python
+    cwe: 22
+    severity: medium
+    disputed: true
+    message: Review an explicit parent-directory component in a joined file path.
+    ast_pattern: "open(os.path.join($BASE, '..', $PATH))"
+  - id: cpp-repeated-free
+    language: cpp
+    cwe: 415
+    severity: medium
+    disputed: true
+    message: Potential adjacent double-free of the same expression inside one compound statement.
+    ast_pattern: "{ free($PTR); free($PTR); }"
+  - id: cpp-repeated-delete
+    language: cpp
+    cwe: 415
+    severity: medium
+    disputed: true
+    message: Potential adjacent double-delete of the same expression inside one compound statement.
+    ast_pattern: "{ delete $PTR; delete $PTR; }"
+  - id: cpp-free-then-dereference
+    language: cpp
+    cwe: 416
+    severity: medium
+    disputed: true
+    message: Potential free followed by a same-expression member dereference inside one compound statement; ownership and lifetime are not proven.
+    ast_pattern: "{ free($PTR); $PTR->$FIELD; }"
+  - id: rust-symlink-check-open
+    language: rust
+    cwe: 59
+    severity: high
+    disputed: true
+    message: Review a symlink metadata check followed by opening the same path for a race window.
+    ast_pattern: "if std::fs::symlink_metadata($PATH).is_ok() { std::fs::File::open($PATH); }"
+  - id: rust-process-command-arg
+    language: rust
+    cwe: null
+    severity: info
+    disputed: true
+    message: Review subprocess argument provenance and whether shell interpretation is enabled; taint is not inferred.
+    ast_pattern: "std::process::Command::new($PROGRAM).arg($ARG)"
+  - id: cuda-thread-index-array-access
+    language: cuda
+    cwe: null
+    severity: info
+    disputed: true
+    message: Review CUDA thread-local array indexing against allocation and bounds guards; this informational hint also matches safe bounded accesses.
+    ast_pattern: "$ARRAY[threadIdx.x]"

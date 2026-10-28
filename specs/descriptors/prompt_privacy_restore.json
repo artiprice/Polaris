@@ -1,0 +1,32 @@
+{
+  "type_of": "pipeline",
+  "name": "KernelPromptAssembler::new_with_privacy",
+  "file_path": "crates/polaris-kernel/src/frame_prompt.rs",
+  "logic_name": "Restored prompt privacy ownership",
+  "test_list": [
+    {
+      "test_name": "assembler_restores_exact_private_marker_map",
+      "description": "Actual CAS+AEAD map snapshot preserves prompt markers."
+    },
+    {
+      "test_name": "assembler_rejects_foreign_or_weaker_privacy_vault",
+      "description": "Owner and entropy policy may not be weakened."
+    }
+  ],
+  "dependencies": [
+    "KernelPiiSnapshotStore",
+    "PiiVault"
+  ],
+  "libraries": [
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "settings",
+      "type": "PromptAssemblySettings",
+      "description": "Prompt limits and optional host-restored vault."
+    }
+  ],
+  "output_type": "Result<KernelPromptAssembler,KernelPromptError>",
+  "output_description": "Prompt assembly with exact bound privacy owner."
+}

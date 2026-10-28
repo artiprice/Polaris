@@ -1,0 +1,44 @@
+   Compiling polaris-spike-ratelimit v0.1.0-alpha (C:\mDev\Polaris\tests\spike\ratelimit)
+    Finished `test` profile [unoptimized] target(s) in 1.46s
+     Running unittests src\lib.rs (target\debug\deps\polaris_spike_ratelimit-67fbf5692764406a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\burst.rs (target\debug\deps\burst-8f88e58b9fba9c31.exe)
+
+running 7 tests
+test background_shed_first_under_pressure ... ok
+test retry_after_flood_is_status_gated_and_checked ... ok
+test tpm_reservation_reconciliation_and_overshoot ... ok
+test fifty_agents_priority_order_and_rate_bound ... FAILED
+test retry_after_storm_respects_floor_and_shared_penalty ... ok
+test report_latency_samples_are_observed_and_real_clock_can_be_sampled ... ok
+test canceled_waiters_are_drained_without_task_leaks ... FAILED
+
+failures:
+
+---- fifty_agents_priority_order_and_rate_bound stdout ----
+
+thread 'fifty_agents_priority_order_and_rate_bound' (12876) panicked at tests\spike\ratelimit\tests\burst.rs:203:5:
+assertion `left == right` failed: configured GCRA burst is the maximum same-tick admission count
+  left: 50
+ right: 24
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- canceled_waiters_are_drained_without_task_leaks stdout ----
+
+thread 'canceled_waiters_are_drained_without_task_leaks' (4320) panicked at tests\spike\ratelimit\tests\burst.rs:471:5:
+assertion `left == right` failed: exactly half of the waiters should be canceled
+  left: 0
+ right: 4
+
+
+failures:
+    canceled_waiters_are_drained_without_task_leaks
+    fifty_agents_priority_order_and_rate_bound
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p polaris-spike-ratelimit --test burst`

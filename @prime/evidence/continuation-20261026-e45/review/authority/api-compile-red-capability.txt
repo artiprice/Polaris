@@ -1,0 +1,16 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+error[E0599]: no variant, associated function, or constant named `Workspace` found for enum `ResourceScope` in the current scope
+  --> crates\polaris-security\crates\capability\tests\capability_contract.rs:90:34
+   |
+90 |         resource: ResourceScope::Workspace,
+   |                                  ^^^^^^^^^ variant, associated function, or constant not found in `ResourceScope`
+
+error[E0599]: no variant, associated function, or constant named `Workspace` found for enum `ResourceScope` in the current scope
+   --> crates\polaris-security\crates\capability\tests\capability_contract.rs:132:39
+    |
+132 |     widened.resource = ResourceScope::Workspace;
+    |                                       ^^^^^^^^^ variant, associated function, or constant not found in `ResourceScope`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-security-capability` (test "capability_contract") due to 2 previous errors

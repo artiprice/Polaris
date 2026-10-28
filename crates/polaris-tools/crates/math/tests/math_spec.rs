@@ -61,6 +61,56 @@ fn float_path_supports_whitelisted_transcendentals_and_rejects_unknown_names() {
 }
 
 #[test]
+fn float_power_limit_cannot_be_bypassed_with_parenthesized_exponent() {
+    assert_eq!(
+        calc_f64("2^(1001)", &CalcLimits::default()),
+        Err(MathError::ExponentLimit)
+    );
+    assert_eq!(
+        calc_f64("2^(1000 + 1)", &CalcLimits::default()),
+        Err(MathError::ExponentLimit)
+    );
+    assert_eq!(
+        calc_f64("2^2^10", &CalcLimits::default()),
+        Err(MathError::ExponentLimit)
+    );
+    assert_eq!(calc_f64("2^(10 + 1)", &CalcLimits::default()), Ok(2048.0));
+}
+
+#[test]
+fn float_power_guard_preserves_unparenthesized_unary_function_operands() {
+    assert!(calc_f64("2^sin PI", &CalcLimits::default()).is_ok());
+    assert!(calc_f64("2^π", &CalcLimits::default()).is_ok());
+}
+
+#[test]
+fn float_max_depth_limits_unparenthesized_prefix_functions() {
+    let limits = CalcLimits {
+        max_depth: 2,
+        ..CalcLimits::default()
+    };
+    assert_eq!(calc_f64("2^sin sin PI", &limits), Err(MathError::TooDeep));
+}
+
+#[test]
+fn float_max_depth_limits_unparenthesized_power_chains() {
+    let limits = CalcLimits {
+        max_depth: 2,
+        ..CalcLimits::default()
+    };
+    assert_eq!(calc_f64("2^2^3^4", &limits), Err(MathError::TooDeep));
+}
+
+#[test]
+fn float_zero_max_depth_is_rejected() {
+    let limits = CalcLimits {
+        max_depth: 0,
+        ..CalcLimits::default()
+    };
+    assert_eq!(calc_f64("1", &limits), Err(MathError::TooDeep));
+}
+
+#[test]
 fn negative_integer_power_is_checked_decimal() {
     assert_eq!(calc("2^-1", &CalcLimits::default()), Ok(Decimal::new(5, 1)));
     assert_eq!(

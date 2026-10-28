@@ -1,0 +1,40 @@
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Finished `test` profile [unoptimized] target(s) in 4.41s
+     Running tests\answer_integrity.rs (target\debug\deps\answer_integrity-6b940fb853155b49.exe)
+
+running 3 tests
+test out_of_range_scores_are_not_success ... FAILED
+test malformed_choice_distributions_are_not_success ... FAILED
+test duplicate_choice_options_reject_before_dispatch ... FAILED
+
+failures:
+
+---- out_of_range_scores_are_not_success stdout ----
+
+thread 'out_of_range_scores_are_not_success' (14356) panicked at tests\spike\s1\tests\answer_integrity.rs:23:5:
+assertion `left == right` failed
+  left: 1
+ right: 0
+
+---- malformed_choice_distributions_are_not_success stdout ----
+
+thread 'malformed_choice_distributions_are_not_success' (14816) panicked at tests\spike\s1\tests\answer_integrity.rs:40:9:
+assertion `left == right` failed: malformed distributions must not count as answers
+  left: 1
+ right: 0
+
+---- duplicate_choice_options_reject_before_dispatch stdout ----
+
+thread 'duplicate_choice_options_reject_before_dispatch' (5656) panicked at tests\spike\s1\tests\answer_integrity.rs:50:5:
+assertion failed: matches!(result, Err(WorkloadError::Bounds))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    duplicate_choice_options_reject_before_dispatch
+    malformed_choice_distributions_are_not_success
+    out_of_range_scores_are_not_success
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-spike-s1 --test answer_integrity`

@@ -96,13 +96,23 @@ pub fn interpolate(knots: &[Knot], kind: Interp, x: Finite) -> Result<Finite, Ma
             .zip(knots.first())
             .map(|(b, a)| b.x.get() - a.x.get())
             .ok_or(MathError::BadKnots("missing knot"))?;
+        if !step.is_finite() || step <= 0.0 {
+            return Err(MathError::BadKnots(
+                "Catmull-Rom requires finite positive uniform spacing",
+            ));
+        }
+        let coordinate_scale = knots
+            .iter()
+            .map(|knot| knot.x.get().abs())
+            .fold(step.abs(), f64::max);
+        let spacing_tolerance = (step.abs() * 1e-12).max(coordinate_scale * f64::EPSILON * 2.0);
         for pair in knots.windows(2) {
             let delta = pair
                 .get(1)
                 .zip(pair.first())
                 .map(|(b, a)| b.x.get() - a.x.get())
                 .ok_or(MathError::BadKnots("missing knot"))?;
-            if (delta - step).abs() > step.abs().max(1.0) * 1e-12 {
+            if !delta.is_finite() || (delta - step).abs() > spacing_tolerance {
                 return Err(MathError::BadKnots("Catmull-Rom requires uniform spacing"));
             }
         }
@@ -218,7 +228,7 @@ fn validate_knots(knots: &[Knot]) -> Result<(), MathError> {
     for pair in knots.windows(2) {
         let a = pair.first().ok_or(MathError::BadKnots("invalid knots"))?;
         let b = pair.get(1).ok_or(MathError::BadKnots("invalid knots"))?;
-        if a.x.get().total_cmp(&b.x.get()).is_ge() {
+        if a.x.get() >= b.x.get() {
             return Err(MathError::BadKnots(
                 "x coordinates must be strictly increasing",
             ));

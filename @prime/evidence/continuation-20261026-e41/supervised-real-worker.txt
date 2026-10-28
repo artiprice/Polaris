@@ -1,0 +1,9 @@
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 5.82s
+     Running tests\supervised_worker.rs (target\debug\deps\supervised_worker-16990dfac1bff2c9.exe)
+
+running 1 test
+test supervised_worker_returns_real_decision ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 8.49s
+

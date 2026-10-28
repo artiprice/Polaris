@@ -1,0 +1,32 @@
+   Compiling polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Finished `test` profile [unoptimized] target(s) in 2.94s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ingest-9ae6d9c6b5ba0a2c.exe)
+
+running 18 tests
+test tests::markdown_renderer_uses_safe_dynamic_code_fences ... ok
+test tests::markdown_renderer_escapes_table_separators_and_newlines ... ok
+test tests::oversize_input_rejected_before_format_parser ... ok
+test tests::byte_signature_takes_precedence_over_misleading_pdf_extension ... ok
+test tests::plain_text_is_normalized_with_line_provenance ... ok
+test tests::csv_rows_preserve_quoted_commas_and_newlines ... ok
+test tests::tsv_uses_tabs_as_the_delimiter ... ok
+test tests::markdown_headings_tables_and_code_are_preserved ... ok
+test tests::unknown_bytes_return_typed_unsupported ... ok
+test tests::windows_1252_csv_is_decoded ... ok
+test tests::normalized_output_and_html_dom_limits_are_enforced ... ok
+test tests::html_dom_and_converter_ignore_script_payload ... ok
+test tests::image_and_scanned_pdf_never_claim_ocr_without_configuration ... ok
+test tests::generated_text_pdf_is_parsed_page_by_page ... ok
+test tests::non_integer_compression_ratio_is_rejected_exactly ... ok
+test tests::normal_archive_passes_and_hostile_archives_are_rejected ... ok
+test tests::generated_xlsx_and_pptx_are_parsed_by_their_real_readers ... ok
+test tests::generated_docx_is_parsed_without_fabricated_line_provenance ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_ingest
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

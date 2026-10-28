@@ -1,0 +1,32 @@
+{
+  "name": "library-safety",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-kernel",
+    "--lib",
+    "--no-deps",
+    "--",
+    "-D",
+    "warnings",
+    "-D",
+    "clippy::unwrap_used",
+    "-D",
+    "clippy::expect_used",
+    "-D",
+    "clippy::panic",
+    "-D",
+    "clippy::as_conversions",
+    "-D",
+    "clippy::indexing_slicing",
+    "-D",
+    "clippy::arithmetic_side_effects"
+  ],
+  "started_utc": "2026-10-26T17:41:20.916212+00:00",
+  "elapsed_seconds": 3.725,
+  "exit_code": 0,
+  "raw": "17-library-safety.txt"
+}

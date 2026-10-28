@@ -1,0 +1,2 @@
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Finished `dev` profile [unoptimized] target(s) in 1.84s

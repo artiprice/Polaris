@@ -1,0 +1,12 @@
+{
+  "name": "source-integrity",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tmp/p2/check_e45_integrity.py"
+  ],
+  "started_utc": "2026-10-26T17:45:54.115886+00:00",
+  "elapsed_seconds": 0.494,
+  "exit_code": 0,
+  "raw": "28-source-integrity.txt"
+}

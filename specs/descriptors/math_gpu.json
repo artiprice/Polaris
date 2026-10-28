@@ -5,6 +5,7 @@
     {"test_name":"shared_memory_limited_launch_reports_shared","description":"Shared memory can be identified as the occupancy limiter."},
     {"test_name":"unknown_capability_is_error","description":"Capabilities absent from the supplied versioned table are rejected."},
     {"test_name":"row_without_source_url_rejected","description":"Every row requires an HTTPS provenance URL and retrieval date."},
+    {"test_name":"gpu_rows_reject_non_nvidia_source_domains","description":"GPU resource rows must cite an approved NVIDIA source domain; arbitrary HTTPS URLs are not sufficient provenance."},
     {"test_name":"invalid_launch_dimensions_rejected","description":"Zero or over-limit block dimensions are rejected."},
     {"test_name":"table_rejects_invalid_limits_and_version","description":"Table version, duplicate rows, and impossible resource limits are validated."}
   ],"dependencies":[],"libraries":["toml","serde"],

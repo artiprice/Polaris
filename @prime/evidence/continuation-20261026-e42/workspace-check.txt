@@ -1,0 +1,53 @@
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Checking polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Checking polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+    Checking polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Checking polaris-cli v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-cli)
+    Checking polaris-daemon v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-daemon)
+    Checking polaris-tests v0.1.0-alpha (C:\mDev\Polaris\tests)
+    Checking polaris-web v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-web)
+    Checking polaris-desktop v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-desktop)
+warning: method `is_consumed` is never used
+   --> apps\polaris-cli\src\demo_gallery.rs:316:18
+    |
+315 | impl GalleryEffect {
+    | ------------------ method in this implementation
+316 |     pub const fn is_consumed(&self) -> bool {
+    |                  ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: multiple methods are never used
+    --> apps\polaris-cli\src\demo_gallery.rs:1332:12
+     |
+1164 | impl DemoGallery {
+     | ---------------- methods in this implementation
+...
+1332 |     pub fn stats_tab_label(&self) -> &'static str {
+     |            ^^^^^^^^^^^^^^^
+...
+1350 |     pub fn stats_summary(&self) -> StatsSummary {
+     |            ^^^^^^^^^^^^^
+...
+1359 |     pub fn settings_categories(&self) -> &'static [&'static str] {
+     |            ^^^^^^^^^^^^^^^^^^^
+...
+1368 |     pub const fn stats_details_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+1371 |     pub const fn stats_bucket(&self) -> Option<usize> {
+     |                  ^^^^^^^^^^^^
+...
+1374 |     pub const fn usage_demo_visible(&self) -> bool {
+     |                  ^^^^^^^^^^^^^^^^^^
+...
+1440 |     pub fn hit_region(&self, index: usize) -> Option<Rect> {
+     |            ^^^^^^^^^^
+
+warning: `polaris-cli` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized] target(s) in 18.38s

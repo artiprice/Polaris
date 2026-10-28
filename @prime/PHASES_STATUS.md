@@ -18,9 +18,9 @@
 |---|---|
 | PASS | 45 |
 | FAIL | 3 |
-| IN PROGRESS | 59 |
+| IN PROGRESS | 70 |
 | BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 41 |
+| NOT STARTED | 30 |
 | **total** | 163 |
 
 **Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
@@ -29,7 +29,7 @@ P1 now composes actual CAS/redb/SQLite, a signed directive verifier, bounded rec
 
 **Full M1/P1 UI acceptance remains open:** CLI UI implementation was subsequently authorized; tested foundation slices and remaining gates are recorded in §E33, §E35 and UI_PHASES. Facades remain IN PROGRESS where later-phase children or the full execution bundle are open; their P1 exports and local profile are checked separately. P2–P9 source compiles in the workspace, but this does not mark those feature phases complete.
 
-P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account requests, the Slint licence decision and dependency vetting open. PID-only orphan identities remain fail-closed for operator review. Full model/sandbox/S1 assembly, remote transports, live credentials and UI retain their own phase gates.
+P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account requests and dependency vetting open (the Slint licence is decided: royalty-free, ADR-014). PID-only orphan identities remain fail-closed for operator review. Full model/sandbox/S1 assembly, remote transports, live credentials and UI retain their own phase gates.
 
 ## P0 — tasks
 
@@ -54,7 +54,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P0-ENV-4 `.cargo/config.toml`, longpaths, PROTOC | PASS | §E12/§E13: `CMAKE_POLICY_VERSION_MINIMUM=3.5` + `xtask` alias committed; `core.longpaths=true`; protoc on PATH; heavy deps build (openshell-sdk S0-1, LanceDB S0-9, ort S0-4); short target-dir not needed |
 | P0-ENV-5 Linux check leg in WSL2 | PASS | §E10 `verify-linux-leg.sh` (check + doc `-Dwarnings`, fmt, 93 packages) + xtask tests on Linux |
 | P0-ENV-6 local OpenAI-compatible server | PASS (endpoint) | §E10: Ollama 0.40.6 + `nemotron-mini`, SSE streaming OK (TTFT 2.3 s warm, 32.8 s cold). **Tool calling flaky: tool_calls in 1 of 4 runs** (the one success was in the previous session; its transcript is not in §E — the two runs in §E10 both show `tool_calls ABSENT`) — risk R22 for P3-X-1, evaluate a stronger small model when disk allows |
-| P0-ENV-7 `deny.toml`, cargo-vet, Slint licence decision | IN PROGRESS | §E11 historical audit snapshot; §E29 current `cargo deny check` all ok, `cargo vet --locked` FAIL: 241 unvetted dependencies in the expanded graph. Existing exemptions are not audits; no new exemptions added. Slint licence choice remains open (team, ADR-014). |
+| P0-ENV-7 `deny.toml`, cargo-vet, Slint licence decision | IN PROGRESS | §E11 historical audit snapshot; §E29 current `cargo deny check` all ok, `cargo vet --locked` FAIL: 241 unvetted dependencies in the expanded graph. Existing exemptions are not audits; no new exemptions added. Slint licence DECIDED 2026-10-28: royalty-free (ADR-014); attribution via `AboutSlint`; `deny.toml` has per-crate exceptions for the 14 slint / i-slint-* crates only; `cargo deny check licenses` reports "licenses ok" (reported from the 2026-10-28 session; not re-run by this doc edit). The `cargo vet` gap above remains open. |
 | P0-XT-1 Rust xtask port of checks | PASS | §E9 (test-first: red → green; real tree OK; negative test FAILs as expected; Windows + WSL2) |
 
 ## P0 — spikes
@@ -84,7 +84,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P1-X-3 rustls aws-lc-rs provider in `main` | PASS (§E30: real main and subprocess provider smoke) |
 | P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final toolchain/guest image and live gateway/sync passed; remaining full audit in [P2 audit](P2_LOGIC_STATUS.md) |
 | P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
-| P3-X-1 walking skeleton (local endpoint) | NOT STARTED |
+| P3-X-1 walking skeleton (local endpoint) | IN PROGRESS (§E45–§E46: production readonly tools and durable journal with synthetic-provider multi-turn evidence; complete live tokenizer/provider/edit/test/proof loop remains open) |
 | P3-X-2 same loop on Nemotron | BLOCKED-ON-ACCESS |
 | P3-X-3 Contree sidecar + E3 run | BLOCKED-ON-ACCESS |
 | P3-X-4 live re-recording of SSE fixtures | BLOCKED-ON-ACCESS |
@@ -117,7 +117,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | M0 skeleton compiles, layers enforced, versions audited, probe green | PASS (§E3–§E6, §E9) |
 | M1 TUI shell with sessions + directives | NOT STARTED |
 | M2 first sandboxed `cargo test` from the TUI | Headless acceptance PASS: real 3 ordinary + 2 independent tests, exact review and zero unresolved resources; TUI explicitly deferred by user. Full P2 remains IN PROGRESS. |
-| M3 walking skeleton (local endpoint) | NOT STARTED |
+| M3 walking skeleton (local endpoint) | IN PROGRESS — readonly dispatch slice verified in §E45; full milestone gate remains open |
 | M4 same loop on Nemotron + Contree | BLOCKED-ON-ACCESS |
 | M5 MVP demo | NOT STARTED |
 | M6 submission build + video | NOT STARTED |
@@ -150,7 +150,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-tests` | `polaris-tests` | P0 | IN PROGRESS | Cross-crate suites include actual EventLog-backed skill approval reopen on Windows and Linux; full system acceptance remains open. |
-| `crate:xtask` | `xtask` | P0 | PASS | P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9) |
+| `crate:xtask` | `xtask` | P0 | PASS | P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9). §E43: deterministic SPDX 2.3 SBOM for the locked full Cargo graph with explicit timestamp, offline locked metadata, BLAKE3 lock digest, atomic no-clobber/force writes. The official schema checks `created` is a string, not RFC3339; the independent RFC3339 check accepts the real document (exit 0), rejects the impossible-date fixture (exit 1), and the official schema rejects the non-string fixture (exit 1). The original helper accepted the impossible date; that failure history is retained. Not a target-binary inventory, license validation, or security audit; advisories and cargo-vet remain failed. See evidence/continuation-20261026-e43/commands.json. |
 
 ### P1
 
@@ -158,7 +158,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-cli` | `polaris-cli` | P1 | IN PROGRESS | UI foundation implementation 2026-10-24: real offline default TUI/dump, bounded signed directive admission/replay and session resume; focused controller/binary suites. See evidence/ui/verification.txt and UI_PHASES.md for open gates and doctor setup failure. Historical P1 non-UI evidence remains in E30. |
-| `crate:polaris-sdk` | `polaris-sdk` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: validated contracts and enum forwarding; SDK Miri supported tests and Kani 3/3. Final consistency/fuzz checkpoint recorded there. |
+| `crate:polaris-sdk` | `polaris-sdk` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: validated contracts and enum forwarding; SDK Miri supported tests and Kani 3/3. §E43: two authorized SDK schema-test fixes; full SDK suite 56 passed, 0 failed, 0 ignored. Schema snapshots unchanged; see evidence/continuation-20261026-e43/commands.json. |
 | `crate:polaris-proto` | `polaris-proto` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded generated protocol, SDK conversions and frozen descriptor contract; native Windows suite, Linux warning-denied check/docs and proto_decode fuzz. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-config` | `polaris-config` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded layered config, trust/provenance/secret refs and real Windows sharing-lock retry. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-log` | `polaris-log` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: redacted bounded rings/queue, zero-allocation enqueue, JSON, UTC daily-size rotation and application flush hooks. Final consistency/fuzz checkpoint recorded there. |
@@ -171,12 +171,12 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-storage` | `polaris-storage` | P1 | IN PROGRESS | P1 exports/layout doctest and CAS/eventlog/registry/cache pass (§E30). Later vector/sync child gates stay open. |
 | `crate:polaris-kernel-bus` | `polaris-kernel-bus` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: durable-prefix/FIFO/lag/close tests; zero allocation, Loom, 13 supported Miri tests, Kani 2/2, bus_ops fuzz and million-event native floods. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-kernel-directives` | `polaris-kernel-directives` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded grammar/render/persistence tests; Miri and 2 cursor proofs; mandatory fuzz and 1MiB throughput corpus. Final consistency/fuzz checkpoint recorded there. |
-| `crate:polaris-kernel-supervisor` | `polaris-kernel-supervisor` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: task/native ownership, bounded intensity/DLQ/backoff, health timeouts and clean/crash classification; 200 native kills with exact restart count and zero roots. Final consistency/fuzz checkpoint recorded there. |
+| `crate:polaris-kernel-supervisor` | `polaris-kernel-supervisor` | P1 | PASS | 2026-10-26 §E41: authenticated worker bootstrap is optional through the SDK trait; initialization and retirement are per generation. A generation is retired before slow cleanup, with an at-most-once cleanup guard, bounded startup/stop waits and fatal uncertain cleanup surfaced. The six focused supervisor tests pass. Timeouts do not establish native-work preemption. |
 | `crate:polaris-kernel-reaper` | `polaris-kernel-reaper` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: ordered cancellation-safe teardown and durable journal; release checkpoint batching, emergency process guard, safe orphan handling; 1070-resource workloads on Windows/WSL. Final consistency/fuzz checkpoint recorded there. |
-| `crate:polaris-tools-builtin` | `polaris-tools-builtin` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: P1 bounded read/pure tools, actual CAS expand/session recall, stable schemas/catalog and diff_apply fuzz; workspace read TOCTOU limit documented. Final consistency/fuzz checkpoint recorded there. |
+| `crate:polaris-tools-builtin` | `polaris-tools-builtin` | P1 | PASS | 2026-10-26 §E45 adds bounded authorized readonly dispatch, per-resource checks, bounded local-ignore preflight, caller output caps, bounded CAS reads and pre-open regular-file rejection. Native and Linux domain suites include FIFO/symlink regressions; external parent/global ignores are disabled for authorized calls and stable-workspace assumptions remain. |
 | `crate:polaris-tools-rtk` | `polaris-tools-rtk` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: bounded JSON/text streams, real recorded cargo fixtures, actual CAS preservation, subprocess ledger contention and release throughput workloads. Final consistency/fuzz checkpoint recorded there. |
 | `crate:polaris-tools` | `polaris-tools` | P1 | IN PROGRESS | P1 builtin/RTK exports and generated catalog consistency pass (§E30). Math child is P3; full child gate stays open. |
-| `crate:polaris-kernel` | `polaris-kernel` | P1 | IN PROGRESS | P1 LocalBackends, signed directive dispatcher, actual read tools/stores/platform, durable session typestate and cancellation-safe shutdown pass (§E30). Full model/sandbox/S1 execution bundle and later child gates retain P2/P3/P4 scope. |
+| `crate:polaris-kernel` | `polaris-kernel` | P1 | IN PROGRESS | 2026-10-27 E49: actual frame tools mutate, ask/resume, prepare host-approved sandbox tests and validate exact review/source proof evidence. Context-owned human/cancellation registries prevent duplicate terminal answers; restart and scoped cancellation are integrated. UI deferred, P2 otherwise paused, full Phase 3 acceptance open. |
 | `crate:polaris-ui-model` | `polaris-ui-model` | P1 | IN PROGRESS | 2026-10-24 UI foundation: North Star/palette migration, transactional bounded composer, global session projection, cockpit and pure questionnaire state; native tests. See UI_PHASES.md and evidence/ui/verification.txt. Human backend protocol, native/formal/performance acceptance remain open; historical E21 retained. |
 | `crate:polaris-ui-cli` | `polaris-ui-cli` | P1 | IN PROGRESS | 2026-10-24 UI foundation: pure responsive renderer plus bounded input scheduler, staged Ratatui presenter and fallible terminal guard; 37 native tests. See UI_PHASES.md and evidence/ui/verification.txt; phase gates remain open. |
 | `crate:polaris-ui` | `polaris-ui` | P1 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
@@ -190,7 +190,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-storage-sync` | `polaris-storage-sync` | P2 | IN PROGRESS | main session, test-first; evidence pending |
 | `crate:polaris-security-automata` | `polaris-security-automata` | P2 | IN PROGRESS | 5 descriptors; red then green: 27 tests (19-rule default pack with a positive+negative per rule, scan == regex-crate reference proptest, user-regex guard, integer fixed-point entropy, redactor idempotence, dhat zero-alloc scan/any_match/redact_into); 3 planted bugs caught (one after tightening a too-loose assertion) (§E18). Open: fuzz targets, Miri, load/scalability tables, bypass corpus, chunk-boundary policy |
 | `crate:polaris-platform-wsl` | `polaris-platform-wsl` | P2 | IN PROGRESS | Real WSL discovery, bounded argv execution, doctor, path/config contracts implemented. Targeted Windows tests pass; full P2 gate remains open. |
-| `crate:polaris-platform-process` | `polaris-platform-process` | P2 | IN PROGRESS | P1 native ownership pulled forward: Windows/Linux tree, shutdown, worker restart and Drop tests PASS; @prime/tmp/p1/p1-native-{windows,wsl}-current.txt. P2 PTY/watch features remain open. |
+| `crate:polaris-platform-process` | `polaris-platform-process` | P2 | IN PROGRESS | 2026-10-26 §E41: child bootstrap delivers its secret once over stdin and cleanup preserves pending or unconfirmed kill outcomes. Process cleanup does not establish endpoint ACL ownership or mutual server authentication; uncertain termination remains explicit. |
 | `crate:polaris-platform` | `polaris-platform` | P2 | IN PROGRESS | Facade exposes process and WSL children; native process implementation pulled forward for P1 supervision. |
 | `crate:polaris-vcs` | `polaris-vcs` | P2 | IN PROGRESS | Real gix status, bounded git fallback, persistent CAS undo and worktree lifecycle implemented; complete recovery and test audit pending. |
 | `crate:polaris-openshell-client` | `polaris-openshell-client` | P2 | IN PROGRESS | Pinned real SDK adapter, explicit policy CID binding, mTLS, bounded transfer/exec and cancellation guards implemented; live acceptance pending. |
@@ -208,35 +208,35 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P3 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | Production RPM/TPM reservation, priority admission and usage reconciliation in progress; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | §E28–§E29: real Ed25519/Biscuit root issuance, signed monotone attenuation, scoped rights/metrics/expiry/hash checks, revocation hook and bounded evaluation. 20 contracts + 2 compile-fail tests, Windows/Linux, 95,847 fuzz executions, isolated expiry Kani proof and path Miri. Published-source vendor patch verified; dependency audit debt and full mutation-pipeline integration remain open. |
+| `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | E50: full weighted burst admission fixed and focused boundaries pass. Tail-only refund remains incomplete; three reservation_refund tests remain RED, including two over-admission-dependent setups. Full load/formal acceptance open. |
+| `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | 2026-10-26 §E45 adds explicit Workspace scope while preserving right/time/churn/unsafe/diff checks and monotone child attenuation. New frame-root/token binding and actual kernel readonly authorization have scoped native/Linux evidence; full mutation assembly and security audit remain open. |
 | `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | IN PROGRESS | 2026-10-24 E32: bounded zeroizing AEAD vault, SDK source, identifier/storage limits and isolated real Windows keyring store/load/delete pass. Other host backends and full P3 assembly remain open. |
-| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | 2026-10-24 E32: bounded HTTP/SSE chat, reasoning/tool replay, embeddings/models and injected SDK credentials pass 24 local fixture/contract tests; strict owned-package Clippy passes. Live keyed provider and full S2 composition remain open. |
-| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-models` | `polaris-models` | P3 | IN PROGRESS | Production model catalog, effort policy and cancellable local slot lifecycle in progress; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-tools-math` | `polaris-tools-math` | P3 | IN PROGRESS | 2026-10-23: 25 math contracts cover expression evaluation, interpolation, statistics and sourced GPU specifications; full P3 audit remains open. |
-| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | 2026-10-24 E32: bounded model/tool/verifier loop with linked transcript replay, quota charging and CAS-before-event journaling; focused contracts pass. Full production plan/edit/test/proof composition remains open. |
-| `crate:polaris-runtime-context` | `polaris-runtime-context` | P3 | IN PROGRESS | Production deterministic prompt assembly and byte-exact CAS context folding in progress; UNVERIFIED, validation deferred. |
-| `crate:polaris-kernel-operators` | `polaris-kernel-operators` | P3 | IN PROGRESS | Production typed operator combinators, cancellation, bounded retries and stage-order contracts in progress; UNVERIFIED, full composition remains open. |
-| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | P3 | IN PROGRESS | 2026-10-26 E39: authentic issued-witness cache isolation/expiry, execution binding and wire contracts pass (five tests), with strict all-target Clippy. Full hybrid mutation acceptance remains open: incomplete unsafe-analysis coverage conservatively requests human approval; no bypass is introduced. |
-| `crate:polaris-spike-ratelimit` | `polaris-spike-ratelimit` | P3 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | E50: same-owner pinned llama.cpp token counting/chat adapter and local real token-usage parity checked; keyed Token Factory and full provider matrices remain open. |
+| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | IN PROGRESS | E48: stateless typed upstream Contree MCP adapter, exact 19-tool inventory, bounded branch/cancel and approved-path sync contracts. Actual MCP hub registry port preserves effect authorization. Live sidecar/SWE acceptance remains BLOCKED-ON-ACCESS. |
+| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | IN PROGRESS | 2026-10-26 §E41: facade exports the implemented Nebius AI Cloud surface. Provider transport and live cloud execution remain absent; child contracts do not establish production integration. |
+| `crate:polaris-models` | `polaris-models` | P3 | IN PROGRESS | E50: production local process loader, exact listener ownership, registry selection, leases through stream EOF and observed owned-tree shutdown checked; full resource/load/formal matrices remain open. |
+| `crate:polaris-tools-math` | `polaris-tools-math` | P3 | IN PROGRESS | E50: compound exponent/depth guards, interpolation edge cases and exact NVIDIA citation hosts repaired; 33 focused tests and scoped lint pass; numerical corpus, fuzz/formal/performance acceptance remains open. |
+| `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | 2026-10-27 E49: sealed actual ancestry/step/result budgets integrate with the production kernel agent runner, durable questions and subtree cancellation. Native frame/domain tests pass; live M3/M4 and formal acceptance remain open. |
+| `crate:polaris-runtime-context` | `polaris-runtime-context` | P3 | IN PROGRESS | 2026-10-27 E47 adds shared tokenizer-independent ConversationWindow validation and bounded verified lossless archive persistence. Kernel production assembly uses complete groups, actual masking, provider counting and capability-gated archive visibility. Real CAS and loopback integration pass; full context lifecycle/live-model acceptance remains open. |
+| `crate:polaris-kernel-operators` | `polaris-kernel-operators` | P3 | IN PROGRESS | §E43: RateLimitOp uses the real dual RPM/TPM limiter with non-Clone admission input, retained permit, and usage reconciliation. Scoped evidence passes; production pipeline assembly and full phase acceptance remain open. See evidence/continuation-20261026-e43/commands.json. |
+| `crate:polaris-kernel-verifier` | `polaris-kernel-verifier` | P3 | IN PROGRESS | 2026-10-27 E49: real mutation approval receipts, distinct human-answer and exact-target cancellation authorities, and call/result/current-source proof integration are exercised. Synthetic S1 and sandbox transports are labelled; full live, calibration, fuzz/formal and safety acceptance remain open. |
+| `crate:polaris-spike-ratelimit` | `polaris-spike-ratelimit` | P3 | IN PROGRESS | 2026-10-27 E49: seven actual-limiter staged pressure, Retry-After, overrun, cancellation and observed-latency workloads pass. Concurrent fairness, full load/stress, unused-budget refunds and raw/live headers remain open. |
 
 ### P4
 
 <!-- generated: P4 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-worker` | `polaris-worker` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-system-one-engine` | `polaris-system-one-engine` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-system-one-client` | `polaris-system-one-client` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-security-pii` | `polaris-security-pii` | P4 | IN PROGRESS | Production reversible bounded DFA/entropy privacy vault in progress; UNVERIFIED. NER span API and real sealed persistence integration remain pending. |
+| `crate:polaris-worker` | `polaris-worker` | P4 | IN PROGRESS | 2026-10-26 §E42: native owner drops idle models after a validated 1ms..1day interval (default 45s); explicit eviction acknowledges only after destruction. Installed-model RED/GREEN and authenticated child explicit/idle eviction plus real reload pass. This does not pause heavy-build admission, preempt inference, impose RSS limits, prove RSS reduction or complete nano/OCR/pressure policy. |
+| `crate:polaris-system-one-engine` | `polaris-system-one-engine` | P4 | IN PROGRESS | E50: separate raw-byte PII span engine and model/runtime digests implemented; installed Decide inference checked. Live PII quality, full parity/calibration and CUDA gates remain open. |
+| `crate:polaris-system-one-client` | `polaris-system-one-client` | P4 | IN PROGRESS | E50: bounded cross-call batching, exact request/checkpoint/generation/incarnation cache and single-flight implemented with cancellation/race fixtures; authenticated real Decide worker checks pass; complete workload/formal gates remain open. |
+| `crate:polaris-security-pii` | `polaris-security-pii` | P4 | IN PROGRESS | E50: reversible NER spans, deterministic degradation, sealed marker-map snapshots and kernel private CAS/recovered-key integration checked; actual PII companion inference, corpus/performance/fuzz acceptance remains open. |
 | `crate:polaris-security-rules` | `polaris-security-rules` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | P4 | IN PROGRESS | Production schema catalog, thresholds, calibration and restrictive overrides in progress; new implementation UNVERIFIED, validation deferred by user. |
-| `crate:polaris-system-one-router` | `polaris-system-one-router` | P4 | IN PROGRESS | Production routing, effort restrictions, tool/file ranking and sandbox recommendations written; UNVERIFIED, tests and validation deferred by user. |
+| `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | P4 | IN PROGRESS | E50: bounded exact-identity binary calibration metrics and xtask measured-candidate reports implemented; production thresholds remain uncalibrated pending real labelled held-out evidence. |
+| `crate:polaris-system-one-router` | `polaris-system-one-router` | P4 | IN PROGRESS | E50: combined intent/effort/parallel/vision request, Medium constrained fallback, bounded input and hard directives checked; labelled ranking/calibration, environments and complete workload matrices remain open. |
 | `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | P4 | IN PROGRESS | Production deterministic safety, preflight/postflight and merge arbitration in progress; UNVERIFIED, validation deferred by user. |
 | `crate:polaris-system-one-watchdog` | `polaris-system-one-watchdog` | P4 | IN PROGRESS | Production bounded loop detection, advisory role/context guards and semantic drift inspection in progress; UNVERIFIED, validation deferred by user. |
-| `crate:polaris-system-one` | `polaris-system-one` | P4 | IN PROGRESS | Kernel-side facade exports production schemas/router/verifier/watchdog; UNVERIFIED, inference worker assembly and calibration remain pending. |
+| `crate:polaris-system-one` | `polaris-system-one` | P4 | IN PROGRESS | E50: explicit per-consumer failure policy, bounded admission, circuit and host epoch fencing checked; whole P4 parity/calibration/MVP acceptance remains open. |
 | `crate:polaris-spike-s1` | `polaris-spike-s1` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ### P5
@@ -245,7 +245,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | IN PROGRESS | 2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open. |
-| `crate:polaris-ingest` | `polaris-ingest` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ingest` | `polaris-ingest` | P5 | IN PROGRESS | 2026-10-26 §E40: concrete format parsers, archive/XML/DOM preflight and source provenance, actual CAS-backed worker acceptance; OCR and process resource isolation remain open. |
 | `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass; live service, broader fuzz/load and full P5 integration remain open. |
 | `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | 2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open. |
 | `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | 2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open. |
@@ -257,7 +257,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-nebius-cloud-data-lab` | `polaris-nebius-cloud-data-lab` | P6 | IN PROGRESS | Production local consent-gated trajectory masking/export in progress; UNVERIFIED. Remote API and fine-tuning remain pending API/access. |
-| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | P6 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | P6 | IN PROGRESS | 2026-10-26 §E41: real checked budget reservations, terminal TTL handling, strict mTLS/IP ingress checks and owner-label selection. Provider transport is not implemented; live cloud integration and phase acceptance remain open. |
 
 ### P7
 
@@ -269,8 +269,8 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | IN PROGRESS | 2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open. |
 | `crate:polaris-ext` | `polaris-ext` | P7 | IN PROGRESS | Skills exports and catalog are implemented. MCP child and full P7 integration remain open. |
 | `crate:polaris-browser` | `polaris-browser` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-hacker` | `polaris-hacker` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | Production bounded DAG scheduler, named pools, speculative races and cancellation written; UNVERIFIED, validation deferred by user. |
+| `crate:polaris-hacker` | `polaris-hacker` | P7 | IN PROGRESS | 2026-10-26 §E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress; local seeded/SDK lifecycle tests pass, actual sanitizers/isolation and broader analysis remain open. |
+| `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | 2026-10-26 §E44: task-ID-correlated completion, explicit per-node interruptions without invented attempt counts, policy-aware dependency skipping and independent progress, preserved completed outcomes during cleanup, plus fail-fast/cancel/drop contracts. Post-implementation tests and strict scoped checks pass; actual panic execution, full scheduler interruption injection, snapshots, race/pool stress and production composition remain open. Interrupted tasks are never replayed automatically. |
 | `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | 2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. Production sandbox/model/critique and broader crash/portability gates remain open. |
 
 ### P8
@@ -280,7 +280,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-devenv-nix` | `polaris-devenv-nix` | P8 | IN PROGRESS | Nix JSON evaluation, filtered store paths, injected bounded sandbox execution/cache and prompt/static validation implemented. Full live Nix/store/policy/cache integration gates remain pending. |
 | `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | IN PROGRESS | 2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open. |
-| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | Production typed CI pipelines, matrix reporting and sandbox engine in progress; UNVERIFIED, Dagger and validation deferred. |
+| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | 2026-10-26 §E41: bounded CI execution, owned cancellation cleanup and late cleanup after ambiguous create outcomes are implemented. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger and persistent cache integration remain open; output redaction follows the output cap and is not a preemptive memory limit. |
 | `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written; CI implementation UNVERIFIED, Nix/Docker adapters remain pending. |
 | `crate:polaris-system-one-nano` | `polaris-system-one-nano` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
@@ -289,11 +289,13 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P9 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-desktop` | `polaris-desktop` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. OPEN: model replies (P3), daemon `--connect` (P9 RPC), attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
 | `crate:polaris-web` | `polaris-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. Six local contracts and strict owned-target Clippy pass. Default P1 profile denies remote mutation/terminal; remote mTLS, authority provisioning/revocation and full agent profile remain open. |
 | `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open. |
-| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. OPEN: Models/Usage/Settings pages, attachments, speech input. |
+| `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` P9 open. |
+| `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. Message history is not indexed yet (search returns only registry-indexed text). |
 | `crate:polaris-ui-web` | `polaris-ui-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 | `crate:polaris-spike-web` | `polaris-spike-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
@@ -1369,3 +1371,477 @@ tables are updated. The percentage report refreshes only this continuation's aff
 other requirement estimates retain their earlier audit basis. No UI implementation is changed
 by this continuation. Phase 2's broader completion work remains paused; its stdio seam is needed
 for P7 MCP. All full-system and complete-phase acceptance claims remain open.
+
+## E40 — Non-UI native inference, authenticated workers, ingestion and deterministic auditing (2026-10-26)
+
+**VERIFIED scoped implementation:** explicit local CPU/fp32 GLiNER/ORT inference, authenticated
+SDK DecisionEngine IPC and real s1/ingest worker modes. Fixed-format parent credentials are read
+from inherited stdin, checked on every RPC and removed before handlers run. Windows pipe
+authentication/collision/teardown tests and a real child/public-client inference path pass. The
+native model stays on its owner thread; canceled waiters cannot release its admission permit.
+
+Concrete text/Markdown/HTML/CSV/TSV/OOXML/PDF parsing now retains available source provenance.
+Archive/XML/DOM/sparse-sheet preflight, output caps and hash-verified CAS-backed ingestion are
+exercised. The worker stores an explicitly untrusted provenance record and exact Markdown CIDs.
+Ingest drain regressions failed before the fix and pass afterwards. OCR remains unconfigured;
+synchronous library work still requires OS process memory/time isolation.
+
+The deterministic audit path reports bounded AST/DFA observations without copying source into
+evidence, generates bounded boundary inputs and owns SDK sandbox cleanup across caller
+cancellation and execution timeout. Actual sanitizer/isolation acceptance is not implied by the
+local SDK fixture. Quadratic/race/CUDA analysis remains unfinished.
+
+**Current evidence:** 119 scoped tests pass; two opt-in artifact tests separately pass one
+real input each. The all-target workspace check and six-package safety Clippy pass. Exact argv,
+statuses, raw output and local artifact hashes are in [commands.json](evidence/continuation-20261026-e40/commands.json)
+and the [evidence index](evidence/continuation-20261026-e40/README.md). The full SDK suite retains
+two unchanged schema-boundary failures. Dependency audit failures remain open, with their exact
+current output preserved. No test assertion, checker or audit exemption was weakened.
+
+**Dependency remediation:** the initial ZIP8 advisory failures are retained in
+[initial-zip8](evidence/continuation-20261026-e40/initial-zip8/README.md). The final graph uses
+ZIP 9.1.1 through a minimal published-source DOCX backport. Source/license provenance and
+adversarial tamper checks pass; image preview decoding is disabled. NUL member names are
+rejected after a compiled behavioral RED. Existing unmaintained-crate and cargo-vet gates
+remain failed, without exemptions. Worker shutdown cancellation, drain-lock contention,
+busy-pipe retries and bounded runtime waiting have retained regression evidence. A timeout
+does not prove preemption or resource release for native/blocking work.
+
+**Consistency and remaining scope:** root dependency ownership, actual API descriptions, phase
+tables and the affected percentage rows are updated. SDK hex decoding uses checked arithmetic
+with an exhaustive 256-byte test; generated tonic status casts use equivalent From conversions
+and a build-time drift guard. Schema snapshots remain unchanged. Automatic supervisor credential
+provisioning is not wired because SpawnSpec has no bootstrap-bytes API. Bearer auth is not mutual
+server authentication or an OS ACL proof. Full parity/calibration, PII-NER/CUDA, OCR/nano, resource
+policy, production kernel assembly and full phase acceptance remain open. No UI source changed
+in this continuation; broader P2 completion remains paused.
+
+## E41 — Worker lifecycle, cloud contracts and bounded CI cleanup (2026-10-26)
+
+**VERIFIED scoped implementation:** SDK optional-trait bootstrap provisions authenticated worker
+startup; worker secrets arrive once through stdin and cleanup preserves pending or unconfirmed-kill
+truth. The supervisor owns initialization and retirement per generation, bounds startup and reports
+fatal uncertain cleanup. S1WorkerLifecycle readiness and generation fencing are exercised through
+the actual worker integration. This supersedes E40's earlier note that automatic supervisor
+credential provisioning was not wired.
+
+P6 AI Cloud adds checked budget reservations, terminal TTL handling, strict mTLS/IP ingress checks
+and owner-label selection. The Nebius facade exports these APIs. No provider transport or live cloud
+request is claimed. P8 CI adds execution caps, owned cancellation cleanup and late cleanup after
+ambiguous create results; live isolation, Dagger and persistent caching remain open.
+
+**Current evidence:** 254 scoped tests pass. Exact command arguments, exit codes and raw outputs
+are indexed in [commands.json](evidence/continuation-20261026-e41/commands.json). The SDK full suite
+retains 54 passing tests and two schema-boundary failures; advisory and cargo-vet gates remain failed
+with six unmaintained-crate findings and 804 unvetted dependencies.
+The helper preserves those outcomes and does not convert them into acceptance. Workspace, member,
+layer and witness checks are required to pass before this checkpoint can be recorded. The two
+supervisor behavioral REDs (`retirement-order-red` and `bounded-stop-red`) precede six passing
+supervisor tests; the API compile RED is compile evidence, not a behavioral regression. Scoped
+all-targets Clippy covers seven packages, with separate checks for supervisor production/bootstrap,
+kernel production library and SDK production library. CI review baseline comparisons were captured
+after implementation, so they are not described as historical test-first evidence.
+
+**Boundaries:** a bounded startup or cleanup wait does not prove native work stopped or resources
+were released; pending and unconfirmed kill states remain explicit. The provider transport and live
+AI Cloud behavior are absent. CI does not yet prove live isolation, Dagger execution or cache behavior.
+No full phase acceptance is implied. The one-input real-model check is not parity or calibration.
+Bearer authentication does not prove mutual server authentication or server endpoint ACL ownership.
+CI runtime abort and a create that never resolves can retain a bounded cleanup task without proving
+remote deletion; output redaction runs after the output cap and does not provide a preemptive memory
+limit. The process package retains its prior 90% code / 80% verified estimate; broader P2 work remains paused;
+historical P1 verdicts remain unchanged. Central dependency ownership was updated for the E41
+bootstrap/client/process work, with 167 external dependencies and no new global external alias. No
+UI source changed.
+
+## E42 — Native model idle eviction, real reload and model lifecycle contracts (2026-10-26)
+
+**VERIFIED scoped implementation:** the native owner enforces monotonic idle eviction (default
+45 seconds, validated 1ms..1day configuration), then lazily reloads the actual model for later work.
+Explicit eviction acknowledges completed handle destruction. The kernel-side client authenticates
+and bounds eviction calls and validates the single-engine acknowledgement. A real 46-second idle
+regression failed before the change and passes afterwards; actual authenticated Windows children
+pass explicit/idle eviction followed by real inference reload. No RSS reduction is inferred.
+
+**Evidence:** 160 scoped tests pass, with six ignored artifact/platform cases; four installed-artifact
+cases are separately exercised (one idle owner, two child reload cases, one supervised inference).
+Twenty existing catalog/lease/manager contract cases pass on Windows and Linux. Workspace all-target
+compilation, three-package all-target safety Clippy, member/layer/witness and format checks pass.
+[Exact commands and outcomes](evidence/continuation-20261026-e42/commands.json) and
+[scope/evidence index](evidence/continuation-20261026-e42/README.md) retain the limitations.
+The broader offline Linux worker attempt cannot compile because its cache lacks aead 0.6.1.
+The two unchanged SDK schema-boundary failures and dependency audit failures remain open.
+
+**Remaining scope:** this does not supply heavy-build admission exclusion, RSS enforcement,
+native-work preemption, production model-slot assembly, checkpoint-bound caching, batching,
+PII-NER/CUDA/calibration, nano/OCR, full stress/Loom/formal evidence or complete phase acceptance.
+P1 historical acceptance is retained; broader P2 work remains paused and UI remains deferred.
+Subsequent phase work has its own evidence; this checkpoint does not certify those later edits.
+
+## E43 — Lossless context records, dual rate-limit admission, and locked-graph SBOM (2026-10-26)
+
+**VERIFIED scoped results:** context assembly stores complete omitted message groups in CAS, applies a hard
+byte cap, and provides bounded expansion with an archive recovery notice. `RateLimitOp` uses the shared
+dual RPM/TPM limiter; its admission input is non-Clone, and its permit follows admitted work
+through dispatch and final-usage reconciliation. Neither feature is composed into the production
+root pipeline. The SDK schema-test changes cover two authorized test files; the SDK full suite
+reports 56 passed, 0 failed, 0 ignored, with the production schema version unchanged.
+
+`cargo xtask release-sbom` generated a deterministic SPDX 2.3 document for the full locked Cargo
+graph using offline metadata and an explicit timestamp. The SBOM records the BLAKE3 lock digest;
+same-timestamp output was byte-identical. The official SPDX schema checks only that
+`creationInfo.created` is a string, not RFC3339. The initial helper accepted an impossible date;
+that validation miss remains in the history. An independent RFC3339 check accepts the real
+document (exit 0) and rejects the impossible-date fixture (exit 1); official schema validation
+rejects a non-string `created` value (exit 1). This is not a target-binary inventory, license
+validation, or security audit.
+
+**Evidence:** member, layer, witness, all-target workspace compile, scoped tests, SDK full suite,
+scoped safety Clippy, SDK production/schema-test Clippy, scoped formatting, repeat SBOM generation,
+and SBOM schema validation exited 0. The scoped five-package suite reports 155 passed, 0 failed,
+2 ignored. Exact argv, exit codes, and raw outputs are indexed in
+[commands.json](evidence/continuation-20261026-e43/commands.json). The advisory gate remains failed
+with six unmaintained-crate findings; `cargo vet --locked` remains failed with 804 unvetted
+dependencies. The SBOM does not close either gate.
+
+**Remaining scope:** full-system and complete-phase acceptance remain open. Broader P2 completion
+remains paused and UI remains deferred. The separate percentage report refreshes only the recorded
+E42/E43 component estimates and partial P10 inventory task; no phase acceptance is claimed.
+
+## E44 — DAG task identity and policy-aware interruption (2026-10-26)
+
+**VERIFIED scoped implementation:** Tokio task identities are tracked from spawn through join.
+Normal completions must match their tracked graph index, node ID and pool; unknown/mismatched
+identities fail closed. A join interruption records a terminal per-node Aborted/Panicked category
+without exposing panic text or inventing an attempt count. ContinueIndependent skips failed
+descendants and preserves independent work; FailFast aborts/drains remaining owned tasks.
+Interrupted tasks are not automatically replayed under Retry. Caller cancellation remains distinct.
+Cleanup preserves completed, previously unconsumed outcomes rather than overwriting them as Cancelled.
+The order_started accessor records scheduler dispatch order, not observed backend entry order.
+
+**Evidence:** 92 scoped tests pass, with 2 ignored. The current
+workspace all-target check, member/layer/witness checks, two-package all-target safety Clippy and
+format checks pass. Real Tokio aborts cover normalization and the shared report transition;
+public scheduler cases cover ordinary failure policy, diamond ordering and cancellation/drop.
+The standalone Linux DAG suite separately reports 12 passed, 0 failed. Initial dependency-artifact
+build failures and capture/launcher failures are retained in the checkpoint's review history.
+[Exact commands and outputs](evidence/continuation-20261026-e44/commands.json).
+The release-inventory test now reads a JSON field with get() rather than indexing; its assertion
+retains the same dependency-edge requirement. No production SBOM logic changed in E44.
+
+**Process and acceptance limits:** the descriptor was publicly emitted before the implementation,
+but its file and initial tests were written after source edits. No blanket historical test-first
+claim is made. The later cleanup-retention regression compiled and failed before its targeted fix;
+the same test then passed. Actual panic execution, full-scheduler join interruption,
+native/blocking preemption, live snapshots, race/pool stress and complete P7 integration remain
+unverified. E43's advisory/vet failures remain open; no exemption or phase acceptance is added.
+Historical P1 is retained, broader P2 remains paused and UI remains deferred.
+
+## E45 — Production readonly frame tools and authority boundaries (2026-10-26)
+
+**VERIFIED scoped implementation:** KernelToolRunner now implements the real frame ToolRunner
+over the actual workspace, CAS and session-bound history. Sealed bindings carry actual frame,
+root, role and exact-token identity; explicit issuer verification, per-resource Biscuit checks,
+consumed runner-bound permits and bounded local revocation fail closed. Workspace scope may
+attenuate to narrower resources; no child may widen to Workspace. CAS references require both
+frame visibility and Read on the full CID; pure queries require ExecuteTool on tools/<name>.
+CAS/history are conservatively classified as reads at the role boundary. Result envelopes retain
+truncation metadata, obey the caller/registry bound and are verified after real CAS write/readback.
+The global 64-owner admission bound and shutdown guards cover detached blocking operations.
+
+**Evidence:** final five-package native suite: 205 passed, 0 failed,
+2 ignored. Linux capability/frames/builtin domain suite: 84 passed,
+0 failed, including regular-file/FIFO/symlink and ignore-file regressions. Actual run_step tests
+use the production runner with synthetic provider/assembler/verifier protocol fixtures; a child
+reads only its attenuated path, and one denied call prevents every execution in its response.
+Strict six-safety-lint plus warnings checks cover the kernel production library, both new public
+integration targets and all targets of the three changed domain crates. Workspace all-target
+compilation and member/layer/witness checks pass. [Commands and raw logs](evidence/continuation-20261026-e45/commands.json).
+
+**Security and process limits:** directory enumeration observes names/metadata to find resources.
+Authorized traversal preauthorizes bounded local ignore files, disables external parent/global
+ignore rules and fails closed for denied ignored subtrees. Filesystems must remain stable; no
+race-free hostile-filesystem claim is made. Cancelling an async future signals its blocking owner,
+but does not preempt OS reads; shutdown drains that owner. Cancellation or failure during CAS
+publication may leave bounded orphan data. Revocation is runner-local/in-memory, not global or
+durable. The initial six adapter tests/abbreviated descriptor preceded source but their RED was
+an API compile failure; canonical fields, extra regressions and loop tests followed implementation.
+No full historical behavioral-TDD claim is made. The later pure-role regression compiled and
+failed before its targeted policy fix, then the identical test passed. Full strict workspace lint,
+new Miri/Kani proofs, complete kernel portability and live production walking skeleton remain open.
+Earlier advisory/vet failures are unresolved. Broader P2 stays paused; UI stays deferred.
+
+## E46 — Bounded durable frame journal over the actual kernel (2026-10-27)
+
+**VERIFIED scoped implementation:** PreparedFrameStep validates explicit record/result/count
+limits, schema and nonzero step, bounds JSON output before cloning result text, grows its buffer
+geometrically, verifies receipt/content CIDs and exact model-visible bytes, then verifies transcript
+CAS write/readback. Even a backend ignoring the requested read limit cannot return a successful
+oversized receipt. KernelFrameJournal binds actual frame/root/session, acquires the bounded owner
+before allocating prepared buffers, offloads store I/O, and publishes through the real log-then-bus
+path. A started owner survives caller-future drop and is drained by kernel shutdown. Debug is opaque.
+
+**Evidence:** final five-package native regression: 227 passed, 0 failed,
+2 ignored; Linux capability/frames/builtin: 96 passed, 0 failed.
+The real two-turn driver uses production tool/journal adapters and temporary stores: event steps,
+session/frame, exact provider call ID/arguments, tool bytes, transcript hashes and replayed second
+request are checked. A second-turn provider failure is journaled distinctly. Provider, tokenizer
+bound and verifier fingerprint are synthetic protocol fixtures, not live-model or proof evidence.
+Strict safety checks, scoped formatting, workspace compilation and member/layer/witness checks
+pass; initial Clippy/test fixture failures are retained. [Commands](evidence/continuation-20261026-e46/commands.json).
+
+**Limits:** the frame driver owns reserved-step order and outcome semantics; the journal is an
+audit sink, not a global step-order/idempotency service or independent proof. Each successful call
+publishes an event; blind retry can duplicate it. CAS persistence followed by publication failure
+may leave an orphan. Per-record limits/global owner slots do not establish whole-process RSS or
+preemption guarantees. The generic JournalAdapter remains synchronous and documented; the actual
+kernel wrapper offloads its I/O. New kernel portability, full strict workspace lint, Miri/Kani,
+live tokenizer/provider/context/edit/test/proof assembly and earlier advisory/vet gates remain open.
+Broader P2 stays paused and UI stays deferred. Initial API/oversize-variant REDs are compile failures;
+canonical-path Debug and admission-order regressions have compiled pre-fix failures and final greens.
+The automatic-review usage-limit interruption changed no requested action; later access was
+revalidated and resumed. No test assertion, dependency exemption or phase gate was loosened.
+
+## E47 — Bound prompt assembly and actual tokenizer transport (2026-10-27)
+
+**VERIFIED scoped implementation:** SDK PromptTokenizer counts the actual complete chat template;
+VllmChatClient explicitly opts into same-origin /tokenize and shares model/messages/tools/reasoning
+serialization with chat. The endpoint must be supplied by the deployment; no Nebius support or
+live model is assumed. Token counts, capacity, token IDs, encoded bytes and deadlines fail closed.
+The configured JSON response allowance must include the required complete token-ID array.
+
+KernelPromptAssembler binds actual kernel/frame/role/model/effort/token and uses the actual PII
+vault before any count request. It obtains tool schemas/effects from the real catalog, normalizes
+CAS/history as reads, filters before counting, preserves complete exchanges, and offloads bounded
+CAS archive work under inspection admission. The final notice is counted exactly. Archive
+visibility also requires the existing full-CID Read right. All candidate archive writes share a
+cumulative byte cap. Count deadlines and encoded context limits are explicit. Its run_frame entry
+point verifies the actual active-frame selection and uses one shared tokenizer/chat owner.
+
+**Evidence:** native seven-package regression: 288 passed, 0 failed, 3 ignored. Linux domain
+result: 176 passed, 0 failed, 1 ignored. The real HTTP/frame composition verifies identical counted/dispatched wire
+messages/tools/model, masked email data and actual durable CAS/event transcripts. The HTTP server,
+token IDs/count and independent-verifier fingerprint are synthetic fixtures, not live-model or
+proof evidence. Strict scoped safety/format checks and full workspace all-target compilation pass.
+[Commands and retained failures](evidence/continuation-20261027-e47/commands.json).
+
+**Limits:** generic low-level frame assembly/dispatch remains caller-injected; use the production
+assembler's bound run_frame entry to enforce shared backend identity. Context snapshots are
+explicit trusted inputs; this does not create an indexer or persisted scratchpad resolver.
+Masking is DFA/entropy only with degraded semantic coverage, not complete DLP. Archives preserve
+the sanitized model-visible transcript, and failed fitting/cancellation can leave bounded orphans.
+Fitting may drop all old history on its final allowed count; maximal retention is not promised.
+Per-count deadlines and shared owner slots do not establish total RSS, tokenization billing/rate
+accounting or preempt OS I/O. Live vLLM/Nebius compatibility, complete edit/test/proof loop, kernel
+Linux portability, new Miri/Kani and full strict workspace/advisory/vet acceptance remain open.
+P2 remains paused; UI remains deferred. Initial API REDs were compile failures. The later deadline,
+encoded-context and cumulative-archive regressions compiled and failed before their targeted fixes.
+Additional dispatch/property fixtures followed implementation; no universal test-first claim is made.
+The new archive fixture parser was corrected to the actual SDK §ref marker; retrieval and exact
+content assertions remain. No existing production test contract or phase gate was loosened.
+
+
+## E48 — Phase 3 human backend, mutation service and Contree adapter (2026-10-27)
+
+**IN PROGRESS; no Phase 3 exit.** SDK/proto schema 5 adds bounded human request/answer contracts while retaining legacy envelopes and the unchanged fixed-size Event limit. The answer authority lives in the L4 verifier; the kernel persists exact approval/answer receipts and routes trusted host answers through the actual command bus. Request-scoped interruption/replay and answer races are covered. Model ask_user dispatch and actual frame-tree cancellation remain unfinished.
+
+Frame-bound write/edit/patch service now performs real path/capability/AST/lease/OCC/hybrid-verifier checks, commits actual bytes, and stores read-back receipts. Eleven integration cases pass with explicitly synthetic semantic safety assessment. Rust unsafe syntax inventory is complete only for valid source without macros/attributes/opaque token trees; other coverage remains conservative. New tests proved and fixed stale answers, oversized reads, missing-final-newline evidence, role bypass, post-verification cancellation and non-durable answer witnesses.
+
+The Contree adapter follows upstream immutable-image/run semantics and the exact 19-tool inventory, with bounded branching/cancellation and hash-checked approved-path upload projection through the SDK MCP port. Six client fixtures are synthetic; no live sidecar/SWE claim is made. Windows fragmented HTTP fixture regression reproduced WouldBlock before the explicit accepted-socket blocking-mode fix; both HTTP cases then passed in 20 consecutive executions. No existing acceptance assertion was loosened.
+
+**Evidence:** nine-package native regression **583 passed / 0 failed / 3 ignored**; full workspace all-target compilation, six-library scoped safety, kernel integration safety, member/layer/witness, format and generator-preservation checks pass. Broader Code Intel arithmetic safety remains RED (38 violations); strict whole-workspace, new Linux/Miri/Kani, calibrated S1, workloads and dependency audit acceptance are not closed. [Retained commands, failures and limitations](evidence/phase3-20261027/README.md).
+
+**Still open:** model mutation/ask_user/test dispatch, independently proven completion of the current source tree, local M3 transcript, actual frame-tree scoped cancellation/sibling continuation, Contree deployment/SWE resolver/workloads, and the remaining P3 owner matrices. Token Factory/Contree keyed M4 checks are BLOCKED-ON-ACCESS (user confirmed unavailable). P2 remains paused; UI remains deferred. All-phase goal remains active.
+
+## E49 — Frame tool dispatch, durable cancellation and current-tree proof (2026-10-27)
+
+VERIFIED scoped E49 checkpoint. Phase 3 remains IN PROGRESS; P2 is paused and UI deferred.
+
+The model-facing kernel runner now dispatches real frame-bound write/edit/patch, file revisions,
+durable ask_user and explicitly host-approved sandbox test requests. Exact sealed step/frame ancestry,
+shared bounded cancellation registries, durable subtree receipts, independent runner cancellation,
+shutdown ownership and complete-set admission protect these operations. SDK event schema 6 and
+proto tags 28–30 preserve older records and the existing compact-event size bound. Host CancelFrame
+uses a separate L4 right; the model does not receive host approval authority.
+
+The production frame verifier validates exact recorded tool-result envelopes, mutation receipts,
+approvals and the current source manifest. Completion requires the latest successful ordinary and
+independent test verdict bound to the exact session/frame/review/source tree. New schema-2 proof
+reports supply those bindings; older unbound proof reports require a fresh test run. These checks
+do not constitute live S1 calibration or a full live model/edit/test/proof acceptance transcript.
+
+Selected native regression: 655 passed, 0 failed, 3 ignored. Linux SDK/proto/capability/frames/
+Code Intel/verifier/spike domain: 238 passed, 0 failed, 0 ignored. Kernel Linux is not covered.
+Seven production libraries pass the recorded unsafe/panic/cast/index/arithmetic lint subset;
+focused new kernel test targets pass the same subset. Workspace all-target compilation and
+member/layer/witness/generated-doc/generator-preservation gates pass. Code Intel's 38 production
+arithmetic violations reported in E48 are fixed; existing example/test and dependency lint debt
+is not thereby closed. Exact commands, failed attempts and raw outputs remain below.
+
+Seven limiter spike cases now exercise actual limiter instances: staged priority, shedding,
+changing Retry-After floors, reservation/overrun, hostile typed durations, owned waiter cancellation
+and real-clock admissions. They do not prove concurrent priority scheduling, fixed-floor anti-herd
+spread, the 100-repetition A–D matrix, 10-minute load, fairness or formal/stress acceptance.
+New polaris-ratelimit reservation_refund acceptance tests remain RED (four failures, three passes
+in the retained investigation). They are excluded from the selected 655-test command. This is
+not a green whole-workspace test claim. No refund assertion has been weakened.
+
+The pinned local llama.cpp/Qwen runtime has separately produced three actual structured-tool-call
+probes with exact count/chat prompt-token parity. See the tracked runtime provenance manifest.
+This observation is not yet an integrated production provider/loader or M3 transcript. Downloaded
+binary/weight artifacts are ignored and excluded from first-party inventory. Token Factory and
+Contree keyed acceptance remains BLOCKED-ON-ACCESS. Full owner matrices, calibrated S1, real
+M3/M4, new Miri/Kani, strict workspace lint and dependency audit/vet gates remain open.
+
+Behavioral REDs include duplicate cross-service answers and stale/current-proof handling; missing
+API compilation failures are distinguished in retained logs. Some additional tests followed
+implementation, so no universal test-first claim is made. No source lint suppressions were added.
+
+[Commands and limitations](evidence/phase3-20261027-dispatch/README.md).
+
+## E50 — Local providers, System One and privacy integration (2026-10-27)
+
+VERIFIED scoped implementation/evidence checkpoint; Phase 3 and Phase 4 remain IN PROGRESS.
+UI is deferred and P2 remains paused except the sandbox image repair required for P3 tests.
+
+Production additions include: same-owner pinned local llama.cpp counting/chat and an owned-process
+loader; exact test-receipt review/frame/session lookup; human-answer reference access and authority
+expiry checks; compatible Contree environment resolution; math expression guards; S1 batching,
+checkpoint/generation/incarnation-bound exact cache and bounded single-flight; separate raw-byte
+PII span engine/RPC/client/vault integration; exact environment ranking and bounded unique tool/file
+candidates; owned S1 burst dispatch with answer-integrity validation; encrypted private CAS marker snapshots with explicit
+host seal-key recovery; semantic prompt masking before tokenization; combined task routing; shared
+consumer fail-open/closed policy with bounded admission and worker epoch fencing; binary calibration
+metrics and a measured-candidate xtask; guarded pinned export/golden tooling. These additions do not
+certify real-model quality, production thresholds, owner matrices or phase exit.
+
+The selected 27-package native run recorded 620 passed / 2 failed / 16 ignored before the final
+weighted-admission fix and single-flight follow-up. Both failures were refund acceptance cases.
+The subsequent complete limiter/spike run recorded 16 passed / 3 failed / 0 ignored before new
+independent refund regressions. The current refund suite records 7 passed / 7 failed: safe non-tail
+refund capacity remains unrecovered, and three preserved fixtures have conflicting contracts.
+All original refund assertions remain. Whole-phase tests are RED; no selected-green claim replaces it.
+Weighted burst tests first failed twice, then passed twice after admission began checking the full
+new weighted debt rather than the old unit-cost threshold.
+
+Actual retained runtime observations include the local Qwen read-only tool/continuation transcript,
+exact count/chat prompt-usage parity, owned loader shutdown, and the real OpenShell test pipeline
+with fixed synthetic S2/S1 fixtures. The combined actual model/edit/test attempt remains RED on
+invalid model arguments, denied before mutation. The rebuilt P3 image is immutable
+sha256:b7a2dc2a53a71c5695242dd890d2705aa5d0e3b45dafcd885ae6a3ea2bbba4b2;
+the paused P2 image/tag was not replaced. Direct Decide, actual authenticated Windows worker,
+idle eviction/reload and supervised-worker inference pass using rehashed existing local artifacts.
+The original four real-model cases do not establish 200-row parity or labelled calibration.
+All nine companion PII artifacts are now pinned by exact revision/size/SHA256. An interrupted
+encoder partial failed whole-file verification, was retained separately and never used; a fresh
+full fetch passed every hash. Actual PII CPU inference passes a planted raw-UTF8 span fixture.
+Actual authenticated PII/Decide/PII reload, idle eviction and warm/post-eviction 50-request bursts
+pass (3 cases). Each repeated-input burst answered 50/50 at peak 8 owned tasks; this exercises
+cache/single-flight, not 50 distinct native model invocations or the full throughput matrix.
+Two exact owned worker kills exposed a fatal-versus-transient retirement bug. After correction,
+actual replacement/authenticated readiness/final retirement pass; the supervisor suite records
+50 passed. These two kills do not complete the full crash-loop/intensity/workload matrix.
+
+A later scoped Linux run recorded 164 passed / 0 failed / 2 ignored for kernel prompt/model/privacy,
+client/PII/facade/router/schemas/secrets/proto, before the newest rules/router/watchdog changes.
+Workspace all-target compilation previously passed after propagating additive health fields to RPC;
+new security-rule/watchdog integration is accumulating and final-tree compilation is not certified.
+Member/layer/witness, generated docs and generator preservation checks pass. Five selected production
+libraries and four selected kernel test targets pass the retained unsafe/panic/cast/index/arithmetic
+lint subset. This does not certify strict whole-workspace lint or a fresh final Linux/full formal run.
+
+Still open: correct bounded out-of-order refund accounting and conflicting late-refund assumptions;
+actual combined local edit/test/proof acceptance with calibrated S1; Token Factory and Contree keyed
+acceptance (BLOCKED-ON-ACCESS, user confirmed unavailable); full PII corpus/quality/resource results;
+full S1 parity, held-out calibration and MVP recording; watchdog/context/role/candidate integrations
+and complete owner load, scalability, stress, fuzz, Miri, Kani, security and release matrices.
+Export inputs are present, but the 10 GiB available-RAM precondition was not satisfied in the last
+probe; no RAM guard or assertion was weakened. Snapshot key provisioning/rotation and rollback
+protection are host lifecycle obligations; the implemented key recovery never silently replaces keys.
+
+[Exact retained commands and limitations](evidence/phase3-20261027-local/README.md).
+
+## E51 — Non-UI task and host-control implementation (2026-10-28)
+
+**IN PROGRESS; implementation is UNVERIFIED.** The user explicitly moved verification to the end
+of implementation. No phase exit, successful final-tree build, test pass, production-readiness
+claim or completion-percentage increase is inferred from this source batch.
+
+The task entry now composes explicit host-authorized mutation capabilities, the actual kernel
+mutation runner and current supervised S1 safety engine, pinned measured schema loading, real
+OpenShell startup/policy/image configuration, questions, and exact-digest sandbox-test review.
+Inspection-only profiles remain supported. A bounded host-control API supplies actual pending
+questions, exact-revision answers, pending review discovery, immutable review inspection,
+execution approval and frame cancellation. The CLI uses an explicit private request directory
+with a sole-owner file lock and claimed request files; it does not start an uncancellable stdin
+reader. Interrupted processing files are never automatically retried.
+
+Optional encrypted private frame checkpoints persist the reversible marker map and authenticated
+session/frame/step/transcript association before publishing the transcript event. Restore checks
+the actual durable event and CAS contents. Host key references use the existing environment or
+keyring source without provisioning replacement keys. The host must protect the directory and
+retain the key; external rollback protection and Windows directory-rename power-loss guarantees
+are not established by this implementation.
+
+Prompt assembly now has actual-worker tool-pruning composition after role and privacy filtering,
+retaining available expansion/revision/question/test tools. Measured watchdog policy is an explicit
+host input. Calibrated safety/watchdog consumers use an added pinned decision path: a discarded
+warmup can establish Decide identity after cold start or a PII swap; accepted results require the
+exact expected native hash and stable model generation/incarnation, followed by the kernel's
+exact owned-process-generation check. Built-in uncalibrated advice remains explicit.
+
+**Verification deferred:** the new implementation/descriptors have not received a final compile,
+integration, regression, concurrency, allocation or acceptance pass. The retained E50/earlier
+failures remain failures: the later real S1 burst failed at 42/50 post-eviction responses before
+reaching the distinct-input round; limiter tests/Clippy also have retained incomplete or failing
+attempts. No assertion was loosened to change those results. Existing percentages remain dated
+estimates, not a measurement of E51. Full Phase 3/4 matrices, calibrated artifacts and actual
+edit/test/proof acceptance remain open. Token Factory/Contree access is still unavailable;
+P2 stays paused except necessary integration, and UI remains deferred.
+
+## E52 — Heavy execution model pause and pure-tool composition (2026-10-28)
+
+**IN PROGRESS; new implementation is UNVERIFIED.** Verification remains deferred until the end
+of implementation by explicit user instruction. This entry does not certify a build, regression
+result, workload, resource limit or phase exit.
+
+The worker protocol adds optional monotonic pause/resume epochs to model eviction and advances
+the compatible minor version to 1.2. The thread-affine native actor handles pause, eviction and
+resume in the same command order as inference. Queued/new Decide and PII calls cannot reload a
+paused actor. The client requires exact epoch/state acknowledgement; an older worker's ordinary
+eviction response cannot authorize heavy execution.
+
+Kernel lifecycle code owns serialized pause leases, rejects inference results crossing admission
+revisions, and applies a requested pause before publishing a replacement worker. Dropping a lease
+leaves admission closed; a later build cannot overwrite an abandoned pause. Explicit recovery uses
+a fresh epoch to settle lost acknowledgements. Kernel recovery additionally owns the execution
+lease and refuses recovery while any sandbox teardown ownership remains in the Reaper.
+
+The production sandbox dispatcher now uses the pause-aware execution entry after signed review
+verification and fresh-source checks. The pause lasts through backend teardown and durable intent
+release. Unconfirmed cleanup preserves the pause; failed resume blocks the terminal proof. Early
+accepted setup failures now publish exact-bound blocked evidence and a terminal execution event,
+allowing the corresponding test-review waiter to continue. Cancellation before create releases its
+intent without deleting a name it never created. Unexpected returned sandbox identities keep the
+pause closed when their own teardown is unconfirmed. No RSS reduction amount or hard memory cap
+is inferred from a native handle eviction acknowledgement.
+
+The real deterministic math dispatcher is now a frame tool: typed input/role/capability checks,
+owned blocking evaluation, bounded result serialization and durable CAS receipts. The frame
+verifier checks the recorded operation against a recomputed exact result. This consistency check
+does not independently prove the mathematical implementation correct. Unknown math input fields
+are rejected. Existing assertion contracts remain; protobuf fixture construction only adds defaults
+for the new optional pause fields.
+
+Prompt fitting now retains tool rank order, supplements the masked goal with a bounded sanitized
+recent assistant step, and can reduce optional tool schemas using actual tokenizer counts after
+history is archived. Required expansion/revision/question/test tools and at least one optional
+operation remain. Uncertain advice initially retains the catalog; exact context fitting can still
+require fewer schemas. Repeated schema-fitting counts reuse an unchanged archive instead of
+charging/writing that same prefix again. All count/archive/deadline ceilings remain in force.
+
+**Still open:** final compilation, relevant contract/snapshot updates, new descriptor cases,
+integration and broad verification for E51/E52; existing limiter/S1 failures; all remaining Phase
+3/4 owner matrices, measured calibration/parity/resource evidence, actual local edit/test/proof,
+keyed acceptance and demo requirements. Token Factory/Contree access remains unavailable.
+Percentages are unchanged dated estimates. UI remains deferred and P2 otherwise stays paused.

@@ -1,0 +1,9 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Finished `test` profile [unoptimized] target(s) in 1.63s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_dag-3e0f8f42c772e3de.exe)
+
+running 1 test
+test graph::tests::abort_drain_retains_a_task_that_finished_before_cleanup ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

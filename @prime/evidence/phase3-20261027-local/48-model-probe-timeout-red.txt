@@ -1,0 +1,22 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 4.65s
+     Running tests\model_lifecycle.rs (target\debug\deps\model_lifecycle-9989bd9973b45886.exe)
+
+running 1 test
+test stalled_profile_probe_retries_within_probe_timeout ... FAILED
+
+failures:
+
+---- stalled_profile_probe_retries_within_probe_timeout stdout ----
+
+thread 'stalled_profile_probe_retries_within_probe_timeout' (19864) panicked at crates\polaris-kernel\tests\model_lifecycle.rs:190:5:
+healthy retry was delayed by the stalled metadata response: 4.2347775s
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stalled_profile_probe_retries_within_probe_timeout
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 4.49s
+
+error: test failed, to rerun pass `-p polaris-kernel --test model_lifecycle`

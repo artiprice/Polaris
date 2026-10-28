@@ -1,0 +1,240 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+    Checking polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+    Checking polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+    Checking polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+    Checking polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+    Checking polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+    Checking polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+    Checking polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+    Checking polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Checking polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+    Checking polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:351:9
+    |
+351 | /         if let Some(schema) = self.catalog.latest("route.task") {
+352 | |             if schema.fail.consumer == polaris_system_one_schemas::Consumer::EffortRouter
+353 | |                 && schema.questions.len() == 4
+354 | |                 && schema
+...   |
+413 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+351 ~         if let Some(schema) = self.catalog.latest("route.task")
+352 ~             && schema.fail.consumer == polaris_system_one_schemas::Consumer::EffortRouter
+353 |                 && schema.questions.len() == 4
+...
+411 |                 }
+412 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:352:13
+    |
+352 | /             if schema.fail.consumer == polaris_system_one_schemas::Consumer::EffortRouter
+353 | |                 && schema.questions.len() == 4
+354 | |                 && schema
+355 | |                     .questions
+...   |
+412 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+362 ~                         .collect()
+363 ~                 && let Some(decision) = self
+364 |                     .decide(schema, &input.text, input.root_goal.as_deref())
+...
+409 |                     }
+410 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:364:17
+    |
+364 | /                 if let Some(decision) = self
+365 | |                     .decide(schema, &input.text, input.root_goal.as_deref())
+366 | |                     .await
+...   |
+411 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+366 ~                     .await
+367 ~                     && let Ok(verdicts) = apply_threshold(schema, &decision) {
+368 |                         if accepted(&verdicts, "intent") {
+...
+408 |                             && matches!(answer_for(&decision, "vision"), Some(Answer::Noul { .. }));
+409 ~                     }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:369:25
+    |
+369 | /                         if accepted(&verdicts, "intent") {
+370 | |                             if let Some(Answer::Choice { selected, probs }) =
+371 | |                                 answer_for(&decision, "intent")
+...   |
+387 | |                         }
+    | |_________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+369 ~                         if accepted(&verdicts, "intent")
+370 ~                             && let Some(Answer::Choice { selected, probs }) =
+371 |                                 answer_for(&decision, "intent")
+...
+385 |                                 }
+386 ~                             }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:388:25
+    |
+388 | /                         if accepted(&verdicts, "effort") {
+389 | |                             if let Some(Answer::Score {
+390 | |                                 value,
+391 | |                                 confidence: certainty,
+...   |
+402 | |                         }
+    | |_________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+388 ~                         if accepted(&verdicts, "effort")
+389 ~                             && let Some(Answer::Score {
+390 |                                 value,
+...
+400 |                                 }
+401 ~                             }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:389:29
+    |
+389 | / ...                   if let Some(Answer::Score {
+390 | | ...                       value,
+391 | | ...                       confidence: certainty,
+392 | | ...                   }) = answer_for(&decision, "effort")
+...   |
+401 | | ...                   }
+    | |_______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+392 ~                             }) = answer_for(&decision, "effort")
+393 ~                                 && let Ok(value) = u8::try_from(*value) {
+394 |                                     if let Ok(wanted) = Effort::try_from(value) {
+...
+398 |                                     }
+399 ~                                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:394:33
+    |
+394 | / ...                   if let Ok(value) = u8::try_from(*value) {
+395 | | ...                       if let Ok(wanted) = Effort::try_from(value) {
+396 | | ...                           effort = choose_effort(wanted, &allowed)?;
+397 | | ...                           confidence = *certainty;
+...   |
+400 | | ...                   }
+    | |_______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+394 ~                                 if let Ok(value) = u8::try_from(*value)
+395 ~                                     && let Ok(wanted) = Effort::try_from(value) {
+396 |                                         effort = choose_effort(wanted, &allowed)?;
+397 |                                         confidence = *certainty;
+398 |                                         source = RouteSource::S1;
+399 ~                                     }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:603:9
+    |
+603 | /         if tier == SandboxTier::E0 {
+604 | |             if let Some(s) = self.catalog.latest("route.sandbox") {
+605 | |                 let c = format!("Deterministic tier E0. Facts: {f:?}");
+606 | |                 if let Some(decision) = self.decide(s, &c, None).await {
+...   |
+620 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+603 ~         if tier == SandboxTier::E0
+604 ~             && let Some(s) = self.catalog.latest("route.sandbox") {
+605 |                 let c = format!("Deterministic tier E0. Facts: {f:?}");
+...
+618 |                 }
+619 ~             }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\router\src\lib.rs:606:17
+    |
+606 | /                 if let Some(decision) = self.decide(s, &c, None).await {
+607 | |                     if let Ok(verdicts) = apply_threshold(s, &decision) {
+608 | |                         let accepts = verdicts
+609 | |                             .iter()
+...   |
+618 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+606 ~                 if let Some(decision) = self.decide(s, &c, None).await
+607 ~                     && let Ok(verdicts) = apply_threshold(s, &decision) {
+608 |                         let accepts = verdicts
+...
+616 |                         }
+617 ~                     }
+    |
+
+error: could not compile `polaris-system-one-router` (lib) due to 9 previous errors
+warning: build failed, waiting for other jobs to finish...

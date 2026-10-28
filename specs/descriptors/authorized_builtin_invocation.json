@@ -1,0 +1,87 @@
+{
+  "type_of": "method",
+  "name": "invoke_authorized_bounded",
+  "file_path": "crates/polaris-tools/crates/builtin/src/registry.rs",
+  "logic_name": "Authorized Builtin Invocation",
+  "test_list": [
+    {
+      "test_name": "recursive_reads_check_each_resource",
+      "description": "A recursive grep must authorize each descended file before opening it and return no partial matches when any file is denied."
+    },
+    {
+      "test_name": "ignorefile_denial_precedes_rule_use",
+      "description": "A denied workspace ignore file aborts before its contents can suppress or expose matching rows."
+    },
+    {
+      "test_name": "ignorefile_preflight_rejects_oversized_case_insensitive_name",
+      "description": "An oversized ignore file is rejected even when its filename casing differs on a case-insensitive filesystem."
+    },
+    {
+      "test_name": "ignorefile_preflight_rejects_directory_candidate",
+      "description": "A directory whose name matches an ignore filename is rejected before walker consumption."
+    },
+    {
+      "test_name": "ignorefile_preflight_rejects_fifo_candidate",
+      "description": "On Unix, a FIFO whose name matches an ignore filename is rejected before a blocking open."
+    },
+    {
+      "test_name": "ignorefile_preflight_rejects_symlink_candidate",
+      "description": "On Unix, a symlink whose name matches an ignore filename is rejected before target contents can be consumed."
+    },
+    {
+      "test_name": "caller_output_cap_intersects_registry_limit",
+      "description": "The caller output cap intersects the registry cap and serialized results never exceed the effective bound."
+    },
+    {
+      "test_name": "oversized_cas_reference_is_rejected_before_decode",
+      "description": "The real CAS bounded-read path rejects a physically oversized corrupt blob as a read-bound error before decoding."
+    },
+    {
+      "test_name": "within_bound_cas_corruption_remains_not_found",
+      "description": "Corruption below the caller read bound retains the existing opaque not-found response."
+    },
+    {
+      "test_name": "zero_output_cap_rejects_before_cas_access",
+      "description": "A zero caller output cap is rejected before attempting to resolve or read a content reference."
+    },
+    {
+      "test_name": "authorization_errors_never_return_partial_success",
+      "description": "A denial after earlier entries were inspected aborts the entire invocation without returning partial output."
+    },
+    {
+      "test_name": "exact_directory_token_does_not_authorize_descendants",
+      "description": "A grant for a directory query root does not grant access to any descended entry."
+    },
+    {
+      "test_name": "exact_file_token_reads_without_parent_grants",
+      "description": "Direct reads authorize the exact normalized file target without requiring ancestor-directory grants."
+    },
+    {
+      "test_name": "read_file_rejects_fifo_before_open",
+      "description": "On Unix, reject a FIFO through pre-open metadata inspection so a blocking open cannot hang a workspace read."
+    },
+    {
+      "test_name": "workspace_root_denial_precedes_reads",
+      "description": "Workspace-dependent builtins authorize the workspace root before resolving or reading paths."
+    },
+    {
+      "test_name": "readonly_entry_rejects_writes_and_unknown_fields",
+      "description": "The authorized entry point rejects P2 writes and strict input-schema violations before dispatch."
+    },
+    {
+      "test_name": "exact_output_boundary_is_accepted_and_json_is_escaped",
+      "description": "Valid JSON serialization is measured in escaped bytes and accepted exactly at the effective output cap."
+    }
+  ],
+  "dependencies": ["ToolRegistry", "ToolLimits", "ToolAccessPolicy", "AccessResource", "CasRefResolver"],
+  "libraries": ["serde", "serde_json", "polaris-storage-cas"],
+  "inputs": [
+    { "name": "name", "type": "&str", "description": "Exact registered builtin name." },
+    { "name": "arguments", "type": "&serde_json::Value", "description": "JSON arguments validated against the registered builtin input shape." },
+    { "name": "context", "type": "&ToolContext", "description": "Calling session, frame, workspace root, and deadline." },
+    { "name": "caller_max_output", "type": "u64", "description": "Caller-specific maximum serialized result size." },
+    { "name": "policy", "type": "&impl ToolAccessPolicy", "description": "Trusted authorization policy consulted before each workspace resource access." }
+  ],
+  "output_type": "Result<ToolOutput, ToolError>",
+  "output_description": "A complete bounded result, or a single structured error with no partial output."
+}

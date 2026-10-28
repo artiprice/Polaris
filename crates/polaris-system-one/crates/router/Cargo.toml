@@ -18,3 +18,6 @@ thiserror = { workspace = true }
 polaris-sdk = { workspace = true }
 polaris-system-one-schemas = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }

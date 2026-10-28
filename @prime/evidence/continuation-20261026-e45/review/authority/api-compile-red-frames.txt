@@ -1,0 +1,27 @@
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+error[E0599]: no variant, associated function, or constant named `Workspace` found for enum `ResourceScope` in the current scope
+  --> crates\polaris-runtime\crates\frames\tests\frame_tool_authority.rs:71:35
+   |
+71 |     let resource = ResourceScope::Workspace;
+   |                                   ^^^^^^^^^ variant, associated function, or constant not found in `ResourceScope`
+
+error[E0599]: no method named `tool_binding` found for struct `AgentContextFrame<S>` in the current scope
+  --> crates\polaris-runtime\crates\frames\tests\frame_tool_authority.rs:73:25
+   |
+73 |     let binding = frame.tool_binding();
+   |                         ^^^^^^^^^^^^ method not found in `AgentContextFrame<Active>`
+
+error[E0599]: no variant, associated function, or constant named `Workspace` found for enum `ResourceScope` in the current scope
+  --> crates\polaris-runtime\crates\frames\tests\frame_tool_authority.rs:88:77
+   |
+88 |     let (mut root, root_token) = active_frame(root_id, scope(ResourceScope::Workspace))?;
+   |                                                                             ^^^^^^^^^ variant, associated function, or constant not found in `ResourceScope`
+
+error[E0599]: no method named `tool_binding` found for struct `AgentContextFrame<S>` in the current scope
+   --> crates\polaris-runtime\crates\frames\tests\frame_tool_authority.rs:111:31
+    |
+111 |     let child_binding = child.tool_binding();
+    |                               ^^^^^^^^^^^^ method not found in `AgentContextFrame<Active>`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-runtime-frames` (test "frame_tool_authority") due to 4 previous errors

@@ -1,0 +1,23 @@
+{
+  "type_of": "struct",
+  "name": "EvictionManager",
+  "file_path": "crates/polaris-models/src/manager.rs",
+  "logic_name": "Model Eviction Manager Contract",
+  "test_list": [
+    {"test_name": "evict_all_orders_longest_idle_first", "description": "The manager visits real slots in descending idle age with deterministic name tie breaking."},
+    {"test_name": "critical_pressure_drains_and_pauses_all_slots", "description": "Critical memory pressure requests bounded drain on each slot and leaves admissions paused until explicit resume."},
+    {"test_name": "elevated_pressure_only_evicts_idle_slots", "description": "Elevated memory pressure applies the slot idle policy without forcing active leases."},
+    {"test_name": "shutdown_requests_every_slot_even_after_budget", "description": "Every slot receives a shutdown request even after the shared wait budget is exhausted."},
+    {"test_name": "invalid_or_duplicate_slot_names_are_rejected", "description": "Manager construction rejects duplicate, empty, control-containing and overlong names."}
+  ],
+  "dependencies": ["polaris-sdk", "tokio"],
+  "libraries": ["std::collections::BTreeSet", "std::time::Duration", "std::time::Instant", "tokio::time"],
+  "inputs": [
+    {"name": "slots", "type": "Vec<(String, E)>", "description": "Named root-selected real loader-backed slots."},
+    {"name": "reason", "type": "EvictReason", "description": "Idle, memory pressure, heavy build or shutdown trigger."},
+    {"name": "pressure", "type": "MemoryPressure", "description": "Observed platform memory state."},
+    {"name": "budget", "type": "Duration", "description": "One overall wait budget for the ordered requests."}
+  ],
+  "output_type": "Vec<EvictionReport>",
+  "output_description": "Per-slot outcomes in trigger order, retaining errors and pending/in-use results."
+}

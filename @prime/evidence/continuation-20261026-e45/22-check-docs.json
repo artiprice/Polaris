@@ -1,0 +1,13 @@
+{
+  "name": "check-docs",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tools/workspace.py",
+    "check-docs"
+  ],
+  "started_utc": "2026-10-26T17:43:21.346298+00:00",
+  "elapsed_seconds": 0.436,
+  "exit_code": 0,
+  "raw": "22-check-docs.txt"
+}

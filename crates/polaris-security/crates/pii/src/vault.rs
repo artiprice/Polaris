@@ -1,4 +1,5 @@
 //! Bounded DFA/entropy masking and session-local reversible vault.
+mod snapshot;
 
 use std::{
     collections::HashMap,
@@ -12,6 +13,7 @@ use std::{
 use polaris_sdk::{
     ids::{FrameId, SessionId},
     registry::{RedactStats, Redactor, SandboxHandle},
+    system_one::{PiiEntitySpan, PiiSpanDetector},
 };
 use polaris_security_automata::{Category, DfaScanner, EntropyCfg, ScanBuf, high_entropy_spans};
 use zeroize::Zeroizing;
@@ -20,6 +22,7 @@ use crate::PiiError;
 
 const FAILURE_MARKER: &[u8] = b"[PII_REDACTION_FAILED]";
 const TOKEN_PREFIX: &str = "<PII1:";
+const MAX_ISSUED_TOKEN_BYTES: usize = TOKEN_PREFIX.len() + 32 + 1 + 20 + 1 + 5 + 1;
 const HARD_MAX_INPUT_BYTES: usize = 16_777_216;
 const HARD_MAX_OUTPUT_BYTES: usize = 33_554_432;
 const HARD_MAX_MATCHES: usize = 65_536;
@@ -201,6 +204,21 @@ impl fmt::Debug for PiiVault {
 }
 
 impl PiiVault {
+    /// Whether this vault belongs to the exact trusted host session/frame identity.
+    #[must_use]
+    pub fn belongs_to(&self, session: SessionId, frame: FrameId) -> bool {
+        self.session == session && self.frame == frame
+    }
+    /// Current immutable entropy policy; no vaulted values are exposed.
+    #[must_use]
+    pub const fn entropy_policy(&self) -> EntropyCfg {
+        self.entropy
+    }
+    /// Current immutable input, output and map capacity limits.
+    #[must_use]
+    pub const fn limits(&self) -> PiiLimits {
+        self.limits
+    }
     /// Build the default secret+PII DFA, bind it to a session/frame, and generate a random marker
     /// tag. Name and organization NER is unavailable because the SDK decision API has no span
     /// output; every mask report therefore marks coverage degraded while DFA and entropy run.
@@ -258,6 +276,111 @@ impl PiiVault {
         Ok(masked)
     }
 
+    /// Runs bounded semantic PII detection before applying both NER and deterministic spans.
+    ///
+    /// NER receives the exact raw UTF-8 input, with no Decide normalization. Detector errors,
+    /// timeouts, and malformed model ranges fall back to DFA and entropy masking; that result is
+    /// marked degraded. A successful empty result is distinct and reports NER coverage as used.
+    /// The detector's future is dropped on its configured timeout; cancellation by the caller
+    /// cancels this operation and produces no masking result.
+    ///
+    /// # Errors
+    /// Returns a vault capacity/scanner failure. NER availability failures are represented in
+    /// `Masked.report` and do not bypass deterministic masking.
+    pub async fn mask_with_ner<D: PiiSpanDetector + ?Sized>(
+        &self,
+        detector: &D,
+        text: &str,
+        timeout: std::time::Duration,
+    ) -> Result<Masked, PiiError> {
+        if text.len() > self.limits.max_input_bytes {
+            return Err(PiiError::InputLimit);
+        }
+        if timeout.is_zero() || timeout > std::time::Duration::from_secs(120) {
+            return self.mask(text);
+        }
+        let result = tokio::time::timeout(timeout, detector.detect_pii_spans(text)).await;
+        match result {
+            Ok(Ok(spans)) => match self.mask_with_ner_spans(text, &spans) {
+                Ok(masked) => Ok(masked),
+                Err(PiiError::InvalidNerSpans) => self.mask(text),
+                Err(error) => Err(error),
+            },
+            Ok(Err(_)) | Err(_) => self.mask(text),
+        }
+    }
+
+    /// Applies already detected semantic PII spans with the deterministic scanner in one vault
+    /// transaction. Spans must be sorted, non-overlapping, and valid UTF-8 byte ranges.
+    ///
+    /// # Errors
+    /// Returns [`PiiError::InvalidNerSpans`] before changing the vault for malformed spans.
+    pub fn mask_with_ner_spans(
+        &self,
+        text: &str,
+        ner_spans: &[PiiEntitySpan],
+    ) -> Result<Masked, PiiError> {
+        if text.len() > self.limits.max_input_bytes {
+            return Err(PiiError::InputLimit);
+        }
+        if ner_spans.len() > self.limits.max_matches_per_input {
+            return Err(PiiError::InvalidNerSpans);
+        }
+        let mut spans = self.scan_spans(text.as_bytes())?;
+        let merged_len = spans
+            .len()
+            .checked_add(ner_spans.len())
+            .ok_or(PiiError::CounterOverflow)?;
+        if merged_len > self.limits.max_matches_per_input {
+            return Err(PiiError::InvalidNerSpans);
+        }
+        spans
+            .try_reserve(ner_spans.len())
+            .map_err(|_| PiiError::Capacity)?;
+        let mut previous_end = 0_usize;
+        let mut validated_ner = Vec::<Span>::new();
+        validated_ner
+            .try_reserve(ner_spans.len())
+            .map_err(|_| PiiError::Capacity)?;
+        for candidate in ner_spans {
+            let start =
+                usize::try_from(candidate.start()).map_err(|_| PiiError::InvalidNerSpans)?;
+            let end = usize::try_from(candidate.end()).map_err(|_| PiiError::InvalidNerSpans)?;
+            if start < previous_end
+                || end > text.len()
+                || text.get(start..end).is_none()
+                || !candidate.confidence().is_finite()
+                || !(0.0..=1.0).contains(&candidate.confidence())
+            {
+                return Err(PiiError::InvalidNerSpans);
+            }
+            validated_ner.push(Span {
+                start,
+                end,
+                kind: PiiKind::Other,
+            });
+            previous_end = end;
+        }
+        let mut state = self.state.lock().map_err(|_| PiiError::StateUnavailable)?;
+        let issued_marker_ranges =
+            collect_issued_marker_ranges(text, &state, self.limits.max_matches_per_input)?;
+        for span in validated_ner {
+            let overlaps_issued_marker = issued_marker_ranges
+                .iter()
+                .any(|marker| span.start < marker.1 && marker.0 < span.end);
+            if !overlaps_issued_marker {
+                spans.push(span);
+            }
+        }
+        spans.sort_by_key(|span| (span.start, span.end));
+        let spans = merge_spans(spans)?;
+        let mut masked = self.mask_locked(text, spans, &mut state)?;
+        masked.report.ner_used = true;
+        masked.report.degraded = false;
+        self.last_redactor_failed.store(false, Ordering::Relaxed);
+        Ok(masked)
+    }
+
     /// Restore only exact markers issued by this vault, and only after explicit sandbox authority.
     ///
     /// The result is zeroizing and must be kept ephemeral by its caller. This operation does not
@@ -279,7 +402,6 @@ impl PiiVault {
     }
 
     /// Number of reversible values currently retained, without exposing their contents.
-    #[must_use]
     pub fn entry_count(&self) -> Result<usize, PiiError> {
         self.state
             .lock()
@@ -524,14 +646,14 @@ fn merge_spans(mut spans: Vec<Span>) -> Result<Vec<Span>, PiiError> {
         .try_reserve(spans.len())
         .map_err(|_| PiiError::Capacity)?;
     for span in spans.drain(..) {
-        if let Some(previous) = merged.last_mut() {
-            if span.start < previous.end {
-                previous.end = previous.end.max(span.end);
-                if span.kind == PiiKind::ApiKey {
-                    previous.kind = PiiKind::ApiKey;
-                }
-                continue;
+        if let Some(previous) = merged.last_mut()
+            && span.start < previous.end
+        {
+            previous.end = previous.end.max(span.end);
+            if span.kind == PiiKind::ApiKey {
+                previous.kind = PiiKind::ApiKey;
             }
+            continue;
         }
         merged.push(span);
     }
@@ -561,6 +683,54 @@ fn append_bounded(output: &mut String, value: &str, maximum: usize) -> Result<()
         .map_err(|_| PiiError::Capacity)?;
     output.push_str(value);
     Ok(())
+}
+
+fn collect_issued_marker_ranges(
+    text: &str,
+    state: &VaultState,
+    maximum_occurrences: usize,
+) -> Result<Vec<(usize, usize)>, PiiError> {
+    let mut ranges = Vec::<(usize, usize)>::new();
+    let mut cursor = 0_usize;
+    let mut occurrences = 0_usize;
+    while let Some(relative_start) = text
+        .get(cursor..)
+        .ok_or(PiiError::InputLimit)?
+        .find(TOKEN_PREFIX)
+    {
+        let start = cursor
+            .checked_add(relative_start)
+            .ok_or(PiiError::CounterOverflow)?;
+        occurrences = occurrences
+            .checked_add(1)
+            .ok_or(PiiError::CounterOverflow)?;
+        if occurrences > maximum_occurrences {
+            return Err(PiiError::Capacity);
+        }
+        let marker_tail = text.get(start..).ok_or(PiiError::InputLimit)?;
+        let marker_end = marker_tail
+            .char_indices()
+            .take_while(|(offset, _)| *offset < MAX_ISSUED_TOKEN_BYTES)
+            .find(|(_, character)| *character == '>')
+            .map(|(offset, character)| {
+                offset
+                    .checked_add(character.len_utf8())
+                    .and_then(|length| start.checked_add(length))
+                    .ok_or(PiiError::CounterOverflow)
+            })
+            .transpose()?;
+        if let Some(end) = marker_end {
+            let candidate = text.get(start..end).ok_or(PiiError::InputLimit)?;
+            if state.token_to_entry.contains_key(candidate) {
+                ranges.try_reserve(1).map_err(|_| PiiError::Capacity)?;
+                ranges.push((start, end));
+            }
+        }
+        cursor = start
+            .checked_add(TOKEN_PREFIX.len())
+            .ok_or(PiiError::CounterOverflow)?;
+    }
+    Ok(ranges)
 }
 
 fn unmask_issued_tokens(

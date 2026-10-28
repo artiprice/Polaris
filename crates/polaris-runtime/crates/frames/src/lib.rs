@@ -11,20 +11,22 @@ mod state;
 mod step;
 
 pub use journal::{
-    FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameStepRecord,
-    JournalAdapter,
+    FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameJournalLimits,
+    FrameStepRecord, JournalAdapter, PreparedFrameStep, WatchdogFrameMemory,
+    reconstruct_watchdog_memory,
 };
 pub use polaris_sdk::ids::{AgentRole, Cid, FastFingerprint, FrameId, ModelId, TokenCount};
 pub use polaris_security_capability::Scope;
 pub use quota::{NetworkPolicy, QuotaError, QuotaLease, ResourceQuota};
 pub use scope::{FrameScope, ScopeError, scope_is_subset};
 pub use state::{
-    Active, AgentContextFrame, DiffTimelineEntry, Finished, FrameError, FrameOutcome, FrameStack,
-    FrameView, ModelSelection, ScratchpadRef, Spawned, StepNo, Suspended,
+    Active, AgentContextFrame, DiffTimelineEntry, Finished, FrameError, FrameOutcome,
+    FramePromptBinding, FrameStack, FrameStepBinding, FrameToolBinding, FrameView, ModelSelection,
+    ScratchpadRef, Spawned, StepNo, Suspended,
 };
 pub use step::{
     AssembleRequest, AssistantResponseCapture, Cancellation, CapturedToolCall, ExecutedToolResult,
     FramePrompt, FrameRunInput, FrameRunLimits, FrameRunOutcome, FrameRunStop, StepExecution,
     StepInput, StepOutcome, StepTool, StepVerifier, ToolCall, ToolResultRef, ToolRunner,
-    Verification, run_frame, run_step,
+    Verification, WatchdogObservation, role_allows_tool, run_frame, run_step,
 };

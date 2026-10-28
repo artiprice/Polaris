@@ -1,0 +1,35 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\tests\runtime_dag_scheduler.rs:152:
+     .map_err(|_| DagError::JoinFailed)??;
+     assert_eq!(report.status(), DagRunStatus::Failed, "all attempts fail");
+     assert!(
+-        matches!(report.result(safe_id), Some(NodeResult::Failed { attempts: 3, .. })),
++        matches!(
++            report.result(safe_id),
++            Some(NodeResult::Failed { attempts: 3, .. })
++        ),
+         "retry-safe operations receive at most max plus one attempts"
+     );
+     assert!(
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\dag\tests\runtime_dag_scheduler.rs:159:
+-        matches!(report.result(unsafe_id), Some(NodeResult::Failed { attempts: 1, .. })),
++        matches!(
++            report.result(unsafe_id),
++            Some(NodeResult::Failed { attempts: 1, .. })
++        ),
+         "non-idempotent operations must not be replayed"
+     );
+-    assert_eq!(safe_calls.load(Ordering::SeqCst), 3, "safe task matches the retry bound");
+-    assert_eq!(unsafe_calls.load(Ordering::SeqCst), 1, "unsafe task runs once");
++    assert_eq!(
++        safe_calls.load(Ordering::SeqCst),
++        3,
++        "safe task matches the retry bound"
++    );
++    assert_eq!(
++        unsafe_calls.load(Ordering::SeqCst),
++        1,
++        "unsafe task runs once"
++    );
+     Ok(())
+ }
+ 

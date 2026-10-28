@@ -562,7 +562,7 @@ enum EvidenceSafetyResult {
     PreflightAndCongruenceAllowed,
 }
 
-fn cid_for(bytes: &[u8]) -> Cid {
+pub(crate) fn cid_for(bytes: &[u8]) -> Cid {
     Cid::from_bytes(*blake3::hash(bytes).as_bytes())
 }
 

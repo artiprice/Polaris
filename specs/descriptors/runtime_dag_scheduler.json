@@ -1,0 +1,86 @@
+{
+  "type_of": "async_function",
+  "name": "run",
+  "file_path": "crates/polaris-runtime/crates/dag/src/graph.rs",
+  "logic_name": "DAG task interruption and failure policy",
+  "test_list": [
+    {
+      "test_name": "aborted_join_retains_node_identity",
+      "description": "Normalize a real Tokio task cancellation JoinError to an Aborted node interruption using its tracked task ID, then remove that exact tracking entry."
+    },
+    {
+      "test_name": "continue_independent_skips_failed_descendants",
+      "description": "A public run with a structured node failure marks descendants dependency-failed and lets an independent sibling complete; a private scheduler-state test also feeds a real Tokio aborted-join event through the shared report transition and verifies the interrupted node identity, skipped descendants, and preserved sibling readiness."
+    },
+    {
+      "test_name": "fail_fast_drains_owned_tasks",
+      "description": "With FailFast, a terminal node failure stops scheduling and aborts/drains already running sibling tasks before the report returns."
+    },
+    {
+      "test_name": "unknown_completion_fails_closed",
+      "description": "A completion with an unknown Tokio task ID or mismatched node identity returns JoinFailed rather than attributing a result to the wrong node."
+    },
+    {
+      "test_name": "successful_diamond_runs_each_node_once",
+      "description": "A valid diamond graph executes its root and join node once, and never starts the join node before both prerequisites succeed."
+    },
+    {
+      "test_name": "retry_policy_bounds_safe_and_non_idempotent_attempts",
+      "description": "Retry policy performs at most max plus one attempts for retry-safe operations and never replays a non-idempotent operation."
+    },
+    {
+      "test_name": "pre_cancelled_run_reports_global_cancellation",
+      "description": "A run whose caller token is already cancelled returns a Cancelled report and does not misclassify global cancellation as an operator interruption."
+    },
+    {
+      "test_name": "invalid_graph_is_rejected_before_run",
+      "description": "A graph with an unknown dependency is rejected by build before scheduling any operator."
+    },
+    {
+      "test_name": "caller_cancellation_drains_started_tasks",
+      "description": "Cancel a run after an operator has started; the report remains globally Cancelled and the owned task releases its pool permit before return."
+    },
+    {
+      "test_name": "dropping_run_after_start_drops_owned_task_future",
+      "description": "Abort the task owning a run after an operator future has started, then observe that dropping the run future drops the owned operator future and releases its pool permit."
+    }
+  ],
+  "dependencies": [
+    "Dag",
+    "DagBuilder",
+    "DagReport",
+    "DagRunStatus",
+    "NodeId",
+    "NodeInterruption",
+    "NodeResult",
+    "NodeTask",
+    "OnFailure",
+    "Pools",
+    "RunOptions"
+  ],
+  "libraries": ["tokio", "tokio-util"],
+  "inputs": [
+    {
+      "name": "dag",
+      "type": "Dag<T>",
+      "description": "Validated acyclic graph whose nodes own injected operations."
+    },
+    {
+      "name": "pools",
+      "type": "&Pools",
+      "description": "Named semaphore pools used by node attempts."
+    },
+    {
+      "name": "cancellation",
+      "type": "CancellationToken",
+      "description": "Caller-owned token that cancels the complete run."
+    },
+    {
+      "name": "options",
+      "type": "RunOptions",
+      "description": "Failure policy and optional global concurrency cap."
+    }
+  ],
+  "output_type": "Result<DagReport<T::Output>, DagError>",
+  "output_description": "Per-node structured outcomes; interrupted tasks retain their tracked node identity and interruption category but never claim an attempt count. Unknown or mismatched task identities fail closed with DagError::JoinFailed."
+}

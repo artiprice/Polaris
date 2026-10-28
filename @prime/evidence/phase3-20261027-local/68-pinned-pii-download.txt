@@ -1,0 +1,7 @@
+FETCH fp32_v2/classifier_fp32.onnx 4731777
+VERIFIED fp32_v2/classifier_fp32.onnx a59406b58c7bb448174c8df32b46d82e1b77b64bcb497da5b481836600ff3ad9
+FETCH fp32_v2/count_lstm_fixed_fp32.onnx 42567350
+VERIFIED fp32_v2/count_lstm_fixed_fp32.onnx 17710c32f639f28f3193ea286226b92757dbfa4a67d86432cf252d479ed86f7d
+FETCH fp32_v2/count_pred_argmax_fp32.onnx 4848570
+VERIFIED fp32_v2/count_pred_argmax_fp32.onnx c67fe0b5b1d1d6b1832a82ccb88153e571033e39f7d46434e661e7befd38294c
+FETCH fp32_v2/encoder_fp32.onnx 1111055954

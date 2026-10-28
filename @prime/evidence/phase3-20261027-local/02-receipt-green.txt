@@ -1,0 +1,14 @@
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 11.57s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-a033101413ef5bc7.exe)
+
+running 4 tests
+test agent_tools::receipt_tests::test_receipt_requires_matching_terminal_status ... ok
+test agent_tools::receipt_tests::test_receipt_rejects_wrong_review ... ok
+test agent_tools::receipt_tests::test_receipt_rejects_foreign_frame ... ok
+test agent_tools::receipt_tests::test_receipt_accepts_exact_pass_and_cleanup_failure ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.18s
+

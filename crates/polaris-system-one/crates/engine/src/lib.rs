@@ -1,22 +1,163 @@
 //! Real, local GLiNER2.5-Decide inference for the isolated `polaris-worker` process.
 //!
 //! The engine accepts explicit model and ONNX Runtime library paths. It never downloads a
-//! checkpoint, searches a hub cache, or fabricates results. The CPU fp32 path is used because it
-//! is the only path verified by spike S0-4. Text normalization is a required configuration choice:
+//! checkpoint, searches a hub cache, or fabricates results. The engine requires
+//! `GLINER2_DEVICE=cpu` because it is the only provider verified by spike S0-4. It pins standard
+//! execution and fp32 independently of GLiNER execution-mode environment variables. Text
+//! normalization is a required configuration choice:
 //! raw text and the Python GLiNER2 2.1 period rule are distinct model inputs.
 
 #![forbid(unsafe_code)]
 
 use std::collections::HashSet;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 
-use gliner2_rs::{Precision, SchemaTask, SpanConfig, SpanEngine};
+use gliner2_rs::{Entity, ExecutionMode, Precision, SchemaTask, SpanConfig, SpanEngine};
 use polaris_sdk::system_one::{
-    Answer, Decision, DecisionInput, Label, LabelScore, Question, QuestionAnswer, QuestionId,
-    QuestionKind,
+    Answer, Decision, DecisionInput, Label, LabelScore, PiiEntitySpan, Question, QuestionAnswer,
+    QuestionId, QuestionKind,
 };
+
+/// Explicit local model and runtime paths for independent semantic PII detection.
+#[derive(Debug, Clone)]
+pub struct PiiEngineConfig {
+    model_directory: PathBuf,
+    ort_library: PathBuf,
+    intra_threads: usize,
+    max_input_bytes: usize,
+    max_spans: usize,
+}
+
+impl PiiEngineConfig {
+    /// Creates a separate PII companion-model config with conservative local bounds.
+    #[must_use]
+    pub fn new(model_directory: PathBuf, ort_library: PathBuf) -> Self {
+        Self {
+            model_directory,
+            ort_library,
+            intra_threads: 2,
+            max_input_bytes: polaris_proto::limits::MAX_PII_INPUT_BYTES,
+            max_spans: 4_096,
+        }
+    }
+
+    /// Sets the ONNX intra-op thread count; zero is rejected on load.
+    #[must_use]
+    pub const fn with_intra_threads(mut self, threads: usize) -> Self {
+        self.intra_threads = threads;
+        self
+    }
+
+    /// Sets the maximum exact raw UTF-8 input size.
+    #[must_use]
+    pub const fn with_max_input_bytes(mut self, max_bytes: usize) -> Self {
+        self.max_input_bytes = max_bytes;
+        self
+    }
+
+    /// Sets the maximum candidate spans returned per request.
+    #[must_use]
+    pub const fn with_max_spans(mut self, max_spans: usize) -> Self {
+        self.max_spans = max_spans;
+        self
+    }
+}
+
+/// Independent loaded GLiNER2 privacy companion model. It never shares the Decide model handle.
+pub struct GlinerPiiEngine {
+    model: Mutex<SpanEngine>,
+    max_input_bytes: usize,
+    max_spans: usize,
+    model_identity_blake3: [u8; 32],
+}
+
+impl std::fmt::Debug for GlinerPiiEngine {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("GlinerPiiEngine")
+            .field("max_input_bytes", &self.max_input_bytes)
+            .field("max_spans", &self.max_spans)
+            .finish_non_exhaustive()
+    }
+}
+
+impl GlinerPiiEngine {
+    /// Loads a separately configured fp32 PII companion checkpoint from explicit local paths.
+    ///
+    /// # Errors
+    /// Returns [`EngineError`] for missing or changing model/runtime artifacts or native load
+    /// failures. It does not search caches or download model files.
+    pub fn load(config: PiiEngineConfig) -> Result<Self, EngineError> {
+        if config.intra_threads == 0
+            || config.max_input_bytes == 0
+            || config.max_input_bytes > polaris_proto::limits::MAX_PII_INPUT_BYTES
+            || config.max_spans == 0
+            || config.max_spans > 4_096
+        {
+            return Err(EngineError::InvalidConfig(
+                "PII engine bounds must be within the protocol caps".to_owned(),
+            ));
+        }
+        validate_cpu_device(std::env::var("GLINER2_DEVICE").ok().as_deref())?;
+        let model_directory = canonical_file_or_directory(&config.model_directory, true)?;
+        let ort_library = canonical_file_or_directory(&config.ort_library, false)?;
+        check_fp32_model_files(&model_directory)?;
+        initialize_runtime(&ort_library)?;
+        let before_load =
+            hash_pii_engine_inputs(&model_directory, &ort_library, config.intra_threads)?;
+        let span_config = SpanConfig::new(&model_directory)
+            .with_precision(Precision::Fp32)
+            .with_intra_threads(config.intra_threads)
+            .with_execution(ExecutionMode::Standard);
+        let model = SpanEngine::new(span_config)
+            .map_err(|error| EngineError::Inference(error.to_string()))?;
+        let after_load =
+            hash_pii_engine_inputs(&model_directory, &ort_library, config.intra_threads)?;
+        if before_load != after_load {
+            return Err(EngineError::InvalidConfig(
+                "PII model inputs changed while the native engine was loading".to_owned(),
+            ));
+        }
+        Ok(Self {
+            model: Mutex::new(model),
+            max_input_bytes: config.max_input_bytes,
+            max_spans: config.max_spans,
+            model_identity_blake3: after_load,
+        })
+    }
+
+    /// BLAKE3 identity of the independent PII checkpoint, runtime and thread configuration.
+    #[must_use]
+    pub const fn model_identity_blake3(&self) -> [u8; 32] {
+        self.model_identity_blake3
+    }
+
+    /// Detects semantic PII using the companion model on exact unnormalized input.
+    ///
+    /// # Errors
+    /// Returns an error on an oversized request, native inference failure, malformed output, or a
+    /// poisoned native session lock. No entity text or labels are returned.
+    pub fn detect(&self, raw_text: &str) -> Result<Vec<PiiEntitySpan>, EngineError> {
+        if raw_text.len() > self.max_input_bytes {
+            return Err(EngineError::InputTooLarge {
+                actual_bytes: raw_text.len(),
+                limit_bytes: self.max_input_bytes,
+            });
+        }
+        let tasks = gliner2_rs::privacy::Group::ALL
+            .iter()
+            .map(|group| group.task())
+            .collect::<Vec<_>>();
+        let mut model = self.model.lock().map_err(|_| EngineError::EnginePoisoned)?;
+        let output = model
+            .extract_long(raw_text, &tasks)
+            .map_err(|error| EngineError::Inference(error.to_string()))?;
+        checked_pii_spans(raw_text, &output.entities, self.max_spans)
+    }
+}
 
 /// Text preprocessing selected by the worker configuration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,6 +259,7 @@ pub struct GlinerEngine {
     model: Mutex<SpanEngine>,
     normalization: TextNormalization,
     max_input_bytes: usize,
+    model_identity_blake3: [u8; 32],
 }
 
 impl std::fmt::Debug for GlinerEngine {
@@ -141,21 +283,47 @@ impl GlinerEngine {
                 "thread count and input-byte limit must be non-zero".to_owned(),
             ));
         }
+        validate_cpu_device(std::env::var("GLINER2_DEVICE").ok().as_deref())?;
         let model_directory = canonical_file_or_directory(&config.model_directory, true)?;
         let ort_library = canonical_file_or_directory(&config.ort_library, false)?;
         check_fp32_model_files(&model_directory)?;
         initialize_runtime(&ort_library)?;
+        let before_load = hash_engine_inputs(
+            &model_directory,
+            &ort_library,
+            config.normalization,
+            config.intra_threads,
+        )?;
 
         let span_config = SpanConfig::new(&model_directory)
             .with_precision(Precision::Fp32)
-            .with_intra_threads(config.intra_threads);
+            .with_intra_threads(config.intra_threads)
+            .with_execution(ExecutionMode::Standard);
         let model = SpanEngine::new(span_config)
             .map_err(|error| EngineError::Inference(error.to_string()))?;
+        let after_load = hash_engine_inputs(
+            &model_directory,
+            &ort_library,
+            config.normalization,
+            config.intra_threads,
+        )?;
+        if before_load != after_load {
+            return Err(EngineError::InvalidConfig(
+                "model inputs changed while the native engine was loading".to_owned(),
+            ));
+        }
         Ok(Self {
             model: Mutex::new(model),
             normalization: config.normalization,
             max_input_bytes: config.max_input_bytes,
+            model_identity_blake3: after_load,
         })
+    }
+
+    /// BLAKE3 identity of the exact ONNX/tokenizer/runtime inputs and inference configuration.
+    #[must_use]
+    pub const fn model_identity_blake3(&self) -> [u8; 32] {
+        self.model_identity_blake3
     }
 
     /// Runs one multi-question classification request using the configured local model.
@@ -186,15 +354,193 @@ impl GlinerEngine {
                 answer: answer_for(plan, &output.classifications)?,
             });
         }
-        let latency_us = match u64::try_from(started.elapsed().as_micros()) {
-            Ok(value) => value,
-            Err(_) => u64::MAX,
+        let elapsed_micros = started.elapsed().as_micros();
+        let latency_us = if elapsed_micros > u128::from(u64::MAX) {
+            u64::MAX
+        } else {
+            match u64::try_from(elapsed_micros) {
+                Ok(value) => value,
+                Err(_) => {
+                    return Err(EngineError::InvalidOutput(
+                        "inference latency conversion failed".to_owned(),
+                    ));
+                }
+            }
         };
         Ok(Decision {
             answers,
             latency_us,
         })
     }
+}
+
+fn hash_engine_inputs(
+    model_directory: &Path,
+    ort_library: &Path,
+    normalization: TextNormalization,
+    intra_threads: usize,
+) -> Result<[u8; 32], EngineError> {
+    const MODEL_FILES: [&str; 9] = [
+        "classifier_fp32.onnx",
+        "count_lstm_fixed_fp32.onnx",
+        "count_pred_argmax_fp32.onnx",
+        "encoder_fp32.onnx",
+        "schema_gather_fp32.onnx",
+        "scorer_fp32.onnx",
+        "span_rep_fp32.onnx",
+        "token_gather_fp32.onnx",
+        "tokenizer.json",
+    ];
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"polaris-s1-engine-inputs-v1\0");
+    hasher.update(match normalization {
+        TextNormalization::Raw => b"raw\0",
+        TextNormalization::Gliner2Python21 => b"gliner2-python-2.1\0",
+    });
+    let thread_bytes = u64::try_from(intra_threads)
+        .map_err(|_| EngineError::InvalidConfig("thread count is not representable".to_owned()))?
+        .to_le_bytes();
+    hasher.update(&thread_bytes);
+    for name in MODEL_FILES {
+        hasher.update(name.as_bytes());
+        hasher.update(b"\0");
+        hash_file_into(&model_directory.join(name), &mut hasher)?;
+    }
+    hasher.update(b"onnxruntime-library\0");
+    hash_file_into(ort_library, &mut hasher)?;
+    Ok(*hasher.finalize().as_bytes())
+}
+
+fn hash_pii_engine_inputs(
+    model_directory: &Path,
+    ort_library: &Path,
+    intra_threads: usize,
+) -> Result<[u8; 32], EngineError> {
+    const MODEL_FILES: [&str; 9] = [
+        "classifier_fp32.onnx",
+        "count_lstm_fixed_fp32.onnx",
+        "count_pred_argmax_fp32.onnx",
+        "encoder_fp32.onnx",
+        "schema_gather_fp32.onnx",
+        "scorer_fp32.onnx",
+        "span_rep_fp32.onnx",
+        "token_gather_fp32.onnx",
+        "tokenizer.json",
+    ];
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"polaris-s1-pii-companion-engine-v1\0");
+    hasher.update(b"raw-utf8-input\0all-seven-pii-groups\0threshold-0.5\0");
+    let thread_bytes = u64::try_from(intra_threads)
+        .map_err(|_| {
+            EngineError::InvalidConfig("PII thread count is not representable".to_owned())
+        })?
+        .to_le_bytes();
+    hasher.update(&thread_bytes);
+    for name in MODEL_FILES {
+        hasher.update(name.as_bytes());
+        hasher.update(b"\0");
+        hash_file_into(&model_directory.join(name), &mut hasher)?;
+    }
+    hasher.update(b"onnxruntime-library\0");
+    hash_file_into(ort_library, &mut hasher)?;
+    Ok(*hasher.finalize().as_bytes())
+}
+
+fn checked_pii_spans(
+    text: &str,
+    entities: &[Entity],
+    max_spans: usize,
+) -> Result<Vec<PiiEntitySpan>, EngineError> {
+    if entities.len() > max_spans {
+        return Err(EngineError::InvalidOutput(
+            "PII model returned more spans than the configured limit".to_owned(),
+        ));
+    }
+    let mut ranked = Vec::new();
+    ranked
+        .try_reserve(entities.len())
+        .map_err(|_| EngineError::InvalidOutput("PII span allocation failed".to_owned()))?;
+    for entity in entities {
+        if !entity.score.is_finite()
+            || !(0.0..=1.0).contains(&entity.score)
+            || entity.char_start >= entity.char_end
+            || entity.char_end > text.len()
+            || text.get(entity.char_start..entity.char_end).is_none()
+        {
+            return Err(EngineError::InvalidOutput(
+                "PII model returned an invalid UTF-8 byte span".to_owned(),
+            ));
+        }
+        let start = u32::try_from(entity.char_start).map_err(|_| {
+            EngineError::InvalidOutput("PII span offset exceeds protocol".to_owned())
+        })?;
+        let end = u32::try_from(entity.char_end).map_err(|_| {
+            EngineError::InvalidOutput("PII span offset exceeds protocol".to_owned())
+        })?;
+        ranked.push((start, end, entity.score));
+    }
+    ranked.sort_by(|left, right| {
+        right
+            .2
+            .total_cmp(&left.2)
+            .then_with(|| right.1.cmp(&left.1))
+            .then_with(|| left.0.cmp(&right.0))
+    });
+    let mut accepted = Vec::<(u32, u32, f32)>::new();
+    accepted
+        .try_reserve(ranked.len())
+        .map_err(|_| EngineError::InvalidOutput("PII span allocation failed".to_owned()))?;
+    for candidate in ranked {
+        let overlaps = accepted
+            .iter()
+            .any(|current| candidate.0 < current.1 && current.0 < candidate.1);
+        if !overlaps {
+            accepted.push(candidate);
+        }
+    }
+    accepted.sort_by_key(|candidate| (candidate.0, candidate.1));
+    accepted
+        .into_iter()
+        .map(|(start, end, confidence)| {
+            PiiEntitySpan::new(start, end, confidence).map_err(|error| {
+                EngineError::InvalidOutput(format!("PII span validation failed: {error}"))
+            })
+        })
+        .collect()
+}
+
+fn hash_file_into(path: &Path, hasher: &mut blake3::Hasher) -> Result<(), EngineError> {
+    let metadata = std::fs::metadata(path).map_err(|error| EngineError::InvalidPath {
+        path: path.to_path_buf(),
+        message: error.to_string(),
+    })?;
+    if !metadata.is_file() {
+        return Err(EngineError::FileMissing(path.to_path_buf()));
+    }
+    hasher.update(&metadata.len().to_le_bytes());
+    let mut file = std::fs::File::open(path).map_err(|error| EngineError::InvalidPath {
+        path: path.to_path_buf(),
+        message: error.to_string(),
+    })?;
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|error| EngineError::InvalidPath {
+                path: path.to_path_buf(),
+                message: error.to_string(),
+            })?;
+        if read == 0 {
+            break;
+        }
+        let chunk = buffer.get(..read).ok_or_else(|| {
+            EngineError::InvalidConfig(
+                "model digest read length exceeded its fixed buffer".to_owned(),
+            )
+        })?;
+        hasher.update(chunk);
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -210,6 +556,16 @@ struct TaskPlan {
     prompt: String,
     labels: Vec<String>,
     answer_kind: AnswerKind,
+}
+
+fn validate_cpu_device(device: Option<&str>) -> Result<(), EngineError> {
+    if device == Some("cpu") {
+        Ok(())
+    } else {
+        Err(EngineError::InvalidConfig(
+            "GLINER2_DEVICE must be explicitly set to cpu".to_owned(),
+        ))
+    }
 }
 
 fn canonical_file_or_directory(path: &Path, directory: bool) -> Result<PathBuf, EngineError> {
@@ -477,7 +833,7 @@ fn answer_for(
                 .map_err(|error| EngineError::InvalidOutput(error.to_string()))?,
         });
     }
-    scores.sort_by(|left, right| right.probability.cmp(&left.probability));
+    scores.sort_by_key(|score| std::cmp::Reverse(score.probability));
     let top = scores
         .first()
         .ok_or_else(|| EngineError::InvalidOutput("model returned no labels".to_owned()))?;
@@ -513,8 +869,144 @@ fn answer_for(
 
 #[cfg(test)]
 mod tests {
-    use super::{EngineError, TextNormalization, build_task_plans, combine_input, prepare_text};
+    use super::{
+        EngineError, TextNormalization, build_task_plans, checked_pii_spans, combine_input,
+        hash_engine_inputs, hash_pii_engine_inputs, prepare_text, validate_cpu_device,
+    };
+    use gliner2_rs::Entity;
     use polaris_sdk::system_one::{DecisionInput, Label, Question, QuestionId, QuestionKind};
+
+    #[test]
+    fn engine_identity_binds_model_runtime_and_normalization_inputs()
+    -> Result<(), Box<dyn std::error::Error>> {
+        const MODEL_FILES: [&str; 9] = [
+            "classifier_fp32.onnx",
+            "count_lstm_fixed_fp32.onnx",
+            "count_pred_argmax_fp32.onnx",
+            "encoder_fp32.onnx",
+            "schema_gather_fp32.onnx",
+            "scorer_fp32.onnx",
+            "span_rep_fp32.onnx",
+            "token_gather_fp32.onnx",
+            "tokenizer.json",
+        ];
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "polaris-s1-identity-{}-{timestamp}",
+            std::process::id()
+        ));
+        let model = root.join("model");
+        std::fs::create_dir_all(&model)?;
+        let runtime = root.join("onnxruntime.dll");
+        std::fs::write(&runtime, b"runtime-v1")?;
+        for filename in MODEL_FILES {
+            std::fs::write(model.join(filename), b"model-v1")?;
+        }
+        let baseline = hash_engine_inputs(&model, &runtime, TextNormalization::Raw, 4)?;
+        let changed_normalization =
+            hash_engine_inputs(&model, &runtime, TextNormalization::Gliner2Python21, 4)?;
+        let changed_threads = hash_engine_inputs(&model, &runtime, TextNormalization::Raw, 2)?;
+        std::fs::write(model.join("tokenizer.json"), b"tokenizer-v2")?;
+        let changed_model = hash_engine_inputs(&model, &runtime, TextNormalization::Raw, 4)?;
+        assert_ne!(baseline, changed_normalization);
+        assert_ne!(baseline, changed_threads);
+        assert_ne!(baseline, changed_model);
+        std::fs::remove_dir_all(root)?;
+        Ok(())
+    }
+
+    #[test]
+    fn pii_companion_identity_is_domain_separated_and_span_offsets_are_raw_utf8_bytes()
+    -> Result<(), Box<dyn std::error::Error>> {
+        const MODEL_FILES: [&str; 9] = [
+            "classifier_fp32.onnx",
+            "count_lstm_fixed_fp32.onnx",
+            "count_pred_argmax_fp32.onnx",
+            "encoder_fp32.onnx",
+            "schema_gather_fp32.onnx",
+            "scorer_fp32.onnx",
+            "span_rep_fp32.onnx",
+            "token_gather_fp32.onnx",
+            "tokenizer.json",
+        ];
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "polaris-s1-pii-identity-{}-{timestamp}",
+            std::process::id()
+        ));
+        let model = root.join("model");
+        std::fs::create_dir_all(&model)?;
+        let runtime = root.join("onnxruntime.dll");
+        std::fs::write(&runtime, b"runtime-v1")?;
+        for filename in MODEL_FILES {
+            std::fs::write(model.join(filename), b"pii-model-v1")?;
+        }
+        let pii_identity = hash_pii_engine_inputs(&model, &runtime, 2)?;
+        let decision_identity = hash_engine_inputs(&model, &runtime, TextNormalization::Raw, 2)?;
+        assert_ne!(pii_identity, decision_identity);
+        let raw = "Привет Alice";
+        let start = raw.find("Alice").ok_or("missing raw fixture")?;
+        let end = start.checked_add("Alice".len()).ok_or("span overflow")?;
+        let entity = Entity {
+            text: "Alice".to_owned(),
+            label: "person".to_owned(),
+            score: 0.95,
+            char_start: start,
+            char_end: end,
+            word_start: 0,
+            word_end: 0,
+            slot: 0,
+            task: "entities".to_owned(),
+        };
+        let overlapping = Entity {
+            text: "lice".to_owned(),
+            label: "last_name".to_owned(),
+            score: 0.8,
+            char_start: end.checked_sub(4).ok_or("overlap test span underflow")?,
+            char_end: end,
+            word_start: 0,
+            word_end: 0,
+            slot: 0,
+            task: "entities".to_owned(),
+        };
+        let spans = checked_pii_spans(raw, &[overlapping, entity], 32)?;
+        assert_eq!(spans.len(), 1);
+        let span = spans.first().ok_or("missing checked span")?;
+        assert_eq!(usize::try_from(span.start())?, start);
+        assert_eq!(usize::try_from(span.end())?, end);
+        assert_eq!(raw.get(start..end), Some("Alice"));
+        let invalid_utf8 = Entity {
+            text: String::new(),
+            label: "person".to_owned(),
+            score: 0.95,
+            char_start: 1,
+            char_end: 2,
+            word_start: 0,
+            word_end: 0,
+            slot: 0,
+            task: "entities".to_owned(),
+        };
+        assert!(checked_pii_spans(raw, &[invalid_utf8], 32).is_err());
+        std::fs::remove_dir_all(root)?;
+        Ok(())
+    }
+
+    #[test]
+    fn cpu_provider_must_be_explicit_and_rejects_device_fallbacks() {
+        assert!(matches!(
+            validate_cpu_device(None),
+            Err(EngineError::InvalidConfig(_))
+        ));
+        assert!(matches!(
+            validate_cpu_device(Some("cuda")),
+            Err(EngineError::InvalidConfig(_))
+        ));
+        assert!(validate_cpu_device(Some("cpu")).is_ok());
+    }
 
     #[test]
     fn configured_python_normalization_changes_actual_model_text() -> Result<(), EngineError> {

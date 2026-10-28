@@ -1,0 +1,17 @@
+{
+  "type_of": "async_function",
+  "name": "Router::route",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "Task Route",
+  "test_list": [
+    {"test_name": "route_timeout_defaults_to_medium_within_allowlist", "description": "An S1 outage uses an allowed deterministic effort."},
+    {"test_name": "route_combines_intent_effort_parallel_and_vision_once", "description": "One schema request supplies all four route decisions."},
+    {"test_name": "route_preserves_hard_facts_and_explicit_direct_tool", "description": "Caller facts and explicitly allowlisted direct tool constraints win."},
+    {"test_name": "route_rejects_oversize_input_before_inference", "description": "Task text and goal are bounded before S1 invocation."}
+  ],
+  "dependencies": ["DecisionEngine", "SchemaCatalog", "RouterConfig"],
+  "libraries": ["thiserror", "tokio"],
+  "inputs": [{"name": "input", "type": "&RouteInput", "description": "PII-masked text, repository facts, and caller directives."}],
+  "output_type": "Result<Route, RouterError>",
+  "output_description": "A constrained routing recommendation with deterministic fallback behavior."
+}

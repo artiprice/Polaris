@@ -1,0 +1,18 @@
+{
+  "observed_utc": "2026-10-26T17:45:28.385068+00:00",
+  "workspace_packages": 93,
+  "external_aliases": 167,
+  "source_files_rehashed": 1208,
+  "source_fingerprint_sha256": "7a74c42789fcfabeae5e2f34cca58b57bb82f933b57f3466b47eb882df8d7efc",
+  "native_tests": {
+    "passed": 205,
+    "failed": 0,
+    "ignored": 2
+  },
+  "linux_domain_tests": {
+    "passed": 84,
+    "failed": 0,
+    "ignored": 0
+  },
+  "scope": "Scoped readonly frame integration only; full acceptance open, P2 paused, UI deferred."
+}

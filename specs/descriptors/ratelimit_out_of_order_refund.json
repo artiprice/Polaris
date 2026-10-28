@@ -1,0 +1,74 @@
+{
+  "type_of": "method",
+  "name": "Bounded snapshot GCRA reservation reconciliation",
+  "file_path": "crates/polaris-ratelimit/src/ledger.rs",
+  "logic_name": "Replay RPM and TPM reservation transforms and settle out of order without losing admission floors",
+  "test_list": [
+    {
+      "test_name": "same_time_non_tail_refund_preserves_newer_reservation",
+      "description": "Refunding an earlier same-time reservation restores only its unused cost while the later reservation remains charged."
+    },
+    {
+      "test_name": "staggered_non_tail_refund_preserves_later_admission_floor",
+      "description": "An older refund is bounded by a later admission-time floor while preserving remaining live reservation debt."
+    },
+    {
+      "test_name": "out_of_order_same_time_refunds_recover_only_settled_capacity",
+      "description": "Multiple reservations settle out of order and only actual unused costs are recovered."
+    },
+    {
+      "test_name": "earlier_refund_respects_multiple_later_time_floors",
+      "description": "A refund preserves both an intervening reservation and a later request's time floor."
+    },
+    {
+      "test_name": "expired_debt_does_not_report_refund",
+      "description": "Settlement after natural debt expiry reports no additional refund."
+    },
+    {
+      "test_name": "concurrent_snapshot_admissions_never_exceed_burst",
+      "description": "Concurrent reserve and settlement operations never admit more same-time tokens than the configured burst."
+    },
+    {
+      "test_name": "reserve_dispatch_and_reconcile_do_not_allocate",
+      "description": "After warming fixed pools, repeated quota reserve, dispatch, and usage reconciliation allocate no heap blocks or bytes."
+    },
+    {
+      "test_name": "snapshot_pool_saturation_defers_without_losing_settlement_intent",
+      "description": "A full snapshot pool returns a deferred settlement and a later operation publishes and acknowledges the owned intent."
+    },
+    {
+      "test_name": "snapshot_result_survives_next_publication_and_stale_ack_cannot_release_reuse",
+      "description": "The next snapshot acknowledges the exact prior result before clearing it, and an old generation cannot release a reused intent slot."
+    },
+    {
+      "test_name": "background_admission_helps_deferred_refund_before_shedding",
+      "description": "A background admission folds a deferred refund before evaluating utilization-based shedding."
+    },
+    {
+      "test_name": "max_plus_composition_preserves_later_floor",
+      "description": "Compacting adjacent settled transforms preserves the later admission-time floor."
+    },
+    {
+      "test_name": "late_refund_never_erases_another_request_charge",
+      "description": "A refund does not reduce the tail below debt from a newer reservation."
+    },
+    {
+      "test_name": "expired_older_reservation_cannot_refund_newer_live_debt",
+      "description": "An older refund cannot create capacity by crossing a later reservation's time baseline."
+    },
+    {
+      "test_name": "concurrent_refund_preserves_other_reservations",
+      "description": "An earlier partial refund does not remove the later reservation's charged amount."
+    }
+  ],
+  "dependencies": ["polaris-ratelimit"],
+  "inputs": [
+    {
+      "name": "reservation",
+      "type": "ReservationId",
+      "description": "Generation-checked reservation identity backed by a preclaimed settlement intent slot."
+    }
+  ],
+  "output_type": "Reconciliation",
+  "output_description": "Actual usage, confirmed refund, retained unused reservation, and whether a published intent remains deferred."
+}

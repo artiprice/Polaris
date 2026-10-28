@@ -1,0 +1,60 @@
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0432]: unresolved import `polaris_kernel::PromptAssemblySettings`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:34:26
+   |
+34 |     use polaris_kernel::{PromptAssemblySettings,privacy_snapshot::{KernelPiiSealer,KernelPiiSnapshotStore}};
+   |                          ^^^^^^^^^^^^^^^^^^^^^^ no `PromptAssemblySettings` in the root
+
+error[E0432]: unresolved import `polaris_kernel::PromptAssemblySettings`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:50:9
+   |
+50 |     use polaris_kernel::PromptAssemblySettings;
+   |         ^^^^^^^^^^^^^^^^----------------------
+   |                         |
+   |                         no `PromptAssemblySettings` in the root
+
+error[E0599]: no method named `privacy_vault` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:41:50
+   |
+41 |     let snapshot=store.save(Arc::clone(assembler.privacy_vault())).await?;
+   |                                                  ^^^^^^^^^^^^^ method not found in `KernelPromptAssembler<CountingFixture>`
+
+error[E0599]: no associated function or constant named `new_with_privacy` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:43:37
+   |
+43 |     let next=KernelPromptAssembler::new_with_privacy(fixture.kernel.clone(),fixture.frame.prompt_binding()?,fixture.token.clone(),Ar...
+   |                                     ^^^^^^^^^^^^^^^^ associated function or constant not found in `KernelPromptAssembler<_, _>`
+
+warning: method call on a diverging inference variable
+  --> crates\polaris-kernel\tests\frame_prompt.rs:44:21
+   |
+44 |     let second=next.apply(fixture.request("Preserve resume.canary@example.com",Vec::new())).await?;
+   |                     ^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+   = note: `#[warn(method_call_on_diverging_infer_var)]` (part of `#[warn(future_incompatible)]`) on by default
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:44:21
+   |
+44 |     let second=next.apply(fixture.request("Preserve resume.canary@example.com",Vec::new())).await?;
+   |                     ^^^^^ method not found in `!`
+
+error[E0599]: no associated function or constant named `new_with_privacy` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:57:43
+   |
+57 | ...elPromptAssembler::new_with_privacy(fixture.kernel.clone(),fixture.frame.prompt_binding()?,fixture.token.clone(),Arc::clone(&fixt...
+   |                       ^^^^^^^^^^^^^^^^ associated function or constant not found in `KernelPromptAssembler<_, _>`
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+warning: `polaris-kernel` (test "frame_prompt") generated 1 warning
+error: could not compile `polaris-kernel` (test "frame_prompt") due to 6 previous errors; 2 warnings emitted

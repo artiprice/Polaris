@@ -1,0 +1,13 @@
+Behavioral/API RED captured before implementation
+
+Command:
+`cargo test -p polaris-security-pii --test ner_spans`
+
+Observed result: exit 1 during test compilation because the proposed contract was absent. This is compile RED, not behavioral RED. Raw error excerpts from that execution:
+
+error[E0432]: unresolved imports `polaris_sdk::system_one::PiiEntitySpan`, `polaris_sdk::system_one::PiiSpanDetector`
+error[E0433]: cannot find module or crate `tokio` in this scope
+error[E0433]: cannot find `DecisionError` in `system_one`
+error[E0425]: cannot find type `DecisionError` in module `polaris_sdk::system_one`
+
+After implementation, the focused tests exercise behavior and pass as recorded in `focused-tests.txt`. The first behavioral test run did expose a fixture mistake: span `1..2` over ASCII was valid; it was corrected to use a multibyte UTF-8 source, then the invalid-boundary fallback test passed. This was test-fixture correction only; no assertions were weakened.

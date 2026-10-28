@@ -1,0 +1,23 @@
+{
+  "type_of": "struct",
+  "name": "LifetimeGuard",
+  "file_path": "crates/polaris-nebius-cloud/crates/ai-cloud/src/lifetime.rs",
+  "logic_name": "Cloud VM Lifetime Guard",
+  "test_list": [
+    {"test_name": "hard_ttl_expires_even_after_recent_activity", "description": "Hard TTL takes precedence over recent activity."},
+    {"test_name": "idle_timeout_expires_without_activity", "description": "Idle timeout expires after inactivity."},
+    {"test_name": "activity_resets_only_idle_deadline", "description": "Activity moves the idle deadline while preserving the original hard TTL."},
+    {"test_name": "rejects_non_monotonic_observation", "description": "A time earlier than the last observed monotonic instant returns an error without changing guard state."},
+    {"test_name": "observed_idle_expiry_is_terminal_after_activity", "description": "Once idle expiry is observed, later activity cannot revive the VM before the hard TTL."}
+  ],
+  "dependencies": [],
+  "libraries": ["std::time", "thiserror"],
+  "inputs": [
+    {"name": "started_at", "type": "std::time::Instant", "description": "Monotonic VM start observation."},
+    {"name": "now", "type": "std::time::Instant", "description": "Current monotonic observation."},
+    {"name": "ttl", "type": "std::time::Duration", "description": "Hard lifetime."},
+    {"name": "idle_timeout", "type": "std::time::Duration", "description": "Idle lifetime."}
+  ],
+  "output_type": "Result<LifetimeStatus, LifetimeError>",
+  "output_description": "Current keep-running/stop decision or a typed clock/configuration error."
+}

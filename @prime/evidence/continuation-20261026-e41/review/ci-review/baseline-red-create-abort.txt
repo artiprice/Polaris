@@ -1,0 +1,27 @@
+$ cargo test -p polaris-devenv-cicd --test cicd_sandbox_lifecycle caller_abort_during_create_destroys_late_handle_without_exec -- --exact --nocapture
+warning: unused variable: `cancellation`
+   --> crates\polaris-devenv\crates\cicd\src\lib.rs:589:5
+    |
+589 |     cancellation: &mut oneshot::Receiver<()>,
+    |     ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_cancellation`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-devenv-cicd` (lib) generated 1 warning (run `cargo fix --lib -p polaris-devenv-cicd` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 0.61s
+     Running tests\cicd_sandbox_lifecycle.rs (target\debug\deps\cicd_sandbox_lifecycle-752852bbb2b8d7d6.exe)
+
+running 1 test
+Error: Custom { kind: Other, error: "late create was executed or not destroyed" }
+test caller_abort_during_create_destroys_late_handle_without_exec ... FAILED
+
+failures:
+
+failures:
+    caller_abort_during_create_destroys_late_handle_without_exec
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-devenv-cicd --test cicd_sandbox_lifecycle`
+
+[exit=101]

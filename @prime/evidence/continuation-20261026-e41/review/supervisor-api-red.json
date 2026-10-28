@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "-p",
+    "polaris-kernel-supervisor",
+    "--test",
+    "worker_bootstrap"
+  ],
+  "exit_code": 101,
+  "kind": "new lifecycle API compilation RED"
+}

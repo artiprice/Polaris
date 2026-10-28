@@ -1,0 +1,40 @@
+{
+  "type_of": "pipeline",
+  "name": "KernelPromptAssembler + VllmChatClient + run_frame",
+  "file_path": "crates/polaris-kernel/tests/frame_prompt_http.rs",
+  "logic_name": "Kernel Prompt HTTP Frame Integration",
+  "test_list": [
+    {
+      "test_name": "counted_prompt_matches_dispatched_http_and_durable_frame",
+      "description": "A bounded loopback server receives the production vLLM-compatible /tokenize request and /v1/chat/completions SSE request; the actual KernelPromptAssembler, KernelToolRunner, KernelFrameJournal, run_frame, CAS and PII vault are wired together, masked PII is absent from both HTTP bodies, and the durable synthetic Stop transcript retains the selected model and effort."
+    }
+  ],
+  "dependencies": [
+    "polaris_kernel::KernelPromptAssembler",
+    "polaris_kernel::KernelToolRunner",
+    "polaris_kernel::KernelFrameJournal",
+    "polaris_runtime::frames::run_frame",
+    "polaris_nebius_cloud::token_factory::VllmChatClient",
+    "polaris_security::pii::PiiVault"
+  ],
+  "libraries": [
+    "tokio",
+    "serde_json",
+    "tempfile",
+    "secrecy"
+  ],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "AgentContextFrame<Active>",
+      "description": "A real local kernel frame with selected synthetic model and effort, session capability, CAS, tool runner and durable journal."
+    },
+    {
+      "name": "http_fixture",
+      "type": "TcpListener",
+      "description": "A bounded loopback-only fixture serving one synthetic /tokenize response followed by one synthetic OpenAI-compatible Stop SSE response."
+    }
+  ],
+  "output_type": "Result<FrameRunOutcome, FrameError>",
+  "output_description": "One real local frame execution whose sanitized request is counted and dispatched with matching messages, tools and model, then durably journaled; tokenizer IDs/counts and verifier fingerprint are explicitly synthetic fixtures."
+}

@@ -1,0 +1,70 @@
+{
+  "type_of": "pipeline",
+  "name": "KernelFrameVerifier",
+  "file_path": "crates/polaris-kernel/src/frame_verification.rs",
+  "logic_name": "Kernel frame source and proof verification",
+  "test_list": [
+    {
+      "test_name": "ordinary_step_returns_fingerprint_of_actual_manifest",
+      "description": "Return a source-derived fingerprint without appending activity."
+    },
+    {
+      "test_name": "wrong_frame_is_rejected_before_using_session_evidence",
+      "description": "Reject a foreign frame view."
+    },
+    {
+      "test_name": "fabricated_mutation_result_without_durable_call_and_approval_is_rejected",
+      "description": "Refuse fabricated result evidence."
+    },
+    {
+      "test_name": "completion_requires_real_passed_event_for_current_frame_and_tree",
+      "description": "Missing durable proof cannot complete a frame."
+    },
+    {
+      "test_name": "stale_source_cannot_reuse_a_missing_completion_witness",
+      "description": "Changed source cannot invent a missing proof."
+    },
+    {
+      "test_name": "production_verifier_accepts_real_mutation_and_rejects_forged_link",
+      "description": "Require exact recorded result, approval and current source."
+    },
+    {
+      "test_name": "frame_completion_verifier_requires_current_actual_proof_and_latest_verdict",
+      "description": "Validate real sandbox-transport fixture evidence, exact review binding, source invalidation and latest failure."
+    }
+  ],
+  "dependencies": [
+    "KernelHandle",
+    "InspectionOwner",
+    "FrameToolBinding",
+    "FrameJournal",
+    "KernelEvidence",
+    "StepVerifier",
+    "Manifest"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json",
+    "tokio",
+    "tokio-util"
+  ],
+  "inputs": [
+    {
+      "name": "frame",
+      "type": "FrameView",
+      "description": "Actual active frame identity supplied by the runtime driver."
+    },
+    {
+      "name": "output",
+      "type": "StepTool",
+      "description": "Untrusted assistant output plus actual bounded tool results from the driver."
+    },
+    {
+      "name": "completion_request",
+      "type": "FrameView",
+      "description": "Exact frame whose completion evidence the trusted host asks to validate."
+    }
+  ],
+  "output_type": "Result<Verification, FrameVerificationError>",
+  "output_description": "A source-bound accepted step with only independently verified diff CIDs, or a separately validated opaque completion proof; no terminal frame transition is performed."
+}

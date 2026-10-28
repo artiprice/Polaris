@@ -22,12 +22,13 @@ pub(crate) fn encode(bytes: &[u8]) -> String {
 }
 
 fn nibble(c: u8, expected: usize, found: usize) -> Result<u8, ParseError> {
-    match c {
-        b'0'..=b'9' => Ok(c - b'0'),
-        b'a'..=b'f' => Ok(c - b'a' + 10),
-        b'A'..=b'F' => Ok(c - b'A' + 10),
-        _ => Err(ParseError::InvalidHex { expected, found }),
-    }
+    let value = match c {
+        b'0'..=b'9' => c.checked_sub(b'0'),
+        b'a'..=b'f' => c.checked_sub(b'a').and_then(|value| value.checked_add(10)),
+        b'A'..=b'F' => c.checked_sub(b'A').and_then(|value| value.checked_add(10)),
+        _ => None,
+    };
+    value.ok_or(ParseError::InvalidHex { expected, found })
 }
 
 fn decode_pairs(text: &str, out: &mut [u8], expected: usize) -> Result<(), ParseError> {
@@ -66,7 +67,29 @@ pub(crate) fn decode_vec(text: &str) -> Result<Vec<u8>, ParseError> {
             found,
         });
     }
-    let mut out = vec![0u8; found / 2];
+    let pairs = found.checked_div(2).ok_or(ParseError::InvalidHex {
+        expected: found,
+        found,
+    })?;
+    let mut out = vec![0u8; pairs];
     decode_pairs(text, &mut out, found)?;
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::nibble;
+
+    #[test]
+    fn every_byte_matches_ascii_hex_contract() {
+        for byte in u8::MIN..=u8::MAX {
+            let expected = char::from(byte)
+                .to_digit(16)
+                .and_then(|value| u8::try_from(value).ok());
+            match expected {
+                Some(value) => assert_eq!(nibble(byte, 2, 1), Ok(value), "ASCII hex mapping"),
+                None => assert!(nibble(byte, 2, 1).is_err(), "non-hex byte is rejected"),
+            }
+        }
+    }
 }

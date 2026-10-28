@@ -159,6 +159,29 @@ fn normal_archive_passes_and_hostile_archives_are_rejected() -> Result<(), Box<d
     let traversal = zip_bytes(&[("../escape", b"x".as_slice())])?;
     assert!(archive::validate(&traversal, limits).is_err());
 
+    let mut invalid_name = zip_bytes(&[("nullpath", b"x".as_slice())])?;
+    let name_offsets = invalid_name
+        .windows(8)
+        .enumerate()
+        .filter_map(|(offset, name)| (name == b"nullpath").then_some(offset))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        name_offsets.len(),
+        2,
+        "fixture must corrupt local and central names"
+    );
+    for offset in name_offsets {
+        let end = offset.checked_add(8).ok_or("fixture offset overflow")?;
+        invalid_name
+            .get_mut(offset..end)
+            .ok_or("fixture name is out of bounds")?
+            .copy_from_slice(b"nul\0path");
+    }
+    assert!(matches!(
+        archive::validate(&invalid_name, limits),
+        Err(IngestError::Malformed(_))
+    ));
+
     let duplicate = zip_bytes(&[
         ("a/./b", b"first".as_slice()),
         ("a/b", b"second".as_slice()),

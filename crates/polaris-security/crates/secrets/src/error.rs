@@ -7,6 +7,9 @@ use crate::SecretName;
 /// Secret operation failures. No variant carries plaintext or operating-system error strings.
 #[derive(Debug, thiserror::Error)]
 pub enum SecretsError {
+    /// The explicitly configured recovery key is missing or is not exactly 32 encoded bytes.
+    #[error("sealing recovery key is missing or invalid")]
+    InvalidSealKey,
     /// The requested value is not loaded into the vault.
     #[error("secret not found: {0:?}")]
     NotFound(SecretName),
@@ -70,7 +73,7 @@ impl HasKind for SecretsError {
             | Self::Capacity { .. }
             | Self::Utf8
             | Self::InvalidKeyringLocation => ErrorKind::Permanent,
-            Self::InvalidName => ErrorKind::Permanent,
+            Self::InvalidName | Self::InvalidSealKey => ErrorKind::Permanent,
             Self::Source(source) => source.kind(),
             Self::Entropy | Self::Seal | Self::Open => ErrorKind::Fatal,
         }

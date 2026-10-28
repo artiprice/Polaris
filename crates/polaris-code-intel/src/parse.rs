@@ -114,6 +114,24 @@ impl Parsed {
         self.tree.root_node().descendant_count()
     }
 
+    /// Evaluates an ast-grep structural pattern over this parser-owned tree.
+    ///
+    /// Pattern parsing is restricted to 4 KiB, source trees must be valid UTF-8 and below
+    /// `max_nodes`, and one result beyond `max_matches` returns an error instead of truncating.
+    /// The source AST itself is not reparsed: ast-grep wraps the tree produced by this crate.
+    ///
+    /// # Errors
+    /// Returns [`CodeIntelError::AstPattern`] for invalid patterns, invalid UTF-8, zero bounds,
+    /// node-limit exhaustion, or match-limit exhaustion.
+    pub fn find_ast_pattern(
+        &self,
+        pattern: &str,
+        max_matches: usize,
+        max_nodes: usize,
+    ) -> Result<Vec<ByteSpan>, CodeIntelError> {
+        crate::ast_pattern::find_ast_pattern(self, pattern, max_matches, max_nodes)
+    }
+
     /// The span of the root node.
     #[must_use]
     pub fn root_span(&self) -> ByteSpan {
@@ -349,6 +367,6 @@ fn point_at(text: &[u8], byte: usize) -> Point {
     let line_start = before
         .iter()
         .rposition(|&b| b == b'\n')
-        .map_or(0, |i| i + 1);
+        .map_or(0, |i| i.saturating_add(1));
     Point::new(row, before.len().saturating_sub(line_start))
 }

@@ -1,0 +1,6 @@
+PASS: 14 final command records; exits and raw test totals agree.
+PASS: scoped suite 92 passed / 0 failed / 2 ignored; Linux DAG 12 / 0 / 0.
+PASS: 1198 recorded source/config/document hashes match current files.
+PASS: 10 descriptor test names have actual test definitions.
+PASS: phase inventory, estimates and report snapshot agree.
+LIMIT: scoped evidence and consistency only; full phase acceptance remains open.

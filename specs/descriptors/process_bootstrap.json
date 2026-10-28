@@ -1,0 +1,75 @@
+{
+  "type_of": "trait implementation",
+  "name": "WorkerBootstrapPlatform::bootstrap_tree",
+  "file_path": "crates/polaris-platform/crates/process/src/lib.rs",
+  "logic_name": "Bounded one-shot worker credential bootstrap",
+  "test_list": [
+    {
+      "test_name": "bootstrap_writes_exact_prefix_and_retains_stdin_until_stop",
+      "description": "For a live owned process tree, write the secret bytes exactly once with no terminator, keep stdin open after success, and allow a later graceful stop."
+    },
+    {
+      "test_name": "bootstrap_rejects_duplicate_before_second_write",
+      "description": "After a successful bootstrap, a second bootstrap request fails without writing additional bytes; a child fixture records any unexpected second prefix."
+    },
+    {
+      "test_name": "bootstrap_rejects_invalid_tree_before_io",
+      "description": "An unknown handle or mismatched root PID is rejected before child stdin is accessed and does not affect the valid owned process."
+    },
+    {
+      "test_name": "bootstrap_timeout_while_waiting_for_child_lock_forces_tree_stop",
+      "description": "A timeout covering child-lock acquisition records a terminal force-stop request, kills the worker once the lock becomes available, and lets supervision observe its exit."
+    },
+    {
+      "test_name": "bootstrap_cancellation_under_lock_contention_forces_tree_stop",
+      "description": "Dropping a pending bootstrap future while another operation holds the child lock preserves force-stop intent, kills the worker after lock release, and lets supervision observe its exit."
+    },
+    {
+      "test_name": "kill_tree_returns_pending_error_under_lock_contention_then_stops_process",
+      "description": "A synchronous kill request reports pending/unconfirmed termination when the retained child lock is held, while owned async cleanup kills the process after lock release and supervision observes its exit."
+    },
+    {
+      "test_name": "bootstrap_rejects_empty_and_oversized_secrets_without_leaking_contents",
+      "description": "Secrets outside the inclusive 1..=4096 byte bound fail with content-free errors, do not write to stdin, and leave a healthy process running."
+    },
+    {
+      "test_name": "bootstrap_accepts_exactly_4096_secret_bytes",
+      "description": "A credential at the inclusive upper bound is transferred exactly and leaves stdin open while the worker remains live."
+    },
+    {
+      "test_name": "bootstrap_rejects_nonpositive_and_unrepresentable_deadlines_without_stopping_worker",
+      "description": "Zero or timer-range-overflow deadlines fail before the one-shot attempt is claimed and leave the process healthy."
+    }
+  ],
+  "dependencies": [
+    "WorkerBootstrapPlatform",
+    "PlatformOps",
+    "ProcessTree",
+    "ProcessPlatform"
+  ],
+  "libraries": [
+    "secrecy",
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "tree",
+      "type": "&ProcessTree",
+      "description": "Opaque retained handle for the process tree to bootstrap."
+    },
+    {
+      "name": "secret",
+      "type": "secrecy::SecretString",
+      "description": "Credential written exactly as supplied to the retained child's stdin."
+    },
+    {
+      "name": "timeout",
+      "type": "std::time::Duration",
+      "description": "Deadline covering process-lock acquisition and the complete stdin write."
+    }
+  ],
+  "output_type": "Result<(), PlatformError>",
+  "output_description": "Success after the bounded exact-prefix write; errors contain no supplied secret bytes. Invalid input and duplicate attempts preserve a healthy process; timeout, write failure, or cancellation after attempt claim persist a force-stop request.",
+  "phase": "P2",
+  "summary": "Provide an opt-in SDK platform capability that securely bootstraps a retained worker process over stdin."
+}

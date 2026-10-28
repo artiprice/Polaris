@@ -1,0 +1,12 @@
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Finished `test` profile [unoptimized] target(s) in 1.40s
+     Running tests\task_route.rs (target\debug\deps\task_route-7fd7b91206d9a55c.exe)
+
+running 4 tests
+test route_timeout_defaults_to_medium_within_allowlist ... ok
+test route_preserves_hard_facts_and_explicit_direct_tool ... ok
+test route_rejects_oversize_input_before_inference ... ok
+test route_combines_intent_effort_parallel_and_vision_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

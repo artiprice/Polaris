@@ -1,0 +1,41 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Finished `test` profile [unoptimized] target(s) in 5.66s
+     Running tests\task_route.rs (target\debug\deps\task_route-7fd7b91206d9a55c.exe)
+
+running 4 tests
+test route_preserves_hard_facts_and_explicit_direct_tool ... ok
+test route_combines_intent_effort_parallel_and_vision_once ... FAILED
+test route_rejects_oversize_input_before_inference ... FAILED
+test route_timeout_defaults_to_medium_within_allowlist ... FAILED
+
+failures:
+
+---- route_combines_intent_effort_parallel_and_vision_once stdout ----
+
+thread 'route_combines_intent_effort_parallel_and_vision_once' (18152) panicked at crates\polaris-system-one\crates\router\tests\task_route.rs:43:80:
+assertion failed: route.spawn.parallel_branches
+
+---- route_rejects_oversize_input_before_inference stdout ----
+
+thread 'route_rejects_oversize_input_before_inference' (15188) panicked at crates\polaris-system-one\crates\router\tests\task_route.rs:59:5:
+assertion failed: router.route(&task).await.is_err()
+
+---- route_timeout_defaults_to_medium_within_allowlist stdout ----
+
+thread 'route_timeout_defaults_to_medium_within_allowlist' (19584) panicked at crates\polaris-system-one\crates\router\tests\task_route.rs:34:5:
+assertion `left == right` failed
+  left: Low
+ right: Medium
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    route_combines_intent_effort_parallel_and_vision_once
+    route_rejects_oversize_input_before_inference
+    route_timeout_defaults_to_medium_within_allowlist
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-system-one-router --test task_route`

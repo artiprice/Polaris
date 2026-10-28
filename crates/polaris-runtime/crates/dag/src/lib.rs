@@ -9,7 +9,8 @@ mod race;
 
 pub use graph::{
     Dag, DagBuilder, DagLimits, DagReport, DagRunStatus, FunctionalOperator, MAX_DAG_EDGES,
-    MAX_DAG_NODES, NodeCtx, NodeError, NodeId, NodeResult, NodeTask, OnFailure, RunOptions, run,
+    MAX_DAG_NODES, NodeCtx, NodeError, NodeId, NodeInterruption, NodeResult, NodeTask, OnFailure,
+    RunOptions, run,
 };
 pub use pools::{Pool, PoolCounters, PoolLimits, PoolPermit, PoolStats, Pools};
 pub use race::{Accept, Branch, MAX_RACE_BRANCHES, RaceOutcome, race};

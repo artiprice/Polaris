@@ -116,6 +116,8 @@ polaris-rpc = { path = "crates/polaris-rpc" }
 polaris-ui-model = { path = "crates/polaris-ui/crates/model" }
 polaris-ui-cli = { path = "crates/polaris-ui/crates/cli" }
 polaris-ui-gui = { path = "crates/polaris-ui/crates/gui" }
+polaris-ui-ascii-aurora = { path = "crates/polaris-ui/crates/ascii-aurora" }
+polaris-ui-session = { path = "crates/polaris-ui/crates/session" }
 polaris-ui-web = { path = "crates/polaris-ui/crates/web" }
 polaris-ui = { path = "crates/polaris-ui" }
 polaris-tests = { path = "tests" }
@@ -132,10 +134,12 @@ tokio-util = "0.7.20"
 tokio-stream = "0.1.19"
 futures = "0.3.34"
 bytes = "1.12.1"
+interprocess = { version = "=2.4.5", features = ["tokio"] }
 
 # ---------------------------------------------------------------- serde
 thiserror = "2.0.21"
 serde = { version = "1.0.229", features = ["derive"] }
+base64 = "0.22.1"
 serde_json = "1.0.154"
 toml = "1.1.8"
 serde-saphyr = "2.0.0"
@@ -168,6 +172,7 @@ prost-types = "0.14.4"
 protoc-bin-vendored = "3.3.0"
 # Tag v0.1.4 (2026-10-13), pinned by commit rev.
 openshell-sdk = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
+# Actual policy schema at the same pinned OpenShell v0.1.4 revision.
 openshell-policy-schema = { git = "https://github.com/NVIDIA/OpenShell", rev = "5a7728c304b5528e954e9ae900cf21f84e1a12b1" }
 
 # ---------------------------------------------------------------- ipc
@@ -223,7 +228,7 @@ hf-hub = { version = "1.0.0", features = ["rustls-tls"] }
 ndarray = "0.17.2"
 
 # ---------------------------------------------------------------- docs
-docx-rs = "0.4.22"
+docx-rs = { version = "0.4.22", path = "vendor/docx-rs", default-features = false }
 calamine = "0.37.0"
 pdf-extract = "0.12.1"
 pdfium-render = "0.9.4"
@@ -260,13 +265,13 @@ globset = "0.4.20"
 walkdir = "2.5.0"
 cap-std = "=4.0.3"
 cap-primitives = "=4.0.3"
-tar = { version = "0.4.46", default-features = false }
 notify = "8.2.0"
 notify-debouncer-full = "0.7.0"
 tempfile = "3.27.0"
 dunce = "1.0.5"
 etcetera = "0.11.0"
 fs4 = "1.1.0"
+tar = { version = "0.4.46", default-features = false }
 sysinfo = { version = "0.39.6", default-features = false, features = ["system", "disk"] }
 process-wrap = { version = "10.0.1", features = ["tokio1"] }
 portable-pty = "0.9.0"
@@ -276,7 +281,6 @@ shlex = "2.0.1"
 # ---------------------------------------------------------------- tui
 ratatui = "0.30.2"
 crossterm = { version = "0.29.0", features = ["event-stream"] }
-crossterm_winapi = "=0.9.1"
 ratatui-textarea = "0.9.3"
 syntect = { version = "5.3.0", default-features = false, features = ["default-fancy"] }
 two-face = { version = "0.5.2", default-features = false, features = ["syntect-fancy"] }
@@ -288,6 +292,8 @@ unicode-segmentation = "1.13.3"
 # ---------------------------------------------------------------- gui
 slint = { version = "1.18.1", default-features = false, features = ["std", "backend-winit", "renderer-femtovg", "renderer-software", "accessibility", "compat-1-2"] }
 slint-build = "1.18.1"
+ab_glyph = "0.2.32"
+i-slint-backend-testing = "=1.18.1"
 
 # ---------------------------------------------------------------- web
 leptos = "0.8.22"
@@ -301,10 +307,14 @@ chromiumoxide = { version = "0.9.1", default-features = false, features = ["byte
 rmcp = { version = "=3.5.1", default-features = false, features = ["client", "macros", "transport-async-rw", "transport-streamable-http-client-reqwest", "reqwest-tls-no-provider"] }
 sse-stream = "0.2.6"
 http-body-util = "0.1.5"
+
+# ---------------------------------------------------------------- docs
 csv = "1.4.0"
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.1", default-features = false, features = ["deflate"] }
 quick-xml = "0.42.0"
-# Default features (http, pipe): Docker Desktop over the Windows named pipe; no TLS (avoids ring).
+
+# ---------------------------------------------------------------- agents
+# Docker Desktop pipe/http plus BuildKit; explicit aws-lc-rs TLS provider avoids the ring-enabled ssl/buildkit feature.
 bollard = { version = "0.21.1", features = ["buildkit_providerless", "aws-lc-rs", "chrono"] }
 # Pulls reqwest 0.11; members must depend on it as an optional feature.
 dagger-sdk = "0.21.10"
@@ -350,6 +360,9 @@ loom = "0.7.2"
 # Zero-allocation tests (ADR-003): dhat::Alloc global allocator + HeapStats in testing mode; avoids own unsafe impl GlobalAlloc.
 dhat = "0.3.3"
 hdrhistogram = "7.6.0"
+
+# ---------------------------------------------------------------- tui
+crossterm_winapi = "=0.9.1"
 
 # ---------------------------------------------------------------- v2 roadmap (not active)
 # whisper-rs = "0.16.0"

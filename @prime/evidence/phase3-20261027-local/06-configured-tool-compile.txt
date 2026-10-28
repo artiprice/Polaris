@@ -1,0 +1,20 @@
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0502]: cannot borrow `fixture.frame` as mutable because it is also borrowed as immutable
+   --> crates\polaris-kernel\tests\agent_tools.rs:474:20
+    |
+432 |     let approve = async {
+    |                   ----- immutable borrow occurs here
+...
+438 |                         if *frame == fixture.frame.view().id =>
+    |                                      ------------- first borrow occurs due to use of `fixture.frame` in coroutine
+...
+474 |             frame: &mut fixture.frame,
+    |                    ^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+...
+483 |         tokio::join!(run, approve)
+    |                           ------- immutable borrow later captured here by closure
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `polaris-kernel` (test "agent_tools") due to 1 previous error

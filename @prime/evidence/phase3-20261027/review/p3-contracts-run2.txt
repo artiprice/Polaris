@@ -1,0 +1,19 @@
+   Compiling hyper-util v0.1.21
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+error[E0599]: no method named `run` found for fn item `fn(FixtureClient) -> impl Future<Output = Result<_, _>> {backend}` in the current scope
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:335:10
+    |
+334 |       let result = backend
+    |  __________________-
+335 | |         .run(&request("base", None)?, true, &cancellation)
+    | |         -^^^ method not found in `fn(FixtureClient) -> impl Future<Output = Result<_, _>> {backend}`
+    | |_________|
+    |
+    |
+    = note: the full name for the type has been written to 'C:\mDev\Polaris\target\debug\deps\polaris_nebius_cloud_sandboxes-a9c38a18b0720964.long-type-7384662185081939314.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-nebius-cloud-sandboxes` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

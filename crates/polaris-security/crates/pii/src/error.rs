@@ -6,6 +6,9 @@ use polaris_security_automata::AutomataError;
 /// A PII operation failed without echoing scanned or vaulted text.
 #[derive(Debug, thiserror::Error)]
 pub enum PiiError {
+    /// Snapshot authentication, format or session/frame binding failed.
+    #[error("PII snapshot authentication or format is invalid")]
+    Snapshot,
     /// The deterministic scanner failed or exceeded its bounded match buffer.
     #[error(transparent)]
     Scan(#[from] AutomataError),
@@ -18,6 +21,9 @@ pub enum PiiError {
     /// The match set or reversible vault reached its configured capacity.
     #[error("PII vault capacity exceeded")]
     Capacity,
+    /// Semantic PII model returned an invalid, oversized, or malformed byte range.
+    #[error("semantic PII span response is invalid")]
+    InvalidNerSpans,
     /// A checked counter or length calculation overflowed.
     #[error("PII vault counter overflow")]
     CounterOverflow,
@@ -39,8 +45,10 @@ impl HasKind for PiiError {
             Self::InputLimit
             | Self::InvalidUtf8
             | Self::Capacity
+            | Self::InvalidNerSpans
             | Self::CounterOverflow
             | Self::RandomUnavailable => ErrorKind::Permanent,
+            Self::Snapshot => ErrorKind::Policy,
             Self::BoundaryDenied => ErrorKind::Policy,
             Self::StateUnavailable => ErrorKind::Fatal,
         }

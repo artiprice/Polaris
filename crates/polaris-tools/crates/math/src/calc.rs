@@ -61,8 +61,8 @@ pub fn calc(expr: &str, limits: &CalcLimits) -> Result<Decimal, MathError> {
 /// `log2`, `sqrt`, `abs`, `PI`, `TAU`, and `E`.
 pub fn calc_f64(expr: &str, limits: &CalcLimits) -> Result<f64, MathError> {
     validate_expression_shape(expr, limits)?;
-    validate_float_exponents(expr, limits)?;
     validate_float_names(expr)?;
+    validate_float_exponents(expr, limits)?;
     let value = exmex::eval_str::<f64>(expr).map_err(|_| MathError::Parse { at: 0 })?;
     if value.is_finite() {
         Ok(value)
@@ -76,35 +76,18 @@ fn validate_float_exponents(expr: &str, limits: &CalcLimits) -> Result<(), MathE
     let mut cursor = 0_usize;
     while let Some(byte) = bytes.get(cursor).copied() {
         if byte == b'^' {
-            let mut start = cursor.checked_add(1).ok_or(MathError::TooLong)?;
-            while bytes
-                .get(start)
-                .is_some_and(|value| value.is_ascii_whitespace())
-            {
-                start = start.checked_add(1).ok_or(MathError::TooLong)?;
+            let rhs_start = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+            let rhs_end = power_rhs_end(bytes, rhs_start, limits.max_depth)?;
+            let rhs = expr
+                .get(rhs_start..rhs_end)
+                .ok_or(MathError::Parse { at: rhs_start })?;
+            let exponent =
+                exmex::eval_str::<f64>(rhs).map_err(|_| MathError::Parse { at: rhs_start })?;
+            if !exponent.is_finite() {
+                return Err(MathError::NonFinite);
             }
-            let signed_start = start;
-            if bytes
-                .get(start)
-                .is_some_and(|value| *value == b'+' || *value == b'-')
-            {
-                start = start.checked_add(1).ok_or(MathError::TooLong)?;
-            }
-            let digits_start = start;
-            while bytes.get(start).is_some_and(u8::is_ascii_digit) {
-                start = start.checked_add(1).ok_or(MathError::TooLong)?;
-            }
-            if digits_start < start && bytes.get(start) != Some(&b'.') {
-                let token = core::str::from_utf8(
-                    bytes
-                        .get(signed_start..start)
-                        .ok_or(MathError::Parse { at: signed_start })?,
-                )
-                .map_err(|_| MathError::Parse { at: signed_start })?;
-                let exponent = token.parse::<i64>().map_err(|_| MathError::ExponentLimit)?;
-                if exponent.unsigned_abs() > u64::from(limits.max_pow_exponent) {
-                    return Err(MathError::ExponentLimit);
-                }
+            if exponent.abs() > f64::from(limits.max_pow_exponent) {
+                return Err(MathError::ExponentLimit);
             }
         }
         cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
@@ -112,9 +95,142 @@ fn validate_float_exponents(expr: &str, limits: &CalcLimits) -> Result<(), MathE
     Ok(())
 }
 
+fn power_rhs_end(bytes: &[u8], start: usize, max_depth: u8) -> Result<usize, MathError> {
+    let mut cursor = start;
+    let mut depth = 1_u8;
+    loop {
+        cursor = consume_power_atom(bytes, cursor, depth, max_depth)?;
+        while bytes
+            .get(cursor)
+            .is_some_and(|value| value.is_ascii_whitespace())
+        {
+            cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+        }
+        if bytes.get(cursor) == Some(&b'^') {
+            cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+            depth = depth.checked_add(1).ok_or(MathError::TooDeep)?;
+            if depth > max_depth {
+                return Err(MathError::TooDeep);
+            }
+        } else {
+            return Ok(cursor);
+        }
+    }
+}
+
+fn consume_power_atom(
+    bytes: &[u8],
+    mut cursor: usize,
+    depth: u8,
+    max_depth: u8,
+) -> Result<usize, MathError> {
+    if depth > max_depth {
+        return Err(MathError::TooDeep);
+    }
+    while bytes
+        .get(cursor)
+        .is_some_and(|value| value.is_ascii_whitespace())
+    {
+        cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+    }
+    while bytes
+        .get(cursor)
+        .is_some_and(|value| *value == b'+' || *value == b'-')
+    {
+        cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+        while bytes
+            .get(cursor)
+            .is_some_and(|value| value.is_ascii_whitespace())
+        {
+            cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+        }
+    }
+    match bytes.get(cursor).copied() {
+        Some(b'(') => consume_parenthesized(bytes, cursor),
+        Some(byte) if byte.is_ascii_digit() || byte == b'.' => {
+            while bytes
+                .get(cursor)
+                .is_some_and(|value| value.is_ascii_digit() || *value == b'.')
+            {
+                cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+            }
+            Ok(cursor)
+        }
+        Some(byte) if byte.is_ascii_alphabetic() || byte == b'_' => {
+            let name_start = cursor;
+            while bytes
+                .get(cursor)
+                .is_some_and(|value| value.is_ascii_alphanumeric() || *value == b'_')
+            {
+                cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+            }
+            let name = core::str::from_utf8(
+                bytes
+                    .get(name_start..cursor)
+                    .ok_or(MathError::Parse { at: name_start })?,
+            )
+            .map_err(|_| MathError::Parse { at: name_start })?;
+            let mut after_name = cursor;
+            while bytes
+                .get(after_name)
+                .is_some_and(|value| value.is_ascii_whitespace())
+            {
+                after_name = after_name.checked_add(1).ok_or(MathError::TooLong)?;
+            }
+            if bytes.get(after_name) == Some(&b'(') {
+                consume_parenthesized(bytes, after_name)
+            } else if matches!(
+                name,
+                "sin" | "cos" | "tan" | "exp" | "ln" | "log10" | "log2" | "sqrt" | "abs"
+            ) {
+                let next_depth = depth.checked_add(1).ok_or(MathError::TooDeep)?;
+                if next_depth > max_depth {
+                    return Err(MathError::TooDeep);
+                }
+                consume_power_atom(bytes, after_name, next_depth, max_depth)
+            } else {
+                Ok(cursor)
+            }
+        }
+        Some(byte) if !byte.is_ascii() => {
+            while bytes.get(cursor).is_some_and(|value| {
+                !value.is_ascii() || value.is_ascii_alphanumeric() || *value == b'_'
+            }) {
+                cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+            }
+            Ok(cursor)
+        }
+        _ => Err(MathError::Parse { at: cursor }),
+    }
+}
+
+fn consume_parenthesized(bytes: &[u8], start: usize) -> Result<usize, MathError> {
+    let mut depth = 0_usize;
+    let mut cursor = start;
+    while let Some(byte) = bytes.get(cursor).copied() {
+        match byte {
+            b'(' => depth = depth.checked_add(1).ok_or(MathError::TooDeep)?,
+            b')' => {
+                depth = depth
+                    .checked_sub(1)
+                    .ok_or(MathError::Parse { at: cursor })?;
+                if depth == 0 {
+                    return cursor.checked_add(1).ok_or(MathError::TooLong);
+                }
+            }
+            _ => {}
+        }
+        cursor = cursor.checked_add(1).ok_or(MathError::TooLong)?;
+    }
+    Err(MathError::Parse { at: start })
+}
+
 fn validate_expression_shape(expr: &str, limits: &CalcLimits) -> Result<(), MathError> {
     if expr.len() > limits.max_len || limits.max_len == 0 {
         return Err(MathError::TooLong);
+    }
+    if limits.max_depth == 0 {
+        return Err(MathError::TooDeep);
     }
     let mut depth = 0_u8;
     for byte in expr.bytes() {

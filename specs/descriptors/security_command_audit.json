@@ -1,0 +1,19 @@
+{
+  "type_of": "method",
+  "name": "RuleEngine::audit_command",
+  "file_path": "crates/polaris-security/crates/rules/src/command.rs",
+  "logic_name": "command_audit",
+  "test_list": [
+    {"test_name": "rm_rf_root_flagged", "description": "The dangerous shell DFA rule reports the destructive command."},
+    {"test_name": "curl_pipe_shell_flagged", "description": "A network-to-shell command reports the injection category."},
+    {"test_name": "benign_ls_clean", "description": "A benign command has no dangerous-shell finding."},
+    {"test_name": "secret_findings_do_not_leak_raw_value", "description": "Secret category is scanned separately and findings expose only snippet CIDs."},
+    {"test_name": "posix_and_windows_destructive_commands_are_categorized", "description": "POSIX destructive commands and Windows recursive removals are categorized with benign Windows commands clean."},
+    {"test_name": "each_secret_rule_has_a_specific_positive_and_benign_negative", "description": "AWS, private-key and GitHub secret patterns each have a matched case and a nearby benign negative."}
+  ],
+  "dependencies": ["DfaScanner", "Category"],
+  "libraries": ["polaris-security-automata"],
+  "inputs": [{"name": "command", "type": "&str", "description": "A bounded command string supplied for audit."}],
+  "output_type": "Result<Vec<Finding>, RulesError>",
+  "output_description": "Structured dangerous-command and secret findings with redacted snippets."
+}

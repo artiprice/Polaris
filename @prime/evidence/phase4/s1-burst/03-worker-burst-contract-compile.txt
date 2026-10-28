@@ -1,0 +1,72 @@
+   Compiling bit-vec v0.10.1
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling gix-imara-diff v0.3.1
+   Compiling ordered-float v2.10.1
+   Compiling serde_regex v1.2.0
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling bit-set v0.11.1
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling serde-value v0.7.0
+   Compiling gix-diff v0.69.0
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling ast-grep-core v0.51.0
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling ast-grep-config v0.51.0
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling gix-status v0.36.0
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling gix v0.89.0
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+error[E0583]: file not found for module `arbitrate`
+ --> crates\polaris-security\crates\rules\src\lib.rs:7:1
+  |
+7 | mod arbitrate;
+  | ^^^^^^^^^^^^^^
+  |
+  = help: to create the module `arbitrate`, create file "crates\polaris-security\crates\rules\src\arbitrate.rs" or "crates\polaris-security\crates\rules\src\arbitrate\mod.rs"
+  = note: if there is a `mod arbitrate` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `audit`
+ --> crates\polaris-security\crates\rules\src\lib.rs:8:1
+  |
+8 | mod audit;
+  | ^^^^^^^^^^
+  |
+  = help: to create the module `audit`, create file "crates\polaris-security\crates\rules\src\audit.rs" or "crates\polaris-security\crates\rules\src\audit\mod.rs"
+  = note: if there is a `mod audit` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `command`
+ --> crates\polaris-security\crates\rules\src\lib.rs:9:1
+  |
+9 | mod command;
+  | ^^^^^^^^^^^^
+  |
+  = help: to create the module `command`, create file "crates\polaris-security\crates\rules\src\command.rs" or "crates\polaris-security\crates\rules\src\command\mod.rs"
+  = note: if there is a `mod command` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `pack`
+  --> crates\polaris-security\crates\rules\src\lib.rs:12:1
+   |
+12 | mod pack;
+   | ^^^^^^^^^
+   |
+   = help: to create the module `pack`, create file "crates\polaris-security\crates\rules\src\pack.rs" or "crates\polaris-security\crates\rules\src\pack\mod.rs"
+   = note: if there is a `mod pack` elsewhere in the crate already, import it with `use crate::...` instead
+
+For more information about this error, try `rustc --explain E0583`.
+error: could not compile `polaris-security-rules` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...

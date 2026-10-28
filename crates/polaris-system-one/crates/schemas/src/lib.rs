@@ -1,4 +1,5 @@
 //! Versioned System-One schemas and deterministic threshold application.
+pub mod calibration;
 use polaris_sdk::system_one::{
     Answer, Decision, DecisionSchema, DecisionSchemaCalibration, DecisionSchemaCalibrationRecord,
     DecisionSchemaCalibrationState, DecisionSchemaCatalog as SdkDecisionSchemaCatalog,
@@ -170,6 +171,36 @@ pub struct FailPolicy {
     /// Integrity mode.
     pub integrity: Integrity,
 }
+/// Integer ratio used by deterministic watchdog thresholds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WatchdogRatio {
+    /// Threshold numerator.
+    pub numerator: u32,
+    /// Nonzero threshold denominator.
+    pub denominator: u32,
+}
+/// Data-only deterministic watchdog bounds; this is not model calibration or authority.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DeterministicWatchdogConfig {
+    /// Configuration format version.
+    pub version: u16,
+    /// Maximum UTF-8 bytes in a proposed step.
+    pub max_step_bytes: u32,
+    /// Recent records retained per frame.
+    pub window_size: u16,
+    /// Tokens per normalized shingle.
+    pub shingle_size: u16,
+    /// Minimum Jaccard similarity for near-duplicate detection.
+    pub near_duplicate: WatchdogRatio,
+    /// Context-used/context-budget pressure threshold.
+    pub pressure: WatchdogRatio,
+    /// Repetition threshold for fatigue detection.
+    pub repetition: WatchdogRatio,
+    /// Require pressure and repetition together for fatigue.
+    pub require_both_signals: bool,
+}
 /// Versioned decision schema.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -265,11 +296,14 @@ pub trait SchemaCatalog: Send + Sync {
 #[derive(Debug, Clone, Default)]
 pub struct SchemaSet {
     schemas: BTreeMap<(String, u32), Schema>,
+    watchdog: Option<DeterministicWatchdogConfig>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct SchemaDocument {
     schemas: Vec<Schema>,
+    #[serde(default)]
+    watchdog: Option<DeterministicWatchdogConfig>,
 }
 impl SchemaSet {
     /// Load embedded production schemas.
@@ -315,7 +349,11 @@ impl SchemaSet {
                 reason: "empty schema set".into(),
             });
         }
-        Ok(Self { schemas })
+        validate_watchdog(doc.watchdog)?;
+        Ok(Self {
+            schemas,
+            watchdog: doc.watchdog,
+        })
     }
     /// Exact version lookup.
     #[must_use]
@@ -331,11 +369,17 @@ impl SchemaSet {
             .max_by_key(|((_, v), _)| v)
             .map(|(_, s)| s)
     }
+    /// Validated deterministic watchdog configuration, when supplied by this schema document.
+    #[must_use]
+    pub const fn watchdog_config(&self) -> Option<&DeterministicWatchdogConfig> {
+        self.watchdog.as_ref()
+    }
     /// Validate all records.
     ///
     /// # Errors
     /// Returns first invalid schema.
     pub fn validate(&self) -> Result<(), SchemaError> {
+        validate_watchdog(self.watchdog)?;
         for s in self.schemas.values() {
             validate_schema(s)?;
         }
@@ -360,6 +404,9 @@ impl SchemaSet {
     /// # Errors
     /// Returns OverrideWeakens if an override broadens policy.
     pub fn with_repository_overrides(&self, o: &SchemaSet) -> Result<Self, SchemaError> {
+        if o.watchdog.is_some() && o.watchdog != self.watchdog {
+            return Err(weak("watchdog", "deterministic watchdog configuration"));
+        }
         let mut out = self.clone();
         for ((id, v), c) in &o.schemas {
             let Some(b) = self.schemas.get(&(id.clone(), *v)) else {
@@ -370,6 +417,34 @@ impl SchemaSet {
         }
         Ok(out)
     }
+}
+
+fn validate_watchdog(config: Option<DeterministicWatchdogConfig>) -> Result<(), SchemaError> {
+    let Some(config) = config else {
+        return Ok(());
+    };
+    let valid_ratio = |ratio: WatchdogRatio, allow_zero: bool| {
+        ratio.denominator > 0
+            && ratio.numerator <= ratio.denominator
+            && (allow_zero || ratio.numerator > 0)
+    };
+    if config.version != 1
+        || config.max_step_bytes == 0
+        || config.max_step_bytes > 1_048_576
+        || config.window_size == 0
+        || config.window_size > 128
+        || config.shingle_size == 0
+        || config.shingle_size > 128
+        || !valid_ratio(config.near_duplicate, false)
+        || !valid_ratio(config.pressure, true)
+        || !valid_ratio(config.repetition, true)
+    {
+        return Err(SchemaError::InvalidSchema {
+            id: "watchdog".to_owned(),
+            reason: "deterministic watchdog configuration is outside bounds".to_owned(),
+        });
+    }
+    Ok(())
 }
 impl SchemaCatalog for SchemaSet {
     fn get(&self, id: &str, v: u32) -> Option<&Schema> {

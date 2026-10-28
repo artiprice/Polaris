@@ -1,0 +1,14 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0624]: method `session` is private
+   --> crates\polaris-kernel\tests\agent_tools.rs:650:66
+    |
+650 |             output.join(format!("{}-events.json", fixture.kernel.session())),
+    |                                                                  ^^^^^^^ private method
+    |
+   ::: crates\polaris-kernel\src\runtime.rs:511:5
+    |
+511 |     pub(crate) fn session(&self) -> SessionId {
+    |     ----------------------------------------- private method defined here
+
+For more information about this error, try `rustc --explain E0624`.
+error: could not compile `polaris-kernel` (test "agent_tools") due to 1 previous error

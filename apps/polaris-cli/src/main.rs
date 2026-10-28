@@ -33,6 +33,10 @@ fn main() -> ExitCode {
     };
     match runtime.block_on(polaris_cli::run(args)) {
         Ok(()) => ExitCode::SUCCESS,
+        Err(polaris_cli::CliError::TaskUnverified) => {
+            fail(polaris_cli::CliError::TaskUnverified);
+            ExitCode::from(3)
+        }
         Err(error) => fail(error),
     }
 }

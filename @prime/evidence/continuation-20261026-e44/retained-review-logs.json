@@ -1,0 +1,90 @@
+[
+  {
+    "path": "review/clippy-final.txt",
+    "sha256": "a67ca106f8368ff78f1ad2f91128ae1416644e74db96a848ccfad3a074f8d284"
+  },
+  {
+    "path": "review/descriptor-final.txt",
+    "sha256": "b689520c7d78c99cdb283871139a38ce72776bac373ed873735b29c1e5731caf"
+  },
+  {
+    "path": "review/descriptor-json-final.txt",
+    "sha256": "dcd2ebbfacc5d11592c054ba23169f901a29172de191e698945ec901719e66ac"
+  },
+  {
+    "path": "review/descriptor-json.txt",
+    "sha256": "3565e040228a3ec7dc0abc43fd547ad28b500ef446161e94d215bd08ffb5598a"
+  },
+  {
+    "path": "review/drain-retention-green.txt",
+    "sha256": "d2d43a1097ffa3effafb970b6ded6a9d5a0a3085b67bd4c6e824e7281d49bab4"
+  },
+  {
+    "path": "review/drain-retention-red.txt",
+    "sha256": "842407a7e619d305f52309469474de4200f24285b3d9c134f7c013a1204085ce"
+  },
+  {
+    "path": "review/drain-retention-red2.txt",
+    "sha256": "6629057c460b3c1676fcf81a428e33d85bdaae87982299aab981d7ad942a1da2"
+  },
+  {
+    "path": "review/fmt-apply-final.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/fmt-apply.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/fmt-check-final.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/fmt-check.txt",
+    "sha256": "d90172ff95b2683f46d1e2653245b018c20e25e788669741b33d64e5fe0280ff"
+  },
+  {
+    "path": "review/fmt-final.txt",
+    "sha256": "a860d06ca906d1db648bf0aedef432d9d054a04bf11812b8f95561bb90e38f47"
+  },
+  {
+    "path": "review/strict-clippy-final.txt",
+    "sha256": "a91f4622dd04cec4ba9508864a486368c4d4bbba01e1b4bd597b6fcc84219134"
+  },
+  {
+    "path": "review/strict-clippy.txt",
+    "sha256": "4935d32387893f8c15adec2ab74c4863a78d641570367b84f8acf4391a26444a"
+  },
+  {
+    "path": "review/test-final.txt",
+    "sha256": "a7c958525314c050387a2380cb82c37d76494d73b16ce4b266c8078c28df73f5"
+  },
+  {
+    "path": "review/test-final2.txt",
+    "sha256": "ee12bc2edb9f8fc97bd2f4814fb1d713f664344e35bee63a31b5da6045f6b98f"
+  },
+  {
+    "path": "review/test-initial.txt",
+    "sha256": "b36c1e3cc8d36d85e3d6e2c1d668affff8ece1d8799e141852528d34a45874f5"
+  },
+  {
+    "path": "review/test-pass1.txt",
+    "sha256": "a150e6fe7234321772975212f5e9727e5e92d15d5c7e2194b41d9838cea34f07"
+  },
+  {
+    "path": "review/test-pass2.txt",
+    "sha256": "65b263ea55edfaeeb17051effbecca0163fecd915912d3a3f6633f52449e1689"
+  },
+  {
+    "path": "review/test-pass3.txt",
+    "sha256": "60947f1b431cedeeea1ec9643c06e2215f22336c28af6a125568de6e3d926c5f"
+  },
+  {
+    "path": "review/test-pass4.txt",
+    "sha256": "630b312279d27b8f3f7a181868c0833abc2c8ef9684993ffaf89443c078983ed"
+  },
+  {
+    "path": "review/test-relocation.txt",
+    "sha256": "9f00158b665337b0efcfccc2f2a0db8f21b167e53941e6d2491bc2b594c46db4"
+  }
+]

@@ -1,0 +1,17 @@
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 11.47s
+     Running tests\model_lifecycle.rs (target\debug\deps\model_lifecycle-a948e7b8dba1d082.exe)
+
+running 8 tests
+test pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile ... ignored, requires provenance-pinned local llama.cpp/Qwen runtime files
+test synthetic_llama_server_fixture ... ok
+test loader_rejects_non_loopback_and_mismatched_url_authority ... ok
+test configured_subagent_override_uses_the_existing_model_registry ... ok
+test load_keeps_one_exact_adapter_and_lease_through_count_and_stream ... ok
+test stalled_profile_probe_retries_within_probe_timeout ... ok
+test failed_profile_startup_stops_the_owned_process_tree ... ok
+test helper_process_listener_fails_closed_and_tree_cleanup_reaps_both ... ok
+
+test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 8.14s
+

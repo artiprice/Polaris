@@ -1,0 +1,572 @@
+[
+  {
+    "name": "vendored-docx",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/check-vendored-docx.py"
+    ],
+    "started_utc": "2026-10-26T14:38:30.873513+00:00",
+    "elapsed_seconds": 4.383,
+    "exit_code": 0,
+    "raw": "vendored-docx.txt"
+  },
+  {
+    "name": "vendored-docx-tests",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/tests/test_check_vendored_docx.py",
+      "-v"
+    ],
+    "started_utc": "2026-10-26T14:38:35.257229+00:00",
+    "elapsed_seconds": 6.518,
+    "exit_code": 0,
+    "raw": "vendored-docx-tests.txt"
+  },
+  {
+    "name": "vendored-biscuit",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/check-vendored-biscuit.py"
+    ],
+    "started_utc": "2026-10-26T14:38:41.776373+00:00",
+    "elapsed_seconds": 1.159,
+    "exit_code": 0,
+    "raw": "vendored-biscuit.txt"
+  },
+  {
+    "name": "zip-graph",
+    "argv": [
+      "cargo",
+      "tree",
+      "--offline",
+      "--locked",
+      "-i",
+      "zip"
+    ],
+    "started_utc": "2026-10-26T14:38:42.936013+00:00",
+    "elapsed_seconds": 2.781,
+    "exit_code": 0,
+    "raw": "zip-graph.txt"
+  },
+  {
+    "name": "summary",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "summary"
+    ],
+    "started_utc": "2026-10-26T14:38:45.717120+00:00",
+    "elapsed_seconds": 0.341,
+    "exit_code": 0,
+    "raw": "summary.txt"
+  },
+  {
+    "name": "members",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "started_utc": "2026-10-26T14:38:46.058814+00:00",
+    "elapsed_seconds": 0.274,
+    "exit_code": 0,
+    "raw": "members.txt"
+  },
+  {
+    "name": "layers",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "started_utc": "2026-10-26T14:38:46.333143+00:00",
+    "elapsed_seconds": 0.378,
+    "exit_code": 0,
+    "raw": "layers.txt"
+  },
+  {
+    "name": "witness",
+    "argv": [
+      "cargo",
+      "xtask",
+      "check-witness"
+    ],
+    "started_utc": "2026-10-26T14:38:46.711463+00:00",
+    "elapsed_seconds": 7.049,
+    "exit_code": 0,
+    "raw": "witness.txt"
+  },
+  {
+    "name": "workspace-check",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-26T14:45:38.480000+00:00",
+    "elapsed_seconds": 16.444,
+    "exit_code": 0,
+    "raw": "workspace-check.txt"
+  },
+  {
+    "name": "scoped-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-platform-process",
+      "-p",
+      "polaris-kernel-supervisor",
+      "-p",
+      "polaris-kernel",
+      "-p",
+      "polaris-nebius-cloud",
+      "-p",
+      "polaris-nebius-cloud-ai-cloud",
+      "-p",
+      "polaris-devenv-cicd",
+      "-p",
+      "polaris-worker"
+    ],
+    "started_utc": "2026-10-26T14:45:54.926480+00:00",
+    "elapsed_seconds": 44.145,
+    "exit_code": 0,
+    "raw": "scoped-tests.txt",
+    "test_result_totals": {
+      "passed": 254,
+      "failed": 0,
+      "ignored": 8
+    }
+  },
+  {
+    "name": "sdk-full-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-sdk",
+      "--no-fail-fast"
+    ],
+    "started_utc": "2026-10-26T14:42:07.530202+00:00",
+    "elapsed_seconds": 8.204,
+    "exit_code": 101,
+    "raw": "sdk-full-tests.txt",
+    "test_result_totals": {
+      "passed": 54,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "real-model",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-system-one-engine",
+      "--test",
+      "real_model",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-26T14:42:15.734548+00:00",
+    "elapsed_seconds": 20.029,
+    "exit_code": 0,
+    "raw": "real-model.txt",
+    "environment_overrides": {
+      "POLARIS_S1_MODEL_DIR": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx",
+      "POLARIS_ORT_DYLIB": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+      "GLINER2_DEVICE": "cpu"
+    },
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "real-worker-process",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-26T14:42:35.764626+00:00",
+    "elapsed_seconds": 29.237,
+    "exit_code": 0,
+    "raw": "real-worker-process.txt",
+    "environment_overrides": {
+      "POLARIS_S1_MODEL_DIR": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx",
+      "POLARIS_ORT_DYLIB": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+      "GLINER2_DEVICE": "cpu"
+    },
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "scoped-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-platform-process",
+      "-p",
+      "polaris-nebius-cloud",
+      "-p",
+      "polaris-nebius-cloud-ai-cloud",
+      "-p",
+      "polaris-devenv-cicd",
+      "-p",
+      "polaris-worker",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T14:43:05.002835+00:00",
+    "elapsed_seconds": 45.064,
+    "exit_code": 0,
+    "raw": "scoped-clippy.txt"
+  },
+  {
+    "name": "supervisor-production-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel-supervisor",
+      "--lib",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T14:43:50.067049+00:00",
+    "elapsed_seconds": 2.084,
+    "exit_code": 0,
+    "raw": "supervisor-production-clippy.txt"
+  },
+  {
+    "name": "supervisor-bootstrap-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel-supervisor",
+      "--test",
+      "worker_bootstrap",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T14:43:52.152197+00:00",
+    "elapsed_seconds": 6.545,
+    "exit_code": 0,
+    "raw": "supervisor-bootstrap-clippy.txt"
+  },
+  {
+    "name": "kernel-production-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T14:43:58.697751+00:00",
+    "elapsed_seconds": 7.963,
+    "exit_code": 0,
+    "raw": "kernel-production-clippy.txt"
+  },
+  {
+    "name": "sdk-production-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-sdk",
+      "--lib",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T14:44:06.661844+00:00",
+    "elapsed_seconds": 0.849,
+    "exit_code": 0,
+    "raw": "sdk-production-clippy.txt"
+  },
+  {
+    "name": "scoped-format",
+    "argv": [
+      "cargo",
+      "fmt",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-platform-process",
+      "-p",
+      "polaris-kernel-supervisor",
+      "-p",
+      "polaris-kernel",
+      "-p",
+      "polaris-nebius-cloud",
+      "-p",
+      "polaris-nebius-cloud-ai-cloud",
+      "-p",
+      "polaris-devenv-cicd",
+      "-p",
+      "polaris-worker",
+      "-p",
+      "polaris-sdk",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T14:44:07.512037+00:00",
+    "elapsed_seconds": 0.768,
+    "exit_code": 0,
+    "raw": "scoped-format.txt"
+  },
+  {
+    "name": "supervised-real-worker",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "supervised_worker",
+      "supervised_worker_returns_real_decision",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-26T14:44:08.280582+00:00",
+    "elapsed_seconds": 15.407,
+    "exit_code": 0,
+    "raw": "supervised-real-worker.txt",
+    "environment_overrides": {
+      "POLARIS_S1_MODEL_DIR": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx",
+      "POLARIS_ORT_DYLIB": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+      "GLINER2_DEVICE": "cpu"
+    },
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "advisories",
+    "argv": [
+      "cargo",
+      "deny",
+      "--offline",
+      "check",
+      "advisories"
+    ],
+    "started_utc": "2026-10-26T14:44:23.688493+00:00",
+    "elapsed_seconds": 12.282,
+    "exit_code": 1,
+    "raw": "advisories.txt"
+  },
+  {
+    "name": "vet",
+    "argv": [
+      "cargo",
+      "vet",
+      "--locked"
+    ],
+    "started_utc": "2026-10-26T14:44:35.971614+00:00",
+    "elapsed_seconds": 1.743,
+    "exit_code": 4294967295,
+    "raw": "vet.txt"
+  },
+  {
+    "name": "members-final",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "exit_code": 0,
+    "raw": "members-final.txt",
+    "observed_utc": "2026-10-26T14:49:49.216954+00:00"
+  },
+  {
+    "name": "layers-final",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "exit_code": 0,
+    "raw": "layers-final.txt",
+    "observed_utc": "2026-10-26T14:49:49.586050+00:00"
+  },
+  {
+    "name": "docs-final",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-docs"
+    ],
+    "exit_code": 0,
+    "raw": "docs-final.txt",
+    "observed_utc": "2026-10-26T14:49:49.834228+00:00"
+  },
+  {
+    "name": "docs-render-final",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs",
+      "--check"
+    ],
+    "exit_code": 0,
+    "raw": "docs-render-final.txt",
+    "observed_utc": "2026-10-26T14:49:50.123520+00:00"
+  },
+  {
+    "name": "percentages-final",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/validate_phase_percentages.py"
+    ],
+    "exit_code": 0,
+    "raw": "percentages-final.txt",
+    "observed_utc": "2026-10-26T14:49:50.254723+00:00"
+  },
+  {
+    "name": "diff-whitespace-final",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "raw": "diff-whitespace-final.txt",
+    "observed_utc": "2026-10-26T14:49:50.410677+00:00"
+  }
+]

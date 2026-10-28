@@ -1,0 +1,12 @@
+COMMAND
+cargo test -p polaris-worker --test configured_host -- --nocapture 2>&1 | Tee-Object -FilePath @prime\evidence\phase4\s1-host-followup\configured-host-tests.txt; exit $LASTEXITCODE
+
+RAW EXEC OUTPUT
+out-file:
+Line |
+   2 | cargo test -p polaris-worker --test configured_host -- --nocapture 2> …
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Could not find a part of the path 'C:\mDev\Polaris\@prime\evidence\phase4\s1-host-followup\configured-host-tests.txt'.
+
+EXEC WRAPPER
+reported exit_code=0, wall_time_seconds=3.367. This transcript does not establish test completion; cargo/rustc processes were still visible immediately afterward and are not attributable from this shell due process-inspection access denial.

@@ -1,0 +1,10 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+error[E0432]: unresolved import `polaris_system_one_schemas::calibration`
+ --> crates\polaris-system-one\crates\schemas\tests\calibration.rs:1:33
+  |
+1 | use polaris_system_one_schemas::calibration::*;
+  |                                 ^^^^^^^^^^^ could not find `calibration` in `polaris_system_one_schemas`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-system-one-schemas` (test "calibration") due to 1 previous error

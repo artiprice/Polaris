@@ -1,0 +1,21 @@
+   Compiling docx-rs v0.4.22 (C:\mDev\Polaris\vendor\docx-rs)
+   Compiling polaris-ingest v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ingest)
+    Finished `test` profile [unoptimized] target(s) in 18.83s
+     Running unittests src\lib.rs (target\debug\deps\polaris_ingest-9ae6d9c6b5ba0a2c.exe)
+
+running 1 test
+
+thread 'tests::normal_archive_passes_and_hostile_archives_are_rejected' (13832) panicked at crates\polaris-ingest\src\tests.rs:176:5:
+assertion failed: matches!(archive::validate(&invalid_name, limits),
+    Err(IngestError::Malformed(_)))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tests::normal_archive_passes_and_hostile_archives_are_rejected ... FAILED
+
+failures:
+
+failures:
+    tests::normal_archive_passes_and_hostile_archives_are_rejected
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-ingest --lib`

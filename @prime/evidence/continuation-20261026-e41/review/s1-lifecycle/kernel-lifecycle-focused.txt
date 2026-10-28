@@ -1,0 +1,8 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error: crate `tonic` required to be available in rlib format, but was not found in this form
+
+error: crate `reqwest` required to be available in rlib format, but was not found in this form
+
+error: crate `openshell_extension_core` required to be available in rlib format, but was not found in this form
+
+error: could not compile `polaris-kernel` (lib test) due to 3 previous errors

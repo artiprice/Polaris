@@ -152,7 +152,9 @@ async fn wait_for_tree_pids(
     directory: &Path,
     count: u32,
 ) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    let deadline = tokio::time::Instant::now()
+        .checked_add(Duration::from_secs(15))
+        .ok_or("process tree PID deadline exceeds timer range")?;
     loop {
         let mut pids = Vec::new();
         for depth in 1..=count {
@@ -162,7 +164,7 @@ async fn wait_for_tree_pids(
             };
             pids.push(text.trim().parse()?);
         }
-        if pids.len() == count as usize {
+        if pids.len() == usize::try_from(count)? {
             return Ok(pids);
         }
         if tokio::time::Instant::now() >= deadline {
@@ -174,7 +176,9 @@ async fn wait_for_tree_pids(
 
 async fn assert_process_gone(pid: u32) -> Result<(), Box<dyn std::error::Error>> {
     let target = Pid::from_u32(pid);
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+    let deadline = tokio::time::Instant::now()
+        .checked_add(Duration::from_secs(10))
+        .ok_or("process exit deadline exceeds timer range")?;
     loop {
         let mut system = System::new();
         system.refresh_processes(ProcessesToUpdate::Some(&[target]), true);

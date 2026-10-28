@@ -443,7 +443,7 @@ fn full_replacement_diff(
         patch.push('-');
         patch.push_str(line);
         patch.push('\n');
-        if index + 1 == old_lines.len() && !old.ends_with('\n') {
+        if index == old_lines.len().saturating_sub(1) && !old.ends_with('\n') {
             patch.push_str("\\ No newline at end of file\n");
         }
     }
@@ -451,7 +451,7 @@ fn full_replacement_diff(
         patch.push('+');
         patch.push_str(line);
         patch.push('\n');
-        if index + 1 == new_lines.len() && !new.ends_with('\n') {
+        if index == new_lines.len().saturating_sub(1) && !new.ends_with('\n') {
             patch.push_str("\\ No newline at end of file\n");
         }
     }

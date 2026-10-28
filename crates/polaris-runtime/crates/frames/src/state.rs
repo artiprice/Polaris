@@ -8,7 +8,9 @@ use polaris_sdk::{
     ids::{AgentRole, Cid, FastFingerprint, FrameId, ModelId},
 };
 use polaris_security_capability::{CapabilityError, Clock, Scope, Token, attenuate};
+use polaris_system_one_watchdog::{NegativeConstraint, StepRecord};
 use std::{
+    collections::VecDeque,
     marker::PhantomData,
     sync::{Arc, Mutex, MutexGuard},
 };
@@ -82,6 +84,10 @@ pub struct FrameView {
     pub steps: u32,
     /// CAS scratchpad reference.
     pub scratchpad: ScratchpadRef,
+    /// Bounded advisory recent-step hashes, oldest first.
+    pub watchdog_recent: Vec<StepRecord>,
+    /// Bounded rejected-hypothesis fingerprints retained beyond the recent window.
+    pub negative_constraints: Vec<NegativeConstraint>,
 }
 
 /// Terminal status. `ClaimedDone` intentionally is not a terminal outcome; proof-of-done belongs
@@ -186,7 +192,9 @@ impl HasKind for FrameError {
 /// from `Debug` and from watchdog views.
 pub struct AgentContextFrame<S> {
     pub(crate) id: FrameId,
+    pub(crate) root_frame_id: FrameId,
     pub(crate) parent: Option<FrameId>,
+    pub(crate) parent_binding: Option<Arc<FrameToolBinding>>,
     pub(crate) role: AgentRole,
     pub(crate) token: Token,
     pub(crate) scope: FrameScope,
@@ -195,12 +203,190 @@ pub struct AgentContextFrame<S> {
     pub(crate) lease: Option<AttachedQuotaLease>,
     pub(crate) scratchpad: ScratchpadRef,
     pub(crate) history: Vec<DiffTimelineEntry>,
+    pub(crate) watchdog_recent: VecDeque<StepRecord>,
+    pub(crate) negative_constraints: VecDeque<NegativeConstraint>,
     pub(crate) steps: u32,
     pub(crate) fingerprint: Option<FastFingerprint>,
     pub(crate) depth: u8,
     pub(crate) model: Option<ModelId>,
     pub(crate) effort: Effort,
     _state: PhantomData<S>,
+}
+
+/// Local, sealed association between a live frame identity and the token it currently carries.
+///
+/// This witness is derived from the actual runtime frame. It is not signed, does not make Biscuit
+/// tokens non-transferable, and does not replace issuer verification or capability authorization.
+#[derive(Clone)]
+pub struct FrameToolBinding {
+    frame_id: FrameId,
+    parent_frame_id: Option<FrameId>,
+    parent_binding: Option<Arc<FrameToolBinding>>,
+    root_frame_id: FrameId,
+    role: AgentRole,
+    token_digest: [u8; 32],
+}
+
+/// Sealed origin of a tool invocation after the actual driver reserves a frame step.
+#[derive(Clone)]
+pub struct FrameStepBinding {
+    binding: FrameToolBinding,
+    step: u32,
+    max_result_bytes: usize,
+}
+impl std::fmt::Debug for FrameStepBinding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("FrameStepBinding(<redacted>)")
+    }
+}
+impl FrameStepBinding {
+    /// Actual frame/token/role binding captured at this step.
+    #[must_use]
+    pub const fn frame_binding(&self) -> &FrameToolBinding {
+        &self.binding
+    }
+    /// Attempt reserved by the real runtime driver; never a model-supplied turn number.
+    #[must_use]
+    pub const fn step(&self) -> u32 {
+        self.step
+    }
+    /// Actual result limit chosen by the driver for this whole tool-call batch.
+    #[must_use]
+    pub const fn max_result_bytes(&self) -> usize {
+        self.max_result_bytes
+    }
+}
+
+/// Sealed, secret-free association between an active frame and its selected prompt configuration.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FramePromptBinding {
+    frame_id: FrameId,
+    root_frame_id: FrameId,
+    role: AgentRole,
+    model: ModelId,
+    effort: Effort,
+}
+
+impl FramePromptBinding {
+    /// Current frame identity.
+    #[must_use]
+    pub const fn frame_id(&self) -> FrameId {
+        self.frame_id
+    }
+
+    /// Root identity shared by this frame and all of its descendants.
+    #[must_use]
+    pub const fn root_frame_id(&self) -> FrameId {
+        self.root_frame_id
+    }
+
+    /// Role assigned by the trusted frame constructor.
+    #[must_use]
+    pub const fn role(&self) -> AgentRole {
+        self.role
+    }
+
+    /// Selected model identifier.
+    #[must_use]
+    pub fn model(&self) -> &ModelId {
+        &self.model
+    }
+
+    /// Effort selected for this frame.
+    #[must_use]
+    pub const fn effort(&self) -> Effort {
+        self.effort
+    }
+}
+
+impl std::fmt::Debug for FrameToolBinding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("FrameToolBinding(<redacted>)")
+    }
+}
+
+impl FrameToolBinding {
+    /// Actual sealed parent binding captured when the runtime constructed this child.
+    /// This contains only identities and token digests; it cannot mint or widen authority.
+    #[must_use]
+    pub fn parent_binding(&self) -> Option<&FrameToolBinding> {
+        self.parent_binding.as_deref()
+    }
+
+    /// Current frame identity.
+    #[must_use]
+    pub const fn frame_id(&self) -> FrameId {
+        self.frame_id
+    }
+
+    /// Actual direct parent in the live runtime frame tree; roots have no parent.
+    #[must_use]
+    pub const fn parent_frame_id(&self) -> Option<FrameId> {
+        self.parent_frame_id
+    }
+
+    /// Root identity shared by this frame and all of its descendants.
+    #[must_use]
+    pub const fn root_frame_id(&self) -> FrameId {
+        self.root_frame_id
+    }
+
+    /// Role assigned by the trusted frame constructor.
+    #[must_use]
+    pub const fn role(&self) -> AgentRole {
+        self.role
+    }
+
+    /// Whether `token` is the token captured from this exact frame instance.
+    #[must_use]
+    pub fn matches_token(&self, token: &Token) -> bool {
+        self.token_digest
+            == frame_token_digest(
+                self.frame_id,
+                self.parent_frame_id,
+                self.root_frame_id,
+                self.role,
+                token,
+            )
+    }
+
+    /// Secret-free digest of this sealed frame identity, including its actual parent and token.
+    #[must_use]
+    pub const fn identity_digest(&self) -> Cid {
+        Cid::from_bytes(self.token_digest)
+    }
+}
+
+fn frame_token_digest(
+    frame_id: FrameId,
+    parent_frame_id: Option<FrameId>,
+    root_frame_id: FrameId,
+    role: AgentRole,
+    token: &Token,
+) -> [u8; 32] {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"polaris.frame-tool-binding.v2\0");
+    hasher.update(frame_id.as_uuid().as_bytes());
+    match parent_frame_id {
+        Some(parent) => {
+            hasher.update(&[1]);
+            hasher.update(parent.as_uuid().as_bytes());
+        }
+        None => {
+            hasher.update(&[0]);
+        }
+    }
+    hasher.update(root_frame_id.as_uuid().as_bytes());
+    hasher.update(&[match role {
+        AgentRole::Orchestrator => 1,
+        AgentRole::SubAgent => 2,
+        AgentRole::Verifier => 3,
+        AgentRole::Researcher => 4,
+        AgentRole::Hacker => 5,
+        AgentRole::Watchdog => 6,
+    }]);
+    hasher.update(token.to_bytes().as_bytes());
+    *hasher.finalize().as_bytes()
 }
 
 impl<S> std::fmt::Debug for AgentContextFrame<S> {
@@ -227,7 +413,9 @@ impl AgentContextFrame<Spawned> {
     ) -> Self {
         Self {
             id,
+            root_frame_id: id,
             parent: None,
+            parent_binding: None,
             role,
             token,
             scope,
@@ -236,6 +424,8 @@ impl AgentContextFrame<Spawned> {
             lease: None,
             scratchpad,
             history: Vec::new(),
+            watchdog_recent: VecDeque::new(),
+            negative_constraints: VecDeque::new(),
             steps: 0,
             fingerprint: None,
             depth: 1,
@@ -256,7 +446,9 @@ impl AgentContextFrame<Spawned> {
         }
         Ok(AgentContextFrame {
             id: self.id,
+            root_frame_id: self.root_frame_id,
             parent: self.parent,
+            parent_binding: self.parent_binding,
             role: self.role,
             token: self.token,
             scope: self.scope,
@@ -265,6 +457,8 @@ impl AgentContextFrame<Spawned> {
             lease: self.lease,
             scratchpad: self.scratchpad,
             history: self.history,
+            watchdog_recent: self.watchdog_recent,
+            negative_constraints: self.negative_constraints,
             steps: self.steps,
             fingerprint: self.fingerprint,
             depth: self.depth,
@@ -296,17 +490,19 @@ impl AgentContextFrame<Active> {
         if next_depth > self.allocation.max_depth || next_depth > quota.max_depth {
             return Err(FrameError::DepthLimit);
         }
+        let id = FrameId::new_v7();
         let child_token = attenuate(&self.token, &child_scope, clock)?;
         let lease = {
             let mut available = lock_recover(&self.remaining);
             available.reserve(&quota)?
         };
-        let id = FrameId::new_v7();
         let remaining = Arc::new(Mutex::new(quota.clone()));
         let lease = Some(lease.attach(Arc::clone(&self.remaining), Arc::clone(&remaining)));
         Ok(AgentContextFrame {
             id,
+            root_frame_id: self.root_frame_id,
             parent: Some(self.id),
+            parent_binding: Some(Arc::new(self.tool_binding())),
             role,
             token: child_token,
             scope: FrameScope {
@@ -318,6 +514,8 @@ impl AgentContextFrame<Active> {
             lease,
             scratchpad,
             history: Vec::new(),
+            watchdog_recent: VecDeque::new(),
+            negative_constraints: VecDeque::new(),
             steps: 0,
             fingerprint: None,
             depth: next_depth,
@@ -465,7 +663,124 @@ impl AgentContextFrame<Active> {
             fingerprint: self.fingerprint,
             steps: self.steps,
             scratchpad: self.scratchpad,
+            watchdog_recent: self.watchdog_recent.iter().cloned().collect(),
+            negative_constraints: self.negative_constraints.iter().copied().collect(),
         }
+    }
+
+    /// Retain one hashed watchdog observation for this already-reserved frame step.
+    /// Raw thought and tool arguments are never part of a `StepRecord`.
+    pub fn record_watchdog_step(&mut self, record: StepRecord) -> Result<(), FrameError> {
+        if record.index.get() != self.steps || record.shingles.len() > 4096 {
+            return Err(FrameError::Accounting);
+        }
+        if let Some(latest) = self.watchdog_recent.back_mut() {
+            if latest.index == record.index {
+                *latest = record;
+                return Ok(());
+            }
+        }
+        if self.watchdog_recent.len() >= 128 {
+            let _ = self.watchdog_recent.pop_front();
+        }
+        self.watchdog_recent.push_back(record);
+        Ok(())
+    }
+
+    /// Retain a rejected proposed-step fingerprint as advisory corrective context.
+    pub fn record_negative_constraint(
+        &mut self,
+        constraint: NegativeConstraint,
+    ) -> Result<(), FrameError> {
+        if constraint.rejected_at.get() == 0 || constraint.rejected_at.get() > self.steps {
+            return Err(FrameError::Accounting);
+        }
+        if self
+            .negative_constraints
+            .iter()
+            .any(|entry| *entry == constraint)
+        {
+            return Ok(());
+        }
+        if self.negative_constraints.len() >= 256 {
+            let _ = self.negative_constraints.pop_front();
+        }
+        self.negative_constraints.push_back(constraint);
+        Ok(())
+    }
+
+    /// Restore advisory watchdog memory after the caller has restored the same frame's step
+    /// counter and quotas. This method cannot advance counters or restore capability authority.
+    pub fn restore_watchdog_memory(
+        &mut self,
+        memory: crate::WatchdogFrameMemory,
+    ) -> Result<(), FrameError> {
+        memory
+            .validate(self.id)
+            .map_err(|_| FrameError::Accounting)?;
+        if memory.step != self.steps {
+            return Err(FrameError::Accounting);
+        }
+        self.watchdog_recent = memory.recent.into();
+        self.negative_constraints = memory.negative_constraints.into();
+        Ok(())
+    }
+
+    /// Capture a sealed local witness for tool dispatch from this actual active frame.
+    #[must_use]
+    pub fn tool_binding(&self) -> FrameToolBinding {
+        FrameToolBinding {
+            frame_id: self.id,
+            parent_frame_id: self.parent,
+            parent_binding: self.parent_binding.clone(),
+            root_frame_id: self.root_frame_id,
+            role: self.role,
+            token_digest: frame_token_digest(
+                self.id,
+                self.parent,
+                self.root_frame_id,
+                self.role,
+                &self.token,
+            ),
+        }
+    }
+
+    /// Borrow this actual frame's attenuated token for trusted backend composition.
+    /// This does not issue authority; callers must still verify its trusted issuer and scope.
+    #[must_use]
+    pub const fn capability_token(&self) -> &Token {
+        &self.token
+    }
+
+    /// Capture tool origin from the actual reserved frame attempt.
+    /// # Errors
+    /// An unstarted frame has no tool step and is rejected.
+    pub(crate) fn step_binding(
+        &self,
+        max_result_bytes: usize,
+    ) -> Result<FrameStepBinding, FrameError> {
+        if self.steps == 0 {
+            return Err(FrameError::Accounting);
+        }
+        Ok(FrameStepBinding {
+            binding: self.tool_binding(),
+            step: self.steps,
+            max_result_bytes,
+        })
+    }
+
+    /// Capture the frame's selected model and effort for prompt construction.
+    ///
+    /// An active frame without a selected model violates its activation invariant.
+    pub fn prompt_binding(&self) -> Result<FramePromptBinding, FrameError> {
+        let model = self.model.clone().ok_or(FrameError::Accounting)?;
+        Ok(FramePromptBinding {
+            frame_id: self.id,
+            root_frame_id: self.root_frame_id,
+            role: self.role,
+            model,
+            effort: self.effort,
+        })
     }
 
     /// Charge CPU measured by a trusted backend. This does not grant or start a process.
@@ -506,7 +821,9 @@ impl<S> AgentContextFrame<S> {
     fn map_state<T>(self) -> AgentContextFrame<T> {
         AgentContextFrame {
             id: self.id,
+            root_frame_id: self.root_frame_id,
             parent: self.parent,
+            parent_binding: self.parent_binding,
             role: self.role,
             token: self.token,
             scope: self.scope,
@@ -515,6 +832,8 @@ impl<S> AgentContextFrame<S> {
             lease: self.lease,
             scratchpad: self.scratchpad,
             history: self.history,
+            watchdog_recent: self.watchdog_recent,
+            negative_constraints: self.negative_constraints,
             steps: self.steps,
             fingerprint: self.fingerprint,
             depth: self.depth,

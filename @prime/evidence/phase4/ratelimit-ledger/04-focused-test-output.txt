@@ -1,0 +1,196 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+error[E0252]: the name `Clock` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:17
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                 ----- previous import of the trait `Clock` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                 ^^^^^--
+     |                 |
+     |                 `Clock` reimported here
+     |                 help: remove unnecessary import
+     |
+     = note: `Clock` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `DualLimiter` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:24
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                        ----------- previous import of the type `DualLimiter` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                        ^^^^^^^^^^^--
+     |                        |
+     |                        `DualLimiter` reimported here
+     |                        help: remove unnecessary import
+     |
+     = note: `DualLimiter` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `TokenCount` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1121:9
+     |
+1109 |     use polaris_sdk::ids::TokenCount;
+     |         ---------------------------- previous import of the type `TokenCount` here
+...
+1121 |     use polaris_sdk::ids::TokenCount;
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `TokenCount` reimported here
+     |
+     = note: `TokenCount` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `NonZeroU32` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1122:9
+     |
+1110 |     use std::num::NonZeroU32;
+     |         -------------------- previous import of the type `NonZeroU32` here
+...
+1122 |     use std::num::NonZeroU32;
+     |         ^^^^^^^^^^^^^^^^^^^^ `NonZeroU32` reimported here
+     |
+     = note: `NonZeroU32` must be defined only once in the type namespace of this module
+
+error[E0428]: the name `ZeroClock` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1125:5
+     |
+1113 |     struct ZeroClock;
+     |     ----------------- previous definition of the type `ZeroClock` here
+...
+1125 |     struct ZeroClock;
+     |     ^^^^^^^^^^^^^^^^^ `ZeroClock` redefined here
+     |
+     = note: `ZeroClock` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `Estimate` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:37
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                     -------- previous import of the type `Estimate` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                     ^^^^^^^^--
+     |                                     |
+     |                                     `Estimate` reimported here
+     |                                     help: remove unnecessary import
+     |
+     = note: `Estimate` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `Priority` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:47
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                               -------- previous import of the type `Priority` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                               ^^^^^^^^--
+     |                                               |
+     |                                               `Priority` reimported here
+     |                                               help: remove unnecessary import
+     |
+     = note: `Priority` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `Quota` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:57
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                                         ----- previous import of the type `Quota` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                                         ^^^^^--
+     |                                                         |
+     |                                                         `Quota` reimported here
+     |                                                         help: remove unnecessary import
+     |
+     = note: `Quota` must be defined only once in the type namespace of this module
+
+error[E0252]: the name `ShedPolicy` is defined multiple times
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:64
+     |
+1108 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                                                ---------- previous import of the type `ShedPolicy` here
+...
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                                                                ^^^^^^^^^^ `ShedPolicy` reimported here
+     |
+     = note: `ShedPolicy` must be defined only once in the type namespace of this module
+
+warning: unused imports: `Clock`, `DualLimiter`, `Estimate`, `Priority`, `Quota`, and `ShedPolicy`
+    --> crates\polaris-ratelimit\src\ledger.rs:1120:17
+     |
+1120 |     use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
+     |                 ^^^^^  ^^^^^^^^^^^  ^^^^^^^^  ^^^^^^^^  ^^^^^  ^^^^^^^^^^
+     |
+     = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `polaris_sdk::ids::TokenCount`
+    --> crates\polaris-ratelimit\src\ledger.rs:1121:9
+     |
+1121 |     use polaris_sdk::ids::TokenCount;
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::num::NonZeroU32`
+    --> crates\polaris-ratelimit\src\ledger.rs:1122:9
+     |
+1122 |     use std::num::NonZeroU32;
+     |         ^^^^^^^^^^^^^^^^^^^^
+
+error[E0119]: conflicting implementations of trait `Clone` for type `ledger::tests::ZeroClock`
+    --> crates\polaris-ratelimit\src\ledger.rs:1124:14
+     |
+1112 |     #[derive(Clone, Copy)]
+     |              ----- first implementation here
+...
+1124 |     #[derive(Clone, Copy)]
+     |              ^^^^^ conflicting implementation for `ledger::tests::ZeroClock`
+
+error[E0119]: conflicting implementations of trait `Copy` for type `ledger::tests::ZeroClock`
+    --> crates\polaris-ratelimit\src\ledger.rs:1124:21
+     |
+1112 |     #[derive(Clone, Copy)]
+     |                     ---- first implementation here
+...
+1124 |     #[derive(Clone, Copy)]
+     |                     ^^^^ conflicting implementation for `ledger::tests::ZeroClock`
+
+error[E0119]: conflicting implementations of trait `Clock` for type `ledger::tests::ZeroClock`
+    --> crates\polaris-ratelimit\src\ledger.rs:1127:5
+     |
+1115 |     impl Clock for ZeroClock {
+     |     ------------------------ first implementation here
+...
+1127 |     impl Clock for ZeroClock {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^ conflicting implementation for `ledger::tests::ZeroClock`
+
+error[E0277]: `?` couldn't convert the error: `(): std::error::Error` is not satisfied
+    --> crates\polaris-ratelimit\src\ledger.rs:1283:69
+     |
+1212 |     -> Result<(), Box<dyn std::error::Error>> {
+     |        -------------------------------------- required `(): std::error::Error` because of this
+...
+1283 |         let (reused_slot, reused_generation) = ledger.claim_intent()?;
+     |                                                       --------------^ the trait `std::error::Error` is not implemented for `()`
+     |                                                       |
+     |                                                       this has type `Result<_, ()>`
+     |
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+     = note: required for `Box<dyn std::error::Error>` to implement `From<()>`
+
+error[E0277]: `?` couldn't convert the error: `(): std::error::Error` is not satisfied
+    --> crates\polaris-ratelimit\src\ledger.rs:1287:52
+     |
+1212 |     -> Result<(), Box<dyn std::error::Error>> {
+     |        -------------------------------------- required `(): std::error::Error` because of this
+...
+1287 |         ledger.ack_snapshot_result(result_snapshot)?;
+     |                ------------------------------------^ the trait `std::error::Error` is not implemented for `()`
+     |                |
+     |                this has type `Result<_, ()>`
+     |
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+     = note: required for `Box<dyn std::error::Error>` to implement `From<()>`
+
+Some errors have detailed explanations: E0119, E0252, E0277, E0428.
+For more information about an error, try `rustc --explain E0119`.
+warning: `polaris-ratelimit` (lib test) generated 3 warnings
+error: could not compile `polaris-ratelimit` (lib test) due to 14 previous errors; 3 warnings emitted
+warning: build failed, waiting for other jobs to finish...

@@ -1,0 +1,26 @@
+{
+  "type_of": "method",
+  "name": "Validated deterministic watchdog configuration",
+  "file_path": "crates/polaris-system-one/crates/schemas/src/lib.rs",
+  "logic_name": "Load a separate versioned deterministic watchdog policy with validated bounded thresholds",
+  "test_list": [
+    {
+      "test_name": "builtin_watchdog_config_is_explicit_and_bounded",
+      "description": "The embedded configuration exposes actual window, shingle, step-byte, and ratio settings without calibration claims."
+    },
+    {
+      "test_name": "invalid_deterministic_watchdog_config_is_rejected",
+      "description": "Degenerate thresholds and values beyond hard bounds fail schema loading."
+    }
+  ],
+  "dependencies": ["polaris-system-one-schemas"],
+  "inputs": [
+    {
+      "name": "watchdog_config",
+      "type": "DeterministicWatchdogConfig",
+      "description": "Separate data-only config; not a model decision schema and has no calibration fields."
+    }
+  ],
+  "output_type": "validated config or SchemaError",
+  "output_description": "A typed deterministic configuration with nonzero ratios and bounded step/window/shingle settings."
+}

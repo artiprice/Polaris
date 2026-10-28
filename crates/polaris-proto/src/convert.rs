@@ -13,6 +13,7 @@ use polaris_sdk::contracts::{
 };
 use polaris_sdk::effort::Effort;
 use polaris_sdk::error::ParseError;
+use polaris_sdk::human::HumanRequestId;
 use polaris_sdk::ids::{AgentRole, Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 use polaris_sdk::system_one::{
     Answer, Decision, DecisionInput, Label, LabelScore, Probability, Question, QuestionAnswer,
@@ -74,7 +75,7 @@ macro_rules! uuid_conversions {
     )+};
 }
 
-uuid_conversions!(SessionId, FrameId, CommandId);
+uuid_conversions!(SessionId, FrameId, CommandId, HumanRequestId);
 
 fn cid_to_pb(cid: Cid) -> Option<pb::Cid> {
     Some(pb::Cid::from(&cid))
@@ -230,6 +231,9 @@ impl From<&Event> for pb::Event {
             Event::DirectiveApplied { directive } => Kind::DirectiveApplied(m::DirectiveApplied {
                 directive: cid_to_pb(directive),
             }),
+            Event::UserInputSubmitted { text } => Kind::UserInputSubmitted(m::UserInputSubmitted {
+                text: cid_to_pb(text),
+            }),
             Event::DecisionMade {
                 frame,
                 decision,
@@ -351,6 +355,66 @@ impl From<&Event> for pb::Event {
                 transcript: cid_to_pb(transcript),
                 outcome: frame_step_outcome_to_pb(outcome),
             }),
+            Event::HumanRequestCreated {
+                request_id,
+                frame,
+                origin_step,
+                request,
+            } => Kind::HumanRequestCreated(m::HumanRequestCreated {
+                request_id: Some(pb::Uuid::from(&request_id)),
+                frame: frame_to_pb(frame),
+                origin_step,
+                request: cid_to_pb(request),
+            }),
+            Event::HumanRequestAnswered {
+                request_id,
+                frame,
+                receipt,
+            } => Kind::HumanRequestAnswered(m::HumanRequestAnswered {
+                request_id: Some(pb::Uuid::from(&request_id)),
+                frame: frame_to_pb(frame),
+                receipt: cid_to_pb(receipt),
+            }),
+            Event::HumanRequestInterrupted {
+                request_id,
+                frame,
+                revision,
+            } => Kind::HumanRequestInterrupted(m::HumanRequestInterrupted {
+                request_id: Some(pb::Uuid::from(&request_id)),
+                frame: frame_to_pb(frame),
+                revision: cid_to_pb(revision),
+            }),
+            Event::FrameToolResultRecorded {
+                frame,
+                call,
+                result,
+            } => Kind::FrameToolResultRecorded(m::FrameToolResultRecorded {
+                frame: frame_to_pb(frame),
+                call: cid_to_pb(call),
+                result: cid_to_pb(result),
+            }),
+            Event::FrameRegistered {
+                frame,
+                parent,
+                root,
+                role,
+                binding,
+            } => Kind::FrameRegistered(m::FrameRegistered {
+                frame: frame_to_pb(frame),
+                parent: parent.map(|value| pb::Uuid::from(&value)),
+                root: frame_to_pb(root),
+                role: role_to_pb(role),
+                binding: cid_to_pb(binding),
+            }),
+            Event::FrameTreeCancellationRequested {
+                target,
+                receipt,
+                command,
+            } => Kind::FrameTreeCancellationRequested(m::FrameTreeCancellationRequested {
+                target: frame_to_pb(target),
+                receipt: cid_to_pb(receipt),
+                command: Some(pb::Uuid::from(&command)),
+            }),
             Event::ProofOfDoneBlocked { frame, report } => {
                 Kind::ProofOfDoneBlocked(m::ProofOfDoneBlocked {
                     frame: frame_to_pb(frame),
@@ -394,6 +458,9 @@ impl TryFrom<pb::Event> for Event {
             },
             Kind::DirectiveApplied(m) => Self::DirectiveApplied {
                 directive: cid_from_pb("event.directive_applied.directive", m.directive)?,
+            },
+            Kind::UserInputSubmitted(m) => Self::UserInputSubmitted {
+                text: cid_from_pb("event.user_input_submitted.text", m.text)?,
             },
             Kind::DecisionMade(m) => Self::DecisionMade {
                 frame: frame_from_pb("event.decision_made.frame", m.frame)?,
@@ -466,6 +533,54 @@ impl TryFrom<pb::Event> for Event {
                 step: m.step,
                 transcript: cid_from_pb("event.frame_step_recorded.transcript", m.transcript)?,
                 outcome: frame_step_outcome_from_pb(m.outcome)?,
+            },
+            Kind::HumanRequestCreated(m) => Self::HumanRequestCreated {
+                request_id: HumanRequestId::from(require(
+                    "event.human_request_created.request_id",
+                    m.request_id,
+                )?),
+                frame: frame_from_pb("event.human_request_created.frame", m.frame)?,
+                origin_step: m.origin_step,
+                request: cid_from_pb("event.human_request_created.request", m.request)?,
+            },
+            Kind::HumanRequestAnswered(m) => Self::HumanRequestAnswered {
+                request_id: HumanRequestId::from(require(
+                    "event.human_request_answered.request_id",
+                    m.request_id,
+                )?),
+                frame: frame_from_pb("event.human_request_answered.frame", m.frame)?,
+                receipt: cid_from_pb("event.human_request_answered.receipt", m.receipt)?,
+            },
+            Kind::HumanRequestInterrupted(m) => Self::HumanRequestInterrupted {
+                request_id: HumanRequestId::from(require(
+                    "event.human_request_interrupted.request_id",
+                    m.request_id,
+                )?),
+                frame: frame_from_pb("event.human_request_interrupted.frame", m.frame)?,
+                revision: cid_from_pb("event.human_request_interrupted.revision", m.revision)?,
+            },
+            Kind::FrameToolResultRecorded(m) => Self::FrameToolResultRecorded {
+                frame: frame_from_pb("event.frame_tool_result_recorded.frame", m.frame)?,
+                call: cid_from_pb("event.frame_tool_result_recorded.call", m.call)?,
+                result: cid_from_pb("event.frame_tool_result_recorded.result", m.result)?,
+            },
+            Kind::FrameRegistered(m) => Self::FrameRegistered {
+                frame: frame_from_pb("event.frame_registered.frame", m.frame)?,
+                parent: m
+                    .parent
+                    .map(|parent| frame_from_pb("event.frame_registered.parent", Some(parent)))
+                    .transpose()?,
+                root: frame_from_pb("event.frame_registered.root", m.root)?,
+                role: role_from_pb("event.frame_registered.role", m.role)?,
+                binding: cid_from_pb("event.frame_registered.binding", m.binding)?,
+            },
+            Kind::FrameTreeCancellationRequested(m) => Self::FrameTreeCancellationRequested {
+                target: frame_from_pb("event.frame_tree_cancellation_requested.target", m.target)?,
+                receipt: cid_from_pb("event.frame_tree_cancellation_requested.receipt", m.receipt)?,
+                command: CommandId::from(require(
+                    "event.frame_tree_cancellation_requested.command",
+                    m.command,
+                )?),
             },
             Kind::ProofOfDoneBlocked(m) => Self::ProofOfDoneBlocked {
                 frame: frame_from_pb("event.proof_of_done_blocked.frame", m.frame)?,
@@ -573,6 +688,15 @@ impl From<&CommandBody> for pb::CommandBody {
             CommandBody::ApplyDirective { directive } => Kind::ApplyDirective(m::ApplyDirective {
                 directive: cid_to_pb(directive),
             }),
+            CommandBody::AnswerHumanRequest {
+                request_id,
+                revision,
+                answer,
+            } => Kind::AnswerHumanRequest(m::AnswerHumanRequest {
+                request_id: Some(pb::Uuid::from(&request_id)),
+                revision: cid_to_pb(revision),
+                answer: cid_to_pb(answer),
+            }),
         };
         Self { kind: Some(kind) }
     }
@@ -612,6 +736,14 @@ impl TryFrom<pb::CommandBody> for CommandBody {
             },
             Kind::ApplyDirective(m) => Self::ApplyDirective {
                 directive: cid_from_pb("command_body.apply_directive.directive", m.directive)?,
+            },
+            Kind::AnswerHumanRequest(m) => Self::AnswerHumanRequest {
+                request_id: HumanRequestId::from(require(
+                    "command_body.answer_human_request.request_id",
+                    m.request_id,
+                )?),
+                revision: cid_from_pb("command_body.answer_human_request.revision", m.revision)?,
+                answer: cid_from_pb("command_body.answer_human_request.answer", m.answer)?,
             },
         };
         Ok(body)

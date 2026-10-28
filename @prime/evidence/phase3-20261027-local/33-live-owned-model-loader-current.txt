@@ -1,0 +1,9 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 4.96s
+     Running tests\model_lifecycle.rs (target\debug\deps\model_lifecycle-fd110c3354683f5a.exe)
+
+running 1 test
+test pinned_llama_loader_runs_and_drains_real_qwen_smoke_profile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 15.02s
+

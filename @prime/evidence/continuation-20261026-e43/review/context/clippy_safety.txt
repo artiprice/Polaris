@@ -1,0 +1,6 @@
+ARGV: cargo clippy -p polaris-runtime-context --all-targets --no-deps -- -D warnings -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic -D clippy::indexing_slicing -D clippy::arithmetic_side_effects -D clippy::as_conversions
+EXIT: 0
+RAW OUTPUT:
+    Checking polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Finished `dev` profile [unoptimized] target(s) in 2.21s
+

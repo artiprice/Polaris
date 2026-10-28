@@ -1,0 +1,24 @@
+{
+  "type_of":"module",
+  "name":"kernel_frame_journal",
+  "file_path":"crates/polaris-kernel/src/frame_journal.rs",
+  "logic_name":"Kernel Frame Journal",
+  "test_list":[
+    {"test_name":"journal_persists_before_durable_live_event","description":"Publish an actual kernel event only after exact transcript CAS readback."},
+    {"test_name":"journal_preserves_actual_executed_tool_result","description":"Retain and verify a real tool result from an interrupted attempt."},
+    {"test_name":"journal_rejects_foreign_frame_missing_content_and_oversize","description":"Reject invalid records without publishing an event."},
+    {"test_name":"journal_survives_restart_and_refuses_closed_admission","description":"Retain durable transcripts across restart and reject new closed-kernel records."},
+    {"test_name":"accepted_journal_finishes_after_future_drop_and_shutdown","description":"Drain an accepted blocking journal operation after its caller drops."},
+    {"test_name":"journal_preparation_obeys_exact_escaped_json_bound","description":"Property-check admission against exact JSON byte counts for arbitrary Unicode goals and output caps."},
+    {"test_name":"journal_debug_hides_kernel_paths","description":"Debug output must not recursively expose kernel state or workspace paths."},
+    {"test_name":"closed_admission_precedes_transcript_preparation","description":"Closed or queued admission cannot allocate additional prepared transcript buffers before obtaining the bounded owner slot."}
+  ],
+  "dependencies":["PreparedFrameStep","FrameJournal","FrameToolBinding","KernelHandle","InspectionOwner","KernelCtx"],
+  "libraries":["tokio"],
+  "inputs":[
+    {"name":"binding","type":"FrameToolBinding","description":"Sealed actual frame and root identity."},
+    {"name":"record","type":"&FrameStepRecord","description":"Bounded transcript for that frame."}
+  ],
+  "output_type":"Result<Cid, KernelFrameJournalError>",
+  "output_description":"Verified durable transcript followed by actual kernel event publication, or an explicit failure."
+}

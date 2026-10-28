@@ -1,0 +1,36 @@
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 6.69s
+     Running unittests src\lib.rs (target\debug\deps\polaris_worker-bd3e9ed618815e81.exe)
+
+running 11 tests
+test idle::tests::failed_loading_keeps_the_session_cold ... ok
+test idle::tests::eviction_acknowledges_completed_destruction_and_is_idempotent ... ok
+test idle::tests::only_completed_work_moves_the_idle_deadline ... ok
+test tests::ingest_and_embedding_do_not_claim_s1_results ... ok
+test tests::empty_decision_batch_is_rejected_before_model_loading ... ok
+test tests::canceled_shutdown_still_signals_transport_stop ... ok
+test ingest::tests::provenance_writer_rejects_growth_and_parser_errors_are_private ... ok
+test ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped ... ok
+test tests::transport_shutdown_wait_is_bounded ... ok
+test ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission ... ok
+test tests::drain_lock_wait_observes_requested_grace ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\main.rs (target\debug\deps\polaris_worker-cb6dbdcafa860100.exe)
+
+running 3 tests
+test tests::bootstrap_rejects_short_and_non_utf8_secrets ... ok
+test tests::idle_cli_policy_is_bounded_and_does_not_echo_bad_values ... ok
+test tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests\idle_eviction.rs (target\debug\deps\idle_eviction-60d4636b23d70676.exe)
+
+running 2 tests
+test default_worker_drops_real_model_after_idle_ttl ... ignored, requires explicit installed model/runtime paths and 46 seconds of real idle time
+test configured_idle_policy_rejects_invalid_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

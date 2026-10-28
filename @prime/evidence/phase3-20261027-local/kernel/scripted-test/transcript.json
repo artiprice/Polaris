@@ -1,0 +1,177 @@
+{
+  "events": [
+    {
+      "at": "2026-10-27T09:44:36.00504Z",
+      "event": {
+        "configuration": "ad13f37fafc2d5e5b5522390afa5531944081d90717e0358fd891c61e558d9cf",
+        "type": "session_configured"
+      },
+      "schema": 6,
+      "seq": 1,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:36.007233Z",
+      "event": {
+        "type": "session_started",
+        "workspace": "4a7e11999bc35a04aa240e694f36f6baec9e13e1113c7fde6d4a3e925806b4cd"
+      },
+      "schema": 6,
+      "seq": 2,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:36.010884Z",
+      "event": {
+        "binding": "6f6fa2f4e6fc4f460ff8f491a0a7f29a3388557d9996142c85199aabb8e6a21d",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "parent": null,
+        "role": "orchestrator",
+        "root": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "type": "frame_registered"
+      },
+      "schema": 6,
+      "seq": 3,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:36.03629Z",
+      "event": {
+        "call": "7c24a20b0deae80b98220350cdbc342216c1fa893d991bd41c349bdd969a4a26",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "type": "tool_execution_started"
+      },
+      "schema": 6,
+      "seq": 4,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:36.069607Z",
+      "event": {
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "report": "092667016f1ebfbbbc48e48413cad11018ece8535032f568d70f738712f61714",
+        "type": "blast_radius_alert"
+      },
+      "schema": 6,
+      "seq": 5,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:36.096749Z",
+      "event": {
+        "call": "092667016f1ebfbbbc48e48413cad11018ece8535032f568d70f738712f61714",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "type": "tool_execution_started"
+      },
+      "schema": 6,
+      "seq": 6,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:39.558932Z",
+      "event": {
+        "exec": "c2dbff3b65fc09f58dd3bf7bff90e623af1a2a67242a308b406e09d7daee2b45",
+        "exit_code": 0,
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "latency_us": 926973,
+        "type": "sandbox_execution_completed"
+      },
+      "schema": 6,
+      "seq": 7,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.512727Z",
+      "event": {
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "report": "e2105ffc06b4fe7ff0440317d5af4b2386a076abb99dd4cb6d2f7d6a455045b0",
+        "type": "proof_of_done_passed"
+      },
+      "schema": 6,
+      "seq": 8,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.518394Z",
+      "event": {
+        "call": "092667016f1ebfbbbc48e48413cad11018ece8535032f568d70f738712f61714",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "latency_us": 10409964,
+        "ok": true,
+        "type": "tool_execution_completed"
+      },
+      "schema": 6,
+      "seq": 9,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.549147Z",
+      "event": {
+        "call": "7c24a20b0deae80b98220350cdbc342216c1fa893d991bd41c349bdd969a4a26",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "result": "29f9469e33ceebe20ca0726d32d76c4b69135550c08481a81c7ea339513bc266",
+        "type": "frame_tool_result_recorded"
+      },
+      "schema": 6,
+      "seq": 10,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.552142Z",
+      "event": {
+        "call": "7c24a20b0deae80b98220350cdbc342216c1fa893d991bd41c349bdd969a4a26",
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "latency_us": 10525346,
+        "ok": true,
+        "type": "tool_execution_completed"
+      },
+      "schema": 6,
+      "seq": 11,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.571964Z",
+      "event": {
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "outcome": "accepted",
+        "step": 1,
+        "transcript": "436c418bb0db6435bd38aa4e28df7b648c48bfdd784f336a3649370f302bd833",
+        "type": "frame_step_recorded"
+      },
+      "schema": 6,
+      "seq": 12,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    },
+    {
+      "at": "2026-10-27T09:44:46.590998Z",
+      "event": {
+        "frame": "01a17cbf-5382-7680-bab7-c2e824004797",
+        "outcome": "accepted",
+        "step": 2,
+        "transcript": "82a8fadc9f2f8226d171f66ba957a9cf47c33fa32b342673259596e4bc110474",
+        "type": "frame_step_recorded"
+      },
+      "schema": 6,
+      "seq": 13,
+      "session": "01a17cbf-5382-7680-bab7-c2e9de6667e2"
+    }
+  ],
+  "objects": [
+    "012360ea0816e18853962a50f3119ae15649558839b846328a6fa68bab03a61a",
+    "092667016f1ebfbbbc48e48413cad11018ece8535032f568d70f738712f61714",
+    "2132b50f84aae14bb939596f9e5a133b946a27626beca72fa8c30efda63ff3f0",
+    "29f9469e33ceebe20ca0726d32d76c4b69135550c08481a81c7ea339513bc266",
+    "35968ffda631a8fe80e0c0ef0ca6c06570d1afd4b74e71faa212f7f7c1de56dc",
+    "436c418bb0db6435bd38aa4e28df7b648c48bfdd784f336a3649370f302bd833",
+    "56b01dd61044ce3a396d003021be7aa2e254c541023e98b5990cc1b68b64b7b8",
+    "63946d34d3e472157e5da1b0dcb36965c3eeedd2a614e95229baed7709f23807",
+    "7c24a20b0deae80b98220350cdbc342216c1fa893d991bd41c349bdd969a4a26",
+    "82a8fadc9f2f8226d171f66ba957a9cf47c33fa32b342673259596e4bc110474",
+    "bad19ea0991abdb034d5ba79fb60c1e162b8a1977ae46a2409dc9290d9b9c652",
+    "c2dbff3b65fc09f58dd3bf7bff90e623af1a2a67242a308b406e09d7daee2b45",
+    "e2105ffc06b4fe7ff0440317d5af4b2386a076abb99dd4cb6d2f7d6a455045b0"
+  ],
+  "proof": "e2105ffc06b4fe7ff0440317d5af4b2386a076abb99dd4cb6d2f7d6a455045b0",
+  "scope": "scripted S2/tokenizer; real host review, OpenShell ordinary/falsifier and current-tree proof",
+  "source": "202e31df2eaa026251054c68908848b739d855bec8bc800c31da52be53e7b292"
+}

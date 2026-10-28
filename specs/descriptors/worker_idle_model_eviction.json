@@ -1,0 +1,20 @@
+{
+  "type_of": "pipeline",
+  "name": "worker_idle_model_eviction",
+  "file_path": "apps/polaris-worker/src/lib.rs",
+  "logic_name": "Native worker idle model eviction",
+  "test_list": [
+    {"test_name": "eviction_acknowledges_completed_destruction_and_is_idempotent", "description": "The native owner drops its resource before acknowledgement and reports no model on a second eviction."},
+    {"test_name": "only_completed_work_moves_the_idle_deadline", "description": "Observation does not renew the deadline; its inclusive expiry and a later reload are explicit."},
+    {"test_name": "failed_loading_keeps_the_session_cold", "description": "A failed loader cannot leave a resident model or an active idle deadline."},
+    {"test_name": "idle_cli_policy_is_bounded_and_does_not_echo_bad_values", "description": "CLI idle bounds are validated without returning rejected input values."},
+    {"test_name": "default_worker_drops_real_model_after_idle_ttl", "description": "Load the installed model, leave the service idle beyond 45 seconds, and require a subsequent eviction request to report zero remaining models."},
+    {"test_name": "configured_idle_policy_rejects_invalid_bounds", "description": "Reject zero, sub-millisecond, and excessive idle intervals."},
+    {"test_name": "real_worker_reloads_after_idle_eviction", "description": "Run inference, observe idle eviction, and run inference again through the authenticated child client."}
+  ],
+  "dependencies": ["GlinerEngine", "WorkerService", "S1Client"],
+  "libraries": ["tokio", "tonic"],
+  "inputs": [{"name": "idle_ttl", "type": "Duration", "description": "Finite idle interval measured after completed native work."}],
+  "output_type": "Result<WorkerService, Error>",
+  "output_description": "A bounded service whose native owner drops idle sessions and lazily reloads them. Handle destruction is not a measurement of RSS release or proof of preemptive native-work cancellation."
+}

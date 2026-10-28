@@ -1,0 +1,443 @@
+// Composer v2, shared by the welcome screen and the session view: an input box with a toolbar
+// row (attach, mode chip | model menu, mic, send) inside a tray whose strip offers the session
+// $directives. Controls without a Polaris feature behind them yet (attach, mic) are visibly
+// disabled and say why.
+
+import { Tokens } from "tokens.slint";
+import { Icon, IconPaths } from "icons.slint";
+import { Segment, ModelRow, Motion } from "parts.slint";
+
+// One $directive offered in the tray strip (name without `$`, help text as tooltip).
+export struct DirectiveChip {
+    name: string,
+    description: string,
+}
+
+// Small hover tooltip drawn above its owner.
+component Tip inherits Rectangle {
+    in property <string> text;
+    in property <bool> show;
+    width: tip-text.preferred-width + 20px;
+    height: tip-text.preferred-height + 10px;
+    background: Tokens.tooltip-bg;
+    border-width: 1px;
+    border-color: Tokens.line;
+    border-radius: 6px;
+    opacity: root.show ? 1 : 0;
+    visible: root.show || self.opacity > 0.01;
+    animate opacity { duration: Motion.fast; }
+    tip-text := Text {
+        text: root.text;
+        font-size: 11px;
+        color: Tokens.text;
+    }
+}
+
+// Round toolbar button; `enabled: false` dims it and keeps its tooltip.
+component ToolButton {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <length> size: 32px;
+    in property <length> icon-size: 16px;
+    callback clicked();
+    out property <bool> hovered: touch.has-hover;
+    width: root.size;
+    height: root.size;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-enabled: root.enabled;
+    accessible-action-default => {
+        if (root.enabled) {
+            root.clicked();
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => {
+            if (root.enabled) {
+                root.clicked();
+            }
+        }
+    }
+    Rectangle {
+        border-radius: self.height / 2;
+        background: root.enabled && touch.has-hover ? Tokens.nav-hover : transparent;
+    }
+    Icon {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: root.icon-size;
+        height: root.icon-size;
+        commands: root.icon;
+        color: root.enabled ? (touch.has-hover ? Tokens.text : Tokens.muted-web) : Tokens.muted;
+        opacity: root.enabled ? 1 : 0.55;
+    }
+}
+
+export component Composer {
+    // ---- data ------------------------------------------------------------------------------
+    in-out property <string> text;
+    in property <string> placeholder: "Ask Polaris anything…";
+    in property <bool> pending;
+    in property <string> notice;
+    in property <[string]> model-names;
+    in property <[string]> model-short-names;
+    in property <[DirectiveChip]> directives;
+    // Open the model menu upward (composer docked at the bottom of the window).
+    in property <bool> menu-up;
+    in-out property <int> model-index: 0;
+    in-out property <int> mode-index: 0;
+    in-out property <int> effort-index: 2;
+    in-out property <bool> menu-open;
+    out property <bool> send-enabled: root.text != "" && !root.pending;
+    out property <bool> input-focused: input.has-focus;
+
+    callback edited(string);
+    callback submit();
+
+    property <string> attach-reason: "Attachments need the model/ingest profile (not set up yet)";
+    property <string> mic-reason: "Speech input is not available yet";
+
+    public function focus-input() {
+        input.focus();
+    }
+
+    function append-directive(name: string) {
+        root.text = root.text == "" || root.text.ends-with(" ") || root.text.ends-with("\n")
+            ? root.text + "$" + name + " "
+            : root.text + " $" + name + " ";
+        root.edited(root.text);
+        input.focus();
+    }
+
+    function try-submit() {
+        if (root.send-enabled) {
+            root.submit();
+        }
+    }
+
+    min-width: 360px;
+    height: tray.height;
+
+    tray := Rectangle {
+        width: parent.width;
+        height: box.height + strip.height;
+        border-radius: 22px;
+        background: Tokens.tray-bg;
+        border-width: 1px;
+        border-color: Tokens.line;
+
+        box := Rectangle {
+            y: 0;
+            height: box-layout.preferred-height;
+            border-radius: 18px;
+            background: Tokens.canvas;
+            border-width: 1px;
+            border-color: input.has-focus ? Tokens.composer-border-focus : Tokens.composer-border;
+            animate border-color { duration: Motion.fast; }
+
+            box-layout := VerticalLayout {
+                padding-left: 16px;
+                padding-right: 10px;
+                padding-top: 14px;
+                padding-bottom: 10px;
+                spacing: 10px;
+
+                input-area := Rectangle {
+                    height: min(200px, max(24px, input.preferred-height));
+                    clip: true;
+                    input := TextInput {
+                        width: parent.width;
+                        text <=> root.text;
+                        font-size: 14px;
+                        color: Tokens.text;
+                        selection-background-color: Tokens.selection;
+                        wrap: word-wrap;
+                        single-line: false;
+                        accessible-role: text-input;
+                        accessible-label: "Message for Polaris";
+                        edited => { root.edited(self.text); }
+                        key-pressed(event) => {
+                            if (event.text == Key.Return && !event.modifiers.shift) {
+                                root.try-submit();
+                                return accept;
+                            }
+                            return reject;
+                        }
+                    }
+                    Text {
+                        visible: input.text == "" && input.preedit-text == "";
+                        width: parent.width;
+                        text: root.placeholder;
+                        font-size: 14px;
+                        color: Tokens.placeholder-web;
+                        accessible-role: none;
+                    }
+                }
+
+                toolbar := HorizontalLayout {
+                    spacing: 6px;
+                    alignment: space-between;
+                    height: 34px;
+
+                    HorizontalLayout {
+                        spacing: 6px;
+                        attach := ToolButton {
+                            y: (parent.height - self.height) / 2;
+                            icon: IconPaths.plus;
+                            label: "Attach files — " + root.attach-reason;
+                            enabled: false;
+                        }
+                        mode-chip := Rectangle {
+                            y: (parent.height - self.height) / 2;
+                            height: 30px;
+                            width: mode-row.preferred-width + 20px;
+                            border-radius: 15px;
+                            background: mode-touch.has-hover ? Tokens.nav-hover : transparent;
+                            border-width: 1px;
+                            border-color: root.mode-index == 0 ? Tokens.mode-plan-line : Tokens.mode-auto-line;
+                            accessible-role: button;
+                            accessible-label: root.mode-index == 0 ? "Mode: plan, asks before acting" : "Mode: auto";
+                            accessible-action-default => { root.mode-index = 1 - root.mode-index; }
+                            mode-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.mode-index = 1 - root.mode-index; }
+                            }
+                            mode-row := HorizontalLayout {
+                                x: 10px;
+                                width: self.preferred-width;
+                                spacing: 6px;
+                                Icon {
+                                    y: (parent.height - self.height) / 2;
+                                    width: 15px;
+                                    height: 15px;
+                                    commands: root.mode-index == 0 ? IconPaths.hand : IconPaths.bolt;
+                                    color: root.mode-index == 0 ? Tokens.mode-plan : Tokens.mode-auto;
+                                }
+                                Text {
+                                    text: root.mode-index == 0 ? "Plan · asks first" : "Auto";
+                                    font-size: 12px;
+                                    vertical-alignment: center;
+                                    color: root.mode-index == 0 ? Tokens.mode-plan : Tokens.mode-auto;
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 4px;
+                        model-pill := Rectangle {
+                            y: (parent.height - self.height) / 2;
+                            height: 30px;
+                            width: model-row.preferred-width + 18px;
+                            border-radius: 15px;
+                            background: root.menu-open ? Tokens.topbar-hover : (model-touch.has-hover ? Tokens.pill-hover : transparent);
+                            accessible-role: button;
+                            accessible-label: "Model and effort: " + root.model-short-names[root.model-index];
+                            accessible-action-default => { root.menu-open = !root.menu-open; }
+                            model-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.menu-open = !root.menu-open; }
+                            }
+                            model-row := HorizontalLayout {
+                                x: 9px;
+                                width: self.preferred-width;
+                                spacing: 5px;
+                                Text {
+                                    text: root.model-short-names[root.model-index];
+                                    font-size: 12px;
+                                    vertical-alignment: center;
+                                    color: root.menu-open ? Tokens.pill-open-fg : (model-touch.has-hover ? Tokens.text : Tokens.pill-fg);
+                                }
+                                Icon {
+                                    y: (parent.height - self.height) / 2;
+                                    width: 12px;
+                                    height: 12px;
+                                    commands: root.menu-open == root.menu-up ? IconPaths.chevron-down : IconPaths.chevron-up;
+                                    color: Tokens.pill-fg;
+                                }
+                            }
+                        }
+                        mic := ToolButton {
+                            y: (parent.height - self.height) / 2;
+                            icon: IconPaths.mic;
+                            label: "Voice input — " + root.mic-reason;
+                            enabled: false;
+                        }
+                        send := Rectangle {
+                            y: (parent.height - self.height) / 2;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 16px;
+                            background: root.send-enabled ? Tokens.accent : Tokens.send-idle-bg;
+                            animate background { duration: Motion.fast; }
+                            accessible-role: button;
+                            accessible-label: root.pending ? "Send message — waiting for the previous message" : "Send message";
+                            accessible-enabled: root.send-enabled;
+                            accessible-action-default => { root.try-submit(); }
+                            send-touch := TouchArea {
+                                mouse-cursor: root.send-enabled ? pointer : default;
+                                clicked => { root.try-submit(); }
+                            }
+                            Icon {
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                                width: 16px;
+                                height: 16px;
+                                commands: IconPaths.send;
+                                color: root.send-enabled ? Tokens.canvas : Tokens.muted;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        strip := HorizontalLayout {
+            y: box.height;
+            height: 40px;
+            padding-left: 14px;
+            padding-right: 14px;
+            spacing: 6px;
+            alignment: start;
+            Text {
+                text: "Session settings";
+                font-size: 11px;
+                vertical-alignment: center;
+                color: Tokens.muted;
+            }
+            for chip in root.directives: Rectangle {
+                y: (parent.height - self.height) / 2;
+                height: 24px;
+                width: chip-text.preferred-width + 16px;
+                border-radius: 12px;
+                background: chip-touch.has-hover ? Tokens.nav-hover : transparent;
+                border-width: 1px;
+                border-color: Tokens.line;
+                accessible-role: button;
+                accessible-label: "Insert $" + chip.name + " — " + chip.description;
+                accessible-action-default => { root.append-directive(chip.name); }
+                chip-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.append-directive(chip.name); }
+                }
+                chip-text := Text {
+                    x: 8px;
+                    text: "$" + chip.name;
+                    font-family: Tokens.font-mono;
+                    font-size: 11px;
+                    vertical-alignment: center;
+                    height: parent.height;
+                    color: chip-touch.has-hover ? Tokens.directive-hover : Tokens.directive;
+                }
+            }
+        }
+    }
+
+    // Disabled-control tooltips and the composer notice.
+    Tip {
+        x: 8px;
+        y: -self.height - 6px;
+        text: root.attach-reason;
+        show: attach.hovered;
+    }
+    Tip {
+        x: root.width - self.width - 8px;
+        y: -self.height - 6px;
+        text: root.mic-reason;
+        show: mic.hovered;
+    }
+    Text {
+        visible: root.notice != "";
+        x: 16px;
+        y: -self.height - 8px;
+        width: root.width - 32px;
+        text: root.notice;
+        wrap: word-wrap;
+        font-size: 11px;
+        color: Tokens.warning;
+    }
+
+    // ---- model / effort menu -------------------------------------------------------------------
+    menu := Rectangle {
+        property <length> rest-y: root.menu-up ? -self.height - 8px : root.height + 8px;
+        width: 300px;
+        x: root.width - self.width;
+        y: root.menu-open ? self.rest-y : self.rest-y + (root.menu-up ? 4px : -4px);
+        height: menu-layout.preferred-height;
+        opacity: root.menu-open ? 1 : 0;
+        visible: root.menu-open || self.opacity > 0.01;
+        animate opacity, y { duration: Motion.fast; easing: cubic-bezier(0.16, 1, 0.3, 1); }
+        drop-shadow-blur: 40px;
+        drop-shadow-offset-y: 12px;
+        drop-shadow-color: Tokens.popover-shadow;
+        background: Tokens.canvas;
+        border-width: 1px;
+        border-color: Tokens.popover-border;
+        border-radius: 12px;
+        TouchArea { }
+        menu-layout := VerticalLayout {
+            padding: 12px;
+            spacing: 2px;
+            Text {
+                text: "Model";
+                font-size: 10px;
+                color: Tokens.muted-web;
+            }
+            for name[index] in root.model-names: ModelRow {
+                label: name;
+                selected: index == root.model-index;
+                clicked => { root.model-index = index; }
+            }
+            Rectangle {
+                height: 9px;
+                Rectangle {
+                    y: 8px;
+                    height: 1px;
+                    background: Tokens.line;
+                }
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    width: 40px;
+                    text: "Effort";
+                    font-size: 10px;
+                    vertical-alignment: center;
+                    color: Tokens.muted-web;
+                }
+                Rectangle {
+                    min-height: 32px;
+                    border-radius: 7px;
+                    border-width: 1px;
+                    border-color: Tokens.segment-border;
+                    HorizontalLayout {
+                        padding: 2px;
+                        spacing: 2px;
+                        for level[index] in ["low", "medium", "high", "xhigh", "max"]: Segment {
+                            label: level;
+                            mono: true;
+                            selected: root.effort-index == index;
+                            selected-color: Tokens.mode-plan;
+                            clicked => { root.effort-index = index; }
+                        }
+                    }
+                }
+            }
+            Rectangle {
+                height: 11px;
+                Rectangle {
+                    y: 10px;
+                    height: 1px;
+                    background: Tokens.line;
+                }
+            }
+            Text {
+                text: "Not saved · model execution unavailable (offline)";
+                font-size: 9px;
+                color: Tokens.muted;
+            }
+        }
+    }
+}

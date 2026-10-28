@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_generation_preserves_implemented_test_package (__main__.WorkspaceOwnershipTests.test_generation_preserves_implemented_test_package)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\mDev\Polaris\@prime\tools\tests\test_workspace_ownership.py", line 27, in test_generation_preserves_implemented_test_package
+    self.assertTrue((root/name).is_file(), name+' belongs to its implemented package')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : tests/Cargo.toml belongs to its implemented package
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)

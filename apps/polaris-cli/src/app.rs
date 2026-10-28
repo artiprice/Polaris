@@ -89,6 +89,14 @@ pub enum Action {
         /// Exactly one session directive.
         task: String,
     },
+    /// Execute one bounded local model task through the configured System-One host.
+    Task {
+        /// Explicit trusted local model and System-One profile TOML.
+        #[arg(long)]
+        profile: PathBuf,
+        /// One bounded task goal.
+        task: String,
+    },
     /// Inspect recovery resources and configured credential references.
     Doctor {
         /// Emit machine-readable JSON.
@@ -126,6 +134,12 @@ pub enum CliError {
     /// Unsupported operation or startup invariant failure.
     #[error("{0}")]
     Unavailable(&'static str),
+    /// Local task entry failure with a sanitized static diagnostic.
+    #[error(transparent)]
+    Task(#[from] crate::task::TaskError),
+    /// Execution ended, but independent current-tree proof was not established.
+    #[error("task execution finished without independent completion proof")]
+    TaskUnverified,
 }
 /// Install aws-lc-rs before any network clients are constructed.
 /// # Errors
@@ -158,6 +172,11 @@ pub async fn run(args: Args) -> Result<(), CliError> {
     if args.demo {
         // No log sink or durable owner is initialized for the presentation demo.
         return crate::tui::run(&args, &loaded, &dirs).await;
+    }
+    if args.session.is_some() && matches!(args.command.as_ref(), Some(Action::Task { .. })) {
+        return Err(CliError::Unavailable(
+            "task creates a new local session and cannot resume an existing session",
+        ));
     }
     let redactor = polaris_security::automata::DfaRedactor::default_redactor()
         .map_err(|_| CliError::Unavailable("log redactor could not compile"))?;
@@ -202,6 +221,19 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             Some(Action::Status { json }) => status(&dirs, json),
             Some(Action::Run { task }) => {
                 headless(&args.state_dir, &args.workspace, args.session, &task).await
+            }
+            Some(Action::Task { profile, task }) => {
+                let summary =
+                    crate::task::run(&args.state_dir, &args.workspace, &profile, &task).await?;
+                let mut out = std::io::stdout().lock();
+                serde_json::to_writer(&mut out, &summary)?;
+                writeln!(out)?;
+                out.flush()?;
+                if summary.proof_status == "verified" {
+                    Ok(())
+                } else {
+                    Err(CliError::TaskUnverified)
+                }
             }
         }
     };
@@ -352,6 +384,27 @@ mod tests {
         assert!(
             matches!(args.command, Some(Action::Status { json: true })),
             "status --json must route to the headless status action"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn task_command_accepts_explicit_profile_and_goal() -> Result<(), clap::Error> {
+        let args = Args::try_parse_from([
+            "polaris",
+            "task",
+            "--profile",
+            "local.toml",
+            "inspect the current workspace",
+        ])?;
+        assert!(
+            matches!(
+                args.command,
+                Some(Action::Task { ref profile, ref task })
+                    if profile == std::path::Path::new("local.toml")
+                        && task == "inspect the current workspace"
+            ),
+            "task must parse as its dedicated non-UI action"
         );
         Ok(())
     }

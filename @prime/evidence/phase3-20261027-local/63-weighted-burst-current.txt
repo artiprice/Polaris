@@ -1,0 +1,10 @@
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Finished `test` profile [unoptimized] target(s) in 1.21s
+     Running tests\weighted_burst.rs (target\debug\deps\weighted_burst-4b68180af0e6f9ac.exe)
+
+running 2 tests
+test weighted_request_cannot_overfill_remaining_burst ... ok
+test weighted_retry_accounts_for_the_entire_request ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

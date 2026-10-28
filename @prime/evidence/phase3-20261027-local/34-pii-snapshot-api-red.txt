@@ -1,0 +1,56 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0432]: unresolved import `polaris_kernel::privacy_snapshot`
+ --> crates\polaris-kernel\tests\privacy_snapshot.rs:3:21
+  |
+3 | use polaris_kernel::privacy_snapshot::KernelPiiSealer;
+  |                     ^^^^^^^^^^^^^^^^ could not find `privacy_snapshot` in `polaris_kernel`
+
+error[E0599]: no method named `export_sealed` found for struct `PiiVault` in the current scope
+  --> crates\polaris-kernel\tests\privacy_snapshot.rs:18:20
+   |
+18 |     let blob=vault.export_sealed(&sealer)?;
+   |                    ^^^^^^^^^^^^^ method not found in `PiiVault`
+
+error[E0599]: no associated function or constant named `import_sealed` found for struct `PiiVault` in the current scope
+   --> crates\polaris-kernel\tests\privacy_snapshot.rs:20:28
+    |
+ 20 |     let restored=PiiVault::import_sealed(session,frame,EntropyCfg::default(),PiiLimits::default(),&sealer,&blob)?;
+    |                            ^^^^^^^^^^^^^ associated function or constant not found in `PiiVault`
+    |
+note: if you're trying to build a new `PiiVault`, consider using `PiiVault::new` which returns `Result<PiiVault, PiiError>`
+   --> crates\polaris-security\crates\pii\src\vault.rs:210:5
+    |
+210 | /     pub fn new(
+211 | |         session: SessionId,
+212 | |         frame: FrameId,
+213 | |         entropy: EntropyCfg,
+214 | |         limits: PiiLimits,
+215 | |     ) -> Result<Self, PiiError> {
+    | |_______________________________^
+
+error[E0599]: no method named `export_sealed` found for struct `PiiVault` in the current scope
+  --> crates\polaris-kernel\tests\privacy_snapshot.rs:32:83
+   |
+32 |     let sealer=KernelPiiSealer::new(Arc::new(SecretVault::new()?));let blob=vault.export_sealed(&sealer)?;
+   |                                                                                   ^^^^^^^^^^^^^ method not found in `PiiVault`
+
+error[E0599]: no associated function or constant named `import_sealed` found for struct `PiiVault` in the current scope
+   --> crates\polaris-kernel\tests\privacy_snapshot.rs:33:80
+    |
+ 33 | ...r,blob:&SealedBlob|PiiVault::import_sealed(s,f,EntropyCfg::default(),limits,sealer,blob);
+    |                                 ^^^^^^^^^^^^^ associated function or constant not found in `PiiVault`
+    |
+note: if you're trying to build a new `PiiVault`, consider using `PiiVault::new` which returns `Result<PiiVault, PiiError>`
+   --> crates\polaris-security\crates\pii\src\vault.rs:210:5
+    |
+210 | /     pub fn new(
+211 | |         session: SessionId,
+212 | |         frame: FrameId,
+213 | |         entropy: EntropyCfg,
+214 | |         limits: PiiLimits,
+215 | |     ) -> Result<Self, PiiError> {
+    | |_______________________________^
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-kernel` (test "privacy_snapshot") due to 5 previous errors

@@ -10,12 +10,19 @@
 mod binding;
 mod evidence;
 mod execution;
+mod frame_cancellation;
+mod human;
 mod local;
 mod verify;
 
 pub use binding::{MutationBindingError, mutation_digest};
 pub use evidence::{EvidenceError, EvidenceStore};
 pub use execution::LocalExecutionVerifier;
+pub use frame_cancellation::{
+    FrameCancellationEvidence, FrameCancellationVerifier, FrameCancellationVerifierError,
+    load_cancellation_evidence, validate_cancellation_evidence,
+};
+pub use human::{HumanRequestVerifier, HumanRequestVerifierError};
 pub use local::{LocalDirectiveVerifier, LocalVerificationError};
 pub use verify::{
     ApprovalReason, ApprovedMutation, HybridMutationVerifier, InputField, MAX_DIFF_BYTES,

@@ -1,0 +1,36 @@
+{
+  "type_of": "pipeline",
+  "name": "FrameStepBinding",
+  "file_path": "crates/polaris-runtime/crates/frames/src/state.rs",
+  "logic_name": "Sealed driver tool admission",
+  "test_list": [
+    {
+      "test_name": "mutation_result_budget_is_rejected_during_admission",
+      "description": "Reject an insufficient driver result budget before side effects."
+    },
+    {
+      "test_name": "model_loop_mutates_then_waits_for_a_real_host_answer",
+      "description": "Actual edit, durable question, signed host answer and model continuation share one frame driver."
+    }
+  ],
+  "dependencies": [
+    "AgentContextFrame",
+    "ToolRunner",
+    "FrameToolAccess"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "binding",
+      "type": "FrameToolBinding",
+      "description": "Sealed identity captured from the actual runtime frame."
+    },
+    {
+      "name": "call",
+      "type": "ToolCall",
+      "description": "Untrusted model call, fully admitted before any call in the batch executes."
+    }
+  ],
+  "output_type": "FrameStepBinding",
+  "output_description": "Actual reserved step, frame identity and result budget supplied by the driver."
+}

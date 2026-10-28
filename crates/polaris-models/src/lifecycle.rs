@@ -11,8 +11,18 @@ use std::{
 };
 use tokio::{runtime::Handle, sync::Notify, task::JoinHandle};
 
-/// Real backend lifecycle contract. `M` must own its resources through RAII as a shutdown fallback.
-/// Load/unload futures must be cancellation-safe: their operation timeout may drop the future.
+/// Real backend lifecycle contract for resources borrowed only through a [`ModelLease`].
+///
+/// `M` must own the backend resource and release it safely from `Drop`, including when a load or
+/// unload future is dropped after its timeout. The type and its public methods must not expose a
+/// cloneable resource handle (or another owned escape) that lets a caller keep using the backend
+/// after its lease ends. The generic API cannot enforce that property; each loader implementation
+/// must uphold it.
+///
+/// Load and unload futures must be cancellation-safe. A timeout may drop either future, so any
+/// partial resource acquired by `load` must be released when that future is dropped, and `M`'s
+/// owned `Drop` fallback must remain sufficient if `unload` is interrupted or fails. `unload`
+/// must also be idempotent because a failed operation can be retried.
 pub trait ModelLoader<M>: Send + Sync + 'static {
     /// Load the actual model or worker resource; never return a dummy success object.
     fn load(&self) -> impl Future<Output = Result<M, LoadError>> + Send;
@@ -103,6 +113,11 @@ struct Tracker {
 
 impl Tracker {
     fn now(&self) -> u64 {
+        // `unwrap_or` is forbidden by the workspace, so retain the explicit saturating case.
+        #[allow(
+            clippy::manual_unwrap_or,
+            reason = "workspace forbids Result::unwrap_or"
+        )]
         match u64::try_from(self.epoch.elapsed().as_micros()) {
             Ok(now) => now,
             Err(_) => u64::MAX,
@@ -118,7 +133,6 @@ pub struct ModelLease<M> {
 
 impl<M> ModelLease<M> {
     /// Access the actual loaded resource while the lease is held.
-    #[must_use]
     pub fn model(&self) -> Result<&M, ModelsError> {
         self.model.as_deref().ok_or(ModelsError::Integrity)
     }
@@ -133,10 +147,10 @@ impl<M> fmt::Debug for ModelLease<M> {
 impl<M> Drop for ModelLease<M> {
     fn drop(&mut self) {
         let release = self.model.take();
-        if let Some(model) = release {
-            if catch_unwind(AssertUnwindSafe(|| drop(model))).is_err() {
-                self.tracker.broken.store(true, Ordering::Release);
-            }
+        if let Some(model) = release
+            && catch_unwind(AssertUnwindSafe(|| drop(model))).is_err()
+        {
+            self.tracker.broken.store(true, Ordering::Release);
         }
         self.tracker
             .last_used
@@ -324,10 +338,10 @@ impl<M, L> Drop for WorkDropGuard<M, L> {
             }
         }
         drop(state);
-        if let Some(fallback) = self.fallback.take() {
-            if catch_unwind(AssertUnwindSafe(|| drop(fallback))).is_err() {
-                self.owner.tracker.broken.store(true, Ordering::Release);
-            }
+        if let Some(fallback) = self.fallback.take()
+            && catch_unwind(AssertUnwindSafe(|| drop(fallback))).is_err()
+        {
+            self.owner.tracker.broken.store(true, Ordering::Release);
         }
         self.owner.tracker.changed.notify_waiters();
     }

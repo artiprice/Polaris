@@ -1,0 +1,9 @@
+COMMAND: wsl.exe -d Ubuntu-24.04 -- bash -lc 'cd /mnt/c/mDev/Polaris && cargo check -p polaris-worker -p polaris-system-one-client --offline'
+ENV: default WSL environment; no overrides
+    Checking polaris-proto v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-proto)
+    Checking polaris-system-one-nano v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/nano)
+    Checking polaris-system-one-engine v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/engine)
+    Checking polaris-system-one-client v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/client)
+    Checking polaris-worker v0.1.0-alpha (/mnt/c/mDev/Polaris/apps/polaris-worker)
+    Finished `dev` profile [unoptimized] target(s) in 20.48s
+wsl_exit=0

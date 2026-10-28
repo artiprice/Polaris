@@ -112,16 +112,24 @@ impl CallPermit {
     }
 
     /// Records the exact point where the request can become externally visible.
-    pub(crate) fn mark_dispatched(&mut self) -> Result<(), SearchProviderError> {
+    pub(crate) async fn mark_dispatched(&mut self) -> Result<(), SearchProviderError> {
         let permit = self
             .limiter_permit
             .as_mut()
             .ok_or(SearchProviderError::RateLimit)?;
-        permit
-            .mark_dispatched()
-            .map_err(|_| SearchProviderError::RateLimit)?;
-        self.dispatched = true;
-        Ok(())
+        for attempt in 0..8 {
+            match permit.mark_dispatched() {
+                Ok(()) => {
+                    self.dispatched = true;
+                    return Ok(());
+                }
+                Err(polaris_ratelimit::RateLimitError::Busy) if attempt < 7 => {
+                    tokio::time::sleep(Duration::from_millis(1)).await;
+                }
+                Err(_) => return Err(SearchProviderError::RateLimit),
+            }
+        }
+        return Err(SearchProviderError::RateLimit);
     }
 
     /// Reconciles a one-request, one-token estimate after response handling.
@@ -147,7 +155,8 @@ fn map_rate_limit_error(error: RateLimitError) -> SearchProviderError {
         | RateLimitError::ExceedsBurst
         | RateLimitError::Cancelled
         | RateLimitError::Accounting
-        | RateLimitError::Undispatched => SearchProviderError::RateLimit,
+        | RateLimitError::Undispatched
+        | RateLimitError::Busy => SearchProviderError::RateLimit,
     }
 }
 

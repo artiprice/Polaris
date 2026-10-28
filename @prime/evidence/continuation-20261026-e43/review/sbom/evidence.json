@@ -1,0 +1,412 @@
+{
+  "task": "release SBOM P10",
+  "evidence": [
+    {
+      "phase": "descriptor-first compile RED",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--test",
+        "release_sbom"
+      ],
+      "exit_code": 101,
+      "raw_output": "   Compiling xtask v0.1.0-alpha (C:\\mDev\\Polaris\\xtask)\nerror[E0432]: unresolved import `xtask::release_sbom`\n --> xtask\\tests\\release_sbom.rs:5:12\n  |\n5 | use xtask::release_sbom::spdx_document;\n  |            ^^^^^^^^^^^^ could not find `release_sbom` in `xtask`\n\nFor more information about this error, try `rustc --explain E0432`.\nerror: could not compile `xtask` (test \"release_sbom\") due to 1 previous error"
+    },
+    {
+      "phase": "behavior contracts GREEN",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--test",
+        "release_sbom"
+      ],
+      "exit_code": 0,
+      "raw_output": "running 4 tests\ntest spdx_document_contains_resolved_packages_and_dependency_relationships ... ok\ntest unknown_license_is_not_invented ... ok\ntest workspace_packages_have_root_provenance_and_lock_hash ... ok\ntest serialization_is_deterministic_for_same_inputs ... ok\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+    },
+    {
+      "phase": "atomic write tests GREEN",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--lib",
+        "release_sbom::tests"
+      ],
+      "exit_code": 0,
+      "raw_output": "running 4 tests`ntest atomic_output_preserves_existing_file_without_force ... ok`ntest atomic_output_replaces_existing_file_only_when_forced ... ok`ntest failed_atomic_replacement_preserves_existing_path ... ok`ntest failed_atomic_replacement_preserves_locked_existing_file ... ok`ntest result: ok. 4 passed; 0 failed."
+    },
+    {
+      "phase": "strict safety Clippy GREEN",
+      "argv": [
+        "cargo",
+        "clippy",
+        "-p",
+        "xtask",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings",
+        "-D",
+        "clippy::unwrap_used",
+        "-D",
+        "clippy::expect_used",
+        "-D",
+        "clippy::panic",
+        "-D",
+        "clippy::indexing_slicing",
+        "-D",
+        "clippy::arithmetic_side_effects",
+        "-D",
+        "clippy::as_conversions"
+      ],
+      "exit_code": 0,
+      "raw_output": "Checking xtask v0.1.0-alpha (C:\\mDev\\Polaris\\xtask)\nFinished `dev` profile [unoptimized] target(s) in 1.46s"
+    },
+    {
+      "phase": "offline locked release SBOM generation",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:30:55Z"
+      ],
+      "exit_code": 0,
+      "raw_output": "Finished `dev` profile [unoptimized] target(s) in 0.66s\nRunning `target\\debug\\xtask.exe release-sbom --root . --output @prime/tmp/20261026-e43/sbom/release.spdx.json --created 2026-10-26T15:30:55Z`\nrelease-sbom: wrote 988315 bytes to \\\\?\\C:\\mDev\\Polaris\\@prime\\tmp\\20261026-e43\\sbom\\release.spdx.json"
+    },
+    {
+      "phase": "default no-clobber negative check",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:30:55Z"
+      ],
+      "exit_code": 101,
+      "raw_output": "xtask: usage: SBOM output already exists: \\\\?\\C:\\mDev\\Polaris\\@prime\\tmp\\20261026-e43\\sbom\\release.spdx.json; pass --force to replace it\nerror: process didn't exit successfully: `target\\debug\\xtask.exe release-sbom --root . --output @prime/tmp/20261026-e43/sbom/release.spdx.json --created 2026-10-26T15:30:55Z` (exit code: 2)"
+    },
+    {
+      "phase": "repeated same-input byte stability",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:30:55Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "release-sbom: wrote 988315 bytes to \\\\?\\C:\\mDev\\Polaris\\@prime\\tmp\\20261026-e43\\sbom\\release.spdx.json\nbefore=8412A6688B58EF811430834C19D81A32932030067BB902DF929EC3600B376691 after=8412A6688B58EF811430834C19D81A32932030067BB902DF929EC3600B376691 equal=True"
+    },
+    {
+      "phase": "artifact inspection",
+      "argv": [
+        "PowerShell",
+        "Get-Content -Raw ... | ConvertFrom-Json"
+      ],
+      "exit_code": 0,
+      "raw_output": "spdxVersion=SPDX-2.3 packages=1027 relationships=3827 described=93 created=10/26/2026 15:30:55"
+    },
+    {
+      "phase": "full xtask regression contracts GREEN",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask"
+      ],
+      "exit_code": 0,
+      "raw_output": "4 unit tests passed; 6 check_layers passed; 5 check_members passed; 4 check_witness passed; 4 release_sbom passed; doc-tests 0 passed, 0 failed.",
+      "raw_log": "cargo-test-xtask.log",
+      "exit_code_file": "cargo-test-xtask.exit"
+    },
+    {
+      "phase": "final strict six-lint Clippy + descriptor JSON parse GREEN",
+      "argv": [
+        "cargo",
+        "clippy",
+        "-p",
+        "xtask",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings",
+        "-D",
+        "clippy::unwrap_used",
+        "-D",
+        "clippy::expect_used",
+        "-D",
+        "clippy::panic",
+        "-D",
+        "clippy::indexing_slicing",
+        "-D",
+        "clippy::arithmetic_side_effects",
+        "-D",
+        "clippy::as_conversions",
+        ";",
+        "Get-Content -Raw specs/descriptors/release_sbom.json | ConvertFrom-Json"
+      ],
+      "exit_code": 0,
+      "raw_output": "Finished dev profile (unoptimized) target(s) in 0.64s`n descriptor JSON parsed",
+      "raw_log": "clippy-xtask.log",
+      "exit_code_file": "clippy-xtask.exit"
+    },
+    {
+      "phase": "Windows std rename replacement diagnostic",
+      "argv": [
+        "rustc",
+        "C:/mDev/Polaris/@prime/tmp/20261026-e43/sbom/rename-probe.rs",
+        "-o",
+        "C:/mDev/Polaris/@prime/tmp/20261026-e43/sbom/rename-probe.exe",
+        "&&",
+        "rename-probe.exe"
+      ],
+      "exit_code": 0,
+      "raw_log": "windows-std-rename.log",
+      "raw_output": "rename_result=Ok(())\nsource_exists=false\ndestination=[110, 101, 119]"
+    },
+    {
+      "phase": "BLAKE3 SPDX artifact generation",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:39:36Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "release-sbom: wrote 988995 bytes",
+      "sha256": "45126476B7CE93E11829C7820501BF73AAEA17A561076E2CD479571D8D28646D",
+      "lock_blake3": "bfeb5dc77d660d65e10bf4e82ba8440a512f0d5bcaf389646499715de5413480",
+      "spdx_checksum_algorithm": "BLAKE3",
+      "package_count": 1027,
+      "relationship_count": 3829,
+      "document_describes_count": 94
+    },
+    {
+      "phase": "BLAKE3 artifact byte stability",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:39:36Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "before=45126476B7CE93E11829C7820501BF73AAEA17A561076E2CD479571D8D28646D after=45126476B7CE93E11829C7820501BF73AAEA17A561076E2CD479571D8D28646D equal=True"
+    },
+    {
+      "phase": "metadata validation behavioral RED baseline",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--test",
+        "release_sbom"
+      ],
+      "exit_code": 101,
+      "raw_log": "metadata-validation-red.log",
+      "raw_output": "running 10 tests; 5 passed, 5 failed: impossible timestamp, non-leap February 29, duplicate package ID, unknown resolve node ID, unknown dependency package ID."
+    },
+    {
+      "phase": "final metadata validation GREEN",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--test",
+        "release_sbom"
+      ],
+      "exit_code": 0,
+      "raw_log": "cargo-test-xtask.log",
+      "raw_output": "release_sbom: 10 passed; 0 failed. Full workspace package evidence in cargo-test-xtask.log."
+    },
+    {
+      "phase": "latest artifact generation",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:46:16Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "release-sbom: wrote 988995 bytes",
+      "sha256": "71790990468CA871E89BB3C7CA77555B2F216FC30EAB37091A58EC5C8BACC280",
+      "package_count": 1027,
+      "relationship_count": 3829,
+      "document_describes_count": 94,
+      "lock_blake3": "bfeb5dc77d660d65e10bf4e82ba8440a512f0d5bcaf389646499715de5413480"
+    },
+    {
+      "phase": "latest same-input output stability",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:46:16Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "before=71790990468CA871E89BB3C7CA77555B2F216FC30EAB37091A58EC5C8BACC280 after=71790990468CA871E89BB3C7CA77555B2F216FC30EAB37091A58EC5C8BACC280 equal=True"
+    },
+    {
+      "phase": "format check GREEN",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check",
+        "--package",
+        "xtask"
+      ],
+      "exit_code": 0,
+      "raw_output": ""
+    },
+    {
+      "phase": "lock stability helper compiled RED baseline",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--lib",
+        "release_sbom::tests::cargo_lock_change_during_metadata_is_rejected"
+      ],
+      "exit_code": 101,
+      "raw_log": "lock-change-red.log",
+      "raw_output": "error[E0432]: unresolved import super::ensure_lock_unchanged; helper absent before implementation."
+    },
+    {
+      "phase": "lock stability helper GREEN",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "xtask",
+        "--lib",
+        "release_sbom::tests"
+      ],
+      "exit_code": 0,
+      "raw_log": "cargo-test-xtask.log",
+      "raw_output": "running 5 tests; all 5 passed including cargo_lock_change_during_metadata_is_rejected."
+    },
+    {
+      "phase": "final artifact generation",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:48:29Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "release-sbom: wrote 988995 bytes",
+      "sha256": "8530F08322C410E9AC6D759272455C8075C50C5B45D5469533A66070CBBC504D",
+      "package_count": 1027,
+      "relationship_count": 3829,
+      "document_describes_count": 94,
+      "lock_blake3": "bfeb5dc77d660d65e10bf4e82ba8440a512f0d5bcaf389646499715de5413480"
+    },
+    {
+      "phase": "final artifact same-input repeat",
+      "argv": [
+        "cargo",
+        "run",
+        "-p",
+        "xtask",
+        "--",
+        "release-sbom",
+        "--root",
+        ".",
+        "--output",
+        "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+        "--created",
+        "2026-10-26T15:48:29Z",
+        "--force"
+      ],
+      "exit_code": 0,
+      "raw_output": "before=8530F08322C410E9AC6D759272455C8075C50C5B45D5469533A66070CBBC504D after=8530F08322C410E9AC6D759272455C8075C50C5B45D5469533A66070CBBC504D equal=True"
+    }
+  ],
+  "artifact": {
+    "path": "@prime/tmp/20261026-e43/sbom/release.spdx.json",
+    "sha256": "8530F08322C410E9AC6D759272455C8075C50C5B45D5469533A66070CBBC504D",
+    "bytes": 988995
+  },
+  "notes": [
+    "Default no-clobber installation writes and syncs a same-directory temporary file, then atomically installs it with a hard link.",
+    "On Windows, std::fs::rename replaced an existing file in a direct local probe; the earlier NotFound was cleanup of the moved temporary path, not rename failure.",
+    "Cached tempfile 3.27.0 Windows source implements overwrite persistence with MoveFileExW and MOVEFILE_REPLACE_EXISTING; root owns the production dependency promotion.",
+    "Latest validation rejects impossible dates/times, duplicate package IDs, unknown resolve nodes, and unknown dependency IDs; it compares exact Cargo.lock bytes before and after cargo metadata.",
+    "Strict timestamp validity checks Gregorian calendar/leap days and UTC clock bounds. Metadata graph input rejects duplicate package IDs and missing/unknown resolve graph IDs. Cargo.lock bytes are compared immediately before and after metadata resolution."
+  ]
+}

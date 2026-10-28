@@ -1,0 +1,63 @@
+   Compiling serde v1.0.229
+   Compiling indexmap v2.14.2
+   Compiling proptest v1.12.0
+   Compiling aws-lc-rs v1.18.2
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling strum_macros v0.28.0
+   Compiling serde_json v1.0.154
+   Compiling bytes v1.12.1
+   Compiling insta v1.49.0
+   Compiling chrono v0.4.45
+   Compiling ahash v0.8.12
+   Compiling fluent-uri v0.4.1
+   Compiling email_address v0.2.9
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling jsonschema-value v0.59.0
+   Compiling rustls-webpki v0.103.16
+   Compiling referencing v0.59.0
+   Compiling tokio v1.54.1
+   Compiling http v1.5.0
+   Compiling rustls v0.23.46
+   Compiling prost v0.14.4
+   Compiling schemars v1.2.3
+   Compiling spdlog-rs v0.5.3
+   Compiling http-body v1.1.0
+   Compiling http-body-util v0.1.5
+   Compiling axum-core v0.5.6
+   Compiling prost-types v0.14.4
+   Compiling rmcp-macros v3.7.0
+   Compiling sse-stream v0.2.6
+   Compiling tokio-util v0.7.20
+   Compiling tokio-rustls v0.26.6
+   Compiling tokio-stream v0.1.19
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling h2 v0.4.20
+   Compiling tower v0.5.3
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling axum v0.8.9
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling tower-http v0.6.11
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling strum v0.28.0
+   Compiling jsonschema v0.59.0
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+   Compiling hyper v1.12.0
+error[E0618]: expected function, found `ContreeBackend<FixtureClient>`
+   --> crates\polaris-nebius-cloud\crates\sandboxes\src\tests.rs:234:9
+    |
+181 | async fn backend(client: FixtureClient) -> Result<ContreeBackend<FixtureClient>, ContreeError> {
+    | ---------------------------------------------------------------------------------------------- this function of the same name is available here, but it's shadowed by the local binding
+...
+214 |     let backend = backend(client.clone()).await?;
+    |         ------- `backend` has type `ContreeBackend<FixtureClient>`
+...
+234 |         backend(drifted_shape).await,
+    |         ^^^^^^^---------------
+    |         |
+    |         call expression requires function
+
+For more information about this error, try `rustc --explain E0618`.
+error: could not compile `polaris-nebius-cloud-sandboxes` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

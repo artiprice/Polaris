@@ -1,0 +1,65 @@
+{
+  "type_of": "module",
+  "name": "Composer (ui/composer.slint) inside AppWindow",
+  "file_path": "crates/polaris-ui/crates/gui/ui/composer.slint",
+  "logic_name": "GUI Composer",
+  "test_list": [
+    {
+      "test_name": "send_disabled_until_draft_has_text",
+      "description": "Send reports accessible-enabled false with an empty draft and true with text; while pending it is disabled again."
+    },
+    {
+      "test_name": "send_action_invokes_submit",
+      "description": "Activating Send with text calls the window's submit callback exactly once."
+    },
+    {
+      "test_name": "enter_submits_from_the_input",
+      "description": "Typing text then Return in the message input calls submit (Shift+Return is the newline path; not simulated)."
+    },
+    {
+      "test_name": "mode_chip_toggles_plan_and_auto",
+      "description": "The mode chip label reads plan (asks first) then auto after activation, and mode-index follows."
+    },
+    {
+      "test_name": "tray_chip_appends_directive",
+      "description": "Activating the $websearch chip appends '$websearch ' to the draft with a separating space."
+    },
+    {
+      "test_name": "attach_and_mic_are_disabled_with_reasons",
+      "description": "Attach and Voice input report accessible-enabled false and their labels state why."
+    },
+    {
+      "test_name": "model_menu_selects_model_and_effort",
+      "description": "The configured default model is selected at start; opening the menu and activating another configured model row and the 'max' effort segment updates model-index and effort-index."
+    },
+    {
+      "test_name": "menu_lists_exactly_the_configured_models",
+      "description": "The model menu lists exactly AppOptions.models (ids as rows, labels on the pill); the GUI has no built-in model names."
+    },
+    {
+      "test_name": "empty_model_list_is_an_error",
+      "description": "build_window with an empty model list returns GuiError::NoModels instead of showing an empty menu."
+    },
+    {
+      "test_name": "welcome_composer_has_focus_on_start",
+      "description": "Typing right after the window opens reaches the welcome composer without a click."
+    }
+  ],
+  "dependencies": [
+    "AppWindow",
+    "build_window"
+  ],
+  "libraries": [
+    "slint",
+    "i-slint-backend-testing"
+  ],
+  "inputs": [
+    {
+      "name": "options",
+      "type": "&WelcomeOptions",
+      "description": "Window options."
+    }
+  ],
+  "output_type": "AppWindow state",
+  "output_description": "Composer controls behave as listed."
+}

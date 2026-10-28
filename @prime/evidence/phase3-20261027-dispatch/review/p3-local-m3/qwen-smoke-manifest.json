@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "source": "actual local model inference; no external provider",
+  "model_repo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "model_file": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "model_bytes": 1117320736,
+  "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "server": "llama.cpp b11804 / c7fc50941",
+  "server_archive_sha256": "3A3E417A0816329829081BDD443E3045FF3B2DBE866FCEF89A1D919E941CE23F",
+  "server_pid": 15100,
+  "server_args": [
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18931",
+    "--threads",
+    "2",
+    "--threads-batch",
+    "2",
+    "--ctx-size",
+    "4096",
+    "--parallel",
+    "1",
+    "--jinja",
+    "--no-webui",
+    "--alias",
+    "qwen2.5-1.5b-instruct"
+  ],
+  "template_capabilities": {
+    "supports_object_arguments": true,
+    "supports_parallel_tool_calls": true,
+    "supports_preserve_reasoning": false,
+    "supports_reasoning_effort": false,
+    "supports_string_content": true,
+    "supports_system_role": true,
+    "supports_tool_calls": true,
+    "supports_tools": true,
+    "supports_typed_content": false
+  },
+  "model_info": {
+    "id": "qwen2.5-1.5b-instruct",
+    "aliases": [
+      "qwen2.5-1.5b-instruct"
+    ],
+    "tags": [],
+    "object": "model",
+    "architecture": {
+      "input_modalities": [
+        "text"
+      ],
+      "output_modalities": [
+        "text"
+      ]
+    },
+    "created": 1793091461,
+    "owned_by": "llamacpp",
+    "meta": {
+      "vocab_type": 2,
+      "n_vocab": 151936,
+      "n_ctx": 4096,
+      "n_ctx_train": 32768,
+      "n_embd": 1536,
+      "n_params": 1777088000,
+      "size": 1111370240,
+      "ftype": "Q4_K - Medium"
+    }
+  },
+  "trials": [
+    {
+      "probe": "probe-1",
+      "request_sha256": "951BBE937BF4C60C8FF35667B2F8432F6C701F2F0FEB968B9D18BF7916C5EC37",
+      "count_response_sha256": "E84D6E4F71A5E5316D4DEA3FC1F71AE8934092E4CC8CAEC7FDAC02A7547F04D4",
+      "chat_response_sha256": "4ECD18BB70571ED9823B26CF634F09DD83B8E020A776CB5CA2ACB76069777155",
+      "count_raw": "{\"input_tokens\":207,\"object\":\"response.input_tokens\"}",
+      "chat_prompt_tokens": 207,
+      "chat_completion_tokens": 25,
+      "finish_reason": "tool_calls",
+      "tool_call_count": 1,
+      "tool_name": "p3_local_probe",
+      "tool_arguments": "{\"probe_id\": \"probe-1\"}"
+    },
+    {
+      "probe": "probe-2",
+      "request_sha256": "FA79FEA97FCD0F45D2E0738D1997FE30C4759D3AC400382F71DD65D50C99A6D4",
+      "count_response_sha256": "E84D6E4F71A5E5316D4DEA3FC1F71AE8934092E4CC8CAEC7FDAC02A7547F04D4",
+      "chat_response_sha256": "3B60F6A08EDDA0B762801D44F947FEA16CD2F4385C599E25C22E01A08830A85A",
+      "count_raw": "{\"input_tokens\":207,\"object\":\"response.input_tokens\"}",
+      "chat_prompt_tokens": 207,
+      "chat_completion_tokens": 25,
+      "finish_reason": "tool_calls",
+      "tool_call_count": 1,
+      "tool_name": "p3_local_probe",
+      "tool_arguments": "{\"probe_id\": \"probe-2\"}"
+    },
+    {
+      "probe": "probe-3",
+      "request_sha256": "BCC48773A063E7341E902F60219B218F2AF0EB047F3FE64B9C7CBB835C076848",
+      "count_response_sha256": "E84D6E4F71A5E5316D4DEA3FC1F71AE8934092E4CC8CAEC7FDAC02A7547F04D4",
+      "chat_response_sha256": "D73CF42C9E840D5F3958A67D7C30A3FDC6A6E3890CDC16F35CBB59F8AD192B88",
+      "count_raw": "{\"input_tokens\":207,\"object\":\"response.input_tokens\"}",
+      "chat_prompt_tokens": 207,
+      "chat_completion_tokens": 25,
+      "finish_reason": "tool_calls",
+      "tool_call_count": 1,
+      "tool_name": "p3_local_probe",
+      "tool_arguments": "{\"probe_id\": \"probe-3\"}"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "type_of": "pipeline",
+  "name": "combined_task_routing",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "Combined Task Routing",
+  "test_list": [
+    {
+      "test_name": "route_timeout_defaults_to_medium_within_allowlist",
+      "description": "Unavailable inference defaults to Medium while obeying caller effort constraints."
+    },
+    {
+      "test_name": "route_combines_intent_effort_parallel_and_vision_once",
+      "description": "One host schema requests all four routing signals."
+    },
+    {
+      "test_name": "route_preserves_hard_facts_and_explicit_direct_tool",
+      "description": "Scores cannot remove required vision or override hard allowed directives."
+    },
+    {
+      "test_name": "route_rejects_oversize_input_before_inference",
+      "description": "Bound primary and context input before engine dispatch."
+    }
+  ],
+  "dependencies": [
+    "DecisionEngine",
+    "SchemaCatalog",
+    "RouterConfig"
+  ],
+  "libraries": [
+    "tokio"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "RouteInput",
+      "description": "Masked task, repository facts and hard directives."
+    }
+  ],
+  "output_type": "Result<Route, RouterError>",
+  "output_description": "Bounded combined routing advice or deterministic fallback."
+}

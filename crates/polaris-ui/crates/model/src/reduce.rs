@@ -189,13 +189,22 @@ pub(crate) fn fold_unsequenced(
         Event::DirectiveApplied { .. } => {
             state.status.directives_applied = state.status.directives_applied.saturating_add(1)
         }
-        Event::FileLeaseGranted { .. }
+        // A typed user message changes no counters; frontends push the resolved text, exactly
+        // like the text of `DirectiveApplied`.
+        Event::UserInputSubmitted { .. }
+        | Event::FileLeaseGranted { .. }
         | Event::FileLeaseRevoked { .. }
         | Event::SandboxSnapshotBranchCreated { .. }
         | Event::SandboxExecutionCompleted { .. }
         | Event::BlastRadiusAlert { .. }
         | Event::DiffNeedsApproval { .. }
-        | Event::FrameStepRecorded { .. } => {}
+        | Event::FrameStepRecorded { .. }
+        | Event::HumanRequestCreated { .. }
+        | Event::HumanRequestAnswered { .. }
+        | Event::HumanRequestInterrupted { .. }
+        | Event::FrameRegistered { .. }
+        | Event::FrameTreeCancellationRequested { .. }
+        | Event::FrameToolResultRecorded { .. } => {}
     }
     state.last_seq = Some(seq);
     Ok(())

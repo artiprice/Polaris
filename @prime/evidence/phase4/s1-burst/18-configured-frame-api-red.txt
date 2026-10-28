@@ -1,0 +1,56 @@
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0432]: unresolved imports `polaris_kernel::ConfiguredFrameError`, `polaris_kernel::ConfiguredFrameServices`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:34:26
+   |
+34 |     use polaris_kernel::{ConfiguredFrameError, ConfiguredFrameServices};
+   |                          ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^ no `ConfiguredFrameServices` in the root
+   |                          |
+   |                          no `ConfiguredFrameError` in the root
+
+error[E0432]: unresolved imports `polaris_kernel::ConfiguredFrameError`, `polaris_kernel::ConfiguredFrameServices`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:51:26
+   |
+51 |     use polaris_kernel::{ConfiguredFrameError, ConfiguredFrameServices};
+   |                          ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^ no `ConfiguredFrameServices` in the root
+   |                          |
+   |                          no `ConfiguredFrameError` in the root
+
+error[E0599]: no method named `run_agent_frame` found for struct `KernelHandle` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:38:33
+   |
+38 |     let result = fixture.kernel.run_agent_frame(
+   |                  ---------------^^^^^^^^^^^^^^^ method not found in `KernelHandle`
+
+error[E0599]: no associated function or constant named `default` found for struct `FrameRunLimits` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:39:141
+   |
+39 | ...ew(), limits: FrameRunLimits::default() },
+   |                                  ^^^^^^^ associated function or constant not found in `FrameRunLimits`
+   |
+help: there is a method `default_color` with a similar name
+   |
+39 |         FrameRunInput { frame: &mut fixture.frame, goal: "Inspect parser", cancellation: &CancellationToken::new(), limits: FrameRunLimits::default_color() },
+   |                                                                                                                                                    ++++++
+
+error[E0599]: no method named `run_agent_frame` found for struct `KernelHandle` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:56:33
+   |
+56 |     let result = fixture.kernel.run_agent_frame(
+   |                  ---------------^^^^^^^^^^^^^^^ method not found in `KernelHandle`
+
+error[E0599]: no associated function or constant named `default` found for struct `FrameRunLimits` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:57:141
+   |
+57 | ...ew(), limits: FrameRunLimits::default() },
+   |                                  ^^^^^^^ associated function or constant not found in `FrameRunLimits`
+   |
+help: there is a method `default_color` with a similar name
+   |
+57 |         FrameRunInput { frame: &mut foreign.frame, goal: "Inspect parser", cancellation: &CancellationToken::new(), limits: FrameRunLimits::default_color() },
+   |                                                                                                                                                    ++++++
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-kernel` (test "frame_prompt") due to 6 previous errors

@@ -1,0 +1,20 @@
+{
+  "type_of":"pipeline",
+  "name":"with_current_tool_pruning",
+  "file_path":"crates/polaris-kernel/src/frame_prompt.rs",
+  "logic_name":"Actual frame prompt tool pruning",
+  "test_list":[
+    {"test_name":"prompt_tool_pruning_masks_before_classifier","description":"Only role-filtered, privacy-sanitized candidates reach the actual current S1 engine."},
+    {"test_name":"prompt_tool_pruning_retains_recovery_and_proof_tools","description":"Retain available expansion, revision, question and test tools."},
+    {"test_name":"prompt_tool_pruning_never_adds_foreign_tools","description":"Advice can only remove existing catalog entries."},
+    {"test_name":"prompt_tool_pruning_keeps_catalog_on_unavailable_advice","description":"Unavailable or invalid advice preserves authorized candidates."},
+    {"test_name":"prompt_tool_schema_fitting_uses_exact_count_and_retains_required_tools","description":"After archiving old exchanges, remove lowest-ranked optional schemas within the fixed count-attempt budget; retain at least one optional operation."},
+    {"test_name":"prompt_tool_schema_fitting_reuses_unchanged_archive","description":"Repeated exact counts after schema reduction do not reserialize or debit the same archive prefix again."},
+    {"test_name":"prompt_tool_pruning_uses_sanitized_recent_step","description":"A bounded recent assistant step supplements the masked root goal without leaking raw tool payloads."}
+  ],
+  "dependencies":["KernelPromptAssembler","Router","LocalS1Host","PiiVault"],
+  "libraries":["tokio"],
+  "inputs":[{"name":"request","type":"ChatRequest","description":"Already sanitized real frame prompt and initialized catalog."}],
+  "output_type":"FramePrompt",
+  "output_description":"Actual selected tool schemas passed to exact tokenization and dispatch. Verification deferred by user instruction."
+}

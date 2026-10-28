@@ -1,0 +1,35 @@
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `PlatformOps`
+  --> crates\polaris-kernel\src\worker_lifecycle.rs:18:51
+   |
+18 |     DecisionEngine, DecisionError, PlatformError, PlatformOps, ProcessTree, WorkerBootstrapPlatform,
+   |                                                   ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-kernel` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 27.35s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-b61021fa115330c1.exe)
+
+running 2 tests
+
+thread 'frame_prompt::watchdog_privacy_tests::watchdog_goal_mask_failure_skips_decision' (3324) panicked at crates\polaris-kernel\src\watchdog_privacy_tests.rs:63:5:
+failed goal masking must not contact S1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'frame_prompt::watchdog_privacy_tests::watchdog_masks_goal_and_proposal_before_decision' (14240) panicked at crates\polaris-kernel\src\watchdog_privacy_tests.rs:51:5:
+raw root goal must not escape the kernel privacy boundary
+test frame_prompt::watchdog_privacy_tests::watchdog_goal_mask_failure_skips_decision ... FAILED
+test frame_prompt::watchdog_privacy_tests::watchdog_masks_goal_and_proposal_before_decision ... FAILED
+
+failures:
+
+failures:
+    frame_prompt::watchdog_privacy_tests::watchdog_goal_mask_failure_skips_decision
+    frame_prompt::watchdog_privacy_tests::watchdog_masks_goal_and_proposal_before_decision
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p polaris-kernel --lib`

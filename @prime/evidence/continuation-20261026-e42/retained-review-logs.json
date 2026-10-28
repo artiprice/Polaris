@@ -1,0 +1,102 @@
+[
+  {
+    "path": "review/catalog/argv.txt",
+    "sha256": "ba938e7b83fec54b818a35114fbf2f5e00c28108372b1fa7023066b79319a200"
+  },
+  {
+    "path": "review/catalog/exit-code.txt",
+    "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+  },
+  {
+    "path": "review/catalog/stdout-stderr.txt",
+    "sha256": "934f171908c2d22586bba7a99017bb4fe54d41959062c9681cb80542a59799ba"
+  },
+  {
+    "path": "review/client/api-red.txt",
+    "sha256": "97e6e002ac6e6dcf240073d0ab0b3f22990ccdd4a19d2e69d94b9c860df8ab3f"
+  },
+  {
+    "path": "review/client/client-tests-final.txt",
+    "sha256": "44ad9d17d0e56f79e785540316e62fc5a59afe6080ecab4442183803e75077a5"
+  },
+  {
+    "path": "review/client/client-tests.txt",
+    "sha256": "7575dee25650e34a2c870049b51e86cf0d1b869721cf6deb05971871a9f22a84"
+  },
+  {
+    "path": "review/client/fmt-check.txt",
+    "sha256": "ea91e5b96380de459a1d366c3eab98ef93e361bf76a3d1866fedd2dfcc9b1df4"
+  },
+  {
+    "path": "review/lifecycle/focused-tests.argv.txt",
+    "sha256": "41f08e61cb61bdb333621558a018cfdda7ed4ee02adb10d520539327cd3f5f54"
+  },
+  {
+    "path": "review/lifecycle/focused-tests.log",
+    "sha256": "2a6b0d658ea0eb3b43dac52a04af4e9f96f9368580b2b46b0b981ee3a194c10e"
+  },
+  {
+    "path": "review/lifecycle/json-descriptors.argv.txt",
+    "sha256": "89061bc88843b88af74d9776b3214263f9a4796aeebdcfa6a48202827ffb4f36"
+  },
+  {
+    "path": "review/lifecycle/json-descriptors.log",
+    "sha256": "df6d05ff37b86aa2565d2de42d57251795c3c207e16cb3167720e315a4f363f8"
+  },
+  {
+    "path": "review/lifecycle/README.md",
+    "sha256": "9345a41d499c4220c16be67330a4033603bc597cfef91def4712debaa992c044"
+  },
+  {
+    "path": "review/lifecycle/rustfmt-check.argv.txt",
+    "sha256": "eafa78f35a65d99c09ed4da01eb13fdf8e6b24cdbb3fc8230563e93aea4842f8"
+  },
+  {
+    "path": "review/lifecycle/rustfmt-check.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/lifecycle/strict-clippy.argv.txt",
+    "sha256": "f71d3593d891e5d42b4632b06f231683f18cce1af488b595b7267085d57eae0b"
+  },
+  {
+    "path": "review/lifecycle/strict-clippy.log",
+    "sha256": "1d438a2560aebcec2fe18e0ce2d4a3b8f81eca88f99bc9ab95d1ee45ba5fb9a7"
+  },
+  {
+    "path": "review/models-linux.txt",
+    "sha256": "6d3c6d015751593031e8efef82c24846c65ea1600025218dc363c2ad5bc32538"
+  },
+  {
+    "path": "review/strict-clippy-checked-counter-api.txt",
+    "sha256": "1029aab29bcf36fdcbc9afeb90eee76c74d12b2ca544c022b142e1e34d38e1e4"
+  },
+  {
+    "path": "review/strict-clippy-green.txt",
+    "sha256": "39fc5366e0edeec372b0a91e8b49be696ba45e53dba9b54ccd9c9bc3daef9920"
+  },
+  {
+    "path": "review/strict-clippy.txt",
+    "sha256": "785d75336773b9b9534c3a03714206425f56e3860774d58ad65304f7a7be043c"
+  },
+  {
+    "path": "review/worker/child-eviction-reload.txt",
+    "sha256": "4d90147b8bd74d9676d0616b5ec9f8ab6d7ed223b7de13ba603a1f3d706b28c0"
+  },
+  {
+    "path": "review/worker/idle-default-green.txt",
+    "sha256": "bed8a05ca9d326d921cfc5630d14f81740b05326190b7722b89ea0846ae54842"
+  },
+  {
+    "path": "review/worker/idle-default-red.txt",
+    "sha256": "426f9578f83071c1fc670e330a4b1a3dcf73d7bb01c6ecea9f086f27f802e1f9"
+  },
+  {
+    "path": "review/worker/idle-local-green.txt",
+    "sha256": "f2d09988df187cd7f462ce0f8d81b15836630ffef87a580c786344ef90f5e8fb"
+  },
+  {
+    "path": "review/worker/idle-policy-api-red.txt",
+    "sha256": "cce77da1d414226331d74911f467d6d55b1c72885d800e8c72e523718beab1fa"
+  }
+]

@@ -22,6 +22,7 @@ use crate::{
 
 /// Input for listing one workspace directory; `None` lists the workspace root.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ListDirInput {
     /// Directory path, or `None` for the workspace root.
     #[serde(default)]
@@ -30,6 +31,7 @@ pub struct ListDirInput {
 
 /// Input for a repository-relative glob pattern.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GlobInput {
     /// Glob pattern using `/`-separated workspace paths.
     pub pattern: String,
@@ -37,6 +39,7 @@ pub struct GlobInput {
 
 /// Input for regular-expression search.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GrepInput {
     /// Regex pattern, validated by the shared automata guard before compilation.
     pub pattern: String,
@@ -82,6 +85,34 @@ pub fn list_dir(
     input: &ListDirInput,
     limits: &ToolLimits,
 ) -> Result<SearchOutput, polaris_sdk::registry::ToolError> {
+    list_dir_impl(root, input, limits, |_| Ok(()), false)
+}
+
+pub(crate) fn list_dir_authorized<F>(
+    root: &Path,
+    input: &ListDirInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    list_dir_impl(root, input, limits, &mut authorize, true)
+}
+
+fn list_dir_impl<F>(
+    root: &Path,
+    input: &ListDirInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+    bounded_authorized: bool,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    if let Some(path) = input.path.as_deref() {
+        authorize(path)?;
+    }
     let directory = resolve_optional_directory(root, input.path.as_deref())?;
     if !directory.is_dir() {
         return Err(polaris_sdk::registry::ToolError::InvalidInput(
@@ -92,6 +123,9 @@ pub fn list_dir(
         .canonicalize()
         .map_err(|_| polaris_sdk::registry::ToolError::Io("workspace root failed".to_owned()))?;
     let start = Instant::now();
+    if bounded_authorized {
+        preauthorize_ignore_files(&canonical_root, &directory, limits, start, &mut authorize)?;
+    }
     let mut selected = BTreeMap::new();
     let mut truncated = false;
     let mut builder = WalkBuilder::new(&directory);
@@ -100,6 +134,9 @@ pub fn list_dir(
         .follow_links(false)
         .max_depth(Some(1))
         .add_custom_ignore_filename(".polarisignore");
+    if bounded_authorized {
+        configure_authorized_walker(&mut builder, &canonical_root);
+    }
     for entry in builder.build() {
         if start.elapsed() >= limits.timeout {
             truncated = true;
@@ -116,6 +153,14 @@ pub fn list_dir(
             continue;
         }
         let path = entry.path().to_path_buf();
+        let Some(relative) = path.strip_prefix(&canonical_root).ok() else {
+            continue;
+        };
+        let relative_text = relative.to_string_lossy().replace('\\', "/");
+        if WorkspacePath::parse(&relative_text).is_err() {
+            continue;
+        }
+        authorize(&relative_text)?;
         let name = match path.file_name() {
             Some(name) => name.to_os_string(),
             None => continue,
@@ -165,6 +210,31 @@ pub fn glob(
     input: &GlobInput,
     limits: &ToolLimits,
 ) -> Result<SearchOutput, polaris_sdk::registry::ToolError> {
+    glob_impl(root, input, limits, |_| Ok(()), false)
+}
+
+pub(crate) fn glob_authorized<F>(
+    root: &Path,
+    input: &GlobInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    glob_impl(root, input, limits, &mut authorize, true)
+}
+
+fn glob_impl<F>(
+    root: &Path,
+    input: &GlobInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+    bounded_authorized: bool,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
     let pattern = input.pattern.replace('\\', "/");
     if pattern.is_empty()
         || pattern.starts_with('/')
@@ -192,11 +262,20 @@ pub fn glob(
         .canonicalize()
         .map_err(|_| polaris_sdk::registry::ToolError::Io("workspace root failed".to_owned()))?;
     let start = Instant::now();
+    if bounded_authorized {
+        preauthorize_ignore_files(
+            &canonical_root,
+            &canonical_root,
+            limits,
+            start,
+            &mut authorize,
+        )?;
+    }
     let mut output = SearchOutput {
         rows: Vec::new(),
         truncated: false,
     };
-    for entry in walker(&canonical_root) {
+    for entry in walker(&canonical_root, &canonical_root, bounded_authorized) {
         let entry = match entry {
             Ok(entry) => entry,
             Err(_) => {
@@ -216,7 +295,11 @@ pub fn glob(
             Err(_) => continue,
         };
         let relative_text = relative.to_string_lossy().replace('\\', "/");
-        if !set.is_match(&relative_text) || WorkspacePath::parse(&relative_text).is_err() {
+        if WorkspacePath::parse(&relative_text).is_err() {
+            continue;
+        }
+        authorize(&relative_text)?;
+        if !set.is_match(&relative_text) {
             continue;
         }
         let resolved = match resolve_in_workspace(&canonical_root, &relative_text) {
@@ -251,6 +334,31 @@ pub fn grep(
     input: &GrepInput,
     limits: &ToolLimits,
 ) -> Result<SearchOutput, polaris_sdk::registry::ToolError> {
+    grep_impl(root, input, limits, |_| Ok(()), false)
+}
+
+pub(crate) fn grep_authorized<F>(
+    root: &Path,
+    input: &GrepInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    grep_impl(root, input, limits, &mut authorize, true)
+}
+
+fn grep_impl<F>(
+    root: &Path,
+    input: &GrepInput,
+    limits: &ToolLimits,
+    mut authorize: F,
+    bounded_authorized: bool,
+) -> Result<SearchOutput, polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
     let validated = validate_user_regex(
         &input.pattern,
         &UserRegexLimits {
@@ -268,11 +376,17 @@ pub fn grep(
         .map_err(|_| {
             polaris_sdk::registry::ToolError::InvalidInput("regex could not be compiled".to_owned())
         })?;
+    if let Some(path) = input.path.as_deref() {
+        authorize(path)?;
+    }
     let canonical_root = root
         .canonicalize()
         .map_err(|_| polaris_sdk::registry::ToolError::Io("workspace root failed".to_owned()))?;
     let search_root = resolve_optional_directory(&canonical_root, input.path.as_deref())?;
     let start = Instant::now();
+    if bounded_authorized && search_root.is_dir() {
+        preauthorize_ignore_files(&canonical_root, &search_root, limits, start, &mut authorize)?;
+    }
     let mut output = SearchOutput {
         rows: Vec::new(),
         truncated: false,
@@ -285,10 +399,11 @@ pub fn grep(
             limits,
             start,
             &mut output,
+            &mut authorize,
         )?;
         return Ok(output);
     }
-    for entry in walker(&search_root) {
+    for entry in walker(&search_root, &canonical_root, bounded_authorized) {
         let entry = match entry {
             Ok(entry) => entry,
             Err(_) => {
@@ -300,10 +415,19 @@ pub fn grep(
             output.truncated = true;
             break;
         }
-        if entry.path_is_symlink()
-            || entry.depth() == 0
-            || !entry.file_type().is_some_and(|kind| kind.is_file())
-        {
+        if entry.path_is_symlink() || entry.depth() == 0 {
+            continue;
+        }
+        let relative = match entry.path().strip_prefix(&canonical_root) {
+            Ok(relative) => relative,
+            Err(_) => continue,
+        };
+        let relative_text = relative.to_string_lossy().replace('\\', "/");
+        if WorkspacePath::parse(&relative_text).is_err() {
+            continue;
+        }
+        authorize(&relative_text)?;
+        if !entry.file_type().is_some_and(|kind| kind.is_file()) {
             continue;
         }
         search_one_file(
@@ -313,6 +437,7 @@ pub fn grep(
             limits,
             start,
             &mut output,
+            &mut authorize,
         )?;
         if output.rows.len() >= limits.max_results || output.truncated {
             break;
@@ -321,14 +446,18 @@ pub fn grep(
     Ok(output)
 }
 
-fn search_one_file(
+fn search_one_file<F>(
     root: &Path,
     path: &Path,
     matcher: &regex::Regex,
     limits: &ToolLimits,
     start: Instant,
     output: &mut SearchOutput,
-) -> Result<(), polaris_sdk::registry::ToolError> {
+    authorize: &mut F,
+) -> Result<(), polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
     if start.elapsed() >= limits.timeout {
         output.truncated = true;
         return Ok(());
@@ -338,6 +467,7 @@ fn search_one_file(
         Err(_) => return Ok(()),
     };
     let relative_text = relative.to_string_lossy().replace('\\', "/");
+    authorize(&relative_text)?;
     let resolved = match resolve_in_workspace(root, &relative_text) {
         Ok(path) => path,
         Err(_) => return Ok(()),
@@ -420,11 +550,145 @@ fn resolve_optional_directory(
     }
 }
 
-fn walker(root: &Path) -> ignore::Walk {
+fn walker(root: &Path, workspace_root: &Path, bounded_authorized: bool) -> ignore::Walk {
     let mut builder = WalkBuilder::new(root);
     builder
         .hidden(false)
         .follow_links(false)
         .add_custom_ignore_filename(".polarisignore");
+    if bounded_authorized {
+        configure_authorized_walker(&mut builder, workspace_root);
+    }
     builder.build()
+}
+
+pub(crate) fn configure_authorized_walker(builder: &mut WalkBuilder, workspace_root: &Path) {
+    let filter_root = workspace_root.to_path_buf();
+    builder
+        .parents(false)
+        .git_global(false)
+        .git_exclude(false)
+        .threads(1)
+        .filter_entry(move |entry| {
+            if entry.depth() == 0 {
+                return true;
+            }
+            if entry.file_name() == ".git" {
+                return false;
+            }
+            let Ok(relative) = entry.path().strip_prefix(&filter_root) else {
+                return false;
+            };
+            let relative_text = relative.to_string_lossy().replace('\\', "/");
+            WorkspacePath::parse(&relative_text).is_ok()
+                && resolve_in_workspace(&filter_root, &relative_text).is_ok()
+        });
+}
+
+/// Authorize and bound candidate entries before the walker can consume local ignore contents.
+///
+/// Enumeration observes directory names and metadata after each candidate path is authorized.
+/// It intentionally scans ignored subtrees too; any denial aborts the full invocation. Global and
+/// parent ignore files are disabled on the authorized walker, while trusted public helpers retain
+/// the default walker behavior. Workspace contents must remain stable between this scan and walk.
+pub(crate) fn preauthorize_ignore_files<F>(
+    workspace_root: &Path,
+    scan_root: &Path,
+    limits: &ToolLimits,
+    started: Instant,
+    authorize: &mut F,
+) -> Result<(), polaris_sdk::registry::ToolError>
+where
+    F: FnMut(&str) -> Result<(), polaris_sdk::registry::ToolError>,
+{
+    let mut pending = vec![scan_root.to_path_buf()];
+    let mut visited = 0_usize;
+    let max_entries = limits.max_results.saturating_mul(64).max(1_024);
+    let mut ignore_bytes = 0_u64;
+    while let Some(directory) = pending.pop() {
+        if started.elapsed() >= limits.timeout {
+            return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                "ignore resource scan exceeded configured time bound".to_owned(),
+            ));
+        }
+        let entries = fs::read_dir(&directory).map_err(|_| {
+            polaris_sdk::registry::ToolError::Io("directory enumeration failed".to_owned())
+        })?;
+        for entry in entries {
+            if started.elapsed() >= limits.timeout || visited >= max_entries {
+                return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                    "ignore resource scan exceeded configured traversal bound".to_owned(),
+                ));
+            }
+            let entry = entry.map_err(|_| {
+                polaris_sdk::registry::ToolError::Io("directory entry failed".to_owned())
+            })?;
+            let path = entry.path();
+            let relative = path.strip_prefix(workspace_root).map_err(|_| {
+                polaris_sdk::registry::ToolError::InvalidInput(
+                    "ignore resource escaped workspace".to_owned(),
+                )
+            })?;
+            let relative_text = relative.to_string_lossy().replace('\\', "/");
+            if WorkspacePath::parse(&relative_text).is_err() {
+                continue;
+            }
+            let ignore_candidate = is_local_ignore_filename(&entry.file_name());
+            authorize(&relative_text)?;
+            visited = visited.saturating_add(1);
+            if entry.file_name() == ".git" {
+                continue;
+            }
+            let resolved = match resolve_in_workspace(workspace_root, &relative_text) {
+                Ok(resolved) => resolved,
+                Err(_) if ignore_candidate => {
+                    return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                        "ignore resource path is not safely resolvable".to_owned(),
+                    ));
+                }
+                Err(_) => continue,
+            };
+            let metadata = fs::symlink_metadata(&resolved).map_err(|_| {
+                polaris_sdk::registry::ToolError::Io("entry metadata failed".to_owned())
+            })?;
+            if metadata.file_type().is_symlink() {
+                if ignore_candidate {
+                    return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                        "ignore resource is not a regular file".to_owned(),
+                    ));
+                }
+                continue;
+            }
+            if ignore_candidate && !metadata.file_type().is_file() {
+                return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                    "ignore resource is not a regular file".to_owned(),
+                ));
+            }
+            if ignore_candidate {
+                ignore_bytes = ignore_bytes.checked_add(metadata.len()).ok_or_else(|| {
+                    polaris_sdk::registry::ToolError::InvalidInput(
+                        "ignore resource size exceeds configured read bound".to_owned(),
+                    )
+                })?;
+                if metadata.len() > limits.max_read_bytes || ignore_bytes > limits.max_read_bytes {
+                    return Err(polaris_sdk::registry::ToolError::InvalidInput(
+                        "ignore resource exceeds configured read bound".to_owned(),
+                    ));
+                }
+            }
+            if metadata.is_dir() {
+                pending.push(path);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn is_local_ignore_filename(file_name: &std::ffi::OsStr) -> bool {
+    let Some(name) = file_name.to_str() else {
+        return false;
+    };
+    [".gitignore", ".ignore", ".polarisignore"]
+        .iter()
+        .any(|candidate| name.eq_ignore_ascii_case(candidate))
 }

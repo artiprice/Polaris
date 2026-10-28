@@ -1,0 +1,12 @@
+Command:
+cargo test -p polaris-system-one-client --test client_batching result_from_prior_model_generation_is_not_cached_under_reloaded_identity -- --nocapture
+
+Observed pre-fix behavioral RED:
+thread 'result_from_prior_model_generation_is_not_cached_under_reloaded_identity' panicked at crates\\polaris-system-one\\crates\\client\\tests\\client_batching.rs:316:5:
+assertion `left == right` failed
+  left: [1]
+ right: [1, 1]
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.03s
+error: test failed, to rerun pass `-p polaris-system-one-client --test client_batching`
+
+Meaning: the old implementation tagged a result with the post-RPC health generation after the test changed the generation during Decide. The fixed path probes authenticated health before and after the batch and caches only when both ready identities match. The same command then passed.

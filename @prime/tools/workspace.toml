@@ -278,8 +278,8 @@ layer = 7
 kind = "app"
 phase = "P1"
 summary = "Terminal client: ratatui TUI (default) and headless `polaris run` mode; binary name `polaris`."
-deps = ["polaris-kernel", "polaris-ui-cli", "polaris-ui-model", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform", "polaris-tools-builtin"]
-ext = ["tokio", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde_json", "tracing", "jiff", "toml", "keyring", "portable-pty"]
+deps = ["polaris-kernel", "polaris-ui-cli", "polaris-ui-model", "polaris-ui-session", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform", "polaris-tools-builtin", "polaris-models", "polaris-runtime", "polaris-system-one", "polaris-nebius-cloud-token-factory"]
+ext = ["tokio", "tokio-util", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde", "serde_json", "blake3", "tracing", "jiff", "toml", "keyring", "portable-pty"]
 responsibilities = [
   "Parse CLI arguments (clap) and resolve config layers.",
   "Embed the kernel in-process by default, or attach to `polarisd` with `--connect`.",
@@ -292,12 +292,15 @@ api = ["bin `polaris`", "`polaris run <task>`", "`polaris doctor`", "`polaris --
 [[crate]]
 name = "polaris-desktop"
 path = "apps/polaris-desktop"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-28 desktop welcome shell (Slint 1.18.1, royalty-free licence ADR-014): offline welcome screen with ASCII aurora; kernel bridge still P9. See evidence/ui/desktop/desktop-verification.txt."
 layer = 7
 kind = "app"
 phase = "P9"
 summary = "Native desktop GUI built with Slint (femtovg/software renderer); mobile targets in v2."
-deps = ["polaris-kernel", "polaris-ui-gui", "polaris-rpc", "polaris-config", "polaris-log"]
-ext = ["tokio", "slint", "slint-build", "rustls"]
+deps = ["polaris-ui-gui", "polaris-ui-session", "polaris-log", "polaris-security", "polaris-sdk", "polaris-config"]
+ext = ["slint", "miette", "tracing", "tokio", "rustls"]
 responsibilities = [
   "Host the Slint UI from polaris-ui-gui and bridge it to the kernel event stream.",
   "Run embedded kernel or connect to the daemon over a named pipe.",
@@ -347,20 +350,20 @@ name = "polaris-worker"
 path = "apps/polaris-worker"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E40: supervised native worker implementation in progress; no production inference/ingest acceptance claimed."
+evidence = "2026-10-26 \u00a7E42: native owner drops idle models after a validated 1ms..1day interval (default 45s); explicit eviction acknowledges only after destruction. Installed-model RED/GREEN and authenticated child explicit/idle eviction plus real reload pass. This does not pause heavy-build admission, preempt inference, impose RSS limits, prove RSS reduction or complete nano/OCR/pressure policy."
 layer = 7
 kind = "app"
 phase = "P4"
 member_setup = ["win-models"]
-summary = "Native worker process for bounded local S1 inference and CAS-backed ingestion; nano and OCR remain unavailable."
+summary = "Native worker process for bounded local Decide and optional separate semantic PII inference, authenticated over the worker RPC; nano and OCR remain unavailable."
 deps = ["polaris-sdk", "polaris-storage-cas", "polaris-system-one-engine", "polaris-system-one-nano", "polaris-ingest", "polaris-proto", "polaris-config", "polaris-log"]
-ext = ["tokio", "tokio-stream", "tonic", "ort", "clap", "serde", "serde_json", "tempfile", "tower", "hyper-util", "secrecy", "zeroize"]
+ext = ["tokio", "tokio-stream", "tonic", "ort", "clap", "serde", "serde_json", "tempfile", "tower", "hyper-util", "secrecy", "zeroize", "getrandom"]
 responsibilities = [
   "Isolate FFI-heavy, crash-prone work (ONNX Runtime, PDF/OCR, C++ engines) from the kernel process.",
   "Serve the worker gRPC service over a named pipe; report health and memory to the supervisor.",
   "Lazy-load and evict models on idle TTL, memory pressure or a force-evict request before builds.",
 ]
-api = ["bin `polaris-worker --mode s1|ingest`", "struct S1Worker", "struct IngestWorker"]
+api = ["bin `polaris-worker --mode s1|ingest`", "struct S1Worker", "struct PiiEngineConfig", "struct IngestWorker"]
 
 [[crate]]
 name = "polaris-guest"
@@ -394,10 +397,10 @@ kind = "lib"
 phase = "P1"
 implemented = true
 status = "PASS"
-evidence = "§E30 / P1_LOGIC_STATUS.md: validated contracts and enum forwarding; SDK Miri supported tests and Kani 3/3. Final consistency/fuzz checkpoint recorded there."
+evidence = "§E30 / P1_LOGIC_STATUS.md: validated contracts and enum forwarding; SDK Miri supported tests and Kani 3/3. §E43: two authorized SDK schema-test fixes; full SDK suite 56 passed, 0 failed, 0 ignored. Schema snapshots unchanged; see evidence/continuation-20261026-e43/commands.json."
 summary = "Domain newtypes, error kinds, API-registry traits (prompt.md §6.2), the Backends bundle, PlatformOps and command/event contracts."
 deps = []
-ext = ["thiserror", "serde", "bytes", "uuid", "jiff", "secrecy"]
+ext = ["thiserror", "serde", "serde_json", "bytes", "uuid", "jiff", "secrecy", "tokio-util"]
 responsibilities = [
   "Define newtypes (SessionId, FrameId, AgentRole, Cid, FastFingerprint, ModelId, Effort, ...).",
   "Define registry traits: ChatModel, EmbeddingProvider, DecisionEngine, SandboxBackend, WebSearch, DocParser, VectorStore, EventStore, KernelApi, PlatformOps, Redactor, FunctionalOperator.",
@@ -491,13 +494,14 @@ name = "polaris-ratelimit"
 path = "crates/polaris-ratelimit"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production RPM/TPM reservation, priority admission and usage reconciliation in progress; UNVERIFIED, validation deferred by user."
+evidence = "E50 baseline plus active refund-ledger work: shared-snapshot replay, owned deferred settlement, and saturation-aware accounting implemented; focused behavioral, race, zero-allocation, performance, and formal acceptance checks remain open. Preserve the three contradictory reservation_refund fixtures unchanged."
 layer = 1
 kind = "lib"
 phase = "P3"
 summary = "GCRA rate limiting: RPM cells plus token-weighted TPM, priority shedding, Retry-After and 15-minute window tracking."
 deps = ["polaris-sdk"]
 ext = ["governor", "backon", "tokio"]
+dev_ext = ["dhat"]
 responsibilities = [
   "Reserve RPM+TPM budget before a request and reconcile with actual usage afterwards.",
   "Prioritize InteractiveUser > Verifier > SubAgent > Background; shed background work near limits.",
@@ -671,7 +675,7 @@ kind = "lib"
 phase = "P3"
 implemented = true
 status = "IN PROGRESS"
-evidence = "§E28–§E29: real Ed25519/Biscuit root issuance, signed monotone attenuation, scoped rights/metrics/expiry/hash checks, revocation hook and bounded evaluation. 20 contracts + 2 compile-fail tests, Windows/Linux, 95,847 fuzz executions, isolated expiry Kani proof and path Miri. Published-source vendor patch verified; dependency audit debt and full mutation-pipeline integration remain open."
+evidence = "2026-10-26 \u00a7E45 adds explicit Workspace scope while preserving right/time/churn/unsafe/diff checks and monotone child attenuation. New frame-root/token binding and actual kernel readonly authorization have scoped native/Linux evidence; full mutation assembly and security audit remain open."
 summary = "Biscuit capability tokens: session authority, per-frame attenuation (path, churn, TTL, no-unsafe), authorization."
 deps = ["polaris-sdk"]
 ext = ["biscuit-auth", "zeroize"]
@@ -793,14 +797,14 @@ name = "polaris-platform-process"
 path = "crates/polaris-platform/crates/process"
 implemented = true
 status = "IN PROGRESS"
-evidence = "P1 native ownership pulled forward: Windows/Linux tree, shutdown, worker restart and Drop tests PASS; @prime/tmp/p1/p1-native-{windows,wsl}-current.txt. P2 PTY/watch features remain open."
+evidence = "2026-10-26 §E41: child bootstrap delivers its secret once over stdin and cleanup preserves pending or unconfirmed kill outcomes. Process cleanup does not establish endpoint ACL ownership or mutual server authentication; uncertain termination remains explicit."
 parent = "polaris-platform"
 layer = 2
 kind = "lib"
 phase = "P2"
 summary = "Process trees (Job Objects / process groups via process-wrap), PTY (ConPTY via portable-pty), fs watching, memory pressure."
 deps = ["polaris-sdk", "polaris-log"]
-ext = ["process-wrap", "portable-pty", "notify", "notify-debouncer-full", "sysinfo", "tokio"]
+ext = ["process-wrap", "portable-pty", "notify", "notify-debouncer-full", "sysinfo", "tokio", "secrecy"]
 responsibilities = [
   "Implement the sdk PlatformOps trait: spawn with kill-on-drop trees, graceful CTRL_BREAK then kill on Windows.",
   "Provide PTY sessions for the terminal tool and AttachTerminal.",
@@ -851,7 +855,7 @@ kind = "lib"
 phase = "P1"
 implemented = true
 status = "PASS"
-evidence = "§E30 / P1_LOGIC_STATUS.md: task/native ownership, bounded intensity/DLQ/backoff, health timeouts and clean/crash classification; 200 native kills with exact restart count and zero roots. Final consistency/fuzz checkpoint recorded there."
+evidence = "2026-10-26 §E41: authenticated worker bootstrap is optional through the SDK trait; initialization and retirement are per generation. A generation is retired before slow cleanup, with an at-most-once cleanup guard, bounded startup/stop waits and fatal uncertain cleanup surfaced. The six focused supervisor tests pass. Timeouts do not establish native-work preemption."
 summary = "OTP-style supervision: one-for-one restart, restart intensity limits, circuit breakers, dead-letter queue, worker process pool."
 deps = ["polaris-sdk", "polaris-log", "polaris-telemetry", "polaris-kernel-bus"]
 ext = ["tokio", "tokio-util", "backon", "tracing"]
@@ -887,7 +891,7 @@ name = "polaris-nebius-cloud-token-factory"
 path = "crates/polaris-nebius-cloud/crates/token-factory"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-24 E32: bounded HTTP/SSE chat, reasoning/tool replay, embeddings/models and injected SDK credentials pass 24 local fixture/contract tests; strict owned-package Clippy passes. Live keyed provider and full S2 composition remain open."
+evidence = "E50: same-owner pinned llama.cpp token counting/chat adapter and local real token-usage parity checked; keyed Token Factory and full provider matrices remain open."
 parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
@@ -906,20 +910,23 @@ api = ["struct TokenFactoryClient", "impl ChatModel", "impl EmbeddingProvider"]
 [[crate]]
 name = "polaris-nebius-cloud-sandboxes"
 path = "crates/polaris-nebius-cloud/crates/sandboxes"
+implemented = true
+status = "IN PROGRESS"
+evidence = "E48: stateless typed upstream Contree MCP adapter, exact 19-tool inventory, bounded branch/cancel and approved-path sync contracts. Actual MCP hub registry port preserves effect authorization. Live sidecar/SWE acceptance remains BLOCKED-ON-ACCESS."
 parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P3"
 member_setup = ["contree-mcp", "win-uv", "win-keyring"]
 summary = "Token Factory Sandboxes (Contree) via the contree-mcp sidecar: run, rsync, images, directory_state_id branching, SWE env resolver."
-deps = ["polaris-sdk", "polaris-config", "polaris-log"]
-ext = ["rmcp", "tokio", "serde_json"]
+deps = ["polaris-sdk", "polaris-config", "polaris-log", "polaris-storage-sync"]
+ext = ["rmcp", "tokio", "serde_json", "serde", "bytes", "url", "futures", "tokio-util", "base64", "blake3"]
 responsibilities = [
   "Supervise `contree-mcp --mode http` and talk to it with an rmcp streamable-HTTP client.",
-  "Implement SandboxBackend (run/upload/download/list_files/read_file/grep) and branching via directory_state_id.",
+  "Expose actual stateless run/operation and immutable-image lineage through the SDK MCP port; do not invent persistent SandboxBackend handles.",
   "Resolve SWE-bench / SWE-rebench environments by repo manifest; drive $nebius-branching.",
 ]
-api = ["struct ContreeBackend", "impl SandboxBackend", "fn resolve_env(manifest)"]
+api = ["struct ContreeBackend<C: McpToolClient>", "run / branch_run / sync_plan_uploads", "fn resolve_env(manifest) (pending)"]
 
 [[crate]]
 name = "polaris-nebius-cloud-data-lab"
@@ -945,14 +952,17 @@ api = ["struct TrajectoryExporter", "fn sync()"]
 [[crate]]
 name = "polaris-nebius-cloud-ai-cloud"
 path = "crates/polaris-nebius-cloud/crates/ai-cloud"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-26 §E41: real checked budget reservations, terminal TTL handling, strict mTLS/IP ingress checks and owner-label selection. Provider transport is not implemented; live cloud integration and phase acceptance remain open."
 parent = "polaris-nebius-cloud"
 layer = 2
 kind = "lib"
 phase = "P6"
 member_setup = ["win-keyring"]
 summary = "Nebius AI Cloud integration: remote OpenShell gateway VM lifecycle and cloud bursting for heavy builds."
-deps = ["polaris-sdk", "polaris-config"]
-ext = ["reqwest", "tonic"]
+deps = []
+ext = ["thiserror"]
 responsibilities = [
   "Provision/start/stop a Linux VM hosting a remote OpenShell gateway (execution tier E4).",
   "Expose connection info (mTLS endpoint) to polaris-openshell-client.",
@@ -962,6 +972,9 @@ api = ["struct AiCloud", "fn ensure_gateway_vm()"]
 [[crate]]
 name = "polaris-nebius-cloud"
 path = "crates/polaris-nebius-cloud"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-26 §E41: facade exports the implemented Nebius AI Cloud surface. Provider transport and live cloud execution remain absent; child contracts do not establish production integration."
 layer = 2
 kind = "facade"
 phase = "P3"
@@ -1054,7 +1067,7 @@ name = "polaris-ingest"
 path = "crates/polaris-ingest"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E40: bounded real document parser implementation in progress; OCR/worker acceptance remains open."
+evidence = "2026-10-26 \u00a7E40: concrete format parsers, archive/XML/DOM preflight and source provenance, actual CAS-backed worker acceptance; OCR and process resource isolation remain open."
 layer = 2
 kind = "lib"
 phase = "P5"
@@ -1204,14 +1217,14 @@ name = "polaris-devenv-cicd"
 path = "crates/polaris-devenv/crates/cicd"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production typed CI pipelines, matrix reporting and sandbox engine in progress; UNVERIFIED, Dagger and validation deferred."
+evidence = "2026-10-26 §E41: bounded CI execution, owned cancellation cleanup and late cleanup after ambiguous create outcomes are implemented. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger and persistent cache integration remain open; output redaction follows the output cap and is not a preemptive memory limit."
 parent = "polaris-devenv"
 layer = 2
 kind = "lib"
 phase = "P8"
 summary = "Built-in CI (/ci, /ci-run, $ci(dagger)): Dagger SDK pipelines on BuildKit with persistent cache mounts; feature-gated dagger-sdk."
 deps = ["polaris-sdk"]
-ext = ["tokio"]
+ext = ["tokio", "bytes"]
 responsibilities = [
   "Run matrix pipelines (lint, build, test) with cache mounts; feed results to Proof-of-Done.",
   "Keep dagger-sdk (reqwest 0.11) behind an optional feature so default builds avoid it.",
@@ -1238,41 +1251,41 @@ name = "polaris-system-one-engine"
 path = "crates/polaris-system-one/crates/engine"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E40: concrete GLiNER/ORT inference adapter in progress; configured-model acceptance remains open."
+evidence = "E50: separate raw-byte PII span engine and model/runtime digests implemented; installed Decide inference checked. Live PII quality, full parity/calibration and CUDA gates remain open."
 parent = "polaris-system-one"
 layer = 2
 kind = "lib"
 phase = "P4"
 member_setup = ["win-models", "win-cuda"]
-summary = "Explicit-path CPU fp32 GLiNER2.5-Decide inference via gliner2-rs and dynamically loaded ONNX Runtime; PII-NER/CUDA acceptance remains open."
+summary = "Explicit-path CPU fp32 GLiNER2.5 Decide and separately configured GLiNER2 PII-span engines via gliner2-rs and dynamically loaded ONNX Runtime; real companion-model acceptance remains open."
 deps = ["polaris-sdk", "polaris-proto"]
-ext = ["gliner2-rs", "ort", "tokenizers", "hf-hub", "ndarray"]
+ext = ["gliner2-rs", "ort", "tokenizers", "hf-hub", "ndarray", "blake3"]
 responsibilities = [
   "Load self-exported ONNX fragments (spike S0-4) with the ORT DLL beside the exe; CPU or CUDA EP on the GTX 1650.",
   "Run multi-task schemas (Choice / Score / Noul) in one forward pass; return probabilities.",
   "Fallback: supervised Python gliner2 sidecar if parity (>=99% top-1) fails.",
 ]
-api = ["struct GlinerEngine", "struct EngineConfig", "fn decide(questions, input) -> Result<Decision, EngineError>"]
+api = ["struct GlinerEngine", "struct EngineConfig", "struct GlinerPiiEngine", "struct PiiEngineConfig", "fn detect(raw_text) -> Result<Vec<PiiEntitySpan>, EngineError>"]
 
 [[crate]]
 name = "polaris-system-one-client"
 path = "crates/polaris-system-one/crates/client"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E40: bounded supervised worker client implementation in progress; full worker/kernel acceptance remains open."
+evidence = "E50: bounded cross-call batching, exact request/checkpoint/generation/incarnation cache and single-flight implemented with cancellation/race fixtures; authenticated real Decide worker checks pass; complete workload/formal gates remain open."
 parent = "polaris-system-one"
 layer = 2
 kind = "lib"
 phase = "P4"
-summary = "Bounded System-One worker client with local IPC, protocol/schema validation and deadlines; cross-call batching and checkpoint-aware caching remain open."
+summary = "Bounded authenticated System-One worker client with coalesced decisions, worker-incarnation-bound cache, and separate raw-text PII span RPC."
 deps = ["polaris-sdk", "polaris-proto"]
-ext = ["tonic", "tokio", "tower", "hyper-util"]
+ext = ["tonic", "tokio", "tower", "hyper-util", "tokio-stream", "prost", "blake3", "interprocess"]
 responsibilities = [
   "Implement the sdk DecisionEngine trait against the s1 worker.",
   "Batch concurrent questions; dirty-check inputs with xxh3 to skip repeated inference.",
   "Enforce per-consumer timeouts so fail-open/fail-closed policies are deterministic.",
 ]
-api = ["struct S1Client", "impl DecisionEngine"]
+api = ["struct S1Client", "impl DecisionEngine", "impl PiiSpanDetector"]
 
 [[crate]]
 name = "polaris-system-one-nano"
@@ -1300,36 +1313,39 @@ name = "polaris-security-pii"
 path = "crates/polaris-security/crates/pii"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production reversible bounded DFA/entropy privacy vault in progress; UNVERIFIED. NER span API and real sealed persistence integration remain pending."
+evidence = "E50: reversible NER spans, deterministic degradation, sealed marker-map snapshots and kernel private CAS/recovered-key integration checked; actual PII companion inference, corpus/performance/fuzz acceptance remains open."
 parent = "polaris-security"
 layer = 3
 kind = "lib"
 phase = "P4"
-summary = "Reversible PII vault: DFA masks + entropy + S1 PII-NER (via DecisionEngine), placeholder tokens, unmask only at the sandbox boundary."
+summary = "Reversible PII vault: DFA and entropy masks plus separately supplied S1 semantic PII byte spans, placeholder tokens, unmask only at the sandbox boundary."
 deps = ["polaris-sdk", "polaris-security-automata"]
-ext = ["zeroize", "secrecy", "getrandom"]
+ext = ["zeroize", "secrecy", "getrandom", "tokio"]
 responsibilities = [
   "Mask emails, IPs, keys, names and internal identifiers before any cloud call (fail closed to DFA+entropy).",
   "Store forward/reverse maps in memory (and sealed on disk for resume); unmask only in sandbox execution.",
   "Report counts of sanitized items per request.",
 ]
-api = ["struct PiiVault", "fn mask(&str) -> Masked", "fn unmask_for_sandbox(&str)"]
+api = ["struct PiiVault", "fn mask(&str) -> Masked", "async fn mask_with_ner(detector, &str, timeout) -> Masked", "fn unmask_for_sandbox(&str)"]
 
 [[crate]]
 name = "polaris-security-rules"
 path = "crates/polaris-security/crates/rules"
+implemented = true
+status = "IN PROGRESS"
+evidence = "Versioned AST/DFA rule packs, bounded diff/command audits, explicit partial-language coverage, fail-closed canonical S1 arbitration, finite same-block UAF indicator and caller-baseline manifest near-name audit implemented; flow-sensitive UAF/taint, broad symlink-race, registry-backed supply-chain and CUDA dataflow coverage remain open. Focused raw test and strict Clippy evidence: @prime/evidence/phase4/security-rules/."
 parent = "polaris-security"
 layer = 3
 kind = "lib"
 phase = "P4"
 summary = "Security rule library: ast-grep YAML packs + DFA patterns + CWE map (memory/concurrency, injection, path traversal, secrets, supply chain, CUDA)."
 deps = ["polaris-sdk", "polaris-security-automata", "polaris-code-intel"]
-ext = ["ast-grep-core", "ast-grep-config", "serde", "serde-saphyr"]
+ext = ["ast-grep-core", "ast-grep-config", "serde", "serde-saphyr", "serde_json", "toml", "proptest", "blake3", "tokio"]
 responsibilities = [
   "Ship versioned rule packs as data; evaluate them on AST diffs.",
   "Tag findings with CWE ids and severities; let S1 arbitrate disputed matches.",
 ]
-api = ["struct RulePack", "fn audit(diff) -> Vec<Finding>"]
+api = ["struct RulePack", "fn audit_diff(&DiffAuditRequest) -> RuleScanReport", "fn audit_command(&str) -> Vec<Finding>", "fn audit_manifest(path, manifest, trusted_baseline) -> ManifestAuditReport", "async fn arbitrate(findings, masked_evidence, s1, schema, trust, timeout) -> ArbitrationReport"]
 
 [[crate]]
 name = "polaris-security"
@@ -1385,7 +1401,7 @@ name = "polaris-system-one-schemas"
 path = "crates/polaris-system-one/crates/schemas"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production schema catalog, thresholds, calibration and restrictive overrides in progress; new implementation UNVERIFIED, validation deferred by user."
+evidence = "E50: bounded exact-identity binary calibration metrics and xtask measured-candidate reports implemented; production thresholds remain uncalibrated pending real labelled held-out evidence."
 parent = "polaris-system-one"
 layer = 3
 kind = "lib"
@@ -1404,7 +1420,7 @@ name = "polaris-system-one-router"
 path = "crates/polaris-system-one/crates/router"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production routing, effort restrictions, tool/file ranking and sandbox recommendations written; UNVERIFIED, tests and validation deferred by user."
+evidence = "E50: combined intent/effort/parallel/vision request, Medium constrained fallback, bounded input and hard directives checked; labelled ranking/calibration, environments and complete workload matrices remain open."
 parent = "polaris-system-one"
 layer = 3
 kind = "lib"
@@ -1412,6 +1428,7 @@ phase = "P4"
 summary = "S1 routing: intent classification, effort scoring (1-5 -> model tier), tool pruning (top-k), file triage, sandbox tier routing ($sandbox(auto))."
 deps = ["polaris-sdk", "polaris-system-one-schemas"]
 ext = ["tokio"]
+dev = ["tokio"]
 responsibilities = [
   "Decide trivial vs S2 work; map effort to Nemotron tiers (respecting $subagent-models).",
   "Prune MCP/builtin tools per step; rank candidate files for a query.",
@@ -1451,7 +1468,7 @@ kind = "lib"
 phase = "P4"
 summary = "Meta-cognitive watchdog over context frames: goal drift, semantic loops (xxh3 window), role boundary, context fatigue."
 deps = ["polaris-sdk", "polaris-system-one-schemas"]
-ext = ["xxhash-rust", "tokio"]
+ext = ["xxhash-rust", "tokio", "serde"]
 responsibilities = [
   "Inspect each proposed step before S2 (fail open on timeout) and inject corrective anchors.",
   "Detect loops via a sliding window of step fingerprints; mark disproven hypotheses.",
@@ -1463,13 +1480,14 @@ name = "polaris-system-one"
 path = "crates/polaris-system-one"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Kernel-side facade exports production schemas/router/verifier/watchdog; UNVERIFIED, inference worker assembly and calibration remain pending."
+evidence = "E50: explicit per-consumer failure policy, bounded admission, circuit and host epoch fencing checked; whole P4 parity/calibration/MVP acceptance remains open."
 layer = 3
 kind = "facade"
 phase = "P4"
 summary = "Facade re-exporting the kernel-side System-One children (client, schemas, router, verifier, watchdog); engine and nano are linked only by polaris-worker (ADR-008)."
-deps = ["polaris-system-one-client", "polaris-system-one-schemas", "polaris-system-one-router", "polaris-system-one-verifier", "polaris-system-one-watchdog"]
-ext = []
+deps = ["polaris-system-one-client", "polaris-system-one-schemas", "polaris-system-one-router", "polaris-system-one-verifier", "polaris-system-one-watchdog", "polaris-sdk"]
+ext = ["tokio"]
+dev = ["tokio"]
 responsibilities = ["Re-export kernel-side S1 children; document the System One primitives and calibration process.", "Never depend on polaris-system-one-engine or polaris-system-one-nano: ONNX Runtime and native engines live only in polaris-worker processes."]
 api = ["pub use polaris_system_one_*"]
 
@@ -1478,7 +1496,7 @@ name = "polaris-models"
 path = "crates/polaris-models"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production model catalog, effort policy and cancellable local slot lifecycle in progress; UNVERIFIED, validation deferred by user."
+evidence = "E50: production local process loader, exact listener ownership, registry selection, leases through stream EOF and observed owned-tree shutdown checked; full resource/load/formal matrices remain open."
 layer = 3
 kind = "lib"
 phase = "P3"
@@ -1497,7 +1515,7 @@ name = "polaris-tools-builtin"
 path = "crates/polaris-tools/crates/builtin"
 implemented = true
 status = "PASS"
-evidence = "§E30 / P1_LOGIC_STATUS.md: P1 bounded read/pure tools, actual CAS expand/session recall, stable schemas/catalog and diff_apply fuzz; workspace read TOCTOU limit documented. Final consistency/fuzz checkpoint recorded there."
+evidence = "2026-10-26 \u00a7E45 adds bounded authorized readonly dispatch, per-resource checks, bounded local-ignore preflight, caller output caps, bounded CAS reads and pre-open regular-file rejection. Native and Linux domain suites include FIFO/symlink regressions; external parent/global ignores are disabled for authorized calls and stable-workspace assumptions remain."
 parent = "polaris-tools"
 layer = 3
 kind = "lib"
@@ -1516,7 +1534,7 @@ name = "polaris-tools-math"
 path = "crates/polaris-tools/crates/math"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-23: 25 math contracts cover expression evaluation, interpolation, statistics and sourced GPU specifications; full P3 audit remains open."
+evidence = "E50: compound exponent/depth guards, interpolation edge cases and exact NVIDIA citation hosts repaired; 33 focused tests and scoped lint pass; numerical corpus, fuzz/formal/performance acceptance remains open."
 parent = "polaris-tools"
 layer = 3
 kind = "lib"
@@ -1588,7 +1606,7 @@ name = "polaris-hacker"
 path = "crates/polaris-hacker"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E40: deterministic static/boundary/sandbox audit implementation in progress; no whole-system audit pass claimed."
+evidence = "2026-10-26 \u00a7E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress; local seeded/SDK lifecycle tests pass, actual sanitizers/isolation and broader analysis remain open."
 layer = 3
 kind = "lib"
 phase = "P7"
@@ -1611,13 +1629,13 @@ name = "polaris-runtime-frames"
 path = "crates/polaris-runtime/crates/frames"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-24 E32: bounded model/tool/verifier loop with linked transcript replay, quota charging and CAS-before-event journaling; focused contracts pass. Full production plan/edit/test/proof composition remains open."
+evidence = "2026-10-27 E49: sealed actual ancestry/step/result budgets integrate with the production kernel agent runner, durable questions and subtree cancellation. Native frame/domain tests pass; live M3/M4 and formal acceptance remain open."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
 phase = "P3"
 summary = "Agents as context frames over one S2 client and one S1 engine: roles, frame stack, attenuated capabilities, resource quotas."
-deps = ["polaris-sdk", "polaris-security-capability", "polaris-models"]
+deps = ["polaris-sdk", "polaris-security-capability", "polaris-models", "polaris-system-one-watchdog"]
 ext = ["tokio", "tokio-util", "serde", "blake3", "serde_json", "bytes"]
 responsibilities = [
   "Create child frames with attenuated Biscuit tokens and sandbox quotas; track step counts and history CIDs.",
@@ -1630,14 +1648,14 @@ name = "polaris-runtime-context"
 path = "crates/polaris-runtime/crates/context"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production deterministic prompt assembly and byte-exact CAS context folding in progress; UNVERIFIED, validation deferred."
+evidence = "2026-10-27 E47 adds shared tokenizer-independent ConversationWindow validation and bounded verified lossless archive persistence. Kernel production assembly uses complete groups, actual masking, provider counting and capability-gated archive visibility. Real CAS and loopback integration pass; full context lifecycle/live-model acceptance remains open."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
 phase = "P3"
 summary = "Lossless context virtualization: stable prefix, epistemic scratchpad, sliding window, §ref folding, polaris_expand/recall."
 deps = ["polaris-sdk", "polaris-storage-cas", "polaris-code-intel", "polaris-tools-rtk"]
-ext = ["blake3", "bytes"]
+ext = ["blake3", "bytes", "serde", "serde_json"]
 responsibilities = [
   "Assemble prompts with a byte-stable prefix (system + tools + versioned repo map) for provider caching.",
   "Fold large tool outputs into CAS with short refs; never destructively summarize facts.",
@@ -1650,7 +1668,7 @@ name = "polaris-runtime-dag"
 path = "crates/polaris-runtime/crates/dag"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production bounded DAG scheduler, named pools, speculative races and cancellation written; UNVERIFIED, validation deferred by user."
+evidence = "2026-10-26 \u00a7E44: task-ID-correlated completion, explicit per-node interruptions without invented attempt counts, policy-aware dependency skipping and independent progress, preserved completed outcomes during cleanup, plus fail-fast/cancel/drop contracts. Post-implementation tests and strict scoped checks pass; actual panic execution, full scheduler interruption injection, snapshots, race/pool stress and production composition remain open. Interrupted tasks are never replayed automatically."
 parent = "polaris-runtime"
 layer = 4
 kind = "lib"
@@ -1745,7 +1763,7 @@ name = "polaris-kernel-operators"
 path = "crates/polaris-kernel/crates/operators"
 implemented = true
 status = "IN PROGRESS"
-evidence = "Production typed operator combinators, cancellation, bounded retries and stage-order contracts in progress; UNVERIFIED, full composition remains open."
+evidence = "§E43: RateLimitOp uses the real dual RPM/TPM limiter with non-Clone admission input, retained permit, and usage reconciliation. Scoped evidence passes; production pipeline assembly and full phase acceptance remain open. See evidence/continuation-20261026-e43/commands.json."
 parent = "polaris-kernel"
 layer = 4
 kind = "lib"
@@ -1769,7 +1787,7 @@ kind = "lib"
 phase = "P3"
 implemented = true
 status = "IN PROGRESS"
-evidence = "2026-10-26 E39: authentic issued-witness cache isolation/expiry, execution binding and wire contracts pass (five tests), with strict all-target Clippy. Full hybrid mutation acceptance remains open: incomplete unsafe-analysis coverage conservatively requests human approval; no bypass is introduced."
+evidence = "2026-10-27 E49: real mutation approval receipts, distinct human-answer and exact-target cancellation authorities, and call/result/current-source proof integration are exercised. Synthetic S1 and sandbox transports are labelled; full live, calibration, fuzz/formal and safety acceptance remain open."
 summary = "HybridMutationVerifier: Biscuit Datalog authorization + AST metric calculus + S1 semantic congruence for every proposed mutation."
 # polaris-proto and polaris-ext-skills are dev-only for wire and authentic approval-cache contracts;
 # this table tracks normal edges.
@@ -1794,10 +1812,11 @@ kind = "facade"
 phase = "P1"
 implemented = true
 status = "IN PROGRESS"
-evidence = "P1 LocalBackends, signed directive dispatcher, actual read tools/stores/platform, durable session typestate and cancellation-safe shutdown pass (§E30). Full model/sandbox/S1 execution bundle and later child gates retain P2/P3/P4 scope."
+evidence = "2026-10-27 E49: actual frame tools mutate, ask/resume, prepare host-approved sandbox tests and validate exact review/source proof evidence. Context-owned human/cancellation registries prevent duplicate terminal answers; restart and scoped cancellation are integrated. UI deferred, P2 otherwise paused, full Phase 3 acceptance open."
 summary = "Composition root: wires Backends, session typestate, orchestrator, projections; re-exports kernel children."
 deps = [
   "polaris-sdk", "polaris-proto", "polaris-config", "polaris-log", "polaris-telemetry", "polaris-ratelimit",
+  "polaris-code-intel",
   "polaris-kernel-bus", "polaris-kernel-directives", "polaris-kernel-supervisor", "polaris-kernel-reaper",
   "polaris-kernel-operators", "polaris-kernel-verifier",
   "polaris-storage", "polaris-security", "polaris-platform", "polaris-vcs", "polaris-openshell",
@@ -1805,7 +1824,7 @@ deps = [
   "polaris-ext", "polaris-nvidia-docs", "polaris-browser", "polaris-devenv",
   "polaris-hacker", "polaris-runtime",
 ]
-ext = ["tokio", "tokio-util", "tracing", "serde", "serde_json", "sysinfo"]
+ext = ["tokio", "tokio-util", "tracing", "serde", "serde_json", "sysinfo", "cap-std", "zeroize"]
 responsibilities = [
   "Instantiate concrete backends (enum dispatch for runtime-selected ones) and inject traits into domain crates.",
   "Reach document ingest and S1 inference only through worker processes (sdk DocParser/DecisionEngine traits over polaris-proto); never link polaris-ingest or polaris-system-one-engine.",
@@ -1880,17 +1899,60 @@ api = ["fn screen::render", "fn screen::dump_text", "struct InputScheduler", "st
 name = "polaris-ui-gui"
 path = "crates/polaris-ui/crates/gui"
 parent = "polaris-ui"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-28 desktop welcome shell: generated Tokens global, welcome/sidebar/topbar/context/composer/popover/about .slint views, ASCII aurora driver. See evidence/ui/desktop/desktop-verification.txt."
 layer = 6
 kind = "lib"
 phase = "P9"
 summary = "Slint components and controllers (desktop now, mobile v2) bound to ui-model view state."
-deps = ["polaris-sdk", "polaris-ui-model"]
-ext = ["slint", "slint-build"]
+deps = ["polaris-ui-model", "polaris-ui-ascii-aurora", "polaris-sdk"]
+ext = ["slint", "slint-build", "tracing"]
 responsibilities = [
   "Implement .slint views (chat, sessions, diff viewer, HUD) with femtovg/software renderers.",
   "Keep generated Slint code isolated from hand-written crates.",
 ]
 api = ["fn mount(window, ViewState)"]
+
+[[crate]]
+name = "polaris-ui-ascii-aurora"
+path = "crates/polaris-ui/crates/ascii-aurora"
+parent = "polaris-ui"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-28 CPU ASCII aurora engine (field, ramp, glyph atlas, blitter, clock); descriptor tests in tests/. See evidence/ui/desktop/desktop-verification.txt."
+layer = 6
+kind = "lib"
+phase = "P9"
+summary = "Pure-Rust animated ASCII aurora: procedural field, glyph ramp, baked glyph atlas and RGBA blitter for the desktop welcome background."
+deps = []
+ext = ["ab_glyph"]
+responsibilities = [
+  "Sample the welcome aurora field (mesh, nebula, ribbons, stars, edge mask) deterministically per seed and time.",
+  "Map luminance to a glyph ramp and blit tinted glyph coverage into a reusable RGBA8 buffer without per-frame allocation.",
+  "Drive a fixed-step clock that pauses while hidden and honours reduced motion.",
+]
+api = ["struct Aurora", "struct AuroraConfig", "struct GlyphAtlas", "struct FrameClock", "enum AuroraError"]
+
+[[crate]]
+name = "polaris-ui-session"
+path = "crates/polaris-ui/crates/session"
+parent = "polaris-ui"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-28 shared offline session host extracted from polaris-cli (typed user input, routed submit, kernel-free list/exists/search); descriptor tests in tests/. See evidence/ui/verification.txt."
+layer = 6
+kind = "lib"
+phase = "P9"
+summary = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
+deps = ["polaris-sdk", "polaris-kernel"]
+ext = ["tokio", "thiserror"]
+responsibilities = [
+  "Open or resume one durable local session and stream its ordered committed records with bounded, validated text for directives and typed user input.",
+  "Route a submitted line to the signed directive path or to typed user input recording, without any model execution.",
+  "Answer session list, existence and history-search queries directly from the registry without starting a kernel.",
+]
+api = ["struct OfflineSession", "struct ResolvedRecord", "enum RecordTextKind", "enum SessionHostError", "async fn list_sessions", "async fn session_exists", "async fn search_history"]
 
 [[crate]]
 name = "polaris-ui-web"
@@ -1915,8 +1977,8 @@ path = "crates/polaris-ui"
 layer = 6
 kind = "facade"
 phase = "P1"
-summary = "Facade re-exporting UI children (model, cli, gui, web)."
-deps = ["polaris-ui-model", "polaris-ui-cli", "polaris-ui-gui", "polaris-ui-web"]
+summary = "Facade re-exporting UI children (model, cli, gui, web, ascii-aurora)."
+deps = ["polaris-ui-model", "polaris-ui-cli", "polaris-ui-gui", "polaris-ui-web", "polaris-ui-ascii-aurora", "polaris-ui-session"]
 ext = []
 responsibilities = ["Re-export UI children; document design tokens and UX rules."]
 api = ["pub use polaris_ui_*"]
@@ -1948,11 +2010,14 @@ api = ["mod common", "fn temp_workspace()", "fn assert_zero_alloc(...)"]
 [[crate]]
 name = "polaris-spike-ratelimit"
 path = "tests/spike/ratelimit"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-27 E49: seven actual-limiter staged pressure, Retry-After, overrun, cancellation and observed-latency workloads pass. Concurrent fairness, full load/stress, unused-budget refunds and raw/live headers remain open."
 layer = 8
 kind = "spike"
 phase = "P3"
 summary = "Spike (burst) tests for the rate limiter: 50 sub-agents at once, 429 storms, Retry-After floods."
-deps = ["polaris-ratelimit"]
+deps = ["polaris-ratelimit", "polaris-sdk"]
 ext = ["tokio", "hdrhistogram"]
 responsibilities = ["Assert priority ordering and bounded latency under sudden load spikes."]
 api = []
@@ -1975,12 +2040,16 @@ api = []
 [[crate]]
 name = "polaris-spike-s1"
 path = "tests/spike/s1"
+implemented = true
+status = "IN PROGRESS"
+evidence = "E50: real-engine burst dispatch, bounded owned tasks, sanitized per-request outcomes and observed latency quantiles implemented; real crash/load matrices remain open."
 layer = 8
 kind = "spike"
 phase = "P4"
 summary = "Spike tests for System One: decision bursts, worker restart under load, cache stampedes."
-deps = ["polaris-system-one-client"]
-ext = ["tokio", "hdrhistogram"]
+deps = ["polaris-system-one-client", "polaris-sdk"]
+ext = ["tokio", "tokio-util", "hdrhistogram"]
+dev = ["tokio"]
 responsibilities = ["Assert batching, fail-open/closed timeouts and recovery after worker crash during bursts."]
 api = []
 
@@ -2019,10 +2088,10 @@ phase = "P0"
 member_setup = ["win-python"]
 implemented = true
 status = "PASS"
-evidence = "P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9)"
+evidence = "P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9). §E43: deterministic SPDX 2.3 SBOM for the locked full Cargo graph with explicit timestamp, offline locked metadata, BLAKE3 lock digest, atomic no-clobber/force writes. The official schema checks `created` is a string, not RFC3339; the independent RFC3339 check accepts the real document (exit 0), rejects the impossible-date fixture (exit 1), and the official schema rejects the non-string fixture (exit 1). The original helper accepted the impossible date; that failure history is retained. Not a target-binary inventory, license validation, or security audit; advisories and cargo-vet remain failed. See evidence/continuation-20261026-e43/commands.json."
 summary = "Repository automation (Rust, P0): check-members, check-layers, lint, fixture regeneration (Python gliner2 goldens), docs seed build, test matrix."
-deps = []
-ext = ["serde", "serde_json", "toml", "thiserror", "tempfile"]
+deps = ["polaris-sdk", "polaris-system-one-schemas"]
+ext = ["serde", "serde_json", "toml", "thiserror", "tempfile", "blake3"]
 responsibilities = [
   "Port @prime/tools/workspace.py checks to Rust once implemented.",
   "Run the prompt.md lint list on demand (never in Cargo.toml — D10).",
@@ -2059,6 +2128,12 @@ version = "1.12.1"
 group = "async"
 
 [[ext]]
+name = "interprocess"
+version = "=2.4.5"
+features = ["tokio"]
+group = "async"
+
+[[ext]]
 name = "thiserror"
 version = "2.0.21"
 group = "serde"
@@ -2066,6 +2141,10 @@ group = "serde"
 name = "serde"
 version = "1.0.229"
 features = ["derive"]
+group = "serde"
+[[ext]]
+name = "base64"
+version = "0.22.1"
 group = "serde"
 [[ext]]
 name = "serde_json"
@@ -2365,6 +2444,8 @@ group = "ml"
 [[ext]]
 name = "docx-rs"
 version = "0.4.22"
+path = "vendor/docx-rs" # Published source plus reviewed upstream ZIP9 security backport.
+default_features = false # Text extraction does not decode image previews.
 group = "docs"
 [[ext]]
 name = "calamine"
@@ -2604,6 +2685,14 @@ name = "slint-build"
 version = "1.18.1"
 group = "gui"
 [[ext]]
+name = "ab_glyph"
+version = "0.2.32"
+group = "gui"
+[[ext]]
+name = "i-slint-backend-testing"
+version = "=1.18.1"
+group = "gui"
+[[ext]]
 name = "leptos"
 version = "0.8.22"
 group = "web"
@@ -2650,7 +2739,7 @@ version = "1.4.0"
 group = "docs"
 [[ext]]
 name = "zip"
-version = "8.6.0"
+version = "9.1.1"
 default_features = false
 features = ["deflate"]
 group = "docs"

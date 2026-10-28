@@ -1,0 +1,2 @@
+PASS: 1250 current source/report hashes; raw command totals and review hashes; generated root manifest; no tracked deletions.
+LIMIT: scoped implementation evidence; Phase 3 exit OPEN; strict Code Intel arithmetic remains RED.

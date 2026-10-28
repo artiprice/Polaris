@@ -407,12 +407,12 @@ pub(crate) fn declarations(p: &Parsed, max_items: usize) -> Result<Vec<DeclInfo>
             is_container: c.members.is_some(),
         });
         if let Some(members) = c.members {
-            stack.extend(
-                named_children(members)
-                    .into_iter()
-                    .rev()
-                    .map(|n| (n, depth + 1, Some(index))),
-            );
+            let child_depth = depth
+                .checked_add(1)
+                .ok_or(CodeIntelError::ArithmeticInvariant("declaration depth"))?;
+            for child in named_children(members).into_iter().rev() {
+                stack.push((child, child_depth, Some(index)));
+            }
         }
     }
     Ok(out)

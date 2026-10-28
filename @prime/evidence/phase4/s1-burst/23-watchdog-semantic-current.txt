@@ -1,0 +1,75 @@
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+error[E0592]: duplicate definitions with name `busy`
+   --> crates\polaris-ratelimit\src\gcra.rs:53:5
+    |
+ 53 |     pub(crate) const fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ duplicate definitions for `busy`
+    |
+   ::: crates\polaris-ratelimit\src\ledger.rs:943:5
+    |
+943 |     fn busy() -> Self {
+    |     ----------------- other definition for `busy`
+
+error[E0034]: multiple applicable items in scope
+   --> crates\polaris-ratelimit\src\ledger.rs:429:47
+    |
+429 |         self.help_ready().map_err(|_| Denied::busy())?;
+    |                                               ^^^^ multiple `busy` found
+    |
+note: candidate #1 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\gcra.rs:53:5
+    |
+ 53 |     pub(crate) const fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\ledger.rs:943:5
+    |
+943 |     fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^
+
+error[E0034]: multiple applicable items in scope
+   --> crates\polaris-ratelimit\src\ledger.rs:433:74
+    |
+433 |         let (slot, generation) = self.claim_intent().map_err(|_| Denied::busy())?;
+    |                                                                          ^^^^ multiple `busy` found
+    |
+note: candidate #1 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\gcra.rs:53:5
+    |
+ 53 |     pub(crate) const fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\ledger.rs:943:5
+    |
+943 |     fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^
+
+error[E0034]: multiple applicable items in scope
+   --> crates\polaris-ratelimit\src\ledger.rs:448:29
+    |
+448 |                 Err(Denied::busy())
+    |                             ^^^^ multiple `busy` found
+    |
+note: candidate #1 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\gcra.rs:53:5
+    |
+ 53 |     pub(crate) const fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: candidate #2 is defined in an impl for the type `gcra::Denied`
+   --> crates\polaris-ratelimit\src\ledger.rs:943:5
+    |
+943 |     fn busy() -> Self {
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `now_ns`
+  --> crates\polaris-ratelimit\src\permit.rs:66:13
+   |
+66 |         let now_ns = gcra::duration_ns(now).ok_or(RateLimitError::Accounting)?;
+   |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_now_ns`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0034, E0592.
+For more information about an error, try `rustc --explain E0034`.
+warning: `polaris-ratelimit` (lib) generated 1 warning
+error: could not compile `polaris-ratelimit` (lib) due to 4 previous errors; 1 warning emitted

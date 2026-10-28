@@ -262,9 +262,10 @@ impl Aggregates {
                     sat_add(self.outcomes.dead_letters, 1, &mut self.saturated);
             }
             // Counted in `events_seen` only: lifecycle, directive, lease and tool-start events
-            // carry no usage, cost or latency.
+            // carry no usage, cost or latency (a typed user message is just text in CAS).
             Event::SessionStarted { .. }
             | Event::DirectiveApplied { .. }
+            | Event::UserInputSubmitted { .. }
             | Event::ToolExecutionStarted { .. }
             | Event::FileLeaseGranted { .. }
             | Event::FileLeaseRevoked { .. }
@@ -274,7 +275,13 @@ impl Aggregates {
             | Event::SessionResumed
             | Event::BlastRadiusAlert { .. }
             | Event::DiffNeedsApproval { .. }
-            | Event::FrameStepRecorded { .. } => {}
+            | Event::FrameStepRecorded { .. }
+            | Event::HumanRequestCreated { .. }
+            | Event::HumanRequestAnswered { .. }
+            | Event::HumanRequestInterrupted { .. }
+            | Event::FrameRegistered { .. }
+            | Event::FrameTreeCancellationRequested { .. }
+            | Event::FrameToolResultRecorded { .. } => {}
         }
     }
 

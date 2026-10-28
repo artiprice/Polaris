@@ -1,0 +1,33 @@
+   Compiling polaris-spike-s1 v0.1.0-alpha (C:\mDev\Polaris\tests\spike\s1)
+    Finished `test` profile [unoptimized] target(s) in 2.46s
+     Running unittests src\lib.rs (target\debug\deps\polaris_spike_s1-66df46d7d1b4f625.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\answer_integrity.rs (target\debug\deps\answer_integrity-6b940fb853155b49.exe)
+
+running 3 tests
+test duplicate_choice_options_reject_before_dispatch ... ok
+test out_of_range_scores_are_not_success ... ok
+test malformed_choice_distributions_are_not_success ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\owned_burst.rs (target\debug\deps\owned_burst-7cae12699a931134.exe)
+
+running 4 tests
+test cancellation_drains_every_owned_task ... ok
+test malformed_engine_results_are_not_success ... ok
+test timeouts_are_measured_and_not_answers ... ok
+test burst_records_observed_calls_and_latency ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+   Doc-tests polaris_spike_s1
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

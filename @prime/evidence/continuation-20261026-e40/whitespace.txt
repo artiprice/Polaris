@@ -1,0 +1,9 @@
+warning: in the working copy of '@prime/PHASES.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/PHASES_STATUS.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/PHASES_STATUS_PERCENTAGE.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/PLAN.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/evidence/progress/percentage-estimates.json', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/evidence/progress/source-inventory.json', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/evidence/progress/validation.txt', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of '@prime/tools/workspace.toml', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'Cargo.toml', CRLF will be replaced by LF the next time Git touches it

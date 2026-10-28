@@ -148,7 +148,9 @@ fn secret_environment_keys_and_duplicate_names_are_rejected() -> TestResult {
 }
 
 async fn wait_for_pid(path: &std::path::Path) -> Result<u32, Box<dyn Error>> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    let deadline = tokio::time::Instant::now()
+        .checked_add(Duration::from_secs(5))
+        .ok_or("worker PID deadline exceeds timer range")?;
     loop {
         if let Ok(text) = std::fs::read_to_string(path) {
             return Ok(text.trim().parse()?);
@@ -178,7 +180,9 @@ fn worker_spec(pid_path: &std::path::Path) -> Result<SpawnSpec, Box<dyn Error>> 
 
 async fn assert_process_gone(pid: u32) -> TestResult {
     let target = Pid::from_u32(pid);
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    let deadline = tokio::time::Instant::now()
+        .checked_add(Duration::from_secs(5))
+        .ok_or("process exit deadline exceeds timer range")?;
     loop {
         let mut system = System::new();
         system.refresh_processes(ProcessesToUpdate::Some(&[target]), true);

@@ -1,0 +1,339 @@
+[
+  {
+    "name": "vendored-docx",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/check-vendored-docx.py"
+    ],
+    "started_utc": "2026-10-26T06:38:25.510214+00:00",
+    "elapsed_seconds": 0.228,
+    "exit_code": 0,
+    "raw": "vendored-docx.txt"
+  },
+  {
+    "name": "vendored-docx-tests",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/tests/test_check_vendored_docx.py",
+      "-v"
+    ],
+    "started_utc": "2026-10-26T06:38:25.738795+00:00",
+    "elapsed_seconds": 6.786,
+    "exit_code": 0,
+    "raw": "vendored-docx-tests.txt"
+  },
+  {
+    "name": "vendored-biscuit",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/check-vendored-biscuit.py"
+    ],
+    "started_utc": "2026-10-26T06:38:32.525574+00:00",
+    "elapsed_seconds": 0.272,
+    "exit_code": 0,
+    "raw": "vendored-biscuit.txt"
+  },
+  {
+    "name": "zip-graph",
+    "argv": [
+      "cargo",
+      "tree",
+      "--offline",
+      "--locked",
+      "-i",
+      "zip"
+    ],
+    "started_utc": "2026-10-26T06:38:32.798073+00:00",
+    "elapsed_seconds": 4.116,
+    "exit_code": 0,
+    "raw": "zip-graph.txt"
+  },
+  {
+    "name": "summary",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "summary"
+    ],
+    "started_utc": "2026-10-26T06:38:36.914618+00:00",
+    "elapsed_seconds": 0.226,
+    "exit_code": 0,
+    "raw": "summary.txt"
+  },
+  {
+    "name": "members",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "started_utc": "2026-10-26T06:38:37.141704+00:00",
+    "elapsed_seconds": 0.273,
+    "exit_code": 0,
+    "raw": "members.txt"
+  },
+  {
+    "name": "layers",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "started_utc": "2026-10-26T06:38:37.415426+00:00",
+    "elapsed_seconds": 0.382,
+    "exit_code": 0,
+    "raw": "layers.txt"
+  },
+  {
+    "name": "witness",
+    "argv": [
+      "cargo",
+      "xtask",
+      "check-witness"
+    ],
+    "started_utc": "2026-10-26T06:38:37.798292+00:00",
+    "elapsed_seconds": 0.859,
+    "exit_code": 0,
+    "raw": "witness.txt"
+  },
+  {
+    "name": "workspace-check",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-26T06:38:38.658249+00:00",
+    "elapsed_seconds": 23.315,
+    "exit_code": 0,
+    "raw": "workspace-check.txt"
+  },
+  {
+    "name": "scoped-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-engine",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-worker",
+      "-p",
+      "polaris-ingest",
+      "-p",
+      "polaris-hacker"
+    ],
+    "started_utc": "2026-10-26T06:39:01.973587+00:00",
+    "elapsed_seconds": 16.64,
+    "exit_code": 0,
+    "raw": "scoped-tests.txt",
+    "test_result_totals": {
+      "passed": 119,
+      "failed": 0,
+      "ignored": 2
+    }
+  },
+  {
+    "name": "sdk-full-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-sdk",
+      "--no-fail-fast"
+    ],
+    "started_utc": "2026-10-26T06:39:18.614546+00:00",
+    "elapsed_seconds": 2.576,
+    "exit_code": 101,
+    "raw": "sdk-full-tests.txt",
+    "test_result_totals": {
+      "passed": 54,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "real-model",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-system-one-engine",
+      "--test",
+      "real_model",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-26T06:39:21.191725+00:00",
+    "elapsed_seconds": 9.05,
+    "exit_code": 0,
+    "raw": "real-model.txt",
+    "environment_overrides": {
+      "POLARIS_S1_MODEL_DIR": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx",
+      "POLARIS_ORT_DYLIB": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+      "GLINER2_DEVICE": "cpu"
+    },
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "real-worker-process",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-worker",
+      "--test",
+      "s1_process",
+      "--",
+      "--ignored",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-26T06:39:30.242802+00:00",
+    "elapsed_seconds": 9.1,
+    "exit_code": 0,
+    "raw": "real-worker-process.txt",
+    "environment_overrides": {
+      "POLARIS_S1_MODEL_DIR": "C:\\Users\\Admin\\.polaris\\models\\gliner2.5-decide-onnx",
+      "POLARIS_ORT_DYLIB": "C:\\Users\\Admin\\.polaris\\models\\onnxruntime-1.23.2-dl\\onnxruntime-win-x64-1.23.2\\lib\\onnxruntime.dll",
+      "GLINER2_DEVICE": "cpu"
+    },
+    "test_result_totals": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "scoped-clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-engine",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-worker",
+      "-p",
+      "polaris-ingest",
+      "-p",
+      "polaris-hacker",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T06:39:39.343538+00:00",
+    "elapsed_seconds": 5.213,
+    "exit_code": 0,
+    "raw": "scoped-clippy.txt"
+  },
+  {
+    "name": "scoped-format",
+    "argv": [
+      "cargo",
+      "fmt",
+      "-p",
+      "polaris-proto",
+      "-p",
+      "polaris-system-one-engine",
+      "-p",
+      "polaris-system-one-client",
+      "-p",
+      "polaris-worker",
+      "-p",
+      "polaris-ingest",
+      "-p",
+      "polaris-hacker",
+      "-p",
+      "polaris-sdk",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T06:39:44.557243+00:00",
+    "elapsed_seconds": 0.555,
+    "exit_code": 0,
+    "raw": "scoped-format.txt"
+  },
+  {
+    "name": "advisories",
+    "argv": [
+      "cargo",
+      "deny",
+      "--offline",
+      "check",
+      "advisories"
+    ],
+    "started_utc": "2026-10-26T06:39:45.113310+00:00",
+    "elapsed_seconds": 4.584,
+    "exit_code": 1,
+    "raw": "advisories.txt"
+  },
+  {
+    "name": "vet-format",
+    "argv": [
+      "cargo",
+      "vet",
+      "fmt"
+    ],
+    "started_utc": "2026-10-26T06:40:40.757277+00:00",
+    "elapsed_seconds": 1.312,
+    "exit_code": 0,
+    "raw": "vet-format.txt"
+  },
+  {
+    "name": "vet",
+    "argv": [
+      "cargo",
+      "vet",
+      "--locked"
+    ],
+    "started_utc": "2026-10-26T06:40:42.069130+00:00",
+    "elapsed_seconds": 1.376,
+    "exit_code": 4294967295,
+    "raw": "vet.txt"
+  }
+]

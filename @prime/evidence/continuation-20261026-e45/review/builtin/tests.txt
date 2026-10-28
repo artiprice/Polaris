@@ -1,0 +1,57 @@
+    Finished `test` profile [unoptimized] target(s) in 0.89s
+     Running unittests src\lib.rs (target\debug\deps\polaris_tools_builtin-bf0be517250908f5.exe)
+
+running 4 tests
+test shell::tests::classifier_identifies_heavy_and_destructive_commands_without_execution ... ok
+test proposal::tests::full_replacement_patch_retains_crlf_and_missing_final_newline ... ok
+test shell::tests::shell_route_uses_only_bound_handle_and_explicit_argv ... ok
+test proposal::tests::edit_submits_full_occ_bound_diff_and_never_writes_host_file ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\authorized_builtin_invocation.rs (target\debug\deps\authorized_builtin_invocation-483604fdc46f6d21.exe)
+
+running 14 tests
+test caller_output_cap_intersects_registry_limit ... ok
+test exact_output_boundary_is_accepted_and_json_is_escaped ... ok
+test readonly_entry_rejects_writes_and_unknown_fields ... ok
+test zero_output_cap_rejects_before_cas_access ... ok
+test workspace_root_denial_precedes_reads ... ok
+test exact_directory_token_does_not_authorize_descendants ... ok
+test ignorefile_preflight_rejects_oversized_case_insensitive_name ... ok
+test ignorefile_preflight_rejects_directory_candidate ... ok
+test ignorefile_denial_precedes_rule_use ... ok
+test authorization_errors_never_return_partial_success ... ok
+test exact_file_token_reads_without_parent_grants ... ok
+test recursive_reads_check_each_resource ... ok
+test within_bound_cas_corruption_remains_not_found ... ok
+test oversized_cas_reference_is_rejected_before_decode ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\builtin_contracts.rs (target\debug\deps\builtin_contracts-c784bb32a90844e0.exe)
+
+running 14 tests
+test applies_context_add_delete_without_touching_base ... ok
+test json_pointer_and_regex_query_are_bounded_and_exact ... ok
+test rejects_stale_patch_context ... ok
+test rejects_malformed_patch_counts_and_retains_missing_final_newline ... ok
+test registry_specs_are_stable_and_schema_backed ... ok
+test path_resolver_requires_existing_targets ... ok
+test rejects_windows_ads_and_reserved_names ... ok
+test rejects_dotdot_and_absolute_escapes ... ok
+test secret_directories_and_credential_files_are_denied ... ok
+test p2_registry_advertises_only_explicitly_bound_proposal_and_sandbox_services ... ok
+test reads_utf16_bom_and_preserves_newline_facts ... ok
+test glob_honors_custom_ignore_file ... ok
+test read_and_search_deny_secrets_and_skip_binary ... ok
+test unified_patch_parser_never_panics_on_arbitrary_inputs ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_tools_builtin
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

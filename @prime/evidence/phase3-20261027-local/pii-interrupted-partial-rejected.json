@@ -1,0 +1,43 @@
+{
+  "path": "@prime/tools/runtime/pii-3bbf02b190a2/fp32_v2/encoder_fp32.onnx.part",
+  "bytes": 1111055954,
+  "sha256": "50c7814977b974aa4fb44d1c89f8dd1a9b74b5d5f3f3f5f1b7e240b981e0a18b",
+  "samples": [
+    {
+      "offset": 0,
+      "bytes": 4096,
+      "nul_bytes": 43
+    },
+    {
+      "offset": 1000000,
+      "bytes": 4096,
+      "nul_bytes": 3
+    },
+    {
+      "offset": 500000000,
+      "bytes": 4096,
+      "nul_bytes": 13
+    },
+    {
+      "offset": 580000000,
+      "bytes": 4096,
+      "nul_bytes": 13
+    },
+    {
+      "offset": 900000000,
+      "bytes": 4096,
+      "nul_bytes": 4096
+    },
+    {
+      "offset": 916455424,
+      "bytes": 4096,
+      "nul_bytes": 10
+    },
+    {
+      "offset": 1100000000,
+      "bytes": 4096,
+      "nul_bytes": 10
+    }
+  ],
+  "verdict": "REJECTED: pinned whole-file SHA256 failed; never used as model"
+}

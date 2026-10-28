@@ -1,10 +1,11 @@
-//! Bounded local RPM/TPM admission with conservative reservations and shared Retry-After.
+//! Bounded local RPM/TPM admission with replayable refunds and shared Retry-After.
 //!
 //! Limits are caller-configured. This crate does not invent provider quotas or treat rate-limit
 //! response headers as authoritative limits. It reserves the estimated prompt plus maximum output
 //! before dispatch and charges actual usage above that reservation after the response.
 
 mod gcra;
+mod ledger;
 mod permit;
 mod retry;
 mod window;
@@ -116,6 +117,9 @@ pub enum RateLimitError {
     /// Provider usage was reconciled before an HTTP request was marked dispatched.
     #[error("cannot reconcile a request before dispatch")]
     Undispatched,
+    /// A preallocated lock-free ledger slot is temporarily unavailable; retry the same operation.
+    #[error("rate-limit accounting is busy; retry the operation")]
+    Busy,
 }
 
 impl HasKind for RateLimitError {
@@ -124,6 +128,7 @@ impl HasKind for RateLimitError {
             Self::InvalidQuota | Self::ExceedsBurst => ErrorKind::Policy,
             Self::Cancelled => ErrorKind::Transient,
             Self::Accounting | Self::Undispatched => ErrorKind::Fatal,
+            Self::Busy => ErrorKind::Transient,
         }
     }
 }
@@ -131,8 +136,7 @@ impl HasKind for RateLimitError {
 pub(crate) struct Shared<C: Clock> {
     pub clock: C,
     pub quota: Quota,
-    pub rpm: gcra::GcraCell,
-    pub tpm: gcra::GcraCell,
+    pub ledger: ledger::QuotaLedger,
     pub penalty_until_ns: AtomicU64,
     pub windows: window::WindowTracker,
 }
@@ -165,22 +169,17 @@ impl<C: Clock> DualLimiter<C> {
         {
             return Err(RateLimitError::InvalidQuota);
         }
-        let rpm = gcra::GcraCell::new(
+        let ledger = ledger::QuotaLedger::new(
             quota.rpm.get(),
             quota.burst_requests,
-            DenyReason::RpmExhausted,
-        )?;
-        let tpm = gcra::GcraCell::new(
             quota.tpm.get(),
             quota.burst_tokens,
-            DenyReason::TpmExhausted,
         )?;
         Ok(Self {
             shared: Arc::new(Shared {
                 clock,
                 quota,
-                rpm,
-                tpm,
+                ledger,
                 penalty_until_ns: AtomicU64::new(0),
                 windows: window::WindowTracker::default(),
             }),
@@ -208,30 +207,21 @@ impl<C: Clock> DualLimiter<C> {
         if cost == 0 || cost > u64::from(self.shared.quota.burst_tokens) {
             return Err(Denied::new(DenyReason::ExceedsBurst, Duration::ZERO));
         }
+        self.shared.ledger.help_pending()?;
         let utilization = self.utilization();
         if let Some(threshold) = self.shed_threshold(priority) {
             let pressure = utilization.rpm_pct.max(utilization.tpm_pct);
             if pressure >= threshold {
-                let retry = self
-                    .shared
-                    .rpm
-                    .retry_after_pct(now_ns, threshold)
-                    .max(self.shared.tpm.retry_after_pct(now_ns, threshold));
+                let retry = self.shared.ledger.retry_after_pct(now_ns, threshold);
                 return Err(Denied::new(DenyReason::Shed(priority), retry));
             }
         }
-        let rpm_reservation = self.shared.rpm.reserve(now_ns, 1)?;
-        if let Err(denied) = self.shared.tpm.reserve(now_ns, cost) {
-            // Refund only when no later concurrent reservation has advanced the cell. In the
-            // contended case the compare-exchange fails and the conservative debit is retained.
-            self.shared.rpm.rollback_if_unchanged(rpm_reservation);
-            return Err(denied);
-        }
-        Ok(Permit::new(Arc::clone(&self.shared), cost))
+        let reservation = self.shared.ledger.reserve(now_ns, cost)?;
+        Ok(Permit::new(Arc::clone(&self.shared), cost, reservation))
     }
 
-    /// Wait for local capacity. Canceling this future before it returns drops no permit and charges
-    /// no additional state beyond conservative partial reservations from a raced dual-cell check.
+    /// Wait for local capacity. Canceling this future before it returns creates no permit; each
+    /// two-cell admission publishes atomically or leaves both cells unchanged.
     pub async fn acquire(
         &self,
         estimate: Estimate,
@@ -286,10 +276,8 @@ impl<C: Clock> DualLimiter<C> {
                 tpm_pct: 0,
             };
         };
-        Utilization {
-            rpm_pct: self.shared.rpm.utilization_pct(now),
-            tpm_pct: self.shared.tpm.utilization_pct(now),
-        }
+        let (rpm_pct, tpm_pct) = self.shared.ledger.utilization(now);
+        Utilization { rpm_pct, tpm_pct }
     }
 
     /// Bounded, conservative 15-minute request/reservation/actual usage snapshot.

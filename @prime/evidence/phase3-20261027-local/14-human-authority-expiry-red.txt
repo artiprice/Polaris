@@ -1,0 +1,24 @@
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 33.28s
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)
+
+running 1 test
+test human_wait_rechecks_expired_execute_authority ... FAILED
+
+failures:
+
+---- human_wait_rechecks_expired_execute_authority stdout ----
+
+thread 'human_wait_rechecks_expired_execute_authority' (20448) panicked at crates\polaris-kernel\tests\agent_tools.rs:891:9:
+expired execution authority must not deliver a successful tool result
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    human_wait_rechecks_expired_execute_authority
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 19 filtered out; finished in 2.31s
+
+error: test failed, to rerun pass `-p polaris-kernel --test agent_tools`

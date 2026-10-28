@@ -1,0 +1,28 @@
+{
+  "type_of": "pipeline",
+  "name": "polaris_kernel_submit_user_input",
+  "file_path": "crates/polaris-kernel/src/runtime.rs",
+  "logic_name": "Offline typed user message recording (SubmitUserInput -> Event::UserInputSubmitted)",
+  "test_list": [
+    {"test_name": "user_input_event_json_roundtrips_at_schema_7", "description": "Event::UserInputSubmitted serializes with the snake_case tag, round-trips, and is rejected below schema 7 (polaris-sdk event_envelope)."},
+    {"test_name": "event_codec_roundtrips_user_input_submitted", "description": "The event-log codec stores and decodes the new variant with its schema prefix (polaris-eventlog event_codec)."},
+    {"test_name": "user_input_submitted_converts_to_proto_and_back", "description": "Protobuf conversion preserves the Cid of UserInputSubmitted (polaris-proto event_conversion, including the proptest strategy and the variant tag table)."},
+    {"test_name": "user_input_does_not_change_usage_counters", "description": "Telemetry aggregation treats the event as a no-op for token, cost and tool counters."},
+    {"test_name": "user_input_submitted_changes_no_counters_and_pushes_no_text", "description": "The ui-model reducer leaves counters untouched and does not push text; frontends push resolved text."},
+    {"test_name": "local_control_accepts_submit_user_input", "description": "The local-control verifier authorizes SubmitUserInput with the same credential, frame check and evidence digest as ApplyDirective."},
+    {"test_name": "local_control_still_rejects_other_bodies", "description": "ProposeDiff and every other non-control body, and a wrong frame, remain rejected."},
+    {"test_name": "plain_prose_commits_user_input_event", "description": "Plain prose submitted through KernelHandle::submit_user_input commits UserInputSubmitted whose Cid resolves to the exact text in CAS."},
+    {"test_name": "blank_user_input_is_rejected_without_event", "description": "Whitespace-only input is rejected as 'user input is empty' and appends no event."},
+    {"test_name": "oversize_user_input_is_rejected", "description": "Input above MAX_CONTROL_BYTES is rejected before CAS write."},
+    {"test_name": "non_utf8_cas_user_input_is_rejected_by_execute", "description": "A non-UTF-8 CAS blob submitted with a valid credential is rejected as 'user input is not UTF-8' and appends no event."},
+    {"test_name": "oversize_cas_user_input_is_rejected_by_execute", "description": "A CAS blob over MAX_CONTROL_BYTES submitted with a valid credential is rejected as 'user input exceeds limit'."},
+    {"test_name": "user_input_replays_after_restart", "description": "After shutdown and a new kernel on the same root, the replayed log still contains the UserInputSubmitted record with the same text."},
+    {"test_name": "directive_path_is_unchanged", "description": "ApplyDirective still requires exactly one directive and keeps its error strings (existing local_runtime tests)."},
+    {"test_name": "shutdown_closes_user_input_admission", "description": "submit_user_input after shutdown fails with a closed error."}
+  ],
+  "dependencies": ["polaris-sdk", "polaris-kernel-verifier", "polaris-kernel-bus", "polaris-eventlog", "polaris-proto"],
+  "libraries": ["serde", "serde_json", "tokio", "thiserror"],
+  "inputs": [{"name": "text", "type": "&str", "description": "Bounded, non-blank UTF-8 user message stored verbatim (no directive parsing)."}],
+  "output_type": "Result<CommandReceipt, ApiError>",
+  "output_description": "Receipt for the committed UserInputSubmitted record; no model execution is implied."
+}

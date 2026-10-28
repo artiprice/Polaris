@@ -1,0 +1,577 @@
+// Session view: shown after the first message is sent from the welcome screen (no ASCII
+// background). Sidebar with real registry sessions grouped by workspace and full-text search;
+// top bar with the session title; the conversation; the docked composer and a status line.
+
+import { ListView } from "std-widgets.slint";
+import { Tokens } from "tokens.slint";
+import { Icon, IconPaths } from "icons.slint";
+import { Brand, Motion } from "parts.slint";
+import { Composer, DirectiveChip } from "composer.slint";
+
+// One conversation entry; `kind` is "user", "assistant", "system", "warning" or "error".
+export struct EntryRow {
+    kind: string,
+    text: string,
+}
+
+// One session in the sidebar.
+export struct SessionRowUi {
+    id: string,
+    title: string,
+    when: string,
+    active: bool,
+}
+
+// Sessions of one workspace folder.
+export struct SessionGroup {
+    name: string,
+    path: string,
+    rows: [SessionRowUi],
+}
+
+// One full-text search hit.
+export struct SearchHitUi {
+    id: string,
+    title: string,
+    snippet: string,
+}
+
+component SidebarButton {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> active;
+    callback clicked();
+    height: 34px;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    Rectangle {
+        border-radius: 8px;
+        background: root.active ? Tokens.session-row-active : (touch.has-hover ? Tokens.nav-hover : transparent);
+    }
+    HorizontalLayout {
+        padding-left: 10px;
+        spacing: 10px;
+        Icon {
+            y: (parent.height - self.height) / 2;
+            width: 16px;
+            height: 16px;
+            commands: root.icon;
+            color: touch.has-hover || root.active ? Tokens.text : Tokens.muted-web;
+        }
+        Text {
+            text: root.label;
+            font-size: 13px;
+            vertical-alignment: center;
+            color: touch.has-hover || root.active ? Tokens.text : Tokens.row-fg;
+        }
+    }
+}
+
+component SessionRow {
+    in property <SessionRowUi> info;
+    callback clicked();
+    height: 34px;
+    accessible-role: button;
+    accessible-label: "Session " + root.info.title;
+    accessible-checked: root.info.active;
+    accessible-action-default => { root.clicked(); }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+    Rectangle {
+        border-radius: 8px;
+        background: root.info.active ? Tokens.session-row-active : (touch.has-hover ? Tokens.nav-hover : transparent);
+    }
+    Rectangle {
+        x: 0;
+        y: (parent.height - self.height) / 2;
+        width: 2px;
+        height: 16px;
+        border-radius: 1px;
+        background: Tokens.accent;
+        visible: root.info.active;
+    }
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 10px;
+        spacing: 8px;
+        Text {
+            horizontal-stretch: 1;
+            text: root.info.title;
+            overflow: elide;
+            font-size: 13px;
+            vertical-alignment: center;
+            color: root.info.active || touch.has-hover ? Tokens.text : Tokens.row-fg;
+        }
+        Text {
+            text: root.info.when;
+            font-size: 11px;
+            vertical-alignment: center;
+            color: Tokens.muted;
+        }
+    }
+}
+
+component Entry {
+    in property <EntryRow> entry;
+    in property <length> column-width;
+    height: layout.preferred-height;
+    layout := HorizontalLayout {
+        alignment: root.entry.kind == "user" ? end : start;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        if root.entry.kind == "user": Rectangle {
+            max-width: root.column-width * 0.8;
+            border-radius: 16px;
+            background: Tokens.bubble-bg;
+            border-width: 1px;
+            border-color: Tokens.line;
+            HorizontalLayout {
+                padding-left: 14px;
+                padding-right: 14px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                Text {
+                    text: root.entry.text;
+                    wrap: word-wrap;
+                    font-size: 14px;
+                    color: Tokens.text;
+                    accessible-role: text;
+                }
+            }
+        }
+        if root.entry.kind != "user": HorizontalLayout {
+            spacing: 8px;
+            Icon {
+                y: 2px;
+                width: 15px;
+                height: 15px;
+                commands: IconPaths.info;
+                color: root.entry.kind == "error" ? Tokens.error : (root.entry.kind == "warning" ? Tokens.warning : Tokens.muted-web);
+            }
+            Text {
+                max-width: root.column-width - 30px;
+                text: root.entry.text;
+                wrap: word-wrap;
+                font-size: 13px;
+                color: root.entry.kind == "error" ? Tokens.error : (root.entry.kind == "warning" ? Tokens.warning : (root.entry.kind == "assistant" ? Tokens.text : Tokens.muted-web));
+                accessible-role: text;
+            }
+        }
+    }
+}
+
+export component SessionScreen {
+    // ---- data from Rust -------------------------------------------------------------------
+    in property <string> title;
+    in property <[EntryRow]> entries;
+    in property <[SessionGroup]> groups;
+    in property <[SearchHitUi]> hits;
+    in property <string> status-workspace;
+    in property <string> status-branch;
+    in property <string> status-connection;
+    in property <string> state-dir;
+    in property <bool> starting;
+    in property <string> notice;
+    in property <[string]> model-names;
+    in property <[string]> model-short-names;
+    in property <[DirectiveChip]> directives;
+
+    // ---- shared state with the welcome screen ----------------------------------------------
+    in-out property <string> draft;
+    in property <bool> pending;
+    in-out property <int> model-index;
+    in-out property <int> mode-index;
+    in-out property <int> effort-index;
+    in-out property <bool> menu-open;
+    in-out property <string> search-text;
+
+    callback draft-edited(string);
+    callback submit();
+    callback new-session();
+    callback open-session(string);
+    callback search-edited(string);
+    callback about();
+
+    property <length> sidebar-width: 280px;
+    property <length> content-max: 760px;
+
+    public function focus-composer() {
+        composer.focus-input();
+    }
+
+    // Ready to type as soon as the screen appears.
+    init => {
+        composer.focus-input();
+    }
+
+    // ---- sidebar ---------------------------------------------------------------------------
+    sidebar := Rectangle {
+        x: 0;
+        width: root.sidebar-width;
+        height: root.height;
+        background: Tokens.session-sidebar-bg;
+        Rectangle {
+            x: parent.width - 1px;
+            width: 1px;
+            background: Tokens.line;
+        }
+        VerticalLayout {
+            padding: 12px;
+            spacing: 4px;
+            HorizontalLayout {
+                padding-bottom: 8px;
+                spacing: 6px;
+                alignment: start;
+                Brand { }
+                Text {
+                    text: "Polaris";
+                    font-family: Tokens.font-display;
+                    font-weight: 500;
+                    font-size: 16px;
+                    vertical-alignment: center;
+                    color: Tokens.text;
+                }
+            }
+            SidebarButton {
+                icon: IconPaths.plus;
+                label: "New session";
+                clicked => { root.new-session(); }
+            }
+            search-field := Rectangle {
+                height: 34px;
+                border-radius: 8px;
+                background: search-input.has-focus ? Tokens.field-bg : transparent;
+                border-width: 1px;
+                border-color: search-input.has-focus ? Tokens.line-strong : transparent;
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 10px;
+                    Icon {
+                        y: (parent.height - self.height) / 2;
+                        width: 16px;
+                        height: 16px;
+                        commands: IconPaths.search;
+                        color: Tokens.muted-web;
+                    }
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        search-input := TextInput {
+                            width: parent.width;
+                            height: parent.height;
+                            vertical-alignment: center;
+                            single-line: true;
+                            text <=> root.search-text;
+                            font-size: 13px;
+                            color: Tokens.text;
+                            accessible-role: text-input;
+                            accessible-label: "Search session history";
+                            edited => { root.search-edited(self.text); }
+                        }
+                        Text {
+                            visible: search-input.text == "";
+                            x: 0;
+                            width: parent.width;
+                            height: parent.height;
+                            horizontal-alignment: left;
+                            vertical-alignment: center;
+                            text: "Search";
+                            font-size: 13px;
+                            color: Tokens.row-fg;
+                            accessible-role: none;
+                        }
+                    }
+                }
+            }
+            Rectangle { height: 10px; }
+
+            if root.search-text != "": VerticalLayout {
+                spacing: 2px;
+                vertical-stretch: 1;
+                Text {
+                    text: root.hits.length == 0 ? "No matches in session history" : "Matches";
+                    font-size: 11px;
+                    color: Tokens.muted;
+                }
+                ListView {
+                    for hit in root.hits: Rectangle {
+                        height: hit-col.preferred-height + 12px;
+                        border-radius: 8px;
+                        background: hit-touch.has-hover ? Tokens.nav-hover : transparent;
+                        accessible-role: button;
+                        accessible-label: "Search hit " + hit.title;
+                        accessible-action-default => { root.open-session(hit.id); }
+                        hit-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.open-session(hit.id); }
+                        }
+                        hit-col := VerticalLayout {
+                            padding-left: 10px;
+                            padding-right: 10px;
+                            padding-top: 6px;
+                            Text {
+                                text: hit.title;
+                                overflow: elide;
+                                font-size: 12px;
+                                color: Tokens.text;
+                            }
+                            Text {
+                                text: hit.snippet;
+                                overflow: elide;
+                                font-size: 11px;
+                                color: Tokens.muted-web;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if root.search-text == "": ListView {
+                vertical-stretch: 1;
+                for group in root.groups: VerticalLayout {
+                    spacing: 2px;
+                    padding-bottom: 10px;
+                    HorizontalLayout {
+                        padding-left: 4px;
+                        spacing: 6px;
+                        height: 26px;
+                        Icon {
+                            y: (parent.height - self.height) / 2;
+                            width: 13px;
+                            height: 13px;
+                            commands: IconPaths.folder;
+                            color: Tokens.muted;
+                        }
+                        Text {
+                            text: group.name;
+                            font-size: 11px;
+                            vertical-alignment: center;
+                            color: Tokens.muted-web;
+                        }
+                    }
+                    for row in group.rows: SessionRow {
+                        info: row;
+                        clicked => { root.open-session(row.id); }
+                    }
+                }
+            }
+            if root.search-text == "" && root.groups.length == 0: Text {
+                text: "No saved sessions yet.";
+                font-size: 12px;
+                color: Tokens.muted;
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Tokens.line;
+            }
+            HorizontalLayout {
+                padding-top: 8px;
+                spacing: 8px;
+                VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 2px;
+                Text {
+                    text: root.status-workspace;
+                    overflow: elide;
+                    font-size: 12px;
+                    color: Tokens.row-fg;
+                }
+                Text {
+                    text: "State: " + root.state-dir;
+                    overflow: elide;
+                    font-family: Tokens.font-mono;
+                    font-size: 10px;
+                    color: Tokens.muted;
+                }
+                }
+                about-btn := Rectangle {
+                    width: 30px;
+                    height: 30px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 15px;
+                    background: about-touch.has-hover ? Tokens.nav-hover : transparent;
+                    accessible-role: button;
+                    accessible-label: "About Polaris";
+                    accessible-action-default => { root.about(); }
+                    about-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.about(); }
+                    }
+                    Icon {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        width: 15px;
+                        height: 15px;
+                        commands: IconPaths.sparkle;
+                        color: about-touch.has-hover ? Tokens.text : Tokens.muted;
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- main column -----------------------------------------------------------------------
+    main := Rectangle {
+        x: root.sidebar-width;
+        width: root.width - root.sidebar-width;
+        height: root.height;
+
+        topbar := Rectangle {
+            y: 0;
+            height: 52px;
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 72px;
+                Text {
+                    text: root.title;
+                    overflow: elide;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                    color: Tokens.row-fg;
+                    accessible-role: text;
+                }
+            }
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Tokens.line;
+            }
+        }
+
+        column := Rectangle {
+            property <length> inner: min(root.content-max, parent.width - 48px);
+            y: topbar.height;
+            height: parent.height - topbar.height;
+
+            conversation := ListView {
+                x: 0;
+                y: 0;
+                width: parent.width;
+                height: parent.height - dock.height;
+                for entry[index] in root.entries: HorizontalLayout {
+                    alignment: center;
+                    padding-top: index == 0 ? 18px : 0px;
+                    Entry {
+                        width: column.inner;
+                        entry: entry;
+                        column-width: column.inner;
+                    }
+                }
+            }
+
+            if root.starting: Text {
+                y: 16px;
+                width: parent.width;
+                horizontal-alignment: center;
+                text: "Starting local session…";
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+
+            dock := Rectangle {
+                y: parent.height - self.height;
+                height: dock-layout.preferred-height;
+                dock-layout := VerticalLayout {
+                    padding-bottom: 10px;
+                    spacing: 8px;
+                    HorizontalLayout {
+                        alignment: center;
+                        composer := Composer {
+                            width: column.inner;
+                            text <=> root.draft;
+                            pending: root.pending;
+                            notice: root.notice;
+                            model-names: root.model-names;
+                            model-short-names: root.model-short-names;
+                            directives: root.directives;
+                            menu-up: true;
+                            model-index <=> root.model-index;
+                            mode-index <=> root.mode-index;
+                            effort-index <=> root.effort-index;
+                            menu-open <=> root.menu-open;
+                            edited(text) => { root.draft-edited(text); }
+                            submit => { root.submit(); }
+                        }
+                    }
+                    HorizontalLayout {
+                        alignment: center;
+                        status := HorizontalLayout {
+                            width: column.inner;
+                            padding-left: 12px;
+                            spacing: 14px;
+                            HorizontalLayout {
+                                spacing: 5px;
+                                horizontal-stretch: 0;
+                                Icon {
+                                    y: (parent.height - self.height) / 2;
+                                    width: 13px;
+                                    height: 13px;
+                                    commands: IconPaths.folder;
+                                    color: Tokens.muted-web;
+                                }
+                                Text {
+                                    text: root.status-workspace;
+                                    font-size: 11px;
+                                    color: Tokens.muted-web;
+                                }
+                            }
+                            if root.status-branch != "": HorizontalLayout {
+                                spacing: 5px;
+                                horizontal-stretch: 0;
+                                Icon {
+                                    y: (parent.height - self.height) / 2;
+                                    width: 13px;
+                                    height: 13px;
+                                    commands: IconPaths.branch;
+                                    color: Tokens.muted-web;
+                                }
+                                Text {
+                                    text: root.status-branch;
+                                    font-size: 11px;
+                                    color: Tokens.muted-web;
+                                }
+                            }
+                            Text {
+                                horizontal-stretch: 0;
+                                text: root.mode-index == 0 ? "Plan" : "Auto";
+                                font-size: 11px;
+                                color: root.mode-index == 0 ? Tokens.mode-plan : Tokens.mode-auto;
+                            }
+                            Rectangle { horizontal-stretch: 1; }
+                            Text {
+                                horizontal-stretch: 0;
+                                text: root.model-short-names[root.model-index] + " · " + ["low", "medium", "high", "xhigh", "max"][root.effort-index];
+                                font-size: 11px;
+                                color: Tokens.row-fg;
+                            }
+                            HorizontalLayout {
+                                spacing: 5px;
+                                horizontal-stretch: 0;
+                                Rectangle {
+                                    y: (parent.height - self.height) / 2;
+                                    width: 7px;
+                                    height: 7px;
+                                    border-radius: 3.5px;
+                                    background: Tokens.warning;
+                                }
+                                Text {
+                                    text: root.status-connection;
+                                    font-size: 11px;
+                                    color: Tokens.muted-web;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

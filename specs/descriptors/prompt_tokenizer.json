@@ -1,0 +1,31 @@
+{
+  "type_of": "trait",
+  "name": "PromptTokenizer",
+  "file_path": "crates/polaris-sdk/src/registry.rs",
+  "logic_name": "Prompt Tokenizer",
+  "test_list": [
+    {
+      "test_name": "prompt_tokenizer_reports_exact_prompt_and_model_capacity",
+      "description": "A tokenizer paired with the request's ChatModel counts the provider's complete chat template, enabled tool schemas, and supported reasoning replay fields and reports positive model context capacity."
+    },
+    {
+      "test_name": "prompt_tokenizer_errors_when_counting_is_unavailable",
+      "description": "A tokenizer or selected model that cannot provide an exact count returns ModelError rather than a byte- or text-length heuristic."
+    },
+    {
+      "test_name": "prompt_token_count_can_exceed_context_for_trimming",
+      "description": "The reported input token count may exceed max_context_tokens so the caller can trim before sending; callers validate count and capacity against output reservations and policy."
+    }
+  ],
+  "dependencies": ["ChatRequest", "ChatModel", "ModelError", "TokenCount"],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "request",
+      "type": "&ChatRequest",
+      "description": "The full request including message history, enabled tool schemas, model, effort, and reasoning replay metadata."
+    }
+  ],
+  "output_type": "Result<PromptTokenCount, ModelError>",
+  "output_description": "Exact tokenizer-derived input count plus the selected model's positive context capacity; no count is synthesized when tokenizer support is unavailable."
+}

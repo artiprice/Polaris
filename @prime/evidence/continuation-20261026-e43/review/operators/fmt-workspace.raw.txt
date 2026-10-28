@@ -1,0 +1,19 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:369:
+             sum.checked_add(group.tokens)
+                 .ok_or(ContextError::EstimateOverflow)
+         })?;
+-        let notice_reserve = self
+-            .estimator
+-            .estimate(&omission_notice_template())?
+-            .tokens;
++        let notice_reserve = self.estimator.estimate(&omission_notice_template())?.tokens;
+         let mut omitted = 0_u64;
+         loop {
+             let notice_tokens = if omitted == 0 { 0 } else { notice_reserve };
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:379:
+             let projected_total = immutable
+-            .checked_add(window_tokens)
++                .checked_add(window_tokens)
+                 .and_then(|sum| sum.checked_add(notice_tokens))
+                 .ok_or(ContextError::EstimateOverflow)?;
+             if projected_total <= self.config.max_context_tokens {

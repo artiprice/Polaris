@@ -1,0 +1,19 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0599]: no method named `run_frame` found for struct `KernelPromptAssembler<M>` in the current scope
+   --> crates\polaris-kernel\tests\frame_prompt.rs:188:25
+    |
+188 |     let run = assembler.run_frame(FrameRunInput { frame: &mut replacement.frame, goal: "goal", cancellation: &cancellation,
+    |               ----------^^^^^^^^^ method not found in `KernelPromptAssembler<CountingFixture>`
+
+error[E0609]: no field `count_timeout` on type `PromptLimits`
+   --> crates\polaris-kernel\tests\frame_prompt.rs:201:39
+    |
+201 |     let mut policy = limits(); policy.count_timeout = Duration::from_millis(20);
+    |                                       ^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `max_input_bytes`, `max_messages`, `max_tools`, `max_count_requests`, `max_input_tokens` ... and 2 others
+
+Some errors have detailed explanations: E0599, E0609.
+For more information about an error, try `rustc --explain E0599`.
+error: could not compile `polaris-kernel` (test "frame_prompt") due to 2 previous errors

@@ -1,0 +1,182 @@
+ARGV: cargo fmt --check
+EXIT: 1
+RAW OUTPUT:
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\src\rate_limit.rs:100:
+     /// or an accounting error if usage reconciliation fails.
+     pub fn reconcile(self, actual_tokens: u64) -> Result<(T, Reconciliation), RateLimitError> {
+         let Self { payload, permit } = self;
+-        permit.reconcile(actual_tokens).map(|reconciliation| (payload, reconciliation))
++        permit
++            .reconcile(actual_tokens)
++            .map(|reconciliation| (payload, reconciliation))
+     }
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\src\rate_limit.rs:121:
+     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+         match self {
+             Self::Admission(error) => write!(formatter, "rate-limit admission failed: {error}"),
+-            Self::Shed(denied) => write!(formatter, "rate-limit priority was shed: {:?}", denied.reason),
++            Self::Shed(denied) => write!(
++                formatter,
++                "rate-limit priority was shed: {:?}",
++                denied.reason
++            ),
+             Self::Timeout => formatter.write_str("rate-limit admission timed out"),
+             Self::Cancelled => formatter.write_str("rate-limit admission was cancelled"),
+         }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:40:
+     );
+     let mut admitted = operator.apply(input).await?;
+ 
+-    assert_eq!(admitted.payload(), "request", "admission preserves the payload");
+-    assert_eq!(admitted.reserved_tokens(), 32, "prompt and output are reserved");
++    assert_eq!(
++        admitted.payload(),
++        "request",
++        "admission preserves the payload"
++    );
++    assert_eq!(
++        admitted.reserved_tokens(),
++        32,
++        "prompt and output are reserved"
++    );
+     admitted.mark_dispatched()?;
+     let (payload, reconciliation) = admitted.reconcile(27)?;
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:48:
+     assert_eq!(payload, "request", "reconciliation returns the payload");
+-    assert_eq!(reconciliation.reserved_tokens, 32, "reservation is reported");
+-    assert_eq!(reconciliation.actual_tokens, 27, "provider usage is reported");
+-    assert!(!reconciliation.reservation_overrun, "usage was within the estimate");
++    assert_eq!(
++        reconciliation.reserved_tokens, 32,
++        "reservation is reported"
++    );
++    assert_eq!(
++        reconciliation.actual_tokens, 27,
++        "provider usage is reported"
++    );
++    assert!(
++        !reconciliation.reservation_overrun,
++        "usage was within the estimate"
++    );
+     Ok(())
+ }
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:89:
+     );
+ 
+     assert!(
+-        matches!(operator.apply(input).await, Err(RateLimitOpError::Admission(RateLimitError::ExceedsBurst))),
++        matches!(
++            operator.apply(input).await,
++            Err(RateLimitOpError::Admission(RateLimitError::ExceedsBurst))
++        ),
+         "an estimate over token capacity must fail closed"
+     );
+     Ok(())
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:114:
+     );
+ 
+     assert!(
+-        matches!(operator.apply(waiting).await, Err(RateLimitOpError::Timeout)),
++        matches!(
++            operator.apply(waiting).await,
++            Err(RateLimitOpError::Timeout)
++        ),
+         "waiting on exhausted request capacity must respect the finite deadline"
+     );
+ 
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:127:
+         cancellation,
+     );
+     assert!(
+-        matches!(operator.apply(canceled).await, Err(RateLimitOpError::Cancelled)),
++        matches!(
++            operator.apply(canceled).await,
++            Err(RateLimitOpError::Cancelled)
++        ),
+         "a canceled admission returns no permit"
+     );
+     Ok(())
+Diff in \\?\C:\mDev\Polaris\crates\polaris-kernel\crates\operators\tests\rate_limit_operator.rs:134:
+ }
+ 
+ #[tokio::test]
+-async fn reservation_requires_dispatch_before_reconciliation() -> Result<(), Box<dyn std::error::Error>> {
++async fn reservation_requires_dispatch_before_reconciliation()
++-> Result<(), Box<dyn std::error::Error>> {
+     let limiter = limiter(quota(4, 128), ShedPolicy::default())?;
+     let operator = RateLimitOp::<_, String>::new(limiter, Duration::from_secs(1))?;
+     let input = RateLimitInput::new(
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:312:
+             return Err(ContextError::WindowArchiveIntegrity);
+         }
+         let envelope: WindowArchive = serde_json::from_slice(&bytes)?;
+-        let message_count = u64::try_from(envelope.messages.len())
+-            .map_err(|_| ContextError::EstimateOverflow)?;
++        let message_count =
++            u64::try_from(envelope.messages.len()).map_err(|_| ContextError::EstimateOverflow)?;
+         if envelope.format_version != WINDOW_ARCHIVE_VERSION
+             || envelope.messages.is_empty()
+             || message_count != archive.message_count
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:584:
+ 
+ #[cfg(test)]
+ mod lossless_window_tests {
+-    use std::{
+-        error::Error,
+-        path::PathBuf,
+-    };
++    use std::{error::Error, path::PathBuf};
+ 
+     use polaris_sdk::registry::{ChatMessage, ChatRole, ChatToolCall};
+     use polaris_storage_cas::{Cas, CasConfig};
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:610:
+ 
+     fn test_store() -> Result<TestStore, Box<dyn Error>> {
+         let current_thread = std::thread::current();
+-        let thread_name = current_thread
+-            .name()
+-            .ok_or("test thread has no name")?;
++        let thread_name = current_thread.name().ok_or("test thread has no name")?;
+         let safe_thread_name = thread_name.replace(':', "_");
+         let path = std::env::temp_dir().join(format!(
+             "polaris-runtime-context-{}-{safe_thread_name}",
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:680:
+         let scratchpad = EpistemicScratchpad::default();
+         let history = rich_tool_history();
+         let prompt = virtualizer.assemble(&request(&history, &scratchpad))?;
+-        let archived = prompt.omitted_window.as_ref().ok_or("missing archive reference")?;
++        let archived = prompt
++            .omitted_window
++            .as_ref()
++            .ok_or("missing archive reference")?;
+         let archived_bytes = virtualizer.expand(archived.reference, None)?;
+-        if archived.message_count != 2 || archived.content_id != polaris_storage_cas::content_id(&archived_bytes) {
++        if archived.message_count != 2
++            || archived.content_id != polaris_storage_cas::content_id(&archived_bytes)
++        {
+             return Err("archive metadata did not identify exact archived messages".into());
+         }
+         let restored = virtualizer.expand_omitted_window(archived)?;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\context\src\assemble.rs:722:
+         let scratchpad = EpistemicScratchpad::default();
+         let history = rich_tool_history();
+         let prompt = virtualizer.assemble(&request(&history, &scratchpad))?;
+-        let archived = prompt.omitted_window.as_ref().ok_or("tool group was not archived")?;
++        let archived = prompt
++            .omitted_window
++            .as_ref()
++            .ok_or("tool group was not archived")?;
+         let restored = virtualizer.expand_omitted_window(archived)?;
+-        if restored.len() != 2 || restored.first() != history.first() || restored.get(1) != history.get(1) {
++        if restored.len() != 2
++            || restored.first() != history.first()
++            || restored.get(1) != history.get(1)
++        {
+             return Err("tool call and correlated result were split or changed".into());
+         }
+         if prompt.window.first() != history.get(2) {
+

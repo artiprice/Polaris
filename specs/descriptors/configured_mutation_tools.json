@@ -1,0 +1,17 @@
+{
+  "type_of": "pipeline",
+  "name": "configured_agent_tool_runner",
+  "file_path": "crates/polaris-kernel/src/configured_tools.rs",
+  "logic_name": "Configured production mutation tool composition",
+  "test_list": [
+    {"test_name": "configured_mutations_require_actual_system_one_host", "description": "Reject missing host before scanner or model dispatch."},
+    {"test_name": "configured_mutations_reject_foreign_root_and_cancelled_policy", "description": "Reject foreign frame or cancelled policy before installing services."},
+    {"test_name": "configured_mutations_preserve_uncalibrated_approval_gate", "description": "Missing measured calibration must never become automatic mutation permission."},
+    {"test_name": "configured_mutations_use_current_worker_generation", "description": "The actual supervised generation adapter performs inference after worker replacement."}
+  ],
+  "dependencies": ["KernelAgentToolRunner", "LocalS1Host", "FrameMutationService", "SchemaSet", "CalibrationBindings"],
+  "libraries": ["tokio", "thiserror"],
+  "inputs": [{"name": "host policy", "type": "frame binding, issuer, mutation policy, schemas, limits and calibration identities", "description": "Trusted host-owned configuration; never model tool arguments."}],
+  "output_type": "Result<ConfiguredAgentToolRunner, ConfiguredToolError>",
+  "output_description": "Actual bound runner. Implementation verification deferred until final pass by user instruction."
+}

@@ -29,6 +29,10 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
     time::Duration,
 };
+use polaris_system_one_watchdog::{
+    HealthVerdict, ProposedStep, StepIndex, StepOutcome as WatchdogStepOutcome, build_step_record,
+};
+use polaris_runtime_frames::WatchdogObservation;
 
 struct TestClock;
 impl Clock for TestClock {
@@ -129,6 +133,7 @@ impl FunctionalOperator for Assembler {
                 effects: Effects::READ_ONLY,
             }],
             input_token_upper_bound: TokenCount::new(20),
+            context_token_budget: TokenCount::new(4096),
             max_output_tokens: Some(TokenCount::new(40)),
         })
     }
@@ -148,6 +153,7 @@ impl FunctionalOperator for FixedAssembler {
             messages: self.messages.clone(),
             tools: Vec::new(),
             input_token_upper_bound: TokenCount::new(20),
+            context_token_budget: TokenCount::new(4096),
             max_output_tokens: Some(TokenCount::new(40)),
         })
     }
@@ -216,6 +222,51 @@ impl StepVerifier for Accept {
         Ok(Verification::Accepted {
             fingerprint: FastFingerprint::new(33),
             verified_diffs: Vec::new(),
+        })
+    }
+}
+
+struct AdvisoryObserver {
+    observed: Arc<Mutex<bool>>,
+}
+
+impl StepVerifier for AdvisoryObserver {
+    type Error = FrameError;
+
+    async fn verify(
+        &self,
+        _frame: &polaris_runtime_frames::FrameView,
+        _output: &StepTool,
+    ) -> Result<Verification, FrameError> {
+        if !*lock_recover(&self.observed) {
+            return Err(FrameError::Accounting);
+        }
+        Ok(Verification::Accepted {
+            fingerprint: FastFingerprint::new(99),
+            verified_diffs: Vec::new(),
+        })
+    }
+
+    async fn inspect_proposal(
+        &self,
+        snapshot: &polaris_system_one_watchdog::FrameSnapshot,
+        step: &ProposedStep,
+    ) -> Option<WatchdogObservation> {
+        *lock_recover(&self.observed) = true;
+        let record = build_step_record(
+            StepIndex::new(snapshot.current_step),
+            step,
+            3,
+            4096,
+            WatchdogStepOutcome::Unknown,
+        )
+        .ok()?;
+        Some(WatchdogObservation {
+            record,
+            verdict: HealthVerdict::RoleViolation {
+                tool: "advisory_only".to_owned(),
+                role: snapshot.role,
+            },
         })
     }
 }
@@ -457,6 +508,62 @@ fn components(scripts: Vec<Vec<ChatChunk>>, result: ToolResultRef) -> TestCompon
         calls,
         result_limits,
     )
+}
+
+#[tokio::test]
+async fn watchdog_observation_is_advisory_and_survives_journal_recovery(
+) -> Result<(), Box<dyn Error>> {
+    let mut frame = frame()?;
+    let (assemble, chat, tools, _, _, _, _) = components(
+        vec![vec![
+            ChatChunk::Text("continue carefully".to_owned()),
+            ChatChunk::Finished(FinishReason::Stop),
+        ]],
+        sample_result("unused"),
+    );
+    let observed = Arc::new(Mutex::new(false));
+    let verifier = AdvisoryObserver {
+        observed: Arc::clone(&observed),
+    };
+    let journal = TestJournal(Mutex::new(Vec::new()));
+    let result = run_frame(
+        FrameRunInput {
+            frame: &mut frame,
+            goal: "inspect the change",
+            cancellation: &Cancellation::new(),
+            limits: base_limits(),
+        },
+        &assemble,
+        &chat,
+        &tools,
+        &verifier,
+        &journal,
+    )
+    .await?;
+    if result.stop != FrameRunStop::ModelTurnComplete || !*lock_recover(&observed) {
+        return Err("advisory observer did not run before independent verification".into());
+    }
+    let view = frame.view();
+    if view.watchdog_recent.len() != 1
+        || view.watchdog_recent[0].outcome != WatchdogStepOutcome::Completed
+    {
+        return Err("hash-only watchdog record was not retained in frame state".into());
+    }
+    let records = lock_recover(&journal.0);
+    let first = records.first().ok_or("frame record was not journaled")?;
+    let bytes = serde_json::to_vec(first)?;
+    let recovered = polaris_runtime_frames::reconstruct_watchdog_memory(
+        [bytes.as_slice()],
+        view.id,
+        polaris_runtime_frames::FrameJournalLimits::default(),
+    )?;
+    if recovered
+        .as_ref()
+        .is_none_or(|memory| memory.recent != view.watchdog_recent)
+    {
+        return Err("journal recovery did not preserve exact frame watchdog hashes".into());
+    }
+    Ok(())
 }
 
 #[tokio::test]
@@ -1113,6 +1220,7 @@ async fn journal_persists_transcript_before_publishing_event() -> Result<(), Box
         assistant_response: None,
         result: None,
         executed_tool_results: Vec::new(),
+        watchdog_memory: None,
         outcome: FrameStepOutcome::Cancelled,
     };
     let transcript = journal.record(&record).await?;
@@ -1169,6 +1277,7 @@ async fn durable_journal_requires_tool_content_to_exist_and_match() -> Result<()
             }],
         }),
         executed_tool_results: Vec::new(),
+        watchdog_memory: None,
         outcome: FrameStepOutcome::Accepted,
     };
     let mut unsupported = record.clone();
@@ -1200,6 +1309,7 @@ async fn durable_journal_requires_tool_content_to_exist_and_match() -> Result<()
         assistant_response: None,
         result: None,
         executed_tool_results: interrupted_results,
+        watchdog_memory: None,
         outcome: FrameStepOutcome::Cancelled,
     };
     journal.record(&interrupted).await?;
@@ -1251,6 +1361,7 @@ async fn real_cas_and_event_log_reopen_the_versioned_frame_transcript() -> Resul
                 content: model_visible.to_owned(),
             },
         }],
+        watchdog_memory: None,
         outcome: FrameStepOutcome::Cancelled,
     };
     let event_path = directory.path().join("events.redb");

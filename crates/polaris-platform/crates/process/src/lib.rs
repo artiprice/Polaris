@@ -11,6 +11,11 @@ mod pty;
 mod resolve;
 mod watch;
 
+#[cfg(test)]
+mod bootstrap_tests;
+
+mod endpoint;
+
 pub use probe::{ExecOutput, run_probe, run_probe_with_env};
 pub use pty::{PtyOutput, PtySession, PtySize, spawn_pty};
 pub use resolve::{ProgramResolution, ResolveError, resolve_program};
@@ -18,16 +23,20 @@ pub use watch::{FsEvent, FsWatcher, RescanReason, WatchConfig, watch};
 
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use polaris_sdk::registry::{
-    MemoryPressure, PlatformError, PlatformOps, ProcessExit, ProcessTree, SpawnSpec, StopOutcome,
+    LocalEndpointOwnership, MemoryPressure, PlatformError, PlatformOps, ProcessExit, ProcessTree,
+    SpawnSpec, StopOutcome, WorkerBootstrapPlatform,
 };
 use process_wrap::tokio::{ChildWrapper, CommandWrap, KillOnDrop};
+use secrecy::ExposeSecret;
 use sysinfo::System;
+use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex as AsyncMutex;
-use tokio::time::{Instant, sleep};
+use tokio::time::{Instant, sleep, timeout_at};
 
 #[cfg(windows)]
 use process_wrap::tokio::JobObject;
@@ -38,6 +47,16 @@ use process_wrap::tokio::ProcessGroup;
 struct ProcessRecord {
     root_pid: u32,
     child: Arc<AsyncMutex<Box<dyn ChildWrapper>>>,
+    state: Arc<ProcessState>,
+}
+
+type RetainedProcess = Arc<AsyncMutex<Box<dyn ChildWrapper>>>;
+type ProcessRecordHandle = (RetainedProcess, Arc<ProcessState>);
+
+#[derive(Debug, Default)]
+struct ProcessState {
+    bootstrap_attempted: AtomicBool,
+    force_stop_requested: AtomicBool,
 }
 
 /// Native process-tree adapter for Windows and Unix platforms.
@@ -75,10 +94,7 @@ impl ProcessPlatform {
         Ok(handle)
     }
 
-    fn record(
-        &self,
-        tree: &ProcessTree,
-    ) -> Result<Arc<AsyncMutex<Box<dyn ChildWrapper>>>, PlatformError> {
+    fn record(&self, tree: &ProcessTree) -> Result<ProcessRecordHandle, PlatformError> {
         let records = self
             .children
             .lock()
@@ -91,7 +107,7 @@ impl ProcessPlatform {
                 "process handle root PID mismatch".to_owned(),
             ));
         }
-        Ok(Arc::clone(&record.child))
+        Ok((Arc::clone(&record.child), Arc::clone(&record.state)))
     }
 
     fn remove_record(&self, tree: &ProcessTree) -> Result<(), PlatformError> {
@@ -188,7 +204,14 @@ impl PlatformOps for ProcessPlatform {
             .children
             .lock()
             .map_err(|_| PlatformError::Io("process registry lock poisoned".to_owned()))?;
-        records.insert(handle_id, ProcessRecord { root_pid, child });
+        records.insert(
+            handle_id,
+            ProcessRecord {
+                root_pid,
+                child,
+                state: Arc::new(ProcessState::default()),
+            },
+        );
         Ok(ProcessTree {
             root_pid,
             handle_id,
@@ -203,8 +226,15 @@ impl PlatformOps for ProcessPlatform {
         let record = self.record(tree);
         let tree = *tree;
         async move {
-            let child_ref = record?;
+            let (child_ref, state) = record?;
             let mut child = child_ref.lock().await;
+            if state.force_stop_requested.load(Ordering::Acquire) {
+                apply_force_stop(&mut child, tree.root_pid)?;
+                let _status = child.wait().await.map_err(platform_io)?;
+                drop(child);
+                self.remove_record(&tree)?;
+                return Ok(StopOutcome::Killed);
+            }
             if let Some(status) = child.try_wait().map_err(platform_io)? {
                 let outcome = StopOutcome::Exited {
                     code: status.code(),
@@ -223,6 +253,13 @@ impl PlatformOps for ProcessPlatform {
                 PlatformError::Policy("grace duration exceeds timer range".to_owned())
             })?;
             loop {
+                if state.force_stop_requested.load(Ordering::Acquire) {
+                    apply_force_stop(&mut child, tree.root_pid)?;
+                    let _status = child.wait().await.map_err(platform_io)?;
+                    drop(child);
+                    self.remove_record(&tree)?;
+                    return Ok(StopOutcome::Killed);
+                }
                 if let Some(status) = child.try_wait().map_err(platform_io)? {
                     let outcome = StopOutcome::Exited {
                         code: status.code(),
@@ -245,19 +282,25 @@ impl PlatformOps for ProcessPlatform {
     }
 
     fn kill_tree(&self, tree: &ProcessTree) -> Result<(), PlatformError> {
-        let child_ref = self.record(tree)?;
-        let mut child = child_ref
-            .try_lock()
-            .map_err(|_| PlatformError::Io("process tree operation is in progress".to_owned()))?;
-        match child.start_kill() {
-            Ok(()) => {}
-            Err(error) => match child.try_wait().map_err(platform_io)? {
-                Some(_) => {}
-                None => return Err(platform_io(error)),
-            },
+        let (child_ref, state) = self.record(tree)?;
+        state.force_stop_requested.store(true, Ordering::Release);
+        match child_ref.try_lock() {
+            Ok(mut child) => {
+                apply_force_stop(&mut child, tree.root_pid)?;
+                drop(child);
+                self.remove_record(tree)
+            }
+            Err(_) if schedule_force_stop(Arc::clone(&child_ref), state, tree.root_pid) => {
+                Err(PlatformError::Io(
+                    "process tree force-stop is pending; OS termination is not confirmed"
+                        .to_owned(),
+                ))
+            }
+            Err(_) => Err(PlatformError::Io(
+                "process tree force-stop is pending but no async cleanup runtime is available"
+                    .to_owned(),
+            )),
         }
-        drop(child);
-        self.remove_record(tree)
     }
 
     fn try_wait_tree(
@@ -267,9 +310,15 @@ impl PlatformOps for ProcessPlatform {
         let record = self.record(tree);
         let tree = *tree;
         async move {
-            let child_ref = record?;
+            let (child_ref, state) = record?;
             let mut child = child_ref.lock().await;
+            if state.force_stop_requested.load(Ordering::Acquire) {
+                apply_force_stop(&mut child, tree.root_pid)?;
+            }
             let status = child.try_wait().map_err(platform_io)?;
+            if state.force_stop_requested.load(Ordering::Acquire) && status.is_none() {
+                apply_force_stop(&mut child, tree.root_pid)?;
+            }
             drop(child);
             match status {
                 Some(status) => {
@@ -290,6 +339,184 @@ impl PlatformOps for ProcessPlatform {
     }
 }
 
+impl WorkerBootstrapPlatform for ProcessPlatform {
+    fn bootstrap_tree(
+        &self,
+        tree: &ProcessTree,
+        secret: secrecy::SecretString,
+        timeout: Duration,
+    ) -> impl std::future::Future<Output = Result<(), PlatformError>> + Send {
+        let tree = *tree;
+        async move {
+            let start = Instant::now();
+            let deadline = start.checked_add(timeout).ok_or_else(|| {
+                PlatformError::Policy("worker bootstrap timeout exceeds timer range".to_owned())
+            })?;
+            if timeout.is_zero() || deadline <= start {
+                return Err(PlatformError::Policy(
+                    "worker bootstrap timeout must be positive".to_owned(),
+                ));
+            }
+
+            let (child_ref, state) = self.record(&tree)?;
+            let secret_bytes = secret.expose_secret().as_bytes();
+            if secret_bytes.is_empty() || secret_bytes.len() > 4096 {
+                return Err(PlatformError::Policy(
+                    "worker bootstrap secret length must be between 1 and 4096 bytes".to_owned(),
+                ));
+            }
+            if state
+                .bootstrap_attempted
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_err()
+            {
+                return Err(PlatformError::Policy(
+                    "worker process bootstrap was already attempted".to_owned(),
+                ));
+            }
+
+            let mut cancellation = BootstrapCancellation {
+                child: Arc::clone(&child_ref),
+                state: Arc::clone(&state),
+                root_pid: tree.root_pid,
+                armed: true,
+            };
+            let write_result = timeout_at(deadline, async {
+                let mut child = child_ref.lock().await;
+                if state.force_stop_requested.load(Ordering::Acquire) {
+                    apply_force_stop(&mut child, tree.root_pid)?;
+                    return Err(PlatformError::Policy(
+                        "worker process has a pending force-stop request".to_owned(),
+                    ));
+                }
+                if child.try_wait().map_err(platform_io)?.is_some() {
+                    return Err(PlatformError::NotFound(
+                        "worker process exited before bootstrap".to_owned(),
+                    ));
+                }
+                let stdin = child.stdin().as_mut().ok_or(PlatformError::Unsupported(
+                    "worker process stdin is not retained",
+                ))?;
+                stdin.write_all(secret_bytes).await.map_err(platform_io)
+            })
+            .await;
+
+            match write_result {
+                Ok(Ok(())) => {
+                    cancellation.armed = false;
+                    Ok(())
+                }
+                Ok(Err(error)) => Err(error),
+                Err(_) => Err(PlatformError::Policy(
+                    "worker bootstrap deadline elapsed".to_owned(),
+                )),
+            }
+        }
+    }
+}
+
+impl LocalEndpointOwnership for ProcessPlatform {
+    fn owns_loopback_tcp_listener(
+        &self,
+        tree: &ProcessTree,
+        address: std::net::SocketAddr,
+    ) -> impl std::future::Future<Output = Result<bool, PlatformError>> + Send {
+        let tree = *tree;
+        async move {
+            if !address.ip().is_loopback() {
+                return Ok(false);
+            }
+            if self.try_wait_tree(&tree).await?.is_some() {
+                return Ok(false);
+            }
+            let root_pid = tree.root_pid;
+            let observed = tokio::task::spawn_blocking(move || {
+                endpoint::owns_exact_root_listener(root_pid, address)
+            })
+            .await
+            .map_err(|_| PlatformError::Io("listener ownership query task failed".to_owned()))??;
+            if self.try_wait_tree(&tree).await?.is_some() {
+                return Ok(false);
+            }
+            Ok(observed)
+        }
+    }
+}
+
+struct BootstrapCancellation {
+    child: Arc<AsyncMutex<Box<dyn ChildWrapper>>>,
+    state: Arc<ProcessState>,
+    root_pid: u32,
+    armed: bool,
+}
+
+impl Drop for BootstrapCancellation {
+    fn drop(&mut self) {
+        if !self.armed {
+            return;
+        }
+        self.state
+            .force_stop_requested
+            .store(true, Ordering::Release);
+        match self.child.try_lock() {
+            Ok(mut child) => {
+                if let Err(error) = apply_force_stop(&mut child, self.root_pid) {
+                    tracing::error!(pid = self.root_pid, error = %error, "failed to terminate worker after bootstrap failure");
+                }
+            }
+            Err(_) => {
+                let scheduled = schedule_force_stop(
+                    Arc::clone(&self.child),
+                    Arc::clone(&self.state),
+                    self.root_pid,
+                );
+                if !scheduled {
+                    tracing::error!(
+                        pid = self.root_pid,
+                        "worker bootstrap force-stop remains pending because no async cleanup runtime is available"
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn apply_force_stop(child: &mut Box<dyn ChildWrapper>, root_pid: u32) -> Result<(), PlatformError> {
+    match child.start_kill() {
+        Ok(()) => Ok(()),
+        Err(error) => match child.try_wait().map_err(platform_io)? {
+            Some(_) => Ok(()),
+            None => {
+                tracing::error!(pid = root_pid, error = %error, "failed to terminate owned worker process");
+                Err(platform_io(error))
+            }
+        },
+    }
+}
+
+fn schedule_force_stop(
+    child: Arc<AsyncMutex<Box<dyn ChildWrapper>>>,
+    state: Arc<ProcessState>,
+    root_pid: u32,
+) -> bool {
+    // Runtime shutdown may abort this detached cleanup before it acquires the child lock. The
+    // persistent flag is still observed by later tree operations; dropping the final retained
+    // ChildWrapper and the supervisor's owner guard remain the synchronous backstops.
+    let Ok(runtime) = tokio::runtime::Handle::try_current() else {
+        return false;
+    };
+    let cleanup = runtime.spawn(async move {
+        let mut child = child.lock().await;
+        if state.force_stop_requested.load(Ordering::Acquire)
+            && let Err(error) = apply_force_stop(&mut child, root_pid)
+        {
+            tracing::error!(pid = root_pid, error = %error, "async worker force-stop cleanup failed");
+        }
+    });
+    drop(cleanup);
+    true
+}
+
 impl Drop for ProcessPlatform {
     fn drop(&mut self) {
         let records = match self.children.get_mut() {
@@ -297,6 +524,10 @@ impl Drop for ProcessPlatform {
             Err(poisoned) => poisoned.into_inner(),
         };
         for (_, record) in records.drain() {
+            record
+                .state
+                .force_stop_requested
+                .store(true, Ordering::Release);
             if let Ok(mut child) = record.child.try_lock() {
                 if let Err(error) = child.start_kill() {
                     tracing::error!(pid = record.root_pid, error = %error, "failed to terminate process tree while dropping adapter");

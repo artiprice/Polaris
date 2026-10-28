@@ -1,0 +1,63 @@
+{
+  "type_of": "struct",
+  "name": "FrameClock",
+  "file_path": "crates/polaris-ui/crates/ascii-aurora/src/clock.rs",
+  "logic_name": "Aurora Frame Clock",
+  "test_list": [
+    {
+      "test_name": "first_advance_renders_immediately",
+      "description": "A fresh animated clock returns Some(0.0) on the first call."
+    },
+    {
+      "test_name": "no_frame_before_step_elapsed",
+      "description": "Elapsed time below the step returns None until the accumulator reaches the step."
+    },
+    {
+      "test_name": "fixed_step_advance",
+      "description": "Each returned frame advances simulation time by exactly one step."
+    },
+    {
+      "test_name": "hidden_pauses_time",
+      "description": "While hidden advance returns None and simulation time does not move; becoming visible resumes from the same time and requests a repaint."
+    },
+    {
+      "test_name": "no_catch_up_burst_after_stall",
+      "description": "A 5 s stall yields exactly one step, and the next short call yields None."
+    },
+    {
+      "test_name": "reduced_motion_static_once",
+      "description": "Reduced motion returns Some(STATIC_T) once and then None."
+    },
+    {
+      "test_name": "invalidate_forces_next_frame",
+      "description": "After invalidate the next advance returns Some even in reduced motion or when less than a step has elapsed, without advancing time."
+    },
+    {
+      "test_name": "step_is_bounded",
+      "description": "Zero and absurdly large steps are clamped into the allowed range."
+    }
+  ],
+  "dependencies": [
+    "core::time::Duration"
+  ],
+  "libraries": [],
+  "inputs": [
+    {
+      "name": "step",
+      "type": "Duration",
+      "description": "Simulation step (frame interval)."
+    },
+    {
+      "name": "reduced_motion",
+      "type": "bool",
+      "description": "Whether the user asked for reduced motion."
+    },
+    {
+      "name": "elapsed",
+      "type": "Duration",
+      "description": "Wall time since the previous advance call."
+    }
+  ],
+  "output_type": "Option<f32>",
+  "output_description": "Some(simulation time in seconds) when a repaint is due, otherwise None."
+}

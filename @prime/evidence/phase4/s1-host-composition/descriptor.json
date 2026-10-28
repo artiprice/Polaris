@@ -1,0 +1,17 @@
+{
+  "case": "configured_kernel_starts_and_owns_supervised_s1_host",
+  "kind": "integration",
+  "red_expectation": "Kernel::start(config.with_s1(...)) fails to compile or returns no S1 host because LocalS1Config and KernelHandle::s1_host are absent.",
+  "assertions": [
+    "configured S1 kernel starts a real worker through Supervisor using the configured executable/model paths",
+    "worker bootstrap secret is delivered through the bootstrap channel, never argv or environment",
+    "Windows named-pipe connector rejects a mismatched server PID before worker credential RPC",
+    "PolicyClient starts admission closed and only opens after authenticated readiness; retirement/restart increments the readiness epoch and fences in-flight results",
+    "engine and PII detector adapters resolve only the current exact ProcessTree generation",
+    "PII detection stays unavailable when the optional companion model is not configured",
+    "configured frame composition uses the real host detector, readonly capability runner, durable journal, and source verifier",
+    "a normal terminal model response without same-frame proof is reported Unverified, DFA masking precedes tokenizer and provider calls, and unavailable optional PII reports degraded fallback coverage",
+    "invalid S1 config or startup failure exposes no KernelHandle and cleans up any spawned process",
+    "KernelHandle shutdown joins S1 supervisor, retires the exact process record, and reaps its worker; default LocalKernelConfig remains offline P1"
+  ]
+}

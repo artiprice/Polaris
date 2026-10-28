@@ -1,0 +1,124 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused variable: `diff`
+   --> crates\polaris-kernel\src\frame_mutation.rs:301:17
+    |
+301 |             let diff = content_id(&prepared.diff_bytes);
+    |                 ^^^^ help: if this is intentional, prefix it with an underscore: `_diff`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-kernel` (lib) generated 1 warning (run `cargo fix --lib -p polaris-kernel` to apply 1 suggestion)
+warning: unused import: `Facts`
+  --> crates\polaris-kernel\tests\frame_mutation.rs:12:16
+   |
+12 |     Authority, Facts, ResourcePath, ResourceScope, Right, Rights, Scope, SystemClock,
+   |                ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: impl trait in impl method signature does not match trait method signature
+  --> crates\polaris-kernel\tests\frame_mutation.rs:27:10
+   |
+27 |     ) -> Ready<Result<SafetyAssessment, VerifierError>> {
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: add `#[allow(refining_impl_trait)]` if it is intended for this to be part of the public API of this crate
+   = note: we are soliciting feedback, see issue #121718 <https://github.com/rust-lang/rust/issues/121718> for more information
+   = note: `#[warn(refining_impl_trait_internal)]` (part of `#[warn(refining_impl_trait)]`) on by default
+help: replace the return type so that it matches the trait
+   |
+27 -     ) -> Ready<Result<SafetyAssessment, VerifierError>> {
+27 +     ) -> impl std::future::Future<Output = std::result::Result<polaris_system_one::polaris_system_one_verifier::SafetyAssessment, polaris_system_one::polaris_system_one_verifier::VerifierError>> + std::marker::Send {
+   |
+
+warning: impl trait in impl method signature does not match trait method signature
+  --> crates\polaris-kernel\tests\frame_mutation.rs:39:10
+   |
+39 |     ) -> Ready<Result<SafetyAssessment, VerifierError>> {
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: add `#[allow(refining_impl_trait)]` if it is intended for this to be part of the public API of this crate
+   = note: we are soliciting feedback, see issue #121718 <https://github.com/rust-lang/rust/issues/121718> for more information
+help: replace the return type so that it matches the trait
+   |
+39 -     ) -> Ready<Result<SafetyAssessment, VerifierError>> {
+39 +     ) -> impl std::future::Future<Output = std::result::Result<polaris_system_one::polaris_system_one_verifier::SafetyAssessment, polaris_system_one::polaris_system_one_verifier::VerifierError>> + std::marker::Send {
+   |
+
+error[E0599]: no method named `now` found for struct `polaris_security::polaris_security_capability::SystemClock` in the current scope
+  --> crates\polaris-kernel\tests\frame_mutation.rs:81:14
+   |
+80 |           let expiry = SystemClock
+   |  ______________________-
+81 | |             .now()
+   | |             -^^^ method not found in `polaris_security::polaris_security_capability::SystemClock`
+   | |_____________|
+   |
+   |
+  ::: crates\polaris-security\crates\capability\src\lib.rs:50:8
+   |
+50 |       fn now(&self) -> Timestamp;
+   |          --- the method is available for `polaris_security::polaris_security_capability::SystemClock` here
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: trait `Clock` which provides `now` is implemented but not in scope; perhaps you want to import it
+   |
+ 3 + use polaris_security::polaris_security_capability::Clock;
+   |
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+  --> crates\polaris-kernel\tests\frame_mutation.rs:85:21
+   |
+85 |           let frame = AgentContextFrame::new_root(
+   |  _____________________^
+86 | |             id,
+87 | |             AgentRole::Orchestrator,
+88 | |             token.clone(),
+...  |
+98 | |             ScratchpadRef::new(Cid::from_bytes([1; 32])),
+99 | |         )?
+   | |__________^ the `?` operator cannot be applied to type `AgentContextFrame<Spawned>`
+   |
+   = help: the nightly-only, unstable trait `Try` is not implemented for `AgentContextFrame<Spawned>`
+
+warning: method call on a diverging inference variable
+   --> crates\polaris-kernel\tests\frame_mutation.rs:100:10
+    |
+100 |         .activate(
+    |          ^^^^^^^^
+    |
+    = help: consider providing a type annotation
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+    = note: `#[warn(method_call_on_diverging_infer_var)]` (part of `#[warn(future_incompatible)]`) on by default
+
+error[E0599]: no method named `activate` found for type `_` in the current scope
+     --> crates\polaris-kernel\tests\frame_mutation.rs:100:10
+      |
+   85 |           let frame = AgentContextFrame::new_root(
+      |  _____________________-
+   86 | |             id,
+   87 | |             AgentRole::Orchestrator,
+   88 | |             token.clone(),
+...     |
+   99 | |         )?
+  100 | |         .activate(
+      | |_________-^^^^^^^^
+      |
+help: there is a method `Activate` with a similar name, but with different arguments
+     --> C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\windows-0.62.2\src\Windows\Win32\UI\Shell\mod.rs:45475:5
+      |
+45475 |     fn Activate(&self, factivate: windows_core::BOOL) -> windows_core::Result<()>;
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no variant, associated function, or constant named `Unavailable` found for enum `DegradedReason` in the current scope
+  --> crates\polaris-kernel\tests\frame_mutation.rs:41:67
+   |
+41 |             reason: polaris_system_one::verifier::DegradedReason::Unavailable,
+   |                                                                   ^^^^^^^^^^^ variant, associated function, or constant not found in `DegradedReason`
+
+Some errors have detailed explanations: E0277, E0599.
+For more information about an error, try `rustc --explain E0277`.
+warning: `polaris-kernel` (test "frame_mutation") generated 4 warnings
+error: could not compile `polaris-kernel` (test "frame_mutation") due to 4 previous errors; 5 warnings emitted
+warning: build failed, waiting for other jobs to finish...

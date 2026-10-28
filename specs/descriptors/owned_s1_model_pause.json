@@ -1,0 +1,22 @@
+{
+  "type_of":"pipeline",
+  "name":"owned_s1_model_pause",
+  "file_path":"crates/polaris-kernel/src/worker_lifecycle.rs",
+  "logic_name":"Owned System One pause around heavy execution",
+  "test_list":[
+    {"test_name":"paused_worker_rejects_decide_and_pii_without_reloading","description":"A paused native actor rejects queued and new inference work."},
+    {"test_name":"stale_resume_cannot_release_newer_pause","description":"Monotonic epochs prevent an old release from reopening admission."},
+    {"test_name":"worker_replacement_inherits_requested_pause","description":"Apply the host pause before publishing a replacement worker connection."},
+    {"test_name":"sandbox_execution_releases_pause_after_cleanup","description":"Hold the owned pause through execution and sandbox teardown."},
+    {"test_name":"abandoned_pause_remains_fail_closed","description":"Dropping a lease does not silently resume inference or allow a later build to overwrite the abandoned epoch."},
+    {"test_name":"pause_recovery_rejects_retained_sandbox_ownership","description":"Kernel recovery refuses to resume while reaper sandbox ownership remains."},
+    {"test_name":"pause_recovery_uses_fresh_epoch_after_lost_resume_ack","description":"Recover an uncertain release by acknowledging and releasing a fresh epoch; stale messages cannot reopen another owner."},
+    {"test_name":"early_execution_failure_unblocks_exact_review_waiter","description":"After accepted execution setup fails, publish exact-bound blocked proof and terminal execution evidence."},
+    {"test_name":"cancelled_precreate_execution_never_deletes_an_unowned_name","description":"Cancellation before backend create only releases its intent; it does not destroy a resource it never created."}
+  ],
+  "dependencies":["S1Worker","S1Client","S1WorkerLifecycle","LocalS1Host","SandboxExecution"],
+  "libraries":["tokio","tokio-util","tonic","thiserror"],
+  "inputs":[{"name":"pause","type":"owned monotonic pause epoch","description":"Kernel-owned build pause, independent of model tool arguments."}],
+  "output_type":"Result<owned pause lease or acknowledged release, error>",
+  "output_description":"Explicit native pause, eviction and resume. Verification deferred until the final pass by user instruction."
+}

@@ -184,7 +184,7 @@ async fn ingest_worker_protocol_and_lifecycle() -> TestResult {
     );
     assert_eq!(
         worker
-            .evict_models(Request::new(pb::EvictModelsRequest {}))
+            .evict_models(Request::new(pb::EvictModelsRequest::default()))
             .await?
             .into_inner()
             .evicted,

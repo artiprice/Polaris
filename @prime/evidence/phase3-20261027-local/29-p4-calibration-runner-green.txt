@@ -1,0 +1,22 @@
+   Compiling xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+error[E0034]: multiple applicable items in scope
+   --> xtask\src\calibration.rs:130:10
+    |
+130 |     file.by_ref()
+    |          ^^^^^^ multiple `by_ref` found
+    |
+    = note: candidate #1 is defined in an impl of the trait `std::io::Read` for the type `std::fs::File`
+    = note: candidate #2 is defined in an impl of the trait `std::io::Write` for the type `std::fs::File`
+help: disambiguate the method for candidate #1
+    |
+130 -     file.by_ref()
+130 +     std::io::Read::by_ref(&mut file)
+    |
+help: disambiguate the method for candidate #2
+    |
+130 -     file.by_ref()
+130 +     std::io::Write::by_ref(&mut file)
+    |
+
+For more information about this error, try `rustc --explain E0034`.
+error: could not compile `xtask` (lib) due to 1 previous error

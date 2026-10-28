@@ -1,0 +1,4 @@
+vLLM primary-source schema checked 2026-10-27:
+- https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/serve/tokenize/protocol.py (TokenizeChatRequest, TokenizeResponse)
+- https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/serve/tokenize/api_router.py (POST /tokenize)
+- https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/serve/tokenize/serving.py (count, max_model_len, token IDs)

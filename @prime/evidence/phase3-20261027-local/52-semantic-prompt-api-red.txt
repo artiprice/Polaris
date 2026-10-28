@@ -1,0 +1,106 @@
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+   Compiling polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+   Compiling polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0433]: cannot find `SemanticPrivacyLimits` in `polaris_kernel`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:48:98
+   |
+48 |         .with_semantic_privacy(Arc::new(SemanticNameDetector{unavailable:false}),polaris_kernel::SemanticPrivacyLimits::default())?;
+   |                                                                                                  ^^^^^^^^^^^^^^^^^^^^^ could not find `SemanticPrivacyLimits` in `polaris_kernel`
+
+error[E0433]: cannot find `SemanticPrivacyLimits` in `polaris_kernel`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:69:97
+   |
+69 |         .with_semantic_privacy(Arc::new(SemanticNameDetector{unavailable:true}),polaris_kernel::SemanticPrivacyLimits::default())?;
+   |                                                                                                 ^^^^^^^^^^^^^^^^^^^^^ could not find `SemanticPrivacyLimits` in `polaris_kernel`
+
+error[E0433]: cannot find `SemanticPrivacyLimits` in `polaris_kernel`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:80:151
+   |
+80 | ...lds:1,..polaris_kernel::SemanticPrivacyLimits::default()})?;
+   |                            ^^^^^^^^^^^^^^^^^^^^^ could not find `SemanticPrivacyLimits` in `polaris_kernel`
+
+error[E0422]: cannot find struct, variant or union type `SemanticPrivacyLimits` in crate `polaris_kernel`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:80:98
+   |
+80 | ...or{unavailable:false}),polaris_kernel::SemanticPrivacyLimits{max_fields:1,..polaris_kernel::SemanticPrivacyLimits::default()})?;
+   |                                           ^^^^^^^^^^^^^^^^^^^^^ not found in `polaris_kernel`
+
+error[E0599]: no method named `with_semantic_privacy` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:48:10
+   |
+47 |       let assembler=fixture.assembler(Arc::clone(&counter),source,limits()).await?
+   |  ___________________-
+48 | |         .with_semantic_privacy(Arc::new(SemanticNameDetector{unavailable:false}),polaris_kernel::SemanticPrivacyLimits::default())?;
+   | |         -^^^^^^^^^^^^^^^^^^^^^ method not found in `KernelPromptAssembler<CountingFixture>`
+   | |_________|
+   |
+
+error[E0599]: no method named `with_semantic_privacy` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:69:10
+   |
+68 |       let assembler=fixture.assembler(Arc::clone(&counter),context(),limits()).await?
+   |  ___________________-
+69 | |         .with_semantic_privacy(Arc::new(SemanticNameDetector{unavailable:true}),polaris_kernel::SemanticPrivacyLimits::default())?;
+   | |         -^^^^^^^^^^^^^^^^^^^^^ method not found in `KernelPromptAssembler<CountingFixture>`
+   | |_________|
+   |
+
+error[E0599]: no method named `with_semantic_privacy` found for struct `KernelPromptAssembler<M, T>` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:80:10
+   |
+79 |       let assembler=fixture.assembler(Arc::new(CountingFixture::default()),context(),limits()).await?
+   |  ___________________-
+80 | |         .with_semantic_privacy(Arc::new(SemanticNameDetector{unavailable:false}),polaris_kernel::SemanticPrivacyLimits{max_fields:...
+   | |         -^^^^^^^^^^^^^^^^^^^^^ method not found in `KernelPromptAssembler<CountingFixture>`
+   | |_________|
+   |
+
+Some errors have detailed explanations: E0422, E0433, E0599.
+For more information about an error, try `rustc --explain E0422`.
+error: could not compile `polaris-kernel` (test "frame_prompt") due to 7 previous errors

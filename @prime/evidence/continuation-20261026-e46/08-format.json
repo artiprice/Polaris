@@ -1,0 +1,17 @@
+{
+  "name": "format",
+  "argv": [
+    "cargo",
+    "fmt",
+    "-p",
+    "polaris-kernel",
+    "-p",
+    "polaris-runtime-frames",
+    "--",
+    "--check"
+  ],
+  "started_utc": "2026-10-26T22:34:40.984118+00:00",
+  "elapsed_seconds": 0.468,
+  "exit_code": 0,
+  "raw": "08-format.txt"
+}

@@ -6,12 +6,15 @@
   "test_list": [
     { "test_name": "empty_decision_batch_is_rejected_before_model_loading", "description": "An empty Decide batch is rejected at the RPC boundary before explicit model loading." },
     { "test_name": "ingest_and_embedding_do_not_claim_s1_results", "description": "The S1 worker explicitly rejects service modes it does not implement." },
-    { "test_name": "configured_windows_worker_process_returns_real_decision", "description": "Ignored acceptance test launches a bounded worker subprocess with explicit local artifacts, verifies named-pipe handshake and real probabilities, then shuts it down." }
+    { "test_name": "canceled_shutdown_still_signals_transport_stop", "description": "The Shutdown handler signals transport shutdown before it waits for local drain, so handler cancellation cannot strand admission-closed service." },
+    { "test_name": "transport_shutdown_wait_is_bounded", "description": "A pending transport graceful-shutdown future returns a deadline outcome after the configured grace interval." },
+    { "test_name": "drain_lock_wait_observes_requested_grace", "description": "Waiting for another drain operation consumes the same grace budget as inference shutdown and thread completion." },
+    { "test_name": "configured_windows_worker_process_returns_real_decision", "description": "Ignored acceptance test launches a bounded worker subprocess with explicit local artifacts and a parent-issued stdin credential, exercises the public named-pipe S1Client connector and real model probabilities, then signals EOF shutdown." }
   ],
   "dependencies": ["polaris-system-one-engine", "polaris-proto"],
   "libraries": ["tonic", "tokio"],
   "inputs": [
-    { "name": "config", "type": "S1WorkerConfig", "description": "Model directory, precision, intra-op threads, and worker RPC endpoint." }
+    { "name": "config", "type": "EngineConfig plus GLINER2_DEVICE=cpu", "description": "Explicit local model directory, ONNX Runtime dynamic library, CPU provider, normalization policy, and private local transport endpoint." }
   ],
   "output_type": "WorkerService",
   "output_description": "An isolated S1 worker RPC service that loads and serves only explicitly configured local model artifacts."

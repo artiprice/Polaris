@@ -1,0 +1,56 @@
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 14.01s
+     Running tests\frame_mutation.rs (target\debug\deps\frame_mutation-ddef15ffd2f57a77.exe)
+
+running 7 tests
+test traversal_secret_and_git_targets_are_rejected ... ok
+test capability_without_propose_diff_is_rejected_before_workspace_change ... ok
+test changed_base_after_prepare_is_rejected_without_overwrite ... ok
+test needs_approval_returns_without_changing_workspace ... ok
+test create_new_file_keeps_absence_as_base_and_records_actual_bytes ... ok
+test create_new_file_records_no_base_and_never_uses_empty_file_identity ... ok
+test edit_and_patch_requests_produce_and_commit_exact_candidates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests\human_requests.rs (target\debug\deps\human_requests-35b1e5980cad373b.exe)
+
+running 6 tests
+test human_request_rejects_invalid_stale_and_duplicate_answers ... FAILED
+test host_answer_rejects_untrusted_control_token ... ok
+test human_request_answer_cancel_race_has_one_winner ... ok
+test host_answer_resumes_only_its_pending_request ... ok
+test human_request_answer_is_atomic_and_durable ... ok
+test human_request_rehydrates_pending_and_terminal_states ... ok
+
+failures:
+
+---- human_request_rejects_invalid_stale_and_duplicate_answers stdout ----
+
+thread 'human_request_rejects_invalid_stale_and_duplicate_answers' (16856) panicked at crates\polaris-kernel\tests\human_requests.rs:219:5:
+assertion failed: service.stage_answer(ticket.request_id, Cid::from_bytes([99; 32]),
+            Fixture::answers()?).await.is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    human_request_rejects_invalid_stale_and_duplicate_answers
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+error: test failed, to rerun pass `-p polaris-kernel --test human_requests`

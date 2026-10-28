@@ -1,0 +1,77 @@
+{
+  "type_of": "pipeline",
+  "name": "Authenticated local PII NER spans",
+  "file_path": "crates/polaris-system-one/crates/engine/src/lib.rs",
+  "logic_name": "Independent companion-model span detection and reversible masking",
+  "test_list": [
+    {
+      "test_name": "pii_rpc_unavailable_is_explicit_when_no_companion_model_is_configured",
+      "description": "The authenticated worker runs the separately configured PII model on exact raw text and returns bounded half-open UTF-8 byte offsets only."
+    },
+    {
+      "test_name": "pii_input_cap_is_checked_before_loading_configured_model",
+      "description": "Out-of-bounds, reversed, oversized, non-finite-confidence, and non-character-boundary spans fail closed before vault writes."
+    },
+    {
+      "test_name": "ner_spans_are_utf8_byte_ranges_and_reversible",
+      "description": "NER spans join DFA and entropy spans in one bounded vault pass, use existing Other kind, and unmask only at the authorized sandbox boundary."
+    },
+    {
+      "test_name": "invalid_ner_spans_fall_back_to_deterministic_masking",
+      "description": "Malformed model byte ranges are rejected before vault mutation and trigger deterministic masking fallback."
+    },
+    {
+      "test_name": "unavailable_or_timed_out_ner_keeps_deterministic_masking",
+      "description": "Unavailable companion model or timed-out/cancelled detection leaves DFA and entropy masking active and reports degraded coverage."
+    },
+    {
+      "test_name": "pii_span_rpc_obeys_client_deadline",
+      "description": "The authenticated client enforces its configured deadline on the PII span RPC."
+    },
+    {
+      "test_name": "overlapping_ner_and_dfa_masks_are_combined_and_existing_marker_is_idempotent",
+      "description": "Overlapping detector spans merge, and already-issued markers remain intact under repeated or overbroad spans."
+    },
+    {
+      "test_name": "issued_marker_scan_is_bounded_with_many_entries_and_unrelated_text",
+      "description": "Issued-marker preservation uses a bounded prefix scan with many vault entries and unrelated text."
+    },
+    {
+      "test_name": "worker_incarnation_changes_across_process_owners",
+      "description": "Worker health process incarnations differ across process owners."
+    },
+    {
+      "test_name": "worker_restart_changes_cache_identity_even_for_same_model_digest_and_generation",
+      "description": "A restart produces a different model cache identity even when digest and generation are unchanged."
+    },
+    {
+      "test_name": "real_pii_model_returns_bounded_raw_utf8_spans",
+      "description": "Ignored artifact-backed acceptance test; it requires a pinned local PII model and ONNX Runtime and has not been run."
+    }
+  ],
+  "dependencies": [
+    "polaris-system-one-engine",
+    "polaris-system-one-client",
+    "polaris-worker",
+    "polaris-security-pii",
+    "polaris-proto"
+  ],
+  "libraries": [
+    "gliner2-rs",
+    "ort"
+  ],
+  "inputs": [
+    {
+      "name": "raw_text",
+      "type": "UTF-8 text",
+      "description": "Bounded local text before Decide normalization; never written to logs or serialized outside the authenticated local worker transport."
+    },
+    {
+      "name": "spans",
+      "type": "PiiEntitySpan[]",
+      "description": "Half-open byte ranges and confidence values; the wire response carries no matched text or model labels."
+    }
+  ],
+  "output_type": "Result<Masked,PiiError>",
+  "output_description": "Reversible bounded output with truthful NER coverage status; unavailable detection falls back to deterministic DFA and entropy masking."
+}

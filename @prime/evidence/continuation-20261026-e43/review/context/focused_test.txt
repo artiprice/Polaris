@@ -1,0 +1,20 @@
+ARGV: cargo test -p polaris-runtime-context --lib
+EXIT: 0
+RAW OUTPUT:
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Finished `test` profile [unoptimized] target(s) in 1.97s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_context-61721459e9914f3b.exe)
+
+running 8 tests
+test assemble::lossless_window_tests::archive_byte_cap_fails_assembly_without_claiming_recovery ... ok
+test assemble::lossless_window_tests::archive_reference_is_exposed_by_context_map ... ok
+test assemble::lossless_window_tests::archive_cid_version_and_message_count_are_validated ... ok
+test assemble::lossless_window_tests::malformed_archived_tool_group_is_rejected ... ok
+test assemble::lossless_window_tests::identical_omitted_windows_produce_identical_archive_references ... ok
+test assemble::lossless_window_tests::archive_metadata_tampering_is_rejected_on_recovery ... ok
+test assemble::lossless_window_tests::omitted_messages_are_archived_with_full_structured_metadata ... ok
+test assemble::lossless_window_tests::tool_call_groups_are_archived_and_retained_atomically ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+

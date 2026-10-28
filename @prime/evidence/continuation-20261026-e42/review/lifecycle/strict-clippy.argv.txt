@@ -1,0 +1,4 @@
+argv: cargo clippy -p polaris-models --test lifecycle_contract --test eviction_manager_contract -- -D warnings
+working_directory: C:\mDev\Polaris
+shell: powershell (login=false)
+exit_code: 0

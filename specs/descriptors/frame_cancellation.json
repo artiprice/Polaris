@@ -1,0 +1,53 @@
+{
+  "type_of": "pipeline",
+  "name": "FrameCancellationService",
+  "file_path": "crates/polaris-kernel/src/frame_cancellation.rs",
+  "logic_name": "Actual frame-tree cancellation",
+  "test_list": [
+    {
+      "test_name": "frame_cancellation_requires_actual_registered_parent",
+      "description": "frame cancellation requires actual registered parent."
+    },
+    {
+      "test_name": "frame_cancellation_cancels_target_descendants_only",
+      "description": "frame cancellation cancels target descendants only."
+    },
+    {
+      "test_name": "frame_cancellation_rejects_collisions_stale_and_invalid_authority",
+      "description": "frame cancellation rejects collisions stale and invalid authority."
+    },
+    {
+      "test_name": "frame_cancellation_rehydrates_pending_and_terminal_states",
+      "description": "frame cancellation rehydrates pending and terminal states."
+    },
+    {
+      "test_name": "frame_cancellation_cancel_race_is_idempotent_and_durable",
+      "description": "frame cancellation cancel race is idempotent and durable."
+    },
+    {
+      "test_name": "cancelling_ancestor_after_child_replays_without_reviving_any_frame",
+      "description": "cancelling ancestor after child replays without reviving any frame."
+    }
+  ],
+  "dependencies": [
+    "KernelCtx",
+    "FrameToolBinding",
+    "FrameCancellationVerifier",
+    "HumanRequestService"
+  ],
+  "libraries": [
+    "serde",
+    "serde_json",
+    "tokio",
+    "tokio-util"
+  ],
+  "inputs": [
+    {
+      "name": "command",
+      "type": "Command<Verified>",
+      "description": "Host-root CancelFrame command with a dedicated exact-target approval witness."
+    }
+  ],
+  "output_type": "Result<FrameCancellationOutcome, FrameCancellationError>",
+  "output_description": "Durable bounded membership and cancellation receipts, canonical subtree signals, shared session ownership and no upward cancellation."
+}

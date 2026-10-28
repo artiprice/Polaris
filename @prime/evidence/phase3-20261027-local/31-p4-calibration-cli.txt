@@ -1,0 +1,11 @@
+   Compiling xtask v0.1.0-alpha (C:\mDev\Polaris\xtask)
+    Finished `test` profile [unoptimized] target(s) in 2.40s
+     Running tests\calibration.rs (target\debug\deps\calibration-5942a757849c4f08.exe)
+
+running 3 tests
+test runner_refuses_incomplete_observations_and_unmet_precision ... ok
+test calibration_cli_requires_explicit_unique_options ... ok
+test runner_hashes_exact_joined_inputs_and_refuses_clobber ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

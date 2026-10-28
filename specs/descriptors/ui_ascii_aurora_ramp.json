@@ -1,0 +1,56 @@
+{
+  "type_of": "function",
+  "name": "ramp::glyph_index / ramp::tile_levels",
+  "file_path": "crates/polaris-ui/crates/ascii-aurora/src/ramp.rs",
+  "logic_name": "Aurora Glyph Ramp",
+  "test_list": [
+    {
+      "test_name": "ramp_is_thirteen_unique_glyphs",
+      "description": "RAMP holds 13 distinct characters and starts with a space."
+    },
+    {
+      "test_name": "ramp_ink_monotonic_along_ramp",
+      "description": "Total baked ink coverage never decreases along RAMP for the real JetBrains Mono font."
+    },
+    {
+      "test_name": "zero_luminance_is_space",
+      "description": "Luminance 0 maps to index 0 which is the space glyph."
+    },
+    {
+      "test_name": "out_of_range_and_nan_clamp",
+      "description": "Negative, above-one, infinite and NaN luminance clamp to valid indices (NaN and negatives to space, above one to the densest glyph)."
+    },
+    {
+      "test_name": "prop_glyph_index_below_ramp_len",
+      "description": "For any f32 the index is below the ramp length."
+    },
+    {
+      "test_name": "glyph_index_is_monotonic",
+      "description": "The glyph index never decreases when luminance increases."
+    },
+    {
+      "test_name": "top_band_is_inverted",
+      "description": "tile_levels flags luminance >= 0.86 as inverted with a bright tile (~0.85) and dark glyph (~0.12); lower luminance is not inverted."
+    },
+    {
+      "test_name": "tile_levels_follow_spec_curve",
+      "description": "Tile background is 0 below 0.45, about 0.18 at 0.8, and glyph foreground rises from ~0.35 towards ~0.95 at 0.85."
+    }
+  ],
+  "dependencies": [
+    "crate::atlas::GlyphAtlas",
+    "crate::params"
+  ],
+  "libraries": [
+    "proptest (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "luminance",
+      "type": "f32",
+      "description": "Field luminance, any float (clamped internally)."
+    }
+  ],
+  "output_type": "usize / (f32, f32, bool)",
+  "output_description": "Ramp index, or (tile background level, glyph foreground level, inverted flag)."
+}

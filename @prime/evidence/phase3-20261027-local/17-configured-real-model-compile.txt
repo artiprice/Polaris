@@ -1,0 +1,5 @@
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 17.79s
+  Executable tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)

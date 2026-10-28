@@ -1,0 +1,79 @@
+   Compiling tonic v0.14.6
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+error[E0425]: cannot find function `validate_health_response` in module `super`
+   --> crates\polaris-system-one\crates\client\src\lib.rs:787:27
+    |
+445 | fn validate_response(schema: &[Question], decision: &Decision) -> Result<(), DecisionError> {
+    | ------------------------------------------------------------------------------------------- similarly named function `validate_response` defined here
+...
+787 |         assert_eq!(super::validate_health_response(response), Ok(false));
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: a function with a similar name exists
+    |
+787 -         assert_eq!(super::validate_health_response(response), Ok(false));
+787 +         assert_eq!(super::validate_response(response), Ok(false));
+    |
+
+error[E0425]: cannot find function `validate_health_response` in module `super`
+   --> crates\polaris-system-one\crates\client\src\lib.rs:797:24
+    |
+445 | fn validate_response(schema: &[Question], decision: &Decision) -> Result<(), DecisionError> {
+    | ------------------------------------------------------------------------------------------- similarly named function `validate_response` defined here
+...
+797 |         assert!(super::validate_health_response(missing).is_err());
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: a function with a similar name exists
+    |
+797 -         assert!(super::validate_health_response(missing).is_err());
+797 +         assert!(super::validate_response(missing).is_err());
+    |
+
+error[E0425]: cannot find function `validate_health_response` in module `super`
+   --> crates\polaris-system-one\crates\client\src\lib.rs:804:24
+    |
+445 | fn validate_response(schema: &[Question], decision: &Decision) -> Result<(), DecisionError> {
+    | ------------------------------------------------------------------------------------------- similarly named function `validate_response` defined here
+...
+804 |         assert!(super::validate_health_response(incompatible).is_err());
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: a function with a similar name exists
+    |
+804 -         assert!(super::validate_health_response(incompatible).is_err());
+804 +         assert!(super::validate_response(incompatible).is_err());
+    |
+
+error[E0599]: no method named `is_ready` found for struct `S1Client` in the current scope
+   --> crates\polaris-system-one\crates\client\src\lib.rs:811:24
+    |
+ 68 | pub struct S1Client {
+    | ------------------- method `is_ready` not found for this struct
+...
+811 |         assert!(client.is_ready().await.is_err());
+    |                        ^^^^^^^^ method not found in `S1Client`
+
+error[E0599]: no method named `is_ready` found for struct `S1Client` in the current scope
+   --> crates\polaris-system-one\crates\client\src\lib.rs:824:31
+    |
+ 68 | pub struct S1Client {
+    | ------------------- method `is_ready` not found for this struct
+...
+824 |             assert_eq!(client.is_ready().await?, expected_ready);
+    |                               ^^^^^^^^ method not found in `S1Client`
+
+error[E0599]: no method named `is_ready` found for struct `S1Client` in the current scope
+   --> crates\polaris-system-one\crates\client\src\lib.rs:846:28
+    |
+ 68 | pub struct S1Client {
+    | ------------------- method `is_ready` not found for this struct
+...
+846 |             assert!(client.is_ready().await.is_err());
+    |                            ^^^^^^^^ method not found in `S1Client`
+
+Some errors have detailed explanations: E0425, E0599.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `polaris-system-one-client` (lib test) due to 6 previous errors

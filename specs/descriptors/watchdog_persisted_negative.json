@@ -1,0 +1,22 @@
+{
+  "type_of": "method",
+  "name": "Persisted watchdog negative evaluation",
+  "file_path": "crates/polaris-system-one/crates/watchdog/src/inspect.rs",
+  "logic_name": "Match exact rejected hypothesis fingerprints retained outside the recent shingle window",
+  "test_list": [
+    {
+      "test_name": "persisted_negative_fingerprint_is_checked_after_recent_window_eviction",
+      "description": "A frame-bound rejected hypothesis remains detectable after its recent step record is evicted."
+    }
+  ],
+  "dependencies": ["polaris-system-one-watchdog", "polaris-system-one-schemas"],
+  "inputs": [
+    {
+      "name": "negative_constraints",
+      "type": "Vec<NegativeConstraint>",
+      "description": "Bounded frame-local fingerprints from independently rejected proposals."
+    }
+  ],
+  "output_type": "HealthVerdict::Loop or another advisory verdict",
+  "output_description": "The exact rejected hypothesis is surfaced as advisory repetition evidence."
+}

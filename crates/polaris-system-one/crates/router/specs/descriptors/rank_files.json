@@ -1,0 +1,21 @@
+{
+  "type_of": "async_function",
+  "name": "Router::rank_files",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "File Triage",
+  "test_list": [
+    {"test_name": "rank_files_caps_s1_candidates", "description": "Only the configured lexical shortlist is submitted to S1."},
+    {"test_name": "rank_files_keeps_lexical_order_on_timeout", "description": "An S1 outage returns deterministic lexical fallback scores."},
+    {"test_name": "rank_files_scores_in_unit_range", "description": "All scores remain valid probabilities."},
+    {"test_name": "rank_files_stable_on_ties_and_rejects_duplicates", "description": "Ties are path ordered and duplicate or oversized paths are rejected."}
+  ],
+  "dependencies": ["DecisionEngine", "SchemaCatalog", "RouterConfig"],
+  "libraries": ["thiserror", "tokio"],
+  "inputs": [
+    {"name": "query", "type": "&str", "description": "Bounded file relevance query."},
+    {"name": "files", "type": "&[FileCandidate]", "description": "Caller-generated paths, excerpts, and lexical scores."},
+    {"name": "k", "type": "TopK", "description": "Nonzero maximum output length."}
+  ],
+  "output_type": "Result<Vec<Ranked<PathBuf>>, RouterError>",
+  "output_description": "A deterministic, bounded ranking of unique paths supplied by the caller."
+}

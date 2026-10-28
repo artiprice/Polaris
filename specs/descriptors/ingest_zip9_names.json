@@ -1,0 +1,16 @@
+{
+  "type_of": "pipeline",
+  "name": "ooxml_zip9_names",
+  "file_path": "crates/polaris-ingest/src/parsers.rs",
+  "logic_name": "Fallible OOXML Archive Names",
+  "test_list": [
+    {"test_name": "generated_docx_is_parsed_without_fabricated_line_provenance", "description": "Preserve DOCX extraction with image previews disabled and ZIP9."},
+    {"test_name": "generated_xlsx_and_pptx_are_parsed_by_their_real_readers", "description": "Preserve real spreadsheet and presentation extraction through fallible ZIP9 names."},
+    {"test_name": "normal_archive_passes_and_hostile_archives_are_rejected", "description": "Retain traversal, duplicate and expansion assertions; reject a member name containing NUL after corrupting both local and central names."}
+  ],
+  "dependencies": ["archive::validate", "IngestLimits"],
+  "libraries": ["zip", "docx-rs"],
+  "inputs": [{"name": "archive", "type": "&[u8]", "description": "Untrusted OOXML bytes."}],
+  "output_type": "Result<IngestedDocument, IngestError>",
+  "output_description": "Decode every archive name fallibly before classification or XML traversal; propagate malformed-name errors and retain existing parser bounds."
+}

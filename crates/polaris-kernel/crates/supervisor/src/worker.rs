@@ -34,6 +34,8 @@ pub trait HealthProbe: Send + Sync {
 }
 
 /// Limits for a worker's health checks, independent of process-exit polling.
+///
+/// Startup initialization uses its separately supplied startup deadline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HealthPolicy {
     /// Delay between checks; must be positive.
@@ -42,7 +44,161 @@ pub struct HealthPolicy {
     pub timeout: Duration,
 }
 
+/// Startup and generation retirement for a worker with a real health transport.
+///
+/// Initialization runs once for every spawned process, before any health probe. Implementors
+/// must publish a usable connection only after bootstrap and protocol validation succeed.
+/// Retirement must synchronously revoke only the matching generation; it runs on normal exit,
+/// startup failure, cancellation, and task abort. It must not block, panic, or disclose secrets.
+pub trait WorkerLifecycle: HealthProbe {
+    /// Initialize this exact owned process before health monitoring starts.
+    fn initialize(
+        &self,
+        tree: ProcessTree,
+    ) -> impl std::future::Future<Output = Result<(), TaskError>> + Send;
+
+    /// Revoke a matching published connection without revoking a newer generation.
+    fn retire(&self, tree: ProcessTree);
+}
+
 impl<S: EventStore + 'static> Supervisor<S> {
+    /// Supervise an initialized worker with startup, health, and process ownership kept together.
+    ///
+    /// Each restart gets a new initialization call. The process guard is installed before the
+    /// initializer is polled, and the retirement guard invalidates its connection before the
+    /// process guard's emergency stop. A cleanup deadline is not proof of OS termination; an
+    /// unconfirmed stop is fatal and cannot trigger another automatic process generation.
+    ///
+    /// # Errors
+    /// Rejects zero polling/health/startup limits, startup or stop grace above 120 seconds, and
+    /// normal supervisor registration failures.
+    pub fn spawn_worker_with_lifecycle<P, L>(
+        &self,
+        platform: Arc<P>,
+        spec: WorkerSpec,
+        lifecycle: Arc<L>,
+        policy: HealthPolicy,
+        startup_timeout: Duration,
+    ) -> Result<crate::task::ChildId, SupervisorError>
+    where
+        P: PlatformOps + 'static,
+        L: WorkerLifecycle + 'static,
+    {
+        if spec.poll_interval.is_zero()
+            || policy.interval.is_zero()
+            || policy.timeout.is_zero()
+            || startup_timeout.is_zero()
+            || startup_timeout > Duration::from_secs(120)
+            || spec.stop_grace > Duration::from_secs(120)
+        {
+            return Err(SupervisorError::Config(
+                "invalid initialized worker deadlines",
+            ));
+        }
+        let task = spec.task;
+        self.spawn_task(task, move |cancellation| {
+            let platform = Arc::clone(&platform);
+            let lifecycle = Arc::clone(&lifecycle);
+            let spec = spec.clone();
+            async move {
+                let tree = platform
+                    .spawn_tree(&spec.process)
+                    .map_err(worker_platform_error)?;
+                let mut process_guard = WorkerProcessGuard::new(Arc::clone(&platform), tree);
+                let mut generation_guard = WorkerGenerationGuard {
+                    lifecycle: Arc::clone(&lifecycle),
+                    tree,
+                    armed: true,
+                };
+                let initialized = tokio::select! {
+                    biased;
+                    () = cancellation.cancelled() => None,
+                    result = tokio::time::timeout(startup_timeout, lifecycle.initialize(tree)) => {
+                        Some(match result {
+                            Ok(result) => result,
+                            Err(_) => Err(TaskError::transient("worker initialization timed out")),
+                        })
+                    }
+                };
+                match initialized {
+                    None => {
+                        generation_guard.retire();
+                        stop_owned_worker(
+                            platform.as_ref(),
+                            tree,
+                            spec.stop_grace,
+                            &mut process_guard,
+                        )
+                        .await?;
+                        return Ok(());
+                    }
+                    Some(Err(error)) => {
+                        generation_guard.retire();
+                        stop_owned_worker(
+                            platform.as_ref(),
+                            tree,
+                            spec.stop_grace,
+                            &mut process_guard,
+                        )
+                        .await?;
+                        return Err(error);
+                    }
+                    Some(Ok(())) => {}
+                }
+                let outcome = {
+                    let worker = monitor_worker(
+                        Arc::clone(&platform),
+                        tree,
+                        cancellation.clone(),
+                        spec.poll_interval,
+                        spec.stop_grace,
+                        &mut process_guard,
+                    );
+                    tokio::select! {
+                        biased;
+                        () = cancellation.cancelled() => None,
+                        result = worker => Some(Ok(result)),
+                        failure = health_failure(lifecycle.as_ref(), tree, policy) => Some(Err(failure)),
+                    }
+                };
+                generation_guard.retire();
+                match outcome {
+                    None => {
+                        stop_owned_worker(
+                            platform.as_ref(),
+                            tree,
+                            spec.stop_grace,
+                            &mut process_guard,
+                        )
+                        .await
+                    }
+                    Some(Ok(result)) => {
+                        if process_guard.armed {
+                            stop_owned_worker(
+                                platform.as_ref(),
+                                tree,
+                                spec.stop_grace,
+                                &mut process_guard,
+                            )
+                            .await?;
+                        }
+                        result
+                    }
+                    Some(Err(failure)) => {
+                        stop_owned_worker(
+                            platform.as_ref(),
+                            tree,
+                            spec.stop_grace,
+                            &mut process_guard,
+                        )
+                        .await?;
+                        Err(failure)
+                    }
+                }
+            }
+        })
+    }
+
     /// Supervise a native worker with a real, caller-injected responsiveness probe.
     /// A failed or timed-out probe terminates the exact owned tree before the restart policy runs.
     /// The caller's in-flight protocol requests observe that transport closure.
@@ -158,6 +314,47 @@ impl<S: EventStore + 'static> Supervisor<S> {
     }
 }
 
+struct WorkerGenerationGuard<L: WorkerLifecycle> {
+    lifecycle: Arc<L>,
+    tree: ProcessTree,
+    armed: bool,
+}
+
+impl<L: WorkerLifecycle> WorkerGenerationGuard<L> {
+    fn retire(&mut self) {
+        if self.armed {
+            self.armed = false;
+            self.lifecycle.retire(self.tree);
+        }
+    }
+}
+
+impl<L: WorkerLifecycle> Drop for WorkerGenerationGuard<L> {
+    fn drop(&mut self) {
+        self.retire();
+    }
+}
+
+async fn stop_owned_worker<P: PlatformOps>(
+    platform: &P,
+    tree: ProcessTree,
+    grace: Duration,
+    guard: &mut WorkerProcessGuard<P>,
+) -> Result<(), TaskError> {
+    let budget = grace
+        .checked_add(Duration::from_millis(100))
+        .ok_or_else(|| TaskError::fatal("worker cleanup deadline overflow"))?;
+    match tokio::time::timeout(budget, platform.graceful_stop(&tree, grace)).await {
+        Ok(Ok(_)) | Ok(Err(PlatformError::NotFound(_))) => {
+            guard.disarm();
+            Ok(())
+        }
+        Ok(Err(_)) | Err(_) => Err(TaskError::fatal(
+            "worker cleanup did not confirm termination",
+        )),
+    }
+}
+
 async fn health_failure<H: HealthProbe>(
     health: &H,
     tree: ProcessTree,
@@ -185,19 +382,12 @@ async fn monitor_worker<P: PlatformOps + 'static>(
         tokio::select! {
             biased;
             () = cancellation.cancelled() => {
-                match platform.graceful_stop(&tree, stop_grace).await {
-                    Ok(_) | Err(PlatformError::NotFound(_)) => {
-                        process_guard.disarm();
-                        return Ok(());
-                    }
-                    Err(_) => match platform.graceful_stop(&tree, Duration::ZERO).await {
-                        Ok(_) | Err(PlatformError::NotFound(_)) => {
-                            process_guard.disarm();
-                            return Ok(());
-                        }
-                        Err(error) => return Err(worker_platform_error(error)),
-                    },
-                }
+                return stop_owned_worker(
+                    platform.as_ref(),
+                    tree,
+                    stop_grace,
+                    process_guard,
+                ).await;
             }
             () = tokio::time::sleep(poll_interval) => {
                 match platform.try_wait_tree(&tree).await {
@@ -206,6 +396,13 @@ async fn monitor_worker<P: PlatformOps + 'static>(
                         return worker_exit(exit.code);
                     }
                     Ok(None) => {}
+                      Err(PlatformError::NotFound(_)) => {
+                          // This exact tree was spawned by this monitor. The adapter's
+                          // emergency kill path may already have retired its record;
+                          // restart policy still governs replacement of that generation.
+                          process_guard.disarm();
+                          return Err(TaskError::transient("owned worker process record was retired"));
+                      }
                     Err(error) => return Err(worker_platform_error(error)),
                 }
             }

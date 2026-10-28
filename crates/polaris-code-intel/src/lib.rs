@@ -26,6 +26,7 @@
 //!
 //! Test-first descriptors: `specs/descriptors/codeintel_*.json`.
 
+mod ast_pattern;
 mod decl;
 mod error;
 mod graph;
@@ -41,6 +42,7 @@ mod walk;
 #[cfg(feature = "kani")]
 mod kani_proofs;
 
+pub use ast_pattern::{MAX_AST_PATTERN_NODES, validate_ast_pattern};
 pub use decl::{SymbolKind, SymbolRef};
 pub use error::CodeIntelError;
 pub use graph::SymbolGraph;

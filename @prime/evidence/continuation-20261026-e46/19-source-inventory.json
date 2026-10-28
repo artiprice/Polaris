@@ -1,0 +1,12 @@
+{
+  "name": "source-inventory",
+  "argv": [
+    "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+    "-I",
+    "@prime/tmp/p2/inventory_phase_sources.py"
+  ],
+  "started_utc": "2026-10-26T22:38:48.908549+00:00",
+  "elapsed_seconds": 1.502,
+  "exit_code": 0,
+  "raw": "19-source-inventory.txt"
+}

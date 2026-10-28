@@ -4,5 +4,5 @@ PASS: all 52 named PHASES.md tasks covered, plus 13 spikes and 2 explicit P2 int
 PASS: all phase percentage arithmetic recomputed from recorded estimates.
 PASS: all local Markdown link targets exist.
 PASS: inventory/estimate/report snapshot and source fingerprint agree.
-INVENTORY: 1110 source/config/spec files; 691 Rust files.
+INVENTORY: 1350 source/config/spec files; 816 Rust files.
 LIMIT: percentages are labeled engineering estimates; this validates report consistency, not product correctness.

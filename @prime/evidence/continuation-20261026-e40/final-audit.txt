@@ -1,0 +1,4 @@
+PASS: 323 final input hashes still match.
+PASS: Only declared SDK/advisory/vet gate failures remain.
+PASS: Six unmaintained findings, zero vulnerability findings in cached-RustSec output; 804 unvetted dependencies.
+PASS: Every E40 README local link resolves.

@@ -1,0 +1,16 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 8.34s
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-2bf63b2bc12983d8.exe)
+
+running 1 test
+Error: Unavailable("OpenShell gateway connection exceeded the 10 second startup deadline")
+test configured_test_tool_waits_for_host_then_proves_actual_source ... FAILED
+
+failures:
+
+failures:
+    configured_test_tool_waits_for_host_then_proves_actual_source
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 12.31s
+
+error: test failed, to rerun pass `-p polaris-kernel --test agent_tools`

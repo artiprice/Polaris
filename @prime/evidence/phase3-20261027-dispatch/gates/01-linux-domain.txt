@@ -1,0 +1,2 @@
+/mnt/c/mDev/Polaris/@prime/tmp/p2/verify_p3_dispatch_linux.sh: line 2: set: pipefail: invalid option name
+error: invalid character `` in package name: `polaris-spike-ratelimit`, characters must be Unicode XID characters (numbers, `-`, `_`, or most letters)

@@ -20,7 +20,8 @@
 //!
 //! The keyring adapter and environment reader implement the SDK's [`SecretSource`] registry
 //! contract. Environment values are read only; writes and deletes are rejected. The in-memory
-//! session key is ephemeral, and the vault's encryption only protects values from accidental
+//! default session key is ephemeral; explicit recovery reads a host-configured key source without
+//! writing or replacing it. The vault's encryption only protects values from accidental
 //! plaintext retention; it does not defend against an attacker executing in the same process.
 
 mod error;

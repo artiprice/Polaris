@@ -1,0 +1,372 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling serde_core v1.0.229
+   Compiling quote v1.0.47
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling zeroize_derive v1.5.0
+   Compiling serde_derive v1.0.229
+   Compiling zeroize v1.9.1
+   Compiling futures-macro v0.3.34
+   Compiling futures-util v0.3.34
+   Compiling bytes v1.12.1
+   Compiling tokio-macros v2.7.2
+   Compiling jiff v0.2.38
+   Compiling tokio v1.54.1
+   Compiling serde_json v1.0.154
+   Compiling tokio-util v0.7.20
+   Compiling thiserror-impl v2.0.21
+   Compiling uuid v1.28.0
+   Compiling secrecy v0.10.3
+   Compiling rustix v1.1.5
+   Compiling thiserror v2.0.21
+   Compiling polaris-sdk v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-sdk)
+   Compiling tracing-attributes v0.1.31
+   Compiling indexmap v2.14.2
+   Compiling http v1.5.0
+   Compiling synstructure v0.14.0
+   Compiling tracing v0.1.44
+   Compiling arrayvec v0.7.8
+   Compiling http-body v1.1.0
+   Compiling rustls-pki-types v1.15.1
+   Compiling zerovec-derive v0.11.6
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerofrom v0.1.8
+   Compiling tempfile v3.27.0
+   Compiling displaydoc v0.2.7
+   Compiling yoke v0.8.3
+   Compiling zerovec v0.11.8
+   Compiling aws-lc-rs v1.18.2
+   Compiling rustls-webpki v0.103.16
+   Compiling generic-array v0.14.9
+   Compiling rustls v0.23.46
+   Compiling tinystr v0.8.4
+   Compiling h2 v0.4.20
+   Compiling blake3 v1.8.7
+   Compiling hyper v1.12.0
+   Compiling icu_locale_core v2.3.0
+   Compiling potential_utf v0.1.6
+   Compiling zerotrie v0.2.5
+   Compiling http-body-util v0.1.5
+   Compiling rustls-native-certs v0.8.5
+   Compiling icu_provider v2.3.1
+   Compiling hyper-util v0.1.21
+   Compiling icu_collections v2.3.0
+   Compiling tower v0.5.3
+   Compiling tokio-rustls v0.26.6
+   Compiling serde_spanned v1.1.2
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling toml v1.1.8+spec-1.1.0
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling prost-derive v0.14.4
+   Compiling icu_normalizer v2.3.0
+   Compiling icu_properties v2.3.0
+   Compiling gix-tempfile v26.0.0
+   Compiling async-trait v0.1.92
+   Compiling chrono v0.4.45
+   Compiling idna_adapter v1.2.2
+   Compiling gix-date v0.18.0
+   Compiling gix-actor v0.44.0
+   Compiling idna v1.1.0
+   Compiling bytemuck_derive v1.12.1
+   Compiling gix-object v0.66.0
+   Compiling url v2.5.8
+   Compiling tokio-stream v0.1.19
+   Compiling bytemuck v1.25.2
+   Compiling serde_urlencoded v0.7.1
+   Compiling axum-core v0.5.6
+   Compiling hyper-rustls v0.27.10
+   Compiling futures-executor v0.3.34
+   Compiling pin-project-internal v1.1.13
+   Compiling axum v0.8.9
+   Compiling polaris-config v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-config)
+   Compiling futures v0.3.34
+   Compiling hyper-timeout v0.5.2
+   Compiling thiserror-impl v1.0.69
+   Compiling pin-project v1.1.13
+   Compiling tonic v0.14.6
+   Compiling thiserror v1.0.69
+   Compiling prost v0.14.4
+   Compiling prettyplease v0.2.37
+   Compiling tower-http v0.6.11
+   Compiling gix-lock v26.0.0
+   Compiling prost-types v0.14.4
+   Compiling sha2 v0.10.9
+   Compiling prost-build v0.14.4
+   Compiling polaris-code-intel v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-code-intel)
+   Compiling der v0.7.10
+   Compiling tonic-build v0.14.6
+   Compiling tonic-prost v0.14.6
+   Compiling chacha20 v0.10.2
+   Compiling spdlog-macros v0.3.1
+   Compiling tonic-prost-build v0.14.6
+   Compiling spki v0.7.3
+   Compiling atomic v0.6.1
+   Compiling tracing-serde v0.2.0
+   Compiling enumflags2_derive v0.7.12
+   Compiling spdlog-rs v0.5.3
+   Compiling serdect v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-revwalk v0.37.0
+   Compiling pkcs8 v0.10.2
+   Compiling zvariant_utils v4.2.0
+   Compiling event-listener v5.4.2
+   Compiling polaris-security-automata v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/automata)
+   Compiling concurrent-queue v2.5.0
+   Compiling event-listener-strategy v0.5.4
+   Compiling polaris-storage-cas v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/cas)
+   Compiling polaris-log v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-log)
+   Compiling zvariant_derive v5.15.1
+   Compiling sec1 v0.7.3
+   Compiling string_cache_codegen v0.6.1
+   Compiling futures-lite v2.6.1
+   Compiling signature v2.2.0
+   Compiling crypto-bigint v0.5.5
+   Compiling new_debug_unreachable v1.0.6
+   Compiling endi v1.1.1
+   Compiling web_atoms v0.2.6
+   Compiling elliptic-curve v0.13.8
+   Compiling icu_locale_fallback v2.3.0
+   Compiling syn v1.0.109
+   Compiling gix-traverse v0.63.0
+   Compiling rand v0.10.3
+   Compiling phf_macros v0.13.1
+   Compiling gix-ref v0.69.0
+   Compiling hmac v0.12.1
+   Compiling async-io v2.6.0
+   Compiling serde_repr v0.1.21
+   Compiling precomputed-hash v0.1.1
+   Compiling string_cache v0.9.0
+   Compiling gix-index v0.57.0
+   Compiling prost-derive v0.10.1
+   Compiling rfc6979 v0.4.0
+   Compiling phf v0.13.1
+   Compiling icu_segmenter v2.3.0
+   Compiling enumflags2 v0.7.12
+   Compiling zcheapstr v1.1.0
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling polling v3.11.0
+   Compiling link-cplusplus v1.0.12
+   Compiling ref-cast-impl v1.0.27
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling async-task v4.7.1
+   Compiling const-oid v0.10.2
+   Compiling scratch v1.0.9
+   Compiling curve25519-dalek v4.1.3
+   Compiling digest v0.11.3
+   Compiling ref-cast v1.0.27
+   Compiling reqwest v0.13.5
+   Compiling zvariant v5.15.1
+   Compiling gix-worktree v0.58.0
+   Compiling prost v0.10.4
+   Compiling textwrap v0.16.4
+   Compiling ecdsa v0.16.9
+   Compiling primeorder v0.13.6
+   Compiling tendril v0.5.1
+   Compiling ed25519 v2.2.3
+   Compiling async-channel v2.5.0
+   Compiling digest v0.9.0
+   Compiling block-buffer v0.9.0
+   Compiling terminal_size v0.4.4
+   Compiling serde_path_to_error v0.1.20
+   Compiling async-stream-impl v0.3.6
+   Compiling miette-derive v7.6.0
+   Compiling cxxbridge-flags v1.0.205
+   Compiling termcolor v1.4.1
+   Compiling noyalib v0.0.53
+   Compiling miette v7.6.0
+   Compiling codespan-reporting v0.13.1
+   Compiling cxx v1.0.205
+   Compiling sha2 v0.9.9
+   Compiling async-stream v0.3.6
+   Compiling ed25519-dalek v2.2.0
+   Compiling markup5ever v0.38.0
+   Compiling p256 v0.13.2
+   Compiling prost-types v0.10.1
+   Compiling zbus_names v4.3.5
+   Compiling async-signal v0.2.14
+   Compiling biscuit-parser v0.2.0
+   Compiling gix-filter v0.36.0
+   Compiling async-lock v3.4.2
+   Compiling piper v0.2.5
+   Compiling polaris-ratelimit v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ratelimit)
+   Compiling numkong v7.8.5
+   Compiling darling_core v0.24.1
+   Compiling biscuit-auth v6.0.0 (/mnt/c/mDev/Polaris/vendor/biscuit-auth)
+   Compiling serde-saphyr v2.0.0
+   Compiling async-process v2.5.0
+   Compiling blocking v1.7.0
+   Compiling fs-set-times v0.20.3
+   Compiling cxx-build v1.0.205
+   Compiling zbus_macros v5.19.0
+   Compiling openshell-policy-schema v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling hmac v0.13.0
+   Compiling async-executor v1.14.0
+   Compiling gix-discover v0.57.0
+   Compiling async-broadcast v0.7.2
+   Compiling openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling reqwest v0.12.28
+   Compiling sha1 v0.10.7
+   Compiling safe_arch v1.2.0
+   Compiling polaris-system-one-schemas v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/schemas)
+   Compiling gix-imara-diff v0.3.1
+   Compiling uluru v3.1.0
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling ordered-stream v0.2.0
+   Compiling async-recursion v1.2.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling bollard-buildkit-proto v0.8.1
+   Compiling cpubits v0.1.1
+   Compiling aes v0.9.3
+   Compiling cap-primitives v4.0.3
+   Compiling tungstenite v0.26.2
+   Compiling schemars_derive v1.2.3
+   Compiling zbus v5.19.0
+   Compiling gix-pack v0.76.0
+   Compiling gix-diff v0.69.0
+   Compiling wide v1.7.1
+   Compiling gix-dir v0.31.0
+   Compiling hkdf v0.13.0
+   Compiling usearch v2.26.5
+   Compiling ahash v0.8.12
+   Compiling polaris-security-capability v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/capability)
+   Compiling darling_macro v0.24.1
+   Compiling html5ever v0.38.0
+   Compiling xml5ever v0.38.0
+   Compiling sha2 v0.11.1
+   Compiling gix-config v0.62.0
+   Compiling polaris-tools-rtk v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools/crates/rtk)
+   Compiling polaris-proto v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-proto)
+   Compiling tonic-types v0.14.6
+   Compiling gix-shallow v0.15.0
+   Compiling openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling cbc v0.2.1
+   Compiling rustls-pemfile v2.2.0
+   Compiling cxxbridge-macro v1.0.205
+   Compiling gix-macros v0.2.0
+   Compiling unicode-general-category v1.1.0
+   Compiling jsonschema-value v0.59.0
+   Compiling bit-vec v0.8.0
+   Compiling borrow-or-share v0.2.4
+   Compiling fluent-uri v0.4.1
+   Compiling bit-set v0.8.0
+   Compiling gix-worktree-state v0.36.0
+   Compiling gix-protocol v0.67.0
+   Compiling simba v0.10.2
+   Compiling gix-submodule v0.36.0
+   Compiling secret-service v5.2.0
+   Compiling markup5ever_rcdom v0.38.0+unofficial
+   Compiling darling v0.24.1
+   Compiling gix-status v0.36.0
+   Compiling gix-odb v0.86.0
+   Compiling schemars v1.2.3
+   Compiling tokio-tungstenite v0.26.2
+   Compiling cap-std v4.0.3
+   Compiling oauth2 v5.0.0
+   Compiling gix-revision v0.51.0
+   Compiling universal-hash v0.6.1
+   Compiling fraction v0.17.0
+   Compiling strum_macros v0.28.0
+   Compiling keyring-core v1.0.1
+   Compiling bytecount v0.6.9
+   Compiling num-cmp v0.1.0
+   Compiling vsimd v0.8.0
+   Compiling rmcp v3.5.1
+   Compiling micromap v0.3.0
+   Compiling either v1.19.0
+   Compiling outref v0.5.2
+   Compiling uuid-simd v0.8.0
+   Compiling rayon v1.12.0
+   Compiling referencing v0.59.0
+   Compiling strum v0.28.0
+   Compiling zbus-secret-service-keyring-store v1.0.1
+   Compiling poly1305 v0.9.1
+   Compiling gix v0.89.0
+   Compiling openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling process-wrap v10.0.1
+   Compiling polaris-telemetry v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-telemetry)
+   Compiling rmcp-macros v3.7.0
+   Compiling htmd v0.5.6
+   Compiling nalgebra v0.35.0
+   Compiling fancy-regex v0.19.2
+   Compiling polaris-storage-sync v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/sync)
+   Compiling polaris-openshell-policy v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/policy)
+   Compiling hyperlocal v0.9.1
+   Compiling filedescriptor v0.8.3
+   Compiling polaris-models v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-models)
+   Compiling aead v0.6.1
+   Compiling sse-stream v0.2.6
+   Compiling jsonschema-regex v0.59.0
+   Compiling email_address v0.2.9
+   Compiling portable-pty v0.9.0
+   Compiling bollard v0.21.1
+   Compiling jsonschema v0.59.0
+   Compiling polaris-runtime-frames v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/frames)
+   Compiling chacha20poly1305 v0.11.0
+   Compiling polaris-openshell-client v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/client)
+   Compiling statrs v0.19.1
+   Compiling polaris-search-providers v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-search/crates/providers)
+   Compiling polaris-storage-vector v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/vector)
+   Compiling polaris-vcs v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-vcs)
+   Compiling keyring v4.2.0
+   Compiling rust_decimal v1.43.0
+   Compiling polaris-storage-registry v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/registry)
+   Compiling polaris-runtime-context v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/context)
+   Compiling polaris-system-one-router v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/router)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/verifier)
+   Compiling polaris-security-pii v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/pii)
+   Compiling polaris-kernel-bus v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-kernel/crates/bus)
+   Compiling polaris-tools-math v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-tools/crates/math)
+   Compiling polaris-platform-process v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-platform/crates/process)
+   Compiling polaris-storage-cache v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/cache)
+   Compiling polaris-runtime-research v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-runtime/crates/research)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-storage/crates/eventlog)
+   Compiling polaris-security-secrets v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-security/crates/secrets)
+   Compiling polaris-search-sift v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-search/crates/sift)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-openshell/crates/nemoclaw)
+   Compiling polaris-ext-mcp v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ext/crates/mcp)
+   Compiling polaris-devenv-docker v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-devenv/crates/docker)
+   Compiling polaris-ext-skills v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-ext/crates/skills)
+   Compiling polaris-platform-wsl v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-platform/crates/wsl)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-nebius-cloud/crates/sandboxes)
+   Compiling polaris-system-one-client v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-system-one/crates/client)
+error[E0432]: unresolved import `prost`
+ --> crates/polaris-system-one/crates/client/src/batch.rs:6:5
+  |
+6 | use prost::M...
+  |     ^^^^^ use of unresolved module or unlinked crate `prost`
+  |
+  = help: if you wanted to use a crate named `prost`, use `cargo add prost` to add it to your `Cargo.toml`
+
+error[E0599]: no method named `encoded_len` found for struct `DecideRequest` in the current scope
+  --> crates/polaris-system-one/crates/client/src/batch.rs:51:67
+   |
+51 | ...}).encoded_len()
+   |       ^^^^^^^^^^^
+   |
+  ::: /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/prost-0.14.4/src/message.rs:41:8
+   |
+41 | ...fn encoded_len(&s...
+   |       ----------- the method is available for `DecideRequest` here
+   |
+   = help: items from traits can only be used if the trait is in scope
+help: there is a method `encode` with a similar name, but with different arguments
+  --> /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/prost-0.14.4/src/message.rs:46:5
+   |
+46 | /     fn encode(&self, bu...
+47 | |     where
+48 | |         Self: Sized,
+   | |____________________^
+help: trait `Message` which provides `encoded_len` is implemented but not in scope; perhaps you want to import it
+   |
+ 1 + use prost::message::Message;
+   |
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `polaris-system-one-client` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

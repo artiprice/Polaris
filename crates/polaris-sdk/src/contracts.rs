@@ -17,10 +17,11 @@ pub use jiff::Timestamp;
 use crate::effort::Effort;
 use crate::error::ParseError;
 use crate::hex;
+use crate::human::HumanRequestId;
 use crate::ids::{AgentRole, Cid, FrameId, MicroUsd, Seq, SessionId, TokenCount};
 
 /// Current [`EventRecord`] schema version.
-pub const EVENT_SCHEMA_VERSION: u16 = 4;
+pub const EVENT_SCHEMA_VERSION: u16 = 7;
 
 /// Opaque capability token (a serialized Biscuit). The sdk never interprets it and never prints it:
 /// `Debug` shows only the length.
@@ -281,6 +282,15 @@ pub enum CommandBody {
         /// The directive text.
         directive: Cid,
     },
+    /// Atomically answer one immutable human request using a complete answer batch in CAS.
+    AnswerHumanRequest {
+        /// Stable human request identity.
+        request_id: HumanRequestId,
+        /// Immutable request digest used as a compare-and-swap revision.
+        revision: Cid,
+        /// Complete answer batch in CAS.
+        answer: Cid,
+    },
 }
 
 /// A command in verification state `S`.
@@ -445,9 +455,10 @@ pub enum FrameStepOutcome {
     Failed,
 }
 
-/// A domain event (schema v4, backwards-readable v1-v3). Fixed-size and `Copy`: text and blobs
+/// A domain event (schema v7, backwards-readable v1-v6). Fixed-size and `Copy`: text and blobs
 /// are [`Cid`] references. Schema 2 adds configuration/pause/resume, schema 3 adds blast alerts,
-/// and schema 4 adds durable frame-step records.
+/// schema 4 adds durable frame-step records, schema 5 adds the human request lifecycle, schema 6
+/// adds the frame registry/tool-result records, and schema 7 adds typed user input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -469,6 +480,12 @@ pub enum Event {
     DirectiveApplied {
         /// Directive text.
         directive: Cid,
+    },
+    /// A user message for the session, text in CAS; recorded offline, no model execution implied
+    /// (schema 7).
+    UserInputSubmitted {
+        /// The message text.
+        text: Cid,
     },
     /// System One answered a decision schema.
     DecisionMade {
@@ -626,6 +643,66 @@ pub enum Event {
         /// Final disposition of the attempt.
         outcome: FrameStepOutcome,
     },
+    /// A validated immutable human request was durably created.
+    HumanRequestCreated {
+        /// Stable human request identity.
+        request_id: HumanRequestId,
+        /// Requesting frame.
+        frame: FrameId,
+        /// Request origin step/turn.
+        origin_step: u32,
+        /// Complete request payload; its digest is also the answer compare-and-swap revision.
+        request: Cid,
+    },
+    /// A complete answer batch was durably committed.
+    HumanRequestAnswered {
+        /// Stable human request identity.
+        request_id: HumanRequestId,
+        /// Requesting frame.
+        frame: FrameId,
+        /// CAS audit receipt binding revision, answer, command, actor and approval evidence.
+        receipt: Cid,
+    },
+    /// A pending human request was interrupted by its requesting frame.
+    HumanRequestInterrupted {
+        /// Stable human request identity.
+        request_id: HumanRequestId,
+        /// Requesting frame.
+        frame: FrameId,
+        /// Request revision interrupted.
+        revision: Cid,
+    },
+    /// Exact result evidence persisted by the executing frame tool owner.
+    FrameToolResultRecorded {
+        /// Actual requesting frame.
+        frame: FrameId,
+        /// Exact stored model tool call.
+        call: Cid,
+        /// Call-bound CAS result envelope.
+        result: Cid,
+    },
+    /// A frame's actual sealed runtime identity and direct parent were durably registered.
+    FrameRegistered {
+        /// Registered frame identity.
+        frame: FrameId,
+        /// Actual direct parent; `None` is reserved for the session root.
+        parent: Option<FrameId>,
+        /// Root identity supplied by the runtime frame constructor.
+        root: FrameId,
+        /// Trusted frame role captured by the sealed binding.
+        role: AgentRole,
+        /// Digest of frame, parent, root, role and bound capability token.
+        binding: Cid,
+    },
+    /// A verified exact-target subtree cancellation intent was durably committed.
+    FrameTreeCancellationRequested {
+        /// Exact target frame; its registered descendants are included by the receipt.
+        target: FrameId,
+        /// CAS receipt with the command, approval evidence and exact descendant snapshot.
+        receipt: Cid,
+        /// Idempotency identity of the verified command.
+        command: CommandId,
+    },
 }
 
 /// Versioned envelope appended to the event store.
@@ -654,6 +731,13 @@ impl EventRecord {
         let minimum = match event {
             Event::BlastRadiusAlert { .. } => 3,
             Event::DiffNeedsApproval { .. } | Event::FrameStepRecorded { .. } => 4,
+            Event::HumanRequestCreated { .. }
+            | Event::HumanRequestAnswered { .. }
+            | Event::HumanRequestInterrupted { .. } => 5,
+            Event::FrameRegistered { .. }
+            | Event::FrameTreeCancellationRequested { .. }
+            | Event::FrameToolResultRecorded { .. } => 6,
+            Event::UserInputSubmitted { .. } => 7,
             Event::SessionConfigured { .. } | Event::SessionPaused | Event::SessionResumed => 2,
             Event::SessionStarted { .. }
             | Event::DirectiveApplied { .. }

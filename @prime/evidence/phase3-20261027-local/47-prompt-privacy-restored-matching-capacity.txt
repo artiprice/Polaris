@@ -1,0 +1,27 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `pii::PiiLimits`
+  --> crates\polaris-kernel\tests\frame_prompt.rs:38:50
+   |
+38 |     use polaris_security::{automata::EntropyCfg, pii::PiiLimits, secrets::SecretVault};
+   |                                                  ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-kernel` (test "frame_prompt") generated 1 warning (run `cargo fix --test "frame_prompt" -p polaris-kernel` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 6.46s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-e92cf88d01f60835.exe)
+
+running 10 tests
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... ok
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_rejects_foreign_or_weaker_privacy_vault ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_restores_exact_private_marker_map ... ok
+test assembler_enforces_deadline_and_cumulative_archive_bound ... ok
+test assembler_run_rejects_replaced_frame_selection ... ok
+test assembler_masks_structured_arguments_and_rejects_unreadable_archive ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+

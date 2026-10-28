@@ -1,0 +1,4 @@
+packages=93 top-level-crates=27 nested=53 external-deps=167
+kinds: {'app': 6, 'facade': 13, 'lib': 67, 'spike': 5, 'test': 1, 'xtask': 1}
+layers: {0: 1, 1: 18, 2: 28, 3: 17, 4: 9, 5: 2, 6: 5, 7: 6, 8: 7}
+phases: {'P0': 2, 'P1': 24, 'P2': 15, 'P3': 13, 'P4': 11, 'P5': 6, 'P6': 2, 'P7': 8, 'P8': 5, 'P9': 7}

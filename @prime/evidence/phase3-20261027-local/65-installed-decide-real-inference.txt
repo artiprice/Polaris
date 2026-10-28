@@ -1,0 +1,11 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-engine v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\engine)
+    Finished `test` profile [unoptimized] target(s) in 7.20s
+     Running tests\real_model.rs (target\debug\deps\real_model-5edb6565ff8cae66.exe)
+
+running 1 test
+test real_model_returns_bounded_choice_probabilities ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.77s
+

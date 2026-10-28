@@ -1,0 +1,12 @@
+{
+  "type_of": "function",
+  "name": "monitor_worker",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/worker.rs",
+  "logic_name": "Owned Worker Retirement Restart",
+  "test_list": [{"test_name": "supervised_worker_replaces_killed_generation_without_orphan", "description": "Kill and retire two exact owned native worker generations; permanent supervision publishes fresh authenticated generations, then shutdown retires the final tree."}],
+  "dependencies": ["PlatformOps", "WorkerProcessGuard", "WorkerLifecycle", "Supervisor"],
+  "libraries": ["tokio", "tokio-util"],
+  "inputs": [{"name": "tree", "type": "ProcessTree", "description": "Exact generation spawned and owned by this monitor, never a recovered PID."}],
+  "output_type": "Result<(), TaskError>",
+  "output_description": "Retirement of this exact owned record is transient so configured restart policy and intensity limits apply; cancellation remains a normal stop."
+}

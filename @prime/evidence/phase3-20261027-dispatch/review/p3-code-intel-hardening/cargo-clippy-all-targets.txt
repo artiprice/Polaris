@@ -1,0 +1,165 @@
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+warning: items after a test module
+   --> crates\polaris-code-intel\src\walk.rs:44:1
+    |
+ 44 | mod tests {
+    | ^^^^^^^^^
+...
+114 | pub(crate) fn node_text<'a>(node: Node<'_>, src: &'a [u8]) -> Cow<'a, str> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+121 | pub(crate) fn field_text(node: Node<'_>, field: &str, src: &[u8]) -> Option<String> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+127 | pub(crate) fn named_children<'t>(node: Node<'t>) -> Vec<Node<'t>> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#items_after_test_module
+    = note: `#[warn(clippy::items_after_test_module)]` on by default
+    = help: move the items to before the test module was defined
+
+warning: `polaris-code-intel` (lib test) generated 1 warning (run `cargo clippy --fix --lib -p polaris-code-intel --tests -- -D clippy::arithmetic_side_effects -D clippy::indexing_slicing -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic` to apply 1 suggestion)
+error: used `unwrap()` on a `Result` value
+ --> crates\polaris-code-intel\examples\scratch.rs:6:15
+  |
+6 |     let src = std::fs::read_to_string(a.get(2).cloned().unwrap_or_default()).unwrap();
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: if this value is an `Err`, it will panic
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#unwrap_used
+  = note: requested on the command line with `-D clippy::unwrap-used`
+
+error: used `unwrap()` on a `Result` value
+  --> crates\polaris-code-intel\examples\scratch.rs:15:5
+   |
+15 |     p.set_language(&lang).unwrap();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is an `Err`, it will panic
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#unwrap_used
+
+error: used `unwrap()` on an `Option` value
+  --> crates\polaris-code-intel\examples\scratch.rs:16:13
+   |
+16 |     let t = p.parse(&src, None).unwrap();
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: if this value is `None`, it will panic
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#unwrap_used
+
+error: could not compile `polaris-code-intel` (example "scratch") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+warning: very complex type used. Consider factoring parts into `type` definitions
+  --> crates\polaris-code-intel\tests\subtree_fingerprints.rs:13:6
+   |
+13 | ) -> Result<Vec<(usize, usize, FastFingerprint)>, Box<dyn std::error::Error>> {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#type_complexity
+   = note: `#[warn(clippy::type_complexity)]` on by default
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\subtree_fingerprints.rs:119:18
+    |
+119 |         let at = idx % vals.len();
+    |                  ^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\mutation_metrics.rs:319:46
+    |
+319 |         prop_assert_eq!(ab.cyclomatic_delta, -ba.cyclomatic_delta);
+    |                                              ^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+warning: `polaris-code-intel` (test "subtree_fingerprints") generated 1 warning
+error: could not compile `polaris-code-intel` (test "subtree_fingerprints") due to 1 previous error; 1 warning emitted
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:361:44
+    |
+361 |         if let Some(slot) = edited.get_mut(idx % vals.len()) {
+    |                                            ^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:380:23
+    |
+380 |         let (i, j) = (i % n, j % n);
+    |                       ^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:380:30
+    |
+380 |         let (i, j) = (i % n, j % n);
+    |                              ^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:385:41
+    |
+385 |         if let Some(s) = o.get_mut(i) { *s += 1000; }
+    |                                         ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:386:41
+    |
+386 |         if let Some(s) = t.get_mut(j) { *s += 2000; }
+    |                                         ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:392:44
+    |
+392 |         if let Some(s) = both.get_mut(i) { *s += 1000; }
+    |                                            ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-code-intel` (test "mutation_metrics") due to 1 previous error
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\symbol_merge.rs:393:44
+    |
+393 |         if let Some(s) = both.get_mut(j) { *s += 2000; }
+    |                                            ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-code-intel` (test "symbol_merge") due to 7 previous errors
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\repo_map_ranking.rs:215:37
+    |
+215 |                 .filter(|(from, _)| from % n == i)
+    |                                     ^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\repo_map_ranking.rs:216:50
+    |
+216 |                 .map(|(_, to)| format!("f{}();", to % n))
+    |                                                  ^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-code-intel\tests\repo_map_ranking.rs:260:27
+    |
+260 |         files.rotate_left(rot % n);
+    |                           ^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-code-intel` (test "repo_map_ranking") due to 3 previous errors

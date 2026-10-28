@@ -1,0 +1,34 @@
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\cas\src\lib.rs:88:9
+   |
+88 |         b'0' + nibble
+   |         ^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+   = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: arithmetic operation that can potentially result in unexpected side-effects
+  --> crates\polaris-storage\crates\cas\src\lib.rs:90:9
+   |
+90 |         b'a' + (nibble - 10)
+   |         ^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+
+error: could not compile `polaris-storage-cas` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: arithmetic operation that can potentially result in unexpected side-effects
+   --> crates\polaris-config\src\sources.rs:112:17
+    |
+112 |                 attempt += 1;
+    |                 ^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#arithmetic_side_effects
+    = note: requested on the command line with `-D clippy::arithmetic-side-effects`
+
+error: could not compile `polaris-config` (lib) due to 1 previous error

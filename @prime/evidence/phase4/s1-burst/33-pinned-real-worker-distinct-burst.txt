@@ -1,0 +1,23 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 1m 32s
+     Running tests\s1_process.rs (target\debug\deps\s1_process-3924b57f3807e6e4.exe)
+
+running 1 test
+test real_worker_runs_warm_and_post_eviction_fifty_request_bursts ... OBSERVED S1 burst warm: requested=50 answered=50 peak_owned=8 elapsed_us=408477 p95_ns=Some(391643135)
+
+thread 'real_worker_runs_warm_and_post_eviction_fifty_request_bursts' (6116) panicked at apps\polaris-worker\tests\s1_process.rs:202:13:
+assertion `left == right` failed: all actual IPC requests must receive valid decisions
+  left: 42
+ right: 50
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    real_worker_runs_warm_and_post_eviction_fifty_request_bursts
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out; finished in 79.76s
+
+error: test failed, to rerun pass `-p polaris-worker --test s1_process`

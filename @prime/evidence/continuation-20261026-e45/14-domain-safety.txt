@@ -1,0 +1,2 @@
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Finished `dev` profile [unoptimized] target(s) in 2.34s

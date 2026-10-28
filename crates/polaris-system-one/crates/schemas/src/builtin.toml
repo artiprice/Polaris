@@ -1,4 +1,24 @@
 [[schemas]]
+id="route.task"
+version=1
+kind="intent"
+max_chars=65536
+questions=[{id="intent",kind={type="choice",options=["trivial_direct","s2","clarification"]}},{id="effort",kind={type="score",min=1,max=5}},{id="parallel",kind={type="noul",statement="The task has multiple independent work streams that benefit from bounded parallel work."}},{id="vision",kind={type="noul",statement="Completing the task requires inspecting visual image or screenshot information."}}]
+thresholds={accept=0.9,reject=0.1,abstain_band=[0.4,0.6]}
+fail={consumer="effort_router",on_timeout="open",deadline_ms=750,integrity="normal"}
+calibration={status="uncalibrated",fixture_set="",n=0}
+
+[watchdog]
+version=1
+max_step_bytes=65536
+window_size=64
+shingle_size=3
+near_duplicate={numerator=4,denominator=5}
+pressure={numerator=4,denominator=5}
+repetition={numerator=3,denominator=5}
+require_both_signals=true
+
+[[schemas]]
 id="route.intent"
 version=1
 kind="intent"

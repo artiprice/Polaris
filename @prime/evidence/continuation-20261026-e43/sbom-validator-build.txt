@@ -1,0 +1,2 @@
+   Compiling polaris-spdx-evidence-validator v0.0.0 (C:\mDev\Polaris\@prime\tmp\20261026-e43\sbom-validator)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.96s

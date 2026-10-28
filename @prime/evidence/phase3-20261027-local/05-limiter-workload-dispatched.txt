@@ -1,0 +1,27 @@
+   Compiling polaris-spike-ratelimit v0.1.0-alpha (C:\mDev\Polaris\tests\spike\ratelimit)
+    Finished `test` profile [unoptimized] target(s) in 1.28s
+     Running unittests src\lib.rs (target\debug\deps\polaris_spike_ratelimit-67fbf5692764406a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\burst.rs (target\debug\deps\burst-8f88e58b9fba9c31.exe)
+
+running 7 tests
+test background_shed_first_under_pressure ... ok
+test retry_after_flood_is_status_gated_and_checked ... ok
+test tpm_reservation_reconciliation_and_overshoot ... ok
+test retry_after_storm_respects_floor_and_shared_penalty ... ok
+test fifty_agents_priority_order_and_rate_bound ... ok
+test report_latency_samples_are_observed_and_real_clock_can_be_sampled ... ok
+test canceled_waiters_are_drained_without_task_leaks ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests polaris_spike_ratelimit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

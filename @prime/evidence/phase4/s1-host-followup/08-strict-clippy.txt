@@ -1,0 +1,273 @@
+    Blocking waiting for file lock on build directory
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Checking tower-http v0.6.11
+    Checking ast-grep-core v0.51.0
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+    Checking interprocess v2.4.5
+    Checking process-wrap v10.0.1
+    Checking bollard v0.21.1
+    Checking polaris-nebius-cloud-ai-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\ai-cloud)
+    Checking reqwest v0.13.5
+    Checking reqwest v0.12.28
+    Checking ast-grep-config v0.51.0
+    Checking rmcp v3.5.1
+    Checking openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+    Checking oauth2 v5.0.0
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+    Checking polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+    Checking polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+    Checking polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+    Checking polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+    Checking polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+    Checking polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+    Checking polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+    Checking polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+error: the `Err`-variant returned from this function is very large
+   --> crates\polaris-kernel\crates\bus\src\bus.rs:148:57
+    |
+148 |     pub fn try_send(&self, cmd: Command<Unverified>) -> Result<(), TrySendError> {
+    |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\polaris-kernel\crates\bus\src\error.rs:50:5
+    |
+ 50 |     Full(Command<Unverified>),
+    |     ------------------------- the largest variant contains at least 152 bytes
+...
+ 53 |     Closed(Command<Unverified>),
+    |     --------------------------- the variant `Closed` contains at least 152 bytes
+    |
+    = help: try reducing the size of `error::TrySendError`, for example by boxing large elements or replacing it with `Box<error::TrySendError>`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#result_large_err
+    = note: `-D clippy::result-large-err` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::result_large_err)]`
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\polaris-kernel\crates\bus\src\bus.rs:166:59
+    |
+166 |     pub async fn send(&self, cmd: Command<Unverified>) -> Result<(), SendError> {
+    |                                                           ^^^^^^^^^^^^^^^^^^^^^ the `Err`-variant is at least 152 bytes
+    |
+    = help: try reducing the size of `error::SendError`, for example by boxing large elements or replacing it with `Box<error::SendError>`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#result_large_err
+
+    Checking polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+    Checking polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+error: could not compile `polaris-kernel-bus` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: this `match` expression can be replaced with `?`
+   --> crates\polaris-ratelimit\src\ledger.rs:846:21
+    |
+846 | /                     match observed.checked_add(1) {
+847 | |                         Some(next) => next,
+848 | |                         None => return None,
+849 | |                     },
+    | |_____________________^ help: try instead: `observed.checked_add(1)?`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#question_mark
+    = note: `-D clippy::question-mark` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::question_mark)]`
+
+error: this pattern reimplements `Result::unwrap_or`
+    --> crates\polaris-ratelimit\src\ledger.rs:1072:5
+     |
+1072 | /     match u8::try_from(pct) {
+1073 | |         Ok(value) => value,
+1074 | |         Err(_) => 100,
+1075 | |     }
+     | |_____^ help: replace with: `u8::try_from(pct).unwrap_or(100)`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+     = note: `-D clippy::manual-unwrap-or` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or)]`
+
+error: enclosing `Some` and `?` operator are unneeded
+    --> crates\polaris-ratelimit\src\ledger.rs:1094:5
+     |
+1094 |     Some(generation.checked_mul(8)?.checked_add(state)?)
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#needless_question_mark
+     = note: `-D clippy::needless-question-mark` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::needless_question_mark)]`
+help: remove the enclosing `Some` and `?` operator
+     |
+1094 -     Some(generation.checked_mul(8)?.checked_add(state)?)
+1094 +     generation.checked_mul(8)?.checked_add(state)
+     |
+
+error: this pattern reimplements `Option::unwrap_or`
+  --> crates\polaris-ratelimit\src\permit.rs:71:22
+   |
+71 |           let now_ns = match gcra::duration_ns(self.shared.clock.now()) {
+   |  ______________________^
+72 | |             Some(value) => value,
+73 | |             None => u64::MAX,
+74 | |         };
+   | |_________^ help: replace with: `gcra::duration_ns(self.shared.clock.now()).unwrap_or(u64::MAX)`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+
+error: this pattern reimplements `Option::unwrap_or`
+   --> crates\polaris-ratelimit\src\permit.rs:125:22
+    |
+125 |           let now_ns = match gcra::duration_ns(self.shared.clock.now()) {
+    |  ______________________^
+126 | |             Some(value) => value,
+127 | |             None => u64::MAX,
+128 | |         };
+    | |_________^ help: replace with: `gcra::duration_ns(self.shared.clock.now()).unwrap_or(u64::MAX)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-ratelimit\src\window.rs:117:5
+    |
+117 | /     match usize::try_from(minute.rem_euclid(15)) {
+118 | |         Ok(index) => index,
+119 | |         Err(_) => 0,
+120 | |     }
+    | |_____^ help: ascribe the type usize and replace your expression with: `usize::try_from(minute.rem_euclid(15)).unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+    = note: `-D clippy::manual-unwrap-or-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or_default)]`
+
+error: could not compile `polaris-ratelimit` (lib) due to 6 previous errors
+error: this `if` statement can be collapsed
+   --> crates\polaris-system-one\crates\watchdog\src\loops.rs:135:13
+    |
+135 | /             if let Some(similarity) = jaccard(&previous.shingles, &next.shingles) {
+136 | |                 if ratio_greater(similarity, highest) {
+137 | |                     highest = similarity;
+138 | |                 }
+139 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+135 ~             if let Some(similarity) = jaccard(&previous.shingles, &next.shingles)
+136 ~                 && ratio_greater(similarity, highest) {
+137 |                     highest = similarity;
+138 ~                 }
+    |
+
+error: match can be simplified with `.unwrap_or_default()`
+   --> crates\polaris-system-one\crates\watchdog\src\loops.rs:207:20
+    |
+207 |           let path = match call.workspace_path.as_deref() {
+    |  ____________________^
+208 | |             Some(path) => path,
+209 | |             None => "",
+210 | |         };
+    | |_________^ help: ascribe the type &str and replace your expression with: `call.workspace_path.as_deref().unwrap_or_default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_unwrap_or_default
+    = note: `-D clippy::manual-unwrap-or-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_unwrap_or_default)]`
+
+error: this function has a `#[must_use]` attribute with no message, but returns a type already considered as `#[must_use]`
+  --> crates\polaris-system-one\crates\watchdog\src\role.rs:54:5
+   |
+54 | /     pub fn new(
+55 | |         role: AgentRole,
+56 | |         allowed_tools: BTreeSet<ToolId>,
+57 | |         network_tools: BTreeSet<ToolId>,
+...  |
+60 | |         writable_path_prefixes: Vec<String>,
+61 | |     ) -> Result<Self, RoleTableError> {
+   | |_____________________________________^
+   |
+help: remove `must_use`
+  --> crates\polaris-system-one\crates\watchdog\src\role.rs:53:5
+   |
+53 |     #[must_use]
+   |     ^^^^^^^^^^^
+   = note: alternatively, you may add an explicit reason to the `must_use` attribute
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#double_must_use
+   = note: `-D clippy::double-must-use` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::double_must_use)]`
+
+error: could not compile `polaris-system-one-watchdog` (lib) due to 3 previous errors
+error: using `chunks_exact` with a constant chunk size
+  --> crates\polaris-tools\crates\rtk\src\input.rs:27:23
+   |
+27 |     let units = bytes.chunks_exact(2).filter_map(|pair| match *pair {
+   |                       ^^^^^^^^^^^^^^^ help: consider using `as_chunks` instead: `as_chunks::<2>().0.iter()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#chunks_exact_to_as_chunks
+   = note: `-D clippy::chunks-exact-to-as-chunks` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::chunks_exact_to_as_chunks)]`
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-tools\crates\rtk\src\input.rs:104:5
+    |
+104 | /     if let Ok(text) = std::str::from_utf8(utf8_body) {
+105 | |         if !has_controls_or_escape(text.as_bytes()) {
+106 | |             return text.to_owned();
+107 | |         }
+108 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+104 ~     if let Ok(text) = std::str::from_utf8(utf8_body)
+105 ~         && !has_controls_or_escape(text.as_bytes()) {
+106 |             return text.to_owned();
+107 ~         }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\polaris-tools\crates\rtk\src\ledger.rs:262:13
+    |
+262 | /             if let LedgerLine::Issue(issue) = line {
+263 | |                 if issue.is_open() {
+264 | |                     if seen.contains(&issue.id) {
+265 | |                         still_open.insert(issue.id.clone());
+...   |
+271 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+262 ~             if let LedgerLine::Issue(issue) = line
+263 ~                 && issue.is_open() {
+264 |                     if seen.contains(&issue.id) {
+...
+269 |                     }
+270 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+  --> crates\polaris-tools\crates\rtk\src\text.rs:31:9
+   |
+31 | /         if let Some(message) = rest.strip_prefix(':') {
+32 | |             if message.is_empty() || message.starts_with(char::is_whitespace) {
+33 | |                 return Some((level, None, message.trim()));
+34 | |             }
+35 | |         }
+   | |_________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#collapsible_if
+help: collapse nested if block
+   |
+31 ~         if let Some(message) = rest.strip_prefix(':')
+32 ~             && (message.is_empty() || message.starts_with(char::is_whitespace)) {
+33 |                 return Some((level, None, message.trim()));
+34 ~             }
+   |
+
+error: could not compile `polaris-tools-rtk` (lib) due to 4 previous errors

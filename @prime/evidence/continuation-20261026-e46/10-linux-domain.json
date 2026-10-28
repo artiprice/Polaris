@@ -1,0 +1,21 @@
+{
+  "name": "linux-domain",
+  "argv": [
+    "wsl.exe",
+    "-d",
+    "Ubuntu-24.04",
+    "--",
+    "bash",
+    "-l",
+    "/mnt/c/mDev/Polaris/@prime/tmp/p2/verify_e46_linux.sh"
+  ],
+  "started_utc": "2026-10-26T22:35:22.457633+00:00",
+  "elapsed_seconds": 53.839,
+  "exit_code": 0,
+  "raw": "10-linux-domain.txt",
+  "test_result_totals": {
+    "passed": 96,
+    "failed": 0,
+    "ignored": 0
+  }
+}

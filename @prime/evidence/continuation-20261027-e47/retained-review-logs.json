@@ -1,0 +1,66 @@
+[
+  {
+    "path": "review/binding/clippy-focused.txt",
+    "sha256": "1081ab70cc269f1c87346bd086da2ade7962bed319a371798a9b112bdb4551c9"
+  },
+  {
+    "path": "review/binding/frames-prompt-binding.txt",
+    "sha256": "98a0155701d500e498f4066744e394a733d667d8b8c2c86f63634c31ddc68391"
+  },
+  {
+    "path": "review/binding/rustfmt-targeted.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/binding/sdk-registry-dispatch.txt",
+    "sha256": "c07e6c265e5bf3d9b7c9034977fedd01b1fb90f46029d46bd5bdd458bc699067"
+  },
+  {
+    "path": "review/window/clippy-safety.txt",
+    "sha256": "23284e7496f2519a8e69233aaf87f3986e3579ccae8e26d34a8d19b934f3de26"
+  },
+  {
+    "path": "review/window/context-tests.txt",
+    "sha256": "5d1660d29302ccb104f77e3210c99773246113c26227205c4dbafdaf2fc6d82d"
+  },
+  {
+    "path": "review/window/fmt-check.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "review/provider/cargo-test.txt",
+    "sha256": "3e9e8ab41d1e142005766f9c225ee412df4065f442133a3969404789bfb40094"
+  },
+  {
+    "path": "review/provider/clippy-strict-all-targets.txt",
+    "sha256": "a0aaf6fecd3516eeb60ac103acd9a9aa3323f00bb4435b392ec898776af464f9"
+  },
+  {
+    "path": "review/provider/clippy-strict-owned-targets.txt",
+    "sha256": "eccec277381ed8aca87f68b845c9c987c03a20b1abaa192b22bf149e25bff18d"
+  },
+  {
+    "path": "review/provider/clippy-warnings.txt",
+    "sha256": "76ffe01c790333513709c35ec653bcdf51e3555543abc2c1779bcd6c83f3a4ca"
+  },
+  {
+    "path": "review/provider/test-first-red.txt",
+    "sha256": "c3304b62c0887b51ead3d005be41b74e3c3cd30bf9bdaf35a21fa76c56440be9"
+  },
+  {
+    "path": "review/provider/vllm-source.txt",
+    "sha256": "9436aaa1646d99156f1af69f1e5184f8dc79bfc12ac8e8e447c06ea98977eb7f"
+  },
+  {
+    "path": "review/http/clippy-safety.txt",
+    "sha256": "9cc4c1a21cb8e7cb44c66001f808edb5b6bd07507826928dca685111648e6659"
+  },
+  {
+    "path": "review/http/frame-prompt-http-test.txt",
+    "sha256": "24ed86ba897ee3a35169f447625768cddf0f6f671e759041c8e14668542920ee"
+  },
+  {
+    "path": "review/http/rustfmt-check.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

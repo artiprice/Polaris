@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "-p",
+    "polaris-worker",
+    "--test",
+    "supervised_worker"
+  ],
+  "exit_code": 101,
+  "kind": "initial integration run; result classification follows actual output"
+}

@@ -832,3 +832,163 @@ async fn cancellation_retains_cleanup_ownership() {
     assert_eq!(backend.destroys.load(Ordering::SeqCst), 1);
     shutdown_without_leaks(&kernel).await;
 }
+
+// Synthetic sandbox transport; production verifier reads actual CAS, event order and source scans.
+#[tokio::test]
+async fn frame_completion_verifier_requires_current_actual_proof_and_latest_verdict()
+-> Result<(), Box<dyn std::error::Error>> {
+    use polaris_runtime::frames::{
+        AgentContextFrame, AgentRole, FrameScope, ModelSelection, ResourceQuota, ScratchpadRef,
+    };
+    use polaris_security::capability::{
+        Authority, Clock, ResourceScope, Right, Rights, Scope, SystemClock,
+    };
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(workspace.path().join("source.rs"), b"fn source() {}\n")?;
+    let session = SessionId::new_v7();
+    let frame = FrameId::new_v7();
+    let kernel = Kernel::start(LocalKernelConfig::new(
+        state.path(),
+        workspace.path(),
+        session,
+        frame,
+    ))
+    .await?;
+    let authority = Authority::new_session()?;
+    let scope = Scope {
+        resource: ResourceScope::Workspace,
+        max_churn_lines: 0,
+        ttl: Duration::from_secs(120),
+        allow_unsafe: false,
+        diff_blake3: None,
+        rights: Rights::new(&[Right::Read]),
+    };
+    let token = authority.issue_root(frame, &scope, &SystemClock)?;
+    let active = AgentContextFrame::new_root(
+        frame,
+        AgentRole::Orchestrator,
+        token,
+        FrameScope {
+            capability: scope,
+            expires_at_micros: SystemClock
+                .now()
+                .as_microsecond()
+                .checked_add(120_000_000)
+                .ok_or("expiry overflow")?,
+        },
+        ResourceQuota {
+            cpu_millis: 10000,
+            memory_mb: 128,
+            network: Default::default(),
+            max_steps: 8,
+            max_depth: 2,
+            token_budget: 1000,
+        },
+        ScratchpadRef::new(Cid::from_bytes([8; 32])),
+    )
+    .activate(
+        ModelSelection {
+            model: polaris_sdk::ids::ModelId::new("fixture/proof-model")?,
+            maximum_effort: polaris_sdk::effort::Effort::Low,
+        },
+        polaris_sdk::effort::Effort::Low,
+    )?;
+    let verifier = polaris_kernel::KernelFrameVerifier::new(kernel.clone(), active.tool_binding())?;
+    assert!(
+        verifier.validate_completion(&active.view()).await.is_err(),
+        "no execution means no completion proof"
+    );
+    let backend = Arc::new(FakeBackend::default());
+    let execution = SandboxExecution::new(Arc::clone(&backend), spec(), session, frame)?;
+    let review = execution
+        .prepare(
+            Arc::clone(kernel.context()),
+            workspace.path().to_owned(),
+            request(),
+        )
+        .await?;
+    let command = Command::new(
+        CommandId::new_v7(),
+        frame,
+        execution.credential(review.digest, review.digest)?,
+        CommandBody::ExecuteTool {
+            call: review.digest,
+        },
+    );
+    execution
+        .execute(
+            Arc::clone(kernel.context()),
+            workspace.path().to_owned(),
+            command,
+            CancellationToken::new(),
+        )
+        .await?;
+    let proof = verifier.validate_completion(&active.view()).await?;
+    assert_eq!(
+        proof.source_cid(),
+        review.tree,
+        "proof must bind the exact paranoid manifest"
+    );
+    {
+        use polaris_kernel::verifier::EvidenceStore;
+        let bytes = polaris_kernel::KernelEvidence::new(Arc::clone(kernel.context()))
+            .get(&proof.report_cid())?
+            .ok_or("missing proof report")?;
+        let report: serde_json::Value = serde_json::from_slice(&bytes)?;
+        assert_eq!(
+            report.get("schema"),
+            Some(&serde_json::json!(2)),
+            "current proof report must use the explicit bound schema"
+        );
+        assert_eq!(
+            report.get("review"),
+            Some(&serde_json::json!(review.digest)),
+            "proof must name the exact approved execution review"
+        );
+    }
+    assert_eq!(proof.frame(), frame);
+    assert_eq!(proof.session(), session);
+    std::fs::write(workspace.path().join("source.rs"), b"fn changed() {}\n")?;
+    assert!(
+        verifier.validate_completion(&active.view()).await.is_err(),
+        "actual source mutation must invalidate prior pass"
+    );
+    std::fs::write(workspace.path().join("source.rs"), b"fn source() {}\n")?;
+    verifier.validate_completion(&active.view()).await?;
+    backend.fail.store(true, Ordering::SeqCst);
+    let review = execution
+        .prepare(
+            Arc::clone(kernel.context()),
+            workspace.path().to_owned(),
+            request(),
+        )
+        .await?;
+    let command = Command::new(
+        CommandId::new_v7(),
+        frame,
+        execution.credential(review.digest, review.digest)?,
+        CommandBody::ExecuteTool {
+            call: review.digest,
+        },
+    );
+    assert!(
+        execution
+            .execute(
+                Arc::clone(kernel.context()),
+                workspace.path().to_owned(),
+                command,
+                CancellationToken::new()
+            )
+            .await
+            .is_err()
+    );
+    assert!(
+        verifier.validate_completion(&active.view()).await.is_err(),
+        "later failure must prevent revival of older passed proof"
+    );
+    let shutdown = kernel.shutdown().await?;
+    assert!(!shutdown.deadline_exceeded);
+    assert!(shutdown.journal_error.is_none());
+    Ok(())
+}

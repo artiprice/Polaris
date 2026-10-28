@@ -9,6 +9,8 @@
 use std::error::Error;
 use std::path::PathBuf;
 
+mod build_support;
+
 /// The proto files of package `polaris.v1`, relative to `proto/`.
 const PROTO_FILES: [&str; 4] = [
     "polaris/v1/common.proto",
@@ -37,5 +39,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     tonic_prost_build::configure()
         .file_descriptor_set_path(out_dir.join("polaris_v1_descriptor.bin"))
         .compile_with_config(config, &protos, &includes)?;
+    let generated = out_dir.join("polaris.v1.rs");
+    let source = std::fs::read_to_string(&generated)?;
+    let checked = build_support::rewrite_generated_status_casts(&source)?;
+    std::fs::write(generated, checked)?;
     Ok(())
 }

@@ -1,0 +1,25 @@
+{
+  "type_of": "struct",
+  "name": "EvictableSlot",
+  "file_path": "crates/polaris-models/src/lifecycle.rs",
+  "logic_name": "Model Slot Lifecycle Contract",
+  "test_list": [
+    {"test_name": "concurrent_acquire_loads_once", "description": "Concurrent callers share one owner-managed load."},
+    {"test_name": "canceled_waiter_keeps_owner_load_alive", "description": "Canceling one acquisition does not cancel the shared load needed by other waiters."},
+    {"test_name": "lease_bound_rejects_excess_acquisitions", "description": "The configured maximum lease count is enforced."},
+    {"test_name": "force_evict_deadline_pauses_then_resume_reopens", "description": "A timed drain does not unload active leases, keeps admission paused, and resumes only explicitly."},
+    {"test_name": "eviction_during_load_drains_the_completed_load", "description": "A forced eviction requested during a shared load drains the resulting real model before admissions reopen."},
+    {"test_name": "idle_ttl_evicts_and_reload_uses_real_loader", "description": "Only a loaded slot beyond its idle TTL unloads, and a later acquire performs a new load."},
+    {"test_name": "close_and_unload_failure_are_reported", "description": "Shutdown closes admission and an actual unload failure remains observable and retryable."},
+    {"test_name": "unload_timeout_keeps_shared_drain_owned", "description": "An unload timeout is reported without claiming successful release or detaching owner work."}
+  ],
+  "dependencies": ["tokio"],
+  "libraries": ["std::sync::Arc", "std::sync::atomic", "tokio::sync", "tokio::time"],
+  "inputs": [
+    {"name": "loader", "type": "ModelLoader<M>", "description": "Real backend lifecycle operations supplied by the composition root."},
+    {"name": "config", "type": "SlotConfig", "description": "Idle TTL, lease bound, load timeout and unload timeout."},
+    {"name": "deadline", "type": "Duration", "description": "Maximum caller wait for requested eviction or close."}
+  ],
+  "output_type": "EvictableSlot<M, L>",
+  "output_description": "A shared loader-backed slot with single-flight loading, RAII leases and observable eviction outcomes."
+}

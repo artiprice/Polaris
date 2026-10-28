@@ -1,0 +1,2 @@
+argv: cargo fmt --package polaris-kernel-operators -- --check
+exit: 0

@@ -1,0 +1,18 @@
+VERIFIED local llama-server teardown
+
+Command performed:
+- Queried Win32_Process PID 15100.
+- Checked process name `llama-server.exe` and executable `C:\mDev\Polaris\@prime\tools\runtime\llama-b11804\llama-server.exe` is under this workspace's owned runtime directory.
+- Recorded process start time `2026-10-27T08:56:33.3570316Z`.
+- Confirmed command line had `--model` and `--port` flags (values omitted).
+- Stopped only PID 15100 and confirmed it exited.
+
+Raw observed output:
+Pid            : 15100
+Name           : llama-server.exe
+Executable     : C:\mDev\Polaris\@prime\tools\runtime\llama-b11804\llama-server.exe
+StartedUtc     : 2026-10-27T08:56:33.3570316Z
+OwnedPathMatch : True
+HasModelFlag   : True
+HasPortFlag    : True
+Stopped exact owned PID 15100

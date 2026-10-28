@@ -60,6 +60,8 @@ pub fn scope_is_subset(parent: &Scope, child: &Scope) -> Result<(), ScopeError> 
 
 fn resource_subset(parent: &ResourceScope, child: &ResourceScope) -> bool {
     match (parent, child) {
+        (ResourceScope::Workspace, _) => true,
+        (_, ResourceScope::Workspace) => false,
         (ResourceScope::Exact(parent_path), ResourceScope::Exact(child_path)) => {
             parent_path == child_path
         }

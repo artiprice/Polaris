@@ -1,7 +1,7 @@
 //! Stable schema catalog and enum-dispatched builtin invocation.
 
 use std::{
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
     time::Instant,
 };
@@ -13,6 +13,7 @@ use polaris_sdk::{
     registry::{Effects, ToolContext, ToolError, ToolSpec},
 };
 use polaris_storage_cas::Cas;
+use polaris_storage_cas::CasError;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -22,8 +23,8 @@ use crate::{
     path::{WorkspacePath, resolve_in_workspace},
     proposal::{EditFileRequest, NoProposalBackend, ProposalToolBackend},
     query::{JsonQueryInput, RegexQueryInput, json_query, regex_query},
-    read::{ReadFileInput, read_file},
-    search::{GlobInput, GrepInput, ListDirInput, glob, grep, list_dir},
+    read::ReadFileInput,
+    search::{GlobInput, GrepInput, ListDirInput},
     shell::{NoShellBackend, ShellInput, ShellToolBackend, output_value},
 };
 
@@ -37,6 +38,33 @@ pub trait RefResolver: Send + Sync {
 pub trait RecallBackend: Send + Sync {
     /// Retrieve relevant records; no in-memory or synthetic fallback is permitted.
     fn recall(&self, query: &str, max_results: usize) -> Result<Value, ToolError>;
+}
+
+/// Workspace resource presented to a trusted authorization policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessResource<'a> {
+    /// Admission marker for a query rooted at the workspace itself.
+    WorkspaceRoot,
+    /// One exact normalized workspace-relative path being accessed or disclosed.
+    WorkspacePath(&'a WorkspacePath),
+}
+
+/// Authorizes every workspace resource accessed by an authorized builtin invocation.
+pub trait ToolAccessPolicy {
+    /// Grant or deny access to one workspace resource.
+    ///
+    /// # Errors
+    /// Returns a policy error when the resource is not authorized.
+    fn authorize(&self, resource: AccessResource<'_>) -> Result<(), ToolError>;
+}
+
+#[derive(Debug, Clone, Copy)]
+struct AllowAllAccessPolicy;
+
+impl ToolAccessPolicy for AllowAllAccessPolicy {
+    fn authorize(&self, _resource: AccessResource<'_>) -> Result<(), ToolError> {
+        Ok(())
+    }
 }
 
 /// CAS-backed resolver for full and collision-checked short content references.
@@ -66,15 +94,15 @@ impl RefResolver for CasRefResolver {
                 .resolve(&short)
                 .map_err(|_| ToolError::NotFound("content reference".to_owned()))?
         };
-        let bytes = self
-            .cas
-            .get(&cid)
-            .map_err(|_| ToolError::NotFound("content reference".to_owned()))?;
-        if u64::try_from(bytes.len()).map_or(true, |length| length > max_bytes) {
-            return Err(ToolError::InvalidInput(
-                "referenced content exceeds configured read bound".to_owned(),
-            ));
-        }
+        let bytes = match self.cas.get_bounded(&cid, max_bytes) {
+            Ok(bytes) => bytes,
+            Err(CasError::TooLarge { .. }) => {
+                return Err(ToolError::InvalidInput(
+                    "referenced content exceeds configured read bound".to_owned(),
+                ));
+            }
+            Err(_) => return Err(ToolError::NotFound("content reference".to_owned())),
+        };
         let text = std::str::from_utf8(&bytes).map_err(|_| {
             ToolError::InvalidInput("referenced content is not UTF-8 text".to_owned())
         })?;
@@ -249,6 +277,71 @@ where
         arguments: &Value,
         context: &ToolContext<'_>,
     ) -> Result<ToolOutput, ToolError> {
+        self.invoke_blocking_with_limits(
+            name,
+            arguments,
+            context,
+            self.limits,
+            &AllowAllAccessPolicy,
+            false,
+        )
+    }
+
+    /// Validate and invoke one pure or read-only builtin under a caller policy and output cap.
+    ///
+    /// The caller cap intersects the registry cap. Recursive workspace reads preauthorize the
+    /// traversed workspace paths and local ignore files before the ignore-aware walker consumes
+    /// ignore contents or produces rows. Preflight observes directory names and filesystem
+    /// metadata to find those resources; denied paths abort the call, including paths that ignore
+    /// rules would otherwise hide. External parent/global Git ignore files are disabled here.
+    /// The trusted blocking entry point retains the walker's default ignore behavior.
+    /// Stable-workspace assumptions still apply between preflight and later filesystem access.
+    ///
+    /// # Errors
+    /// Unknown tools, writes, invalid arguments, policy denials, backend failures, and results
+    /// exceeding either configured output limit are rejected without returning partial output.
+    pub fn invoke_authorized_bounded<A: ToolAccessPolicy>(
+        &self,
+        name: &str,
+        arguments: &Value,
+        context: &ToolContext<'_>,
+        caller_max_output: u64,
+        policy: &A,
+    ) -> Result<ToolOutput, ToolError> {
+        if caller_max_output == 0 {
+            return Err(ToolError::InvalidInput(
+                "caller output bound must be positive".to_owned(),
+            ));
+        }
+        let spec = self
+            .get(name)
+            .ok_or_else(|| ToolError::NotFound("builtin tool".to_owned()))?;
+        if spec.effects.writes_workspace || spec.effects.network || spec.effects.executes {
+            return Err(ToolError::Forbidden(
+                "builtin is not available in read-only invocation".to_owned(),
+            ));
+        }
+        let _bounded_arguments = serialize_bounded(
+            arguments,
+            self.limits.max_input_bytes,
+            "tool arguments exceed configured bound",
+        )?;
+        validate_readonly_arguments(name, arguments)?;
+        let mut limits = self.limits;
+        limits.max_output_bytes = limits.max_output_bytes.min(caller_max_output);
+        limits.max_read_bytes = limits.max_read_bytes.min(limits.max_output_bytes);
+        self.invoke_blocking_with_limits(name, arguments, context, limits, policy, true)
+    }
+
+    fn invoke_blocking_with_limits<A: ToolAccessPolicy>(
+        &self,
+        name: &str,
+        arguments: &Value,
+        context: &ToolContext<'_>,
+        call_limits: ToolLimits,
+        policy: &A,
+        authorized_traversal: bool,
+    ) -> Result<ToolOutput, ToolError> {
         if self.get(name).is_none() {
             return Err(ToolError::NotFound("builtin tool".to_owned()));
         }
@@ -257,16 +350,20 @@ where
                 "this builtin requires asynchronous invocation".to_owned(),
             ));
         }
-        let input_bytes = serde_json::to_vec(arguments)
-            .map_err(|_| ToolError::InvalidInput("invalid tool arguments".to_owned()))?;
-        if u64::try_from(input_bytes.len())
-            .map_or(true, |length| length > self.limits.max_input_bytes)
-        {
-            return Err(ToolError::InvalidInput(
-                "tool arguments exceed configured bound".to_owned(),
-            ));
+        let _input_bytes = serialize_bounded(
+            arguments,
+            call_limits.max_input_bytes,
+            "tool arguments exceed configured bound",
+        )?;
+        let limits = effective_limits(call_limits, context.deadline);
+        let query_uses_workspace_root = match name {
+            "list_dir" | "grep" => matches!(arguments.get("path"), None | Some(Value::Null)),
+            "glob" | "repo_map" => true,
+            _ => false,
+        };
+        if query_uses_workspace_root {
+            policy.authorize(AccessResource::WorkspaceRoot)?;
         }
-        let limits = effective_limits(self.limits, context.deadline);
         let parser = ParserPool::with_limits(ParseLimits {
             max_source_bytes: usize::try_from(limits.max_read_bytes).map_err(|_| {
                 ToolError::InvalidInput("read limit exceeds platform size".to_owned())
@@ -276,7 +373,12 @@ where
         let (value, truncated) = match name {
             "read_file" => {
                 let input: ReadFileInput = parse_args(arguments)?;
-                let output = read_file(context.workspace_root, &input, &limits)?;
+                let output = crate::read::read_file_authorized(
+                    context.workspace_root,
+                    &input,
+                    &limits,
+                    |path| authorize_workspace_path(policy, path),
+                )?;
                 let truncated = output.truncated;
                 (
                     serde_json::to_value(output).map_err(|_| {
@@ -287,7 +389,16 @@ where
             }
             "list_dir" => {
                 let input: ListDirInput = parse_args(arguments)?;
-                let output = list_dir(context.workspace_root, &input, &limits)?;
+                let output = if authorized_traversal {
+                    crate::search::list_dir_authorized(
+                        context.workspace_root,
+                        &input,
+                        &limits,
+                        |path| authorize_workspace_path(policy, path),
+                    )?
+                } else {
+                    crate::search::list_dir(context.workspace_root, &input, &limits)?
+                };
                 let truncated = output.truncated;
                 (
                     serde_json::to_value(output).map_err(|_| {
@@ -298,7 +409,16 @@ where
             }
             "glob" => {
                 let input: GlobInput = parse_args(arguments)?;
-                let output = glob(context.workspace_root, &input, &limits)?;
+                let output = if authorized_traversal {
+                    crate::search::glob_authorized(
+                        context.workspace_root,
+                        &input,
+                        &limits,
+                        |path| authorize_workspace_path(policy, path),
+                    )?
+                } else {
+                    crate::search::glob(context.workspace_root, &input, &limits)?
+                };
                 let truncated = output.truncated;
                 (
                     serde_json::to_value(output).map_err(|_| {
@@ -309,7 +429,16 @@ where
             }
             "grep" => {
                 let input: GrepInput = parse_args(arguments)?;
-                let output = grep(context.workspace_root, &input, &limits)?;
+                let output = if authorized_traversal {
+                    crate::search::grep_authorized(
+                        context.workspace_root,
+                        &input,
+                        &limits,
+                        |path| authorize_workspace_path(policy, path),
+                    )?
+                } else {
+                    crate::search::grep(context.workspace_root, &input, &limits)?
+                };
                 let truncated = output.truncated;
                 (
                     serde_json::to_value(output).map_err(|_| {
@@ -320,8 +449,13 @@ where
             }
             "skeleton" => {
                 let input: PathInput = parse_args(arguments)?;
-                let output =
-                    self.skeleton(context.workspace_root, &input.path, &limits, &parser)?;
+                let output = self.skeleton(
+                    context.workspace_root,
+                    &input.path,
+                    &limits,
+                    &parser,
+                    policy,
+                )?;
                 (
                     serde_json::to_value(output).map_err(|_| {
                         ToolError::InvalidInput("skeleton result encoding failed".to_owned())
@@ -331,8 +465,14 @@ where
             }
             "repo_map" => {
                 let input: RepoMapInput = parse_args(arguments)?;
-                let (output, truncated) =
-                    self.repo_map(context.workspace_root, &input, &limits, &parser)?;
+                let (output, truncated) = self.repo_map(
+                    context.workspace_root,
+                    &input,
+                    &limits,
+                    &parser,
+                    policy,
+                    authorized_traversal,
+                )?;
                 (
                     serde_json::to_value(output).map_err(|_| {
                         ToolError::InvalidInput("repo map result encoding failed".to_owned())
@@ -400,13 +540,16 @@ where
         path: &str,
         limits: &ToolLimits,
         parser: &ParserPool,
+        policy: &impl ToolAccessPolicy,
     ) -> Result<SkeletonOutput, ToolError> {
         let input = ReadFileInput {
             path: path.to_owned(),
             offset: 0,
             limit: None,
         };
-        let read = read_file(root, &input, limits)?;
+        let read = crate::read::read_file_authorized(root, &input, limits, |resource_path| {
+            authorize_workspace_path(policy, resource_path)
+        })?;
         if read.binary {
             return Err(ToolError::InvalidInput(
                 "binary files have no source skeleton".to_owned(),
@@ -448,11 +591,16 @@ where
         input: &RepoMapInput,
         limits: &ToolLimits,
         parser: &ParserPool,
+        policy: &impl ToolAccessPolicy,
+        authorized_traversal: bool,
     ) -> Result<(RepoMapOutput, bool), ToolError> {
         if input.max_tokens == 0 {
             return Err(ToolError::InvalidInput(
                 "max_tokens must be positive".to_owned(),
             ));
+        }
+        for path in &input.focus_files {
+            authorize_workspace_path(policy, path)?;
         }
         let canonical_root = root
             .canonicalize()
@@ -464,11 +612,23 @@ where
             ToolError::InvalidInput("file result bound exceeds platform size".to_owned())
         })?;
         let mut truncated = false;
+        if authorized_traversal {
+            crate::search::preauthorize_ignore_files(
+                &canonical_root,
+                &canonical_root,
+                limits,
+                start,
+                &mut |path| authorize_workspace_path(policy, path),
+            )?;
+        }
         let mut builder = WalkBuilder::new(&canonical_root);
         builder
             .hidden(false)
             .follow_links(false)
             .add_custom_ignore_filename(".polarisignore");
+        if authorized_traversal {
+            crate::search::configure_authorized_walker(&mut builder, &canonical_root);
+        }
         for entry in builder.build() {
             let entry = match entry {
                 Ok(entry) => entry,
@@ -481,10 +641,7 @@ where
                 truncated = true;
                 break;
             }
-            if entry.depth() == 0
-                || entry.path_is_symlink()
-                || !entry.file_type().is_some_and(|kind| kind.is_file())
-            {
+            if entry.depth() == 0 || entry.path_is_symlink() {
                 continue;
             }
             let relative = match entry.path().strip_prefix(&canonical_root) {
@@ -492,6 +649,13 @@ where
                 Err(_) => continue,
             };
             let relative_text = relative.to_string_lossy().replace('\\', "/");
+            if WorkspacePath::parse(&relative_text).is_err() {
+                continue;
+            }
+            authorize_workspace_path(policy, &relative_text)?;
+            if !entry.file_type().is_some_and(|kind| kind.is_file()) {
+                continue;
+            }
             let resolved = match resolve_in_workspace(&canonical_root, &relative_text) {
                 Ok(path) => path,
                 Err(_) => continue,
@@ -573,24 +737,29 @@ where
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct PathInput {
     path: String,
 }
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct RepoMapInput {
     #[serde(default)]
     focus_files: Vec<String>,
     max_tokens: u32,
 }
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ExpandInput {
     reference: String,
 }
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct RecallInput {
     query: String,
 }
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct DiffApplyInput {
     base: String,
     patch: String,
@@ -661,6 +830,36 @@ fn parse_args<T: for<'de> Deserialize<'de>>(value: &Value) -> Result<T, ToolErro
         .map_err(|_| ToolError::InvalidInput("tool arguments do not match schema".to_owned()))
 }
 
+/// Parse and reject unknown fields for a pure or read-only builtin without performing I/O.
+///
+/// # Errors
+/// Returns the same input error class used by invocation for malformed or unsupported tools.
+pub fn validate_readonly_arguments(name: &str, arguments: &Value) -> Result<(), ToolError> {
+    match name {
+        "read_file" => parse_args::<ReadFileInput>(arguments).map(|_| ()),
+        "list_dir" => parse_args::<ListDirInput>(arguments).map(|_| ()),
+        "glob" => parse_args::<GlobInput>(arguments).map(|_| ()),
+        "grep" => parse_args::<GrepInput>(arguments).map(|_| ()),
+        "skeleton" => parse_args::<PathInput>(arguments).map(|_| ()),
+        "repo_map" => parse_args::<RepoMapInput>(arguments).map(|_| ()),
+        "json_query" => parse_args::<JsonQueryInput>(arguments).map(|_| ()),
+        "regex_query" => parse_args::<RegexQueryInput>(arguments).map(|_| ()),
+        "diff_apply" => parse_args::<DiffApplyInput>(arguments).map(|_| ()),
+        "polaris_expand" => parse_args::<ExpandInput>(arguments).map(|_| ()),
+        "polaris_recall" => parse_args::<RecallInput>(arguments).map(|_| ()),
+        "classify_command" => parse_args::<ClassifyInput>(arguments).map(|_| ()),
+        "write_file" | "edit_file" | "apply_patch" | "shell" => Err(ToolError::Forbidden(
+            "builtin is not available in read-only invocation".to_owned(),
+        )),
+        _ => Err(ToolError::NotFound("builtin tool".to_owned())),
+    }
+}
+
+fn authorize_workspace_path(policy: &impl ToolAccessPolicy, value: &str) -> Result<(), ToolError> {
+    let path = WorkspacePath::parse(value).map_err(crate::read::path_tool_error)?;
+    policy.authorize(AccessResource::WorkspacePath(&path))
+}
+
 fn parse_cid(value: &str) -> Result<Cid, ToolError> {
     Cid::from_hex(value)
         .map_err(|_| ToolError::InvalidInput("expected_base must be a full content id".to_owned()))
@@ -678,20 +877,62 @@ fn finish_output(
     truncated: bool,
     limits: &ToolLimits,
 ) -> Result<ToolOutput, ToolError> {
-    let encoded = serde_json::to_vec(&value)
-        .map_err(|_| ToolError::InvalidInput("tool result encoding failed".to_owned()))?;
+    let encoded = serialize_bounded(
+        &value,
+        limits.max_output_bytes,
+        "tool output exceeds configured bound",
+    )?;
     let bytes = u64::try_from(encoded.len())
         .map_err(|_| ToolError::InvalidInput("tool output size overflow".to_owned()))?;
-    if bytes > limits.max_output_bytes {
-        return Err(ToolError::InvalidInput(
-            "tool output exceeds configured bound".to_owned(),
-        ));
-    }
     Ok(ToolOutput {
         value,
         truncated,
         bytes,
     })
+}
+
+fn serialize_bounded(value: &Value, limit: u64, message: &str) -> Result<Vec<u8>, ToolError> {
+    let mut writer = BoundedJsonWriter {
+        bytes: Vec::new(),
+        limit,
+    };
+    serde_json::to_writer(&mut writer, value)
+        .map_err(|_| ToolError::InvalidInput(message.to_owned()))?;
+    Ok(writer.bytes)
+}
+
+struct BoundedJsonWriter {
+    bytes: Vec<u8>,
+    limit: u64,
+}
+
+impl Write for BoundedJsonWriter {
+    fn write(&mut self, buffer: &[u8]) -> std::io::Result<usize> {
+        let current = u64::try_from(self.bytes.len()).map_err(|_| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, "output size overflow")
+        })?;
+        let incoming = u64::try_from(buffer.len()).map_err(|_| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, "output size overflow")
+        })?;
+        let Some(next) = current.checked_add(incoming) else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "output size overflow",
+            ));
+        };
+        if next > self.limit {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "output limit exceeded",
+            ));
+        }
+        self.bytes.extend_from_slice(buffer);
+        Ok(buffer.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 /// Registered P1 tool schemas in byte-stable name order. No backend is needed to inspect schemas.

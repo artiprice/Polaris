@@ -22,6 +22,9 @@ pub enum WatchdogError {
     /// A required size, threshold, or timeout bound is invalid.
     #[error("watchdog configuration is invalid")]
     InvalidConfig,
+    /// Validated schema set did not contain deterministic watchdog configuration.
+    #[error("validated schema set has no deterministic watchdog configuration")]
+    MissingSchemaConfig,
 }
 
 /// Per-step advisory watchdog.
@@ -60,6 +63,32 @@ where
         })
     }
 
+    /// Copy the validated deterministic bounds used by this instance.
+    #[must_use]
+    pub const fn config(&self) -> WatchdogConfig {
+        self.config
+    }
+
+    /// Build the hash-only record for an already-reserved frame step.
+    /// # Errors
+    /// Returns a bounded build error when the proposal exceeds configured processing limits.
+    pub fn record_proposal(
+        &self,
+        snapshot: &FrameSnapshot,
+        step: &ProposedStep,
+    ) -> Result<crate::StepRecord, crate::StepBuildError> {
+        if snapshot.current_step == 0 {
+            return Err(crate::StepBuildError::InvalidWindowSize);
+        }
+        build_step_record(
+            StepIndex::new(snapshot.current_step),
+            step,
+            self.config.loops.shingle_size,
+            self.config.max_step_bytes,
+            StepOutcome::Unknown,
+        )
+    }
+
     /// Inspect a proposed step before it reaches S2.
     ///
     /// Role policy, loop detection, and context-pressure checks run deterministically first. S1
@@ -68,7 +97,7 @@ where
     /// preserving the watchdog's fail-open advisory policy. Capability authorization remains the
     /// only source of tool authority.
     pub async fn inspect(&self, snapshot: &FrameSnapshot, step: &ProposedStep) -> HealthVerdict {
-        if let Some(call) = step.tool_call.as_ref() {
+        for call in &step.tool_calls {
             if !self.role_table.allows(snapshot.role, call) {
                 return HealthVerdict::RoleViolation {
                     tool: call.tool.as_str().to_owned(),
@@ -77,14 +106,12 @@ where
             }
         }
 
-        let index = match next_index(&snapshot.recent) {
-            Some(index) => index,
-            None => {
-                return HealthVerdict::Unchecked {
-                    reason: UncheckedReason::StepIndexOverflow,
-                };
-            }
-        };
+        if snapshot.current_step == 0 {
+            return HealthVerdict::Unchecked {
+                reason: UncheckedReason::StepIndexOverflow,
+            };
+        }
+        let index = StepIndex::new(snapshot.current_step);
         let next = match build_step_record(
             index,
             step,
@@ -109,6 +136,18 @@ where
                 };
             }
         };
+
+        if let Some(negative) = snapshot
+            .negative_constraints
+            .iter()
+            .find(|entry| entry.hypothesis == next.fingerprint)
+        {
+            return HealthVerdict::Loop {
+                repeats: negative.rejected_at,
+                disproven: Some(negative.hypothesis),
+                similarity: crate::ShingleSimilarity::new(1, 1),
+            };
+        }
 
         let mut window = match LoopWindow::new(self.config.loops.window_size) {
             Ok(window) => window,
@@ -239,15 +278,60 @@ where
     }
 }
 
+impl<D> Watchdog<D, polaris_system_one_schemas::SchemaSet>
+where
+    D: DecisionEngine,
+{
+    /// Construct from a schema set carrying its separately validated deterministic policy.
+    ///
+    /// # Errors
+    /// Returns an error when the schema set omits that policy or contains invalid values.
+    pub fn from_schema_set(
+        engine: D,
+        catalog: polaris_system_one_schemas::SchemaSet,
+        role_table: RoleTable,
+        calibration: CalibrationContext,
+    ) -> Result<Self, WatchdogError> {
+        let source = catalog
+            .watchdog_config()
+            .ok_or(WatchdogError::MissingSchemaConfig)?;
+        let config = WatchdogConfig {
+            max_step_bytes: usize::try_from(source.max_step_bytes)
+                .map_err(|_| WatchdogError::InvalidConfig)?,
+            loops: crate::LoopConfig {
+                window_size: usize::from(source.window_size),
+                shingle_size: usize::from(source.shingle_size),
+                near_duplicate: RatioThreshold {
+                    numerator: source.near_duplicate.numerator,
+                    denominator: source.near_duplicate.denominator,
+                },
+            },
+            fatigue: crate::FatigueConfig {
+                pressure: RatioThreshold {
+                    numerator: source.pressure.numerator,
+                    denominator: source.pressure.denominator,
+                },
+                repetition: RatioThreshold {
+                    numerator: source.repetition.numerator,
+                    denominator: source.repetition.denominator,
+                },
+                require_both_signals: source.require_both_signals,
+            },
+        };
+        Self::new(engine, catalog, role_table, config, calibration)
+    }
+}
+
 fn validate_config(config: WatchdogConfig) -> Result<(), WatchdogError> {
     let valid_ratio =
         |ratio: RatioThreshold| ratio.denominator > 0 && ratio.numerator <= ratio.denominator;
     if config.max_step_bytes == 0
         || config.max_step_bytes > 1_048_576
         || config.loops.window_size == 0
-        || config.loops.window_size > 500
+        || config.loops.window_size > 128
         || config.loops.shingle_size == 0
         || config.loops.shingle_size > 128
+        || config.loops.near_duplicate.numerator == 0
         || !valid_ratio(config.loops.near_duplicate)
         || !valid_ratio(config.fatigue.pressure)
         || !valid_ratio(config.fatigue.repetition)
@@ -255,13 +339,6 @@ fn validate_config(config: WatchdogConfig) -> Result<(), WatchdogError> {
         return Err(WatchdogError::InvalidConfig);
     }
     Ok(())
-}
-
-fn next_index(recent: &[crate::StepRecord]) -> Option<StepIndex> {
-    match recent.last() {
-        Some(record) => record.index.get().checked_add(1).map(StepIndex::new),
-        None => Some(StepIndex::new(1)),
-    }
 }
 
 fn bounded_text(input: &str, limit: usize) -> String {
@@ -285,22 +362,17 @@ fn bounded_text(input: &str, limit: usize) -> String {
 }
 
 fn decision_step_text(step: &ProposedStep) -> String {
-    let Some(call) = step.tool_call.as_ref() else {
-        return step.thought.clone();
-    };
-    let path = match call.workspace_path.as_deref() {
-        Some(path) => path,
-        None => "",
-    };
-    format!(
-        "{}\nTool: {}\nPath: {}\nWrites workspace: {}\nNetwork: {}\nExecutes: {}",
-        step.thought,
-        call.tool.as_str(),
-        path,
-        call.writes_workspace,
-        call.network,
-        call.executes,
-    )
+    let mut text = step.thought.clone();
+    for call in &step.tool_calls {
+        text.push_str(&format!(
+            "\nTool: {}\nWrites workspace: {}\nNetwork: {}\nExecutes: {}",
+            call.tool.as_str(),
+            call.writes_workspace,
+            call.network,
+            call.executes,
+        ));
+    }
+    text
 }
 
 fn unchecked(reason: UncheckedReason) -> HealthVerdict {

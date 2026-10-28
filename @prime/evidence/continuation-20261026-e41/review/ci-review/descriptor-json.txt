@@ -1,0 +1,3 @@
+$ python json.load(specs/descriptors/cicd_sandbox_lifecycle.json)
+valid JSON
+[exit=0]

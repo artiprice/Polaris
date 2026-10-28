@@ -1,0 +1,1 @@
+cargo test -p polaris-nebius-cloud-ai-cloud --test cloud_policy --no-fail-fast

@@ -1,0 +1,90 @@
+   Compiling chacha20poly1305 v0.11.0
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+error[E0599]: no associated function or constant named `with_seal_key_from_source` found for struct `SecretVault` in the current scope
+   --> crates\polaris-security\crates\secrets\tests\key_recovery.rs:17:28
+    |
+ 17 |     let first=SecretVault::with_seal_key_from_source(&location,&source,VaultLimits::new(0,0))?;
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^ associated function or constant not found in `SecretVault`
+    |
+note: if you're trying to build a new `SecretVault` consider using one of the following associated functions:
+      SecretVault::new
+      SecretVault::with_limits
+   --> crates\polaris-security\crates\secrets\src\vault.rs:202:5
+    |
+202 |     pub fn new() -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+213 |     pub fn with_limits(limits: VaultLimits) -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no associated function or constant named `with_seal_key_from_source` found for struct `SecretVault` in the current scope
+   --> crates\polaris-security\crates\secrets\tests\key_recovery.rs:19:29
+    |
+ 19 |     let second=SecretVault::with_seal_key_from_source(&location,&source,VaultLimits::new(0,0))?;
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^ associated function or constant not found in `SecretVault`
+    |
+note: if you're trying to build a new `SecretVault` consider using one of the following associated functions:
+      SecretVault::new
+      SecretVault::with_limits
+   --> crates\polaris-security\crates\secrets\src\vault.rs:202:5
+    |
+202 |     pub fn new() -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+213 |     pub fn with_limits(limits: VaultLimits) -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no associated function or constant named `with_seal_key_from_source` found for struct `SecretVault` in the current scope
+   --> crates\polaris-security\crates\secrets\tests\key_recovery.rs:28:30
+    |
+ 28 |         assert!(SecretVault::with_seal_key_from_source(&location,&source,VaultLimits::new(0,0)).is_err());
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^ associated function or constant not found in `SecretVault`
+    |
+note: if you're trying to build a new `SecretVault` consider using one of the following associated functions:
+      SecretVault::new
+      SecretVault::with_limits
+   --> crates\polaris-security\crates\secrets\src\vault.rs:202:5
+    |
+202 |     pub fn new() -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+213 |     pub fn with_limits(limits: VaultLimits) -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no associated function or constant named `with_seal_key_from_source` found for struct `SecretVault` in the current scope
+   --> crates\polaris-security\crates\secrets\tests\key_recovery.rs:31:28
+    |
+ 31 |     let first=SecretVault::with_seal_key_from_source(&location,&source(Some(&"01".repeat(32))),VaultLimits::new(0,0))?;
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^ associated function or constant not found in `SecretVault`
+    |
+note: if you're trying to build a new `SecretVault` consider using one of the following associated functions:
+      SecretVault::new
+      SecretVault::with_limits
+   --> crates\polaris-security\crates\secrets\src\vault.rs:202:5
+    |
+202 |     pub fn new() -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+213 |     pub fn with_limits(limits: VaultLimits) -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no associated function or constant named `with_seal_key_from_source` found for struct `SecretVault` in the current scope
+   --> crates\polaris-security\crates\secrets\tests\key_recovery.rs:32:29
+    |
+ 32 |     let second=SecretVault::with_seal_key_from_source(&location,&source(Some(&"02".repeat(32))),VaultLimits::new(0,0))?;
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^ associated function or constant not found in `SecretVault`
+    |
+note: if you're trying to build a new `SecretVault` consider using one of the following associated functions:
+      SecretVault::new
+      SecretVault::with_limits
+   --> crates\polaris-security\crates\secrets\src\vault.rs:202:5
+    |
+202 |     pub fn new() -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+213 |     pub fn with_limits(limits: VaultLimits) -> Result<Self, SecretsError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-security-secrets` (test "key_recovery") due to 5 previous errors

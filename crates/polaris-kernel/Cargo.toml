@@ -19,10 +19,13 @@ serde_json = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
+cap-std = { workspace = true }
+zeroize = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-proto = { workspace = true }
 polaris-config = { workspace = true }
+polaris-code-intel = { workspace = true }
 polaris-log = { workspace = true }
 polaris-telemetry = { workspace = true }
 polaris-ratelimit = { workspace = true }
@@ -50,6 +53,7 @@ polaris-hacker = { workspace = true }
 polaris-runtime = { workspace = true }
 
 [dev-dependencies]
+secrecy = { workspace = true }
 tar = { workspace = true }
 blake3 = { workspace = true }
 bytes = { workspace = true }

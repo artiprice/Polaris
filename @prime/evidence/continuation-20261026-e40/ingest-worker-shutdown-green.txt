@@ -1,0 +1,12 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 9.63s
+     Running unittests src\lib.rs (target\debug\deps\polaris_worker-1b91e7a4f340ade3.exe)
+
+running 3 tests
+test ingest::tests::provenance_writer_rejects_growth_and_parser_errors_are_private ... ok
+test ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped ... ok
+test ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.03s
+

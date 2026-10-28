@@ -1,0 +1,93 @@
+{
+  "type_of": "struct",
+  "name": "Aurora::{new, resize, render_rgba, render_text}",
+  "file_path": "crates/polaris-ui/crates/ascii-aurora/src/blit.rs",
+  "logic_name": "Aurora RGBA Blitter",
+  "test_list": [
+    {
+      "test_name": "render_writes_every_pixel_opaque",
+      "description": "After pre-filling the buffer with garbage render_rgba overwrites all w*h*4 bytes and every alpha byte is 255."
+    },
+    {
+      "test_name": "wrong_buffer_size_is_error",
+      "description": "A buffer of the wrong length yields AuroraError::BufferSize with expected and actual."
+    },
+    {
+      "test_name": "render_does_not_reallocate",
+      "description": "Internal buffer pointers are identical before and after many frames."
+    },
+    {
+      "test_name": "resize_same_size_keeps_buffers",
+      "description": "Resizing to the same size keeps all internal buffers untouched."
+    },
+    {
+      "test_name": "resize_new_size_rebuilds",
+      "description": "Resizing to a new size changes the cell grid and buffer lengths."
+    },
+    {
+      "test_name": "resize_clamps_to_max_and_ceils_cells",
+      "description": "Each axis is clamped to the configured maximum and cols/rows are ceil(px / cell)."
+    },
+    {
+      "test_name": "zero_cell_is_size_error",
+      "description": "A zero cell width or height is rejected with AuroraError::Size."
+    },
+    {
+      "test_name": "render_is_deterministic",
+      "description": "Two renders of the same (seed, size, t) are byte-identical."
+    },
+    {
+      "test_name": "prop_render_valid_over_time",
+      "description": "For arbitrary t in [0,600] a small frame renders without error and with alpha 255."
+    },
+    {
+      "test_name": "grid_line_visible_on_cell_edges",
+      "description": "Empty cells show a faint grid line on the right and bottom pixel of the cell, brighter than the cell interior."
+    },
+    {
+      "test_name": "render_text_blank_ratio",
+      "description": "At 96x40 cells and t=12 between 60% and 75% of cells are blank spaces."
+    },
+    {
+      "test_name": "render_text_golden_snapshot",
+      "description": "insta snapshot of the 96x40 text render at t=12."
+    },
+    {
+      "test_name": "write_preview_ppm",
+      "description": "Ignored visual check: renders 1440x900 at t=12 and t=20 and writes binary PPM files for review."
+    },
+    {
+      "test_name": "render_perf_1080p_average_under_bound",
+      "description": "Ignored release-only timing: the average of 30 frames at 1920x1080 stays under 15 ms."
+    }
+  ],
+  "dependencies": [
+    "crate::field",
+    "crate::ramp",
+    "crate::atlas::GlyphAtlas",
+    "crate::error::AuroraError"
+  ],
+  "libraries": [
+    "proptest (dev)",
+    "insta (dev)"
+  ],
+  "inputs": [
+    {
+      "name": "config",
+      "type": "AuroraConfig",
+      "description": "Cell size, seed and maximum pixel size."
+    },
+    {
+      "name": "font",
+      "type": "&[u8]",
+      "description": "Monospace font bytes for the glyph atlas."
+    },
+    {
+      "name": "t_seconds, out",
+      "type": "f32, &mut [u8]",
+      "description": "Simulation time and the destination RGBA8 buffer."
+    }
+  ],
+  "output_type": "Result<(), AuroraError> / String",
+  "output_description": "Straight opaque RGBA8 pixels written without allocation, or rows of ramp glyphs joined by newlines."
+}

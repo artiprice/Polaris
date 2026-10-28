@@ -1,0 +1,25 @@
+{
+  "type_of": "method",
+  "name": "RuleEngine::audit_diff",
+  "file_path": "crates/polaris-security/crates/rules/src/audit.rs",
+  "logic_name": "diff_audit",
+  "test_list": [
+    {"test_name": "finds_rule_match_in_added_hunk", "description": "An AST pattern matching changed code yields a finding."},
+    {"test_name": "ignores_unchanged_match", "description": "A matching construct outside changed byte hunks yields no finding."},
+    {"test_name": "returns_cwe_severity_and_cid", "description": "Findings include mapped metadata and a digest of the snippet, never its raw contents."},
+    {"test_name": "unsupported_language_is_incomplete", "description": "Missing grammar or rule coverage is explicit."},
+    {"test_name": "explicit_parent_component_in_joined_open_path_is_reported", "description": "An AST-shaped joined path with an explicit parent component reports CWE-22; a benign joined path does not."},
+    {"test_name": "repeated_adjacent_free_in_one_compound_statement_is_reported", "description": "Repeated deallocation of the same AST expression is a disputed potential CWE-415 indicator; reassignment is a negative case."},
+    {"test_name": "repeated_adjacent_delete_in_one_compound_statement_is_reported", "description": "Repeated C++ delete of the same AST expression is a disputed potential CWE-415 indicator."},
+    {"test_name": "freed_pointer_use_in_same_compound_statement_is_reported_as_potential", "description": "A free followed by same-expression pointer dereference in one C++ block is a disputed potential CWE-416 indicator; no lifetime proof is claimed."},
+    {"test_name": "reassigned_pointer_after_free_is_not_reported_as_same_expression_uaf", "description": "A pointer reassignment between free and dereference does not match the finite same-expression UAF pattern."},
+    {"test_name": "other_pointer_after_free_is_not_reported_as_same_expression_uaf", "description": "Dereferencing a different expression after free is a negative case for this pattern."},
+    {"test_name": "symlink_check_then_open_of_same_path_is_reported", "description": "A same-path symlink metadata check followed by open is a disputed CWE-59 race indicator."},
+    {"test_name": "direct_cuda_thread_index_access_is_an_informational_review_hint", "description": "Direct CUDA thread-local indexing is an informational review hint with no CWE; a safe explicit bounds guard is also recorded as a known false positive."}
+  ],
+  "dependencies": ["ParserPool", "Parsed", "ByteSpan", "RulePack"],
+  "libraries": ["ast-grep-core", "blake3"],
+  "inputs": [{"name": "request", "type": "&DiffAuditRequest", "description": "Validated relative path, old/new source and bounded changed byte spans."}],
+  "output_type": "Result<RuleScanReport, RulesError>",
+  "output_description": "Findings restricted to changed hunks plus explicit language coverage."
+}

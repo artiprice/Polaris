@@ -1,0 +1,9 @@
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+    Finished `test` profile [unoptimized] target(s) in 1.67s
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_client-252d843dfbb35c91.exe)
+
+running 1 test
+test tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+

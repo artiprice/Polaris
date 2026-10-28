@@ -1,0 +1,29 @@
+{
+  "name": "scoped-tests",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline",
+    "--locked",
+    "--no-fail-fast",
+    "-p",
+    "polaris-sdk",
+    "-p",
+    "polaris-security-capability",
+    "-p",
+    "polaris-runtime-frames",
+    "-p",
+    "polaris-tools-builtin",
+    "-p",
+    "polaris-kernel"
+  ],
+  "started_utc": "2026-10-26T17:40:42.516534+00:00",
+  "elapsed_seconds": 38.398,
+  "exit_code": 0,
+  "raw": "16-scoped-tests.txt",
+  "test_result_totals": {
+    "passed": 205,
+    "failed": 0,
+    "ignored": 2
+  }
+}

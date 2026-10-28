@@ -1,0 +1,12 @@
+{
+  "bytes": 989120,
+  "sha256": "d3511cb356ce54630a9f6afd540b3a3cd366e307505cb9dffc20613433cdc02b",
+  "packages": 1027,
+  "relationships": 3829,
+  "described_elements": 94,
+  "repeated_bytes_identical": true,
+  "explicit_created": "2026-10-26T15:53:11Z",
+  "schema_source": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json",
+  "schema_sha256": "239208b7ac287b3cf5d9a9af23f9d69863971102a5e1587a27a398b43490b89b",
+  "scope": "Full resolved Cargo workspace graph, including development/build/platform dependencies; not a target-binary inventory."
+}

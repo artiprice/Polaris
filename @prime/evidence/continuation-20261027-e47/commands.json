@@ -1,0 +1,605 @@
+[
+  {
+    "name": "assembler-red",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:51:29.933549+00:00",
+    "elapsed_seconds": 20.154,
+    "exit_code": 101,
+    "raw": "01-assembler-red.txt"
+  },
+  {
+    "name": "assembler-first-build",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:53:23.363535+00:00",
+    "elapsed_seconds": 4.878,
+    "exit_code": 101,
+    "raw": "02-assembler-first-build.txt"
+  },
+  {
+    "name": "assembler-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:53:58.576282+00:00",
+    "elapsed_seconds": 9.47,
+    "exit_code": 101,
+    "raw": "03-assembler-tests.txt",
+    "test_result_totals": {
+      "passed": 3,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "assembler-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:55:07.355473+00:00",
+    "elapsed_seconds": 10.631,
+    "exit_code": 0,
+    "raw": "04-assembler-tests.txt",
+    "test_result_totals": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "kernel-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--test",
+      "frame_prompt",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T22:55:46.167189+00:00",
+    "elapsed_seconds": 11.657,
+    "exit_code": 101,
+    "raw": "05-kernel-safety.txt"
+  },
+  {
+    "name": "kernel-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--test",
+      "frame_prompt",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T22:56:34.081189+00:00",
+    "elapsed_seconds": 2.519,
+    "exit_code": 0,
+    "raw": "06-kernel-safety.txt"
+  },
+  {
+    "name": "binding-deadline-red",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:59:10.529501+00:00",
+    "elapsed_seconds": 3.221,
+    "exit_code": 101,
+    "raw": "07-binding-deadline-red.txt"
+  },
+  {
+    "name": "deadline-context-behavior-red",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T22:59:40.799794+00:00",
+    "elapsed_seconds": 11.759,
+    "exit_code": 101,
+    "raw": "08-deadline-context-behavior-red.txt",
+    "test_result_totals": {
+      "passed": 5,
+      "failed": 2,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "cumulative-archive-behavior-red",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt"
+    ],
+    "started_utc": "2026-10-26T23:00:27.243213+00:00",
+    "elapsed_seconds": 9.749,
+    "exit_code": 101,
+    "raw": "09-cumulative-archive-behavior-red.txt",
+    "test_result_totals": {
+      "passed": 6,
+      "failed": 1,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "bound-assembly-green",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--test",
+      "frame_prompt",
+      "--test",
+      "frame_prompt_http",
+      "-p",
+      "polaris-sdk",
+      "--test",
+      "prompt_tokenizer"
+    ],
+    "started_utc": "2026-10-26T23:01:09.836864+00:00",
+    "elapsed_seconds": 20.058,
+    "exit_code": 0,
+    "raw": "10-bound-assembly-green.txt",
+    "test_result_totals": {
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  {
+    "name": "native-regression",
+    "argv": [
+      "cargo",
+      "test",
+      "--offline",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "polaris-sdk",
+      "-p",
+      "polaris-security-capability",
+      "-p",
+      "polaris-runtime-frames",
+      "-p",
+      "polaris-runtime-context",
+      "-p",
+      "polaris-tools-builtin",
+      "-p",
+      "polaris-nebius-cloud-token-factory",
+      "-p",
+      "polaris-kernel"
+    ],
+    "started_utc": "2026-10-26T23:03:38.591806+00:00",
+    "elapsed_seconds": 66.416,
+    "exit_code": 0,
+    "raw": "11-native-regression.txt",
+    "test_result_totals": {
+      "passed": 288,
+      "failed": 0,
+      "ignored": 3
+    }
+  },
+  {
+    "name": "linux-domain",
+    "argv": [
+      "wsl.exe",
+      "-d",
+      "Ubuntu-24.04",
+      "--",
+      "bash",
+      "-l",
+      "/mnt/c/mDev/Polaris/@prime/tmp/p2/verify_e47_linux.sh"
+    ],
+    "started_utc": "2026-10-26T23:04:57.094106+00:00",
+    "elapsed_seconds": 322.247,
+    "exit_code": 0,
+    "raw": "12-linux-domain.txt",
+    "test_result_totals": {
+      "passed": 176,
+      "failed": 0,
+      "ignored": 1
+    }
+  },
+  {
+    "name": "kernel-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-kernel",
+      "--lib",
+      "--test",
+      "frame_prompt",
+      "--test",
+      "frame_prompt_http",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T23:08:52.173754+00:00",
+    "elapsed_seconds": 12.226,
+    "exit_code": 0,
+    "raw": "gates/01-kernel-safety.txt"
+  },
+  {
+    "name": "provider-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-nebius-cloud-token-factory",
+      "--lib",
+      "--test",
+      "provider_prompt_tokenization",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T23:09:33.546028+00:00",
+    "elapsed_seconds": 5.192,
+    "exit_code": 0,
+    "raw": "gates/02-provider-safety.txt"
+  },
+  {
+    "name": "sdk-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-sdk",
+      "--lib",
+      "--test",
+      "prompt_tokenizer",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T23:10:04.193166+00:00",
+    "elapsed_seconds": 3.697,
+    "exit_code": 0,
+    "raw": "gates/03-sdk-safety.txt"
+  },
+  {
+    "name": "frame-context-safety",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--offline",
+      "--locked",
+      "-p",
+      "polaris-runtime-frames",
+      "-p",
+      "polaris-runtime-context",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-F",
+      "unsafe_code",
+      "-D",
+      "warnings",
+      "-D",
+      "clippy::unwrap_used",
+      "-D",
+      "clippy::expect_used",
+      "-D",
+      "clippy::panic",
+      "-D",
+      "clippy::as_conversions",
+      "-D",
+      "clippy::indexing_slicing",
+      "-D",
+      "clippy::arithmetic_side_effects"
+    ],
+    "started_utc": "2026-10-26T23:10:08.003914+00:00",
+    "elapsed_seconds": 5.614,
+    "exit_code": 0,
+    "raw": "gates/04-frame-context-safety.txt"
+  },
+  {
+    "name": "format",
+    "argv": [
+      "cargo",
+      "fmt",
+      "-p",
+      "polaris-kernel",
+      "-p",
+      "polaris-sdk",
+      "-p",
+      "polaris-runtime-frames",
+      "-p",
+      "polaris-runtime-context",
+      "-p",
+      "polaris-nebius-cloud-token-factory",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T23:10:13.712995+00:00",
+    "elapsed_seconds": 0.738,
+    "exit_code": 0,
+    "raw": "gates/05-format.txt"
+  },
+  {
+    "name": "workspace-check",
+    "argv": [
+      "cargo",
+      "check",
+      "--offline",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "started_utc": "2026-10-26T23:44:13.028189+00:00",
+    "elapsed_seconds": 32.72,
+    "exit_code": 0,
+    "raw": "gates/06-workspace-check.txt"
+  },
+  {
+    "name": "members",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-members"
+    ],
+    "started_utc": "2026-10-26T23:44:45.844011+00:00",
+    "elapsed_seconds": 0.288,
+    "exit_code": 0,
+    "raw": "gates/07-members.txt"
+  },
+  {
+    "name": "layers",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-layers"
+    ],
+    "started_utc": "2026-10-26T23:44:46.220819+00:00",
+    "elapsed_seconds": 0.397,
+    "exit_code": 0,
+    "raw": "gates/08-layers.txt"
+  },
+  {
+    "name": "witness",
+    "argv": [
+      "cargo",
+      "xtask",
+      "check-witness"
+    ],
+    "started_utc": "2026-10-26T23:44:46.714826+00:00",
+    "elapsed_seconds": 0.787,
+    "exit_code": 0,
+    "raw": "gates/09-witness.txt"
+  },
+  {
+    "name": "render-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs"
+    ],
+    "started_utc": "2026-10-26T23:46:37.499714+00:00",
+    "elapsed_seconds": 0.363,
+    "exit_code": 0,
+    "raw": "22-render-docs.txt"
+  },
+  {
+    "name": "check-docs",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "check-docs"
+    ],
+    "started_utc": "2026-10-26T23:46:37.863712+00:00",
+    "elapsed_seconds": 0.424,
+    "exit_code": 0,
+    "raw": "23-check-docs.txt"
+  },
+  {
+    "name": "render-docs-check",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tools/workspace.py",
+      "render-docs",
+      "--check"
+    ],
+    "started_utc": "2026-10-26T23:46:38.288710+00:00",
+    "elapsed_seconds": 0.376,
+    "exit_code": 0,
+    "raw": "24-render-docs-check.txt"
+  },
+  {
+    "name": "source-inventory",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/inventory_phase_sources.py"
+    ],
+    "started_utc": "2026-10-26T23:46:38.665234+00:00",
+    "elapsed_seconds": 1.631,
+    "exit_code": 0,
+    "raw": "25-source-inventory.txt"
+  },
+  {
+    "name": "percentages",
+    "argv": [
+      "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-I",
+      "@prime/tmp/p2/validate_phase_percentages.py"
+    ],
+    "started_utc": "2026-10-26T23:46:40.329972+00:00",
+    "elapsed_seconds": 0.16,
+    "exit_code": 0,
+    "raw": "26-percentages.txt"
+  },
+  {
+    "name": "source-integrity",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/check_e47_integrity.py"
+    ],
+    "started_utc": "2026-10-26T23:46:49.916681+00:00",
+    "elapsed_seconds": 0.434,
+    "exit_code": 1,
+    "raw": "27-source-integrity.txt"
+  },
+  {
+    "name": "source-integrity",
+    "argv": [
+      "python",
+      "-I",
+      "@prime/tmp/p2/check_e47_integrity.py"
+    ],
+    "started_utc": "2026-10-26T23:47:46.187938+00:00",
+    "elapsed_seconds": 3.544,
+    "exit_code": 0,
+    "raw": "28-source-integrity.txt"
+  }
+]

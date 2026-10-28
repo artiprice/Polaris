@@ -11,7 +11,7 @@ pub use inspect::{Watchdog, WatchdogError};
 pub use loops::{LoopWindow, StepBuildError, build_step_record};
 pub use role::{RolePolicy, RoleTable, RoleTableError, ToolCallFacts, ToolId};
 pub use types::{
-    FatigueConfig, FrameSnapshot, HealthVerdict, LoopConfig, LoopMatch, ProposedStep,
-    RatioThreshold, ShingleSet, ShingleSimilarity, StepFingerprint, StepIndex, StepOutcome,
-    StepRecord, UncheckedReason, WatchdogConfig,
+    FatigueConfig, FrameSnapshot, HealthVerdict, LoopConfig, LoopMatch, NegativeConstraint,
+    ProposedStep, RatioThreshold, ShingleSet, ShingleSimilarity, StepFingerprint, StepIndex,
+    StepOutcome, StepRecord, UncheckedReason, WatchdogConfig,
 };

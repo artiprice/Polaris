@@ -1,0 +1,4 @@
+    Checking tokio v1.54.1
+    Checking tokio-util v0.7.20
+    Checking polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+    Finished `dev` profile [unoptimized] target(s) in 5.54s

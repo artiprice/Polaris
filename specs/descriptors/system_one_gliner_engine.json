@@ -4,6 +4,7 @@
   "file_path": "crates/polaris-system-one/crates/engine/src/lib.rs",
   "logic_name": "Configured GLiNER2 System-One Inference",
   "test_list": [
+    { "test_name": "cpu_provider_must_be_explicit_and_rejects_device_fallbacks", "description": "The engine refuses unset or non-CPU GLiNER device settings and accepts only explicit CPU provider selection." },
     { "test_name": "configured_python_normalization_changes_actual_model_text", "description": "Raw input remains unchanged while the configured GLiNER2 Python normalization appends a period only when needed." },
     { "test_name": "input_context_is_included_and_checked_before_inference", "description": "Primary text and context are combined and rejected when their aggregate UTF-8 byte count exceeds the configured bound." },
     { "test_name": "duplicate_model_prompts_are_rejected_before_inference", "description": "Ambiguous GLiNER task names are rejected before native inference." },
@@ -15,9 +16,9 @@
   "dependencies": ["gliner2_rs::SpanEngine", "polaris_sdk::system_one::{DecisionInput, Decision}"],
   "libraries": ["gliner2-rs", "ort"],
   "inputs": [
-    { "name": "config", "type": "EngineConfig", "description": "Explicit model directory, ORT dynamic library, normalization contract, and bounded thread count." },
+    { "name": "config", "type": "EngineConfig plus GLINER2_DEVICE=cpu", "description": "Explicit model directory, ORT dynamic library, CPU provider, standard execution mode, normalization contract, and bounded thread count." },
     { "name": "input", "type": "DecisionInput", "description": "Validated text and questions supplied through the public SDK contract." }
   ],
   "output_type": "Result<Decision, EngineError>",
-  "output_description": "A real local GLiNER2 classification result with model-derived probabilities and no network/model fallback."
+  "output_description": "A real local GLiNER2 CPU fp32 classification result with model-derived probabilities and no network/model fallback."
 }

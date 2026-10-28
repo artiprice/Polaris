@@ -1,0 +1,42 @@
+{
+  "type_of": "pipeline",
+  "name": "PiiVault sealed snapshots",
+  "file_path": "crates/polaris-security/crates/pii/src/vault/snapshot.rs",
+  "logic_name": "Bounded authenticated PII resume state",
+  "test_list": [
+    {
+      "test_name": "sealed_snapshot_restores_exact_markers_with_real_aead",
+      "description": "Actual AEAD preserves exact reversible markers after reconstructing the vault."
+    },
+    {
+      "test_name": "snapshot_rejects_wrong_owner_key_tamper_and_capacity",
+      "description": "Reject wrong frame/session/key, tampered envelope and reduced restore capacity."
+    },
+    {
+      "test_name": "kernel_snapshot_cas_roundtrip_is_private_and_owner_bound",
+      "description": "Save actual ciphertext to real CAS, reconstruct vault, refuse foreign binding and corrupt CIDs."
+    },
+    {
+      "test_name": "snapshot_reopens_kernel_cas_using_explicit_recovered_key",
+      "description": "Reopen actual kernel CAS and reconstruct marker map with a separately recovered explicit AEAD key; source is an in-memory synthetic credential fixture."
+    }
+  ],
+  "dependencies": [
+    "PiiVault",
+    "Sealer",
+    "SecretVault",
+    "KernelPiiSnapshotStore"
+  ],
+  "libraries": [
+    "zeroize"
+  ],
+  "inputs": [
+    {
+      "name": "sealer",
+      "type": "impl Sealer",
+      "description": "Host-owned authenticated encryption adapter and key custody."
+    }
+  ],
+  "output_type": "Result<PiiVault,PiiError>",
+  "output_description": "Bounded owner-bound restored map, all temporary plaintext zeroizing; durable key custody remains explicit."
+}

@@ -1,0 +1,14 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0277]: `TokenCount` doesn't implement `std::fmt::Display`
+   --> crates\polaris-kernel\tests\model_lifecycle.rs:695:13
+    |
+694 |             "exact adapter token count {} differed from chat usage {}",
+    |                                        -- required by this formatting parameter
+695 |             count.input_tokens, usage.prompt_tokens
+    |             ^^^^^^^^^^^^^^^^^^ `TokenCount` cannot be formatted with the default formatter
+    |
+    = help: the trait `std::fmt::Display` is not implemented for `TokenCount`
+    = note: in format strings you may be able to use `{:?}` (or `{:#?}` for pretty-print) instead
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `polaris-kernel` (test "model_lifecycle") due to 1 previous error

@@ -1,0 +1,68 @@
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+error[E0599]: no method named `evict_models` found for struct `S1Client` in the current scope
+    --> crates\polaris-system-one\crates\client\src\lib.rs:1038:27
+     |
+  68 | pub struct S1Client {
+     | ------------------- method `evict_models` not found for this struct
+...
+1038 |         assert_eq!(client.evict_models().await?, 1);
+     |                           ^^^^^^^^^^^^ method not found in `S1Client`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following trait defines an item `evict_models`, perhaps you need to implement it:
+             candidate #1: `WorkerService`
+
+error[E0599]: no method named `evict_models` found for struct `S1Client` in the current scope
+    --> crates\polaris-system-one\crates\client\src\lib.rs:1058:20
+     |
+  68 | pub struct S1Client {
+     | ------------------- method `evict_models` not found for this struct
+...
+1058 |             client.evict_models().await,
+     |                    ^^^^^^^^^^^^ method not found in `S1Client`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following trait defines an item `evict_models`, perhaps you need to implement it:
+             candidate #1: `WorkerService`
+
+error[E0599]: no method named `evict_models` found for struct `S1Client` in the current scope
+    --> crates\polaris-system-one\crates\client\src\lib.rs:1077:20
+     |
+  68 | pub struct S1Client {
+     | ------------------- method `evict_models` not found for this struct
+...
+1077 |             client.evict_models().await,
+     |                    ^^^^^^^^^^^^ method not found in `S1Client`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following trait defines an item `evict_models`, perhaps you need to implement it:
+             candidate #1: `WorkerService`
+
+error[E0599]: no method named `evict_models` found for struct `S1Client` in the current scope
+    --> crates\polaris-system-one\crates\client\src\lib.rs:1099:33
+     |
+  68 | pub struct S1Client {
+     | ------------------- method `evict_models` not found for this struct
+...
+1099 |             let result = client.evict_models().await;
+     |                                 ^^^^^^^^^^^^ method not found in `S1Client`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following trait defines an item `evict_models`, perhaps you need to implement it:
+             candidate #1: `WorkerService`
+
+error[E0599]: no method named `evict_models` found for struct `S1Client` in the current scope
+    --> crates\polaris-system-one\crates\client\src\lib.rs:1126:20
+     |
+  68 | pub struct S1Client {
+     | ------------------- method `evict_models` not found for this struct
+...
+1126 |             client.evict_models().await,
+     |                    ^^^^^^^^^^^^ method not found in `S1Client`
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following trait defines an item `evict_models`, perhaps you need to implement it:
+             candidate #1: `WorkerService`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `polaris-system-one-client` (lib test) due to 5 previous errors

@@ -1,0 +1,4 @@
+argv: rustfmt --check --edition 2024 crates/polaris-models/src/lifecycle.rs crates/polaris-models/src/manager.rs crates/polaris-models/tests/lifecycle_contract.rs crates/polaris-models/tests/eviction_manager_contract.rs
+working_directory: C:\mDev\Polaris
+shell: powershell (login=false)
+exit_code: 0

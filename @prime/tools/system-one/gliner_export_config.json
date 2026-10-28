@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "checkpoint": {
+    "repo": "fastino/GLiNER2.5-Decide",
+    "revision": "9d1bfb848cd16d93ee56ccbc59cd92bf0f284d90",
+    "architecture": "span"
+  },
+  "upstream": {
+    "repository": "https://github.com/dariofinardi/gliner2-rs.git",
+    "revision": "7626d237d8c58f0fcfadd094e8360e7d5ae9c8ee"
+  },
+  "tools": {
+    "exporter": {
+      "root": "workspace",
+      "path": "@prime/tools/system-one/upstream/export_span_v3.py",
+      "sha256": "88c9f6ccfe3064806b4c1ccb46c55e881a06106682925354775cfd9d13637f24"
+    },
+    "golden_generator": {
+      "root": "spike",
+      "path": "gen_golden.py",
+      "sha256": "1f2e9a43e86c610ed0ae44fa1aa1fff887dd295139c4821370de067b7c0ef58d"
+    },
+    "python_reference": {
+      "root": "spike",
+      "path": "ref_python.py",
+      "sha256": "1677479beebda2e9211a63a45b6e3502c8b7a7357aab2f60440ce449ec7d9ea5"
+    }
+  },
+  "goldens": {
+    "seed": 20261020,
+    "rows": 200,
+    "categories": {"choice": 60, "noul": 60, "score": 50, "multi3": 30},
+    "synthetic_only": true
+  },
+  "resource_limits": {
+    "minimum_free_ram_gib": 10,
+    "export_max_parallelism": 1
+  }
+}

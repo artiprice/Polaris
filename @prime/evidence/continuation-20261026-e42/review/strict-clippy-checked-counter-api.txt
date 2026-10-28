@@ -1,0 +1,34 @@
+    Checking polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+error: use of deprecated method `std::sync::atomic::Atomic::<usize>::fetch_update`: renamed to `try_update` for consistency
+  --> crates\polaris-models\tests\eviction_manager_contract.rs:31:14
+   |
+31 |             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+   |              ^^^^^^^^^^^^
+   |
+   = note: `-D deprecated` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(deprecated)]`
+help: replace the use of the deprecated method
+   |
+31 -             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+31 +             .try_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+   |
+
+error: use of deprecated method `std::sync::atomic::Atomic::<usize>::fetch_update`: renamed to `try_update` for consistency
+  --> crates\polaris-models\tests\lifecycle_contract.rs:61:14
+   |
+61 |             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+   |              ^^^^^^^^^^^^
+   |
+   = note: `-D deprecated` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(deprecated)]`
+help: replace the use of the deprecated method
+   |
+61 -             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+61 +             .try_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+   |
+
+error: could not compile `polaris-models` (test "eviction_manager_contract") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-models` (test "lifecycle_contract") due to 1 previous error

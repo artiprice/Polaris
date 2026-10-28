@@ -5,9 +5,10 @@ use polaris_sdk::{
     ids::{AgentRole, FrameId},
     system_one::Probability,
 };
+use serde::{Deserialize, Serialize};
 
 /// xxh3-128 fingerprint for loop detection only; never an authorization or content identity.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct StepFingerprint(u128);
 
 impl StepFingerprint {
@@ -23,7 +24,7 @@ impl StepFingerprint {
 }
 
 /// One-based position assigned to a step by its owning context frame.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct StepIndex(u32);
 
 impl StepIndex {
@@ -41,7 +42,7 @@ impl StepIndex {
 }
 
 /// Sorted, unique shingle hashes for one normalized proposed step.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShingleSet(Vec<u64>);
 
 impl ShingleSet {
@@ -141,7 +142,7 @@ pub struct WatchdogConfig {
 }
 
 /// Outcome of a completed prior step, used to identify failed variants that must not be repeated.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StepOutcome {
     /// The step completed and made progress.
     Completed,
@@ -159,7 +160,7 @@ pub enum StepOutcome {
 }
 
 /// Record of one prior step retained in the frame snapshot.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StepRecord {
     /// Frame-local step index.
     pub index: StepIndex,
@@ -173,17 +174,30 @@ pub struct StepRecord {
     pub outcome: StepOutcome,
 }
 
+/// Persistable advisory memory of a rejected hypothesis; not an authorization fact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NegativeConstraint {
+    /// Exact rejected proposed-step fingerprint.
+    pub hypothesis: StepFingerprint,
+    /// Frame-local step at which it was rejected.
+    pub rejected_at: StepIndex,
+}
+
 /// Read-only snapshot supplied by the owning context frame before the next S2 call.
 #[derive(Debug, Clone)]
 pub struct FrameSnapshot {
     /// Frame identity.
     pub frame: FrameId,
+    /// Already-reserved current frame step number.
+    pub current_step: u32,
     /// Assigned role; only used for advisory role-table lookup.
     pub role: AgentRole,
     /// Root task goal.
     pub root_goal: String,
     /// Bounded recent step records, oldest first.
     pub recent: Vec<StepRecord>,
+    /// Bounded fingerprints of rejected hypotheses retained beyond the recent-record window.
+    pub negative_constraints: Vec<NegativeConstraint>,
     /// Current context token count.
     pub context_tokens: u32,
     /// Context token budget; zero is treated as unavailable evidence.
@@ -196,7 +210,7 @@ pub struct ProposedStep {
     /// Agent thought or intended action text.
     pub thought: String,
     /// Optional structured tool request facts.
-    pub tool_call: Option<ToolCallFacts>,
+    pub tool_calls: Vec<ToolCallFacts>,
 }
 
 /// Result from deterministic loop detection.

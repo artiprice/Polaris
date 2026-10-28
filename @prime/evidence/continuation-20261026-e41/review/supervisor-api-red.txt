@@ -1,0 +1,15 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling backon v1.6.0
+   Compiling tokio-util v0.7.20
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+   Compiling polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+error[E0432]: unresolved import `polaris_kernel_supervisor::WorkerLifecycle`
+  --> crates\polaris-kernel\crates\supervisor\tests\worker_bootstrap.rs:11:26
+   |
+11 |     TaskError, TaskSpec, WorkerLifecycle, WorkerSpec,
+   |                          ^^^^^^^^^^^^^^^ no `WorkerLifecycle` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-kernel-supervisor` (test "worker_bootstrap") due to 1 previous error

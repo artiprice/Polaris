@@ -1,0 +1,10 @@
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Finished `test` profile [unoptimized] target(s) in 2.61s
+     Running tests\rust_unsafe_coverage.rs (target\debug\deps\rust_unsafe_coverage-030540a1fc67f512.exe)
+
+running 2 tests
+test rust_expansion_and_invalid_syntax_keep_incomplete_coverage ... ok
+test rust_without_expansion_has_complete_unsafe_inventory ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,2 @@
+    Checking polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+    Finished `dev` profile [unoptimized] target(s) in 1.89s

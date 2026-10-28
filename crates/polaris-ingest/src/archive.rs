@@ -22,7 +22,10 @@ pub(super) fn validate(bytes: &[u8], limits: IngestLimits) -> Result<(), IngestE
         let mut entry = archive
             .by_index(index)
             .map_err(|error| malformed("invalid ZIP member", error))?;
-        let name = entry.name().to_owned();
+        let name = entry
+            .name()
+            .map_err(|error| malformed("invalid ZIP member name", error))?
+            .into_owned();
         if unsafe_path(&name) {
             return Err(IngestError::Malformed(format!(
                 "unsafe archive member path: {name}"
@@ -95,6 +98,7 @@ pub(super) fn validate(bytes: &[u8], limits: IngestLimits) -> Result<(), IngestE
 fn unsafe_path(name: &str) -> bool {
     name.starts_with('/')
         || name.starts_with('\\')
+        || name.contains('\0')
         || name.contains(':')
         || name.split(['/', '\\']).any(|part| part == "..")
 }

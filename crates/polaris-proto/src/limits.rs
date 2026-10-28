@@ -15,6 +15,9 @@ use crate::error::ProtoError;
 /// Largest message the protocol allows: 1 MiB, the OpenShell gateway request limit.
 pub const MAX_MESSAGE_BYTES: usize = 1024 * 1024;
 
+/// Maximum exact raw input bytes accepted by one semantic PII model request.
+pub const MAX_PII_INPUT_BYTES: usize = 16_384;
+
 /// Largest payload of one stream chunk (terminal, stdin / stdout / stderr): 896 KiB, which leaves
 /// 128 KiB of the message limit for framing.
 pub const MAX_CHUNK_BYTES: usize = 896 * 1024;

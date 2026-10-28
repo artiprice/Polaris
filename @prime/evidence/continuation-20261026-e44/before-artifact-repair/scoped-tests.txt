@@ -1,0 +1,18 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error: crate `tonic` required to be available in rlib format, but was not found in this form
+
+error: crate `reqwest` required to be available in rlib format, but was not found in this form
+
+error: crate `openshell_extension_core` required to be available in rlib format, but was not found in this form
+
+error: could not compile `polaris-kernel` (lib test) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `polaris-kernel` (test "error_taxonomy") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "lifecycle_stress") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "session_typestate") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "runtime_safety") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "local_runtime") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "local_tools") due to 3 previous errors
+error: could not compile `polaris-kernel` (test "sandbox_execution") due to 3 previous errors

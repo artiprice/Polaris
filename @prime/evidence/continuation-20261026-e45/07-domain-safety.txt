@@ -1,0 +1,26 @@
+    Checking windows-sys v0.61.2
+    Checking biscuit-auth v6.0.0 (C:\mDev\Polaris\vendor\biscuit-auth)
+    Checking polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+    Checking polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+    Checking polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+    Checking tempfile v3.27.0
+    Checking mio v1.2.4
+    Checking socket2 v0.6.5
+    Checking winapi-util v0.1.11
+    Checking etcetera v0.11.0
+    Checking cap-primitives v4.0.3
+    Checking same-file v1.0.6
+    Checking polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+    Checking rusty-fork v0.3.1
+    Checking polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+    Checking walkdir v2.5.0
+    Checking proptest v1.12.0
+    Checking ignore v0.4.33
+    Checking tokio v1.54.1
+    Checking cap-std v4.0.3
+    Checking polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+    Checking polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+    Checking tokio-util v0.7.20
+    Checking polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+    Checking polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Finished `dev` profile [unoptimized] target(s) in 18.08s

@@ -1,0 +1,70 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+   Compiling polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+   Compiling polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+   Compiling polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+error[E0408]: variable `_error` is not bound in all patterns
+   --> crates\polaris-security\crates\pii\src\vault.rs:304:31
+    |
+304 |             Ok(Err(_error)) | Err(_) => self.mask(text),
+    |                    ------     ^^^^^^ pattern doesn't bind `_error`
+    |                    |
+    |                    variable not in all patterns
+
+error[E0603]: enum `DecisionError` is private
+  --> crates\polaris-security\crates\pii\src\vault.rs:16:18
+   |
+16 |     system_one::{DecisionError, PiiEntitySpan, PiiSpanDetector},
+   |                  ^^^^^^^^^^^^^ private enum
+   |
+note: the enum `DecisionError` is defined here
+  --> crates\polaris-sdk\src\system_one.rs:12:5
+   |
+12 | use crate::registry::DecisionError;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+error[E0308]: mismatched types
+   --> crates\polaris-security\crates\pii\src\vault.rs:357:49
+    |
+357 |         let mut masked = self.mask_locked(text, spans, &mut state)?;
+    |                               -----------       ^^^^^ expected `Vec<Span>`, found `Result<Vec<Span>, PiiError>`
+    |                               |
+    |                               arguments to this method are incorrect
+    |
+    = note: expected struct `Vec<_>`
+                 found enum `Result<Vec<_>, PiiError>`
+note: method defined here
+   --> crates\polaris-security\crates\pii\src\vault.rs:445:8
+    |
+445 |     fn mask_locked(
+    |        ^^^^^^^^^^^
+...
+448 |         spans: Vec<Span>,
+    |         ----------------
+help: use the `?` operator to extract the `Result<Vec<Span>, PiiError>` value, propagating a `Result::Err` value to the caller
+    |
+357 |         let mut masked = self.mask_locked(text, spans?, &mut state)?;
+    |                                                      +
+
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+Some errors have detailed explanations: E0308, E0408, E0603.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `polaris-security-pii` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...

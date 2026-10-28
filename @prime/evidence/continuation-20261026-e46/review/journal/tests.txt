@@ -1,0 +1,66 @@
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+    Finished `test` profile [unoptimized] target(s) in 3.36s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_frames-be755cf2ec47f0be.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\bounded_frame_journal.rs (target\debug\deps\bounded_frame_journal-6f16406e9f596f99.exe)
+
+running 9 tests
+test limits_default_and_reject_invalid_or_over_ceiling_values ... ok
+test prepare_rejects_invalid_schema_zero_step_and_result_count ... ok
+test prepare_rejects_tool_text_and_serialized_record_over_bounds ... ok
+test prepared_debug_redacts_payload_and_persist_verifies_exact_cas_bytes ... ok
+test persist_rejects_wrong_put_cid_and_corrupt_readback ... ok
+test persist_rejects_model_visible_content_mismatch ... ok
+test persist_rejects_missing_and_corrupt_receipt_blobs ... ok
+test journal_adapter_appends_only_after_verified_persistence ... ok
+test prepared_persist_roundtrips_through_real_cas ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\frame_execution.rs (target\debug\deps\frame_execution-0cc9249ea387ab27.exe)
+
+running 22 tests
+test content_reference_failures_are_fatal_integrity_errors ... ok
+test journal_persists_transcript_before_publishing_event ... ok
+test durable_journal_requires_tool_content_to_exist_and_match ... ok
+test only_verifier_accepted_diff_references_enter_history ... ok
+test oversized_prior_reasoning_and_tool_arguments_fail_before_model_dispatch ... ok
+test duplicate_finish_is_rejected_and_captured_as_incomplete ... ok
+test tool_runner_receives_result_ceiling_and_oversize_is_not_replayed ... ok
+test cancellation_records_an_incomplete_assistant_stream_as_partial_and_keeps_reserved_quota ... ok
+test empty_message_overhead_counts_toward_prompt_byte_limit ... ok
+test text_after_finish_is_rejected_and_captured_as_incomplete ... ok
+test claimed_done_remains_unproven_and_keeps_frame_active ... ok
+test mismatched_tool_content_cid_is_rejected_before_verification ... ok
+test stop_finish_with_tool_calls_fails_before_authorization ... ok
+test child_scope_only_narrows_and_only_unused_quota_returns ... ok
+test cancellation_after_finish_before_eof_keeps_response_partial ... ok
+test tool_loop_stops_before_an_attempt_beyond_round_bound ... ok
+test cancellation_after_tool_execution_journals_the_partial_result ... ok
+test tool_transcript_is_replayed_with_cas_reference_and_call_identity ... ok
+test usage_after_finish_is_retained_after_clean_end_of_stream ... ok
+test usage_before_finish_does_not_stop_stream_collection ... ok
+test verifier_retries_stop_at_bound_and_keep_quota_spent ... ok
+test real_cas_and_event_log_reopen_the_versioned_frame_transcript ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\frame_tool_authority.rs (target\debug\deps\frame_tool_authority-495bd60ac677d978.exe)
+
+running 3 tests
+test workspace_scope_attenuates_without_widening ... ok
+test binding_matches_only_actual_frame_token ... ok
+test child_binding_preserves_root_identity ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_runtime_frames
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

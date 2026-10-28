@@ -92,6 +92,9 @@ def load_table() -> dict:
         for e in c.get("ext", []):
             if e not in ext_names:
                 raise SystemExit(f"{c['name']}: unknown external dep {e}")
+        for e in c.get("dev_ext", []):
+            if e not in ext_names:
+                raise SystemExit(f"{c['name']}: unknown dev external dep {e}")
         parent = c.get("parent")
         if parent and parent not in by_name:
             raise SystemExit(f"{c['name']}: unknown parent {parent}")
@@ -136,6 +139,12 @@ def render_package_manifest(crate: dict, template: str) -> str:
         lines.append("# Internal edges (layer-checked by `workspace.py check-layers`).")
         for d in deps:
             lines.append(f"{d} = {{ workspace = true }}")
+    dev_ext = crate.get("dev_ext", [])
+    if dev_ext:
+        lines.append("")
+        lines.append("[dev-dependencies]")
+        for name in dev_ext:
+            lines.append(f"{name} = {{ workspace = true }}")
     return "\n".join(lines) + "\n"
 
 
@@ -308,7 +317,7 @@ def collect_foreign_files() -> list[Path]:
             if p.is_file() and not is_generated(p):
                 foreign.append(p)
     for p in [ROOT / "tests" / "Cargo.toml", ROOT / "tests" / "src" / "lib.rs"]:
-        if p.exists() and not is_generated(p):
+        if p.exists() and not under_implemented(p, keep) and not is_generated(p):
             foreign.append(p)
     return foreign
 
@@ -327,10 +336,10 @@ def remove_generated() -> None:
             elif p.is_dir() and not any(p.iterdir()):
                 p.rmdir()
     for p in [ROOT / "tests" / "Cargo.toml", ROOT / "tests" / "src" / "lib.rs"]:
-        if p.exists() and is_generated(p):
+        if p.exists() and not under_implemented(p, keep) and is_generated(p):
             p.unlink()
     src = ROOT / "tests" / "src"
-    if src.exists() and not any(src.iterdir()):
+    if src.exists() and not under_implemented(src, keep) and not any(src.iterdir()):
         src.rmdir()
 
 

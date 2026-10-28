@@ -115,7 +115,7 @@ impl fmt::Debug for SealedBlob {
     }
 }
 
-/// Ephemeral 256-bit in-memory sealing key; never copied or exposed via formatting.
+/// Host-owned 256-bit sealing key, generated or explicitly recovered; never exposed via formatting.
 ///
 /// Session key types intentionally implement no formatting or serialization traits.
 ///
@@ -195,6 +195,44 @@ impl fmt::Debug for SecretVault {
 }
 
 impl SecretVault {
+    /// Recover a stable AEAD key from an explicitly supplied credential source, without writes.
+    ///
+    /// The source value must encode exactly 32 bytes as 64 hexadecimal characters. Provisioning
+    /// and rotation belong to trusted host administration. A missing key is an error; silently
+    /// generating another key would make existing snapshots unrecoverable. The source secret
+    /// and decoded key are zeroizing and cannot be formatted through this vault's Debug API.
+    /// # Errors
+    /// Source access failure or missing/malformed key. This method never stores or deletes a key.
+    pub fn with_seal_key_from_source(
+        location: &SecretLocation,
+        source: &impl SecretSource,
+        limits: VaultLimits,
+    ) -> Result<Self, SecretsError> {
+        let secret = source.load(location)?.ok_or(SecretsError::InvalidSealKey)?;
+        let encoded = secret.expose_secret().as_bytes();
+        if encoded.len() != 64 {
+            return Err(SecretsError::InvalidSealKey);
+        }
+        let mut key = Box::new(Zeroizing::new([0_u8; KEY_BYTES]));
+        let (pairs, remainder) = encoded.as_chunks::<2>();
+        if !remainder.is_empty() {
+            return Err(SecretsError::InvalidSealKey);
+        }
+        for (target, [high, low]) in key.iter_mut().zip(pairs) {
+            let high = hex_nibble(*high)?;
+            let low = hex_nibble(*low)?;
+            *target = high
+                .checked_mul(16)
+                .and_then(|value| value.checked_add(low))
+                .ok_or(SecretsError::InvalidSealKey)?;
+        }
+        Ok(Self {
+            key: SessionSealKey(key),
+            entries: HashMap::new(),
+            limits,
+            plaintext_bytes: 0,
+        })
+    }
     /// Creates an empty vault with an independently generated session key.
     ///
     /// # Errors
@@ -447,6 +485,21 @@ impl SecretVault {
                 .saturating_sub(previous.plaintext_bytes);
         }
         self.plaintext_bytes = self.plaintext_bytes.saturating_add(plaintext_bytes);
+    }
+}
+
+fn hex_nibble(value: u8) -> Result<u8, SecretsError> {
+    match value {
+        b'0'..=b'9' => value.checked_sub(b'0').ok_or(SecretsError::InvalidSealKey),
+        b'a'..=b'f' => value
+            .checked_sub(b'a')
+            .and_then(|n| n.checked_add(10))
+            .ok_or(SecretsError::InvalidSealKey),
+        b'A'..=b'F' => value
+            .checked_sub(b'A')
+            .and_then(|n| n.checked_add(10))
+            .ok_or(SecretsError::InvalidSealKey),
+        _ => Err(SecretsError::InvalidSealKey),
     }
 }
 

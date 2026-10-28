@@ -1,0 +1,110 @@
+COMMAND: cargo test -p polaris-tools-math
+    Finished `test` profile [unoptimized] target(s) in 0.66s
+     Running unittests src\lib.rs (target\debug\deps\polaris_tools_math-59182e36fe850795.exe)
+
+running 3 tests
+test tool::tests::invalid_decimal_string_returns_typed_error ... ok
+test tool::tests::typed_dispatch_preserves_decimal_output ... ok
+test tool::tests::tool_spec_is_pure_and_has_a_real_operation_schema ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\math_adversarial.rs (target\debug\deps\math_adversarial-f8edca3fcac8ce2d.exe)
+
+running 1 test
+test hostile_expression_shapes_are_rejected_at_configured_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\math_ops.rs (target\debug\deps\math_ops-03b86bfa7f3810d1.exe)
+
+running 11 tests
+test bandwidth_is_decimal_gigabytes_per_second ... ok
+test catmull_rom_returns_knots_and_rejects_nonuniform_spacing ... ok
+test bilinear_reproduces_corners_and_bezier_stays_bounded ... ok
+test catmull_rom_uniformity_tolerance_scales_with_small_coordinates ... ok
+test signed_zero_is_not_a_strictly_increasing_knot_interval ... ok
+test linear_hits_knots_and_rejects_outside_domain ... ok
+test gpu_rows_reject_non_nvidia_source_domains ... ok
+test summary_is_finite_ordered_and_singleton_stddev_zero ... ok
+test curated_nvidia_reference_has_sourced_rows_for_supported_capabilities ... ok
+test gpu_occupancy_identifies_resource_and_rejects_unknown_capability ... ok
+test gpu_rows_require_valid_source_and_limits ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\math_properties.rs (target\debug\deps\math_properties-64a9efa222466e08.exe)
+
+running 4 tests
+test bounded_integer_decimal_addition_matches_decimal ... ok
+test generated_bezier_points_remain_in_control_bounds ... ok
+test generated_linear_knots_are_reproduced ... ok
+test generated_finite_summaries_keep_order ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\math_spec.rs (target\debug\deps\math_spec-832170b35b2c21fa.exe)
+
+running 14 tests
+test deep_nesting_rejected ... ok
+test divide_by_zero_is_error ... ok
+test float_max_depth_limits_unparenthesized_prefix_functions ... ok
+test float_max_depth_limits_unparenthesized_power_chains ... ok
+test huge_exponent_rejected ... ok
+test negative_integer_power_is_checked_decimal ... ok
+test float_zero_max_depth_is_rejected ... ok
+test point_one_plus_point_two_is_exact ... ok
+test overflow_is_error_not_wrap ... ok
+test negative_power_and_precedence_are_correct ... ok
+test unknown_identifier_rejected ... ok
+test float_power_limit_cannot_be_bypassed_with_parenthesized_exponent ... ok
+test float_path_supports_whitelisted_transcendentals_and_rejects_unknown_names ... ok
+test float_power_guard_preserves_unparenthesized_unary_function_operands ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_tools_math
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+COMMAND: cargo clippy -p polaris-tools-math --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized] target(s) in 0.68s
+
+COMMAND: cargo fmt --check --package polaris-tools-math
+
+COMMAND: cargo fmt --check (workspace)
+Diff in \\?\C:\mDev\Polaris\crates\polaris-code-intel\src\decl.rs:407:
+             is_container: c.members.is_some(),
+         });
+         if let Some(members) = c.members {
+-            let child_depth = depth.checked_add(1).ok_or(CodeIntelError::ArithmeticInvariant("declaration depth"))?;
++            let child_depth = depth
++                .checked_add(1)
++                .ok_or(CodeIntelError::ArithmeticInvariant("declaration depth"))?;
+             for child in named_children(members).into_iter().rev() {
+                 stack.push((child, child_depth, Some(index)));
+             }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-code-intel\src\metrics.rs:76:
+     }
+     let old_complexity = i64::from(cyclomatic_complexity(old));
+     let new_complexity = i64::from(cyclomatic_complexity(new));
+-    let delta = new_complexity.checked_sub(old_complexity).ok_or(CodeIntelError::ArithmeticInvariant("cyclomatic delta"))?;
++    let delta = new_complexity
++        .checked_sub(old_complexity)
++        .ok_or(CodeIntelError::ArithmeticInvariant("cyclomatic delta"))?;
+     let (distance, exact) = tree_edit_distance(old, new, cfg.ted_node_cap)?;
+     Ok(MutationMetrics {
+         churn_lines: churn_lines(old.source(), new.source()),
+Diff in \\?\C:\mDev\Polaris\crates\polaris-code-intel\src\metrics.rs:214:
+ }
+ 
+ /// Tree-edit distance with unit costs, or a lower bound above `cap`.
+-fn tree_edit_distance(old: &Parsed, new: &Parsed, cap: usize) -> Result<(u32, bool), CodeIntelError> {
++fn tree_edit_distance(
++    old: &Parsed,
++    new: &Parsed,
+
+END OF CAPTURE

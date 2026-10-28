@@ -1,0 +1,14 @@
+ARGV: cargo test -p polaris-runtime-context --lib expand_rejects_archives_larger_than_the_receiving_virtualizer_cap
+EXIT: 0
+RAW OUTPUT:
+    Blocking waiting for file lock on build directory
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+    Finished `test` profile [unoptimized] target(s) in 4.81s
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_context-61721459e9914f3b.exe)
+
+running 1 test
+test assemble::lossless_window_tests::expand_rejects_archives_larger_than_the_receiving_virtualizer_cap ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.01s
+
+

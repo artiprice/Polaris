@@ -1,0 +1,32 @@
+{
+  "type_of": "function",
+  "name": "analyze_safety",
+  "file_path": "crates/polaris-code-intel/src/safety.rs",
+  "logic_name": "Rust unsafe syntax coverage",
+  "test_list": [
+    {
+      "test_name": "rust_without_expansion_has_complete_unsafe_inventory",
+      "description": "rust without expansion has complete unsafe inventory"
+    },
+    {
+      "test_name": "rust_expansion_and_invalid_syntax_keep_incomplete_coverage",
+      "description": "rust expansion and invalid syntax keep incomplete coverage"
+    }
+  ],
+  "dependencies": [
+    "ParserPool",
+    "SafetyAnalysis"
+  ],
+  "libraries": [
+    "tree-sitter"
+  ],
+  "inputs": [
+    {
+      "name": "input",
+      "type": "&Parsed",
+      "description": "Bounded input to the named implementation."
+    }
+  ],
+  "output_type": "Result<SafetyAnalysis, CodeIntelError>",
+  "output_description": "Validated observations or authority with explicit failure; see retained acceptance evidence and limitations."
+}

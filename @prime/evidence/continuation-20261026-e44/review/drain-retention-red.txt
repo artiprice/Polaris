@@ -1,0 +1,45 @@
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+error[E0310]: the parameter type `O` may not live long enough
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:585:5
+    |
+585 |     join_set.abort_all();
+    |     ^^^^^^^^^^^^^^^^^^^^
+    |     |
+    |     the parameter type `O` must be valid for the static lifetime...
+    |     ...so that the type `O` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+581 | async fn abort_and_drain<O: 'static>(
+    |                           +++++++++
+
+error[E0310]: the parameter type `O` may not live long enough
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:586:11
+    |
+586 |     while join_set.join_next().await.is_some() {}
+    |           ^^^^^^^^^^^^^^^^^^^^
+    |           |
+    |           the parameter type `O` must be valid for the static lifetime...
+    |           ...so that the type `O` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+581 | async fn abort_and_drain<O: 'static>(
+    |                           +++++++++
+
+error[E0310]: the parameter type `O` may not live long enough
+   --> crates\polaris-runtime\crates\dag\src\graph.rs:586:32
+    |
+586 |     while join_set.join_next().await.is_some() {}
+    |                                ^^^^^
+    |                                |
+    |                                the parameter type `O` must be valid for the static lifetime...
+    |                                ...so that the type `O` will meet its required lifetime bounds
+    |
+help: consider adding an explicit lifetime bound
+    |
+581 | async fn abort_and_drain<O: 'static>(
+    |                           +++++++++
+
+For more information about this error, try `rustc --explain E0310`.
+error: could not compile `polaris-runtime-dag` (lib test) due to 3 previous errors

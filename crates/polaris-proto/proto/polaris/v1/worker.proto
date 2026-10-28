@@ -11,6 +11,8 @@ service WorkerService {
   rpc Handshake(WorkerHandshakeRequest) returns (WorkerHandshakeResponse);
   // Answers a batch of decision schemas.
   rpc Decide(DecideRequest) returns (DecideResponse);
+  // Detects semantic PII on exact raw text using the separately configured local companion model.
+  rpc DetectPii(DetectPiiRequest) returns (DetectPiiResponse);
   // Embeds texts that live in CAS; vectors come back as CAS references (little-endian f32 blobs).
   rpc Embed(EmbedRequest) returns (EmbedResponse);
   // Parses one document that lives in CAS.
@@ -117,6 +119,25 @@ message DecideResponse {
   reserved 100 to 199;
 }
 
+// Exact unnormalized raw text for the local semantic PII model.
+message DetectPiiRequest {
+  string raw_text = 1;
+  reserved 100 to 199;
+}
+
+// Half-open UTF-8 byte offsets and confidence only; entity text and labels are never returned.
+message PiiEntitySpan {
+  uint32 start = 1;
+  uint32 end = 2;
+  float confidence = 3;
+  reserved 100 to 199;
+}
+
+message DetectPiiResponse {
+  repeated PiiEntitySpan spans = 1;
+  reserved 100 to 199;
+}
+
 message EmbedRequest {
   // Texts to embed (CAS references).
   repeated Cid texts = 1;
@@ -146,12 +167,20 @@ message IngestResponse {
 }
 
 message EvictModelsRequest {
+  // Zero performs ordinary eviction. Nonzero epochs belong to an authenticated host pause.
+  uint64 pause_epoch = 1;
+  // Release this exact pause epoch; a stale epoch cannot release a newer pause.
+  bool resume = 2;
   reserved 100 to 199;
 }
 
 message EvictModelsResponse {
   // Number of models dropped.
   uint32 evicted = 1;
+  // Highest pause epoch observed by this worker incarnation.
+  uint64 pause_epoch = 2;
+  // Acknowledged native admission state, serialized with inference and eviction.
+  bool paused = 3;
   reserved 100 to 199;
 }
 

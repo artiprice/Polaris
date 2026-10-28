@@ -138,7 +138,7 @@ impl Fetcher {
                 .build()
                 .map_err(|_| SearchProviderError::ProviderConfig)?;
             if redirects == 0 {
-                call.mark_dispatched()?;
+                call.mark_dispatched().await?;
             }
             let response = client
                 .get(target.url.clone())

@@ -139,7 +139,10 @@ fn component_eq(left: Component<'_>, right: Component<'_>) -> bool {
     left == right
 }
 
-pub(crate) fn is_secret_path(path: &WorkspacePath) -> bool {
+/// Whether a normalized path names protected state, credentials or secret-bearing files.
+/// Mutation and inspection adapters share this policy; it is not a complete content DLP scan.
+#[must_use]
+pub fn is_secret_path(path: &WorkspacePath) -> bool {
     let components: Vec<String> = path
         .as_str()
         .split('/')

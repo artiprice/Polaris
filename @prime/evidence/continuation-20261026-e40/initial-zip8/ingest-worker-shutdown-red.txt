@@ -1,0 +1,29 @@
+    Finished `test` profile [unoptimized] target(s) in 1.13s
+     Running unittests src\lib.rs (target\debug\deps\polaris_worker-1b91e7a4f340ade3.exe)
+
+running 3 tests
+test ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission ... FAILED
+test ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped ... FAILED
+test ingest::tests::provenance_writer_rejects_growth_and_parser_errors_are_private ... ok
+
+failures:
+
+---- ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission stdout ----
+
+thread 'ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission' (9624) panicked at apps\polaris-worker\src\ingest.rs:426:9:
+shutdown cannot claim drain while parser still owns admission
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped stdout ----
+
+thread 'ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped' (4796) panicked at apps\polaris-worker\src\ingest.rs:452:9:
+a synchronous parser cannot be forcibly cancelled by a grace timeout
+
+
+failures:
+    ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped
+    ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p polaris-worker --lib`

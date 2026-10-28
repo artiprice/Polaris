@@ -1,0 +1,21 @@
+{
+  "type_of": "async_function",
+  "name": "Router::prune_tools",
+  "file_path": "crates/polaris-system-one/crates/router/src/lib.rs",
+  "logic_name": "Tool Pruning",
+  "test_list": [
+    {"test_name": "prune_returns_at_most_k", "description": "Output never exceeds the caller's nonzero top-k bound."},
+    {"test_name": "prune_lexical_fallback_on_timeout", "description": "An S1 outage returns a deterministic lexical shortlist."},
+    {"test_name": "prune_truncates_oversize_summaries", "description": "Only bounded summary prefixes participate in lexical filtering and S1 context."},
+    {"test_name": "prune_rejects_duplicates_and_hard_bound_violations", "description": "Duplicate IDs and excessive candidate/query/name sizes are rejected before scoring."}
+  ],
+  "dependencies": ["DecisionEngine", "SchemaCatalog", "RouterConfig"],
+  "libraries": ["thiserror", "tokio"],
+  "inputs": [
+    {"name": "step", "type": "&str", "description": "Bounded user-task text."},
+    {"name": "tools", "type": "&[ToolCandidate]", "description": "Caller-supplied tool IDs and untrusted names and summaries."},
+    {"name": "k", "type": "TopK", "description": "Nonzero maximum output length."}
+  ],
+  "output_type": "Result<Vec<Ranked<ToolId>>, RouterError>",
+  "output_description": "A unique, bounded shortlist of supplied tool IDs with semantic or lexical scores."
+}

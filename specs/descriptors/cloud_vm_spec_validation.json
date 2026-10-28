@@ -1,0 +1,25 @@
+{
+  "type_of": "struct",
+  "name": "ValidatedVmSpec",
+  "file_path": "crates/polaris-nebius-cloud/crates/ai-cloud/src/spec.rs",
+  "logic_name": "Cloud VM Specification Validation",
+  "test_list": [
+    {"test_name": "rejects_zero_disk_or_lifetime", "description": "A VM cannot be admitted with a zero disk size or zero lifetime."},
+    {"test_name": "accepts_only_exact_operator_ip_allowlist_with_mtls", "description": "Ingress accepts explicit operator IP addresses only and requires mTLS."},
+    {"test_name": "rejects_empty_allowlist_and_missing_mtls", "description": "An empty allowlist or absent mTLS requirement is rejected."},
+    {"test_name": "rejects_unspecified_multicast_and_broadcast_operator_ips", "description": "Unspecified, multicast, and broadcast IPv4/IPv6 addresses are rejected."},
+    {"test_name": "canonicalizes_ipv4_mapped_ipv6_and_deduplicates", "description": "IPv4-mapped IPv6 addresses normalize to the equivalent IPv4 address and duplicates collapse."},
+    {"test_name": "rejects_allowlists_larger_than_the_finite_limit", "description": "An allowlist above the documented fixed maximum is rejected."},
+    {"test_name": "idle_timeout_must_not_exceed_hard_ttl", "description": "The idle timeout is positive and bounded by the hard lifetime."}
+  ],
+  "dependencies": ["BudgetGuard"],
+  "libraries": ["std::net", "std::time", "thiserror"],
+  "inputs": [
+    {"name": "disk_gib", "type": "u32", "description": "Requested boot disk size in GiB."},
+    {"name": "hard_ttl", "type": "std::time::Duration", "description": "Maximum VM lifetime."},
+    {"name": "idle_timeout", "type": "std::time::Duration", "description": "Idle shutdown interval."},
+    {"name": "ingress", "type": "IngressPolicy", "description": "Exact operator IP allowlist and mandatory mTLS flag."}
+  ],
+  "output_type": "Result<ValidatedVmSpec, SpecError>",
+  "output_description": "An immutable validated policy configuration or a typed validation error."
+}

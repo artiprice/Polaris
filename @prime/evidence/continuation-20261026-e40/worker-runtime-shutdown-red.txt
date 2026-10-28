@@ -1,0 +1,20 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-worker v0.1.0-alpha (C:\mDev\Polaris\apps\polaris-worker)
+    Finished `test` profile [unoptimized] target(s) in 12.98s
+     Running unittests src\main.rs (target\debug\deps\polaris_worker-09cfaa269cac871c.exe)
+
+running 1 test
+
+thread 'tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains' (17388) panicked at apps\polaris-worker\src\main.rs:244:9:
+runtime shutdown must return within its configured wait without preempting blocking work
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains ... FAILED
+
+failures:
+
+failures:
+    tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out; finished in 2.01s
+
+error: test failed, to rerun pass `-p polaris-worker --bin polaris-worker`

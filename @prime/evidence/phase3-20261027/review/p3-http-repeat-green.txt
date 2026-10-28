@@ -1,0 +1,160 @@
+ATTEMPT 1
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 2
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 3
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 4
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 5
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 6
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+ATTEMPT 7
+
+running 2 tests
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+ATTEMPT 8
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 9
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 10
+
+running 2 tests
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+ATTEMPT 11
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 12
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 13
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 14
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 15
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 16
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 17
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 18
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 19
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 20
+
+running 2 tests
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+

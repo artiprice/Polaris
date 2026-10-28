@@ -1,0 +1,30 @@
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 13.29s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-e92cf88d01f60835.exe)
+
+running 10 tests
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... ok
+test assembler_rejects_foreign_or_weaker_privacy_vault ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_restores_exact_private_marker_map ... FAILED
+test assembler_enforces_deadline_and_cumulative_archive_bound ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_run_rejects_replaced_frame_selection ... ok
+test assembler_masks_structured_arguments_and_rejects_unreadable_archive ... ok
+
+failures:
+
+---- assembler_restores_exact_private_marker_map stdout ----
+Error: Privacy
+
+
+failures:
+    assembler_restores_exact_private_marker_map
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+error: test failed, to rerun pass `-p polaris-kernel --test frame_prompt`

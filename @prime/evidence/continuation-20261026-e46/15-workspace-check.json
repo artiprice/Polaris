@@ -1,0 +1,15 @@
+{
+  "name": "workspace-check",
+  "argv": [
+    "cargo",
+    "check",
+    "--offline",
+    "--locked",
+    "--workspace",
+    "--all-targets"
+  ],
+  "started_utc": "2026-10-26T22:37:48.412424+00:00",
+  "elapsed_seconds": 3.413,
+  "exit_code": 0,
+  "raw": "15-workspace-check.txt"
+}

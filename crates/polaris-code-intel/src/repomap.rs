@@ -226,14 +226,19 @@ pub fn repo_map(g: &SymbolGraph, b: &RepoMapBudget) -> Result<RepoMap, CodeIntel
             continue;
         }
         let header = header_line(&path).len();
-        if used.saturating_add(header) > max_bytes {
+        let mut file_used = used
+            .checked_add(header)
+            .ok_or(CodeIntelError::TooLarge { limit: max_bytes })?;
+        if file_used > max_bytes {
             break;
         }
-        let mut file_used = used + header;
         let mut outline: Vec<String> = Vec::new();
         for line in &symbols.outline {
             let len = outline_line(line).len();
-            if file_used.saturating_add(len) > max_bytes {
+            let next_file_used = file_used
+                .checked_add(len)
+                .ok_or(CodeIntelError::TooLarge { limit: max_bytes })?;
+            if next_file_used > max_bytes {
                 if !outline.is_empty() {
                     entries.push(RankedFile {
                         path,
@@ -243,7 +248,7 @@ pub fn repo_map(g: &SymbolGraph, b: &RepoMapBudget) -> Result<RepoMap, CodeIntel
                 }
                 break 'files;
             }
-            file_used += len;
+            file_used = next_file_used;
             outline.push(line.clone());
         }
         used = file_used;

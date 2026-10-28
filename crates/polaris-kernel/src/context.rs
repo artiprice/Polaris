@@ -34,6 +34,10 @@ pub struct KernelCtx {
     // Taken exactly once by the local command owner; other callers cannot consume its queue.
     commands: Mutex<Option<CommandReceiver>>,
     root: PathBuf,
+    pub(crate) human_registries:
+        Mutex<std::collections::BTreeMap<SessionId, crate::human_requests::HumanRegistryCache>>,
+    pub(crate) frame_registries:
+        Mutex<std::collections::BTreeMap<SessionId, crate::frame_cancellation::FrameRegistryCache>>,
 }
 pub(crate) async fn blocking<T: Send + 'static>(
     work: impl FnOnce() -> Result<T, KernelError> + Send + 'static,
@@ -129,6 +133,8 @@ impl KernelCtx {
             closed: AtomicBool::new(false),
             commands: Mutex::new(Some(commands)),
             root,
+            human_registries: Mutex::new(std::collections::BTreeMap::new()),
+            frame_registries: Mutex::new(std::collections::BTreeMap::new()),
         }))
     }
 

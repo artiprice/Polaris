@@ -1,0 +1,7 @@
+Command:
+& '@prime/spikes/s0-4-gliner/.venv/Scripts/python.exe' -X utf8 -P @prime/tools/system-one/gliner_export.py goldens crates/polaris-system-one/crates/engine/tests/fixtures/s1/decide
+
+Observed output:
+gliner-export: insufficient available RAM for golden inference: 8249507840 bytes; need 10737418240
+goldens_exit=2
+target_exists=False

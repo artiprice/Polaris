@@ -61,7 +61,7 @@ pub struct ExecutionRequest {
     pub min_tests: u32,
 }
 impl ExecutionRequest {
-    fn validate(&self) -> Result<(), KernelError> {
+    pub(crate) fn validate(&self) -> Result<(), KernelError> {
         for argv in [&self.argv, &self.independent_argv] {
             if argv.is_empty()
                 || argv.len() > 256
@@ -131,6 +131,94 @@ impl<B> std::fmt::Debug for SandboxExecution<B> {
     }
 }
 impl<B: SandboxBackend + 'static> SandboxExecution<B> {
+    pub(crate) async fn pending_reviews(
+        &self,
+        ctx: Arc<KernelCtx>,
+    ) -> Result<Vec<Cid>, KernelError> {
+        let session = self.session;
+        let frame = self.frame;
+        blocking(move || {
+            ctx.ensure_open()?;
+            let mut pending = BTreeSet::new();
+            for (index, record) in ctx
+                .bus
+                .store()
+                .replay_iter(polaris_sdk::ids::Seq::new(u64::MAX))?
+                .enumerate()
+            {
+                if index >= 1_000_000 {
+                    return Err(KernelError::Configuration("review replay bound exceeded"));
+                }
+                let record = record?;
+                if record.session() != session {
+                    continue;
+                }
+                match record.event() {
+                    Event::BlastRadiusAlert {
+                        frame: owner,
+                        report,
+                    } if *owner == frame => {
+                        let _inserted = pending.insert(*report);
+                        if pending.len() > 128 {
+                            return Err(KernelError::Configuration(
+                                "pending review bound exceeded",
+                            ));
+                        }
+                    }
+                    Event::ToolExecutionStarted { frame: owner, call } if *owner == frame => {
+                        let _removed = pending.remove(call);
+                    }
+                    _ => {}
+                }
+            }
+            Ok(pending.into_iter().collect())
+        })
+        .await
+    }
+
+    pub(crate) async fn read_review(
+        &self,
+        ctx: Arc<KernelCtx>,
+        workspace: PathBuf,
+        digest: Cid,
+    ) -> Result<ExecutionReview, KernelError> {
+        let session = self.session;
+        let frame = self.frame;
+        let spec = self.spec.clone();
+        blocking(move || {
+            ctx.ensure_open()?;
+            let bytes = ctx.cas.get_bounded(&digest, u64::try_from(MAX_REVIEW_BYTES)
+                .map_err(|_| KernelError::Configuration("review bound invalid"))?)?;
+            if crate::storage::cas::content_id(&bytes) != digest {
+                return Err(KernelError::Integrity("review digest mismatch"));
+            }
+            let stored: StoredReview = serde_json::from_slice(&bytes)?;
+            stored.request.validate()?;
+            let workspace = std::fs::canonicalize(workspace)?;
+            let environment = EXECUTION_ENV.iter().map(|(key, value)| ((*key).to_owned(), (*value).to_owned())).collect();
+            if stored.version != 2 || stored.session != session || stored.frame != frame
+                || stored.workspace != workspace || stored.sandbox != spec
+                || stored.environment != environment || stored.remote_root != REMOTE_ROOT {
+                return Err(KernelError::Integrity("review owner mismatch"));
+            }
+            let mut published = false;
+            for (index, record) in ctx.bus.store().replay_iter(polaris_sdk::ids::Seq::new(u64::MAX))?.enumerate() {
+                if index >= 1_000_000 { return Err(KernelError::Configuration("review replay bound exceeded")); }
+                let record = record?;
+                if record.session() == session && matches!(record.event(),
+                    Event::BlastRadiusAlert { frame: owner, report } if *owner == frame && *report == digest) {
+                    published = true;
+                    break;
+                }
+            }
+            if !published { return Err(KernelError::Integrity("review was not durably published")); }
+            Ok(ExecutionReview { digest, tree: stored.tree, details: serde_json::to_value(stored)? })
+        }).await
+    }
+
+    pub(crate) fn workspace_leases(&self) -> LeaseManager {
+        self.leases.clone()
+    }
     /// Bind a backend, explicit policy and immutable image reference to one session/frame.
     /// # Errors
     /// Missing policy/image, mutable image reference, or authority construction failure.
@@ -234,6 +322,23 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         command: Command<Unverified>,
         stop: CancellationToken,
     ) -> Result<CommandReceipt, KernelError> {
+        self.execute_with_model_pause(ctx, workspace, command, stop, None)
+            .await
+    }
+
+    /// Execute an approved immutable review while the configured S1 host holds native models paused.
+    /// The pause starts only after signed verification and fresh reviewed-source checks. It remains
+    /// active when sandbox cleanup cannot be confirmed, and requires explicit host recovery.
+    /// # Errors
+    /// Ordinary execution/proof/cleanup failures, or unacknowledged model pause/resume.
+    pub async fn execute_with_model_pause(
+        &self,
+        ctx: Arc<KernelCtx>,
+        workspace: PathBuf,
+        command: Command<Unverified>,
+        stop: CancellationToken,
+        s1: Option<Arc<crate::LocalS1Host>>,
+    ) -> Result<CommandReceipt, KernelError> {
         let authority = Arc::clone(&self.authority);
         let context = Arc::clone(&ctx);
         let verified = blocking(move || {
@@ -268,6 +373,11 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             let accepted = context.publish(session,Event::ToolExecutionStarted {frame:owner,call})?.seq();
             Ok((review,manifest,accepted))
         }).await?;
+        let mut model_pause = None;
+        let accepted_started = Instant::now();
+        let mut safe_to_resume = true;
+        let mut terminal_attempted = false;
+        let execution_result = async {
         let scope_key = LeaseKey::from_resolved_relative("execution/workspace")
             .map_err(|_| KernelError::Integrity("execution lease key"))?;
         let _lease = self
@@ -280,6 +390,9 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             })
             .await
             .map_err(|_| KernelError::Configuration("execution lease unavailable"))?;
+        if let Some(host) = s1 {
+            model_pause = Some(host.pause_models().await?);
+        }
         // OpenShell v0.1.4 permits 19 characters. The UUID's final 16 hex digits retain
         // 62 random bits, avoiding the timestamp-heavy prefix of UUIDv7.
         // Generate the identity after approval. A public review must not let another
@@ -312,12 +425,17 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let mut spec = self.spec.clone();
         spec.name = Some(sandbox.as_str().to_owned());
         let started = Instant::now();
+        let mut create_attempted = false;
+        let mut unexpected_cleanup_confirmed = true;
         let operation = async {
             if stop.is_cancelled() {
                 return Err(KernelError::Closed);
             }
+            create_attempted = true;
+            safe_to_resume = false;
             let created = self.backend.create(&spec).await.map_err(backend_error)?;
             if created != sandbox {
+                unexpected_cleanup_confirmed = false;
                 // Preserve the actual returned identity even if immediate destruction fails.
                 let context = Arc::clone(&ctx);
                 let backend = Arc::clone(&self.backend);
@@ -340,6 +458,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
                     .map_err(backend_error)?;
                 let context = Arc::clone(&ctx);
                 blocking(move || Ok(context.reaper.release(unexpected_registration)?)).await?;
+                unexpected_cleanup_confirmed = true;
                 return Err(KernelError::Integrity(
                     "backend changed journaled sandbox identity",
                 ));
@@ -349,7 +468,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
                 &sandbox,
                 &review,
                 &manifest,
-                command_id,
+                (command_id, call),
                 &stop,
             )
             .await
@@ -357,7 +476,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         .await;
         // A journaled intent precedes create, so cancellation during readiness cannot lose the
         // cleanup identity. Destruction failure retains recovery metadata for reaper retry.
-        let mut cleanup = if matches!(
+        let mut cleanup = if !create_attempted || matches!(
             &operation,
             Err(KernelError::Sandbox(
                 polaris_sdk::registry::SandboxError::AlreadyExists(_)
@@ -378,6 +497,12 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             // record cannot be released. Include that failure in the one terminal proof.
             cleanup = blocking(move || Ok(context.reaper.release(registration)?)).await;
         }
+        safe_to_resume = cleanup.is_ok() && unexpected_cleanup_confirmed;
+        if safe_to_resume && let Some(pause) = model_pause.take() {
+            cleanup = pause.resume().await.map_err(|_| KernelError::Runtime(
+                "System One model admission did not resume after sandbox cleanup".to_owned(),
+            ));
+        }
         let context = Arc::clone(&ctx);
         let ok = operation.is_ok() && cleanup.is_ok();
         let proof_report = match &operation {
@@ -390,6 +515,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let frame = self.frame;
         let latency_us = u64::try_from(started.elapsed().as_micros())
             .map_err(|_| KernelError::Integrity("execution duration overflow"))?;
+        terminal_attempted = true;
         blocking(move || {
             if ok {
                 let report = proof_report.ok_or(KernelError::Integrity("proof report missing"))?;
@@ -423,6 +549,37 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             command: command_id,
             accepted_at,
         })
+        }.await;
+        let release = if safe_to_resume {
+            match model_pause.take() {
+                Some(pause) => pause.resume().await.map_err(|_| {
+                    KernelError::Runtime(
+                        "System One model admission did not resume after execution failure"
+                            .to_owned(),
+                    )
+                }),
+                None => Ok(()),
+            }
+        } else {
+            // Dropping the lease releases the host ownership lock but preserves the desired pause.
+            // The sandbox can still contain running work; never reintroduce native model memory.
+            drop(model_pause.take());
+            Ok(())
+        };
+        if !terminal_attempted && (execution_result.is_err() || release.is_err()) {
+            publish_early_execution_failure(
+                Arc::clone(&ctx),
+                session,
+                self.frame,
+                command_id,
+                call,
+                review.tree,
+                accepted_started.elapsed(),
+            )
+            .await?;
+        }
+        release?;
+        execution_result
     }
 
     async fn run_in_sandbox(
@@ -431,9 +588,10 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         sandbox: &SandboxHandle,
         review: &StoredReview,
         manifest: &Manifest,
-        command: CommandId,
+        execution_binding: (CommandId, Cid),
         stop: &CancellationToken,
     ) -> Result<Cid, KernelError> {
+        let (command, review_cid) = execution_binding;
         let init = ExecRequest {
             argv: vec![
                 "mkdir".into(),
@@ -514,9 +672,16 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
             || !report.secret_blocked.is_empty()
             || report.rescan_required
         {
-            return Err(KernelError::Configuration(
-                "workspace sync did not preserve reviewed snapshot",
-            ));
+            return Err(KernelError::Runtime(format!(
+                "workspace sync did not preserve reviewed snapshot: failed={}, changed={}, conflicts={}, path_conflicts={}, cancelled={}, secret_blocked={}, rescan_required={}",
+                report.failed.len(),
+                report.changed.len(),
+                report.conflicts.len(),
+                report.path_conflicts.len(),
+                report.cancelled.len(),
+                report.secret_blocked.len(),
+                report.rescan_required,
+            )));
         }
         self.verify_remote(sandbox, manifest).await?;
         let output = self
@@ -633,7 +798,7 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         let passed = verdict.is_ok();
         let reason = verdict.as_ref().err().map(ToString::to_string);
         let report = blocking(move || {
-            let report=context.cas.put(&serde_json::to_vec(&serde_json::json!({"command":command,"tree":current_tree,"stdout":stdout,"stderr":stderr,"independent_report":independent_report,"passed":passed,"reason":reason}))?)?;
+            let report=context.cas.put(&serde_json::to_vec(&serde_json::json!({"schema":2,"session":session,"frame":frame,"review":review_cid,"command":command,"tree":current_tree,"stdout":stdout,"stderr":stderr,"independent_report":independent_report,"passed":passed,"reason":reason}))?)?;
             Ok(report)
         }).await?;
         verdict
@@ -680,6 +845,29 @@ impl<B: SandboxBackend + 'static> SandboxExecution<B> {
         }
         Ok(())
     }
+}
+
+async fn publish_early_execution_failure(
+    ctx: Arc<KernelCtx>,
+    session: SessionId,
+    frame: FrameId,
+    command: CommandId,
+    review: Cid,
+    tree: Cid,
+    elapsed: Duration,
+) -> Result<(), KernelError> {
+    let latency_us = u64::try_from(elapsed.as_micros())
+        .map_err(|_| KernelError::Integrity("execution duration overflow"))?;
+    blocking(move || {
+        let report = ctx.cas.put(&serde_json::to_vec(&serde_json::json!({
+            "schema":2,"session":session,"frame":frame,"command":command,"review":review,"tree":tree,
+            "passed":false,"stage":"execution_admission_or_setup","reason":"execution failed before terminal evidence publication"
+        }))?)?;
+        let _writer = ctx.lock_writer()?;
+        let _blocked = ctx.publish(session, Event::ProofOfDoneBlocked { frame, report })?;
+        let _completed = ctx.publish(session, Event::ToolExecutionCompleted { frame, call: review, ok: false, latency_us })?;
+        Ok(())
+    }).await
 }
 
 fn backend_error(error: polaris_sdk::registry::SandboxError) -> KernelError {

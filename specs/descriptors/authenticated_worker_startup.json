@@ -1,0 +1,20 @@
+{
+  "type_of": "pipeline",
+  "name": "authenticated_worker_startup",
+  "file_path": "crates/polaris-kernel/crates/supervisor/src/worker.rs",
+  "logic_name": "Authenticated Worker Startup",
+  "test_list": [
+    {"test_name": "retirement_precedes_slow_stop", "description": "Admission is retired before cancellation or known failure starts process cleanup, and the fallback drop guard retires at most once."},
+    {"test_name": "pending_stop_is_bounded_and_retires_before_supervisor_abort", "description": "A platform stop that never resolves must reach its cleanup deadline, retire the generation and retain its force-stop backstop before supervisor abort."},
+    {"test_name": "bootstrap_precedes_health_and_restarts", "description": "Initialize each generation before probing health; retire every completed generation."},
+    {"test_name": "failed_bootstrap_is_retired_and_never_probed", "description": "A failed initializer cannot publish a healthy process or detach its tree."},
+    {"test_name": "startup_deadline_and_cancellation_retain_process_ownership", "description": "Startup deadline and caller shutdown preserve the process stop guard and retire the generation."},
+    {"test_name": "unconfirmed_cleanup_never_starts_another_generation", "description": "An unconfirmed OS cleanup halts automatic replacement, retaining emergency stop ownership."},
+    {"test_name": "bootstrap_copy_preserves_authorization_without_exporting_plain_bytes", "description": "The explicit bootstrap copy remains wrapped in a zeroizing secret and authenticates the same parent-issued identity."}
+  ],
+  "dependencies": ["PlatformOps", "WorkerBootstrapPlatform", "Supervisor", "WorkerCredential"],
+  "libraries": ["tokio", "secrecy"],
+  "inputs": [{"name": "worker", "type": "WorkerSpec", "description": "Owned executable, explicit environment, restart and deadline policy."}],
+  "output_type": "Result<ChildId, SupervisorError>",
+  "output_description": "A supervised process initialized before health monitoring, with generation retirement and process ownership across failure and cancellation."
+}

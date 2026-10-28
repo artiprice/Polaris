@@ -1,0 +1,39 @@
+id: polaris-command-secret
+version: 1
+rules:
+  - id: root-recursive-delete
+    cwe: null
+    severity: critical
+    message: Recursive deletion targets a root or home directory.
+    dfa_category: dangerous_shell
+    dfa_pattern: '(?m)\brm[ \t]+(?:-[A-Za-z]+[ \t]+)*-[A-Za-z]*[rR][A-Za-z]*[ \t]+(?:--no-preserve-root[ \t]+)?(?:/|~|\$HOME)(?:/?\*)?(?:[ \t;&|]|$)'
+  - id: network-pipe-to-shell
+    cwe: 78
+    severity: critical
+    message: Network content is piped directly to a shell.
+    dfa_category: dangerous_shell
+    dfa_pattern: '\b(?:curl|wget)\b[^\n|]*\|[ \t]*(?:sudo[ \t]+)?(?:ba|z|da)?sh\b'
+  - id: windows-recursive-remove
+    cwe: null
+    severity: high
+    message: PowerShell or cmd recursively removes a target.
+    dfa_category: dangerous_shell
+    dfa_pattern: '(?i)\b(?:Remove-Item|rd|rmdir)\b[^\n]*(?:-Recurse|/s)'
+  - id: aws-access-key
+    cwe: 798
+    severity: critical
+    message: An AWS access key shaped secret is present.
+    dfa_category: secret
+    dfa_pattern: '\b(?:AKIA|ASIA)[0-9A-Z]{16}\b'
+  - id: private-key-block
+    cwe: 798
+    severity: critical
+    message: A private key block is present.
+    dfa_category: secret
+    dfa_pattern: '-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----'
+  - id: github-token
+    cwe: 798
+    severity: critical
+    message: A GitHub token shaped secret is present.
+    dfa_category: secret
+    dfa_pattern: '\bgh[pousr]_[A-Za-z0-9]{36,255}\b'

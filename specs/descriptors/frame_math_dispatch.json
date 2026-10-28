@@ -1,0 +1,17 @@
+{
+  "type_of":"pipeline",
+  "name":"frame_math_dispatch",
+  "file_path":"crates/polaris-kernel/src/agent_tools.rs",
+  "logic_name":"Actual frame-bound deterministic math tools",
+  "test_list":[
+    {"test_name":"frame_math_requires_tool_capability_and_bound_role","description":"Reject missing ExecuteTool authority, foreign frame, denied role or cancellation before evaluation."},
+    {"test_name":"frame_math_runs_actual_dispatch_and_records_receipt","description":"Evaluate typed bounded math on its owned blocking task and persist the real result and frame receipt."},
+    {"test_name":"frame_math_verifier_recomputes_exact_argument_result","description":"Reject content that differs from deterministic evaluation of its recorded call arguments."},
+    {"test_name":"frame_math_rejects_unknown_input_fields","description":"Unknown fields do not silently alter the typed operation contract."}
+  ],
+  "dependencies":["MathTool","KernelAgentToolRunner","KernelFrameVerifier"],
+  "libraries":["tokio","serde_json"],
+  "inputs":[{"name":"call","type":"sealed frame-bound typed math operation","description":"Actual math operation admitted by role, token and processing bounds."}],
+  "output_type":"Result<ToolResultRef, ToolError>",
+  "output_description":"Real deterministic output with durable bound CAS receipt. Final verification deferred by user instruction."
+}

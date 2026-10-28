@@ -16,6 +16,7 @@ fn events() -> Vec<Event> {
     vec![
         Event::SessionStarted { workspace: c(1) },
         Event::DirectiveApplied { directive: c(2) },
+        Event::UserInputSubmitted { text: c(17) },
         Event::DecisionMade {
             frame,
             decision: c(3),
@@ -116,14 +117,13 @@ fn decode_rejects_short_and_garbage_input() {
 
 #[test]
 fn decode_rejects_newer_schema_before_parsing() {
-    let mut future = 7u16.to_le_bytes().to_vec();
+    let found = SUPPORTED_SCHEMA + 1;
+    let mut future = found.to_le_bytes().to_vec();
     future.extend_from_slice(b"anything");
     assert!(matches!(
         decode_record(&future),
-        Err(EventLogError::SchemaTooNew {
-            found: 7,
-            supported: 3
-        })
+        Err(EventLogError::SchemaTooNew { found: f, supported: s })
+            if f == found && s == SUPPORTED_SCHEMA
     ));
 }
 
@@ -170,4 +170,32 @@ proptest! {
     fn prop_decode_never_panics(bytes in prop::collection::vec(any::<u8>(), 0..512)) {
         let _ = decode_record(&bytes);
     }
+}
+
+#[test]
+fn event_codec_roundtrips_user_input_submitted() -> TestResult {
+    let rec = EventRecord::new(
+        Seq::new(9),
+        Timestamp::UNIX_EPOCH,
+        SessionId::from_u128(1),
+        Event::UserInputSubmitted {
+            text: Cid::from_bytes([33; 32]),
+        },
+    );
+    let bytes = encode_record(&rec)?;
+    assert_eq!(
+        bytes.get(..2),
+        Some(&7u16.to_le_bytes()[..]),
+        "schema prefix 7"
+    );
+    assert_eq!(decode_record(&bytes)?, rec);
+    let mut mislabeled = bytes.clone();
+    if let Some(prefix) = mislabeled.get_mut(..2) {
+        prefix.copy_from_slice(&6u16.to_le_bytes());
+    }
+    assert!(
+        decode_record(&mislabeled).is_err(),
+        "user input cannot be disguised as schema 6"
+    );
+    Ok(())
 }

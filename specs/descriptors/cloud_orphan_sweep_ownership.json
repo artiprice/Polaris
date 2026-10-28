@@ -1,0 +1,18 @@
+{
+  "type_of": "function",
+  "name": "select_owned_resources",
+  "file_path": "crates/polaris-nebius-cloud/crates/ai-cloud/src/sweep.rs",
+  "logic_name": "Cloud Orphan Sweep Ownership Filter",
+  "test_list": [
+    {"test_name": "selects_only_exact_owner_marker", "description": "A resource is selected only if its reserved ownership label exactly matches the configured owner marker."},
+    {"test_name": "never_selects_untagged_or_similarly_tagged_resources", "description": "Untagged resources and labels with only a matching prefix are never selected."}
+  ],
+  "dependencies": [],
+  "libraries": [],
+  "inputs": [
+    {"name": "resources", "type": "impl IntoIterator<Item = ResourceLabels>", "description": "Provider resources and their labels."},
+    {"name": "owner_marker", "type": "&OwnerMarker", "description": "Exact label key/value required for Polaris ownership."}
+  ],
+  "output_type": "Vec<ResourceId>",
+  "output_description": "IDs of resources carrying the exact owner marker; selection does not execute deletion."
+}

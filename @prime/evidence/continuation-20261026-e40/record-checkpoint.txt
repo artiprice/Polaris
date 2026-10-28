@@ -1,0 +1,1 @@
+E40 implementation checkpoints and exact verification index recorded; full phase gates remain open.

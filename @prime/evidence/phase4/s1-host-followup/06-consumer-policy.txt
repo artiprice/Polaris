@@ -1,0 +1,40 @@
+    Blocking waiting for file lock on build directory
+   Compiling tokio v1.54.1
+   Compiling ast-grep-core v0.51.0
+   Compiling tokio-util v0.7.20
+   Compiling tokio-stream v0.1.19
+   Compiling tokio-rustls v0.26.6
+   Compiling interprocess v2.4.5
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling h2 v0.4.20
+   Compiling tower v0.5.3
+   Compiling axum v0.8.9
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling hyper v1.12.0
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling hyper-util v0.1.21
+   Compiling hyper-timeout v0.5.2
+   Compiling tonic v0.14.6
+   Compiling tonic-prost v0.14.6
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+    Finished `test` profile [unoptimized] target(s) in 1m 22s
+     Running tests\consumer_policy.rs (target\debug\deps\consumer_policy-e971755f7a2e0d93.exe)
+
+running 8 tests
+test circuit_opens_and_requires_host_readiness ... ok
+test consumer_matrix_preserves_closed_safety_boundaries ... ok
+test retired_worker_response_cannot_cross_recovery_epoch ... ok
+test a_service_ready_probe_without_a_loaded_model_cannot_recover_the_circuit ... ok
+test repeated_model_ready_probe_does_not_fence_an_inflight_call ... ok
+test strict_uncalibrated_answer_still_needs_approval ... ok
+test saturation_and_cancel_release_admission ... ok
+test deadline_and_invalid_answers_return_typed_failure ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+

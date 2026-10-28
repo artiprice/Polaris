@@ -1,0 +1,18 @@
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+error[E0432]: unresolved imports `journal::FrameJournalLimits`, `journal::PreparedFrameStep`
+  --> crates\polaris-runtime\crates\frames\src\lib.rs:14:72
+   |
+14 |     FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameJournalLimits,
+   |                                                                        ^^^^^^^^^^^^^^^^^^ no `FrameJournalLimits` in `journal`
+15 |     FrameStepRecord, JournalAdapter, PreparedFrameStep,
+   |                                      ^^^^^^^^^^^^^^^^^ no `PreparedFrameStep` in `journal`
+   |
+help: a similar name exists in the module
+   |
+14 -     FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameJournalLimits,
+14 +     FRAME_STEP_RECORD_SCHEMA_VERSION, FrameJournal, FrameJournalError, FrameJournal,
+   |
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `polaris-runtime-frames` (lib) due to 1 previous error

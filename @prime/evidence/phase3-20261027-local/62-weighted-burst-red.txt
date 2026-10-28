@@ -1,0 +1,28 @@
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+    Finished `test` profile [unoptimized] target(s) in 3.99s
+     Running tests\weighted_burst.rs (target\debug\deps\weighted_burst-4b68180af0e6f9ac.exe)
+
+running 2 tests
+test weighted_retry_accounts_for_the_entire_request ... FAILED
+test weighted_request_cannot_overfill_remaining_burst ... FAILED
+
+failures:
+
+---- weighted_retry_accounts_for_the_entire_request stdout ----
+Error: "five admitted into two-token remainder"
+
+---- weighted_request_cannot_overfill_remaining_burst stdout ----
+
+thread 'weighted_request_cannot_overfill_remaining_burst' (11212) panicked at crates\polaris-ratelimit\tests\weighted_burst.rs:17:5:
+a three-token request must not occupy the two-token remainder
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    weighted_request_cannot_overfill_remaining_burst
+    weighted_retry_accounts_for_the_entire_request
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p polaris-ratelimit --test weighted_burst`

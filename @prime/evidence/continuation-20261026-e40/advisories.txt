@@ -1,0 +1,192 @@
+error[unmaintained]: paste - no longer maintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:473:1
+    │
+473 │ paste 1.0.15 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2024-0436
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2024-0436
+    ├ The creator of the crate `paste` has stated in the [`README.md`](https://github.com/dtolnay/paste/blob/master/README.md) 
+      that this project is not longer maintained as well as archived the repository
+      
+      ## Possible Alternative(s)
+      
+      - [`pastey`]: a fork of paste and is aimed to be a drop-in replacement with additional features for paste crate
+      - [`with_builtin_macros`]: crate providing a [superset of `paste`'s functionality including general `macro_rules!` eager expansions](https://docs.rs/with_builtin_macros/0.1.0/with_builtin_macros/macro.with_eager_expansions.html)  and `concat!`/`concat_idents!` macros
+      
+      [`pastey`]: https://crates.io/crates/pastey
+      [`with_builtin_macros`]: https://crates.io/crates/with_builtin_macros
+    ├ Announcement: https://github.com/dtolnay/paste
+    ├ Solution: No safe upgrade is available!
+    ├ paste v1.0.15
+      └── tokenizers v0.23.2
+          └── gliner2-rs v0.9.6
+              └── polaris-system-one-engine v0.1.0-alpha
+                  └── polaris-worker v0.1.0-alpha
+
+error[unmaintained]: rustls-pemfile is unmaintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:674:1
+    │
+674 │ rustls-pemfile 2.2.0 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2025-0134
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2025-0134
+    ├ The rustls-pemfile crate is no longer maintained. The repository has been archived since August
+      2025, and users are encouraged to depend directly on the underlying PEM parsing code included
+      in rustls-pki-types since 1.9.0. The latest version of rustls-pemfile is in fact a thin wrapper
+      around the same code used in rustls-pki-types, so migrating should be straightforward.
+      
+      The new API is represented by the [`PemObject`][PemObject] trait, which provides methods for
+      reading a single or multiple PEM objects from a file or byte slice.
+      
+      [PemObject]: https://docs.rs/rustls-pki-types/latest/rustls_pki_types/pem/trait.PemObject.html
+    ├ Announcement: https://github.com/rustls/pemfile/issues/61
+    ├ Solution: No safe upgrade is available!
+    ├ rustls-pemfile v2.2.0
+      └── openshell-core v0.0.0
+          └── openshell-sdk v0.0.0
+              └── polaris-openshell-client v0.1.0-alpha
+                  ├── polaris-openshell v0.1.0-alpha
+                  │   ├── polaris-cli v0.1.0-alpha
+                  │   ├── polaris-kernel v0.1.0-alpha
+                  │   │   ├── polaris-cli v0.1.0-alpha (*)
+                  │   │   ├── polaris-daemon v0.1.0-alpha
+                  │   │   ├── polaris-desktop v0.1.0-alpha
+                  │   │   ├── polaris-tests v0.1.0-alpha
+                  │   │   └── polaris-web v0.1.0-alpha
+                  │   └── polaris-spike-sandbox v0.1.0-alpha
+                  └── polaris-openshell-nemoclaw v0.1.0-alpha
+                      └── polaris-openshell v0.1.0-alpha (*)
+
+error[unmaintained]: `ttf-parser` is unmaintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:811:1
+    │
+811 │ ttf-parser 0.25.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2026-0192
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0192
+    ├ The author of `ttf-parser` has stated that the crate is unmaintained and will not receive further fixes (see the referenced issue).
+      
+      ## Alternative(s)
+      
+      - [`skrifa`](https://crates.io/crates/skrifa), an actively maintained TrueType and OpenType font parsing crate, part of the Google Fonts "oxidize" (`fontations`) project.
+    ├ Announcement: https://github.com/harfbuzz/ttf-parser/issues/217
+    ├ Solution: No safe upgrade is available!
+    ├ ttf-parser v0.25.1
+      └── lopdf v0.42.0
+          └── pdf-extract v0.12.1
+              └── polaris-ingest v0.1.0-alpha
+                  └── polaris-worker v0.1.0-alpha
+
+error[unmaintained]: `zbus_names` is unmaintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:919:1
+    │
+919 │ zbus_names 4.3.5 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2026-0371
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0371
+    ├ The `zbus_names` crate is no longer maintained as a standalone crate.
+      
+      It has been merged into [`zbus`](https://crates.io/crates/zbus) starting with version `6.0.0`, as its `names` module.
+      
+      Users should migrate to [`zbus`](https://crates.io/crates/zbus), with its default features disabled if they only need the D-Bus name types.
+    ├ Announcement: https://github.com/z-galaxy/zbus/issues/2043
+    ├ Solution: No safe upgrade is available!
+    ├ zbus_names v4.3.5
+      ├── zbus v5.19.0
+      │   ├── secret-service v5.2.0
+      │   │   └── zbus-secret-service-keyring-store v1.0.1
+      │   │       └── keyring v4.2.0
+      │   │           ├── polaris-cli v0.1.0-alpha
+      │   │           └── polaris-security-secrets v0.1.0-alpha
+      │   │               └── polaris-security v0.1.0-alpha
+      │   │                   ├── polaris-cli v0.1.0-alpha (*)
+      │   │                   └── polaris-kernel v0.1.0-alpha
+      │   │                       ├── polaris-cli v0.1.0-alpha (*)
+      │   │                       ├── polaris-daemon v0.1.0-alpha
+      │   │                       ├── polaris-desktop v0.1.0-alpha
+      │   │                       ├── polaris-tests v0.1.0-alpha
+      │   │                       └── polaris-web v0.1.0-alpha
+      │   └── zbus-secret-service-keyring-store v1.0.1 (*)
+      └── zbus_macros v5.19.0
+          └── zbus v5.19.0 (*)
+
+error[unmaintained]: `zvariant` is unmaintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:937:1
+    │
+937 │ zvariant 5.15.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2026-0370
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0370
+    ├ The `zvariant` crate is no longer maintained as a standalone crate.
+      
+      It has been merged into [`zbus`](https://crates.io/crates/zbus) starting with version `6.0.0`, as its `wire` module.
+      
+      Users should migrate to [`zbus`](https://crates.io/crates/zbus), with its default features disabled if they only need the D-Bus wire format. Users of the GVariant format should migrate to [`zgvariant`](https://crates.io/crates/zgvariant).
+    ├ Announcement: https://github.com/z-galaxy/zbus/issues/2043
+    ├ Solution: No safe upgrade is available!
+    ├ zvariant v5.15.1
+      ├── zbus v5.19.0
+      │   ├── secret-service v5.2.0
+      │   │   └── zbus-secret-service-keyring-store v1.0.1
+      │   │       └── keyring v4.2.0
+      │   │           ├── polaris-cli v0.1.0-alpha
+      │   │           └── polaris-security-secrets v0.1.0-alpha
+      │   │               └── polaris-security v0.1.0-alpha
+      │   │                   ├── polaris-cli v0.1.0-alpha (*)
+      │   │                   └── polaris-kernel v0.1.0-alpha
+      │   │                       ├── polaris-cli v0.1.0-alpha (*)
+      │   │                       ├── polaris-daemon v0.1.0-alpha
+      │   │                       ├── polaris-desktop v0.1.0-alpha
+      │   │                       ├── polaris-tests v0.1.0-alpha
+      │   │                       └── polaris-web v0.1.0-alpha
+      │   └── zbus-secret-service-keyring-store v1.0.1 (*)
+      ├── zbus_macros v5.19.0
+      │   └── zbus v5.19.0 (*)
+      └── zbus_names v4.3.5
+          ├── zbus v5.19.0 (*)
+          └── zbus_macros v5.19.0 (*)
+
+error[unmaintained]: `zvariant_derive` is unmaintained
+    ┌─ C:\mDev\Polaris/Cargo.lock:938:1
+    │
+938 │ zvariant_derive 5.15.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ unmaintained advisory detected
+    │
+    ├ ID: RUSTSEC-2026-0372
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0372
+    ├ The `zvariant_derive` crate is no longer maintained as a standalone crate.
+      
+      Its derive macros are provided by [`zbus`](https://crates.io/crates/zbus) starting with version `6.0.0`.
+      
+      Users should migrate to [`zbus`](https://crates.io/crates/zbus), with its default features disabled if they only need the D-Bus wire format.
+    ├ Announcement: https://github.com/z-galaxy/zbus/issues/2043
+    ├ Solution: No safe upgrade is available!
+    ├ zvariant_derive v5.15.1
+      └── zvariant v5.15.1
+          ├── zbus v5.19.0
+          │   ├── secret-service v5.2.0
+          │   │   └── zbus-secret-service-keyring-store v1.0.1
+          │   │       └── keyring v4.2.0
+          │   │           ├── polaris-cli v0.1.0-alpha
+          │   │           └── polaris-security-secrets v0.1.0-alpha
+          │   │               └── polaris-security v0.1.0-alpha
+          │   │                   ├── polaris-cli v0.1.0-alpha (*)
+          │   │                   └── polaris-kernel v0.1.0-alpha
+          │   │                       ├── polaris-cli v0.1.0-alpha (*)
+          │   │                       ├── polaris-daemon v0.1.0-alpha
+          │   │                       ├── polaris-desktop v0.1.0-alpha
+          │   │                       ├── polaris-tests v0.1.0-alpha
+          │   │                       └── polaris-web v0.1.0-alpha
+          │   └── zbus-secret-service-keyring-store v1.0.1 (*)
+          ├── zbus_macros v5.19.0
+          │   └── zbus v5.19.0 (*)
+          └── zbus_names v4.3.5
+              ├── zbus v5.19.0 (*)
+              └── zbus_macros v5.19.0 (*)
+
+advisories FAILED

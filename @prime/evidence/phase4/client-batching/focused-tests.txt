@@ -1,0 +1,147 @@
+    Finished `test` profile [unoptimized] target(s) in 1.59s
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_client-762c4ecb813c4214.exe)
+
+running 21 tests
+test cache::tests::cache_digest_collision_with_different_request_bytes_is_a_miss ... ok
+test tests::client_input_bound_matches_worker_cap ... ok
+test cache::tests::health_identity_requires_a_complete_digest_and_nonzero_generation ... ok
+test cache::tests::cache_key_binds_model_generation_schema_and_masked_context ... ok
+test tests::health_response_validation_distinguishes_admission_from_model_readiness ... ok
+test tests::health_response_validation_rejects_missing_and_incompatible_versions ... ok
+test tests::pipe_retry_classifies_pipe_busy_without_retrying_acl_denial ... ok
+test tests::response_validation_rejects_answers_for_another_question ... ok
+test tests::response_validation_rejects_unselected_or_unsorted_choice_scores ... ok
+test tests::request_validation_rejects_empty_schema_without_transport ... ok
+test tests::request_validation_counts_context_separator_and_utf8_bytes ... ok
+test tests::readiness_does_not_report_ready_when_authenticated_rpc_cannot_connect ... ok
+test cache::tests::cache_capacity_and_identity_change_clear_old_entries ... ok
+test tests::schema_bound_counts_derived_ordinal_labels ... ok
+test tests::eviction_rejects_missing_authentication ... ok
+test tests::readiness_authenticates_handshake_and_health_and_reports_admission_only ... ok
+test tests::eviction_rejects_acknowledgement_above_native_engine_capacity ... ok
+test tests::eviction_authenticates_handshake_and_rpc_and_returns_drop_acknowledgement ... ok
+test tests::readiness_rejects_invalid_health_protocol_versions ... ok
+test tests::eviction_maps_worker_status_errors ... ok
+test tests::eviction_obeys_configured_deadline ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\client_batching.rs (target\debug\deps\client_batching-ff966a7e7c5483d2.exe)
+
+running 4 tests
+test cancelled_caller_does_not_stall_other_items_in_the_batch ... ok
+test worker_without_loaded_identity_never_serves_cached_answers ... ok
+test result_from_prior_model_generation_is_not_cached_under_reloaded_identity ... ok
+test concurrent_decisions_share_one_worker_batch ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_system_one_engine-7f4bd023fef9de63.exe)
+
+running 8 tests
+test tests::configured_python_normalization_changes_actual_model_text ... ok
+test tests::cpu_provider_must_be_explicit_and_rejects_device_fallbacks ... ok
+test tests::duplicate_choice_labels_are_rejected_but_reused_labels_are_valid_across_prompts ... ok
+test tests::duplicate_model_prompts_are_rejected_before_inference ... ok
+test tests::input_context_is_included_and_checked_before_inference ... ok
+test tests::question_ids_are_unique_independently_of_noul_prompts ... ok
+test tests::oversized_noul_statement_and_aggregate_schema_fail_before_inference ... ok
+test tests::engine_identity_binds_model_runtime_and_normalization_inputs ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\real_model.rs (target\debug\deps\real_model-93b58ab946bc86de.exe)
+
+running 1 test
+test real_model_returns_bounded_choice_probabilities ... ignored, requires explicit local GLiNER model and ORT DLL paths
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_worker-b4e84df33dc435d3.exe)
+
+running 12 tests
+test idle::tests::eviction_acknowledges_completed_destruction_and_is_idempotent ... ok
+test idle::tests::failed_loading_keeps_the_session_cold ... ok
+test idle::tests::only_completed_work_moves_the_idle_deadline ... ok
+test tests::empty_decision_batch_is_rejected_before_model_loading ... ok
+test tests::canceled_shutdown_still_signals_transport_stop ... ok
+test tests::ingest_and_embedding_do_not_claim_s1_results ... ok
+test tests::health_has_no_loaded_model_identity_before_first_decision ... ok
+test ingest::tests::provenance_writer_rejects_growth_and_parser_errors_are_private ... ok
+test ingest::tests::shutdown_reports_drain_timeout_without_claiming_parser_stopped ... ok
+test tests::transport_shutdown_wait_is_bounded ... ok
+test tests::drain_lock_wait_observes_requested_grace ... ok
+test ingest::tests::shutdown_waits_for_active_parser_permit_and_closes_admission ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\main.rs (target\debug\deps\polaris_worker-aced9df7832e41a6.exe)
+
+running 3 tests
+test tests::bootstrap_rejects_short_and_non_utf8_secrets ... ok
+test tests::idle_cli_policy_is_bounded_and_does_not_echo_bad_values ... ok
+test tests::runtime_shutdown_wait_is_bounded_while_blocking_work_remains ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+     Running tests\idle_eviction.rs (target\debug\deps\idle_eviction-93bddef609823655.exe)
+
+running 2 tests
+test default_worker_drops_real_model_after_idle_ttl ... ignored, requires explicit installed model/runtime paths and 46 seconds of real idle time
+test configured_idle_policy_rejects_invalid_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\ingest_service.rs (target\debug\deps\ingest_service-fed887e2877a2e74.exe)
+
+running 5 tests
+test ingest_worker_protocol_and_lifecycle ... ok
+test invalid_or_missing_source_is_rejected ... ok
+test unsupported_ocr_remains_an_error ... ok
+test ingest_persists_text_and_untrusted_provenance ... ok
+test corrupt_and_oversized_sources_fail_before_parsing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\local_transport.rs (target\debug\deps\local_transport-521483b7456182d5.exe)
+
+running 2 tests
+test windows_pipe_collision_fails_before_serve_returns_success ... ok
+test windows_pipe_ingest_handshake_content_and_shutdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\s1_process.rs (target\debug\deps\s1_process-aaf14a6152c1b1c7.exe)
+
+running 2 tests
+test configured_windows_worker_process_returns_real_decision ... ignored, requires explicit local GLiNER model and ORT DLL paths
+test real_worker_reloads_after_idle_eviction ... ignored, requires explicit installed GLiNER/ORT artifacts
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\supervised_worker.rs (target\debug\deps\supervised_worker-7a6c4e25d447967e.exe)
+
+running 2 tests
+test supervised_worker_returns_real_decision ... ignored, requires explicit installed GLiNER/ORT artifact paths
+test supervised_worker_bootstraps_authenticated_health_and_retires ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+   Doc-tests polaris_system_one_client
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_system_one_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_worker
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

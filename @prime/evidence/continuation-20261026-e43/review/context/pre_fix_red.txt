@@ -1,0 +1,84 @@
+ARGV: cargo test -p polaris-runtime-context --lib lossless_window_tests
+EXIT: 101
+RAW OUTPUT:
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+error[E0609]: no field `omitted_window` on type `AssembledPrompt`
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:580:31
+    |
+580 |         let archived = prompt.omitted_window.as_ref().ok_or("missing archive reference")?;
+    |                               ^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `prefix`, `scratchpad`, `active_scope`, `window`, `stats`
+
+error[E0599]: no method named `expand_omitted_window` found for struct `ContextVirtualizer<C, K>` in the current scope
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:585:36
+    |
+224 | pub struct ContextVirtualizer<C, K> {
+    | ----------------------------------- method `expand_omitted_window` not found for this struct
+...
+585 |         let restored = virtualizer.expand_omitted_window(archived)?;
+    |                                    ^^^^^^^^^^^^^^^^^^^^^ method not found in `ContextVirtualizer<polaris_storage_cas::Cas, ByteHeuristic>`
+
+error[E0609]: no field `omission_notice` on type `AssembledPrompt`
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:589:20
+    |
+589 |         if !prompt.omission_notice.as_deref().is_some_and(|notice| notice.contains("untrusted")) {
+    |                    ^^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `prefix`, `scratchpad`, `active_scope`, `window`, `stats`
+
+error[E0609]: no field `omitted_window` on type `ContextMapReport`
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:604:19
+    |
+604 |         if report.omitted_window != prompt.omitted_window {
+    |                   ^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `total_tokens`, `window_cap`, `prefix_tokens`, `scratchpad_tokens`, `active_scope_tokens` ... and 2 others
+
+error[E0609]: no field `omitted_window` on type `AssembledPrompt`
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:604:44
+    |
+604 |         if report.omitted_window != prompt.omitted_window {
+    |                                            ^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `prefix`, `scratchpad`, `active_scope`, `window`, `stats`
+
+error[E0609]: no field `omitted_window` on type `AssembledPrompt`
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:618:31
+    |
+618 |         let archived = prompt.omitted_window.as_ref().ok_or("tool group was not archived")?;
+    |                               ^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `prefix`, `scratchpad`, `active_scope`, `window`, `stats`
+
+error[E0599]: no method named `expand_omitted_window` found for struct `ContextVirtualizer<C, K>` in the current scope
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:619:36
+    |
+224 | pub struct ContextVirtualizer<C, K> {
+    | ----------------------------------- method `expand_omitted_window` not found for this struct
+...
+619 |         let restored = virtualizer.expand_omitted_window(archived)?;
+    |                                    ^^^^^^^^^^^^^^^^^^^^^ method not found in `ContextVirtualizer<polaris_storage_cas::Cas, ByteHeuristic>`
+
+error[E0716]: temporary value dropped while borrowed
+   --> crates\polaris-runtime\crates\context\src\assemble.rs:511:27
+    |
+511 |         let thread_name = std::thread::current()
+    |                           ^^^^^^^^^^^^^^^^^^^^^^ creates a temporary value which is freed while still in use
+512 |             .name()
+513 |             .ok_or("test thread has no name")?;
+    |                                               - temporary value is freed at the end of this statement
+514 |         let path = std::env::temp_dir().join(format!(
+515 |             "polaris-runtime-context-{}-{thread_name}",
+    |                                          ----------- borrow later used here
+    |
+help: consider using a `let` binding to create a longer lived value
+    |
+511 ~         let binding = std::thread::current();
+512 ~         let thread_name = binding
+    |
+
+Some errors have detailed explanations: E0599, E0609, E0716.
+For more information about an error, try `rustc --explain E0599`.
+error: could not compile `polaris-runtime-context` (lib test) due to 8 previous errors
+

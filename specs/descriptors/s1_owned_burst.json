@@ -1,0 +1,47 @@
+{
+  "type_of": "module",
+  "name": "system_one_burst_workload",
+  "file_path": "tests/spike/s1/src/lib.rs",
+  "logic_name": "System One Owned Burst Workload",
+  "test_list": [
+    {
+      "test_name": "real_worker_runs_warm_and_post_eviction_fifty_request_bursts",
+      "description": "With exact installed artifacts, measure actual authenticated repeated-input warm/post-eviction bursts and a 50-distinct-input warm round; successful transport is not a semantic quality verdict."
+    },
+    {
+      "test_name": "burst_records_observed_calls_and_latency",
+      "description": "Every request has one actual recorded outcome and timing under bounded owned concurrency."
+    },
+    {
+      "test_name": "timeouts_are_measured_and_not_answers",
+      "description": "Stalled calls yield timeout outcomes without fabricated decisions."
+    },
+    {
+      "test_name": "cancellation_drains_every_owned_task",
+      "description": "Cancellation aborts and joins owned work before reporting."
+    },
+    {
+      "test_name": "malformed_engine_results_are_not_success",
+      "description": "Missing or foreign question identities are not successful decisions."
+    }
+  ],
+  "dependencies": [
+    "DecisionEngine",
+    "S1Client"
+  ],
+  "libraries": [
+    "tokio",
+    "tokio-util",
+    "hdrhistogram",
+    "thiserror"
+  ],
+  "inputs": [
+    {
+      "name": "requests",
+      "type": "Vec<BurstRequest>",
+      "description": "Actual bounded schemas and masked inputs."
+    }
+  ],
+  "output_type": "Result<BurstReport, WorkloadError>",
+  "output_description": "Sanitized per-request outcomes and observed latency quantiles; quality and recovery require separate evidence."
+}

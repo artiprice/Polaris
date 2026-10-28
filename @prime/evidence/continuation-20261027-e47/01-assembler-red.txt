@@ -1,0 +1,197 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-config v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-config)
+   Compiling polaris-code-intel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-code-intel)
+   Compiling polaris-security-automata v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\automata)
+   Compiling polaris-storage-cas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cas)
+   Compiling polaris-log v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-log)
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-schemas v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\schemas)
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-telemetry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-telemetry)
+   Compiling polaris-openshell-policy v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\policy)
+   Compiling polaris-storage-registry v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\registry)
+   Compiling polaris-kernel-bus v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\bus)
+   Compiling polaris-storage-vector v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\vector)
+   Compiling polaris-kernel-directives v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\directives)
+   Compiling polaris-tools-rtk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\rtk)
+   Compiling polaris-security-pii v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\pii)
+   Compiling polaris-vcs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-vcs)
+   Compiling polaris-platform-process v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\process)
+   Compiling polaris-storage-eventlog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\eventlog)
+   Compiling polaris-models v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-models)
+   Compiling polaris-system-one-router v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\router)
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-system-one-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\verifier)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-runtime-context v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\context)
+   Compiling polaris-runtime-guards v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\guards)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-runtime-leases v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\leases)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-system-one-watchdog v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\watchdog)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-nebius-cloud-sandboxes v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\sandboxes)
+   Compiling polaris-platform-wsl v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform\crates\wsl)
+   Compiling polaris-nebius-cloud-data-lab v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\data-lab)
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-devenv-nix v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\nix)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-storage-cache v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\cache)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-security-secrets v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\secrets)
+   Compiling polaris-devenv-cicd v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\cicd)
+   Compiling polaris-ext-skills v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\skills)
+   Compiling polaris-storage-sync v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage\crates\sync)
+   Compiling polaris-tools-math v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\math)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-platform v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-platform)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-storage v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-storage)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling polaris-hacker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-hacker)
+   Compiling polaris-kernel-supervisor v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\supervisor)
+   Compiling polaris-kernel-reaper v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\reaper)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+error[E0432]: unresolved imports `polaris_kernel::KernelPromptAssembler`, `polaris_kernel::PromptContext`, `polaris_kernel::PromptLimits`
+ --> crates\polaris-kernel\tests\frame_prompt.rs:3:44
+  |
+3 | use polaris_kernel::{Kernel, KernelHandle, KernelPromptAssembler, KernelToolRunner, LocalKernelConfig, PromptContext, PromptLimits};
+  |                                            ^^^^^^^^^^^^^^^^^^^^^                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^ no `PromptLimits` in the root
+  |                                            |                                                           |
+  |                                            |                                                           no `PromptContext` in the root
+  |                                            no `KernelPromptAssembler` in the root
+
+warning: method call on a diverging inference variable
+  --> crates\polaris-kernel\tests\frame_prompt.rs:54:28
+   |
+54 |     let prompt = assembler.apply(fixture.request("Contact person@example.com", vec![ChatMessage::text(ChatRole::Assistant, "reply pr...
+   |                            ^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+   = note: `#[warn(method_call_on_diverging_infer_var)]` (part of `#[warn(future_incompatible)]`) on by default
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:54:28
+   |
+54 |     let prompt = assembler.apply(fixture.request("Contact person@example.com", vec![ChatMessage::text(ChatRole::Assistant, "reply pr...
+   |                            ^^^^^ method not found in `!`
+
+warning: method call on a diverging inference variable
+  --> crates\polaris-kernel\tests\frame_prompt.rs:76:28
+   |
+76 |     let prompt = assembler.apply(fixture.request("Analyze", Vec::new())).await?;
+   |                            ^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:76:28
+   |
+76 |     let prompt = assembler.apply(fixture.request("Analyze", Vec::new())).await?;
+   |                            ^^^^^ method not found in `!`
+
+warning: method call on a diverging inference variable
+  --> crates\polaris-kernel\tests\frame_prompt.rs:93:28
+   |
+93 |     let prompt = assembler.apply(fixture.request("Continue", vec![assistant.clone(), result.clone(), ChatMessage::text(ChatRole::Ass...
+   |                            ^^^^^
+   |
+   = help: consider providing a type annotation
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+   = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+  --> crates\polaris-kernel\tests\frame_prompt.rs:93:28
+   |
+93 |     let prompt = assembler.apply(fixture.request("Continue", vec![assistant.clone(), result.clone(), ChatMessage::text(ChatRole::Ass...
+   |                            ^^^^^ method not found in `!`
+
+warning: method call on a diverging inference variable
+   --> crates\polaris-kernel\tests\frame_prompt.rs:120:23
+    |
+120 |     assert!(assembler.apply(wrong).await.is_err(), "foreign frame rejected");
+    |                       ^^^^^
+    |
+    = help: consider providing a type annotation
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+   --> crates\polaris-kernel\tests\frame_prompt.rs:120:23
+    |
+120 |     assert!(assembler.apply(wrong).await.is_err(), "foreign frame rejected");
+    |                       ^^^^^ method not found in `!`
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+   --> crates\polaris-kernel\tests\frame_prompt.rs:122:23
+    |
+122 |     assert!(assembler.apply(fixture.request("goal", vec![orphan])).await.is_err(), "malformed tool history rejected");
+    |                       ^^^^^ method not found in `!`
+
+warning: unreachable expression
+   --> crates\polaris-kernel\tests\frame_prompt.rs:122:29
+    |
+122 |     assert!(assembler.apply(fixture.request("goal", vec![orphan])).await.is_err(), "malformed tool history rejected");
+    |             ---------       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unreachable expression
+    |             |
+    |             any code following this expression is unreachable
+    |
+    = note: `#[warn(unreachable_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method call on a diverging inference variable
+   --> crates\polaris-kernel\tests\frame_prompt.rs:126:28
+    |
+126 |     assert!(tiny_assembler.apply(fixture.request("goal", Vec::new())).await.is_err(), "mandatory prefix cannot be silently discarde...
+    |                            ^^^^^
+    |
+    = help: consider providing a type annotation
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+   --> crates\polaris-kernel\tests\frame_prompt.rs:126:28
+    |
+126 |     assert!(tiny_assembler.apply(fixture.request("goal", Vec::new())).await.is_err(), "mandatory prefix cannot be silently discarde...
+    |                            ^^^^^ method not found in `!`
+
+warning: method call on a diverging inference variable
+   --> crates\polaris-kernel\tests\frame_prompt.rs:128:25
+    |
+128 |     assert!(unavailable.apply(fixture.request("goal", Vec::new())).await.is_err(), "no heuristic fallback");
+    |                         ^^^^^
+    |
+    = help: consider providing a type annotation
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #156047 <https://github.com/rust-lang/rust/issues/156047>
+
+error[E0599]: no method named `apply` found for type `!` in the current scope
+   --> crates\polaris-kernel\tests\frame_prompt.rs:128:25
+    |
+128 |     assert!(unavailable.apply(fixture.request("goal", Vec::new())).await.is_err(), "no heuristic fallback");
+    |                         ^^^^^ method not found in `!`
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+warning: `polaris-kernel` (test "frame_prompt") generated 7 warnings
+error: could not compile `polaris-kernel` (test "frame_prompt") due to 8 previous errors; 13 warnings emitted

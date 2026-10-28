@@ -334,6 +334,11 @@ where
             protocol_version: Some(polaris_proto::PROTOCOL_VERSION.into()),
             build_version: env!("CARGO_PKG_VERSION").to_owned(),
             ready: self.readiness.is_ready(),
+            loaded_model_identity_blake3: Vec::new(),
+            loaded_model_generation: 0,
+            loaded_pii_model_identity_blake3: Vec::new(),
+            loaded_pii_model_generation: 0,
+            worker_incarnation: Vec::new(),
         }))
     }
 }
@@ -425,11 +430,12 @@ fn command_right(body: &pb::CommandBody) -> Result<Right, Status> {
         Some(Kind::AcquireAstScope(_)) | Some(Kind::ReleaseAstScope(_)) => Ok(Right::Read),
         Some(Kind::SpawnSubagent(_)) => Ok(Right::SpawnSubagent),
         Some(Kind::ExecuteTool(_)) => Ok(Right::ExecuteTool),
-        Some(Kind::RollbackTo(_)) | Some(Kind::CancelFrame(_)) | Some(Kind::ApplyDirective(_)) => {
-            Err(Status::permission_denied(
-                "command has no RPC capability right",
-            ))
-        }
+        Some(Kind::RollbackTo(_))
+        | Some(Kind::CancelFrame(_))
+        | Some(Kind::ApplyDirective(_))
+        | Some(Kind::AnswerHumanRequest(_)) => Err(Status::permission_denied(
+            "command has no RPC capability right",
+        )),
         None => Err(Status::invalid_argument("command kind is required")),
     }
 }

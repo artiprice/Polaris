@@ -229,14 +229,14 @@ impl<T> Pipeline<T> {
     where
         Op: FunctionalOperator<In = T>,
     {
-        if let Some(previous) = self.last_request_stage {
-            if stage <= previous {
-                return Err(PipelineError::StageOrder {
-                    previous,
-                    requested: stage,
-                    trace: self.trace,
-                });
-            }
+        if let Some(previous) = self.last_request_stage
+            && stage <= previous
+        {
+            return Err(PipelineError::StageOrder {
+                previous,
+                requested: stage,
+                trace: self.trace,
+            });
         }
         self.run(operator, stage_name(stage), Some(stage)).await
     }

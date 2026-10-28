@@ -1,0 +1,28 @@
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 8.36s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-9d4b5cae7650a748.exe)
+
+running 7 tests
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_enforces_deadline_and_cumulative_archive_bound ... FAILED
+test assembler_run_rejects_replaced_frame_selection ... ok
+
+failures:
+
+---- assembler_enforces_deadline_and_cumulative_archive_bound stdout ----
+
+thread 'assembler_enforces_deadline_and_cumulative_archive_bound' (13880) panicked at crates\polaris-kernel\tests\frame_prompt.rs:296:5:
+two individually fitting archives must not exceed their cumulative allowance
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    assembler_enforces_deadline_and_cumulative_archive_bound
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+error: test failed, to rerun pass `-p polaris-kernel --test frame_prompt`

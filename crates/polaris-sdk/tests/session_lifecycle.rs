@@ -7,8 +7,8 @@ use std::error::Error;
 #[test]
 fn lifecycle_records_use_current_schema() -> Result<(), Box<dyn Error>> {
     assert_eq!(
-        EVENT_SCHEMA_VERSION, 4,
-        "blast alert extension requires a schema revision"
+        EVENT_SCHEMA_VERSION, 7,
+        "typed user input extension requires schema v7"
     );
     for event in [
         Event::SessionConfigured {
@@ -23,7 +23,11 @@ fn lifecycle_records_use_current_schema() -> Result<(), Box<dyn Error>> {
             SessionId::from_u128(1),
             event,
         );
-        assert_eq!(record.schema(), 4, "new records use the current schema");
+        assert_eq!(
+            record.schema(),
+            EVENT_SCHEMA_VERSION,
+            "new records use the current schema"
+        );
         assert_eq!(
             serde_json::from_str::<EventRecord>(&serde_json::to_string(&record)?)?,
             record,
@@ -96,7 +100,13 @@ fn versioned_constructor_validates_schema() -> Result<(), Box<dyn Error>> {
         "zero schema refused"
     );
     assert!(
-        make(4, Event::SessionClosed).is_err(),
+        make(
+            EVENT_SCHEMA_VERSION
+                .checked_add(1)
+                .ok_or("schema overflow")?,
+            Event::SessionClosed
+        )
+        .is_err(),
         "future schema refused"
     );
     assert!(
@@ -111,9 +121,9 @@ proptest! {
     fn prop_schema_acceptance_matches_lifecycle_minimum(schema in any::<u16>(), configuration in any::<[u8; 32]>()) {
         for event in [Event::SessionConfigured { configuration: Cid::from_bytes(configuration) }, Event::SessionPaused, Event::SessionResumed] {
             let result = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), event);
-            prop_assert_eq!(result.is_ok(), schema == 2 || schema == 3);
+            prop_assert_eq!(result.is_ok(), (2..=EVENT_SCHEMA_VERSION).contains(&schema));
         }
         let legacy = EventRecord::from_versioned(schema, Seq::ZERO, Timestamp::UNIX_EPOCH, SessionId::from_u128(1), Event::SessionClosed);
-        prop_assert_eq!(legacy.is_ok(), schema == 1 || schema == 2 || schema == 3);
+        prop_assert_eq!(legacy.is_ok(), (1..=EVENT_SCHEMA_VERSION).contains(&schema));
     }
 }

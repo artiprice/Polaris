@@ -1,0 +1,22 @@
+{
+  "chat_tool_call": {
+    "arguments_json": "{\"probe_id\": \"adapter-smoke\"}",
+    "id": "TF2nNpv0LrwGcIb6e2Bl7YXecdxbK3zC",
+    "name": "p3_local_probe"
+  },
+  "chat_usage_prompt_tokens": 174,
+  "count_tokens": 174,
+  "evidence_files": {
+    "chat_request": "live-10244-chat-request.json",
+    "chat_response": "live-10244-chat-response.http",
+    "count_request": "live-10244-count-request.json",
+    "count_response": "live-10244-count-response.http"
+  },
+  "model_repository": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "model_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "request_body_equal": true,
+  "schema": 1,
+  "server_release": "llama.cpp b11804 / c7fc50941",
+  "server_sha256": "3a3e417a0816329829081bdd443e3045ff3b2dbe866fcef89a1d919e941ce23f"
+}

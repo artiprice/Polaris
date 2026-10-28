@@ -1,0 +1,85 @@
+Diff in \\?\C:\mDev\Polaris\crates\polaris-runtime\crates\frames\tests\frame_tool_authority.rs:1:
+ use polaris_runtime_frames::{
+-    Active, AgentContextFrame, AgentRole, FrameScope, ModelSelection, ResourceQuota,
+-    ScratchpadRef, scope_is_subset,
++    Active, AgentContextFrame, AgentRole, FrameScope, ModelSelection, ResourceQuota, ScratchpadRef,
++    scope_is_subset,
+ };
+ use polaris_sdk::{
+     contracts::Timestamp,
+Diff in \\?\C:\mDev\Polaris\crates\polaris-security\crates\capability\src\scope.rs:169:
+         }
+         ResourceScope::Prefix(path) => {
+             let _previous = params.insert("path".to_owned(), string(path.as_str()));
+-            let _previous = params.insert(
+-                "prefix".to_owned(),
+-                string(&format!("{}/", path.as_str())),
+-            );
++            let _previous =
++                params.insert("prefix".to_owned(), string(&format!("{}/", path.as_str())));
+             "check if resource({path}) trusting authority or resource($p), $p.starts_with({prefix}) trusting authority;\n".to_owned()
+         }
+         ResourceScope::Symbol { path, symbol } => {
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:1:
+-use std::{
+-    collections::BTreeSet,
+-    time::Duration,
+-};
++use std::{collections::BTreeSet, time::Duration};
+ 
+ use polaris_sdk::{
+     ids::{FrameId, SessionId},
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:61:
+ struct NoRecall;
+ 
+ impl RecallBackend for NoRecall {
+-    fn recall(
+-        &self,
+-        _query: &str,
+-        _max_results: usize,
+-    ) -> Result<serde_json::Value, ToolError> {
++    fn recall(&self, _query: &str, _max_results: usize) -> Result<serde_json::Value, ToolError> {
+         Err(ToolError::NotFound("recall backend".to_owned()))
+     }
+ }
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:113:
+     let workspace = tempfile::tempdir()?;
+     std::fs::create_dir(workspace.path().join("nested"))?;
+     std::fs::write(workspace.path().join("first.txt"), "needle first\n")?;
+-    std::fs::write(workspace.path().join("nested/second.txt"), "needle second\n")?;
++    std::fs::write(
++        workspace.path().join("nested/second.txt"),
++        "needle second\n",
++    )?;
+     let (_cas_root, cas) = empty_cas()?;
+     let tools = registry(cas, 16_384, 4_096)?;
+     let result = tools.invoke_authorized_bounded(
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:152:
+     config.max_blob_bytes = 1_024;
+     let cas = Cas::open(config)?;
+     let cid = cas.put(b"known-valid-content-that-is-larger-than-the-read-cap")?;
+-    std::fs::write(cas.blob_path(&cid), b"corrupt raw blob payload longer than cap")?;
++    std::fs::write(
++        cas.blob_path(&cid),
++        b"corrupt raw blob payload longer than cap",
++    )?;
+     let tools = registry(cas, 16_384, 8)?;
+     let result = tools.invoke_authorized_bounded(
+         "polaris_expand",
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:253:
+ }
+ 
+ #[test]
+-fn exact_output_boundary_is_accepted_and_json_is_escaped() -> Result<(), Box<dyn std::error::Error>> {
++fn exact_output_boundary_is_accepted_and_json_is_escaped() -> Result<(), Box<dyn std::error::Error>>
++{
+     let workspace = tempfile::tempdir()?;
+     let (_cas_root, cas) = empty_cas()?;
+     let tools = registry(cas, 16_384, 4_096)?;
+Diff in \\?\C:\mDev\Polaris\crates\polaris-tools\crates\builtin\tests\authorized_builtin_invocation.rs:260:
+-    let arguments = serde_json::json!({"json":"{\"value\":\"line\\nquote\\\"\"}","pointer":"/value"});
++    let arguments =
++        serde_json::json!({"json":"{\"value\":\"line\\nquote\\\"\"}","pointer":"/value"});
+     let output = tools.invoke_authorized_bounded(
+         "json_query",
+         &arguments,

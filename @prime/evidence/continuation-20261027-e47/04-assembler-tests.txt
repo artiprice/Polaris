@@ -1,0 +1,14 @@
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 9.33s
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-9d4b5cae7650a748.exe)
+
+running 4 tests
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+

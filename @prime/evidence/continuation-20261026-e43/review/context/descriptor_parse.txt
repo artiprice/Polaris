@@ -1,0 +1,4 @@
+ARGV: descriptor JSON parse and test-name parity
+EXIT: 0
+RAW OUTPUT:
+JSON valid; descriptor tests=12; source test names matched

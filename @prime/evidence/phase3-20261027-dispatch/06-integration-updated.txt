@@ -1,0 +1,170 @@
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-spike-ratelimit v0.1.0-alpha (C:\mDev\Polaris\tests\spike\ratelimit)
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-sdk v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-sdk)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 27.29s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-87643a57174e4d1e.exe)
+
+running 18 tests
+test sandbox_recovery::tests::locator_encoding_is_versioned_scoped_and_strict ... ok
+test worker_lifecycle::tests::bootstrap_errors_are_sanitized_and_do_not_publish_connections ... ok
+test worker_lifecycle::tests::initialization_bootstraps_before_connect_and_never_publishes_failure ... ok
+test worker_lifecycle::tests::retiring_an_old_generation_does_not_clear_the_new_generation ... ok
+test skill_status::tests::invalid_skill_root_is_reported_unavailable_without_fabricated_entries ... ok
+test docker_pool::tests::live_pool_is_not_reported_as_orphan_and_release_removes_registration ... ok
+test docker_pool::tests::active_pool_registration_cannot_be_acknowledged_as_an_orphan ... ok
+test docker_pool::tests::failed_backend_cleanup_keeps_the_orphan_journaled ... ok
+test skill_status::tests::status_compares_requirements_to_the_real_local_builtin_catalog ... ok
+test docker_pool::tests::restart_recovers_only_orphaned_docker_pool_locators ... ok
+test sandbox_recovery::tests::recovery_acknowledges_only_absent_matching_scoped_records ... ok
+test frame_tools::tests::bounded_serialization_preserves_exact_json_or_rejects ... ok
+test frame_journal::tests::journal_preparation_obeys_exact_escaped_json_bound ... ok
+test context::tests::startup_recovers_docker_orphans_before_the_generic_reaper_sweep ... ok
+test frame_prompt::tests::prompt_encoded_limit_matches_exact_escaped_json ... ok
+test runtime::inspection_owner_tests::shutdown_drains_a_blocking_inspection_owner ... ok
+test runtime::inspection_owner_tests::inspection_slots_bound_admission_and_shutdown_releases_waiters ... ok
+test frame_journal::tests::accepted_journal_finishes_after_future_drop_and_shutdown ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests\agent_tools.rs (target\debug\deps\agent_tools-030bb6da92b20b1a.exe)
+
+running 16 tests
+test run_tests_without_execution_profile_fails_before_activity ... ok
+test write_requires_explicit_absence_or_revision ... ok
+test targeted_runner_cancel_preserves_shared_parent_and_peer ... ok
+test mutation_result_budget_is_rejected_during_admission ... ok
+test denied_later_call_prevents_every_mutation ... ok
+test custom_results_bind_exact_call_and_content ... ok
+test dropping_a_waiting_call_persists_request_interruption ... ok
+test cancelling_a_queued_mutation_does_not_wait_for_current_holder ... ok
+test shutdown_interrupts_and_drains_waiting_request_owners ... ok
+test mutation_command_id_preserves_exact_diff_authority ... ok
+test waiting_question_allows_sibling_workspace_reads ... ok
+test host_cancels_waiting_child_preserving_root_and_sibling ... ok
+test production_verifier_accepts_real_mutation_and_rejects_forged_link ... ok
+test contended_mutations_do_not_reserve_all_read_slots ... ok
+test independent_runners_share_one_workspace_mutation_lease ... ok
+test model_loop_mutates_then_waits_for_a_real_host_answer ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests\durable_frame_run.rs (target\debug\deps\durable_frame_run-4ad97e68fb0c70ba.exe)
+
+running 2 tests
+test scripted_tool_turn_and_ordinary_final_turn_are_durably_journaled ... ok
+test second_model_turn_failure_is_journaled_as_failed_without_completion_claim ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests\error_taxonomy.rs (target\debug\deps\error_taxonomy-e018f1f1db8a2f32.exe)
+
+running 1 test
+test storage_error_kinds_are_preserved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\frame_cancellation.rs (target\debug\deps\frame_cancellation-8bcc3ab580105180.exe)
+
+running 5 tests
+test frame_cancellation_requires_actual_registered_parent ... ok
+test frame_cancellation_rejects_collisions_stale_and_invalid_authority ... ok
+test frame_cancellation_rehydrates_pending_and_terminal_states ... ok
+test frame_cancellation_cancels_target_descendants_only ... ok
+test frame_cancellation_cancel_race_is_idempotent_and_durable ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests\frame_journal.rs (target\debug\deps\frame_journal-f2a3302fe8c70c2d.exe)
+
+running 6 tests
+test journal_debug_hides_kernel_paths ... ok
+test closed_admission_precedes_transcript_preparation ... ok
+test journal_persists_before_durable_live_event ... ok
+test journal_preserves_actual_executed_tool_result ... ok
+test journal_survives_restart_and_refuses_closed_admission ... ok
+test journal_rejects_foreign_frame_missing_content_and_oversize ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running tests\frame_mutation.rs (target\debug\deps\frame_mutation-37105ea879e3ddae.exe)
+
+running 11 tests
+test capability_without_propose_diff_is_rejected_before_workspace_change ... ok
+test cancellation_during_verification_prevents_commit ... ok
+test oversized_source_is_rejected_before_hashing_the_candidate ... ok
+test traversal_secret_and_git_targets_are_rejected ... ok
+test changed_base_after_prepare_is_rejected_without_overwrite ... ok
+test needs_approval_returns_without_changing_workspace ... ok
+test create_new_file_keeps_absence_as_base_and_records_actual_bytes ... ok
+test mutation_diff_reconstructs_exact_missing_final_newline ... ok
+test create_new_file_records_no_base_and_never_uses_empty_file_identity ... ok
+test edit_and_patch_requests_produce_and_commit_exact_candidates ... ok
+test readonly_frame_roles_cannot_construct_a_mutation_service ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests\frame_prompt.rs (target\debug\deps\frame_prompt-fa1325e09dcf2843.exe)
+
+running 8 tests
+test assembler_filters_role_tools_before_counting ... ok
+test assembler_rejects_sensitive_protocol_identity_and_oversized_context ... ok
+test assembler_masks_before_counting_and_dispatch ... ok
+test assembler_rejects_identity_budget_and_protocol_failures ... ok
+test assembler_archives_whole_groups_and_recounts ... ok
+test assembler_enforces_deadline_and_cumulative_archive_bound ... ok
+test assembler_run_rejects_replaced_frame_selection ... ok
+test assembler_masks_structured_arguments_and_rejects_unreadable_archive ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests\frame_prompt_http.rs (target\debug\deps\frame_prompt_http-53d8dcafbf53fa14.exe)
+
+running 2 tests
+test loopback_fixture_reads_deliberately_fragmented_request_bodies ... ok
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\frame_tools.rs (target\debug\deps\frame_tools-94b05471c2a73e97.exe)
+
+running 13 tests
+test wrong_token_issuer_frame_and_runner_are_denied ... ok
+test malformed_mutating_and_closed_calls_are_denied ... ok
+test cancellation_and_input_bounds_reject_without_execution ... ok
+test revocation_between_authorize_and_execute_denies ... ok
+test recursive_reads_cannot_escape_exact_directory_scope ... ok
+test bounded_read_keeps_truncation_metadata ... ok
+test actual_file_result_round_trips_through_cas ... ok
+test pure_only_role_cannot_read_persistent_cas_or_history ... ok
+test short_references_preserve_capability_scope ... ok
+test history_uses_actual_kernel_session ... ok
+test cas_visibility_and_output_caps_are_enforced ... ok
+test expired_tokens_and_foreign_kernel_bindings_are_denied ... ok
+test pure_tools_require_execute_right_on_their_namespace ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests\frame_tools_loop.rs (target\debug\deps\frame_tools_loop-eaf05165a2103964.exe)
+
+running 2 tests
+test child_loop_reads_only_its_exact_path_and_parent_scope_remains_available ... FAILED
+test run_step_authorizes_all_calls_before_executing_any_child_call ... FAILED
+
+failures:
+
+---- child_loop_reads_only_its_exact_path_and_parent_scope_remains_available stdout ----
+Error: Forbidden("actual frame registry rejected binding")
+
+---- run_step_authorizes_all_calls_before_executing_any_child_call stdout ----
+Error: Forbidden("actual frame registry rejected binding")
+
+
+failures:
+    child_loop_reads_only_its_exact_path_and_parent_scope_remains_available
+    run_step_authorizes_all_calls_before_executing_any_child_call
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `-p polaris-kernel --test frame_tools_loop`

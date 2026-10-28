@@ -1,0 +1,23 @@
+{
+  "type_of": "function",
+  "name": "parse_args / run",
+  "file_path": "apps/polaris-desktop/src/lib.rs",
+  "logic_name": "Desktop Main",
+  "test_list": [
+    { "test_name": "defaults_use_cwd_and_local_app_data", "description": "No arguments: workspace is the cwd, logs go to <LOCALAPPDATA>/Polaris/logs, motion is on." },
+    { "test_name": "static_flag_and_env_enable_reduced_motion", "description": "--static, or POLARIS_REDUCED_MOTION set to a value other than empty or '0', enables reduced motion; '0' does not." },
+    { "test_name": "workspace_and_log_dir_flags_override_defaults", "description": "--workspace, --state-dir and --log-dir set the paths (state dir defaults to None = <workspace>/.polaris/state); a missing value is a usage error." },
+    { "test_name": "connect_is_rejected_until_p9", "description": "--connect returns a usage error naming the missing daemon bridge; no kernel or daemon is started." },
+    { "test_name": "unknown_flag_is_rejected", "description": "An unknown flag returns a usage error that includes the usage line." }
+  ],
+  "dependencies": ["polaris_ui_gui::run_welcome", "polaris_log::init"],
+  "libraries": ["miette", "thiserror"],
+  "inputs": [
+    { "name": "args", "type": "impl IntoIterator<Item = OsString>", "description": "Arguments after the program name." },
+    { "name": "reduced_motion_env", "type": "Option<OsString>", "description": "POLARIS_REDUCED_MOTION." },
+    { "name": "cwd", "type": "PathBuf", "description": "Current directory." },
+    { "name": "local_app_data", "type": "Option<PathBuf>", "description": "LOCALAPPDATA." }
+  ],
+  "output_type": "Result<DesktopArgs, DesktopError>",
+  "output_description": "Parsed arguments or a usage error."
+}

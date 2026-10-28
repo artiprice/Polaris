@@ -1,0 +1,370 @@
+
+running 21 tests
+test client::tests::local_ollama_chat_model_smoke ... ignored, requires the explicitly installed local Ollama nemotron-mini:latest model
+test client::tests::retry_after_is_honored_but_capped ... ok
+test client::tests::retry_fallback_jitter_stays_within_exponential_and_global_caps ... ok
+test sse::tests::arbitrary_chunk_split_inside_multibyte_utf8_preserves_event ... ok
+test client::tests::empty_chat_history_is_rejected_by_both_endpoints ... ok
+test sse::tests::parses_comment_multiline_data_and_done_with_crlf ... ok
+test client::tests::retry_after_accepts_http_date_form ... ok
+test sse::tests::rejects_invalid_utf8_and_feed_after_finish ... ok
+test sse::tests::rejects_oversized_frame_and_excess_events_before_unbounded_buffering ... ok
+test client::tests::base_url_requires_tls_for_non_loopback_and_rejects_embedded_credentials ... ok
+test client::tests::responses_request_replays_linked_function_call_and_result ... ok
+test sse::tests::arbitrary_chunk_partition_preserves_multibyte_sse_data ... ok
+test client::tests::synthetic_redirect_is_not_followed_with_bearer_credentials ... ok
+test client::tests::synthetic_unauthorized_fixture_maps_without_echoing_response_body ... ok
+test client::tests::synthetic_responses_fixture_streams_text_tool_call_and_usage ... ok
+test client::tests::streamed_tool_call_state_respects_configured_count_bound ... ok
+test client::tests::synthetic_chat_fixture_streams_reasoning_tool_deltas_and_usage ... ok
+test client::tests::synthetic_503_retries_within_configured_attempt_budget ... ok
+test client::tests::synthetic_models_and_embeddings_fixture_orders_vectors_and_retries_429 ... ok
+test client::tests::retry_after_penalty_blocks_later_admission_within_request_deadline ... ok
+test client::tests::slow_loris_stream_is_stopped_by_total_request_deadline ... ok
+
+test result: ok. 20 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+
+running 7 tests
+test tokenizer_rejects_oversized_input_before_network_dispatch ... ok
+test tokenizer_omits_empty_tools ... ok
+test chat_model_wrapper_forwards_stream_to_same_client ... ok
+test tokenizer_preserves_oversized_prompt_count_for_trimming ... ok
+test tokenizer_sends_chat_equivalent_prompt_and_returns_server_counts ... ok
+test tokenizer_rejects_malformed_counts_and_token_ids ... ok
+test tokenizer_bounds_response_and_deadline_and_redacts_failures ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 3 tests
+test missing_and_failed_credentials_remain_distinct ... ok
+test malformed_provider_credentials_fail_without_leaking_values ... ok
+test provider_value_is_resolved_once_and_debug_is_redacted ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test borrowed_frame_routing_allocates_nothing_after_parser_initialization ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test assemble::lossless_window_tests::no_omission_emits_no_archive_marker ... ok
+test assemble::lossless_window_tests::archive_byte_cap_fails_assembly_without_claiming_recovery ... ok
+test assemble::lossless_window_tests::archive_metadata_tampering_is_rejected_on_recovery ... ok
+test assemble::lossless_window_tests::archive_notice_is_included_in_the_context_budget ... ok
+test assemble::lossless_window_tests::identical_omitted_windows_produce_identical_archive_references ... ok
+test assemble::lossless_window_tests::malformed_archived_tool_group_is_rejected ... ok
+test assemble::lossless_window_tests::archive_reference_is_exposed_by_context_map ... ok
+test assemble::lossless_window_tests::expand_rejects_archives_larger_than_the_receiving_virtualizer_cap ... ok
+test assemble::lossless_window_tests::tool_call_groups_are_archived_and_retained_atomically ... ok
+test assemble::lossless_window_tests::archive_cid_version_and_message_count_are_validated ... ok
+test assemble::lossless_window_tests::prefix_scratchpad_and_active_scope_order_remains_stable ... ok
+test assemble::lossless_window_tests::archived_messages_expand_byte_exactly_and_preserve_tool_correlation ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test window_preserves_complete_tool_groups ... ok
+test window_rejects_malformed_history ... ok
+test window_archive_roundtrip_is_bounded_and_verified ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 12 tests
+test limits_default_and_reject_invalid_or_over_ceiling_values ... ok
+test prepare_rejects_invalid_schema_zero_step_and_result_count ... ok
+test prepare_rejects_tool_text_and_serialized_record_over_bounds ... ok
+test persist_rejects_wrong_put_cid_and_corrupt_readback ... ok
+test prepared_debug_redacts_payload_and_persist_verifies_exact_cas_bytes ... ok
+test persist_rejects_model_visible_content_mismatch ... ok
+test bounded_writer_accepts_exact_size_and_rejects_one_byte_less ... ok
+test persist_rejects_missing_and_corrupt_receipt_blobs ... ok
+test persist_rejects_valid_hash_oversized_receipt_from_bound_violating_store ... ok
+test journal_adapter_appends_only_after_verified_persistence ... ok
+test bounded_writer_matches_json_size_for_escaped_input_family ... ok
+test prepared_persist_roundtrips_through_real_cas ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 22 tests
+test content_reference_failures_are_fatal_integrity_errors ... ok
+test journal_persists_transcript_before_publishing_event ... ok
+test durable_journal_requires_tool_content_to_exist_and_match ... ok
+test only_verifier_accepted_d     Running tests/frame_prompt_binding.rs (target/debug/deps/frame_prompt_binding-f3d954edf54f8d66)
+     Running tests/frame_tool_authority.rs (target/debug/deps/frame_tool_authority-5bff59ec59fbd6c1)
+     Running unittests src/lib.rs (target/debug/deps/polaris_sdk-7ec9266afe0deebd)
+     Running tests/blast_alert_schema.rs (target/debug/deps/blast_alert_schema-3083a6447c5c6956)
+     Running tests/command_typestate.rs (target/debug/deps/command_typestate-4602d4048841a1b7)
+     Running tests/content_identifiers.rs (target/debug/deps/content_identifiers-1cccf14df8ce5207)
+     Running tests/content_store_dispatch.rs (target/debug/deps/content_store_dispatch-9ef301ed872d4f2b)
+     Running tests/effort_parsing.rs (target/debug/deps/effort_parsing-b0bc780e13a8cebd)
+     Running tests/event_envelope.rs (target/debug/deps/event_envelope-9eea71d25dbab527)
+     Running tests/interactive_contract.rs (target/debug/deps/interactive_contract-9f1ab2933c8efeec)
+     Running tests/probability_validation.rs (target/debug/deps/probability_validation-b720442480b2cec4)
+     Running tests/prompt_tokenizer.rs (target/debug/deps/prompt_tokenizer-f812e308f01af6bb)
+     Running tests/registry_dispatch.rs (target/debug/deps/registry_dispatch-460e6b9f2a90a8e1)
+     Running tests/secret_source_contract.rs (target/debug/deps/secret_source_contract-361abb07bc81cf98)
+     Running tests/session_lifecycle.rs (target/debug/deps/session_lifecycle-a8d99b3a8e5905d8)
+     Running unittests src/lib.rs (target/debug/deps/polaris_security_capability-9a061acda8a43486)
+     Running tests/capability_contract.rs (target/debug/deps/capability_contract-be089e5153479067)
+     Running unittests src/lib.rs (target/debug/deps/polaris_tools_builtin-ffd558aaa93afe1c)
+     Running tests/authorized_builtin_invocation.rs (target/debug/deps/authorized_builtin_invocation-b555fc73ab722b7c)
+     Running tests/builtin_contracts.rs (target/debug/deps/builtin_contracts-ecf0016e58bcbf6b)
+   Doc-tests polaris_nebius_cloud_token_factory
+   Doc-tests polaris_runtime_context
+   Doc-tests polaris_runtime_frames
+   Doc-tests polaris_sdk
+   Doc-tests polaris_security_capability
+   Doc-tests polaris_tools_builtin
+_tests::schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test blast_alert_requires_schema_three ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test verified_requires_approval_witness ... ok
+test token_bytes_debug_is_redacted ... ok
+test command_serde_roundtrip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test short_ref_is_first_48_bits ... ok
+test short_ref_renders_12_lowercase_hex ... ok
+test cid_rejects_wrong_length_hex ... ok
+test cid_hex_roundtrip ... ok
+test short_ref_parse_accepts_marker_and_bare_hex ... ok
+test prop_cid_shortref_hex_roundtrip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 3 tests
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+test one_of_three_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test parses_names_case_insensitively ... ok
+test display_roundtrips_name ... ok
+test rejects_zero_and_six ... ok
+test try_from_u8_is_total ... ok
+test parses_numeric_1_to_5 ... ok
+test prop_order_matches_numeric_form ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.59s
+
+
+running 2 tests
+test interactive_debug_never_exposes_arguments_or_environment ... ok
+test interactive_enum_and_arc_preserve_dispatch_and_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test accepts_bounds ... ok
+test rejects_above_one_and_below_zero ... ok
+test rejects_nan ... ok
+test ordering_is_total_for_valid_values ... ok
+test serde_rejects_out_of_range ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test prompt_tokenizer_errors_when_counting_is_unavailable ... ok
+test prompt_token_count_can_exceed_context_for_trimming ... ok
+test prompt_tokenizer_reports_exact_prompt_and_model_capacity ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test arc_forwards_sync_registry_traits ... ok
+test error_kinds_cover_taxonomy ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test has_kind_maps_transient_and_permanent_failures ... ok
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+test source_error_display_is_sanitized ... ok
+test validated_locations_contain_identifiers_only ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test versioned_constructor_validates_schema ... ok
+test schema_one_records_remain_readable ... ok
+test new_lifecycle_events_cannot_claim_schema_one ... ok
+test lifecycle_records_use_current_schema ... ok
+test prop_schema_acceptance_matches_lifecycle_minimum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 22 tests
+test resource_paths_reject_aliases_and_escapes ... ok
+test invalid_ttl_and_overflow_are_rejected ... ok
+test root_token_wrong_key_rejected ... ok
+test authority_and_token_debug_are_redacted ... ok
+test root_token_verifies_with_public_key ... ok
+test invalid_capability_inputs_are_not_component_fatal ... ok
+test revoking_an_ancestor_denies_all_descendants ... ok
+test tampered_delegation_proof_is_rejected ... ok
+test symbol_scope_requires_exact_path_and_symbol ... ok
+test scope_limits_and_diff_binding_are_enforced ... ok
+test expiry_uses_injected_clock_and_is_exclusive ... ok
+test root_scope_grants_listed_rights_only ... ok
+test unknown_vocabulary_cannot_be_repaired_by_descendant_facts ... ok
+test resource_scope_is_component_bounded ... ok
+test chain_of_three_attenuations_monotone ... ok
+test token_facts_cannot_spoof_ambient_facts_or_grants ... ok
+test widening_child_never_escapes_ancestor_checks ... ok
+test workspace_scope_attenuates_without_widening ... ok
+test bounded_tokens_and_evaluation_fail_closed ... ok
+test prop_arbitrary_token_bytes_never_authorize ... ok
+test datalog_fact_explosion_exhausts_budget_without_granting ... ok
+test prop_attenuation_is_monotone ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+
+running 4 tests
+test shell::tests::shell_route_uses_only_bound_handle_and_explicit_argv ... ok
+test shell::tests::classifier_identifies_heavy_and_destructive_commands_without_execution ... ok
+test proposal::tests::full_replacement_patch_retains_crlf_and_missing_final_newline ... ok
+test proposal::tests::edit_submits_full_occ_bound_diff_and_never_writes_host_file ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 17 tests
+test caller_output_cap_intersects_registry_limit ... ok
+test exact_output_boundary_is_accepted_and_json_is_escaped ... ok
+test ignorefile_denial_precedes_rule_use ... ok
+test ignorefile_preflight_rejects_oversized_case_insensitive_name ... ok
+test authorization_errors_never_return_partial_success ... ok
+test workspace_root_denial_precedes_reads ... ok
+test ignorefile_preflight_rejects_symlink_candidate ... ok
+test ignorefile_preflight_rejects_directory_candidate ... ok
+test exact_directory_token_does_not_authorize_descendants ... ok
+test readonly_entry_rejects_writes_and_unknown_fields ... ok
+test exact_file_token_reads_without_parent_grants ... ok
+test zero_output_cap_rejects_before_cas_access ... ok
+test within_bound_cas_corruption_remains_not_found ... ok
+test recursive_reads_check_each_resource ... ok
+test oversized_cas_reference_is_rejected_before_decode ... ok
+test read_file_rejects_fifo_before_open ... ok
+test ignorefile_preflight_rejects_fifo_candidate ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+
+running 14 tests
+test applies_context_add_delete_without_touching_base ... ok
+test rejects_stale_patch_context ... ok
+test rejects_malformed_patch_counts_and_retains_missing_final_newline ... ok
+test rejects_windows_ads_and_reserved_names ... ok
+test rejects_dotdot_and_absolute_escapes ... ok
+test registry_specs_are_stable_and_schema_backed ... ok
+test secret_directories_and_credential_files_are_denied ... ok
+test path_resolver_requires_existing_targets ... ok
+test p2_registry_advertises_only_explicitly_bound_proposal_and_sandbox_services ... ok
+test reads_utf16_bom_and_preserves_newline_facts ... ok
+test json_pointer_and_regex_query_are_bounded_and_exact ... ok
+test read_and_search_deny_secrets_and_skip_binary ... ok
+test glob_honors_custom_ignore_file ... ok
+test unified_patch_parser_never_panics_on_arbitrary_inputs ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test crates/polaris-sdk/src/contracts.rs - contracts::Command (line 321) ... ok
+test crates/polaris-sdk/src/contracts.rs - contracts::Command (line 290) ... ok
+test crates/polaris-sdk/src/ids.rs - ids::FastFingerprint (line 265) ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+
+running 3 tests
+test crates/polaris-sdk/src/contracts.rs - contracts::Command (line 315) - compile fail ... ok
+test crates/polaris-sdk/src/ids.rs - ids::FastFingerprint (line 260) - compile fail ... ok
+test crates/polaris-sdk/src/contracts.rs - contracts::Command (line 304) - compile fail ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+all doctests ran in 4.93s; merged doctests compilation took 3.81s
+
+running 2 tests
+test crates/polaris-security/crates/capability/src/lib.rs - (line 20) - compile fail ... ok
+test crates/polaris-security/crates/capability/src/lib.rs - (line 15) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

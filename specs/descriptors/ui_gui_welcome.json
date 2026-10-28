@@ -1,0 +1,23 @@
+{
+  "type_of": "module",
+  "name": "AppWindow (ui/app.slint) + build_window / draft_notice",
+  "file_path": "crates/polaris-ui/crates/gui/src/welcome.rs",
+  "logic_name": "GUI Welcome",
+  "test_list": [
+    { "test_name": "send_and_attach_are_disabled_with_tooltips", "description": "The Send and Attach buttons report accessible-enabled false and their labels say they are unavailable until the kernel bridge (P9) is connected; send-enabled is false." },
+    { "test_name": "popover_selects_model_mode_effort", "description": "Activating the pill opens the menu; activating a model row, the 'auto' segment and the 'max' segment sets model-index 1, mode-index 1 and effort-index 4." },
+    { "test_name": "typing_updates_draft_and_notice", "description": "Editing the draft calls draft-edited; a normal draft leaves draft-notice empty, an over-budget draft (beyond composer MAX_TEXT_BYTES) sets a notice." },
+    { "test_name": "new_conversation_clears_the_draft", "description": "Activating 'New conversation' empties the draft and the notice and closes the menu." },
+    { "test_name": "context_panel_toggles", "description": "Activating 'Session context' flips context-open both ways." },
+    { "test_name": "about_panel_shows_slint_attribution", "description": "Activating 'About Polaris' opens the About panel, which contains the AboutSlint widget (licence ADR-014)." },
+    { "test_name": "unbuilt_pages_say_so", "description": "Sidebar entries for pages the desktop shell lacks carry a tooltip saying they are not in the desktop shell yet." },
+    { "test_name": "welcome_renders_without_panic_in_software_renderer", "description": "The window renders through Slint's software renderer into a pixel buffer; the buffer is not uniformly one colour (text and composer are drawn)." }
+  ],
+  "dependencies": ["polaris_ui_model::composer::Composer", "AppWindow"],
+  "libraries": ["slint", "i-slint-backend-testing"],
+  "inputs": [
+    { "name": "options", "type": "&WelcomeOptions", "description": "Version, workspace path and reduced-motion flag." }
+  ],
+  "output_type": "Result<AppWindow, GuiError>",
+  "output_description": "A configured window whose controls behave as listed."
+}

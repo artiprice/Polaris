@@ -1,0 +1,1 @@
+descriptor JSON parsed: type_of=async_function; name=run; tests=10

@@ -1,0 +1,17 @@
+
+running 1 test
+
+thread 'same_time_non_tail_refund_preserves_newer_reservation' (14864) panicked at crates\polaris-ratelimit\tests\reservation_refund.rs:161:5:
+assertion `left == right` failed
+  left: 0
+ right: 4
+test same_time_non_tail_refund_preserves_newer_reservation ... FAILED
+
+failures:
+
+failures:
+    same_time_non_tail_refund_preserves_newer_reservation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

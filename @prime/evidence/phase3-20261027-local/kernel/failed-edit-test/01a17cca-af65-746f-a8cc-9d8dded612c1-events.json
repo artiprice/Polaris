@@ -1,0 +1,49 @@
+[
+  {
+    "seq": 1,
+    "at": "2026-10-27T09:57:00.442543Z",
+    "schema": 6,
+    "session": "01a17cca-af65-746f-a8cc-9d8efc0f3dde",
+    "event": {
+      "type": "session_configured",
+      "configuration": "5b6391af9f1e0679373ea12db1cbb62614a5583e43f606aab2f61184eedb56fa"
+    }
+  },
+  {
+    "seq": 2,
+    "at": "2026-10-27T09:57:00.446036Z",
+    "schema": 6,
+    "session": "01a17cca-af65-746f-a8cc-9d8efc0f3dde",
+    "event": {
+      "type": "session_started",
+      "workspace": "98ea0ac828802ba1bcabe91bf2d8e2f0626b28c4c2a30a086e045ad5bdcae727"
+    }
+  },
+  {
+    "seq": 3,
+    "at": "2026-10-27T09:57:00.451605Z",
+    "schema": 6,
+    "session": "01a17cca-af65-746f-a8cc-9d8efc0f3dde",
+    "event": {
+      "type": "frame_registered",
+      "frame": "01a17cca-af65-746f-a8cc-9d8dded612c1",
+      "parent": null,
+      "root": "01a17cca-af65-746f-a8cc-9d8dded612c1",
+      "role": "orchestrator",
+      "binding": "4ea7b2f8d8830ba6a33ce0861870be1e6749395c04a1c65b28d67ad980897f6f"
+    }
+  },
+  {
+    "seq": 4,
+    "at": "2026-10-27T09:57:13.331821Z",
+    "schema": 6,
+    "session": "01a17cca-af65-746f-a8cc-9d8efc0f3dde",
+    "event": {
+      "type": "frame_step_recorded",
+      "frame": "01a17cca-af65-746f-a8cc-9d8dded612c1",
+      "step": 1,
+      "transcript": "fe9b1402e8515b37b7714ca7e4cd53ecd38658785ac48b5b7ec8d9f28be6f8db",
+      "outcome": "failed"
+    }
+  }
+]

@@ -178,7 +178,8 @@ fn stress_conpty_streams_one_hundred_mibibytes_with_bounded_records()
         },
     )?;
     let expected_bytes = 100_u64 * 1024 * 1024;
-    let expected_markers = expected_bytes / PAYLOAD_MARKER.len() as u64;
+    let marker_bytes = u64::try_from(PAYLOAD_MARKER.len())?;
+    let expected_markers = expected_bytes / marker_bytes;
     let deadline = std::time::Instant::now() + Duration::from_secs(180);
     let started = std::time::Instant::now();
     let mut marker_count = 0_u64;
@@ -236,8 +237,11 @@ fn pty_stress_writer_fixture() -> Result<(), Box<dyn std::error::Error>> {
     }
     use std::io::Write;
     const PAYLOAD_MARKER: &[u8] = b"ZQ7V3K9M";
-    let chunk: Vec<u8> = (0..1024 * 1024)
-        .map(|index| PAYLOAD_MARKER[index % PAYLOAD_MARKER.len()])
+    let chunk: Vec<u8> = PAYLOAD_MARKER
+        .iter()
+        .copied()
+        .cycle()
+        .take(1024 * 1024)
         .collect();
     let stdout = std::io::stdout();
     let mut output = stdout.lock();

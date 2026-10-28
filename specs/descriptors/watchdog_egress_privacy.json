@@ -1,0 +1,16 @@
+{
+  "type_of": "module",
+  "name": "watchdog_egress_privacy",
+  "file_path": "crates/polaris-kernel/src/frame_prompt.rs",
+  "logic_name": "Watchdog Egress Privacy",
+  "test_list": [
+    {"test_name": "watchdog_semantic_names_are_masked_before_decision", "description": "Configured local NER masks planted names in goal and proposal before the capturing classifier; synthetic calibrated fixture ensures actual egress."},
+    {"test_name": "watchdog_masks_goal_and_proposal_before_decision", "description": "Actual adapter egress contains neither planted goal nor proposal email; synthetic calibrated schema reaches the capturing engine."},
+    {"test_name": "watchdog_goal_mask_failure_skips_decision", "description": "An over-limit goal prevents engine dispatch and yields an unchecked advisory."}
+  ],
+  "dependencies": ["PiiVault", "Watchdog", "FrameProposalObserver"],
+  "libraries": ["tokio"],
+  "inputs": [{"name": "snapshot", "type": "FrameSnapshot", "description": "Actual frame goal and bounded prior hashes."}],
+  "output_type": "Option<WatchdogObservation>",
+  "output_description": "Masked advisory input or explicit unchecked failure; ordinary tool authorization is independent."
+}

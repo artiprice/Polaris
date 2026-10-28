@@ -1,0 +1,13 @@
+Classification: MISSING API RED, not behavioral RED.
+
+Pre-implementation command:
+cargo test -p polaris-system-one-router --test environment_images
+
+Captured compiler output excerpt:
+error[E0425]: cannot find type `RepoManifestFacts` in this scope
+error[E0425]: cannot find type `EnvImageCandidate` in this scope
+error[E0433]: cannot find type `ImageId` in this scope
+error[E0599]: no method named `rank_env_images` found for struct `polaris_system_one_router::Router<D, C>` in the current scope
+error: could not compile `polaris-system-one-router` (test "environment_images") due to 22 previous errors
+
+This run proved only that the API was absent before implementation. It did not exercise ranking behavior.

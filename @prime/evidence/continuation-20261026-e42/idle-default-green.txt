@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized] target(s) in 1.91s
+     Running tests\idle_eviction.rs (target\debug\deps\idle_eviction-60d4636b23d70676.exe)
+
+running 1 test
+test default_worker_drops_real_model_after_idle_ttl ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 56.22s
+

@@ -1,0 +1,6 @@
+[
+  "rustfmt",
+  "--edition",
+  "2024",
+  "crates/polaris-platform/crates/process/src/bootstrap_tests.rs"
+]

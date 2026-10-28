@@ -75,9 +75,14 @@ impl LoopWindow {
         self.records.push_back(record);
     }
 
-    /// Detect the nearest exact or near-duplicate unproductive prior step.
+    /// Detect an exact or configured near-duplicate unproductive prior step.
+    ///
+    /// A matching rejected patch takes precedence over a newer ordinary failure so its negative
+    /// hypothesis remains available to the frame owner for corrective context.
     #[must_use]
     pub fn detect(&self, next: &StepRecord, config: &WatchdogConfig) -> Option<crate::LoopMatch> {
+        let mut nearest_match = None;
+        let mut rejected_match = None;
         for previous in self.records.iter().rev() {
             let disproven = match previous.outcome {
                 StepOutcome::RejectedPatch { hypothesis } => Some(hypothesis),
@@ -89,27 +94,37 @@ impl LoopWindow {
             if matches!(previous.outcome, StepOutcome::Completed) {
                 continue;
             }
-            if previous.fingerprint == next.fingerprint {
-                return Some(crate::LoopMatch {
-                    repeats: previous.index,
-                    disproven,
-                    similarity: ShingleSimilarity::new(1, 1),
-                });
-            }
-            let similarity = jaccard(&previous.shingles, &next.shingles)?;
-            if ratio_at_least(
-                similarity.intersection,
-                similarity.union,
-                config.loops.near_duplicate,
-            ) {
-                return Some(crate::LoopMatch {
-                    repeats: previous.index,
-                    disproven,
-                    similarity,
-                });
+            let similarity = if previous.fingerprint == next.fingerprint {
+                ShingleSimilarity::new(1, 1)
+            } else {
+                let Some(similarity) = jaccard(&previous.shingles, &next.shingles) else {
+                    continue;
+                };
+                if config.loops.near_duplicate.numerator == 0
+                    || !ratio_at_least(
+                        similarity.intersection,
+                        similarity.union,
+                        config.loops.near_duplicate,
+                    )
+                {
+                    continue;
+                }
+                similarity
+            };
+            let matched = crate::LoopMatch {
+                repeats: previous.index,
+                disproven,
+                similarity,
+            };
+            if disproven.is_some() {
+                if rejected_match.is_none() {
+                    rejected_match = Some(matched);
+                }
+            } else if nearest_match.is_none() {
+                nearest_match = Some(matched);
             }
         }
-        None
+        rejected_match.or(nearest_match)
     }
 
     /// Highest shingle similarity to any record in the ring, regardless of outcome.
@@ -147,11 +162,11 @@ pub fn build_step_record(
     if max_bytes == 0 || max_bytes > 1_048_576 {
         return Err(StepBuildError::InvalidByteLimit);
     }
-    let total = composed_len(&step.thought, step.tool_call.as_ref())?;
+    let total = composed_len(&step.thought, &step.tool_calls)?;
     if total > max_bytes {
         return Err(StepBuildError::TooLarge);
     }
-    let composed = compose(&step.thought, step.tool_call.as_ref());
+    let composed = compose(&step.thought, &step.tool_calls);
     let normalized = normalize(&composed);
     let fingerprint = StepFingerprint::from_raw(xxh3_128(normalized.as_bytes()));
     let shingles = shingles(&normalized, shingle_size)?;
@@ -160,51 +175,49 @@ pub fn build_step_record(
         fingerprint,
         shingles,
         tool: step
-            .tool_call
-            .as_ref()
+            .tool_calls
+            .first()
             .map(|call| call.tool.as_str().to_owned()),
         outcome,
     })
 }
 
-fn composed_len(thought: &str, tool: Option<&ToolCallFacts>) -> Result<usize, StepBuildError> {
-    let Some(call) = tool else {
-        return Ok(thought.len());
-    };
-    let mut length = thought
-        .len()
-        .checked_add(6)
-        .and_then(|size| size.checked_add(call.tool.as_str().len()))
-        .and_then(|size| size.checked_add(6))
-        .and_then(|size| size.checked_add(call.workspace_path.as_deref().map_or(0, str::len)))
-        .and_then(|size| size.checked_add(7))
-        .ok_or(StepBuildError::TooLarge)?;
-    length = length
-        .checked_add(bool_len(call.writes_workspace))
-        .and_then(|size| size.checked_add(9))
-        .and_then(|size| size.checked_add(bool_len(call.network)))
-        .and_then(|size| size.checked_add(9))
-        .and_then(|size| size.checked_add(bool_len(call.executes)))
-        .ok_or(StepBuildError::TooLarge)?;
+fn composed_len(thought: &str, tools: &[ToolCallFacts]) -> Result<usize, StepBuildError> {
+    let mut length = thought.len();
+    for call in tools {
+        length = length
+            .checked_add(6)
+            .and_then(|size| size.checked_add(call.tool.as_str().len()))
+            .and_then(|size| size.checked_add(6))
+            .and_then(|size| size.checked_add(call.workspace_path.as_deref().map_or(0, str::len)))
+            .and_then(|size| size.checked_add(7))
+            .and_then(|size| size.checked_add(bool_len(call.writes_workspace)))
+            .and_then(|size| size.checked_add(9))
+            .and_then(|size| size.checked_add(bool_len(call.network)))
+            .and_then(|size| size.checked_add(9))
+            .and_then(|size| size.checked_add(bool_len(call.executes)))
+            .ok_or(StepBuildError::TooLarge)?;
+    }
     Ok(length)
 }
 
-fn compose(thought: &str, tool: Option<&ToolCallFacts>) -> String {
-    let Some(call) = tool else {
-        return thought.to_owned();
-    };
-    let path = match call.workspace_path.as_deref() {
-        Some(path) => path,
-        None => "",
-    };
-    format!(
-        "{thought}\ntool={}\npath={}\nwrite={}\nnetwork={}\nexecute={}",
-        call.tool.as_str(),
-        path,
-        call.writes_workspace,
-        call.network,
-        call.executes,
-    )
+fn compose(thought: &str, tools: &[ToolCallFacts]) -> String {
+    let mut composed = thought.to_owned();
+    for call in tools {
+        let path = match call.workspace_path.as_deref() {
+            Some(path) => path,
+            None => "",
+        };
+        composed.push_str(&format!(
+            "\ntool={}\npath={}\nwrite={}\nnetwork={}\nexecute={}",
+            call.tool.as_str(),
+            path,
+            call.writes_workspace,
+            call.network,
+            call.executes,
+        ));
+    }
+    composed
 }
 
 fn bool_len(value: bool) -> usize {
@@ -241,7 +254,7 @@ fn shingles(normalized: &str, size: usize) -> Result<ShingleSet, StepBuildError>
         }
     }
     let count = u32::try_from(values.len()).map_err(|_| StepBuildError::TooManyShingles)?;
-    if count > 1_000_000 {
+    if count > 4096 {
         return Err(StepBuildError::TooManyShingles);
     }
     Ok(ShingleSet::from_sorted(values.into_iter().collect()))

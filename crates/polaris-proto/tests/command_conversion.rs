@@ -6,6 +6,7 @@ use std::error::Error;
 use polaris_proto::{ProtoError, pb};
 use polaris_sdk::contracts::{Command, CommandBody, CommandId, TokenBytes, Unverified};
 use polaris_sdk::effort::Effort;
+use polaris_sdk::human::HumanRequestId;
 use polaris_sdk::ids::{AgentRole, Cid, FrameId, Seq};
 use proptest::collection::vec;
 use proptest::prelude::*;
@@ -30,10 +31,11 @@ const fn body_index(body: &CommandBody) -> usize {
         CommandBody::RollbackTo { .. } => 6,
         CommandBody::CancelFrame { .. } => 7,
         CommandBody::ApplyDirective { .. } => 8,
+        CommandBody::AnswerHumanRequest { .. } => 9,
     }
 }
 
-const VARIANT_COUNT: usize = 9;
+const VARIANT_COUNT: usize = 10;
 
 fn bodies() -> Vec<CommandBody> {
     let mut all = vec![
@@ -52,6 +54,11 @@ fn bodies() -> Vec<CommandBody> {
             frame: FrameId::from_u128(u128::MAX),
         },
         CommandBody::ApplyDirective { directive: cid(6) },
+        CommandBody::AnswerHumanRequest {
+            request_id: HumanRequestId::from_u128(7),
+            revision: cid(8),
+            answer: cid(9),
+        },
     ];
     for role in [
         AgentRole::Orchestrator,
@@ -241,6 +248,15 @@ fn arb_body() -> impl Strategy<Value = CommandBody> {
         arb_cid()
             .prop_map(|directive| CommandBody::ApplyDirective { directive })
             .boxed(),
+        (any::<u128>(), arb_cid(), arb_cid())
+            .prop_map(
+                |(request_id, revision, answer)| CommandBody::AnswerHumanRequest {
+                    request_id: HumanRequestId::from_u128(request_id),
+                    revision,
+                    answer,
+                },
+            )
+            .boxed(),
     ];
     assert_eq!(arms.len(), VARIANT_COUNT);
     Union::new(arms)
@@ -279,7 +295,9 @@ proptest! {
         let mut bytes = pb::Command::from(&command(body)).encode_to_vec();
         for (pos, value) in flips {
             let len = bytes.len();
-            if let Some(slot) = bytes.get_mut(pos % len.max(1)) {
+            let position = pos.checked_rem(len.max(1))
+                .ok_or_else(|| TestCaseError::fail("nonzero mutation span invariant"))?;
+            if let Some(slot) = bytes.get_mut(position) {
                 *slot = value;
             }
         }

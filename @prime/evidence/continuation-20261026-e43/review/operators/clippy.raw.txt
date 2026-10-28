@@ -1,0 +1,2 @@
+    Checking polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+    Finished `dev` profile [unoptimized] target(s) in 0.89s

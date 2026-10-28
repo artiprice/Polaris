@@ -1,0 +1,140 @@
+ATTEMPT 1
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+ATTEMPT 2
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 3
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 4
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 5
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 6
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 7
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 8
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 9
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 10
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 11
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 12
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 13
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 14
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 15
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 16
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 17
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 18
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 19
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+ATTEMPT 20
+
+running 1 test
+test counted_prompt_matches_dispatched_http_and_durable_frame ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+

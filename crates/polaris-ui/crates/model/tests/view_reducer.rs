@@ -423,6 +423,17 @@ fn status_from_worker_circuit_dead_letter() -> TestResult {
 }
 
 #[test]
+fn user_input_submitted_changes_no_counters_and_pushes_no_text() -> TestResult {
+    let mut s = fresh()?;
+    let before = s.clone();
+    reduce(&mut s, &rec(0, Event::UserInputSubmitted { text: cid(40) }))?;
+    assert_eq!(s.conversation, before.conversation, "no text is pushed");
+    assert_eq!(s.status, before.status, "no counter moves");
+    assert_eq!(s.last_seq, Some(Seq::ZERO), "the record is still consumed");
+    Ok(())
+}
+
+#[test]
 fn session_started_and_closed() -> TestResult {
     let mut s = fresh()?;
     let at = Timestamp::from_second(1_800_000_000)?;
@@ -725,6 +736,9 @@ fn event_strategy() -> impl Strategy<Value = Event> {
             .boxed(),
         c.clone()
             .prop_map(|directive| Event::DirectiveApplied { directive })
+            .boxed(),
+        c.clone()
+            .prop_map(|text| Event::UserInputSubmitted { text })
             .boxed(),
         (c.clone(), latency.clone())
             .prop_map(|(decision, latency_us)| Event::DecisionMade {

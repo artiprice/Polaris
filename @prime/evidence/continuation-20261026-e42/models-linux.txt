@@ -1,0 +1,58 @@
+   Compiling uuid v1.28.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling toml v1.1.8+spec-1.1.0
+   Compiling polaris-sdk v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-sdk)
+   Compiling polaris-config v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-config)
+   Compiling polaris-models v0.1.0-alpha (/mnt/c/mDev/Polaris/crates/polaris-models)
+    Finished `test` profile [unoptimized] target(s) in 38.98s
+     Running unittests src/lib.rs (target/debug/deps/polaris_models-a3d6afa7c116c247)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/catalog_contract.rs (target/debug/deps/catalog_contract-166b5580b6a454f4)
+
+running 7 tests
+test constrained_selection_enforces_effort_model_and_availability ... ok
+test cascade_uses_lower_effort_draft_and_requested_verification ... ok
+test overrides_are_first_wins_and_report_gaps ... ok
+test invalid_override_is_atomic ... ok
+test builtin_contains_dated_snapshot_ids_and_effort_mapping ... ok
+test availability_observations_validate_atomically_and_monotonically ... ok
+test custom_registry_is_bounded_and_rejects_unsafe_aliases ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/eviction_manager_contract.rs (target/debug/deps/eviction_manager_contract-7f0c362202799034)
+
+running 5 tests
+test invalid_or_duplicate_slot_names_are_rejected ... ok
+test shutdown_requests_every_slot_even_after_budget ... ok
+test elevated_pressure_only_evicts_idle_slots ... ok
+test critical_pressure_drains_and_pauses_all_slots ... ok
+test evict_all_orders_longest_idle_first ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/lifecycle_contract.rs (target/debug/deps/lifecycle_contract-ee0cfc8891e89b05)
+
+running 8 tests
+test lease_bound_rejects_excess_acquisitions ... ok
+test canceled_waiter_keeps_owner_load_alive ... ok
+test concurrent_acquire_loads_once ... ok
+test eviction_during_load_drains_the_completed_load ... ok
+test force_evict_deadline_pauses_then_resume_reopens ... ok
+test close_and_unload_failure_are_reported ... ok
+test unload_timeout_keeps_shared_drain_owned ... ok
+test idle_ttl_evicts_and_reload_uses_real_loader ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests polaris_models
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

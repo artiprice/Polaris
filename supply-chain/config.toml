@@ -23,6 +23,10 @@ url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/
 audit-as-crates-io = true
 notes = "Vendored 6.0.0 changes only seven missing feature guards for upstream issue 305 and warning-denied builds. Audit requirements remain; this is not a dependency audit or exemption."
 
+[policy.docx-rs]
+audit-as-crates-io = true
+notes = "Published 0.4.22 with upstream ZIP9 security backport, checked against published source checksums. Full audit requirements remain; no exemption is granted."
+
 [[exemptions.arrayvec]]
 version = "0.7.8"
 criteria = "safe-to-deploy"

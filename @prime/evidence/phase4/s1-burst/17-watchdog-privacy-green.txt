@@ -1,0 +1,21 @@
+   Compiling polaris-security-rules v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\rules)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+warning: unused import: `PlatformOps`
+  --> crates\polaris-kernel\src\worker_lifecycle.rs:18:51
+   |
+18 |     DecisionEngine, DecisionError, PlatformError, PlatformOps, ProcessTree, WorkerBootstrapPlatform,
+   |                                                   ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `polaris-kernel` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 15.06s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-b61021fa115330c1.exe)
+
+running 2 tests
+test frame_prompt::watchdog_privacy_tests::watchdog_goal_mask_failure_skips_decision ... ok
+test frame_prompt::watchdog_privacy_tests::watchdog_masks_goal_and_proposal_before_decision ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.01s
+

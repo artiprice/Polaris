@@ -1,0 +1,7 @@
+PASS: 20 captured command records match raw totals; latest required gates pass; 1 earlier failed gate retained.
+PASS: final native 227 passed / 0 failed / 2 ignored; Linux domain 96 / 0 / 0.
+PASS: 1215 current source/config/document hashes and retained review hashes match.
+PASS: three canonical descriptors identify 22 actual test definitions; new journal files contain no banned unwrap family or lint attributes.
+PASS: generated manifest, 93 packages, 167 aliases, source inventory and percentage snapshot agree.
+PASS: compiled Debug/admission REDs and final passing regressions retained.
+LIMIT: scoped mechanical evidence only; full system, kernel portability and phase gates remain open.

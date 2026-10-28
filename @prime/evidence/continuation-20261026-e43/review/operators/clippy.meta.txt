@@ -1,0 +1,2 @@
+argv: cargo clippy -p polaris-kernel-operators --all-targets --no-deps -- -D warnings
+exit: 0

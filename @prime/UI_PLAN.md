@@ -688,7 +688,7 @@ one owning file/directory, not a claim every future file exists. Main phase valu
 dependencies refer to module IDs, while backend prerequisites are spelled out in the phase tasks.
 `status` tracks UI implementation coverage (`NOT STARTED`, `IN PROGRESS`, `PARTIAL`, or `DEFERRED`); it does not overwrite crate status or imply phase acceptance. Use `PARTIAL` when only a subset of a logical module exists or its acceptance evidence is incomplete.
 
-## 10. Deferred web welcome and desktop
+## 10. Deferred web welcome; desktop welcome shell in progress
 
 ### 10.1 WEB-WELCOME — future welcome-page design, no full web application plan
 
@@ -731,11 +731,16 @@ assets. Broader application/PWA/session caching and other web pages remain later
    reduced motion, no-JS static shell and forced colors. Save measurements separately from visual
    screenshots. WEB-WELCOME may pass visually while WEB-OPT remains NOT STARTED/FAIL.
 
-### 10.3 DESKTOP-LATER and full web/daemon UI
+### 10.3 DESKTOP-LATER (desktop welcome + offline session view IN PROGRESS) and full web/daemon UI
 
-Declare only the future seam: shared domain events/tokens/presentation concepts, Slint desktop,
-P9 authenticated RPC/daemon and ADR-014 licence gate. No desktop screens, Slint renderer work,
-full web interaction design, SSE/terminal web implementation or mobile work is scheduled here.
+Desktop is no longer deferred: the desktop welcome screen and an offline session view are IN PROGRESS
+(ASCII aurora background per PLAN ADR-016, paused in the session view). Its gate ADR-014 (Slint licence)
+is resolved: royalty-free. The desktop runs a real offline kernel session through `polaris-ui-session`
+(sessions list/search/resume, typed input recorded as `UserInputSubmitted`); the status line shows
+"Offline · no model replies". Still open: model execution (P3), the P9 authenticated RPC/daemon
+`--connect` bridge, attachments, speech input, message indexing for search, and the Models/Usage/Settings
+pages. Diff, HUD, full web interaction design, SSE/terminal web implementation and mobile work are still
+not scheduled here.
 Existing P9 backend progress neither authorizes this work nor removes its future UI gates.
 
 ## 11. Documentation and implementation verification boundary

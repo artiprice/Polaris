@@ -1,0 +1,5 @@
+Command: cargo test -p polaris-nebius-cloud-token-factory --test provider_prompt_tokenization
+Observed before implementation:
+error[E0432]: unresolved import `polaris_nebius_cloud_token_factory::VllmChatClient`
+error[E0432]: unresolved import `polaris_sdk::registry::PromptTokenizer`
+error: could not compile `polaris-nebius-cloud-token-factory` (test "provider_prompt_tokenization") due to 2 previous errors

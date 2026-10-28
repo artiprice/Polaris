@@ -1,0 +1,51 @@
+    Blocking waiting for file lock on build directory
+   Compiling polaris-ratelimit v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ratelimit)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling polaris-kernel-operators v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\operators)
+   Compiling polaris-nvidia-docs v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nvidia-docs)
+error[E0525]: expected a closure that implements the `FnMut` trait, but this closure only implements `FnOnce`
+   --> crates\polaris-system-one\crates\client\src\lib.rs:379:43
+    |
+379 |         let connector = tower::service_fn(move |_uri| {
+    |                                           ^^^^^^^^^^^ this closure implements `FnOnce`, not `FnMut`
+...
+399 |                                 rejected_identity.store(true, std::sync::atomic::Ordering::Release);
+    |                                 ----------------- closure is `FnOnce` because it moves the variable `rejected_identity` out of its environment
+...
+420 |             .connect_with_connector(connector)
+    |              ---------------------- --------- the requirement to implement `FnMut` derives from here
+    |              |
+    |              required by a bound introduced by this call
+    |
+    = note: required for `ServiceFn<{closure@crates\polaris-system-one\crates\client\src\lib.rs:379:43: 379:54}>` to implement `Service<Uri>`
+note: required by a bound in `Endpoint::connect_with_connector`
+   --> C:\Users\Admin\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tonic-0.14.6\src\transport\channel\endpoint.rs:588:12
+    |
+586 |     pub async fn connect_with_connector<C>(&self, connector: C) -> Result<Channel, Error>
+    |                  ---------------------- required by a bound in this associated function
+587 |     where
+588 |         C: Service<Uri> + Send + 'static,
+    |            ^^^^^^^^^^^^ required by this bound in `Endpoint::connect_with_connector`
+
+error[E0525]: expected a closure that implements the `FnMut` trait, but this closure only implements `FnOnce`
+   --> crates\polaris-system-one\crates\client\src\lib.rs:379:43
+    |
+379 |           let connector = tower::service_fn(move |_uri| {
+    |                                             ^^^^^^^^^^^ this closure implements `FnOnce`, not `FnMut`
+...
+399 |                                   rejected_identity.store(true, std::sync::atomic::Ordering::Release);
+    |                                   ----------------- closure is `FnOnce` because it moves the variable `rejected_identity` out of its environment
+...
+418 |           let channel = Endpoint::from_static("http://[::]:50051")
+    |  _______________________-
+419 | |             .connect_timeout(config.timeout)
+420 | |             .connect_with_connector(connector)
+    | |______________________________________________- the requirement to implement `FnMut` derives from here
+    |
+    = note: required for `ServiceFn<{closure@crates\polaris-system-one\crates\client\src\lib.rs:379:43: 379:54}>` to implement `Service<Uri>`
+
+For more information about this error, try `rustc --explain E0525`.
+error: could not compile `polaris-system-one-client` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

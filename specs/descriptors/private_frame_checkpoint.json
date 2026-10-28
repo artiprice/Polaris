@@ -1,0 +1,17 @@
+{
+  "type_of": "module",
+  "name": "private_frame_checkpoint",
+  "file_path": "crates/polaris-kernel/src/private_frame_checkpoint.rs",
+  "logic_name": "Private frame checkpoint persistence",
+  "test_list": [
+    {"test_name": "checkpoint_roundtrip_preserves_exact_marker_map", "description": "Recover a sealed map using the exact session, frame, step and transcript."},
+    {"test_name": "checkpoint_rejects_foreign_or_tampered_association", "description": "Reject altered ciphertext, ownership or transcript bindings."},
+    {"test_name": "checkpoint_failure_prevents_transcript_event", "description": "Do not publish the journal event when required checkpoint persistence fails."},
+    {"test_name": "checkpoint_rejects_workspace_directory_and_path_traversal", "description": "Keep private recovery files outside model-readable workspace paths."}
+  ],
+  "dependencies": ["KernelFrameJournal", "KernelPiiSealer", "PiiVault", "Cas"],
+  "libraries": ["tokio", "serde", "serde_json", "zeroize", "thiserror"],
+  "inputs": [{"name": "checkpoint", "type": "session/frame/step/transcript-bound sealed state", "description": "Actual journal and vault state with an explicit host key owner."}],
+  "output_type": "Result<private checkpoint or restored PiiVault, PrivateCheckpointError>",
+  "output_description": "Authenticated recovery state, or a sanitized failure. Implementation and integration verification deferred by user instruction."
+}

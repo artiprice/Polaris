@@ -1,0 +1,466 @@
+   Compiling tonic v0.14.6
+   Compiling reqwest v0.13.5
+   Compiling reqwest v0.12.28
+   Compiling polaris-runtime-frames v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\frames)
+   Compiling polaris-tools-builtin v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools\crates\builtin)
+   Compiling polaris-runtime-dag v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\dag)
+   Compiling polaris-security v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security)
+   Compiling polaris-kernel-verifier v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel\crates\verifier)
+   Compiling polaris-security-capability v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-security\crates\capability)
+   Compiling polaris-runtime-research v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime\crates\research)
+   Compiling polaris-tools v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-tools)
+   Compiling polaris-runtime v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-runtime)
+   Compiling rmcp v3.5.1
+   Compiling polaris-search-providers v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\providers)
+   Compiling polaris-nebius-cloud-token-factory v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud\crates\token-factory)
+   Compiling oauth2 v5.0.0
+   Compiling tonic-prost v0.14.6
+   Compiling tonic-types v0.14.6
+   Compiling openshell-extension-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling bollard-buildkit-proto v0.8.1
+   Compiling polaris-proto v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-proto)
+   Compiling polaris-search-sift v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search\crates\sift)
+   Compiling polaris-nebius-cloud v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-nebius-cloud)
+   Compiling openshell-core v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling polaris-search v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-search)
+   Compiling polaris-system-one-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one\crates\client)
+   Compiling polaris-browser v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-browser)
+   Compiling polaris-system-one v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-system-one)
+   Compiling bollard-stubs v1.53.1-rc.29.3.1
+   Compiling polaris-ext-mcp v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext\crates\mcp)
+   Compiling polaris-ext v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-ext)
+   Compiling openshell-sdk v0.0.0 (https://github.com/NVIDIA/OpenShell?rev=5a7728c304b5528e954e9ae900cf21f84e1a12b1#5a7728c3)
+   Compiling bollard v0.21.1
+   Compiling polaris-openshell-client v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\client)
+   Compiling polaris-openshell-nemoclaw v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell\crates\nemoclaw)
+   Compiling polaris-openshell v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-openshell)
+   Compiling polaris-devenv-docker v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv\crates\docker)
+   Compiling polaris-devenv v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-devenv)
+   Compiling polaris-kernel v0.1.0-alpha (C:\mDev\Polaris\crates\polaris-kernel)
+    Finished `test` profile [unoptimized] target(s) in 1m 28s
+     Running unittests src\lib.rs (target\debug\deps\polaris_kernel-e5f40931a0f969ef.exe)
+
+running 15 tests
+test worker_lifecycle::tests::retiring_an_old_generation_does_not_clear_the_new_generation ... ok
+test sandbox_recovery::tests::locator_encoding_is_versioned_scoped_and_strict ... ok
+test worker_lifecycle::tests::initialization_bootstraps_before_connect_and_never_publishes_failure ... ok
+test worker_lifecycle::tests::bootstrap_errors_are_sanitized_and_do_not_publish_connections ... ok
+test skill_status::tests::invalid_skill_root_is_reported_unavailable_without_fabricated_entries ... ok
+test docker_pool::tests::live_pool_is_not_reported_as_orphan_and_release_removes_registration ... ok
+test docker_pool::tests::active_pool_registration_cannot_be_acknowledged_as_an_orphan ... ok
+test docker_pool::tests::failed_backend_cleanup_keeps_the_orphan_journaled ... ok
+test skill_status::tests::status_compares_requirements_to_the_real_local_builtin_catalog ... ok
+test docker_pool::tests::restart_recovers_only_orphaned_docker_pool_locators ... ok
+test sandbox_recovery::tests::recovery_acknowledges_only_absent_matching_scoped_records ... ok
+test frame_tools::tests::bounded_serialization_preserves_exact_json_or_rejects ... ok
+test context::tests::startup_recovers_docker_orphans_before_the_generic_reaper_sweep ... ok
+test runtime::inspection_owner_tests::shutdown_drains_a_blocking_inspection_owner ... ok
+test runtime::inspection_owner_tests::inspection_slots_bound_admission_and_shutdown_releases_waiters ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests\error_taxonomy.rs (target\debug\deps\error_taxonomy-c8e48fd66251cb86.exe)
+
+running 1 test
+test storage_error_kinds_are_preserved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\frame_tools.rs (target\debug\deps\frame_tools-51531f6a5f1babef.exe)
+
+running 12 tests
+test cancellation_and_input_bounds_reject_without_execution ... ok
+test malformed_mutating_and_closed_calls_are_denied ... ok
+test bounded_read_keeps_truncation_metadata ... ok
+test recursive_reads_cannot_escape_exact_directory_scope ... ok
+test wrong_token_issuer_frame_and_runner_are_denied ... ok
+test revocation_between_authorize_and_execute_denies ... ok
+test cas_visibility_and_output_caps_are_enforced ... ok
+test actual_file_result_round_trips_through_cas ... ok
+test history_uses_actual_kernel_session ... ok
+test short_references_preserve_capability_scope ... ok
+test expired_tokens_and_foreign_kernel_bindings_are_denied ... ok
+test pure_tools_require_execute_right_on_their_namespace ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests\frame_tools_loop.rs (target\debug\deps\frame_tools_loop-db86c406a203df5a.exe)
+
+running 2 tests
+test run_step_authorizes_all_calls_before_executing_any_child_call ... ok
+test child_loop_reads_only_its_exact_path_and_parent_scope_remains_available ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests\lifecycle_stress.rs (target\debug\deps\lifecycle_stress-0d51d9367f0f5285.exe)
+
+running 5 tests
+test reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes ... ignored, 1000-directory and 20-process durable teardown workload; run explicitly
+test two_hundred_native_worker_kills_respect_restart_budget_and_leave_no_roots ... ignored, native 200-process crash/kill stress; run explicitly
+test native_sleeper_fixture ... ok
+test timed_out_health_probe_kills_owned_native_worker ... ok
+test dropping_reaper_stops_process_even_when_native_adapter_is_shared ... ok
+
+test result: ok. 3 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\local_runtime.rs (target\debug\deps\local_runtime-f588570b15397470.exe)
+
+running 2 tests
+test invalid_token_appends_no_event ... ok
+test directive_receipt_matches_committed_event ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\local_tools.rs (target\debug\deps\local_tools-75cfc2417cbb3969.exe)
+
+running 1 test
+test local_tools_use_actual_workspace_cas_and_scoped_history ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\runtime_safety.rs (target\debug\deps\runtime_safety-a5ee6761b3ea5ffd.exe)
+
+running 5 tests
+test canceled_shutdown_waiter_does_not_cancel_owner_cleanup ... ok
+test failed_startup_releases_session_claim_and_writes_no_lifecycle_event ... ok
+test dropping_last_handle_drains_and_closes_event_stream ... ok
+test missing_registry_projection_is_rebuilt_from_durable_lifecycle_records ... ok
+test durable_replay_bridges_delayed_subscription_to_live_events_without_duplicates ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running tests\sandbox_execution.rs (target\debug\deps\sandbox_execution-9d916d360fd0c143.exe)
+
+running 5 tests
+test cancellation_retains_cleanup_ownership ... ok
+test changed_review_environment_and_remote_root_are_rejected_before_create ... ok
+test failed_run_does_not_publish_proof ... ok
+test stale_or_replayed_review_is_rejected_before_create ... ok
+test zero_tests_tampered_source_and_name_collision_never_complete ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+
+     Running tests\session_typestate.rs (target\debug\deps\session_typestate-d9e1948b4cea9b28.exe)
+
+running 18 tests
+test invalid_configuration_commits_nothing ... ok
+test created_configures_to_configured ... ok
+test paused_resumes_to_running ... ok
+test configured_but_never_started_is_not_resumed ... ok
+test shutdown_closes_session_mutations ... ok
+test corrupt_configuration_cas_fails_recovery ... ok
+test one_live_owner_per_session ... ok
+test running_session_is_recovered_as_paused ... ok
+test live_publication_is_already_in_the_durable_log ... ok
+test session_defaults_do_not_leak_to_other_sessions ... ok
+test invalid_lifecycle_order_is_not_silently_replayed ... ok
+test committed_projection_failure_is_explicit_and_recoverable ... ok
+test unresolved_orphans_block_startup ... ok
+test startup_failure_releases_previously_opened_databases ... ok
+test reopen_replays_directives_in_order ... ok
+test registry_can_be_rebuilt_after_its_file_is_lost ... ok
+test replay_crosses_page_boundary_and_filters_other_sessions ... ok
+test prop_replayed_directive_fold_matches_last_override ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.90s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_runtime_frames-db8c384afb57648c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\frame_execution.rs (target\debug\deps\frame_execution-ee2ed18ac6c7a641.exe)
+
+running 22 tests
+test content_reference_failures_are_fatal_integrity_errors ... ok
+test durable_journal_requires_tool_content_to_exist_and_match ... ok
+test journal_persists_transcript_before_publishing_event ... ok
+test duplicate_finish_is_rejected_and_captured_as_incomplete ... ok
+test mismatched_tool_content_cid_is_rejected_before_verification ... ok
+test cancellation_after_finish_before_eof_keeps_response_partial ... ok
+test cancellation_records_an_incomplete_assistant_stream_as_partial_and_keeps_reserved_quota ... ok
+test stop_finish_with_tool_calls_fails_before_authorization ... ok
+test tool_loop_stops_before_an_attempt_beyond_round_bound ... ok
+test empty_message_overhead_counts_toward_prompt_byte_limit ... ok
+test text_after_finish_is_rejected_and_captured_as_incomplete ... ok
+test oversized_prior_reasoning_and_tool_arguments_fail_before_model_dispatch ... ok
+test tool_transcript_is_replayed_with_cas_reference_and_call_identity ... ok
+test tool_runner_receives_result_ceiling_and_oversize_is_not_replayed ... ok
+test cancellation_after_tool_execution_journals_the_partial_result ... ok
+test only_verifier_accepted_diff_references_enter_history ... ok
+test child_scope_only_narrows_and_only_unused_quota_returns ... ok
+test claimed_done_remains_unproven_and_keeps_frame_active ... ok
+test usage_before_finish_does_not_stop_stream_collection ... ok
+test usage_after_finish_is_retained_after_clean_end_of_stream ... ok
+test verifier_retries_stop_at_bound_and_keep_quota_spent ... ok
+test real_cas_and_event_log_reopen_the_versioned_frame_transcript ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\frame_tool_authority.rs (target\debug\deps\frame_tool_authority-8a0e7884e06cd0ed.exe)
+
+running 3 tests
+test workspace_scope_attenuates_without_widening ... ok
+test child_binding_preserves_root_identity ... ok
+test binding_matches_only_actual_frame_token ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_sdk-e57f3894b2161ff8.exe)
+
+running 3 tests
+test hex::tests::every_byte_matches_ascii_hex_contract ... ok
+test system_one::decision_schema_tests::validated_schema_snapshot_preserves_version_policy_and_calibration_state ... ok
+test system_one::decision_schema_tests::schema_snapshot_rejects_duplicate_question_ids_and_bad_calibration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\blast_alert_schema.rs (target\debug\deps\blast_alert_schema-5145a9c0c2d61b88.exe)
+
+running 1 test
+test blast_alert_requires_schema_three ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\command_typestate.rs (target\debug\deps\command_typestate-71ed5d76d1a1bdb0.exe)
+
+running 3 tests
+test token_bytes_debug_is_redacted ... ok
+test verified_requires_approval_witness ... ok
+test command_serde_roundtrip ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\content_identifiers.rs (target\debug\deps\content_identifiers-a8f5b139ce1745ad.exe)
+
+running 6 tests
+test cid_rejects_wrong_length_hex ... ok
+test cid_hex_roundtrip ... ok
+test short_ref_is_first_48_bits ... ok
+test short_ref_parse_accepts_marker_and_bare_hex ... ok
+test short_ref_renders_12_lowercase_hex ... ok
+test prop_cid_shortref_hex_roundtrip ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\content_store_dispatch.rs (target\debug\deps\content_store_dispatch-3442018411a45bff.exe)
+
+running 3 tests
+test arc_content_store_forwards_arguments_and_errors ... ok
+test one_of_three_content_store_forwards_every_variant ... ok
+test one_of_two_content_store_forwards_every_variant ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\effort_parsing.rs (target\debug\deps\effort_parsing-e0c67a51b97d30f0.exe)
+
+running 6 tests
+test parses_numeric_1_to_5 ... ok
+test parses_names_case_insensitively ... ok
+test display_roundtrips_name ... ok
+test rejects_zero_and_six ... ok
+test try_from_u8_is_total ... ok
+test prop_order_matches_numeric_form ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\event_envelope.rs (target\debug\deps\event_envelope-6a66b84a9654066a.exe)
+
+running 4 tests
+test event_is_fixed_size_copy ... ok
+test schema_version_is_current ... ok
+test event_record_json_roundtrip ... ok
+test event_record_json_snapshot ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests\interactive_contract.rs (target\debug\deps\interactive_contract-0d720fb9935d9784.exe)
+
+running 2 tests
+test interactive_debug_never_exposes_arguments_or_environment ... ok
+test interactive_enum_and_arc_preserve_dispatch_and_denial ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\probability_validation.rs (target\debug\deps\probability_validation-3df2360e621ed816.exe)
+
+running 5 tests
+test accepts_bounds ... ok
+test rejects_above_one_and_below_zero ... ok
+test rejects_nan ... ok
+test serde_rejects_out_of_range ... ok
+test ordering_is_total_for_valid_values ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\registry_dispatch.rs (target\debug\deps\registry_dispatch-e0d4bafbb07f96b2.exe)
+
+running 5 tests
+test error_kinds_cover_taxonomy ... ok
+test arc_forwards_sync_registry_traits ... ok
+test one_of2_forwards_event_store_to_active_variant ... ok
+test one_of3_forwards_redactor ... ok
+test one_of2_forwards_async_chat_stream ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\secret_source_contract.rs (target\debug\deps\secret_source_contract-e8f259772f819a5d.exe)
+
+running 7 tests
+test environment_name_requires_bounded_uppercase_identifier ... ok
+test keyring_location_rejects_empty_or_controlled_parts ... ok
+test has_kind_maps_transient_and_permanent_failures ... ok
+test validated_locations_contain_identifiers_only ... ok
+test one_of_two_forwards_all_secret_source_operations ... ok
+test source_error_display_is_sanitized ... ok
+test one_of_three_forwards_all_secret_source_operations ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\session_lifecycle.rs (target\debug\deps\session_lifecycle-098f7eccc5cfd718.exe)
+
+running 5 tests
+test versioned_constructor_validates_schema ... ok
+test schema_one_records_remain_readable ... ok
+test lifecycle_records_use_current_schema ... ok
+test new_lifecycle_events_cannot_claim_schema_one ... ok
+test prop_schema_acceptance_matches_lifecycle_minimum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_security_capability-02b7df5c8aa4b86c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\capability_contract.rs (target\debug\deps\capability_contract-979a74a67629cebb.exe)
+
+running 22 tests
+test resource_paths_reject_aliases_and_escapes ... ok
+test invalid_ttl_and_overflow_are_rejected ... ok
+test authority_and_token_debug_are_redacted ... ok
+test root_token_wrong_key_rejected ... ok
+test root_token_verifies_with_public_key ... ok
+test tampered_delegation_proof_is_rejected ... ok
+test invalid_capability_inputs_are_not_component_fatal ... ok
+test revoking_an_ancestor_denies_all_descendants ... ok
+test symbol_scope_requires_exact_path_and_symbol ... ok
+test root_scope_grants_listed_rights_only ... ok
+test scope_limits_and_diff_binding_are_enforced ... ok
+test expiry_uses_injected_clock_and_is_exclusive ... ok
+test unknown_vocabulary_cannot_be_repaired_by_descendant_facts ... ok
+test resource_scope_is_component_bounded ... ok
+test token_facts_cannot_spoof_ambient_facts_or_grants ... ok
+test chain_of_three_attenuations_monotone ... ok
+test workspace_scope_attenuates_without_widening ... ok
+test widening_child_never_escapes_ancestor_checks ... ok
+test bounded_tokens_and_evaluation_fail_closed ... ok
+test prop_arbitrary_token_bytes_never_authorize ... ok
+test datalog_fact_explosion_exhausts_budget_without_granting ... ok
+test prop_attenuation_is_monotone ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running unittests src\lib.rs (target\debug\deps\polaris_tools_builtin-09e1be4952a467d2.exe)
+
+running 4 tests
+test shell::tests::classifier_identifies_heavy_and_destructive_commands_without_execution ... ok
+test shell::tests::shell_route_uses_only_bound_handle_and_explicit_argv ... ok
+test proposal::tests::full_replacement_patch_retains_crlf_and_missing_final_newline ... ok
+test proposal::tests::edit_submits_full_occ_bound_diff_and_never_writes_host_file ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\authorized_builtin_invocation.rs (target\debug\deps\authorized_builtin_invocation-2520374c0a1de503.exe)
+
+running 12 tests
+test caller_output_cap_intersects_registry_limit ... ok
+test exact_output_boundary_is_accepted_and_json_is_escaped ... ok
+test readonly_entry_rejects_writes_and_unknown_fields ... ok
+test workspace_root_denial_precedes_reads ... ok
+test zero_output_cap_rejects_before_cas_access ... ok
+test exact_directory_token_does_not_authorize_descendants ... ok
+test authorization_errors_never_return_partial_success ... ok
+test ignorefile_denial_precedes_rule_use ... ok
+test exact_file_token_reads_without_parent_grants ... ok
+test recursive_reads_check_each_resource ... ok
+test within_bound_cas_corruption_remains_not_found ... ok
+test oversized_cas_reference_is_rejected_before_decode ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\builtin_contracts.rs (target\debug\deps\builtin_contracts-df8c3238fc3930c4.exe)
+
+running 14 tests
+test applies_context_add_delete_without_touching_base ... ok
+test rejects_malformed_patch_counts_and_retains_missing_final_newline ... ok
+test rejects_stale_patch_context ... ok
+test registry_specs_are_stable_and_schema_backed ... ok
+test json_pointer_and_regex_query_are_bounded_and_exact ... ok
+test path_resolver_requires_existing_targets ... ok
+test rejects_windows_ads_and_reserved_names ... ok
+test rejects_dotdot_and_absolute_escapes ... ok
+test secret_directories_and_credential_files_are_denied ... ok
+test p2_registry_advertises_only_explicitly_bound_proposal_and_sandbox_services ... ok
+test reads_utf16_bom_and_preserves_newline_facts ... ok
+test read_and_search_deny_secrets_and_skip_binary ... ok
+test glob_honors_custom_ignore_file ... ok
+test unified_patch_parser_never_panics_on_arbitrary_inputs ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests polaris_kernel
+
+running 1 test
+test crates\polaris-kernel\src\lib.rs - (line 31) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test crates\polaris-kernel\src\session.rs - session (line 5) - compile fail ... ok
+test crates\polaris-kernel\src\session.rs - session (line 12) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+all doctests ran in 4.36s; merged doctests compilation took 3.05s
+   Doc-tests polaris_runtime_frames
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests polaris_sdk
+
+running 3 tests
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 290) ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 321) ... ok
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 265) ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test crates\polaris-sdk\src\ids.rs - ids::FastFingerprint (line 260) - compile fail ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 304) - compile fail ... ok
+test crates\polaris-sdk\src\contracts.rs - contracts::Command (line 315) - compile fail ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+all doctests ran in 1.30s; merged doctests compilation took 0.93s
+   Doc-tests polaris_security_capability
+
+running 2 tests
+test crates\polaris-security\crates\capability\src\lib.rs - (line 20) - compile fail ... ok
+test crates\polaris-security\crates\capability\src\lib.rs - (line 15) - compile fail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+   Doc-tests polaris_tools_builtin
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

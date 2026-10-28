@@ -1,0 +1,14 @@
+{
+  "type_of": "function",
+  "name": "nibble",
+  "file_path": "crates/polaris-sdk/src/hex.rs",
+  "logic_name": "Checked hexadecimal decoding",
+  "test_list": [
+    {"test_name": "every_byte_matches_ascii_hex_contract", "description": "Exhaustively compare all 256 bytes against hexadecimal character semantics, rejecting every non-hex byte."}
+  ],
+  "dependencies": ["ParseError"],
+  "libraries": [],
+  "inputs": [{"name": "c", "type": "u8", "description": "One untrusted encoded byte."}],
+  "output_type": "Result<u8, ParseError>",
+  "output_description": "Exactly the previous 0..15 mapping with explicit checked arithmetic; existing invalid-input behavior stays unchanged."
+}
