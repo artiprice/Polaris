@@ -496,6 +496,10 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "Auto mode may change files: each change shows its diff; y applies, n declines, Enter with a note declines with it. Plan mode only reads."
             .to_owned(),
+        "NVIDIA: /nv-profile shows the detected stack and GPUs, /nv-verify runs the CUDA advisor; $nvidia(off|list|auto) controls what replies get."
+            .to_owned(),
+        "/hack audits the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA bugs."
+            .to_owned(),
     ];
     lines.push(
         "Ctrl+V/Shift+Insert paste text; Ctrl+C copies selection; Ctrl+X cuts after clipboard acknowledgement. Images are unavailable."
@@ -529,8 +533,8 @@ enum BackendRequest {
     SetEffort(Effort),
     /// Activity across every local session.
     Stats,
-    /// `/nv-profile` or `/nv-verify` on the session's workspace.
-    Nvidia(polaris_ui_session::nvidia::NvidiaCommand),
+    /// `/nv-profile`, `/nv-verify` or `/hack` on the session's workspace.
+    Local(polaris_ui_session::commands::LocalCommand),
     Sessions,
     Resume(SessionId),
     /// Apply or decline the change the running turn waits on.
@@ -809,7 +813,7 @@ pub async fn run(
                                 Err(error) => BackendMessage::QueryFailed(error.to_string()),
                             })
                         }
-                        BackendRequest::Nvidia(command) => Some(
+                        BackendRequest::Local(command) => Some(
                             match command.run(active.kernel(), active.workspace()).await {
                                 Ok(lines) => BackendMessage::Sheet {
                                     title: command.title().to_owned(),
@@ -2758,13 +2762,14 @@ fn submit_draft(
                     }
                 }
             },
-            SlashCommand::NvProfile | SlashCommand::NvVerify => {
-                let nvidia = if matches!(command, SlashCommand::NvProfile) {
-                    polaris_ui_session::nvidia::NvidiaCommand::Profile
-                } else {
-                    polaris_ui_session::nvidia::NvidiaCommand::Verify
+            SlashCommand::NvProfile | SlashCommand::NvVerify | SlashCommand::Hack => {
+                use polaris_ui_session::commands::LocalCommand;
+                let local = match command {
+                    SlashCommand::NvProfile => LocalCommand::NvProfile,
+                    SlashCommand::NvVerify => LocalCommand::NvVerify,
+                    _ => LocalCommand::Hack,
                 };
-                if let Err(error) = queue_request(commands, BackendRequest::Nvidia(nvidia)) {
+                if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
                     state.notice = error.to_string();
                     state.composer.cancel_submit(prepared);
                     return Ok(false);
@@ -2787,7 +2792,6 @@ fn submit_draft(
             | SlashCommand::Screenshot
             | SlashCommand::Browser(_)
             | SlashCommand::UiDiff
-            | SlashCommand::Hack
             | SlashCommand::Redteam
             | SlashCommand::SearchLocal(_)
             | SlashCommand::Ci

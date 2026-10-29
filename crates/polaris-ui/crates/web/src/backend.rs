@@ -258,9 +258,9 @@ impl Owner {
     }
 
     async fn submit_remote(&mut self, text: String) {
-        if polaris_ui_session::nvidia::nvidia_command(&text).is_some() {
+        if polaris_ui_session::commands::LocalCommand::parse(&text).is_some() {
             self.publisher.publish(WebEvent::Rejected {
-                reason: "NVIDIA commands run on local sessions; this page is attached to polarisd."
+                reason: "/nv-profile, /nv-verify and /hack run on local sessions; this page is attached to polarisd."
                     .to_owned(),
             });
             return;
@@ -381,7 +381,7 @@ impl Owner {
             });
             return;
         };
-        if let Some(command) = polaris_ui_session::nvidia::nvidia_command(&text) {
+        if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(&text) {
             match command.run(session.kernel(), session.workspace()).await {
                 Ok(lines) => {
                     self.publisher.publish(WebEvent::Committed);

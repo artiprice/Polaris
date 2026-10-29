@@ -12,13 +12,16 @@
 #![forbid(unsafe_code)]
 
 pub mod chat;
+pub mod commands;
 mod error;
+pub mod hack;
 pub mod host;
 pub mod nvidia;
 mod offline;
 mod queries;
 mod remote;
 pub mod stats;
+mod walk;
 
 pub use chat::{
     ChangeReview, ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, answer_review,

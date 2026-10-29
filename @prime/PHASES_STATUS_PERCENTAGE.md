@@ -248,7 +248,7 @@
 | [`polaris-ext-mcp`](../crates/polaris-ext/crates/mcp/src) | 75% | 50% | Real RMCP stdio/HTTP client, bounded framing, schema-aware normalization, caller authorization and lifecycle checks. Local protocol fixtures pass; live sandbox-backed MCP, production registry/frame assembly and wider lifecycle/adversarial gates remain open; E39. |
 | [`polaris-ext-skills`](../crates/polaris-ext/crates/skills/src) | 80% | 75% | Confined discovery/selection/cache retained; authentic LocalDirectiveVerifier-issued cache witnesses pass and check-witness is green. Skill-specific approval, runtime enablement/injection and full trust integration remain open; E39. |
 | [`polaris-ext`](../crates/polaris-ext/src) | 75% | 55% | Skills and concrete MCP client exported with shared trust documentation; full capability-bound kernel extension assembly remains open; E39. |
-| [`polaris-browser`](../crates/polaris-browser/src) | 0% | 0% | Documentation-only browser/a11y/image adapter. |
+| [`polaris-browser`](../crates/polaris-browser/src) | 45% | 35% | Host side: a11y outline, DCT pHash visual diff and verified sandbox artifact session with tests. Guest-side Chromium driver and the microVM loop wait for the sandbox image (P2-X-1). |
 | [`polaris-hacker`](../crates/polaris-hacker/src) | 40% | 30% | Bounded metadata-only AST/DFA observations, deterministic boundary corpus and cancellation-owned SDK sandbox stress. Seeded/local lifecycle tests pass; live sanitizers, race/CUDA/performance analysis and runtime command assembly remain open; E40. |
 | [`polaris-runtime-dag`](../crates/polaris-runtime/crates/dag/src) | 70% | 30% | Task-ID-correlated completions, explicit interruptions, dependency skipping and cancellation/drop contracts now have post-implementation evidence. Full-scheduler join interruption, actual panic, snapshots, race/pool stress and production integration remain open; E44. |
 | [`polaris-runtime-research`](../crates/polaris-runtime/crates/research/src) | 80% | 60% | Strict program parser, locked durable checkpoint/CAS evidence, path-attenuated tools, VCS receipts and bounded runner. Twenty real local-process iterations plus crash/reopen pass; live sandbox/model composition, cross-process contention, broader crash windows and adversarial critique remain open; E39. |
@@ -256,7 +256,7 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P7-X-1` | 70% | 50% | Twenty capability-checked local process/Git/CAS iterations, all 60 payloads reopened and one abrupt-exit recovery pass. Actual sandbox/model research composition and broader crash matrix remain open; E39. |
-| `P7-X-2` | 25% | 15% | Bounded seeded static positives/negatives and SDK cleanup/cancellation fixtures exist. Actual sandbox sanitizer workloads, seeded race/CUDA acceptance and complete /hack composition remain open; E40. |
+| `P7-X-2` | 90% | 80% | `/hack` composed and wired in every frontend; seeded race/blocking/CUDA acceptance 5/5 with 0 false positives on the synthetic repo, calibrated on this repository (E55). Sandbox sanitizer workloads remain open. |
 | `P7-X-3` | 0% | 0% | No composed microVM browser/a11y/pHash loop; individual spikes are separate. |
 
 ### P8 — DevEnv and Needle

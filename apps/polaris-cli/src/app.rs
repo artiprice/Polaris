@@ -105,6 +105,9 @@ pub enum Action {
     NvProfile,
     /// Run the CUDA advisor over the workspace's `.cu`/`.cuh` sources (`/nv-verify`).
     NvVerify,
+    /// Audit the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA
+    /// bugs (`/hack`).
+    Hack,
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
@@ -240,11 +243,12 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
-            Some(Action::NvProfile) | Some(Action::NvVerify) => {
-                let command = if matches!(args.command, Some(Action::NvProfile)) {
-                    polaris_ui_session::nvidia::NvidiaCommand::Profile
-                } else {
-                    polaris_ui_session::nvidia::NvidiaCommand::Verify
+            Some(Action::NvProfile) | Some(Action::NvVerify) | Some(Action::Hack) => {
+                use polaris_ui_session::commands::LocalCommand;
+                let command = match args.command {
+                    Some(Action::NvProfile) => LocalCommand::NvProfile,
+                    Some(Action::NvVerify) => LocalCommand::NvVerify,
+                    _ => LocalCommand::Hack,
                 };
                 let lines = command
                     .run_with(
@@ -271,7 +275,7 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                         let session = args.session.ok_or(CliError::Unavailable(
                             "--connect needs --session with the daemon's session id",
                         ))?;
-                        let credential = std::fs::read_to_string(token_file)?;
+                        let credential = tokio::fs::read_to_string(token_file).await?;
                         Some(
                             polaris_ui_web::AttachTarget::new(
                                 &endpoint,

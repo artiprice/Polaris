@@ -9,7 +9,18 @@ const MAX_MATCHES_PER_FILE: usize = 4096;
 const MAX_FINDINGS: usize = 8192;
 const MAX_PATH_BYTES: usize = 4096;
 const MAX_RULE_BYTES: usize = 256;
-const COVERAGE_LIMITS: &str = "not analyzed: quadratic hot loops, thread races, CUDA barrier/bank behavior, unchecked panic paths, or path traversal; absence of findings is not a safety verdict";
+const COVERAGE_LIMITS: &str = "not analyzed: quadratic hot loops, races other than split lock scopes and atomic load/store pairs in Rust, CUDA barrier/bank behavior, unchecked panic paths, or path traversal; absence of findings is not a safety verdict";
+/// Calls that block the executor thread when made inside an `async fn`, with their rule ids.
+const BLOCKING_CALLS: &[(&str, &str)] = &[
+    ("std::thread::sleep", "async-blocking-thread-sleep"),
+    ("thread::sleep", "async-blocking-thread-sleep"),
+    ("std::fs::read_to_string", "async-blocking-fs"),
+    ("std::fs::read", "async-blocking-fs"),
+    ("std::fs::write", "async-blocking-fs"),
+    ("fs::read_to_string", "async-blocking-fs"),
+    ("fs::write", "async-blocking-fs"),
+    ("std::net::TcpStream::connect", "async-blocking-net"),
+];
 
 /// Run code-intel observations and the caller-selected DFA rules over caller-owned source bytes.
 ///
@@ -82,8 +93,15 @@ pub fn static_scan(files: &[SourceFile], rules: &DfaScanner) -> Result<StaticRep
             }
         }
         for call in &analysis.calls {
-            if call.identity.as_deref() == Some("std::thread::sleep")
-                && in_async_region(&file.bytes, call.span.start)
+            let Some((identity, rule)) = call.identity.as_deref().and_then(|identity| {
+                BLOCKING_CALLS
+                    .iter()
+                    .find(|(name, _)| *name == identity)
+                    .copied()
+            }) else {
+                continue;
+            };
+            if in_async_region(&file.bytes, call.span.start)
                 && call.span.text(&file.bytes).is_some()
             {
                 push_finding(
@@ -91,13 +109,18 @@ pub fn static_scan(files: &[SourceFile], rules: &DfaScanner) -> Result<StaticRep
                     Finding {
                         path: file.path.clone(),
                         class: FindingClass::BlockingInAsync,
-                        rule: "async-blocking-thread-sleep".to_owned(),
+                        rule: rule.to_owned(),
                         start: call.span.start,
                         end: call.span.end,
-                        evidence: "heuristic:async-region+std::thread::sleep".to_owned(),
+                        evidence: format!("heuristic:async-region+{identity}"),
                         confidence: Confidence::AdvisoryHeuristic,
                     },
                 )?;
+            }
+        }
+        if file.lang == polaris_code_intel::Lang::Rust {
+            for finding in crate::race::race_candidates(&file.path, &file.bytes) {
+                push_finding(&mut report, finding)?;
             }
         }
         rules.scan(&file.bytes, &mut matches)?;

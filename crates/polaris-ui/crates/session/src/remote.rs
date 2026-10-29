@@ -38,7 +38,9 @@ impl AttachTarget {
                 .map_err(|_| SessionHostError::Unavailable("invalid daemon session id"))?,
         };
         let hex = credential_hex.trim();
-        if hex.is_empty() || !hex.len().is_multiple_of(2) || !hex.bytes().all(|byte| byte.is_ascii_hexdigit())
+        if hex.is_empty()
+            || !hex.len().is_multiple_of(2)
+            || !hex.bytes().all(|byte| byte.is_ascii_hexdigit())
         {
             return Err(SessionHostError::Unavailable(
                 "credential file is not hexadecimal",

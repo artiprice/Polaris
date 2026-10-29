@@ -1,0 +1,11 @@
+// Synthetic sample for /hack: request ids.
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+/// SEEDED race: two callers can read the same value and both store it plus one.
+pub fn next_id() -> u64 {
+    let id = NEXT_ID.load(Ordering::SeqCst);
+    NEXT_ID.store(id + 1, Ordering::SeqCst);
+    id
+}

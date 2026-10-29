@@ -1,0 +1,15 @@
+// Synthetic sample for /hack: a block-wide normalization.
+#include <cuda_runtime.h>
+
+__global__ void normalize(float* data, int n) {
+    __shared__ float total;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    if (threadIdx.x == 0) {
+        total = 0.0f;
+        // SEEDED CUDA barrier misuse: only thread 0 reaches this barrier; the block hangs.
+        __syncthreads();
+    }
+    atomicAdd(&total, data[i]);
+    data[i] /= total;
+}

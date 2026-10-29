@@ -23,3 +23,11 @@ source = "hand-written, synthetic"
 licence = "Apache-2.0 (this repository)"
 generator = "none; materialized like nvidia/cuda-vector-add"
 date = "2026-10-29"
+
+[[fixture]]
+path = "hack/seeded-service"
+purpose = "P7-X-2 seeded-bug repository: two races, two blocking calls in async handlers and a CUDA barrier in a divergent branch (listed in SEEDED.toml), plus clean.rs doing the same work correctly"
+source = "hand-written, synthetic"
+licence = "Apache-2.0 (this repository)"
+generator = "none; materialized like nvidia/cuda-vector-add (SEEDED.toml is copied as is)"
+date = "2026-10-29"

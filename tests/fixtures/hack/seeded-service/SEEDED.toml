@@ -1,0 +1,32 @@
+# The bugs planted in this synthetic repository, for scoring /hack (P7-X-2). A finding matches a
+# seed when its path and line are equal; any other finding in src/clean.rs is a false positive.
+
+[[seed]]
+path = "src/ids.rs"
+line = 9
+class = "race"
+what = "atomic load then separate store loses concurrent increments"
+
+[[seed]]
+path = "src/account.rs"
+line = 22
+class = "race"
+what = "balance checked under one lock and written under another"
+
+[[seed]]
+path = "src/handlers.rs"
+line = 10
+class = "blocking-in-async"
+what = "std::thread::sleep inside an async handler"
+
+[[seed]]
+path = "src/handlers.rs"
+line = 16
+class = "blocking-in-async"
+what = "std::fs::read_to_string inside an async handler"
+
+[[seed]]
+path = "kernels/normalize.cu"
+line = 8
+class = "cuda-barrier"
+what = "__syncthreads() inside a branch only thread 0 takes"

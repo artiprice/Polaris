@@ -21,27 +21,10 @@ use polaris_nvidia_docs::{
 };
 
 use crate::SessionHostError;
+use crate::walk::{relative, source_files};
 
-/// Directory entries `/nv-verify` looks at before it stops.
-const MAX_ENTRIES: usize = 20_000;
-/// Directory depth `/nv-verify` descends to.
-const MAX_DEPTH: usize = 12;
 /// CUDA sources `/nv-verify` checks.
 const MAX_SOURCES: usize = 500;
-/// Directories that never hold the project's own CUDA sources.
-const SKIPPED: &[&str] = &[
-    ".git",
-    ".polaris",
-    "target",
-    "node_modules",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "build",
-    "dist",
-    "third_party",
-    "external",
-];
 /// Findings quoted in a turn's context.
 const CONTEXT_FINDINGS: usize = 8;
 /// How long `nvidia-smi` may take.
@@ -103,39 +86,13 @@ impl NvVerifyReport {
 /// # Errors
 /// The workspace cannot be listed.
 pub fn nv_verify(workspace: &Path) -> Result<NvVerifyReport, SessionHostError> {
-    let mut report = NvVerifyReport::default();
-    let mut sources = Vec::new();
-    let mut stack = vec![(workspace.to_owned(), 0_usize)];
-    let mut seen = 0_usize;
-    'walk: while let Some((directory, depth)) = stack.pop() {
-        let entries = std::fs::read_dir(&directory)
-            .map_err(|_| SessionHostError::Unavailable("workspace is unavailable"))?;
-        for entry in entries.flatten() {
-            seen = seen.saturating_add(1);
-            if seen > MAX_ENTRIES || sources.len() >= MAX_SOURCES {
-                report.truncated = true;
-                break 'walk;
-            }
-            let Ok(kind) = entry.file_type() else {
-                continue;
-            };
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if kind.is_dir() {
-                if depth < MAX_DEPTH && !SKIPPED.contains(&name.as_str()) {
-                    stack.push((entry.path(), depth.saturating_add(1)));
-                }
-            } else if kind.is_file() && is_cuda_source(&name) {
-                sources.push(entry.path());
-            }
-        }
-    }
-    sources.sort();
+    let (sources, truncated) = source_files(workspace, is_cuda_source, MAX_SOURCES)?;
+    let mut report = NvVerifyReport {
+        truncated,
+        ..NvVerifyReport::default()
+    };
     for path in sources {
-        let relative = path
-            .strip_prefix(workspace)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let relative = relative(workspace, &path);
         let Ok(metadata) = std::fs::metadata(&path) else {
             continue;
         };
@@ -389,78 +346,35 @@ pub fn context_for_turn(
     Ok(turn_context(&profile, &report))
 }
 
-/// Which NVIDIA command, if any, `text` is exactly (`/nv-profile` or `/nv-verify`).
-#[must_use]
-pub fn nvidia_command(text: &str) -> Option<NvidiaCommand> {
-    match text.trim() {
-        "/nv-profile" => Some(NvidiaCommand::Profile),
-        "/nv-verify" => Some(NvidiaCommand::Verify),
-        _ => None,
-    }
-}
-
-/// The NVIDIA slash commands frontends answer locally.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NvidiaCommand {
-    /// `/nv-profile`.
-    Profile,
-    /// `/nv-verify`.
-    Verify,
-}
-
-impl NvidiaCommand {
-    /// Panel title.
-    #[must_use]
-    pub const fn title(self) -> &'static str {
-        match self {
-            Self::Profile => "NVIDIA profile",
-            Self::Verify => "CUDA advisor",
-        }
-    }
-
-    /// Run the command for a session, under its `$nvidia` mode.
-    /// # Errors
-    /// The workspace cannot be listed.
-    pub async fn run(
-        self,
-        kernel: &KernelHandle,
-        workspace: &Path,
-    ) -> Result<Vec<String>, SessionHostError> {
-        self.run_with(nvidia_mode(kernel), workspace).await
-    }
-
-    /// Run the command on `workspace` under `mode` (no session needed, as `polaris nv-verify`).
-    /// # Errors
-    /// The workspace cannot be listed.
-    pub async fn run_with(
-        self,
-        mode: NvidiaMode,
-        workspace: &Path,
-    ) -> Result<Vec<String>, SessionHostError> {
-        if mode == NvidiaMode::Off {
-            return Ok(vec![
-                match self {
-                    Self::Profile => "$nvidia(off) — NVIDIA profiling is disabled; apply $nvidia(auto) to enable it.",
-                    Self::Verify => "$nvidia(off) — the CUDA advisor is disabled; apply $nvidia(auto) to enable it.",
-                }
-                .to_owned(),
-            ]);
-        }
-        let root = workspace.to_owned();
-        match self {
-            Self::Profile => {
-                let profile = tokio::task::spawn_blocking(move || auto_profile(&root, ""))
-                    .await
-                    .map_err(|_| SessionHostError::Unavailable("profile task failed"))?
-                    .map_err(|_| SessionHostError::Unavailable("workspace is unavailable"))?;
-                Ok(profile_lines(mode, &profile, &local_gpus().await))
+/// `/nv-profile` (`verify` false) or `/nv-verify` (`verify` true) on `workspace` under `mode`.
+/// # Errors
+/// The workspace cannot be listed.
+pub(crate) async fn report_lines(
+    verify: bool,
+    mode: NvidiaMode,
+    workspace: &Path,
+) -> Result<Vec<String>, SessionHostError> {
+    if mode == NvidiaMode::Off {
+        return Ok(vec![
+            if verify {
+                "$nvidia(off) — the CUDA advisor is disabled; apply $nvidia(auto) to enable it."
+            } else {
+                "$nvidia(off) — NVIDIA profiling is disabled; apply $nvidia(auto) to enable it."
             }
-            Self::Verify => {
-                let report = tokio::task::spawn_blocking(move || nv_verify(&root))
-                    .await
-                    .map_err(|_| SessionHostError::Unavailable("advisor task failed"))??;
-                Ok(verify_lines(&report))
-            }
-        }
+            .to_owned(),
+        ]);
+    }
+    let root = workspace.to_owned();
+    if verify {
+        let report = tokio::task::spawn_blocking(move || nv_verify(&root))
+            .await
+            .map_err(|_| SessionHostError::Unavailable("advisor task failed"))??;
+        Ok(verify_lines(&report))
+    } else {
+        let profile = tokio::task::spawn_blocking(move || auto_profile(&root, ""))
+            .await
+            .map_err(|_| SessionHostError::Unavailable("profile task failed"))?
+            .map_err(|_| SessionHostError::Unavailable("workspace is unavailable"))?;
+        Ok(profile_lines(mode, &profile, &local_gpus().await))
     }
 }

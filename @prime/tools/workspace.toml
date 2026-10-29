@@ -1946,7 +1946,7 @@ layer = 6
 kind = "lib"
 phase = "P9"
 summary = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
-deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model", "polaris-rpc", "polaris-nvidia-docs"]
+deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model", "polaris-rpc", "polaris-nvidia-docs", "polaris-hacker", "polaris-code-intel"]
 ext = ["tokio", "tokio-util", "thiserror", "jiff"]
 responsibilities = [
   "Run interactive chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas, and file changes that wait for the person's review (plan mode is read-only).",

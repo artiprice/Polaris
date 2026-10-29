@@ -632,6 +632,10 @@ fn help_only_advertises_available_local_controls() {
         help.contains("Ctrl+J"),
         "safe newline fallback must be documented"
     );
+    assert!(
+        help.contains("/nv-profile") && help.contains("/nv-verify"),
+        "the NVIDIA commands answer locally and are documented"
+    );
 }
 
 #[test]

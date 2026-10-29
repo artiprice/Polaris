@@ -8,9 +8,9 @@ use polaris_kernel::directives::directive::NvidiaMode;
 use polaris_nvidia_docs::{ComputeCapability, Gpu, auto_profile};
 use polaris_sdk::ids::SessionId;
 use polaris_ui_session::OfflineSession;
+use polaris_ui_session::commands::LocalCommand;
 use polaris_ui_session::nvidia::{
-    NvidiaCommand, context_for_turn, nv_verify, nvidia_command, nvidia_mode, profile_lines,
-    verify_lines,
+    context_for_turn, nv_verify, nvidia_mode, profile_lines, verify_lines,
 };
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -194,7 +194,7 @@ async fn the_session_directive_selects_the_mode_and_survives_resume() -> TestRes
         NvidiaMode::Auto,
         "auto without a directive"
     );
-    let verify = NvidiaCommand::Verify
+    let verify = LocalCommand::NvVerify
         .run(session.kernel(), session.workspace())
         .await?;
     assert_eq!(
@@ -204,7 +204,7 @@ async fn the_session_directive_selects_the_mode_and_survives_resume() -> TestRes
 
     session.apply_directive("$nvidia(list)").await?;
     assert_eq!(nvidia_mode(session.kernel()), NvidiaMode::List);
-    let profile = NvidiaCommand::Profile
+    let profile = LocalCommand::NvProfile
         .run(session.kernel(), session.workspace())
         .await?;
     assert!(
@@ -217,7 +217,7 @@ async fn the_session_directive_selects_the_mode_and_survives_resume() -> TestRes
 
     session.apply_directive("$nvidia(off)").await?;
     assert_eq!(nvidia_mode(session.kernel()), NvidiaMode::Off);
-    let off = NvidiaCommand::Verify
+    let off = LocalCommand::NvVerify
         .run(session.kernel(), session.workspace())
         .await?;
     assert!(
@@ -238,12 +238,17 @@ async fn the_session_directive_selects_the_mode_and_survives_resume() -> TestRes
 
 #[test]
 fn only_the_exact_commands_are_answered_locally() {
-    assert_eq!(nvidia_command("/nv-profile"), Some(NvidiaCommand::Profile));
     assert_eq!(
-        nvidia_command("  /nv-verify \n"),
-        Some(NvidiaCommand::Verify)
+        LocalCommand::parse("/nv-profile"),
+        Some(LocalCommand::NvProfile)
     );
-    assert_eq!(nvidia_command("/nv-verify src/a.cu"), None);
-    assert_eq!(nvidia_command("please run /nv-verify"), None);
-    assert_eq!(NvidiaCommand::Verify.title(), "CUDA advisor");
+    assert_eq!(
+        LocalCommand::parse("  /nv-verify \n"),
+        Some(LocalCommand::NvVerify)
+    );
+    assert_eq!(LocalCommand::parse("/nv-verify src/a.cu"), None);
+    assert_eq!(LocalCommand::parse("please run /nv-verify"), None);
+    assert_eq!(LocalCommand::parse("/hack"), Some(LocalCommand::Hack));
+    assert_eq!(LocalCommand::parse("/hack src"), None);
+    assert_eq!(LocalCommand::NvVerify.title(), "CUDA advisor");
 }

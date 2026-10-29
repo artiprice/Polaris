@@ -28,6 +28,8 @@ polaris-nebius-cloud-token-factory = { workspace = true }
 polaris-ui-model = { workspace = true }
 polaris-rpc = { workspace = true }
 polaris-nvidia-docs = { workspace = true }
+polaris-hacker = { workspace = true }
+polaris-code-intel = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -47,6 +49,10 @@ path = "../../../../tests/crates/polaris-ui/crates/session/open_latency.rs"
 [[test]]
 name = "session_host"
 path = "../../../../tests/crates/polaris-ui/crates/session/session_host.rs"
+
+[[test]]
+name = "hack"
+path = "../../../../tests/crates/polaris-ui/crates/session/hack.rs"
 
 [[test]]
 name = "nvidia"

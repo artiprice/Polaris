@@ -99,7 +99,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P6-X-2 remote OpenShell gateway (E4) | BLOCKED-ON-ACCESS |
 | P6-X-3 Data Lab export + fine-tune trigger | BLOCKED-ON-ACCESS |
 | P7-X-1 `/research` long run | NOT STARTED |
-| P7-X-2 `/hack` on seeded-bug repos | NOT STARTED |
+| P7-X-2 `/hack` on seeded-bug repos | PASS (E55: 5/5 seeded races, blocking-in-async and CUDA barrier bugs, 0 false positives; synthetic repo) |
 | P7-X-3 microVM browser loop | NOT STARTED |
 | P9-X-1 static welcome page | IN PROGRESS (welcome page from the demo design in web and desktop; visual acceptance open) |
 | P9-X-2 named-pipe transport + mTLS remote | IN PROGRESS (frontends attach over named pipe with token auth, security tests pass — E53; remote mTLS deployment open) |
@@ -268,8 +268,8 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-ext-mcp` | `polaris-ext-mcp` | P7 | IN PROGRESS | 2026-10-26 E39: real RMCP3.5.1 stdio/HTTP client, sandbox-only production launch, bounded protocol framing/body/SSE, schema-aware validation, lifecycle and trust/effect controls. Twenty-eight local contracts and strict all-target Clippy pass; live sandbox-backed MCP, full kernel registry/frame composition and wider lifecycle gates remain open. |
 | `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | IN PROGRESS | 2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open. |
 | `crate:polaris-ext` | `polaris-ext` | P7 | IN PROGRESS | Skills exports and catalog are implemented. MCP child and full P7 integration remain open. |
-| `crate:polaris-browser` | `polaris-browser` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-hacker` | `polaris-hacker` | P7 | IN PROGRESS | 2026-10-26 §E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress; local seeded/SDK lifecycle tests pass, actual sanitizers/isolation and broader analysis remain open. |
+| `crate:polaris-browser` | `polaris-browser` | P7 | IN PROGRESS | 2026-10-28: host side implemented (a11y outline, own DCT pHash visual diff, verified sandbox artifact session); the guest-side Chromium driver and the microVM loop wait for the sandbox image (P2-X-1). |
+| `crate:polaris-hacker` | `polaris-hacker` | P7 | IN PROGRESS | 2026-10-26 §E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress. 2026-10-29 §E55: lexical race rules (split lock scopes, atomic load/store) and wider blocking-in-async rules, composed as `/hack` with the CUDA advisor. Sanitizer workloads and deeper race analysis remain open. |
 | `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | 2026-10-26 §E44: task-ID-correlated completion, explicit per-node interruptions without invented attempt counts, policy-aware dependency skipping and independent progress, preserved completed outcomes during cleanup, plus fail-fast/cancel/drop contracts. Post-implementation tests and strict scoped checks pass; actual panic execution, full scheduler interruption injection, snapshots, race/pool stress and production composition remain open. Interrupted tasks are never replayed automatically. |
 | `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | 2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. Production sandbox/model/critique and broader crash/portability gates remain open. |
 
@@ -1909,3 +1909,36 @@ it lives in `polaris_ui_session::nvidia` and every frontend uses it.
 **Still open:** NVIDIA docs sync run and offline seed (P5-X-3), cited doc slices in turns (needs
 the index), vector search (Token Factory key), tree-sitter rule packs and per-arch limit tables,
 S1 topic scoring, `$rag` and `/search-local` with provenance.
+
+## E55 — P7 `/hack` finds the seeded bugs (2026-10-29)
+
+**P7-X-2 PASS on a synthetic seeded repository; P7 phase acceptance open.**
+
+- **Race rules** (`polaris-hacker`, advisory): `race-split-lock` — a value read under one lock
+  (bound and used in the write, or tested in a condition within 8 lines) written under a second
+  lock of the same mutex/`RwLock`; `race-atomic-load-store` — the same for an atomic `load` and a
+  separate `store` with no read-modify-write between and no guard held across both. Bound guards
+  (`let g = m.lock().unwrap()`, `if let Ok(g) = m.lock()`) count only when dropped first; writes
+  are not checks; `read()`/`write()` count only when unwrapped, expected or awaited. Comments and
+  literals are blanked first. Blocking-in-async now also covers `thread::sleep` without the `std`
+  prefix, `std::fs` reads/writes and `TcpStream::connect`.
+- **`/hack`** (`polaris_ui_session::hack`, through `commands::LocalCommand` shared with
+  `/nv-profile` and `/nv-verify`): Rust/Python/C++/TypeScript through the hacker within its
+  budgets, precise credential formats and destructive shell commands from the automata pack (the
+  generic `name: value` secret rule and PII rules are left out of source audits), CUDA warnings
+  from the advisor. Answered in the TUI, web pages, desktop window and as `polaris hack`.
+- **Seeded repository** `tests/fixtures/hack/seeded-service` (stored as `*.fixture`), with
+  `SEEDED.toml`: two races, two blocking calls in async handlers, one CUDA barrier in a divergent
+  branch, and `clean.rs` doing the same work correctly.
+- **Result** (`@prime/evidence/p7/hack-seeded-service.txt`, real binary): recall 5/5, 0 extra
+  findings. Calibration on this repository cut the first version's 11 race candidates and 9 generic
+  secret matches in `polaris-kernel` to 1 advisory finding (`model_lifecycle.rs` stop: check of
+  an atomic flag, then store), 0 in seven other crates; it also caught a blocking file read in
+  this session's own async `polaris web --connect` path, fixed with `tokio::fs`.
+- **Tests:** `polaris-hacker` `race_rules` (5), `polaris-ui-session` `hack` (4), plus the shared
+  command parsing in `nvidia` tests.
+
+**Still open (P7):** `/research` with a real model and sandbox (P7-X-1: the loop, durable resume
+and 20-iteration contract exist; the composition needs a sandbox — the OpenShell gateway and the
+Polaris sandbox image, P2-X-1); the microVM browser loop (P7-X-3: host-side outline/pHash/session
+exist; the guest Chromium driver needs the same image); `/redteam`, sanitizer workloads.

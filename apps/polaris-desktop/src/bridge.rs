@@ -203,9 +203,9 @@ impl Bridgework {
     }
 
     async fn submit_remote(&mut self, text: &str) {
-        if polaris_ui_session::nvidia::nvidia_command(text).is_some() {
+        if polaris_ui_session::commands::LocalCommand::parse(text).is_some() {
             let _sent = self.emit(BackendEvent::Rejected(String::from(
-                "NVIDIA commands run on local sessions; this window is attached to polarisd",
+                "/nv-profile, /nv-verify and /hack run on local sessions; this window is attached to polarisd",
             )));
             return;
         }
@@ -342,7 +342,7 @@ impl Bridgework {
             let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
             return;
         };
-        if let Some(command) = polaris_ui_session::nvidia::nvidia_command(text) {
+        if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(text) {
             match command.run(session.kernel(), session.workspace()).await {
                 Ok(lines) => {
                     let _committed = self.emit(BackendEvent::Committed);

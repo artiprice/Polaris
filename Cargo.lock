@@ -8758,6 +8758,7 @@ dependencies = [
  "polaris-code-intel",
  "polaris-sdk",
  "polaris-security-automata",
+ "regex",
  "thiserror 2.0.21",
  "tokio",
 ]
@@ -9868,8 +9869,10 @@ name = "polaris-ui-session"
 version = "0.1.0-alpha"
 dependencies = [
  "jiff",
+ "polaris-code-intel",
  "polaris-config",
  "polaris-daemon",
+ "polaris-hacker",
  "polaris-kernel",
  "polaris-nebius-cloud-token-factory",
  "polaris-nvidia-docs",

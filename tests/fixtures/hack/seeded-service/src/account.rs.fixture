@@ -1,0 +1,29 @@
+// Synthetic sample for /hack: an account shared between request handlers.
+use std::sync::Mutex;
+
+pub struct Account {
+    balance: Mutex<u64>,
+}
+
+impl Account {
+    pub fn new(balance: u64) -> Self {
+        Self {
+            balance: Mutex::new(balance),
+        }
+    }
+
+    /// SEEDED race: the balance is checked under one lock and written under another, so two
+    /// withdrawals can both pass the check.
+    pub fn withdraw(&self, amount: u64) -> bool {
+        let balance = *self.balance.lock().unwrap();
+        if balance < amount {
+            return false;
+        }
+        *self.balance.lock().unwrap() = balance - amount;
+        true
+    }
+
+    pub fn balance(&self) -> u64 {
+        *self.balance.lock().unwrap()
+    }
+}
