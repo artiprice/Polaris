@@ -7,6 +7,8 @@
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
 
+use polaris_sdk::effort::Effort;
+
 /// What the window asks the backend to do.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BackendRequest {
@@ -32,6 +34,10 @@ pub enum BackendRequest {
     Close,
     /// Interrupt the running reply.
     Interrupt,
+    /// Continue the conversation on the provider's model for this effort.
+    SetEffort(Effort),
+    /// Activity across every local session (the Usage panel).
+    Stats,
 }
 
 /// How a committed message entered the session.
@@ -110,7 +116,29 @@ pub enum BackendEvent {
         provider: String,
         /// Selected model id.
         model: String,
+        /// Effort the model serves.
+        effort: Effort,
+        /// The provider's model for every effort.
+        models: Vec<(Effort, String)>,
     },
+    /// The conversation continues on another model.
+    ModelSwitched {
+        /// New model id.
+        model: String,
+        /// Its effort.
+        effort: Effort,
+    },
+    /// Token use of the open session, from its committed model requests.
+    Usage {
+        /// Model requests.
+        requests: u64,
+        /// Prompt tokens.
+        prompt_tokens: u64,
+        /// Completion tokens.
+        completion_tokens: u64,
+    },
+    /// Activity lines across every local session (`/stats` in the terminal).
+    Stats(Vec<String>),
     /// No model provider is usable; messages are recorded without replies.
     ProviderUnavailable(String),
     /// The model started answering the last message.

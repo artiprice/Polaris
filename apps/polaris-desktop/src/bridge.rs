@@ -134,6 +134,8 @@ struct Bridgework {
     events: Sender<BackendEvent>,
     session: Option<OfflineSession>,
     chat: Option<ConversationHost>,
+    /// Model requests and tokens of the open session, from its committed records.
+    usage: (u64, u64, u64),
 }
 
 impl Bridgework {
@@ -183,6 +185,7 @@ impl Bridgework {
             None => SessionId::new_v7(),
         };
         let started = std::time::Instant::now();
+        self.usage = (0, 0, 0);
         match OfflineSession::open(&self.state_dir, &self.workspace, id).await {
             Ok(session) => {
                 tracing::info!(
@@ -253,13 +256,45 @@ impl Bridgework {
         let _sent = self.emit(event);
     }
 
+    fn set_effort(&mut self, effort: polaris_sdk::effort::Effort) {
+        let event = match self.chat.as_mut() {
+            Some(chat) => match chat.set_effort(effort) {
+                Ok(model) => BackendEvent::ModelSwitched { model, effort },
+                Err(reason) => BackendEvent::Failed(reason),
+            },
+            None => BackendEvent::Failed(String::from("model replies are not enabled")),
+        };
+        let _sent = self.emit(event);
+    }
+
+    async fn stats(&self) {
+        let event = match list_sessions(&self.state_dir, 10_000).await {
+            Ok(rows) => {
+                let now = jiff::Zoned::now();
+                BackendEvent::Stats(polaris_ui_session::stats::stats_lines(
+                    &rows,
+                    now.date(),
+                    now.time_zone(),
+                ))
+            }
+            Err(error) => BackendEvent::Failed(describe("Reading activity failed", &error)),
+        };
+        let _sent = self.emit(event);
+    }
+
     fn host_event(&self, event: HostEvent) {
         let event = match event {
             HostEvent::ProviderReady {
-                provider, model, ..
+                provider,
+                model,
+                effort,
+                models,
+                ..
             } => BackendEvent::ProviderReady {
                 provider: provider.to_owned(),
                 model,
+                effort,
+                models,
             },
             HostEvent::ProviderUnavailable(reason) => BackendEvent::ProviderUnavailable(reason),
             HostEvent::Progress(ChatProgress::Text(text)) => BackendEvent::ReplyText(text),
@@ -317,6 +352,24 @@ impl Bridgework {
                 };
                 if resolved.record.session() != open_id(open) {
                     return;
+                }
+                if let polaris_sdk::contracts::Event::ModelRequestCompleted {
+                    prompt_tokens,
+                    completion_tokens,
+                    ..
+                } = resolved.record.event()
+                {
+                    let (requests, prompt, completion) = self.usage;
+                    self.usage = (
+                        requests.saturating_add(1),
+                        prompt.saturating_add(u64::from(prompt_tokens.get())),
+                        completion.saturating_add(u64::from(completion_tokens.get())),
+                    );
+                    let _sent = self.emit(BackendEvent::Usage {
+                        requests: self.usage.0,
+                        prompt_tokens: self.usage.1,
+                        completion_tokens: self.usage.2,
+                    });
                 }
                 if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
                     let kind = match kind {
@@ -386,6 +439,7 @@ async fn run(
         events,
         session: None,
         chat: chat.map(|options| ConversationHost::new(options.config, options.env_file)),
+        usage: (0, 0, 0),
     };
     if let Some(chat) = work.chat.as_mut() {
         chat.start_pick();
@@ -407,6 +461,8 @@ async fn run(
                             chat.cancel_turn();
                         }
                     }
+                    BackendRequest::SetEffort(effort) => work.set_effort(effort),
+                    BackendRequest::Stats => work.stats().await,
                 }
             }
             next = next_record(&mut work.session) => work.record(next),

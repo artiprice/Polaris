@@ -762,7 +762,7 @@ pub async fn run(
                                     let now = jiff::Zoned::now();
                                     BackendMessage::Sheet {
                                         title: "Stats".to_owned(),
-                                        lines: crate::stats::stats_lines(
+                                        lines: polaris_ui_session::stats::stats_lines(
                                             &rows,
                                             now.date(),
                                             now.time_zone(),

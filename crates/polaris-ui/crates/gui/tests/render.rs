@@ -157,6 +157,74 @@ fn welcome_renders_without_panic_in_software_renderer() -> TestResult {
         settle();
         let session = draw(&window, stride)?.ok_or("session did not redraw")?;
         write_ppm(&dir.join("session.ppm"), &session)?;
+
+        // A connected provider, a streamed reply with a work summary, then the panels.
+        let efforts = [
+            (
+                polaris_sdk::effort::Effort::Low,
+                "nvidia/nemotron-3.5-lightning:free",
+            ),
+            (
+                polaris_sdk::effort::Effort::Medium,
+                "nvidia/nemotron-3.5-lightning:free",
+            ),
+            (
+                polaris_sdk::effort::Effort::High,
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+            ),
+        ];
+        event_tx.send(BackendEvent::ProviderReady {
+            provider: String::from("openrouter"),
+            model: String::from("nvidia/nemotron-3.5-lightning:free"),
+            effort: polaris_sdk::effort::Effort::Medium,
+            models: efforts
+                .iter()
+                .map(|(effort, model)| (*effort, (*model).to_owned()))
+                .collect(),
+        })?;
+        event_tx.send(BackendEvent::ReplyStarted)?;
+        event_tx.send(BackendEvent::ReplyText(String::from(
+            "Here is the plan:
+
+1. Port the aurora renderer to the welcome page.
+2. Wire the session view to the bridge.
+
+```rust
+fn main() {
+    polaris::run();
+}
+```",
+        )))?;
+        event_tx.send(BackendEvent::ReplyFinished {
+            answer: None,
+            summary: String::from("Worked for 4s · 2 requests · 1 tool round"),
+        })?;
+        event_tx.send(BackendEvent::Usage {
+            requests: 2,
+            prompt_tokens: 5310,
+            completion_tokens: 212,
+        })?;
+        wiring.pump(&ui);
+        settle();
+        let reply = draw(&window, stride)?.ok_or("reply did not redraw")?;
+        write_ppm(&dir.join("session-reply.ppm"), &reply)?;
+        ui.set_models_open(true);
+        settle();
+        let models = draw(&window, stride)?.ok_or("models did not redraw")?;
+        write_ppm(&dir.join("session-models.ppm"), &models)?;
+        ui.set_models_open(false);
+        ui.set_usage_open(true);
+        event_tx.send(BackendEvent::Stats(vec![
+            String::from("Sessions            3"),
+            String::from("Prompt tokens       5310"),
+            String::from("Activity, last 12 weeks"),
+            String::from("  Mo · · · · · · · · · · ░ ▓"),
+            String::from("  Less · ░ ▒ ▓ █ More"),
+        ]))?;
+        wiring.pump(&ui);
+        settle();
+        let usage = draw(&window, stride)?.ok_or("usage did not redraw")?;
+        write_ppm(&dir.join("session-usage.ppm"), &usage)?;
     }
     Ok(())
 }

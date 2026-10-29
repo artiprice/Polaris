@@ -139,13 +139,12 @@ fn typed_message_is_recorded_then_answered_by_the_provider() -> TestResult {
             BackendEvent::ProviderReady { .. } | BackendEvent::ProviderUnavailable(_)
         )
     })?;
-    assert_eq!(
-        seen.last(),
-        Some(&BackendEvent::ProviderReady {
-            provider: "local".to_owned(),
-            model: "fake-model".to_owned(),
-        })
-    );
+    match seen.last() {
+        Some(BackendEvent::ProviderReady {
+            provider, model, ..
+        }) => assert_eq!((provider.as_str(), model.as_str()), ("local", "fake-model")),
+        other => return Err(format!("expected the local provider, got {other:?}").into()),
+    }
     link.requests.send(BackendRequest::Open { resume: None })?;
     let _opened = until(&link.events, |e| matches!(e, BackendEvent::Opened { .. }))?;
     link.requests.send(BackendRequest::Submit {

@@ -304,7 +304,29 @@ fn connected_session_has_no_offline_note_and_streams_one_reply() -> TestResult {
     let _none = c.apply(BackendEvent::ProviderReady {
         provider: String::from("openrouter"),
         model: String::from("nvidia/nemotron-test"),
+        effort: polaris_sdk::effort::Effort::Medium,
+        models: vec![
+            (
+                polaris_sdk::effort::Effort::Medium,
+                String::from("nvidia/nemotron-test"),
+            ),
+            (
+                polaris_sdk::effort::Effort::High,
+                String::from("nvidia/nemotron-ultra"),
+            ),
+        ],
     });
+    let rows = c.model_rows();
+    assert_eq!(rows.len(), 2);
+    assert!(rows[0].active && !rows[1].active);
+    assert_eq!(
+        c.choose_model(1),
+        vec![BackendRequest::SetEffort(polaris_sdk::effort::Effort::High)]
+    );
+    assert!(
+        c.choose_model(0).is_empty(),
+        "the active model is not re-selected"
+    );
     assert_eq!(c.status_line(), "nvidia/nemotron-test · openrouter");
     let _list = c.apply(opened("s1"));
     assert!(

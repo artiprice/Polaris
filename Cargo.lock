@@ -7937,6 +7937,7 @@ dependencies = [
 name = "polaris-desktop"
 version = "0.1.0-alpha"
 dependencies = [
+ "jiff",
  "miette",
  "polaris-config",
  "polaris-log",
@@ -9164,6 +9165,7 @@ dependencies = [
 name = "polaris-ui-session"
 version = "0.1.0-alpha"
 dependencies = [
+ "jiff",
  "polaris-config",
  "polaris-kernel",
  "polaris-nebius-cloud-token-factory",

@@ -146,6 +146,21 @@ pub struct SessionController {
     notice: String,
     connection: Connection,
     reply: Option<Reply>,
+    models: Vec<(Effort, String)>,
+    effort: Effort,
+    usage: (u64, u64, u64),
+    stats: Vec<String>,
+}
+
+/// One row of the Models panel.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelRow {
+    /// Effort name.
+    pub effort: String,
+    /// Model id served for it.
+    pub model: String,
+    /// Whether the conversation uses it now.
+    pub active: bool,
 }
 
 impl SessionController {
@@ -166,7 +181,63 @@ impl SessionController {
             notice: String::new(),
             connection: Connection::Connecting,
             reply: None,
+            models: Vec::new(),
+            effort: Effort::Medium,
+            usage: (0, 0, 0),
+            stats: Vec::new(),
         }
+    }
+
+    /// Models panel rows: the provider's model for each effort.
+    #[must_use]
+    pub fn model_rows(&self) -> Vec<ModelRow> {
+        self.models
+            .iter()
+            .map(|(effort, model)| ModelRow {
+                effort: effort.name().to_owned(),
+                model: model.clone(),
+                active: *effort == self.effort,
+            })
+            .collect()
+    }
+
+    /// Switch to the model of the Models panel row at `index`.
+    pub fn choose_model(&mut self, index: usize) -> Vec<BackendRequest> {
+        let Some((effort, _)) = self.models.get(index) else {
+            return Vec::new();
+        };
+        if self.reply.is_some() {
+            "Change the model after the reply finishes.".clone_into(&mut self.notice);
+            return Vec::new();
+        }
+        if *effort == self.effort {
+            return Vec::new();
+        }
+        vec![BackendRequest::SetEffort(*effort)]
+    }
+
+    /// Usage panel lines: the open session's tokens, then activity across sessions.
+    #[must_use]
+    pub fn usage_lines(&self) -> Vec<String> {
+        let (requests, prompt, completion) = self.usage;
+        let mut lines = vec![
+            format!("This session    {requests} requests"),
+            format!("Prompt          {prompt} tokens"),
+            format!("Completion      {completion} tokens"),
+            String::new(),
+        ];
+        if self.stats.is_empty() {
+            lines.push(String::from("Loading activity…"));
+        } else {
+            lines.extend(self.stats.iter().cloned());
+        }
+        lines
+    }
+
+    /// Ask for fresh activity lines (the Usage panel opened).
+    #[must_use]
+    pub fn refresh_usage(&self) -> Vec<BackendRequest> {
+        vec![BackendRequest::Stats]
     }
 
     /// Model connection state.
@@ -351,6 +422,7 @@ impl SessionController {
             } => {
                 self.starting = false;
                 self.reply = None;
+                self.usage = (0, 0, 0);
                 self.view.conversation.clear();
                 if matches!(self.connection, Connection::Offline(_)) {
                     if let Err(error) = self.view.push_system(OFFLINE_NOTE) {
@@ -410,11 +482,41 @@ impl SessionController {
                 self.reply = None;
                 Vec::new()
             }
-            BackendEvent::ProviderReady { provider, model } => {
+            BackendEvent::ProviderReady {
+                provider,
+                model,
+                effort,
+                models,
+            } => {
                 if let Ok(id) = ModelId::new(&model) {
                     self.view.set_model(id);
                 }
+                self.models = models;
+                self.effort = effort;
                 self.connection = Connection::Ready { provider, model };
+                Vec::new()
+            }
+            BackendEvent::ModelSwitched { model, effort } => {
+                if let Ok(id) = ModelId::new(&model) {
+                    self.view.set_model(id);
+                }
+                self.effort = effort;
+                if let Connection::Ready { model: current, .. } = &mut self.connection {
+                    current.clone_from(&model);
+                }
+                self.notice = format!("Model {model} · {} effort", effort.name());
+                Vec::new()
+            }
+            BackendEvent::Usage {
+                requests,
+                prompt_tokens,
+                completion_tokens,
+            } => {
+                self.usage = (requests, prompt_tokens, completion_tokens);
+                Vec::new()
+            }
+            BackendEvent::Stats(lines) => {
+                self.stats = lines;
                 Vec::new()
             }
             BackendEvent::ProviderUnavailable(reason) => {

@@ -16,6 +16,7 @@ name = "polaris-desktop"
 path = "src/main.rs"
 
 [dependencies]
+jiff = { workspace = true }
 thiserror = { workspace = true }
 miette = { workspace = true }
 tracing = { workspace = true }

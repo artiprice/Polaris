@@ -122,11 +122,15 @@ fn settings_contains_about_with_slint_attribution() -> TestResult {
 }
 
 #[test]
-fn unbuilt_pages_say_so() -> TestResult {
+fn models_and_usage_panels_open_from_the_rail() -> TestResult {
     let h = harness()?;
-    for page in ["Models", "Usage"] {
-        element(&h.ui, &format!("{page} · not in the desktop shell yet"))?;
-    }
+    element(&h.ui, "Models")?.invoke_accessible_default_action();
+    assert!(h.ui.get_models_open(), "Models opens its panel");
+    element(&h.ui, "Models panel")?;
+    element(&h.ui, "Usage")?.invoke_accessible_default_action();
+    assert!(h.ui.get_usage_open(), "Usage opens its panel");
+    assert!(!h.ui.get_models_open(), "one panel at a time");
+    element(&h.ui, "Usage panel")?;
     Ok(())
 }
 
@@ -160,6 +164,10 @@ fn send_flow_switches_to_session_and_shows_committed_message() -> TestResult {
         "no aurora area in the session screen"
     );
 
+    h.events
+        .send(BackendEvent::ProviderUnavailable(String::from(
+            "local: no model configured",
+        )))?;
     h.events.send(opened("s1"))?;
     h.events.send(BackendEvent::Message {
         kind: MessageKind::UserInput,

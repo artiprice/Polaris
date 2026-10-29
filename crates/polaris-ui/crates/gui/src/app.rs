@@ -15,7 +15,7 @@ use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use crate::aurora_driver::{AuroraDriver, FRAME_STEP};
 use crate::backend::{BackendEvent, BackendLink, BackendRequest};
 use crate::generated::{
-    DirectiveChip, EntryRow, SearchHitUi, SessionGroup as SlintGroup, SessionRowUi,
+    DirectiveChip, EntryRow, ModelRowUi, SearchHitUi, SessionGroup as SlintGroup, SessionRowUi,
 };
 use crate::session_view::{Screen, SessionController};
 use crate::{AppWindow, FrameHistogram, GuiError};
@@ -174,6 +174,22 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
         })
         .collect();
     ui.set_entries(ModelRc::new(VecModel::from(entries)));
+    let models: Vec<ModelRowUi> = controller
+        .model_rows()
+        .into_iter()
+        .map(|row| ModelRowUi {
+            effort: SharedString::from(row.effort),
+            model: SharedString::from(row.model),
+            active: row.active,
+        })
+        .collect();
+    ui.set_model_rows(ModelRc::new(VecModel::from(models)));
+    let usage: Vec<SharedString> = controller
+        .usage_lines()
+        .into_iter()
+        .map(SharedString::from)
+        .collect();
+    ui.set_usage_lines(ModelRc::new(VecModel::from(usage)));
     let groups: Vec<SlintGroup> = controller
         .groups(now_ms())
         .into_iter()
@@ -349,6 +365,11 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
     });
     on!(on_submit, |c| c.submit());
     on!(on_interrupt, |c| c.interrupt());
+    on!(on_choose_model, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_model(index),
+        Err(_) => Vec::new(),
+    });
+    on!(on_usage_opened, |c| c.refresh_usage());
     on!(on_new_conversation, |c| c.new_session());
     on!(on_open_session, |c, id| c.open_listed(id.as_str()));
     on!(on_search_edited, |c, query| c.search(query.as_str()));

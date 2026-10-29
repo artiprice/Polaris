@@ -300,7 +300,7 @@ kind = "app"
 phase = "P9"
 summary = "Native desktop GUI built with Slint (femtovg/software renderer); mobile targets in v2."
 deps = ["polaris-ui-gui", "polaris-ui-session", "polaris-log", "polaris-security", "polaris-sdk", "polaris-config"]
-ext = ["slint", "miette", "tracing", "tokio", "rustls"]
+ext = ["slint", "miette", "tracing", "tokio", "rustls", "jiff"]
 responsibilities = [
   "Host the Slint UI from polaris-ui-gui and bridge it to the kernel event stream.",
   "Run embedded kernel or connect to the daemon over a named pipe.",
@@ -1946,7 +1946,7 @@ kind = "lib"
 phase = "P9"
 summary = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
 deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model"]
-ext = ["tokio", "tokio-util", "thiserror"]
+ext = ["tokio", "tokio-util", "thiserror", "jiff"]
 responsibilities = [
   "Run interactive read-only chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas for the frontend.",
   "Open or resume one durable local session and stream its ordered committed records with bounded, validated text for directives and typed user input.",

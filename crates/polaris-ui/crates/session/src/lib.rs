@@ -13,6 +13,7 @@
 pub mod chat;
 mod error;
 pub mod host;
+pub mod stats;
 mod offline;
 mod queries;
 

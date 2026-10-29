@@ -18,6 +18,13 @@ import { SessionScreen, EntryRow, SessionRowUi, SessionGroup, SearchHitUi } from
 
 export { Tokens, DirectiveChip, EntryRow, SessionRowUi, SessionGroup, SearchHitUi }
 
+// One row of the Models panel: an effort level and the provider's model for it.
+export struct ModelRowUi {
+    effort: string,
+    model: string,
+    active: bool,
+}
+
 export component AppWindow inherits Window {
     title: "Polaris";
     preferred-width: 1280px;
@@ -45,6 +52,8 @@ export component AppWindow inherits Window {
     in property <string> notice;
     in property <bool> pending;
     in property <bool> working;
+    in property <[ModelRowUi]> model-rows;
+    in property <[string]> usage-lines;
     in property <bool> starting;
     in property <string> session-title;
     in property <[EntryRow]> entries;
@@ -63,6 +72,8 @@ export component AppWindow inherits Window {
     in-out property <bool> popover-open;
     in-out property <bool> context-open;
     in-out property <bool> settings-open;
+    in-out property <bool> models-open;
+    in-out property <bool> usage-open;
     in-out property <string> search-text;
 
     // Size of the aurora area, derived from window geometry (the welcome layer is conditional).
@@ -72,6 +83,8 @@ export component AppWindow inherits Window {
     callback draft-edited(string);
     callback submit();
     callback interrupt();
+    callback choose-model(int);
+    callback usage-opened();
     callback new-conversation();
     callback open-session(string);
     callback search-edited(string);
@@ -204,15 +217,33 @@ export component AppWindow inherits Window {
                         clicked => { root.show-sessions(); }
                     }
                 }
-                for item in [
-                    { icon: IconPaths.models, tip: "Models · not in the desktop shell yet" },
-                    { icon: IconPaths.usage, tip: "Usage · not in the desktop shell yet" },
-                ]: HorizontalLayout {
+                HorizontalLayout {
                     alignment: center;
                     padding-bottom: 7px;
                     NavButton {
-                        icon: item.icon;
-                        tip: item.tip;
+                        icon: IconPaths.models;
+                        tip: "Models";
+                        active: root.models-open;
+                        clicked => {
+                            root.models-open = !root.models-open;
+                            root.usage-open = false;
+                            root.settings-open = false;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    alignment: center;
+                    padding-bottom: 7px;
+                    NavButton {
+                        icon: IconPaths.usage;
+                        tip: "Usage";
+                        active: root.usage-open;
+                        clicked => {
+                            root.usage-open = !root.usage-open;
+                            root.models-open = false;
+                            root.settings-open = false;
+                            if (root.usage-open) { root.usage-opened(); }
+                        }
                     }
                 }
                 HorizontalLayout {
@@ -222,7 +253,11 @@ export component AppWindow inherits Window {
                         icon: IconPaths.settings;
                         tip: "Settings";
                         active: root.settings-open;
-                        clicked => { root.settings-open = !root.settings-open; }
+                        clicked => {
+                            root.settings-open = !root.settings-open;
+                            root.models-open = false;
+                            root.usage-open = false;
+                        }
                     }
                 }
             }
@@ -261,7 +296,22 @@ export component AppWindow inherits Window {
         new-session => { root.new-conversation(); }
         open-session(id) => { root.open-session(id); }
         search-edited(query) => { root.search-edited(query); }
-        settings => { root.settings-open = !root.settings-open; }
+        settings => {
+            root.settings-open = !root.settings-open;
+            root.models-open = false;
+            root.usage-open = false;
+        }
+        models => {
+            root.models-open = !root.models-open;
+            root.usage-open = false;
+            root.settings-open = false;
+        }
+        usage => {
+            root.usage-open = !root.usage-open;
+            root.models-open = false;
+            root.settings-open = false;
+            if (root.usage-open) { root.usage-opened(); }
+        }
     }
 
     // ---- context toggle (both screens) ------------------------------------------------------------
@@ -353,10 +403,16 @@ export component AppWindow inherits Window {
                 color: Tokens.muted-web;
             }
             Text {
-                text: "Local offline session. Messages and $directives are recorded in the session store; model execution is unavailable until the P3 model path exists, so nothing replies.";
+                text: root.status-connection;
                 wrap: word-wrap;
                 font-size: 12px;
                 color: Tokens.directive;
+            }
+            Text {
+                text: "Read-only conversation: the model reads workspace files and proposes patches; nothing is written.";
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.muted-web;
             }
             Rectangle { height: 14px; }
             Text {
@@ -375,10 +431,128 @@ export component AppWindow inherits Window {
         }
     }
 
+    // ---- models panel: the provider's model per effort ------------------------------------------
+    Rectangle {
+        x: root.in-session ? 12px : root.sidebar-width + 10px;
+        y: root.height - self.height - (root.in-session ? 58px : 22px);
+        width: 380px;
+        height: models-layout.preferred-height;
+        opacity: root.models-open ? 1 : 0;
+        visible: root.models-open || self.opacity > 0.01;
+        animate opacity { duration: Motion.fast; }
+        background: Tokens.surface;
+        border-width: 1px;
+        border-color: Tokens.line-strong;
+        border-radius: 12px;
+        drop-shadow-blur: 50px;
+        drop-shadow-offset-y: 12px;
+        drop-shadow-color: Tokens.panel-shadow;
+        accessible-role: groupbox;
+        accessible-label: "Models panel";
+        TouchArea { }
+        models-layout := VerticalLayout {
+            padding: 20px;
+            spacing: 8px;
+            Text {
+                text: "Models";
+                font-family: Tokens.font-display;
+                font-weight: 500;
+                font-size: 19px;
+                color: Tokens.text;
+            }
+            Text {
+                text: root.status-connection;
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+            Rectangle { height: 4px; }
+            if root.model-rows.length == 0: Text {
+                text: "No model provider is connected. Put OPENROUTER_API_KEY or NEBIUS_API_KEY in ~/.polaris/.env, or set local.model for a local server, then restart.";
+                wrap: word-wrap;
+                font-size: 12px;
+                color: Tokens.muted-web;
+            }
+            for row[index] in root.model-rows: Rectangle {
+                height: 34px;
+                border-radius: 8px;
+                background: row.active ? Tokens.row-checked-bg : (model-touch.has-hover ? Tokens.row-hover-bg : transparent);
+                animate background { duration: Motion.fast; }
+                accessible-role: button;
+                accessible-label: "Use " + row.model + " (" + row.effort + " effort)";
+                accessible-action-default => { root.choose-model(index); }
+                model-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.choose-model(index); }
+                }
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 10px;
+                    Text {
+                        width: 56px;
+                        vertical-alignment: center;
+                        text: row.effort;
+                        font-family: Tokens.font-mono;
+                        font-size: 11px;
+                        color: row.active ? Tokens.accent : Tokens.muted-web;
+                    }
+                    Text {
+                        vertical-alignment: center;
+                        text: row.model;
+                        overflow: elide;
+                        font-size: 13px;
+                        color: Tokens.text;
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- usage panel: this session's tokens and activity across sessions ---------------------
+    Rectangle {
+        x: root.in-session ? 12px : root.sidebar-width + 10px;
+        y: root.height - self.height - (root.in-session ? 58px : 22px);
+        width: 420px;
+        height: min(root.height - 44px, usage-layout.preferred-height);
+        opacity: root.usage-open ? 1 : 0;
+        visible: root.usage-open || self.opacity > 0.01;
+        animate opacity { duration: Motion.fast; }
+        background: Tokens.surface;
+        border-width: 1px;
+        border-color: Tokens.line-strong;
+        border-radius: 12px;
+        clip: true;
+        drop-shadow-blur: 50px;
+        drop-shadow-offset-y: 12px;
+        drop-shadow-color: Tokens.panel-shadow;
+        accessible-role: groupbox;
+        accessible-label: "Usage panel";
+        TouchArea { }
+        usage-layout := VerticalLayout {
+            padding: 20px;
+            spacing: 4px;
+            Text {
+                text: "Usage";
+                font-family: Tokens.font-display;
+                font-weight: 500;
+                font-size: 19px;
+                color: Tokens.text;
+            }
+            Rectangle { height: 6px; }
+            for line in root.usage-lines: Text {
+                text: line;
+                font-family: Tokens.font-mono;
+                font-size: 11px;
+                color: Tokens.muted-web;
+            }
+        }
+    }
+
     // ---- settings panel (About + Slint royalty-free licence attribution, ADR-014) ----------------
     Rectangle {
         x: root.in-session ? 12px : root.sidebar-width + 10px;
-        y: root.height - self.height - 22px;
+        y: root.height - self.height - (root.in-session ? 58px : 22px);
         width: 340px;
         height: settings-layout.preferred-height;
         opacity: root.settings-open ? 1 : 0;

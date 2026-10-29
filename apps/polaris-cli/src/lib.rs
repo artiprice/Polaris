@@ -43,7 +43,6 @@ pub mod key_trace;
 mod rtk;
 mod sandbox;
 pub mod session;
-mod stats;
 mod task;
 pub mod tui;
 /// Bounded clipboard and workspace-index workers owned by the CLI controller.

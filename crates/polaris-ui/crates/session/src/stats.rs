@@ -1,5 +1,5 @@
 //! `/stats`: activity across every local session, from registry rows only (no kernel).
-use polaris_ui_session::SessionMeta;
+use crate::SessionMeta;
 
 /// Weeks shown in the activity calendar.
 const CALENDAR_WEEKS: i64 = 12;
@@ -14,7 +14,8 @@ struct Day {
 }
 
 /// Render the stats sheet for `rows` as seen on `today` in `zone`.
-pub(crate) fn stats_lines(
+#[must_use]
+pub fn stats_lines(
     rows: &[SessionMeta],
     today: jiff::civil::Date,
     zone: &jiff::tz::TimeZone,
@@ -153,8 +154,8 @@ const fn weekday_short(row: i64) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::{level, stats_lines};
+    use crate::SessionMeta;
     use polaris_sdk::ids::SessionId;
-    use polaris_ui_session::SessionMeta;
 
     fn row(
         at: &str,

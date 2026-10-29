@@ -200,6 +200,8 @@ export component SessionScreen {
     callback open-session(string);
     callback search-edited(string);
     callback settings();
+    callback models();
+    callback usage();
 
     property <length> sidebar-width: 280px;
     property <length> content-max: 760px;
@@ -393,6 +395,52 @@ export component SessionScreen {
                     font-size: 10px;
                     color: Tokens.muted;
                 }
+                }
+                models-btn := Rectangle {
+                    width: 30px;
+                    height: 30px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 15px;
+                    background: models-touch.has-hover ? Tokens.nav-hover : transparent;
+                    animate background { duration: Motion.fast; }
+                    accessible-role: button;
+                    accessible-label: "Models";
+                    accessible-action-default => { root.models(); }
+                    models-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.models(); }
+                    }
+                    Icon {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        width: 15px;
+                        height: 15px;
+                        commands: IconPaths.models;
+                        color: models-touch.has-hover ? Tokens.text : Tokens.muted;
+                    }
+                }
+                usage-btn := Rectangle {
+                    width: 30px;
+                    height: 30px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: 15px;
+                    background: usage-touch.has-hover ? Tokens.nav-hover : transparent;
+                    animate background { duration: Motion.fast; }
+                    accessible-role: button;
+                    accessible-label: "Usage";
+                    accessible-action-default => { root.usage(); }
+                    usage-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.usage(); }
+                    }
+                    Icon {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        width: 15px;
+                        height: 15px;
+                        commands: IconPaths.usage;
+                        color: usage-touch.has-hover ? Tokens.text : Tokens.muted;
+                    }
                 }
                 settings-btn := Rectangle {
                     width: 30px;
