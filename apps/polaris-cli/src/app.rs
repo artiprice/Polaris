@@ -108,6 +108,10 @@ pub enum Action {
     /// Audit the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA
     /// bugs (`/hack`).
     Hack,
+    /// Show the workspace's CI pipeline and whether Docker can run it (`/ci`).
+    Ci,
+    /// Run the CI pipeline in Docker with cache volumes (`/ci-run`).
+    CiRun,
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
@@ -243,11 +247,17 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
-            Some(Action::NvProfile) | Some(Action::NvVerify) | Some(Action::Hack) => {
+            Some(Action::NvProfile)
+            | Some(Action::NvVerify)
+            | Some(Action::Hack)
+            | Some(Action::Ci)
+            | Some(Action::CiRun) => {
                 use polaris_ui_session::commands::LocalCommand;
                 let command = match args.command {
                     Some(Action::NvProfile) => LocalCommand::NvProfile,
                     Some(Action::NvVerify) => LocalCommand::NvVerify,
+                    Some(Action::Ci) => LocalCommand::Ci,
+                    Some(Action::CiRun) => LocalCommand::CiRun,
                     _ => LocalCommand::Hack,
                 };
                 let lines = command

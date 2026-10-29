@@ -1,5 +1,5 @@
 //! Slash commands every frontend answers locally, on the session's workspace, without the model:
-//! `/nv-profile`, `/nv-verify` (P5) and `/hack` (P7). Each returns report lines that the terminal
+//! `/nv-profile`, `/nv-verify` (P5), `/hack` (P7), `/ci` and `/ci-run` (P8). Each returns report lines that the terminal
 //! shows as a sheet and the web and desktop views as a report entry.
 
 use std::path::Path;
@@ -19,6 +19,10 @@ pub enum LocalCommand {
     NvVerify,
     /// `/hack`: races, blocking calls in async code, unsafe code, secrets and CUDA bugs.
     Hack,
+    /// `/ci`: the workspace's CI pipeline, its caches and whether Docker can run it.
+    Ci,
+    /// `/ci-run`: run the pipeline in Docker with cache volumes.
+    CiRun,
 }
 
 impl LocalCommand {
@@ -29,6 +33,8 @@ impl LocalCommand {
             "/nv-profile" => Some(Self::NvProfile),
             "/nv-verify" => Some(Self::NvVerify),
             "/hack" => Some(Self::Hack),
+            "/ci" => Some(Self::Ci),
+            "/ci-run" => Some(Self::CiRun),
             _ => None,
         }
     }
@@ -40,6 +46,8 @@ impl LocalCommand {
             Self::NvProfile => "NVIDIA profile",
             Self::NvVerify => "CUDA advisor",
             Self::Hack => "Hack audit",
+            Self::Ci => "CI pipeline",
+            Self::CiRun => "CI run",
         }
     }
 
@@ -51,7 +59,12 @@ impl LocalCommand {
         kernel: &KernelHandle,
         workspace: &Path,
     ) -> Result<Vec<String>, SessionHostError> {
-        self.run_with(nvidia_mode(kernel), workspace).await
+        let env = kernel.directives().get("env").cloned();
+        match self {
+            Self::Ci => crate::ci::plan_report(workspace, env.as_ref()).await,
+            Self::CiRun => crate::ci::run_report(workspace, env.as_ref()).await,
+            _ => self.run_with(nvidia_mode(kernel), workspace).await,
+        }
     }
 
     /// Run the command on `workspace` (no session needed, as `polaris hack`), the NVIDIA ones
@@ -73,6 +86,8 @@ impl LocalCommand {
                     .map_err(|_| SessionHostError::Unavailable("audit task failed"))??;
                 Ok(crate::hack::hack_lines(&report))
             }
+            Self::Ci => crate::ci::plan_report(workspace, None).await,
+            Self::CiRun => crate::ci::run_report(workspace, None).await,
         }
     }
 }

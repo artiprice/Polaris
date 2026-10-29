@@ -281,7 +281,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-devenv-nix` | `polaris-devenv-nix` | P8 | IN PROGRESS | Nix JSON evaluation, filtered store paths, injected bounded sandbox execution/cache and prompt/static validation implemented. Full live Nix/store/policy/cache integration gates remain pending. |
 | `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | IN PROGRESS | 2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open. |
 | `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | 2026-10-26 §E41: bounded CI execution, owned cancellation cleanup and late cleanup after ambiguous create outcomes are implemented. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger and persistent cache integration remain open; output redaction follows the output cap and is not a preemptive memory limit. |
-| `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written; CI implementation UNVERIFIED, Nix/Docker adapters remain pending. |
+| `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written. 2026-10-29 §E56: composed as `/ci` and `/ci-run` (cicd pipeline + Docker sandbox with cache volumes) in every frontend; Nix evaluation and Dagger remain open. |
 | `crate:polaris-system-one-nano` | `polaris-system-one-nano` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ### P9
@@ -1942,3 +1942,37 @@ S1 topic scoring, `$rag` and `/search-local` with provenance.
 and 20-iteration contract exist; the composition needs a sandbox — the OpenShell gateway and the
 Polaris sandbox image, P2-X-1); the microVM browser loop (P7-X-3: host-side outline/pHash/session
 exist; the guest Chromium driver needs the same image); `/redteam`, sanitizer workloads.
+
+## E56 — P8 `/ci` runs in Docker with cache mounts (2026-10-29)
+
+**`/ci` exit item PASS on a local Docker Engine; P8 phase acceptance open (`$env(nix)`, Needle).**
+
+- **`DockerSandbox`** (`polaris-devenv-docker`, implements the SDK `SandboxBackend`): one
+  container per sandbox (`sleep infinity`, labelled `polaris.ci=1`), the workspace bind-mounted
+  read-only, named cache volumes that outlive the container, every capability dropped,
+  `no-new-privileges`, CPU/memory/PID limits, bridge network for cold dependency fetches (off with
+  `network: false`); exec with working directory, output cap and timeout; file transfer refused
+  (the mount is the workspace); `remove_caches`, `remove_orphan_ci_containers`. Nothing is pulled.
+- **Cache mounts in the pipeline** (`polaris-devenv-cicd`): `validate()` still rejects them (a
+  generic backend cannot apply them); `validate_with_cache_mounts()` accepts valid keys/absolute
+  targets for a backend that mounts them, `cache_mounts()` returns the distinct mounts, and
+  `rust_test_pipeline_cached` puts `CARGO_HOME` and `CARGO_TARGET_DIR` on `<prefix>-cargo` /
+  `<prefix>-target`.
+- **`/ci` and `/ci-run`** (`polaris_ui_session::ci`, through `LocalCommand`): the plan (steps,
+  image, per-workspace volumes `polaris-ci-<12 hex>` with cold/warm state, Docker readiness and the
+  image build command when missing) and the run (verdict, per-step status/time/exit, cache state
+  before and after, the failing step's log tail; logs redacted by the automata redactor). Answered
+  in the TUI, web pages and desktop window off their session loops (a run can take minutes), and
+  as `polaris ci|ci-run`. `$env(nix|host)` is reported: CI still runs in Docker.
+- **CI image** `@prime/tools/ci/Dockerfile`: `rust:1.99.0-bookworm` (pulled with the user's
+  approval) plus rustfmt and clippy → `polaris-ci-rust:1.99.0`.
+- **Evidence** `@prime/evidence/p8/ci-run-docker.txt` (real binary, Docker Desktop 28.4.0):
+  sample `tests/fixtures/ci/rust-lib` cold 5.1 s (check 1.2 s, test 2.8 s) → warm 1.4 s (0.2 s
+  each), 9 MB of artifacts in the target volume; a copy with one unformatted line fails at
+  `format` with the rustfmt diff and skips the rest; no container left behind.
+- **Tests:** `cicd` `cache_mounts` (2), `polaris-ui-session` `ci` (3, the live one with
+  `POLARIS_CI_DOCKER_LIVE=1`: cold then warm, then removes its volumes).
+
+**Still open (P8):** `$env(nix)` devShell evaluation (needs Nix in a sandbox), `/nix-flake`
+drafting, Dagger, Podman, matrix legs beyond linux-x86_64, Needle T0 (engine and weights are not on
+this machine; the S0-6 spike passed elsewhere).

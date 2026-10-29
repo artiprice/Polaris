@@ -500,6 +500,8 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "/hack audits the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA bugs."
             .to_owned(),
+        "/ci shows the workspace's CI pipeline; /ci-run runs it in Docker with cached cargo home and target."
+            .to_owned(),
     ];
     lines.push(
         "Ctrl+V/Shift+Insert paste text; Ctrl+C copies selection; Ctrl+X cuts after clipboard acknowledgement. Images are unavailable."
@@ -813,15 +815,23 @@ pub async fn run(
                                 Err(error) => BackendMessage::QueryFailed(error.to_string()),
                             })
                         }
-                        BackendRequest::Local(command) => Some(
-                            match command.run(active.kernel(), active.workspace()).await {
-                                Ok(lines) => BackendMessage::Sheet {
-                                    title: command.title().to_owned(),
-                                    lines,
-                                },
-                                Err(error) => BackendMessage::QueryFailed(error.to_string()),
-                            },
-                        ),
+                        BackendRequest::Local(command) => {
+                            // Answered off the backend loop: a CI run can take minutes.
+                            let kernel = active.kernel().clone();
+                            let workspace = active.workspace().to_path_buf();
+                            let events = events_tx.clone();
+                            tokio::spawn(async move {
+                                let message = match command.run(&kernel, &workspace).await {
+                                    Ok(lines) => BackendMessage::Sheet {
+                                        title: command.title().to_owned(),
+                                        lines,
+                                    },
+                                    Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                                };
+                                let _delivered = send_message(&events, message);
+                            });
+                            None
+                        }
                         BackendRequest::Sessions => Some(match active.list_sessions().await {
                             Ok(rows) => BackendMessage::Sheet {
                                 title: "Sessions".to_owned(),
@@ -2762,11 +2772,20 @@ fn submit_draft(
                     }
                 }
             },
-            SlashCommand::NvProfile | SlashCommand::NvVerify | SlashCommand::Hack => {
+            SlashCommand::NvProfile
+            | SlashCommand::NvVerify
+            | SlashCommand::Hack
+            | SlashCommand::Ci
+            | SlashCommand::CiRun => {
                 use polaris_ui_session::commands::LocalCommand;
                 let local = match command {
                     SlashCommand::NvProfile => LocalCommand::NvProfile,
                     SlashCommand::NvVerify => LocalCommand::NvVerify,
+                    SlashCommand::Ci => LocalCommand::Ci,
+                    SlashCommand::CiRun => {
+                        state.notice = "Running the CI pipeline in Docker…".to_owned();
+                        LocalCommand::CiRun
+                    }
                     _ => LocalCommand::Hack,
                 };
                 if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
@@ -2794,8 +2813,6 @@ fn submit_draft(
             | SlashCommand::UiDiff
             | SlashCommand::Redteam
             | SlashCommand::SearchLocal(_)
-            | SlashCommand::Ci
-            | SlashCommand::CiRun
             | SlashCommand::NixFlake
             | SlashCommand::ProofOfDone => {
                 state.notice = "This command requires its real backend profile and is unavailable here; draft retained".to_owned();

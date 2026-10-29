@@ -9868,10 +9868,12 @@ dependencies = [
 name = "polaris-ui-session"
 version = "0.1.0-alpha"
 dependencies = [
+ "blake3",
  "jiff",
  "polaris-code-intel",
  "polaris-config",
  "polaris-daemon",
+ "polaris-devenv",
  "polaris-hacker",
  "polaris-kernel",
  "polaris-nebius-cloud-token-factory",

@@ -12,6 +12,7 @@
 #![forbid(unsafe_code)]
 
 pub mod chat;
+pub mod ci;
 pub mod commands;
 mod error;
 pub mod hack;

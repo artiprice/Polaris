@@ -343,18 +343,21 @@ impl Bridgework {
             return;
         };
         if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(text) {
-            match command.run(session.kernel(), session.workspace()).await {
-                Ok(lines) => {
-                    let _committed = self.emit(BackendEvent::Committed);
-                    let _sent = self.emit(BackendEvent::Report {
+            // Answered off the bridge loop: a CI run can take minutes.
+            let kernel = session.kernel().clone();
+            let workspace = session.workspace().to_path_buf();
+            let _committed = self.emit(BackendEvent::Committed);
+            let events = self.events.clone();
+            tokio::spawn(async move {
+                let event = match command.run(&kernel, &workspace).await {
+                    Ok(lines) => BackendEvent::Report {
                         title: command.title().to_owned(),
                         lines,
-                    });
-                }
-                Err(error) => {
-                    let _sent = self.emit(BackendEvent::Rejected(error.to_string()));
-                }
-            }
+                    },
+                    Err(error) => BackendEvent::Failed(format!("{}: {error}", command.title())),
+                };
+                let _sent = events.send(event);
+            });
             return;
         }
         let answer = !is_single_directive(text)

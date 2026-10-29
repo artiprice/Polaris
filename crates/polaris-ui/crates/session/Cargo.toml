@@ -30,6 +30,8 @@ polaris-rpc = { workspace = true }
 polaris-nvidia-docs = { workspace = true }
 polaris-hacker = { workspace = true }
 polaris-code-intel = { workspace = true }
+polaris-devenv = { workspace = true }
+blake3 = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -49,6 +51,10 @@ path = "../../../../tests/crates/polaris-ui/crates/session/open_latency.rs"
 [[test]]
 name = "session_host"
 path = "../../../../tests/crates/polaris-ui/crates/session/session_host.rs"
+
+[[test]]
+name = "ci"
+path = "../../../../tests/crates/polaris-ui/crates/session/ci.rs"
 
 [[test]]
 name = "hack"

@@ -1,0 +1,61 @@
+# P8 evidence: /ci and /ci-run with cache mounts on a local Docker Engine (2026-10-29)
+# Docker Desktop 28.4.0 (Windows named pipe), image polaris-ci-rust:1.99.0 built from @prime/tools/ci/Dockerfile
+# (rust:1.99.0-bookworm + rustfmt + clippy). Sample: tests/fixtures/ci/rust-lib (synthetic, no dependencies,
+# 400 generated functions so a cold build is measurable), materialized into a temp dir. Real binary.
+
+$ polaris --workspace <tmp>/rust-lib ci      (after the runs below; caches warm)
+CI pipeline
+Pipeline (Rust): image polaris-ci-rust:1.99.0, workspace mounted read-only at /workspace
+  1. format: cargo fmt --all -- --check (timeout 10 min)
+  2. check: cargo check --workspace (timeout 30 min, after format)
+  3. test: cargo test --workspace (timeout 60 min, after check)
+  cache: polaris-ci-45682bbfd9fa-cargo at /cache/cargo (warm), polaris-ci-45682bbfd9fa-target at /cache/target (warm)
+Docker 28.4.0 is ready; run the pipeline with /ci-run.
+
+$ polaris --workspace <tmp>/rust-lib ci-run   (twice; volumes removed before the first run)
+== run 1
+CI run
+CI run: PASS in 5.1 s (Docker 28.4.0)
+  format  passed    0.3 s, exit 0
+  check   passed    1.2 s, exit 0
+  test    passed    2.8 s, exit 0
+Cache before the run: polaris-ci-45682bbfd9fa-cargo at /cache/cargo (cold), polaris-ci-45682bbfd9fa-target at /cache/target (cold)
+Cache after the run: polaris-ci-45682bbfd9fa-cargo at /cache/cargo (warm), polaris-ci-45682bbfd9fa-target at /cache/target (warm)
+== run 2
+CI run
+CI run: PASS in 1.4 s (Docker 28.4.0)
+  format  passed    0.3 s, exit 0
+  check   passed    0.2 s, exit 0
+  test    passed    0.2 s, exit 0
+Cache before the run: polaris-ci-45682bbfd9fa-cargo at /cache/cargo (warm), polaris-ci-45682bbfd9fa-target at /cache/target (warm)
+Cache after the run: polaris-ci-45682bbfd9fa-cargo at /cache/cargo (warm), polaris-ci-45682bbfd9fa-target at /cache/target (warm)
+
+Cold run 5.1 s (check 1.2 s, test 2.8 s) -> warm run 1.4 s (check 0.2 s, test 0.2 s): the second run reused
+the target directory on the volume. After the first run the target volume held 9.0 MB of artifacts
+(ci_sample rlib/rmeta/test binary), inspected with a throwaway container.
+
+$ polaris --workspace <tmp>/rust-lib-bad ci-run   (a copy with one unformatted line)
+CI run
+CI run: FAIL in 1.1 s (Docker 28.4.0)
+  format  FAILED    0.3 s, exit 1
+  check   skipped   0.0 s
+  test    skipped   0.0 s
+Cache before the run: polaris-ci-96c58affdcba-cargo at /cache/cargo (cold), polaris-ci-96c58affdcba-target at /cache/target (cold)
+Cache after the run: polaris-ci-96c58affdcba-cargo at /cache/cargo (warm), polaris-ci-96c58affdcba-target at /cache/target (warm)
+Last lines of format:
+  | [stdout]
+  | Diff in /workspace/src/lib.rs:14:
+  |  
+  |  /// Whether `n` is prime.
+  |  #[must_use]
+  | -pub fn is_prime(n: u64)->bool{
+  | +pub fn is_prime(n: u64) -> bool {
+  |      n >= 2 && (2..).take_while(|d| d * d <= n).all(|d| n % d != 0)
+  |  }
+  |  
+  | 
+  | [stderr]
+
+After every run: docker ps -a --filter label=polaris.ci=1 -> no containers (each run's container is removed;
+the volumes stay as the cache). The workspace is mounted read-only; caps dropped, no-new-privileges,
+4 CPUs / 6 GiB / 4096 PIDs; network on for cold dependency fetches (none needed for this sample).

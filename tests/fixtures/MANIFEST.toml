@@ -31,3 +31,11 @@ source = "hand-written, synthetic"
 licence = "Apache-2.0 (this repository)"
 generator = "none; materialized like nvidia/cuda-vector-add (SEEDED.toml is copied as is)"
 date = "2026-10-29"
+
+[[fixture]]
+path = "ci/rust-lib"
+purpose = "P8 /ci-run sample: a dependency-free Rust library with tests and a generated 400-function module so a cold build is measurable; Cargo.lock included because the workspace is mounted read-only"
+source = "hand-written, synthetic; src/generated.rs.fixture generated once by a Python loop (see its header), then formatted with rustfmt"
+licence = "Apache-2.0 (this repository)"
+generator = "none at test time; materialized like nvidia/cuda-vector-add"
+date = "2026-10-29"

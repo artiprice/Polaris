@@ -265,8 +265,8 @@
 |---|---:|---:|---|
 | [`polaris-devenv-nix`](../crates/polaris-devenv/crates/nix/src) | 65% | 35% | Bounded parse/sanitize/cache/prompt and backend seam; actual Nix/store/policy integration absent. |
 | [`polaris-devenv-docker`](../crates/polaris-devenv/crates/docker/src) | 80% | 70% | 12-test suite, actual UUID recovery/BuildKit cache and image exec pass; Podman/latency/full gate incomplete. |
-| [`polaris-devenv-cicd`](../crates/polaris-devenv/crates/cicd/src) | 60% | 35% | Bounded CI caps, owned cancellation cleanup and late cleanup after ambiguous create outcomes. Live isolation, Dagger and persistent cache acceptance remain open; E41. |
-| [`polaris-devenv`](../crates/polaris-devenv/src) | 25% | 10% | Child exports exist; unified environment/CI command composition missing. |
+| [`polaris-devenv-cicd`](../crates/polaris-devenv/crates/cicd/src) | 80% | 70% | Bounded CI caps, owned cancellation cleanup (E41); cache mounts for backends that apply them and the cached Rust pipeline, run live in Docker with persistent cache volumes (E56). Dagger remains open. |
+| [`polaris-devenv`](../crates/polaris-devenv/src) | 60% | 50% | Child exports; composed as `/ci` and `/ci-run` in every frontend (E56). Nix environment composition remains. |
 | [`polaris-system-one-nano`](../crates/polaris-system-one/crates/nano/src) | 0% | 0% | Documentation-only Needle production adapter; earlier spike is not runtime integration. |
 
 ### P9 — Daemon, RPC and interfaces

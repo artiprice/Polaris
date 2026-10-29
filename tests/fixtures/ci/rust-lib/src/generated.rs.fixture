@@ -1,0 +1,4411 @@
+//! Generated workload for /ci-run (P8): enough code that a cold build takes measurable time,
+//! so the cached second run shows the cache. Regenerate by hand; no build script.
+
+/// Generated function 0.
+#[must_use]
+pub fn work_0(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(3).rotate_left(1))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 1.
+#[must_use]
+pub fn work_1(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(5).rotate_left(2))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 2.
+#[must_use]
+pub fn work_2(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(7).rotate_left(3))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 3.
+#[must_use]
+pub fn work_3(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(9).rotate_left(4))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 4.
+#[must_use]
+pub fn work_4(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(11).rotate_left(5))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 5.
+#[must_use]
+pub fn work_5(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(13).rotate_left(6))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 6.
+#[must_use]
+pub fn work_6(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(15).rotate_left(7))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 7.
+#[must_use]
+pub fn work_7(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(17).rotate_left(8))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 8.
+#[must_use]
+pub fn work_8(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(19).rotate_left(9))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 9.
+#[must_use]
+pub fn work_9(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(21).rotate_left(10))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 10.
+#[must_use]
+pub fn work_10(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(23).rotate_left(11))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 11.
+#[must_use]
+pub fn work_11(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(25).rotate_left(12))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 12.
+#[must_use]
+pub fn work_12(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(27).rotate_left(13))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 13.
+#[must_use]
+pub fn work_13(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(29).rotate_left(14))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 14.
+#[must_use]
+pub fn work_14(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(31).rotate_left(15))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 15.
+#[must_use]
+pub fn work_15(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(33).rotate_left(16))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 16.
+#[must_use]
+pub fn work_16(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(35).rotate_left(17))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 17.
+#[must_use]
+pub fn work_17(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(37).rotate_left(18))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 18.
+#[must_use]
+pub fn work_18(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(39).rotate_left(19))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 19.
+#[must_use]
+pub fn work_19(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(41).rotate_left(20))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 20.
+#[must_use]
+pub fn work_20(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(43).rotate_left(21))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 21.
+#[must_use]
+pub fn work_21(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(45).rotate_left(22))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 22.
+#[must_use]
+pub fn work_22(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(47).rotate_left(23))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 23.
+#[must_use]
+pub fn work_23(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(49).rotate_left(24))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 24.
+#[must_use]
+pub fn work_24(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(51).rotate_left(25))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 25.
+#[must_use]
+pub fn work_25(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(53).rotate_left(26))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 26.
+#[must_use]
+pub fn work_26(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(55).rotate_left(27))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 27.
+#[must_use]
+pub fn work_27(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(57).rotate_left(28))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 28.
+#[must_use]
+pub fn work_28(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(59).rotate_left(29))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 29.
+#[must_use]
+pub fn work_29(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(61).rotate_left(30))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 30.
+#[must_use]
+pub fn work_30(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(63).rotate_left(31))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 31.
+#[must_use]
+pub fn work_31(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(65).rotate_left(1))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 32.
+#[must_use]
+pub fn work_32(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(67).rotate_left(2))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 33.
+#[must_use]
+pub fn work_33(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(69).rotate_left(3))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 34.
+#[must_use]
+pub fn work_34(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(71).rotate_left(4))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 35.
+#[must_use]
+pub fn work_35(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(73).rotate_left(5))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 36.
+#[must_use]
+pub fn work_36(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(75).rotate_left(6))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 37.
+#[must_use]
+pub fn work_37(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(77).rotate_left(7))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 38.
+#[must_use]
+pub fn work_38(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(79).rotate_left(8))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 39.
+#[must_use]
+pub fn work_39(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(81).rotate_left(9))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 40.
+#[must_use]
+pub fn work_40(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(83).rotate_left(10))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 41.
+#[must_use]
+pub fn work_41(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(85).rotate_left(11))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 42.
+#[must_use]
+pub fn work_42(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(87).rotate_left(12))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 43.
+#[must_use]
+pub fn work_43(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(89).rotate_left(13))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 44.
+#[must_use]
+pub fn work_44(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(91).rotate_left(14))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 45.
+#[must_use]
+pub fn work_45(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(93).rotate_left(15))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 46.
+#[must_use]
+pub fn work_46(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(95).rotate_left(16))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 47.
+#[must_use]
+pub fn work_47(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(97).rotate_left(17))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 48.
+#[must_use]
+pub fn work_48(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(99).rotate_left(18))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 49.
+#[must_use]
+pub fn work_49(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(101).rotate_left(19))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 50.
+#[must_use]
+pub fn work_50(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(103).rotate_left(20))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 51.
+#[must_use]
+pub fn work_51(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(105).rotate_left(21))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 52.
+#[must_use]
+pub fn work_52(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(107).rotate_left(22))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 53.
+#[must_use]
+pub fn work_53(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(109).rotate_left(23))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 54.
+#[must_use]
+pub fn work_54(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(111).rotate_left(24))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 55.
+#[must_use]
+pub fn work_55(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(113).rotate_left(25))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 56.
+#[must_use]
+pub fn work_56(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(115).rotate_left(26))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 57.
+#[must_use]
+pub fn work_57(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(117).rotate_left(27))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 58.
+#[must_use]
+pub fn work_58(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(119).rotate_left(28))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 59.
+#[must_use]
+pub fn work_59(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(121).rotate_left(29))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 60.
+#[must_use]
+pub fn work_60(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(123).rotate_left(30))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 61.
+#[must_use]
+pub fn work_61(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(125).rotate_left(31))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 62.
+#[must_use]
+pub fn work_62(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(127).rotate_left(1))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 63.
+#[must_use]
+pub fn work_63(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(129).rotate_left(2))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 64.
+#[must_use]
+pub fn work_64(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(131).rotate_left(3))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 65.
+#[must_use]
+pub fn work_65(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(133).rotate_left(4))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 66.
+#[must_use]
+pub fn work_66(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(135).rotate_left(5))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 67.
+#[must_use]
+pub fn work_67(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(137).rotate_left(6))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 68.
+#[must_use]
+pub fn work_68(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(139).rotate_left(7))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 69.
+#[must_use]
+pub fn work_69(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(141).rotate_left(8))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 70.
+#[must_use]
+pub fn work_70(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(143).rotate_left(9))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 71.
+#[must_use]
+pub fn work_71(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(145).rotate_left(10))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 72.
+#[must_use]
+pub fn work_72(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(147).rotate_left(11))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 73.
+#[must_use]
+pub fn work_73(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(149).rotate_left(12))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 74.
+#[must_use]
+pub fn work_74(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(151).rotate_left(13))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 75.
+#[must_use]
+pub fn work_75(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(153).rotate_left(14))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 76.
+#[must_use]
+pub fn work_76(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(155).rotate_left(15))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 77.
+#[must_use]
+pub fn work_77(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(157).rotate_left(16))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 78.
+#[must_use]
+pub fn work_78(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(159).rotate_left(17))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 79.
+#[must_use]
+pub fn work_79(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(161).rotate_left(18))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 80.
+#[must_use]
+pub fn work_80(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(163).rotate_left(19))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 81.
+#[must_use]
+pub fn work_81(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(165).rotate_left(20))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 82.
+#[must_use]
+pub fn work_82(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(167).rotate_left(21))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 83.
+#[must_use]
+pub fn work_83(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(169).rotate_left(22))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 84.
+#[must_use]
+pub fn work_84(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(171).rotate_left(23))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 85.
+#[must_use]
+pub fn work_85(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(173).rotate_left(24))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 86.
+#[must_use]
+pub fn work_86(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(175).rotate_left(25))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 87.
+#[must_use]
+pub fn work_87(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(177).rotate_left(26))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 88.
+#[must_use]
+pub fn work_88(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(179).rotate_left(27))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 89.
+#[must_use]
+pub fn work_89(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(181).rotate_left(28))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 90.
+#[must_use]
+pub fn work_90(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(183).rotate_left(29))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 91.
+#[must_use]
+pub fn work_91(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(185).rotate_left(30))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 92.
+#[must_use]
+pub fn work_92(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(187).rotate_left(31))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 93.
+#[must_use]
+pub fn work_93(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(189).rotate_left(1))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 94.
+#[must_use]
+pub fn work_94(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(191).rotate_left(2))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 95.
+#[must_use]
+pub fn work_95(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(193).rotate_left(3))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 96.
+#[must_use]
+pub fn work_96(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(195).rotate_left(4))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 97.
+#[must_use]
+pub fn work_97(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(197).rotate_left(5))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 98.
+#[must_use]
+pub fn work_98(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(199).rotate_left(6))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 99.
+#[must_use]
+pub fn work_99(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(201).rotate_left(7))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 100.
+#[must_use]
+pub fn work_100(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(203).rotate_left(8))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 101.
+#[must_use]
+pub fn work_101(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(205).rotate_left(9))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 102.
+#[must_use]
+pub fn work_102(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(207).rotate_left(10))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 103.
+#[must_use]
+pub fn work_103(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(209).rotate_left(11))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 104.
+#[must_use]
+pub fn work_104(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(211).rotate_left(12))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 105.
+#[must_use]
+pub fn work_105(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(213).rotate_left(13))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 106.
+#[must_use]
+pub fn work_106(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(215).rotate_left(14))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 107.
+#[must_use]
+pub fn work_107(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(217).rotate_left(15))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 108.
+#[must_use]
+pub fn work_108(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(219).rotate_left(16))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 109.
+#[must_use]
+pub fn work_109(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(221).rotate_left(17))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 110.
+#[must_use]
+pub fn work_110(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(223).rotate_left(18))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 111.
+#[must_use]
+pub fn work_111(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(225).rotate_left(19))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 112.
+#[must_use]
+pub fn work_112(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(227).rotate_left(20))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 113.
+#[must_use]
+pub fn work_113(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(229).rotate_left(21))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 114.
+#[must_use]
+pub fn work_114(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(231).rotate_left(22))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 115.
+#[must_use]
+pub fn work_115(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(233).rotate_left(23))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 116.
+#[must_use]
+pub fn work_116(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(235).rotate_left(24))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 117.
+#[must_use]
+pub fn work_117(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(237).rotate_left(25))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 118.
+#[must_use]
+pub fn work_118(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(239).rotate_left(26))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 119.
+#[must_use]
+pub fn work_119(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(241).rotate_left(27))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 120.
+#[must_use]
+pub fn work_120(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(243).rotate_left(28))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 121.
+#[must_use]
+pub fn work_121(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(245).rotate_left(29))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 122.
+#[must_use]
+pub fn work_122(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(247).rotate_left(30))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 123.
+#[must_use]
+pub fn work_123(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(249).rotate_left(31))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 124.
+#[must_use]
+pub fn work_124(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(251).rotate_left(1))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 125.
+#[must_use]
+pub fn work_125(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(253).rotate_left(2))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 126.
+#[must_use]
+pub fn work_126(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(255).rotate_left(3))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 127.
+#[must_use]
+pub fn work_127(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(257).rotate_left(4))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 128.
+#[must_use]
+pub fn work_128(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(259).rotate_left(5))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 129.
+#[must_use]
+pub fn work_129(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(261).rotate_left(6))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 130.
+#[must_use]
+pub fn work_130(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(263).rotate_left(7))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 131.
+#[must_use]
+pub fn work_131(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(265).rotate_left(8))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 132.
+#[must_use]
+pub fn work_132(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(267).rotate_left(9))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 133.
+#[must_use]
+pub fn work_133(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(269).rotate_left(10))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 134.
+#[must_use]
+pub fn work_134(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(271).rotate_left(11))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 135.
+#[must_use]
+pub fn work_135(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(273).rotate_left(12))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 136.
+#[must_use]
+pub fn work_136(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(275).rotate_left(13))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 137.
+#[must_use]
+pub fn work_137(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(277).rotate_left(14))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 138.
+#[must_use]
+pub fn work_138(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(279).rotate_left(15))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 139.
+#[must_use]
+pub fn work_139(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(281).rotate_left(16))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 140.
+#[must_use]
+pub fn work_140(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(283).rotate_left(17))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 141.
+#[must_use]
+pub fn work_141(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(285).rotate_left(18))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 142.
+#[must_use]
+pub fn work_142(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(287).rotate_left(19))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 143.
+#[must_use]
+pub fn work_143(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(289).rotate_left(20))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 144.
+#[must_use]
+pub fn work_144(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(291).rotate_left(21))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 145.
+#[must_use]
+pub fn work_145(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(293).rotate_left(22))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 146.
+#[must_use]
+pub fn work_146(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(295).rotate_left(23))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 147.
+#[must_use]
+pub fn work_147(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(297).rotate_left(24))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 148.
+#[must_use]
+pub fn work_148(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(299).rotate_left(25))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 149.
+#[must_use]
+pub fn work_149(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(301).rotate_left(26))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 150.
+#[must_use]
+pub fn work_150(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(303).rotate_left(27))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 151.
+#[must_use]
+pub fn work_151(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(305).rotate_left(28))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 152.
+#[must_use]
+pub fn work_152(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(307).rotate_left(29))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 153.
+#[must_use]
+pub fn work_153(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(309).rotate_left(30))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 154.
+#[must_use]
+pub fn work_154(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(311).rotate_left(31))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 155.
+#[must_use]
+pub fn work_155(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(313).rotate_left(1))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 156.
+#[must_use]
+pub fn work_156(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(315).rotate_left(2))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 157.
+#[must_use]
+pub fn work_157(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(317).rotate_left(3))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 158.
+#[must_use]
+pub fn work_158(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(319).rotate_left(4))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 159.
+#[must_use]
+pub fn work_159(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(321).rotate_left(5))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 160.
+#[must_use]
+pub fn work_160(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(323).rotate_left(6))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 161.
+#[must_use]
+pub fn work_161(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(325).rotate_left(7))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 162.
+#[must_use]
+pub fn work_162(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(327).rotate_left(8))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 163.
+#[must_use]
+pub fn work_163(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(329).rotate_left(9))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 164.
+#[must_use]
+pub fn work_164(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(331).rotate_left(10))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 165.
+#[must_use]
+pub fn work_165(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(333).rotate_left(11))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 166.
+#[must_use]
+pub fn work_166(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(335).rotate_left(12))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 167.
+#[must_use]
+pub fn work_167(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(337).rotate_left(13))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 168.
+#[must_use]
+pub fn work_168(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(339).rotate_left(14))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 169.
+#[must_use]
+pub fn work_169(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(341).rotate_left(15))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 170.
+#[must_use]
+pub fn work_170(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(343).rotate_left(16))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 171.
+#[must_use]
+pub fn work_171(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(345).rotate_left(17))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 172.
+#[must_use]
+pub fn work_172(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(347).rotate_left(18))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 173.
+#[must_use]
+pub fn work_173(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(349).rotate_left(19))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 174.
+#[must_use]
+pub fn work_174(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(351).rotate_left(20))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 175.
+#[must_use]
+pub fn work_175(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(353).rotate_left(21))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 176.
+#[must_use]
+pub fn work_176(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(355).rotate_left(22))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 177.
+#[must_use]
+pub fn work_177(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(357).rotate_left(23))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 178.
+#[must_use]
+pub fn work_178(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(359).rotate_left(24))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 179.
+#[must_use]
+pub fn work_179(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(361).rotate_left(25))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 180.
+#[must_use]
+pub fn work_180(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(363).rotate_left(26))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 181.
+#[must_use]
+pub fn work_181(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(365).rotate_left(27))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 182.
+#[must_use]
+pub fn work_182(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(367).rotate_left(28))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 183.
+#[must_use]
+pub fn work_183(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(369).rotate_left(29))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 184.
+#[must_use]
+pub fn work_184(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(371).rotate_left(30))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 185.
+#[must_use]
+pub fn work_185(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(373).rotate_left(31))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 186.
+#[must_use]
+pub fn work_186(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(375).rotate_left(1))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 187.
+#[must_use]
+pub fn work_187(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(377).rotate_left(2))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 188.
+#[must_use]
+pub fn work_188(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(379).rotate_left(3))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 189.
+#[must_use]
+pub fn work_189(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(381).rotate_left(4))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 190.
+#[must_use]
+pub fn work_190(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(383).rotate_left(5))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 191.
+#[must_use]
+pub fn work_191(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(385).rotate_left(6))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 192.
+#[must_use]
+pub fn work_192(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(387).rotate_left(7))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 193.
+#[must_use]
+pub fn work_193(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(389).rotate_left(8))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 194.
+#[must_use]
+pub fn work_194(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(391).rotate_left(9))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 195.
+#[must_use]
+pub fn work_195(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(393).rotate_left(10))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 196.
+#[must_use]
+pub fn work_196(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(395).rotate_left(11))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 197.
+#[must_use]
+pub fn work_197(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(397).rotate_left(12))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 198.
+#[must_use]
+pub fn work_198(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(399).rotate_left(13))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 199.
+#[must_use]
+pub fn work_199(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(401).rotate_left(14))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 200.
+#[must_use]
+pub fn work_200(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(403).rotate_left(15))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 201.
+#[must_use]
+pub fn work_201(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(405).rotate_left(16))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 202.
+#[must_use]
+pub fn work_202(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(407).rotate_left(17))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 203.
+#[must_use]
+pub fn work_203(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(409).rotate_left(18))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 204.
+#[must_use]
+pub fn work_204(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(411).rotate_left(19))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 205.
+#[must_use]
+pub fn work_205(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(413).rotate_left(20))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 206.
+#[must_use]
+pub fn work_206(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(415).rotate_left(21))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 207.
+#[must_use]
+pub fn work_207(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(417).rotate_left(22))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 208.
+#[must_use]
+pub fn work_208(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(419).rotate_left(23))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 209.
+#[must_use]
+pub fn work_209(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(421).rotate_left(24))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 210.
+#[must_use]
+pub fn work_210(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(423).rotate_left(25))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 211.
+#[must_use]
+pub fn work_211(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(425).rotate_left(26))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 212.
+#[must_use]
+pub fn work_212(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(427).rotate_left(27))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 213.
+#[must_use]
+pub fn work_213(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(429).rotate_left(28))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 214.
+#[must_use]
+pub fn work_214(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(431).rotate_left(29))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 215.
+#[must_use]
+pub fn work_215(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(433).rotate_left(30))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 216.
+#[must_use]
+pub fn work_216(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(435).rotate_left(31))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 217.
+#[must_use]
+pub fn work_217(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(437).rotate_left(1))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 218.
+#[must_use]
+pub fn work_218(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(439).rotate_left(2))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 219.
+#[must_use]
+pub fn work_219(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(441).rotate_left(3))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 220.
+#[must_use]
+pub fn work_220(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(443).rotate_left(4))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 221.
+#[must_use]
+pub fn work_221(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(445).rotate_left(5))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 222.
+#[must_use]
+pub fn work_222(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(447).rotate_left(6))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 223.
+#[must_use]
+pub fn work_223(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(449).rotate_left(7))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 224.
+#[must_use]
+pub fn work_224(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(451).rotate_left(8))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 225.
+#[must_use]
+pub fn work_225(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(453).rotate_left(9))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 226.
+#[must_use]
+pub fn work_226(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(455).rotate_left(10))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 227.
+#[must_use]
+pub fn work_227(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(457).rotate_left(11))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 228.
+#[must_use]
+pub fn work_228(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(459).rotate_left(12))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 229.
+#[must_use]
+pub fn work_229(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(461).rotate_left(13))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 230.
+#[must_use]
+pub fn work_230(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(463).rotate_left(14))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 231.
+#[must_use]
+pub fn work_231(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(465).rotate_left(15))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 232.
+#[must_use]
+pub fn work_232(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(467).rotate_left(16))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 233.
+#[must_use]
+pub fn work_233(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(469).rotate_left(17))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 234.
+#[must_use]
+pub fn work_234(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(471).rotate_left(18))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 235.
+#[must_use]
+pub fn work_235(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(473).rotate_left(19))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 236.
+#[must_use]
+pub fn work_236(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(475).rotate_left(20))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 237.
+#[must_use]
+pub fn work_237(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(477).rotate_left(21))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 238.
+#[must_use]
+pub fn work_238(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(479).rotate_left(22))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 239.
+#[must_use]
+pub fn work_239(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(481).rotate_left(23))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 240.
+#[must_use]
+pub fn work_240(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(483).rotate_left(24))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 241.
+#[must_use]
+pub fn work_241(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(485).rotate_left(25))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 242.
+#[must_use]
+pub fn work_242(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(487).rotate_left(26))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 243.
+#[must_use]
+pub fn work_243(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(489).rotate_left(27))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 244.
+#[must_use]
+pub fn work_244(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(491).rotate_left(28))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 245.
+#[must_use]
+pub fn work_245(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(493).rotate_left(29))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 246.
+#[must_use]
+pub fn work_246(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(495).rotate_left(30))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 247.
+#[must_use]
+pub fn work_247(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(497).rotate_left(31))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 248.
+#[must_use]
+pub fn work_248(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(499).rotate_left(1))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 249.
+#[must_use]
+pub fn work_249(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(501).rotate_left(2))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 250.
+#[must_use]
+pub fn work_250(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(503).rotate_left(3))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 251.
+#[must_use]
+pub fn work_251(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(505).rotate_left(4))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 252.
+#[must_use]
+pub fn work_252(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(507).rotate_left(5))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 253.
+#[must_use]
+pub fn work_253(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(509).rotate_left(6))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 254.
+#[must_use]
+pub fn work_254(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(511).rotate_left(7))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 255.
+#[must_use]
+pub fn work_255(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(513).rotate_left(8))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 256.
+#[must_use]
+pub fn work_256(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(515).rotate_left(9))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 257.
+#[must_use]
+pub fn work_257(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(517).rotate_left(10))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 258.
+#[must_use]
+pub fn work_258(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(519).rotate_left(11))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 259.
+#[must_use]
+pub fn work_259(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(521).rotate_left(12))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 260.
+#[must_use]
+pub fn work_260(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(523).rotate_left(13))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 261.
+#[must_use]
+pub fn work_261(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(525).rotate_left(14))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 262.
+#[must_use]
+pub fn work_262(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(527).rotate_left(15))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 263.
+#[must_use]
+pub fn work_263(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(529).rotate_left(16))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 264.
+#[must_use]
+pub fn work_264(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(531).rotate_left(17))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 265.
+#[must_use]
+pub fn work_265(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(533).rotate_left(18))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 266.
+#[must_use]
+pub fn work_266(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(535).rotate_left(19))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 267.
+#[must_use]
+pub fn work_267(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(537).rotate_left(20))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 268.
+#[must_use]
+pub fn work_268(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(539).rotate_left(21))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 269.
+#[must_use]
+pub fn work_269(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(541).rotate_left(22))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 270.
+#[must_use]
+pub fn work_270(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(543).rotate_left(23))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 271.
+#[must_use]
+pub fn work_271(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(545).rotate_left(24))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 272.
+#[must_use]
+pub fn work_272(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(547).rotate_left(25))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 273.
+#[must_use]
+pub fn work_273(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(549).rotate_left(26))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 274.
+#[must_use]
+pub fn work_274(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(551).rotate_left(27))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 275.
+#[must_use]
+pub fn work_275(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(553).rotate_left(28))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 276.
+#[must_use]
+pub fn work_276(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(555).rotate_left(29))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 277.
+#[must_use]
+pub fn work_277(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(557).rotate_left(30))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 278.
+#[must_use]
+pub fn work_278(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(559).rotate_left(31))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 279.
+#[must_use]
+pub fn work_279(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(561).rotate_left(1))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 280.
+#[must_use]
+pub fn work_280(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(563).rotate_left(2))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 281.
+#[must_use]
+pub fn work_281(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(565).rotate_left(3))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 282.
+#[must_use]
+pub fn work_282(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(567).rotate_left(4))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 283.
+#[must_use]
+pub fn work_283(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(569).rotate_left(5))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 284.
+#[must_use]
+pub fn work_284(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(571).rotate_left(6))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 285.
+#[must_use]
+pub fn work_285(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(573).rotate_left(7))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 286.
+#[must_use]
+pub fn work_286(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(575).rotate_left(8))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 287.
+#[must_use]
+pub fn work_287(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(577).rotate_left(9))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 288.
+#[must_use]
+pub fn work_288(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(579).rotate_left(10))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 289.
+#[must_use]
+pub fn work_289(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(581).rotate_left(11))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 290.
+#[must_use]
+pub fn work_290(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(583).rotate_left(12))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 291.
+#[must_use]
+pub fn work_291(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(585).rotate_left(13))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 292.
+#[must_use]
+pub fn work_292(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(587).rotate_left(14))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 293.
+#[must_use]
+pub fn work_293(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(589).rotate_left(15))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 294.
+#[must_use]
+pub fn work_294(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(591).rotate_left(16))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 295.
+#[must_use]
+pub fn work_295(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(593).rotate_left(17))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 296.
+#[must_use]
+pub fn work_296(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(595).rotate_left(18))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 297.
+#[must_use]
+pub fn work_297(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(597).rotate_left(19))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 298.
+#[must_use]
+pub fn work_298(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(599).rotate_left(20))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 299.
+#[must_use]
+pub fn work_299(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(601).rotate_left(21))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 300.
+#[must_use]
+pub fn work_300(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(603).rotate_left(22))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 301.
+#[must_use]
+pub fn work_301(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(605).rotate_left(23))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 302.
+#[must_use]
+pub fn work_302(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(607).rotate_left(24))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 303.
+#[must_use]
+pub fn work_303(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(609).rotate_left(25))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 304.
+#[must_use]
+pub fn work_304(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(611).rotate_left(26))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 305.
+#[must_use]
+pub fn work_305(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(613).rotate_left(27))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 306.
+#[must_use]
+pub fn work_306(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(615).rotate_left(28))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 307.
+#[must_use]
+pub fn work_307(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(617).rotate_left(29))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 308.
+#[must_use]
+pub fn work_308(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(619).rotate_left(30))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 309.
+#[must_use]
+pub fn work_309(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(621).rotate_left(31))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 310.
+#[must_use]
+pub fn work_310(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(623).rotate_left(1))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 311.
+#[must_use]
+pub fn work_311(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(625).rotate_left(2))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 312.
+#[must_use]
+pub fn work_312(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(627).rotate_left(3))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 313.
+#[must_use]
+pub fn work_313(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(629).rotate_left(4))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 314.
+#[must_use]
+pub fn work_314(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(631).rotate_left(5))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 315.
+#[must_use]
+pub fn work_315(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(633).rotate_left(6))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 316.
+#[must_use]
+pub fn work_316(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(635).rotate_left(7))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 317.
+#[must_use]
+pub fn work_317(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(637).rotate_left(8))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 318.
+#[must_use]
+pub fn work_318(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(639).rotate_left(9))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 319.
+#[must_use]
+pub fn work_319(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(641).rotate_left(10))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 320.
+#[must_use]
+pub fn work_320(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(643).rotate_left(11))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 321.
+#[must_use]
+pub fn work_321(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(645).rotate_left(12))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 322.
+#[must_use]
+pub fn work_322(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(647).rotate_left(13))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 323.
+#[must_use]
+pub fn work_323(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(649).rotate_left(14))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 324.
+#[must_use]
+pub fn work_324(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(651).rotate_left(15))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 325.
+#[must_use]
+pub fn work_325(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(653).rotate_left(16))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 326.
+#[must_use]
+pub fn work_326(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(655).rotate_left(17))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 327.
+#[must_use]
+pub fn work_327(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(657).rotate_left(18))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 328.
+#[must_use]
+pub fn work_328(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(659).rotate_left(19))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 329.
+#[must_use]
+pub fn work_329(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(661).rotate_left(20))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 330.
+#[must_use]
+pub fn work_330(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(663).rotate_left(21))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 331.
+#[must_use]
+pub fn work_331(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(665).rotate_left(22))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 332.
+#[must_use]
+pub fn work_332(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(667).rotate_left(23))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 333.
+#[must_use]
+pub fn work_333(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(669).rotate_left(24))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 334.
+#[must_use]
+pub fn work_334(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(671).rotate_left(25))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 335.
+#[must_use]
+pub fn work_335(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(673).rotate_left(26))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 336.
+#[must_use]
+pub fn work_336(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(675).rotate_left(27))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 337.
+#[must_use]
+pub fn work_337(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(677).rotate_left(28))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 338.
+#[must_use]
+pub fn work_338(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(679).rotate_left(29))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 339.
+#[must_use]
+pub fn work_339(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(681).rotate_left(30))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 340.
+#[must_use]
+pub fn work_340(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(683).rotate_left(31))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 341.
+#[must_use]
+pub fn work_341(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(685).rotate_left(1))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 342.
+#[must_use]
+pub fn work_342(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(687).rotate_left(2))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 343.
+#[must_use]
+pub fn work_343(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(689).rotate_left(3))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 344.
+#[must_use]
+pub fn work_344(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(691).rotate_left(4))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 345.
+#[must_use]
+pub fn work_345(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(693).rotate_left(5))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 346.
+#[must_use]
+pub fn work_346(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(695).rotate_left(6))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 347.
+#[must_use]
+pub fn work_347(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(697).rotate_left(7))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 348.
+#[must_use]
+pub fn work_348(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(699).rotate_left(8))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 349.
+#[must_use]
+pub fn work_349(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(701).rotate_left(9))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 350.
+#[must_use]
+pub fn work_350(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(703).rotate_left(10))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 351.
+#[must_use]
+pub fn work_351(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(705).rotate_left(11))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 352.
+#[must_use]
+pub fn work_352(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(707).rotate_left(12))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 353.
+#[must_use]
+pub fn work_353(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(709).rotate_left(13))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 354.
+#[must_use]
+pub fn work_354(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(711).rotate_left(14))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 355.
+#[must_use]
+pub fn work_355(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(713).rotate_left(15))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 356.
+#[must_use]
+pub fn work_356(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(715).rotate_left(16))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 357.
+#[must_use]
+pub fn work_357(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(717).rotate_left(17))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 358.
+#[must_use]
+pub fn work_358(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(719).rotate_left(18))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 359.
+#[must_use]
+pub fn work_359(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(721).rotate_left(19))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 360.
+#[must_use]
+pub fn work_360(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(723).rotate_left(20))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 361.
+#[must_use]
+pub fn work_361(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(725).rotate_left(21))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 362.
+#[must_use]
+pub fn work_362(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(727).rotate_left(22))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 363.
+#[must_use]
+pub fn work_363(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(729).rotate_left(23))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 364.
+#[must_use]
+pub fn work_364(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(731).rotate_left(24))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 365.
+#[must_use]
+pub fn work_365(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(733).rotate_left(25))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 366.
+#[must_use]
+pub fn work_366(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(735).rotate_left(26))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 367.
+#[must_use]
+pub fn work_367(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(737).rotate_left(27))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 368.
+#[must_use]
+pub fn work_368(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(739).rotate_left(28))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 369.
+#[must_use]
+pub fn work_369(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(741).rotate_left(29))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 370.
+#[must_use]
+pub fn work_370(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(743).rotate_left(30))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 371.
+#[must_use]
+pub fn work_371(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(745).rotate_left(31))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 372.
+#[must_use]
+pub fn work_372(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(747).rotate_left(1))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 373.
+#[must_use]
+pub fn work_373(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(749).rotate_left(2))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 374.
+#[must_use]
+pub fn work_374(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(751).rotate_left(3))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 375.
+#[must_use]
+pub fn work_375(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(753).rotate_left(4))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 376.
+#[must_use]
+pub fn work_376(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(755).rotate_left(5))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 377.
+#[must_use]
+pub fn work_377(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(757).rotate_left(6))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 378.
+#[must_use]
+pub fn work_378(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(759).rotate_left(7))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 379.
+#[must_use]
+pub fn work_379(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(761).rotate_left(8))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 380.
+#[must_use]
+pub fn work_380(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(763).rotate_left(9))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 381.
+#[must_use]
+pub fn work_381(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(765).rotate_left(10))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 382.
+#[must_use]
+pub fn work_382(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(767).rotate_left(11))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 383.
+#[must_use]
+pub fn work_383(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(769).rotate_left(12))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 384.
+#[must_use]
+pub fn work_384(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(771).rotate_left(13))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 385.
+#[must_use]
+pub fn work_385(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(773).rotate_left(14))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 386.
+#[must_use]
+pub fn work_386(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(775).rotate_left(15))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 387.
+#[must_use]
+pub fn work_387(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(777).rotate_left(16))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 388.
+#[must_use]
+pub fn work_388(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(779).rotate_left(17))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 389.
+#[must_use]
+pub fn work_389(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(781).rotate_left(18))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 390.
+#[must_use]
+pub fn work_390(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(783).rotate_left(19))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 391.
+#[must_use]
+pub fn work_391(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(785).rotate_left(20))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 392.
+#[must_use]
+pub fn work_392(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(787).rotate_left(21))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 393.
+#[must_use]
+pub fn work_393(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(789).rotate_left(22))
+        .filter(|v| v % 3 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 394.
+#[must_use]
+pub fn work_394(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(791).rotate_left(23))
+        .filter(|v| v % 4 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 395.
+#[must_use]
+pub fn work_395(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(793).rotate_left(24))
+        .filter(|v| v % 5 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 396.
+#[must_use]
+pub fn work_396(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(795).rotate_left(25))
+        .filter(|v| v % 6 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 397.
+#[must_use]
+pub fn work_397(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(797).rotate_left(26))
+        .filter(|v| v % 7 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 398.
+#[must_use]
+pub fn work_398(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(799).rotate_left(27))
+        .filter(|v| v % 8 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Generated function 399.
+#[must_use]
+pub fn work_399(values: &[u64]) -> u64 {
+    values
+        .iter()
+        .map(|v| v.wrapping_mul(801).rotate_left(28))
+        .filter(|v| v % 2 != 0)
+        .fold(0_u64, |acc, v| acc.wrapping_add(v) ^ (acc >> 3))
+}
+
+/// Sum of every generated function over `values`.
+#[must_use]
+pub fn all(values: &[u64]) -> u64 {
+    [
+        work_0(values),
+        work_1(values),
+        work_2(values),
+        work_3(values),
+        work_4(values),
+        work_5(values),
+        work_6(values),
+        work_7(values),
+        work_8(values),
+        work_9(values),
+        work_10(values),
+        work_11(values),
+        work_12(values),
+        work_13(values),
+        work_14(values),
+        work_15(values),
+        work_16(values),
+        work_17(values),
+        work_18(values),
+        work_19(values),
+        work_20(values),
+        work_21(values),
+        work_22(values),
+        work_23(values),
+        work_24(values),
+        work_25(values),
+        work_26(values),
+        work_27(values),
+        work_28(values),
+        work_29(values),
+        work_30(values),
+        work_31(values),
+        work_32(values),
+        work_33(values),
+        work_34(values),
+        work_35(values),
+        work_36(values),
+        work_37(values),
+        work_38(values),
+        work_39(values),
+        work_40(values),
+        work_41(values),
+        work_42(values),
+        work_43(values),
+        work_44(values),
+        work_45(values),
+        work_46(values),
+        work_47(values),
+        work_48(values),
+        work_49(values),
+        work_50(values),
+        work_51(values),
+        work_52(values),
+        work_53(values),
+        work_54(values),
+        work_55(values),
+        work_56(values),
+        work_57(values),
+        work_58(values),
+        work_59(values),
+        work_60(values),
+        work_61(values),
+        work_62(values),
+        work_63(values),
+        work_64(values),
+        work_65(values),
+        work_66(values),
+        work_67(values),
+        work_68(values),
+        work_69(values),
+        work_70(values),
+        work_71(values),
+        work_72(values),
+        work_73(values),
+        work_74(values),
+        work_75(values),
+        work_76(values),
+        work_77(values),
+        work_78(values),
+        work_79(values),
+        work_80(values),
+        work_81(values),
+        work_82(values),
+        work_83(values),
+        work_84(values),
+        work_85(values),
+        work_86(values),
+        work_87(values),
+        work_88(values),
+        work_89(values),
+        work_90(values),
+        work_91(values),
+        work_92(values),
+        work_93(values),
+        work_94(values),
+        work_95(values),
+        work_96(values),
+        work_97(values),
+        work_98(values),
+        work_99(values),
+        work_100(values),
+        work_101(values),
+        work_102(values),
+        work_103(values),
+        work_104(values),
+        work_105(values),
+        work_106(values),
+        work_107(values),
+        work_108(values),
+        work_109(values),
+        work_110(values),
+        work_111(values),
+        work_112(values),
+        work_113(values),
+        work_114(values),
+        work_115(values),
+        work_116(values),
+        work_117(values),
+        work_118(values),
+        work_119(values),
+        work_120(values),
+        work_121(values),
+        work_122(values),
+        work_123(values),
+        work_124(values),
+        work_125(values),
+        work_126(values),
+        work_127(values),
+        work_128(values),
+        work_129(values),
+        work_130(values),
+        work_131(values),
+        work_132(values),
+        work_133(values),
+        work_134(values),
+        work_135(values),
+        work_136(values),
+        work_137(values),
+        work_138(values),
+        work_139(values),
+        work_140(values),
+        work_141(values),
+        work_142(values),
+        work_143(values),
+        work_144(values),
+        work_145(values),
+        work_146(values),
+        work_147(values),
+        work_148(values),
+        work_149(values),
+        work_150(values),
+        work_151(values),
+        work_152(values),
+        work_153(values),
+        work_154(values),
+        work_155(values),
+        work_156(values),
+        work_157(values),
+        work_158(values),
+        work_159(values),
+        work_160(values),
+        work_161(values),
+        work_162(values),
+        work_163(values),
+        work_164(values),
+        work_165(values),
+        work_166(values),
+        work_167(values),
+        work_168(values),
+        work_169(values),
+        work_170(values),
+        work_171(values),
+        work_172(values),
+        work_173(values),
+        work_174(values),
+        work_175(values),
+        work_176(values),
+        work_177(values),
+        work_178(values),
+        work_179(values),
+        work_180(values),
+        work_181(values),
+        work_182(values),
+        work_183(values),
+        work_184(values),
+        work_185(values),
+        work_186(values),
+        work_187(values),
+        work_188(values),
+        work_189(values),
+        work_190(values),
+        work_191(values),
+        work_192(values),
+        work_193(values),
+        work_194(values),
+        work_195(values),
+        work_196(values),
+        work_197(values),
+        work_198(values),
+        work_199(values),
+        work_200(values),
+        work_201(values),
+        work_202(values),
+        work_203(values),
+        work_204(values),
+        work_205(values),
+        work_206(values),
+        work_207(values),
+        work_208(values),
+        work_209(values),
+        work_210(values),
+        work_211(values),
+        work_212(values),
+        work_213(values),
+        work_214(values),
+        work_215(values),
+        work_216(values),
+        work_217(values),
+        work_218(values),
+        work_219(values),
+        work_220(values),
+        work_221(values),
+        work_222(values),
+        work_223(values),
+        work_224(values),
+        work_225(values),
+        work_226(values),
+        work_227(values),
+        work_228(values),
+        work_229(values),
+        work_230(values),
+        work_231(values),
+        work_232(values),
+        work_233(values),
+        work_234(values),
+        work_235(values),
+        work_236(values),
+        work_237(values),
+        work_238(values),
+        work_239(values),
+        work_240(values),
+        work_241(values),
+        work_242(values),
+        work_243(values),
+        work_244(values),
+        work_245(values),
+        work_246(values),
+        work_247(values),
+        work_248(values),
+        work_249(values),
+        work_250(values),
+        work_251(values),
+        work_252(values),
+        work_253(values),
+        work_254(values),
+        work_255(values),
+        work_256(values),
+        work_257(values),
+        work_258(values),
+        work_259(values),
+        work_260(values),
+        work_261(values),
+        work_262(values),
+        work_263(values),
+        work_264(values),
+        work_265(values),
+        work_266(values),
+        work_267(values),
+        work_268(values),
+        work_269(values),
+        work_270(values),
+        work_271(values),
+        work_272(values),
+        work_273(values),
+        work_274(values),
+        work_275(values),
+        work_276(values),
+        work_277(values),
+        work_278(values),
+        work_279(values),
+        work_280(values),
+        work_281(values),
+        work_282(values),
+        work_283(values),
+        work_284(values),
+        work_285(values),
+        work_286(values),
+        work_287(values),
+        work_288(values),
+        work_289(values),
+        work_290(values),
+        work_291(values),
+        work_292(values),
+        work_293(values),
+        work_294(values),
+        work_295(values),
+        work_296(values),
+        work_297(values),
+        work_298(values),
+        work_299(values),
+        work_300(values),
+        work_301(values),
+        work_302(values),
+        work_303(values),
+        work_304(values),
+        work_305(values),
+        work_306(values),
+        work_307(values),
+        work_308(values),
+        work_309(values),
+        work_310(values),
+        work_311(values),
+        work_312(values),
+        work_313(values),
+        work_314(values),
+        work_315(values),
+        work_316(values),
+        work_317(values),
+        work_318(values),
+        work_319(values),
+        work_320(values),
+        work_321(values),
+        work_322(values),
+        work_323(values),
+        work_324(values),
+        work_325(values),
+        work_326(values),
+        work_327(values),
+        work_328(values),
+        work_329(values),
+        work_330(values),
+        work_331(values),
+        work_332(values),
+        work_333(values),
+        work_334(values),
+        work_335(values),
+        work_336(values),
+        work_337(values),
+        work_338(values),
+        work_339(values),
+        work_340(values),
+        work_341(values),
+        work_342(values),
+        work_343(values),
+        work_344(values),
+        work_345(values),
+        work_346(values),
+        work_347(values),
+        work_348(values),
+        work_349(values),
+        work_350(values),
+        work_351(values),
+        work_352(values),
+        work_353(values),
+        work_354(values),
+        work_355(values),
+        work_356(values),
+        work_357(values),
+        work_358(values),
+        work_359(values),
+        work_360(values),
+        work_361(values),
+        work_362(values),
+        work_363(values),
+        work_364(values),
+        work_365(values),
+        work_366(values),
+        work_367(values),
+        work_368(values),
+        work_369(values),
+        work_370(values),
+        work_371(values),
+        work_372(values),
+        work_373(values),
+        work_374(values),
+        work_375(values),
+        work_376(values),
+        work_377(values),
+        work_378(values),
+        work_379(values),
+        work_380(values),
+        work_381(values),
+        work_382(values),
+        work_383(values),
+        work_384(values),
+        work_385(values),
+        work_386(values),
+        work_387(values),
+        work_388(values),
+        work_389(values),
+        work_390(values),
+        work_391(values),
+        work_392(values),
+        work_393(values),
+        work_394(values),
+        work_395(values),
+        work_396(values),
+        work_397(values),
+        work_398(values),
+        work_399(values),
+    ]
+    .iter()
+    .fold(0_u64, |acc, v| acc.wrapping_add(*v))
+}

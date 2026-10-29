@@ -382,18 +382,23 @@ impl Owner {
             return;
         };
         if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(&text) {
-            match command.run(session.kernel(), session.workspace()).await {
-                Ok(lines) => {
-                    self.publisher.publish(WebEvent::Committed);
-                    self.publisher.publish(WebEvent::Report {
+            // Answered off the session loop: a CI run can take minutes.
+            self.publisher.publish(WebEvent::Committed);
+            let kernel = session.kernel().clone();
+            let workspace = session.workspace().to_path_buf();
+            let publisher = self.publisher.clone();
+            tokio::spawn(async move {
+                let event = match command.run(&kernel, &workspace).await {
+                    Ok(lines) => WebEvent::Report {
                         title: command.title().to_owned(),
                         lines,
-                    });
-                }
-                Err(error) => self.publisher.publish(WebEvent::Rejected {
-                    reason: error.to_string(),
-                }),
-            }
+                    },
+                    Err(error) => WebEvent::Notice {
+                        text: format!("{}: {error}", command.title()),
+                    },
+                };
+                publisher.publish(event);
+            });
             return;
         }
         let answer = !is_single_directive(&text) && self.chat.is_ready();
