@@ -26,10 +26,14 @@ polaris-security = { workspace = true }
 polaris-system-one = { workspace = true }
 polaris-nebius-cloud-token-factory = { workspace = true }
 polaris-ui-model = { workspace = true }
+polaris-rpc = { workspace = true }
+polaris-nvidia-docs = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+# A real daemon for the attach tests (dev only, not a layer edge).
+polaris-daemon = { workspace = true }
 
 # Tests live in the root tests/ tree, mirroring this package's path.
 [[test]]
@@ -43,3 +47,11 @@ path = "../../../../tests/crates/polaris-ui/crates/session/open_latency.rs"
 [[test]]
 name = "session_host"
 path = "../../../../tests/crates/polaris-ui/crates/session/session_host.rs"
+
+[[test]]
+name = "nvidia"
+path = "../../../../tests/crates/polaris-ui/crates/session/nvidia.rs"
+
+[[test]]
+name = "remote"
+path = "../../../../tests/crates/polaris-ui/crates/session/remote.rs"

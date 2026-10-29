@@ -1,0 +1,25 @@
+# Every fixture under tests/fixtures with its provenance (see README.md).
+
+[[fixture]]
+path = "nvidia/cuda-vector-add"
+purpose = "P5 sample repository: CUDA sources with one deliberate advisor finding per kernel, a clean file and a vendored file /nv-verify skips; CMake targets sm_75 and sm_90"
+source = "hand-written, synthetic"
+licence = "Apache-2.0 (this repository)"
+generator = "none; files end in .fixture and are copied without the suffix into a temporary workspace at test time, so this repository itself never looks like a CUDA project"
+date = "2026-10-29"
+
+[[fixture]]
+path = "nvidia/trtllm-serving"
+purpose = "P5 sample repository: TensorRT-LLM and Triton client dependencies, a build script naming sm_90"
+source = "hand-written, synthetic"
+licence = "Apache-2.0 (this repository)"
+generator = "none; materialized like nvidia/cuda-vector-add"
+date = "2026-10-29"
+
+[[fixture]]
+path = "nvidia/plain-rust"
+purpose = "P5 sample repository without any NVIDIA stack: $nvidia(auto) must add nothing"
+source = "hand-written, synthetic"
+licence = "Apache-2.0 (this repository)"
+generator = "none; materialized like nvidia/cuda-vector-add"
+date = "2026-10-29"

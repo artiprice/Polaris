@@ -640,6 +640,13 @@ impl SessionController {
                 self.stats = lines;
                 Vec::new()
             }
+            BackendEvent::Report { title, lines } => {
+                let text = format!("**{title}**\n\n```text\n{}\n```", lines.join("\n"));
+                if let Err(error) = self.view.push_assistant(text) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
+            }
             BackendEvent::ProviderUnavailable(reason) => {
                 self.connection = Connection::Offline(reason);
                 Vec::new()

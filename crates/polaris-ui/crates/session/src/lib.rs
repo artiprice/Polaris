@@ -14,8 +14,10 @@
 pub mod chat;
 mod error;
 pub mod host;
+pub mod nvidia;
 mod offline;
 mod queries;
+mod remote;
 pub mod stats;
 
 pub use chat::{
@@ -29,3 +31,4 @@ pub use host::{
 pub use offline::{OfflineSession, RecordTextKind, ResolvedRecord, is_single_directive};
 pub use polaris_kernel::storage::registry::{Hit, SessionMeta};
 pub use queries::{list_sessions, search_history, session_exists};
+pub use remote::{AttachTarget, RemoteSession};

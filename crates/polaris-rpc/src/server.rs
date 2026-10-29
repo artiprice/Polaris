@@ -4,8 +4,8 @@ use futures::{Stream, StreamExt};
 use polaris_proto::{limits, pb};
 use polaris_sdk::{
     contracts::{Command, Unverified},
-    ids::{Seq, SessionId},
-    registry::{EventSource, KernelApi, KernelError},
+    ids::{Cid, Seq, SessionId},
+    registry::{CommandReceipt, EventSource, KernelApi, KernelError},
 };
 use polaris_security_capability::Right;
 use prost::Message;
@@ -43,6 +43,29 @@ pub trait TerminalApi: Send + Sync + 'static {
     ) -> impl Future<Output = Result<Self::Stream, Status>> + Send;
 }
 
+/// Largest text accepted by `SubmitText` and returned by `ReadText`, in bytes.
+pub const MAX_SESSION_TEXT_BYTES: usize = 64 * 1024;
+
+/// A boxed future for [`SessionTextApi`], which must stay object safe.
+pub type TextFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Status>> + Send + 'a>>;
+
+/// Text operations of an attached frontend, injected by the composition root (protocol 1.3).
+///
+/// The server authorizes the bearer before calling; the implementation submits through its own
+/// command authority (the client never mints kernel commands) and must only return text that a
+/// directive or user-input event of `session` references.
+pub trait SessionTextApi: Send + Sync + 'static {
+    /// Record `text` as user input, or apply it as one directive.
+    fn submit_text(
+        &self,
+        session: SessionId,
+        text: String,
+        directive: bool,
+    ) -> TextFuture<'_, CommandReceipt>;
+    /// The text behind `cid`, when a text event of `session` references it.
+    fn read_text(&self, session: SessionId, cid: Cid) -> TextFuture<'_, String>;
+}
+
 /// Actual kernel readiness probe, injected because `KernelApi` intentionally exposes only submit
 /// and subscribe operations.
 pub trait Readiness: Send + Sync + 'static {
@@ -70,6 +93,7 @@ pub struct RpcService<K, T, A, H> {
     auth: RpcAuthenticator<A>,
     readiness: H,
     limits: RpcLimits,
+    text: Option<Arc<dyn SessionTextApi>>,
 }
 
 impl<K, T, A, H> RpcService<K, T, A, H>
@@ -103,7 +127,16 @@ where
             auth,
             readiness,
             limits,
+            text: None,
         })
+    }
+
+    /// Serve `SubmitText` and `ReadText` through `text`; without it they fail with
+    /// `FAILED_PRECONDITION`.
+    #[must_use]
+    pub fn with_session_text(mut self, text: Arc<dyn SessionTextApi>) -> Self {
+        self.text = Some(text);
+        self
     }
 
     /// Wrap the adapter in the generated tonic service with protocol message bounds.
@@ -324,6 +357,62 @@ where
         Ok(Response::new(Box::pin(bounded)))
     }
 
+    async fn submit_text(
+        &self,
+        request: Request<pb::SubmitTextRequest>,
+    ) -> Result<Response<pb::SubmitCommandResponse>, Status> {
+        let body = request.get_ref();
+        if body.text.len() > MAX_SESSION_TEXT_BYTES {
+            return Err(Status::resource_exhausted("text exceeds 64 KiB"));
+        }
+        if body.text.trim().is_empty() {
+            return Err(Status::invalid_argument("text is empty"));
+        }
+        let session = session_of(body.session.as_ref())?;
+        // Writing into a session needs more than the read right that observes it.
+        self.auth.authorize(
+            &request,
+            Right::ProposeDiff,
+            RequestSubject::SubmitText(body),
+            None,
+        )?;
+        let text = self
+            .text
+            .as_ref()
+            .ok_or_else(|| Status::failed_precondition("this server does not accept text"))?;
+        let body = request.into_inner();
+        let receipt = text.submit_text(session, body.text, body.directive).await?;
+        Ok(Response::new(pb::SubmitCommandResponse {
+            command_id: Some(pb::Uuid::from(&receipt.command)),
+            accepted_at: Some(receipt.accepted_at.get()),
+        }))
+    }
+
+    async fn read_text(
+        &self,
+        request: Request<pb::ReadTextRequest>,
+    ) -> Result<Response<pb::ReadTextResponse>, Status> {
+        let body = request.get_ref();
+        let session = session_of(body.session.as_ref())?;
+        let cid = Cid::try_from(
+            body.text
+                .clone()
+                .ok_or_else(|| Status::invalid_argument("text digest is required"))?,
+        )
+        .map_err(|_| Status::invalid_argument("malformed text digest"))?;
+        self.auth
+            .authorize(&request, Right::Read, RequestSubject::ReadText(body), None)?;
+        let text = self
+            .text
+            .as_ref()
+            .ok_or_else(|| Status::failed_precondition("this server does not serve text"))?;
+        let text = text.read_text(session, cid).await?;
+        if text.len() > MAX_SESSION_TEXT_BYTES {
+            return Err(Status::resource_exhausted("text exceeds 64 KiB"));
+        }
+        Ok(Response::new(pb::ReadTextResponse { text }))
+    }
+
     async fn health(
         &self,
         request: Request<pb::HealthRequest>,
@@ -420,6 +509,13 @@ async fn pump_events<E: EventSource + 'static, A: TrustedFactsResolver>(
             return;
         }
     }
+}
+
+fn session_of(wire: Option<&pb::Uuid>) -> Result<SessionId, Status> {
+    let wire = wire.ok_or_else(|| Status::invalid_argument("session is required"))?;
+    Ok(SessionId::from_u128(
+        u128::from(wire.hi) << 64 | u128::from(wire.lo),
+    ))
 }
 
 fn command_right(body: &pb::CommandBody) -> Result<Right, Status> {

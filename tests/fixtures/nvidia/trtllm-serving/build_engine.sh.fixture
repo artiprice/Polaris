@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Synthetic sample: build the engine on the deployment GPU (H100, sm_90) before serving.
+set -eu
+trtllm-build --checkpoint_dir ./checkpoint --output_dir ./engine --gemm_plugin auto

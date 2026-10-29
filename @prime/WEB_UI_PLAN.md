@@ -85,5 +85,10 @@ with Leptos pages:
   cd apps/polaris-web && cargo leptos build
   target/debug/polaris-web --site-root target/site --env-file <keys>.env
   ```
-- **Not yet:** per-route lazy loading (one route today), WebSocket terminal channels, attaching to
-  `polarisd` over `polaris-rpc` instead of an in-process session owner.
+- **Attached to `polarisd` (P9).** `polarisd --pipe polaris-main --session 42 --frame 7
+  --client-token-out client.token …` writes a credential; `polaris-web --connect polaris-main
+  --session 42 --token-file client.token` (or `polaris --session <id> web --connect …`) shows and
+  records into the daemon's session instead of opening local ones. Model replies are not served
+  while attached yet. Evidence: `@prime/evidence/p9/attach-verification.txt`.
+- **Not yet:** per-route lazy loading (one route today), WebSocket terminal channels, model
+  replies in attached mode.

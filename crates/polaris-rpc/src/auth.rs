@@ -28,6 +28,10 @@ pub enum RequestSubject<'a> {
     AttachTerminal,
     /// Liveness request.
     Health,
+    /// Text typed in an attached frontend (protocol 1.3).
+    SubmitText(&'a pb::SubmitTextRequest),
+    /// Read of the text a session event references (protocol 1.3).
+    ReadText(&'a pb::ReadTextRequest),
 }
 
 /// Trusted operation facts supplied by the composition root after resolving request references.

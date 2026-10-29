@@ -138,6 +138,46 @@ fn stopping_offline_and_unknown_events_are_handled() -> TestResult {
 }
 
 #[test]
+fn an_attached_page_says_where_messages_are_recorded() -> TestResult {
+    let mut ui = UiState::default();
+    let reason = "Attached to polarisd: messages are recorded in the daemon's session; model replies are not served in attached mode yet.";
+    ui.apply(event(
+        &serde_json::json!({"type": "provider-unavailable", "reason": reason}).to_string(),
+    )?);
+    assert!(ui.attached());
+    assert_eq!(
+        ui.status(0),
+        ("offline", "polarisd · no model replies".to_owned())
+    );
+    ui.apply(event(
+        r#"{"type":"opened","id":"s1","title":"polarisd","workspace":"polaris-main"}"#,
+    )?);
+    assert!(
+        matches!(ui.entries.first().map(|entry| &entry.kind), Some(EntryKind::System(text)) if text == reason)
+    );
+    let mut local = UiState::default();
+    local.apply(event(
+        r#"{"type":"provider-unavailable","reason":"provider.order is empty"}"#,
+    )?);
+    assert!(!local.attached());
+    Ok(())
+}
+
+#[test]
+fn a_command_report_becomes_a_finished_markdown_entry() -> TestResult {
+    let mut ui = UiState::default();
+    ui.apply(event(
+        r#"{"type":"report","title":"CUDA advisor","lines":["Checked 1 CUDA source: 0 warnings, 0 suggestions.","Lexical rules: advice"]}"#,
+    )?);
+    assert!(matches!(
+        ui.entries.last().map(|entry| &entry.kind),
+        Some(EntryKind::Assistant { text, streaming: false })
+            if text == "**CUDA advisor**\n\n```text\nChecked 1 CUDA source: 0 warnings, 0 suggestions.\nLexical rules: advice\n```"
+    ));
+    Ok(())
+}
+
+#[test]
 fn markdown_becomes_blocks_with_diff_classes() {
     assert_eq!(
         blocks("## Plan\nUse `cargo test` **now**.\n- one\n\n```diff\n-old\n+new\n```"),

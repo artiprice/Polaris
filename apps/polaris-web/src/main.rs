@@ -1,4 +1,5 @@
-//! `polaris-web`: the Leptos web UI over a local session store, on loopback only.
+//! `polaris-web`: the Leptos web UI over a local session store, or attached to a `polarisd`
+//! session with `--connect`, on loopback only.
 
 use std::io::Write;
 use std::net::SocketAddr;
@@ -25,6 +26,15 @@ struct Args {
     /// Site built by `cargo leptos build` (holds `pkg/`).
     #[arg(long, default_value = "target/site")]
     site_root: String,
+    /// Attach to the `polarisd` listening here (a `polaris-*` pipe name or a socket path).
+    #[arg(long, requires_all = ["session", "token_file"])]
+    connect: Option<String>,
+    /// The daemon's session id (as passed to `polarisd --session`).
+    #[arg(long, requires = "connect")]
+    session: Option<String>,
+    /// Credential file written by `polarisd --client-token-out`.
+    #[arg(long, requires = "connect")]
+    token_file: Option<PathBuf>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -35,11 +45,26 @@ enum WebAppError {
     Web(#[from] polaris_ui_web::WebError),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error("--connect: {0}")]
+    Attach(String),
+}
+
+fn attach_target(args: &Args) -> Result<Option<polaris_ui_web::AttachTarget>, WebAppError> {
+    let (Some(endpoint), Some(session), Some(token_file)) =
+        (&args.connect, &args.session, &args.token_file)
+    else {
+        return Ok(None);
+    };
+    let credential = std::fs::read_to_string(token_file)?;
+    polaris_ui_web::AttachTarget::new(endpoint, session, &credential)
+        .map(Some)
+        .map_err(|error| WebAppError::Attach(error.to_string()))
 }
 
 #[tokio::main]
 async fn main() -> Result<(), WebAppError> {
     let args = Args::parse();
+    let attach = attach_target(&args)?;
     let dirs = polaris_config::discover(&args.workspace)?;
     let layers = polaris_config::read_layers(
         &dirs,
@@ -54,7 +79,8 @@ async fn main() -> Result<(), WebAppError> {
     });
     let pages =
         polaris_web_app::server::pages(polaris_web_app::server::site_options(&args.site_root));
-    let server = polaris_ui_web::WebServer::bind_with_pages(
+    let attached = attach.as_ref().map(|target| target.endpoint.clone());
+    let server = polaris_ui_web::WebServer::bind_with(
         polaris_ui_web::WebOptions {
             bind: args.bind,
             state_dir: args.state_dir,
@@ -63,10 +89,14 @@ async fn main() -> Result<(), WebAppError> {
             env_file,
         },
         Some(pages),
+        attach,
     )
     .await?;
     let mut out = std::io::stdout().lock();
     writeln!(out, "Polaris web UI (Leptos): {}", server.url())?;
+    if let Some(endpoint) = attached {
+        writeln!(out, "Attached to polarisd at {endpoint}.")?;
+    }
     writeln!(
         out,
         "Open it in a browser on this machine; Ctrl+C stops the server."

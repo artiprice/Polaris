@@ -31,7 +31,14 @@ polaris-ui-session = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 reqwest = { workspace = true }
+# A real daemon for the attach test (dev only, not a layer edge).
+polaris-daemon = { workspace = true }
+polaris-kernel = { workspace = true }
 
 [[test]]
 name = "web_api"
 path = "../../../../tests/crates/polaris-ui/crates/web/web_api.rs"
+
+[[test]]
+name = "web_attach"
+path = "../../../../tests/crates/polaris-ui/crates/web/web_attach.rs"

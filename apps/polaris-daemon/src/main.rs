@@ -29,8 +29,19 @@ struct Args {
     #[arg(long)]
     frame: u128,
     /// File containing the trusted issuer's 32-byte public key or 64 hexadecimal digits.
+    #[arg(
+        long,
+        required_unless_present = "client_token_out",
+        conflicts_with = "client_token_out"
+    )]
+    token_root_public_key: Option<PathBuf>,
+    /// Create a local issuer and write one client credential (hex) to this new file, for
+    /// frontends attaching with `--connect` on this machine.
     #[arg(long)]
-    token_root_public_key: PathBuf,
+    client_token_out: Option<PathBuf>,
+    /// Lifetime of the `--client-token-out` credential, in hours (1..=168).
+    #[arg(long, default_value_t = 24)]
+    client_token_hours: u64,
     /// Local Windows named-pipe basename (`polaris-*`).
     #[arg(long, conflicts_with_all = ["uds", "listen"])]
     pipe: Option<String>,
@@ -96,7 +107,30 @@ fn main() -> ExitCode {
 fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
     let state_dir = args.state_dir.clone();
     let endpoint = endpoint_from_args(&args)?;
-    let token_root = read_token_public_key(&args.token_root_public_key)?;
+    let session = SessionId::from_u128(args.session);
+    let frame = FrameId::from_u128(args.frame);
+    let token_root = match (&args.token_root_public_key, &args.client_token_out) {
+        (Some(path), None) => read_token_public_key(path)?,
+        (None, Some(out)) => {
+            let (root, token) = polaris_daemon::issue_local_client_token(
+                session,
+                frame,
+                Duration::from_secs(args.client_token_hours.saturating_mul(3600)),
+            )?;
+            write_private(out, &polaris_daemon::credential_hex(&token))?;
+            let _printed = writeln!(
+                std::io::stdout().lock(),
+                "polarisd: client credential written to {}",
+                out.display()
+            );
+            root
+        }
+        _ => {
+            return Err(polaris_daemon::DaemonError::Configuration(
+                "use exactly one of --token-root-public-key or --client-token-out",
+            ));
+        }
+    };
     let settings = DaemonSettings {
         event_buffer: args.event_buffer,
         backpressure_timeout: Duration::from_millis(args.backpressure_timeout_ms),
@@ -106,12 +140,7 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
     }
     .validate()?;
     let config = DaemonConfig {
-        kernel: LocalKernelConfig::new(
-            &args.state_dir,
-            &args.workspace,
-            SessionId::from_u128(args.session),
-            FrameId::from_u128(args.frame),
-        ),
+        kernel: LocalKernelConfig::new(&args.state_dir, &args.workspace, session, frame),
         endpoint,
         token_root,
         settings,
@@ -139,6 +168,22 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
         (Ok(()), true) => Ok(()),
         (Ok(()), false) => Err(polaris_daemon::DaemonError::LogFlush),
     }
+}
+
+/// Create `path` (never overwrite) readable by the owner only where the platform allows it.
+fn write_private(path: &std::path::Path, text: &str) -> Result<(), polaris_daemon::DaemonError> {
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options
+        .open(path)
+        .map_err(polaris_daemon::DaemonError::TlsMaterial)?;
+    file.write_all(text.as_bytes())
+        .map_err(polaris_daemon::DaemonError::TlsMaterial)
 }
 
 fn endpoint_from_args(args: &Args) -> Result<EndpointSettings, polaris_daemon::DaemonError> {

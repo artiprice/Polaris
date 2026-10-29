@@ -153,6 +153,13 @@ pub enum BackendEvent {
     },
     /// Activity lines across every local session (`/stats` in the terminal).
     Stats(Vec<String>),
+    /// A command's report (`/nv-profile`, `/nv-verify`) to show in the conversation.
+    Report {
+        /// Title.
+        title: String,
+        /// Lines, shown verbatim.
+        lines: Vec<String>,
+    },
     /// No model provider is usable; messages are recorded without replies.
     ProviderUnavailable(String),
     /// The model started answering the last message.

@@ -101,8 +101,8 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P7-X-1 `/research` long run | NOT STARTED |
 | P7-X-2 `/hack` on seeded-bug repos | NOT STARTED |
 | P7-X-3 microVM browser loop | NOT STARTED |
-| P9-X-1 static welcome page | NOT STARTED |
-| P9-X-2 named-pipe transport + mTLS remote | NOT STARTED |
+| P9-X-1 static welcome page | IN PROGRESS (welcome page from the demo design in web and desktop; visual acceptance open) |
+| P9-X-2 named-pipe transport + mTLS remote | IN PROGRESS (frontends attach over named pipe with token auth, security tests pass — E53; remote mTLS deployment open) |
 | P10-1 full test matrix | NOT STARTED |
 | P10-2 security review | NOT STARTED |
 | P10-3 performance budgets | NOT STARTED |
@@ -249,7 +249,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass; live service, broader fuzz/load and full P5 integration remain open. |
 | `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | 2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open. |
 | `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | 2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open. |
-| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | IN PROGRESS | 2026-10-29: workspace/prompt profiles, CUDA advisor rules, llms.txt/HTML ingestion, BM25 index and bounded fetcher; wired at the composition root through `polaris_ui_session::nvidia` (E54). Open: docs sync run + offline seed (P5-X-3), vector search (key), tree-sitter rule packs. |
 
 ### P6
 
@@ -289,14 +289,14 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P9 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. OPEN: model replies (P3), daemon `--connect` (P9 RPC), attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
-| `crate:polaris-web` | `polaris-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. 2026-10-29: model replies with reviewed edits; `--connect/--session/--token-file` attaches to `polarisd` (E53). OPEN: attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
+| `crate:polaris-web` | `polaris-web` | P9 | IN PROGRESS | 2026-10-29: Leptos SSR + hydration + PWA over the `polaris-ui-web` API (WEB_UI_PLAN §7); `--connect/--session/--token-file` attaches to `polarisd` (E53). |
 | `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. Six local contracts and strict owned-target Clippy pass. Default P1 profile denies remote mutation/terminal; remote mTLS, authority provisioning/revocation and full agent profile remain open. |
 | `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open. |
 | `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. OPEN: Models/Usage/Settings pages, attachments, speech input. |
-| `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` P9 open. |
+| `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` attach done 2026-10-29 (E53). |
 | `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. Message history is not indexed yet (search returns only registry-indexed text). |
-| `crate:polaris-ui-web` | `polaris-ui-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ui-web` | `polaris-ui-web` | P9 | IN PROGRESS | 2026-10-29: loopback web UI (token + host checks, CSP), SSE events, chat with reviewed edits; attached mode over `RemoteSession` (`WebServer::bind_with`, E53). |
 | `crate:polaris-spike-web` | `polaris-spike-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ## Probe history (dependency resolution)
@@ -1845,3 +1845,67 @@ integration and broad verification for E51/E52; existing limiter/S1 failures; al
 3/4 owner matrices, measured calibration/parity/resource evidence, actual local edit/test/proof,
 keyed acceptance and demo requirements. Token Factory/Contree access remains unavailable.
 Percentages are unchanged dated estimates. UI remains deferred and P2 otherwise stays paused.
+
+## E53 — P9 frontends attach to `polarisd` (2026-10-29)
+
+**IN PROGRESS (phase acceptance open).** Desktop, `polaris web` and the Leptos `polaris-web` attach
+to a running `polarisd` over its local endpoint (`polaris-*` named pipe on Windows, private Unix
+socket elsewhere) with a credential the daemon issued.
+
+- **Protocol 1.3.** `SubmitText` records typed text as user input or one directive; `ReadText`
+  returns the text behind a CID. The server authorizes `ProposeDiff` for submit and `Read` for
+  read before calling the injected `SessionTextApi`; text is capped at 64 KiB both ways.
+- **Daemon authority.** `DaemonText` submits through the kernel's own control path (clients never
+  mint commands) and serves only CIDs that a directive/user-input event of the daemon's session
+  references (subscription index plus durable-log reindex); other digests are `NOT_FOUND`.
+  `DaemonResolver` pins both calls to the daemon session.
+- **Credentials.** `polarisd --client-token-out <file> [--client-token-hours N]` issues a Biscuit
+  (Read + ProposeDiff on `sessions/<id>/rpc`, 1 s..7 d) under a fresh root, writes it hex-encoded
+  with `create_new` (0600 on Unix) and trusts only that root.
+- **Frontends.** `polaris_ui_session::RemoteSession` replays the session from the first record with
+  text read back; desktop `bridge::spawn_attached`, web `WebServer::bind_with(.., attach)`.
+  In attached mode model replies are not served (announced as provider-unavailable); search and
+  activity stay local.
+- **Security tests.** `tests/apps/polaris-daemon/daemon_lifecycle.rs` (read-only credential cannot
+  write, foreign issuer `UNAUTHENTICATED`, other session `PERMISSION_DENIED`, unreferenced CID
+  `NOT_FOUND`, malformed directive `INVALID_ARGUMENT`, oversize rejected, bounded token lifetime);
+  attach tests against a real daemon: `session/remote.rs` (2), `desktop/bridge_attach.rs` (2),
+  `web/web_attach.rs` (1), desktop args (5). Evidence: `@prime/evidence/p9/attach-verification.txt`.
+
+**Still open:** model replies in attached mode (the daemon has no provider chain), remote mTLS
+deployment, attachments and speech, independent security audit, P9-X-1 visual acceptance.
+
+## E54 — P5 `$nvidia(...)`, `/nv-profile` and `/nv-verify` wired (2026-10-29)
+
+**IN PROGRESS (phase acceptance open).** PLAN §6.14 asks for the wiring "at the composition root";
+it lives in `polaris_ui_session::nvidia` and every frontend uses it.
+
+- **Kernel directive state.** `KernelHandle::directives()` returns the directives in effect as the
+  command owner last committed them (seeded at start from defaults and the replayed log, updated
+  after each `$directive`). Resume restores `$nvidia(off)` from the durable log (tested).
+- **`$nvidia(auto)`** (also the mode with no `$nvidia` directive): each chat turn profiles the
+  workspace and prompt (`auto_profile`, bounded walk) and, only when a stack is found, appends the
+  profile, per-topic invariants and the first eight `/nv-verify` findings to the system prompt.
+  `$nvidia(list)` keeps it out of the model's context; `$nvidia(off)` disables the commands too.
+- **`/nv-profile`** (stack, build targets, evidence, local GPUs from `nvidia-smi` with a 3 s
+  bound, notes where the targets exceed the local GPU) and **`/nv-verify`** (CUDA advisor over
+  `.cu`/`.cuh`, skipping vendored/build directories, bounded) answer in the TUI (sheet), the web
+  pages and the desktop window (a report entry, not recorded or sent to the model), and headless
+  as `polaris nv-profile` / `polaris nv-verify`. Attached frontends decline them (no local kernel).
+- **Sample repositories.** `tests/fixtures/nvidia/{cuda-vector-add,trtllm-serving,plain-rust}`,
+  stored as `*.fixture` and materialized at test time so this repository never profiles as CUDA;
+  provenance in `tests/fixtures/MANIFEST.toml`.
+- **Tests.** `session/nvidia.rs` (5: planted findings at exact lines and severities, vendored code
+  skipped, profiles of all three samples, turn context per mode, directive mode across resume,
+  exact command matching), `session/chat.rs` (the model request carries the profile, and not after
+  `$nvidia(off)`), desktop `bridge.rs` and web `web_api.rs` (`/nv-verify` answered with a report),
+  Leptos reducer test.
+- **Evidence.** `@prime/evidence/p5/nvidia-sample-repos.txt` (real binary on the three samples;
+  this machine's GPU is a Quadro RTX 4000, sm_75, so the sm_90 target note fires) and
+  `@prime/evidence/p5/live-chat-cuda-sample.txt` (one live turn through the provider chain on the
+  synthetic CUDA sample; the reply follows the advisor findings but misquotes three line numbers —
+  recorded as observed).
+
+**Still open:** NVIDIA docs sync run and offline seed (P5-X-3), cited doc slices in turns (needs
+the index), vector search (Token Factory key), tree-sitter rule packs and per-arch limit tables,
+S1 topic scoring, `$rag` and `/search-local` with provenance.

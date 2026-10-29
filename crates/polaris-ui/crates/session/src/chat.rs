@@ -485,8 +485,14 @@ where
         }
         let map_root = self.workspace.clone();
         let mention_text = prompt.to_owned();
-        let (repo_map, references) = tokio::task::spawn_blocking(move || {
-            workspace_map(&map_root).map(|map| (map, mention_hint(&map_root, &mention_text)))
+        let nvidia_mode = crate::nvidia::nvidia_mode(kernel);
+        let (repo_map, references, nvidia) = tokio::task::spawn_blocking(move || {
+            let map = workspace_map(&map_root)?;
+            let references = mention_hint(&map_root, &mention_text);
+            // `$nvidia(auto)`: the profile and its invariants, only when a stack is found.
+            let nvidia = crate::nvidia::context_for_turn(nvidia_mode, &map_root, &mention_text)
+                .unwrap_or_default();
+            Ok::<_, ChatError>((map, references, nvidia))
         })
         .await
         .map_err(|_| ChatError::Workspace)??;
@@ -519,6 +525,7 @@ where
                 kernel,
                 &goal,
                 repo_map,
+                nvidia.as_deref(),
                 Arc::new(runner),
                 progress,
                 cancellation,
@@ -554,6 +561,7 @@ where
                 kernel,
                 &goal,
                 repo_map,
+                nvidia.as_deref(),
                 Arc::new(runner),
                 progress,
                 cancellation,
@@ -599,6 +607,7 @@ where
         kernel: &KernelHandle,
         goal: &str,
         repo_map: String,
+        nvidia: Option<&str>,
         runner: Arc<T>,
         progress: mpsc::Sender<ChatProgress>,
         cancellation: &CancellationToken,
@@ -627,7 +636,10 @@ where
                 progress,
             }),
             context: PromptContext {
-                system_prompt: system_prompt.to_owned(),
+                system_prompt: match nvidia {
+                    Some(context) => format!("{system_prompt}\n\n{context}"),
+                    None => system_prompt.to_owned(),
+                },
                 repo_map_version: "bounded-top-level-1".to_owned(),
                 repo_map,
                 active_scope: scope.to_owned(),

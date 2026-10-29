@@ -208,6 +208,7 @@ fn Sidebar(panel: RwSignal<Option<&'static str>>) -> impl IntoView {
                     <span class="muted">{move || ui.with(|state| match &state.connection {
                         Connection::Ready { model, .. } => model.clone(),
                         Connection::Connecting => "Connecting…".to_owned(),
+                        Connection::Offline(_) if state.attached() => "polarisd".to_owned(),
                         Connection::Offline(_) => "Offline".to_owned(),
                     })}</span>
                 </div>

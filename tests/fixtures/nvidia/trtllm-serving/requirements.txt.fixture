@@ -1,0 +1,3 @@
+tensorrt_llm==0.20.0
+tritonclient[grpc]==2.50.0
+numpy==2.1.3

@@ -296,6 +296,88 @@ async fn prompt_streams_a_reply_over_server_sent_events() -> TestResult {
     Ok(())
 }
 
+/// P5: `/nv-verify` on the page is answered with the CUDA advisor's report, not sent to the model.
+#[tokio::test(flavor = "multi_thread")]
+async fn nv_verify_is_answered_with_a_report() -> TestResult {
+    let running = start().await?;
+    std::fs::write(
+        running.workspace.join("kernel.cu"),
+        "__global__ void zero(float* x) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    x[i] = 0.0f;
+}
+",
+    )?;
+    let client = reqwest::Client::new();
+    let events = client
+        .get(format!(
+            "{}/api/events?token={}",
+            running.base, running.token
+        ))
+        .send()
+        .await?;
+    let mut stream = events.bytes_stream();
+    let mut buffer = String::new();
+    let mut seen: Vec<serde_json::Value> = Vec::new();
+    let (mut opened, mut submitted) = (false, false);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(40);
+    while !seen.iter().any(|event| event["type"] == "report") {
+        let chunk = tokio::time::timeout_at(deadline, stream.next())
+            .await
+            .map_err(|_| format!("timed out; events: {seen:?}"))?
+            .ok_or("event stream ended")??;
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+        while let Some(end) = buffer.find(
+            "
+
+",
+        ) {
+            let frame: String = buffer.drain(..end + 2).collect();
+            for line in frame.lines() {
+                if let Some(data) = line.strip_prefix("data:") {
+                    seen.push(serde_json::from_str(data.trim())?);
+                }
+            }
+        }
+        if !opened && seen.iter().any(|event| event["type"] == "provider") {
+            opened = true;
+            client
+                .post(format!("{}/api/open", running.base))
+                .bearer_auth(&running.token)
+                .json(&serde_json::json!({}))
+                .send()
+                .await?;
+        }
+        if !submitted && seen.iter().any(|event| event["type"] == "opened") {
+            submitted = true;
+            client
+                .post(format!("{}/api/submit", running.base))
+                .bearer_auth(&running.token)
+                .json(&serde_json::json!({"text": "/nv-verify"}))
+                .send()
+                .await?;
+        }
+    }
+    let report = seen
+        .iter()
+        .find(|event| event["type"] == "report")
+        .ok_or("report")?;
+    assert_eq!(report["title"], "CUDA advisor");
+    assert_eq!(
+        report["lines"][0],
+        "Checked 1 CUDA source: 1 warning, 0 suggestions."
+    );
+    assert!(
+        !seen
+            .iter()
+            .any(|event| event["type"] == "reply-started" || event["type"] == "message"),
+        "the command is neither recorded nor answered by the model: {seen:?}"
+    );
+    running.stop().await?;
+    drop(stream);
+    Ok(())
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn a_proposed_change_waits_for_review_and_is_written_after_apply() -> TestResult {
     let running = start_with(scripted_provider(vec![

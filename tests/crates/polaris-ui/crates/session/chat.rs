@@ -479,3 +479,59 @@ async fn a_reviewed_deletion_is_reported_as_deleted() -> TestResult {
     assert!(!workspace.path().join("old.md").exists());
     Ok(())
 }
+
+/// P5: under `$nvidia(auto)` (the default) a turn in a CUDA workspace carries its NVIDIA profile
+/// and advisor findings to the model; after `$nvidia(off)` it does not.
+#[tokio::test]
+async fn a_cuda_workspace_turn_carries_the_profile_until_nvidia_is_off() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(
+        workspace.path().join("kernel.cu"),
+        "__global__ void zero(float* x) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    x[i] = 0.0f;\n}\n",
+    )?;
+    let mut session =
+        OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![
+        text_turn("Add a bounds check."),
+        text_turn("Still needs a bounds check."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancel = CancellationToken::new();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    agent
+        .turn(session.kernel(), "Is this kernel safe?", &cancel, tx)
+        .await?;
+    let _shown = drain(&mut rx);
+    session.apply_directive("$nvidia(off)").await?;
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    agent
+        .turn(session.kernel(), "And now?", &cancel, tx)
+        .await?;
+    let _shown = drain(&mut rx);
+
+    let requests = model.requests();
+    let carries = |request: &ChatRequest, needle: &str| {
+        request
+            .messages
+            .iter()
+            .any(|message| message.content.contains(needle))
+    };
+    assert_eq!(requests.len(), 2);
+    assert!(carries(
+        &requests[0],
+        "NVIDIA profile of this workspace ($nvidia(auto))"
+    ));
+    assert!(carries(&requests[0], "- kernel.cu:2 [missing-grid-bounds]"));
+    assert!(!carries(&requests[1], "NVIDIA profile of this workspace"));
+    session.close().await?;
+    Ok(())
+}

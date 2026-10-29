@@ -223,7 +223,8 @@ fn html_pages_become_markdown_without_scripts() -> TestResult {
 
 /// A loopback docs server: the first request gets a page with an ETag, a request carrying that
 /// ETag gets 304. Returns the port and the request heads it saw.
-fn docs_server() -> Result<(u16, std::sync::Arc<std::sync::Mutex<Vec<String>>>), Box<dyn std::error::Error>> {
+fn docs_server()
+-> Result<(u16, std::sync::Arc<std::sync::Mutex<Vec<String>>>), Box<dyn std::error::Error>> {
     use std::io::{Read, Write};
     let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
     let port = listener.local_addr()?.port();
@@ -236,7 +237,8 @@ fn docs_server() -> Result<(u16, std::sync::Arc<std::sync::Mutex<Vec<String>>>),
             let read = stream.read(&mut buffer).unwrap_or(0);
             let head = String::from_utf8_lossy(&buffer[..read]).to_lowercase();
             let response = if head.contains("if-none-match: \"v1\"") {
-                "HTTP/1.1 304 Not Modified\r\ncontent-length: 0\r\nconnection: close\r\n\r\n".to_owned()
+                "HTTP/1.1 304 Not Modified\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
+                    .to_owned()
             } else {
                 let body = "<html><body><h1>Streams</h1><p>Use cudaStreamCreate to overlap copies with kernels.</p></body></html>";
                 format!(
@@ -269,10 +271,16 @@ async fn refreshes_are_conditional_and_spaced() -> TestResult {
     assert_eq!(chunks[0].heading, "Streams");
     assert!(chunks[0].text.contains("cudaStreamCreate"));
     assert_eq!(
-        fetcher.validators().get(&url).and_then(|v| v.etag.as_deref()),
+        fetcher
+            .validators()
+            .get(&url)
+            .and_then(|v| v.etag.as_deref()),
         Some("\"v1\"")
     );
-    assert!(fetcher.ingest(&url, DocTopic::Cuda, 800).await?.is_none(), "304 means unchanged");
+    assert!(
+        fetcher.ingest(&url, DocTopic::Cuda, 800).await?.is_none(),
+        "304 means unchanged"
+    );
     assert!(started.elapsed() >= spacing, "the second request waited");
     let heads = seen.lock().map_err(|_| "poisoned")?.clone();
     assert_eq!(heads.len(), 2);

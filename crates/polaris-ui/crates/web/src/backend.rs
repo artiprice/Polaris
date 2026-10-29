@@ -2,9 +2,9 @@
 //! [`ConversationHost`], fed by HTTP commands and publishing [`WebEvent`]s to every open page.
 use polaris_sdk::{contracts::Event, effort::Effort, ids::SessionId};
 use polaris_ui_session::{
-    ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind,
-    ResolvedRecord, SessionHostError, answer_review, is_single_directive, list_sessions,
-    records_until_own_input,
+    AttachTarget, ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession,
+    RecordTextKind, RemoteSession, ResolvedRecord, SessionHostError, answer_review,
+    is_single_directive, list_sessions, records_until_own_input,
 };
 use serde::Serialize;
 use std::{
@@ -118,6 +118,8 @@ pub enum WebEvent {
     },
     /// Something the page should show as a notice.
     Notice { text: String },
+    /// A command's report (`/nv-profile`, `/nv-verify`) to show in the conversation.
+    Report { title: String, lines: Vec<String> },
 }
 
 /// Events since the provider was chosen and the session opened, for pages that connect later.
@@ -217,7 +219,12 @@ pub struct BackendConfig {
     pub config: polaris_config::PolarisConfig,
     /// Dotenv file with provider keys.
     pub env_file: Option<PathBuf>,
+    /// Attach to this `polarisd` session instead of opening local ones (P9).
+    pub attach: Option<AttachTarget>,
 }
+
+/// Why replies are absent while attached.
+const ATTACHED: &str = "Attached to polarisd: messages are recorded in the daemon's session; model replies are not served in attached mode yet.";
 
 struct Owner {
     config: BackendConfig,
@@ -227,9 +234,75 @@ struct Owner {
     usage: (u64, u64, u64),
     /// Changes the running reply waits on, by request id.
     reviews: BTreeMap<String, ChangeReview>,
+    /// The attached daemon session, when `config.attach` is set.
+    remote: Option<RemoteSession>,
 }
 
 impl Owner {
+    async fn open_remote(&mut self, target: AttachTarget) {
+        self.publisher.publish(WebEvent::Opening);
+        self.remote = None;
+        match RemoteSession::attach(&target).await {
+            Ok(remote) => {
+                self.publisher.publish(WebEvent::Opened {
+                    id: remote.id.to_string(),
+                    title: "polarisd".to_owned(),
+                    workspace: remote.endpoint().to_owned(),
+                });
+                self.remote = Some(remote);
+            }
+            Err(error) => self.publisher.publish(WebEvent::Notice {
+                text: format!("Could not attach to polarisd: {error}"),
+            }),
+        }
+    }
+
+    async fn submit_remote(&mut self, text: String) {
+        if polaris_ui_session::nvidia::nvidia_command(&text).is_some() {
+            self.publisher.publish(WebEvent::Rejected {
+                reason: "NVIDIA commands run on local sessions; this page is attached to polarisd."
+                    .to_owned(),
+            });
+            return;
+        }
+        let Some(remote) = self.remote.as_ref() else {
+            self.publisher.publish(WebEvent::Rejected {
+                reason: "Not attached to polarisd.".to_owned(),
+            });
+            return;
+        };
+        match remote.submit(&text).await {
+            Ok(_) => self.publisher.publish(WebEvent::Committed),
+            Err(error) => self.publisher.publish(WebEvent::Rejected {
+                reason: error.to_string(),
+            }),
+        }
+    }
+
+    fn remote_record(&mut self, next: Result<Option<ResolvedRecord>, SessionHostError>) {
+        match next {
+            Ok(Some(resolved)) => {
+                if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
+                    let kind = match kind {
+                        RecordTextKind::Directive => "directive",
+                        RecordTextKind::UserInput => "user",
+                    };
+                    self.publisher.publish(WebEvent::Message {
+                        kind: kind.to_owned(),
+                        text,
+                    });
+                }
+            }
+            Ok(None) | Err(_) => {
+                self.remote = None;
+                self.publisher.publish(WebEvent::Notice {
+                    text: "The connection to polarisd ended; open the session again.".to_owned(),
+                });
+                self.publisher.publish(WebEvent::Closed);
+            }
+        }
+    }
+
     async fn review(&mut self, request_id: &str, apply: bool, note: Option<String>) {
         let (Some(review), Some(session)) = (self.reviews.get(request_id), self.session.as_ref())
         else {
@@ -308,6 +381,21 @@ impl Owner {
             });
             return;
         };
+        if let Some(command) = polaris_ui_session::nvidia::nvidia_command(&text) {
+            match command.run(session.kernel(), session.workspace()).await {
+                Ok(lines) => {
+                    self.publisher.publish(WebEvent::Committed);
+                    self.publisher.publish(WebEvent::Report {
+                        title: command.title().to_owned(),
+                        lines,
+                    });
+                }
+                Err(error) => self.publisher.publish(WebEvent::Rejected {
+                    reason: error.to_string(),
+                }),
+            }
+            return;
+        }
         let answer = !is_single_directive(&text) && self.chat.is_ready();
         if answer && self.chat.is_running() {
             self.publisher.publish(WebEvent::Rejected {
@@ -477,6 +565,15 @@ async fn next_record(
     }
 }
 
+async fn next_remote_record(
+    remote: &mut Option<RemoteSession>,
+) -> Result<Option<ResolvedRecord>, SessionHostError> {
+    match remote.as_mut() {
+        Some(remote) => remote.next_record().await,
+        None => std::future::pending().await,
+    }
+}
+
 /// Run the session owner until `commands` closes; then stop the reply and close the session.
 pub async fn run(
     config: BackendConfig,
@@ -491,13 +588,29 @@ pub async fn run(
         chat,
         usage: (0, 0, 0),
         reviews: BTreeMap::new(),
+        remote: None,
     };
-    owner.chat.start_pick();
+    let attach = owner.config.attach.clone();
+    if attach.is_some() {
+        owner.publisher.publish(WebEvent::ProviderUnavailable {
+            reason: ATTACHED.to_owned(),
+        });
+    } else {
+        owner.chat.start_pick();
+    }
     loop {
         tokio::select! {
             command = commands.recv() => {
                 let Some(command) = command else { break };
                 match command {
+                    Command::Open { .. } if attach.is_some() => {
+                        if let Some(target) = attach.clone() {
+                            owner.open_remote(target).await;
+                        }
+                    }
+                    Command::Submit { text, .. } if attach.is_some() => {
+                        owner.submit_remote(text).await;
+                    }
                     Command::Open { resume } => owner.open(resume).await,
                     Command::Submit { text, plan } => owner.submit(text, plan).await,
                     Command::Interrupt => owner.chat.cancel_turn(),
@@ -515,12 +628,22 @@ pub async fn run(
                     Command::Review { request_id, apply, note } => {
                         owner.review(&request_id, apply, note).await;
                     }
+                    Command::List { reply } if attach.is_some() => {
+                        let rows = owner.remote.as_ref().map(|remote| SessionRow {
+                            id: remote.id.to_string(),
+                            title: "polarisd".to_owned(),
+                            workspace: remote.endpoint().to_owned(),
+                            updated_ms: 0,
+                        });
+                        let _delivered = reply.send(rows.into_iter().collect());
+                    }
                     Command::List { reply } => {
                         let _delivered = reply.send(owner.list().await);
                     }
                 }
             }
             next = next_record(&mut owner.session) => owner.record(next),
+            next = next_remote_record(&mut owner.remote) => owner.remote_record(next),
             event = owner.chat.next_event() => owner.host_event(event),
         }
     }

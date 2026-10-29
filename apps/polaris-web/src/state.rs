@@ -202,8 +202,18 @@ impl UiState {
         match &self.connection {
             Connection::Connecting => ("", "Connecting to a model…".to_owned()),
             Connection::Ready { provider, model } => ("ready", format!("{model} · {provider}")),
+            Connection::Offline(_) if self.attached() => {
+                ("offline", "polarisd · no model replies".to_owned())
+            }
             Connection::Offline(_) => ("offline", "Offline · no model replies".to_owned()),
         }
+    }
+
+    /// Whether the server records into a `polarisd` session (its provider-unavailable reason
+    /// says so) rather than a local one.
+    #[must_use]
+    pub fn attached(&self) -> bool {
+        matches!(&self.connection, Connection::Offline(reason) if reason.starts_with("Attached to polarisd"))
     }
 
     /// Send the composer text, or stop the running reply.
@@ -340,11 +350,14 @@ impl UiState {
                     title,
                     workspace,
                 });
-                if matches!(self.connection, Connection::Offline(_)) {
-                    self.push(EntryKind::System(
+                if let Connection::Offline(reason) = &self.connection {
+                    let notice = if self.attached() {
+                        reason.clone()
+                    } else {
                         "Offline session · messages are recorded locally; no model replies."
-                            .to_owned(),
-                    ));
+                            .to_owned()
+                    };
+                    self.push(EntryKind::System(notice));
                 }
                 let mut effects = vec![Effect::RefreshSessions];
                 if let Some((text, plan)) = self.pending.clone() {
@@ -451,6 +464,10 @@ impl UiState {
                 completion_tokens,
             } => self.usage = (requests, prompt_tokens, completion_tokens),
             WebEvent::Notice { text } => self.notice = Some(text),
+            WebEvent::Report { title, lines } => self.push(EntryKind::Assistant {
+                text: format!("**{title}**\n\n```text\n{}\n```", lines.join("\n")),
+                streaming: false,
+            }),
             WebEvent::Review { request_id, prompt } => {
                 let known = self.entries.iter().any(|entry| {
                     matches!(&entry.kind, EntryKind::Review { request_id: id, .. } if *id == request_id)

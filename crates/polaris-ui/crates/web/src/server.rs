@@ -104,6 +104,18 @@ impl WebServer {
         options: WebOptions,
         pages: Option<Router>,
     ) -> Result<Self, WebError> {
+        Self::bind_with(options, pages, None).await
+    }
+
+    /// As [`Self::bind_with_pages`]; with `attach`, the page shows and records into that
+    /// `polarisd` session instead of opening local ones (P9).
+    /// # Errors
+    /// As [`Self::bind`].
+    pub async fn bind_with(
+        options: WebOptions,
+        pages: Option<Router>,
+        attach: Option<polaris_ui_session::AttachTarget>,
+    ) -> Result<Self, WebError> {
         if !options.bind.ip().is_loopback() {
             return Err(WebError::NotLoopback(options.bind));
         }
@@ -118,6 +130,7 @@ impl WebServer {
                 workspace: options.workspace,
                 config: options.config,
                 env_file: options.env_file,
+                attach,
             },
             publisher.clone(),
             receiver,

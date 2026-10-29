@@ -36,4 +36,7 @@ pub use auth::{
     AuthorizationLease, MAX_BEARER_HEADER_BYTES, MAX_METADATA_BYTES, MAX_METADATA_ENTRIES,
     RequestSubject, RpcAuthenticator, TrustedFacts, TrustedFactsResolver,
 };
-pub use server::{Readiness, RpcError, RpcLimits, RpcService, TerminalApi};
+pub use server::{
+    MAX_SESSION_TEXT_BYTES, Readiness, RpcError, RpcLimits, RpcService, SessionTextApi,
+    TerminalApi, TextFuture,
+};

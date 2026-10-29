@@ -164,6 +164,7 @@ async fn authenticated_rpc_p1_event_replay_denial_and_shutdown() -> TestResult<(
     let ready = Ready;
     let serving = tokio::spawn(serve_kernel_api(
         kernel.clone(),
+        None,
         NoTerminal,
         RpcAuthenticator::new(authority.public_key(), Resolver(session)),
         ready,
@@ -190,6 +191,11 @@ async fn authenticated_rpc_p1_event_replay_denial_and_shutdown() -> TestResult<(
     assert!(
         health.ready,
         "health must report the started kernel as ready"
+    );
+    let read_only_write = reader.submit_text("hello", false).await;
+    assert!(
+        matches!(read_only_write, Err(ClientError::Status(status)) if status.code() == tonic::Code::PermissionDenied),
+        "a read-only credential cannot record text"
     );
     let receipt = writer.apply_directive("$websearch(off)").await?;
     let mut events = reader.subscribe_checked(receipt.accepted_at).await?;
@@ -266,4 +272,146 @@ async fn production_local_daemon_health_and_graceful_shutdown() -> TestResult<()
         .await
         .map_err(|_| "daemon graceful shutdown exceeded five seconds")???;
     Ok(())
+}
+
+fn session_token(
+    authority: &Authority,
+    frame: FrameId,
+    session: SessionId,
+    rights: &[Right],
+) -> TestResult<polaris_sdk::contracts::TokenBytes> {
+    let scope = Scope {
+        resource: ResourceScope::Exact(ResourcePath::new(&format!("sessions/{session}/rpc"))?),
+        max_churn_lines: 0,
+        ttl: Duration::from_secs(60),
+        allow_unsafe: false,
+        diff_blake3: None,
+        rights: Rights::new(rights),
+    };
+    Ok(authority
+        .issue_root(frame, &scope, &SystemClock)?
+        .to_bytes()
+        .clone())
+}
+
+fn status_code<T>(result: Result<T, ClientError>) -> Option<tonic::Code> {
+    match result {
+        Err(ClientError::Status(status)) => Some(status.code()),
+        _ => None,
+    }
+}
+
+/// P9: a frontend attaches over the local endpoint with the credential polarisd issued, records
+/// typed text and a directive through the daemon's own command authority, and reads the text
+/// back from the session's events; weaker, foreign or out-of-scope credentials are refused.
+#[cfg(any(unix, windows))]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_attached_frontend_records_and_reads_session_text() -> TestResult<()> {
+    use polaris_sdk::contracts::Event;
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    #[cfg(unix)]
+    let (endpoint, local_endpoint) = endpoint(state.path())?;
+    #[cfg(windows)]
+    let (endpoint, local_endpoint) = endpoint()?;
+    let session = SessionId::from_u128(0xA77A);
+    let frame = FrameId::from_u128(0xF00D);
+    let (root, credential) =
+        polaris_daemon::issue_local_client_token(session, frame, Duration::from_secs(600))?;
+    assert!(
+        polaris_daemon::credential_hex(&credential)
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit())
+    );
+    let config = DaemonConfig {
+        kernel: LocalKernelConfig::new(state.path(), workspace.path(), session, frame),
+        endpoint,
+        token_root: root,
+        settings: DaemonSettings::default(),
+    };
+    let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+    let serving = tokio::spawn(serve_daemon(config, async move {
+        let _received = stop_rx.await;
+    }));
+    let client = connect_local(local_endpoint.clone(), session, credential.clone()).await?;
+    assert!(client.health().await?.ready);
+
+    let typed = client.submit_text("Explain the parser", false).await?;
+    let directive = client.submit_text("$websearch(off)", true).await?;
+    assert!(directive.accepted_at > typed.accepted_at);
+    let mut events = client.subscribe_checked(typed.accepted_at).await?;
+    let mut texts = Vec::new();
+    while texts.len() < 2 {
+        let record = tokio::time::timeout(Duration::from_secs(5), events.next_record())
+            .await
+            .map_err(|_| "attached event replay timed out")??
+            .ok_or("event stream ended")?;
+        let cid = match record.event() {
+            Event::UserInputSubmitted { text } => *text,
+            Event::DirectiveApplied { directive } => *directive,
+            _ => continue,
+        };
+        texts.push(client.read_text(cid).await?);
+    }
+    assert_eq!(texts, ["Explain the parser", "$websearch(off)"]);
+
+    // An unreferenced digest is not readable, even with a valid credential.
+    assert_eq!(
+        status_code(client.read_text(Cid::from_bytes([9; 32])).await),
+        Some(tonic::Code::NotFound)
+    );
+    // Malformed directives are rejected by the kernel, not recorded.
+    assert_eq!(
+        status_code(client.submit_text("$not-a-directive(", true).await),
+        Some(tonic::Code::InvalidArgument)
+    );
+    // Oversized text never leaves the client.
+    assert!(
+        client
+            .submit_text(&"x".repeat(70 * 1024), false)
+            .await
+            .is_err()
+    );
+
+    // A credential from another issuer is refused.
+    let other_issuer = Authority::new_session()?;
+    let foreign = session_token(
+        &other_issuer,
+        frame,
+        session,
+        &[Right::Read, Right::ProposeDiff],
+    )?;
+    let foreign_client = connect_local(local_endpoint.clone(), session, foreign).await?;
+    assert_eq!(
+        status_code(foreign_client.submit_text("hello", false).await),
+        Some(tonic::Code::Unauthenticated),
+        "a credential from another issuer is refused"
+    );
+    // A client pinned to another session is refused by the daemon's scope.
+    let elsewhere = connect_local(local_endpoint, SessionId::from_u128(0xBAD), credential).await?;
+    assert_eq!(
+        status_code(elsewhere.submit_text("hello", false).await),
+        Some(tonic::Code::PermissionDenied)
+    );
+
+    drop(events);
+    drop(client);
+    stop_tx
+        .send(())
+        .map_err(|_| "daemon shutdown receiver disappeared")?;
+    tokio::time::timeout(Duration::from_secs(5), serving)
+        .await
+        .map_err(|_| "daemon shutdown exceeded five seconds")???;
+    Ok(())
+}
+
+#[test]
+fn local_client_tokens_have_bounded_lifetimes() {
+    let session = SessionId::from_u128(1);
+    let frame = FrameId::from_u128(2);
+    assert!(polaris_daemon::issue_local_client_token(session, frame, Duration::ZERO).is_err());
+    assert!(
+        polaris_daemon::issue_local_client_token(session, frame, Duration::from_secs(8 * 86_400))
+            .is_err()
+    );
 }

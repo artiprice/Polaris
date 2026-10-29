@@ -42,10 +42,10 @@ pub mod fetch;
 pub mod profile;
 
 pub use advisor::{AdvisorFinding, Severity, advise_cuda};
-pub use fetch::{DOC_HOSTS, DocFetcher, FetchOutcome, Validators};
 pub use docs::{
     DocChunk, DocHit, DocIndex, DocLink, LlmsTxt, chunk_markdown, html_to_markdown, parse_llms_txt,
 };
+pub use fetch::{DOC_HOSTS, DocFetcher, FetchOutcome, Validators};
 pub use profile::{
     ComputeCapability, DocTopic, Gpu, NvidiaProfile, arch_mentions, auto_profile, parse_nvidia_smi,
 };

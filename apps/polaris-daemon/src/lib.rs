@@ -2,13 +2,15 @@
 #![forbid(unsafe_code)]
 
 use futures::Stream;
-use polaris_kernel::{Kernel, KernelError, LocalKernelConfig};
+use polaris_kernel::{Kernel, KernelError, KernelHandle, LocalKernelConfig};
 use polaris_rpc::{
-    BoundServer, LocalEndpoint, Readiness, RequestSubject, RpcAuthenticator, RpcLimits, RpcService,
-    TerminalApi, Transport, TransportError, TransportLimits, TrustedFacts, TrustedFactsResolver,
+    BoundServer, LocalEndpoint, MAX_SESSION_TEXT_BYTES, Readiness, RequestSubject,
+    RpcAuthenticator, RpcLimits, RpcService, SessionTextApi, TerminalApi, TextFuture, Transport,
+    TransportError, TransportLimits, TrustedFacts, TrustedFactsResolver,
 };
-use polaris_sdk::ids::SessionId;
-use polaris_sdk::registry::{EventSource, KernelApi};
+use polaris_sdk::contracts::Event;
+use polaris_sdk::ids::{Cid, Seq, SessionId};
+use polaris_sdk::registry::{CommandReceipt, EventSource, KernelApi};
 use polaris_security_capability::{PublicKeyBytes, ResourcePath, Right};
 use secrecy::SecretString;
 use std::{
@@ -302,6 +304,46 @@ pub enum DaemonError {
     LogFlush,
 }
 
+/// A fresh local issuer and one client credential for attached frontends.
+///
+/// The private issuer key lives only in this process; the credential reads and writes this
+/// session's RPC resource (`Read` + `ProposeDiff`) for `ttl`, and nothing else.
+/// # Errors
+/// Entropy or token encoding failure, or a TTL outside 1 second ..= 7 days.
+pub fn issue_local_client_token(
+    session: SessionId,
+    frame: polaris_sdk::ids::FrameId,
+    ttl: Duration,
+) -> Result<(PublicKeyBytes, polaris_sdk::contracts::TokenBytes), DaemonError> {
+    use polaris_security_capability::{Authority, ResourceScope, Rights, Scope, SystemClock};
+    if ttl < Duration::from_secs(1) || ttl > Duration::from_secs(7 * 24 * 3600) {
+        return Err(DaemonError::Configuration(
+            "client token lifetime must be between 1 second and 7 days",
+        ));
+    }
+    let authority = Authority::new_session()?;
+    let scope = Scope {
+        resource: ResourceScope::Exact(ResourcePath::new(&format!("sessions/{session}/rpc"))?),
+        max_churn_lines: 0,
+        ttl,
+        allow_unsafe: false,
+        diff_blake3: None,
+        rights: Rights::new(&[Right::Read, Right::ProposeDiff]),
+    };
+    let token = authority.issue_root(frame, &scope, &SystemClock)?;
+    Ok((authority.public_key(), token.to_bytes().clone()))
+}
+
+/// Lowercase hex of a credential, the form `--token-file` readers expect.
+#[must_use]
+pub fn credential_hex(token: &polaris_sdk::contracts::TokenBytes) -> String {
+    token
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
 /// Read a verification-only Ed25519 key from exactly 32 raw bytes or 64 hexadecimal digits.
 /// ASCII whitespace around hexadecimal input is accepted; key contents are never included in errors.
 /// # Errors
@@ -377,10 +419,12 @@ where
     let readiness = DaemonReadiness::new();
     let resolver = DaemonResolver::new(session)?;
     let shutdown_handle = kernel.clone();
+    let text: Arc<dyn SessionTextApi> = Arc::new(DaemonText::new(kernel.clone(), session));
     readiness.set(true);
     let shutdown = close_readiness_when_signaled(shutdown, readiness.clone());
     let served = serve_kernel_api(
         kernel,
+        Some(text),
         UnavailableTerminal,
         RpcAuthenticator::new(config.token_root, resolver),
         readiness.clone(),
@@ -403,8 +447,10 @@ where
 /// future kernel profiles; the local CLI profile uses [`serve_daemon`].
 /// # Errors
 /// Service construction, listener/transport, shutdown callback, or kernel teardown failure.
+#[allow(clippy::too_many_arguments)]
 pub async fn serve_kernel_api<K, T, A, H, F, S, SH>(
     kernel: K,
+    text: Option<Arc<dyn SessionTextApi>>,
     terminal: T,
     authenticator: RpcAuthenticator<A>,
     readiness: H,
@@ -432,6 +478,10 @@ where
             settings.rpc_limits(),
         )
         .map_err(|_| DaemonError::Configuration("invalid RPC service limits"))?;
+        let service = match text {
+            Some(text) => service.with_session_text(text),
+            None => service,
+        };
         let server = listener.endpoint.bind().await?;
         server
             .serve(service, settings.transport_limits(), shutdown)
@@ -482,6 +532,18 @@ impl DaemonResolver {
         Ok(Self { session, resource })
     }
 }
+impl DaemonResolver {
+    fn check_session(&self, session: Option<&polaris_proto::pb::Uuid>) -> Result<(), Status> {
+        let Some(session) = session else {
+            return Err(Status::invalid_argument("session is required"));
+        };
+        let requested = (u128::from(session.hi) << 64) | u128::from(session.lo);
+        if requested != self.session.as_uuid().as_u128() {
+            return Err(Status::permission_denied("session is outside daemon scope"));
+        }
+        Ok(())
+    }
+}
 impl TrustedFactsResolver for DaemonResolver {
     fn resolve(&self, _right: Right, subject: RequestSubject<'_>) -> Result<TrustedFacts, Status> {
         match subject {
@@ -496,6 +558,8 @@ impl TrustedFactsResolver for DaemonResolver {
                 }
             }
             RequestSubject::SubmitCommand(_) => {}
+            RequestSubject::SubmitText(request) => self.check_session(request.session.as_ref())?,
+            RequestSubject::ReadText(request) => self.check_session(request.session.as_ref())?,
         }
         Ok(TrustedFacts {
             resource: self.resource.clone(),
@@ -503,6 +567,141 @@ impl TrustedFactsResolver for DaemonResolver {
             churn_lines: 0,
             touches_unsafe: false,
             diff_blake3: None,
+        })
+    }
+}
+
+/// Attached-frontend text over the daemon's own kernel: typed lines go through the kernel's
+/// control authority (the client never mints commands), and only text that a directive or
+/// user-input event of this session references can be read back.
+pub struct DaemonText {
+    kernel: KernelHandle,
+    session: SessionId,
+    /// Text digests referenced by this session's events, kept current by a subscription.
+    known: Arc<std::sync::Mutex<std::collections::BTreeSet<Cid>>>,
+}
+
+impl DaemonText {
+    /// Serve text for `session` of `kernel`. Must be called inside a tokio runtime.
+    #[must_use]
+    pub fn new(kernel: KernelHandle, session: SessionId) -> Self {
+        let known = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
+        let index = Arc::clone(&known);
+        let mut events = kernel.context().subscribe();
+        tokio::spawn(async move {
+            while let Ok(record) = events.next().await {
+                if record.session() == session
+                    && let Some(cid) = text_reference(record.event())
+                    && let Ok(mut known) = index.lock()
+                {
+                    known.insert(cid);
+                }
+            }
+        });
+        Self {
+            kernel,
+            session,
+            known,
+        }
+    }
+
+    fn scope(&self, session: SessionId) -> Result<(), Status> {
+        if session == self.session {
+            Ok(())
+        } else {
+            Err(Status::permission_denied("session is outside daemon scope"))
+        }
+    }
+
+    fn is_known(&self, cid: &Cid) -> bool {
+        self.known.lock().is_ok_and(|known| known.contains(cid))
+    }
+
+    /// Rebuild the index from the durable log (events committed before the subscription).
+    async fn reindex(&self) -> Result<(), Status> {
+        let context = Arc::clone(self.kernel.context());
+        let session = self.session;
+        let found = tokio::task::spawn_blocking(move || {
+            context
+                .records(Seq::new(1), Seq::new(u64::MAX))
+                .map(|records| {
+                    records
+                        .iter()
+                        .filter(|record| record.session() == session)
+                        .filter_map(|record| text_reference(record.event()))
+                        .collect::<Vec<_>>()
+                })
+        })
+        .await
+        .map_err(|_| Status::internal("text index task failed"))?
+        .map_err(|_| Status::unavailable("event log unavailable"))?;
+        if let Ok(mut known) = self.known.lock() {
+            known.extend(found);
+        }
+        Ok(())
+    }
+}
+
+fn text_reference(event: &Event) -> Option<Cid> {
+    match event {
+        Event::DirectiveApplied { directive } => Some(*directive),
+        Event::UserInputSubmitted { text } => Some(*text),
+        _ => None,
+    }
+}
+
+fn text_status(error: &polaris_sdk::registry::KernelError) -> Status {
+    use polaris_sdk::registry::KernelError as ApiError;
+    match error {
+        ApiError::Rejected(reason) => Status::invalid_argument(reason.clone()),
+        ApiError::Busy => Status::unavailable("kernel is busy; try again"),
+        ApiError::Closed => Status::unavailable("kernel is closed"),
+        ApiError::Internal(_) => Status::internal("kernel could not record the text"),
+    }
+}
+
+impl SessionTextApi for DaemonText {
+    fn submit_text(
+        &self,
+        session: SessionId,
+        text: String,
+        directive: bool,
+    ) -> TextFuture<'_, CommandReceipt> {
+        Box::pin(async move {
+            self.scope(session)?;
+            if text.len() > MAX_SESSION_TEXT_BYTES || text.trim().is_empty() {
+                return Err(Status::invalid_argument("text is empty or exceeds 64 KiB"));
+            }
+            let receipt = if directive {
+                self.kernel.apply_directive(&text).await
+            } else {
+                self.kernel.submit_user_input(&text).await
+            };
+            receipt.map_err(|error| text_status(&error))
+        })
+    }
+
+    fn read_text(&self, session: SessionId, cid: Cid) -> TextFuture<'_, String> {
+        Box::pin(async move {
+            use polaris_kernel::verifier::EvidenceStore;
+            self.scope(session)?;
+            if !self.is_known(&cid) {
+                self.reindex().await?;
+            }
+            if !self.is_known(&cid) {
+                return Err(Status::not_found(
+                    "no text event of this session references that digest",
+                ));
+            }
+            let store = polaris_kernel::KernelEvidence::new(Arc::clone(self.kernel.context()));
+            let bytes = store
+                .get(&cid)
+                .map_err(|_| Status::unavailable("content store unavailable"))?
+                .ok_or_else(|| Status::not_found("text is not in the content store"))?;
+            if bytes.len() > MAX_SESSION_TEXT_BYTES {
+                return Err(Status::resource_exhausted("text exceeds 64 KiB"));
+            }
+            String::from_utf8(bytes).map_err(|_| Status::data_loss("stored text is not UTF-8"))
         })
     }
 }

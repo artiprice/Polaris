@@ -76,6 +76,11 @@ function shortModel(model) {
   return last.split(":")[0];
 }
 
+// The server records into a polarisd session (its provider-unavailable reason says so).
+function attached() {
+  return Boolean(state.provider && state.provider.type !== "provider" && String(state.provider.reason || "").startsWith("Attached to polarisd"));
+}
+
 function folder(path) {
   const parts = path.split(/[\\/]/).filter(Boolean);
   return parts[parts.length - 1] || path;
@@ -340,7 +345,7 @@ function updateStatus() {
     line = `${state.provider.model} · ${state.provider.provider}`;
   } else if (state.provider) {
     dot.dataset.state = "offline";
-    line = "Offline · no model replies";
+    line = attached() ? "polarisd · no model replies" : "Offline · no model replies";
   } else {
     dot.dataset.state = "";
     line = "Connecting to a model…";
@@ -515,7 +520,7 @@ function handle(event) {
       $("#foot-workspace").textContent = folder(event.workspace);
       state.usage = { requests: 0, prompt_tokens: 0, completion_tokens: 0 };
       setView("session");
-      if (state.provider && state.provider.type !== "provider") addEntry("system", "Offline session · messages are recorded locally; no model replies.");
+      if (state.provider && state.provider.type !== "provider") addEntry("system", attached() ? state.provider.reason : "Offline session · messages are recorded locally; no model replies.");
       if (state.pending) api("/api/submit", state.pending);
       refreshSessions();
       break;
@@ -588,6 +593,9 @@ function handle(event) {
       break;
     case "notice":
       showNotice(event.text, 8000);
+      break;
+    case "report":
+      addEntry("assistant", `**${event.title}**\n\n\`\`\`text\n${(event.lines || []).join("\n")}\n\`\`\``);
       break;
     default:
       break;

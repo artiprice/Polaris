@@ -22,4 +22,6 @@ mod backend;
 mod server;
 
 pub use backend::{SessionRow, WebEvent};
+/// Where an attached page records (P9), re-exported for the binaries.
+pub use polaris_ui_session::AttachTarget;
 pub use server::{WebError, WebOptions, WebServer};

@@ -7,6 +7,10 @@
 //! the runtime by a blocking task); one loop selects over requests and the open session's record
 //! stream, and reports [`BackendEvent`]s back on another std channel that the UI thread drains.
 //! The kernel starts lazily on the first `Open`, so the welcome screen never waits for it.
+//!
+//! [`spawn_attached`] runs the same loop over a `polarisd` session instead
+//! ([`polaris_ui_session::RemoteSession`], P9): messages are recorded by the daemon and shown
+//! from its event stream; replies, search and activity stay with local sessions.
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -17,9 +21,9 @@ use polaris_ui_gui::backend::{
     BackendEvent, BackendLink, BackendRequest, MessageKind, SearchHit, SessionSummary,
 };
 use polaris_ui_session::{
-    ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind,
-    SessionHostError, SessionMeta, answer_review, is_single_directive, list_sessions,
-    records_until_own_input, search_history,
+    AttachTarget, ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession,
+    RecordTextKind, RemoteSession, SessionHostError, SessionMeta, answer_review,
+    is_single_directive, list_sessions, records_until_own_input, search_history,
 };
 
 use crate::DesktopError;
@@ -28,6 +32,10 @@ use crate::DesktopError;
 const LIST_LIMIT: u32 = 100;
 /// Search hits returned per query.
 const SEARCH_LIMIT: u32 = 50;
+/// Why replies are absent while attached.
+const ATTACHED: &str = "Attached to polarisd: messages are recorded in the daemon's session; model replies are not served in attached mode yet.";
+/// Why search and activity are absent while attached.
+const LOCAL_ONLY: &str = "Search and activity cover the local session store; they are not available while attached to polarisd.";
 
 /// Handle to the bridge thread.
 #[derive(Debug)]
@@ -81,6 +89,28 @@ pub fn spawn_with_chat(
     workspace: PathBuf,
     chat: Option<ChatOptions>,
 ) -> Result<(BackendLink, Bridge), DesktopError> {
+    spawn_inner(state_dir, workspace, chat, None)
+}
+
+/// Starts the bridge thread over the `polarisd` session `target` names (P9): `Open` attaches,
+/// typed lines are recorded by the daemon, and the view follows its event stream.
+///
+/// # Errors
+/// [`DesktopError::Bridge`] when the thread or its runtime cannot start.
+pub fn spawn_attached(
+    state_dir: PathBuf,
+    workspace: PathBuf,
+    target: AttachTarget,
+) -> Result<(BackendLink, Bridge), DesktopError> {
+    spawn_inner(state_dir, workspace, None, Some(target))
+}
+
+fn spawn_inner(
+    state_dir: PathBuf,
+    workspace: PathBuf,
+    chat: Option<ChatOptions>,
+    attach: Option<AttachTarget>,
+) -> Result<(BackendLink, Bridge), DesktopError> {
     let (request_tx, request_rx) = mpsc::channel::<BackendRequest>();
     let (event_tx, event_rx) = mpsc::channel::<BackendEvent>();
     let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -92,7 +122,9 @@ pub fn spawn_with_chat(
     let thread = std::thread::Builder::new()
         .name(String::from("polaris-bridge"))
         .spawn(move || {
-            runtime.block_on(run(state_dir, workspace, chat, request_rx, event_tx));
+            runtime.block_on(run(
+                state_dir, workspace, chat, attach, request_rx, event_tx,
+            ));
         })
         .map_err(|_| DesktopError::Bridge("bridge thread failed to start"))?;
     Ok((
@@ -141,9 +173,92 @@ struct Bridgework {
     plan: bool,
     /// Changes the running reply waits on, by request id.
     reviews: std::collections::BTreeMap<String, ChangeReview>,
+    /// The `polarisd` session `Open` attaches to, in attached mode.
+    attach: Option<AttachTarget>,
+    /// The attached daemon session.
+    remote: Option<RemoteSession>,
 }
 
 impl Bridgework {
+    async fn open_remote(&mut self, target: AttachTarget) {
+        let _sent = self.emit(BackendEvent::Starting);
+        self.close_session().await;
+        match RemoteSession::attach(&target).await {
+            Ok(remote) => {
+                let _sent = self.emit(BackendEvent::Opened {
+                    id: remote.id.to_string(),
+                    title: String::from("polarisd"),
+                    workspace: PathBuf::from(remote.endpoint()),
+                    branch: None,
+                });
+                self.remote = Some(remote);
+            }
+            Err(error) => {
+                let _sent = self.emit(BackendEvent::Failed(describe(
+                    "Could not attach to polarisd",
+                    &error,
+                )));
+            }
+        }
+    }
+
+    async fn submit_remote(&mut self, text: &str) {
+        if polaris_ui_session::nvidia::nvidia_command(text).is_some() {
+            let _sent = self.emit(BackendEvent::Rejected(String::from(
+                "NVIDIA commands run on local sessions; this window is attached to polarisd",
+            )));
+            return;
+        }
+        let Some(remote) = self.remote.as_ref() else {
+            let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
+            return;
+        };
+        let event = match remote.submit(text).await {
+            Ok(_) => BackendEvent::Committed,
+            Err(error) => BackendEvent::Rejected(error.to_string()),
+        };
+        let _sent = self.emit(event);
+    }
+
+    fn remote_record(
+        &mut self,
+        next: Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError>,
+    ) {
+        match next {
+            Ok(Some(resolved)) => {
+                if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
+                    let kind = match kind {
+                        RecordTextKind::Directive => MessageKind::Directive,
+                        RecordTextKind::UserInput => MessageKind::UserInput,
+                    };
+                    let _sent = self.emit(BackendEvent::Message { kind, text });
+                }
+            }
+            Ok(None) | Err(_) => {
+                self.remote = None;
+                let _sent = self.emit(BackendEvent::Failed(String::from(
+                    "The connection to polarisd ended; open the session again.",
+                )));
+                let _closed = self.emit(BackendEvent::Closed);
+            }
+        }
+    }
+
+    fn remote_list(&self) {
+        let rows = self
+            .remote
+            .iter()
+            .map(|remote| SessionSummary {
+                id: remote.id.to_string(),
+                title: String::from("polarisd"),
+                workspace: PathBuf::from(remote.endpoint()),
+                branch: None,
+                updated_ms: 0,
+            })
+            .collect();
+        let _sent = self.emit(BackendEvent::Sessions(rows));
+    }
+
     /// `false` once the window is gone (nobody to report to).
     fn emit(&self, event: BackendEvent) -> bool {
         self.events.send(event).is_ok()
@@ -161,6 +276,9 @@ impl Bridgework {
                     &error,
                 )));
             }
+            let _sent = self.emit(BackendEvent::Closed);
+        }
+        if self.remote.take().is_some() {
             let _sent = self.emit(BackendEvent::Closed);
         }
     }
@@ -224,6 +342,21 @@ impl Bridgework {
             let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
             return;
         };
+        if let Some(command) = polaris_ui_session::nvidia::nvidia_command(text) {
+            match command.run(session.kernel(), session.workspace()).await {
+                Ok(lines) => {
+                    let _committed = self.emit(BackendEvent::Committed);
+                    let _sent = self.emit(BackendEvent::Report {
+                        title: command.title().to_owned(),
+                        lines,
+                    });
+                }
+                Err(error) => {
+                    let _sent = self.emit(BackendEvent::Rejected(error.to_string()));
+                }
+            }
+            return;
+        }
         let answer = !is_single_directive(text)
             && self.chat.as_ref().is_some_and(ConversationHost::is_ready);
         if answer && self.chat.as_ref().is_some_and(ConversationHost::is_running) {
@@ -447,6 +580,16 @@ async fn next_record(
     }
 }
 
+async fn next_remote_record(
+    remote: &mut Option<RemoteSession>,
+) -> Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError> {
+    match remote.as_mut() {
+        Some(remote) => remote.next_record().await,
+        // Never resolves: nothing is attached.
+        None => std::future::pending().await,
+    }
+}
+
 async fn next_host_event(chat: &mut Option<ConversationHost>) -> HostEvent {
     match chat.as_mut() {
         Some(chat) => chat.next_event().await,
@@ -459,6 +602,7 @@ async fn run(
     state_dir: PathBuf,
     workspace: PathBuf,
     chat: Option<ChatOptions>,
+    attach: Option<AttachTarget>,
     requests: Receiver<BackendRequest>,
     events: Sender<BackendEvent>,
 ) {
@@ -479,8 +623,12 @@ async fn run(
         usage: (0, 0, 0),
         plan: true,
         reviews: std::collections::BTreeMap::new(),
+        attach,
+        remote: None,
     };
-    if let Some(chat) = work.chat.as_mut() {
+    if work.attach.is_some() {
+        let _sent = work.emit(BackendEvent::ProviderUnavailable(String::from(ATTACHED)));
+    } else if let Some(chat) = work.chat.as_mut() {
         chat.start_pick();
     }
     loop {
@@ -489,7 +637,20 @@ async fn run(
                 let Some(request) = request else {
                     break;
                 };
+                let attached = work.attach.clone();
                 match request {
+                    BackendRequest::Open { .. } if attached.is_some() => {
+                        if let Some(target) = attached {
+                            work.open_remote(target).await;
+                        }
+                    }
+                    BackendRequest::Submit { text } if attached.is_some() => {
+                        work.submit_remote(&text).await;
+                    }
+                    BackendRequest::List if attached.is_some() => work.remote_list(),
+                    BackendRequest::Search { .. } | BackendRequest::Stats if attached.is_some() => {
+                        let _sent = work.emit(BackendEvent::Failed(String::from(LOCAL_ONLY)));
+                    }
                     BackendRequest::Open { resume } => work.open(resume).await,
                     BackendRequest::Submit { text } => work.submit(&text).await,
                     BackendRequest::List => work.list().await,
@@ -509,6 +670,7 @@ async fn run(
                 }
             }
             next = next_record(&mut work.session) => work.record(next),
+            next = next_remote_record(&mut work.remote) => work.remote_record(next),
             event = next_host_event(&mut work.chat) => work.host_event(event),
         }
     }

@@ -1,0 +1,3 @@
+// Synthetic vendored code: /nv-verify skips third_party/, so this unchecked launch is not reported.
+__global__ void vendored(float* x) { x[threadIdx.x] = 0.0f; }
+void vendored_go(float* x) { vendored<<<1, 32>>>(x); }

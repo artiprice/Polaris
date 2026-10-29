@@ -218,7 +218,7 @@
 | [`polaris-search-providers`](../crates/polaris-search/crates/providers/src) | 75% | 55% | Concrete redacting Tavily/SearXNG, DNS-pinned SSRF policy and bounded fetch/charset/DOM conversion; 18 local contracts pass. Live service/container, broader DNS/fuzz/load and audit gates remain open; E39. |
 | [`polaris-search-sift`](../crates/polaris-search/crates/sift/src) | 85% | 60% | Bounded source race, pools, cancellation/drain, deduplicated S1 budget, SDK web bridge and hash-verified durable drop manifests. Local recovery/race contracts pass; live production composition, calibration and wider workloads remain open; E39. |
 | [`polaris-search`](../crates/polaris-search/src) | 100% | 80% | Both real children exported with provider-to-race/sift flow documented and doctest checked. This facade score does not certify production kernel retrieval composition or live services; E39. |
-| [`polaris-nvidia-docs`](../crates/polaris-nvidia-docs/src) | 0% | 0% | Documentation-only NVIDIA ingestion/index/adviser. |
+| [`polaris-nvidia-docs`](../crates/polaris-nvidia-docs/src) | 60% | 45% | Profiles, CUDA advisor, llms.txt/HTML ingestion, BM25 index and fetcher; `$nvidia(...)`, `/nv-profile`, `/nv-verify` wired in every frontend with sample-repo evidence (E54). Docs sync/seed, vector search and tree-sitter rule packs remain. |
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
@@ -284,7 +284,7 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P9-X-1` | 0% | 0% | Welcome-page visual acceptance is user-deferred. **UI deferred; excluded from aggregate.** |
-| `P9-X-2` | 90% | 75% | Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass; independent security audit and production daemon assembly remain open; E32. |
+| `P9-X-2` | 95% | 85% | Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass (E32); desktop and web attach to `polarisd` over the named pipe with daemon-issued credentials, attach security tests pass (E53). Independent security audit and remote mTLS deployment remain open. |
 
 ### P10 — Hardening and submission
 

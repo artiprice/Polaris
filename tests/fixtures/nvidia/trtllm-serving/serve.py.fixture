@@ -1,0 +1,12 @@
+"""Synthetic sample: answer one prompt with a prebuilt TensorRT-LLM engine."""
+from tensorrt_llm import LLM, SamplingParams
+
+
+def main() -> None:
+    llm = LLM(model="./engine")
+    for output in llm.generate(["Hello"], SamplingParams(max_tokens=16)):
+        print(output.outputs[0].text)
+
+
+if __name__ == "__main__":
+    main()

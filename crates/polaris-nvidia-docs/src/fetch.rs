@@ -105,7 +105,9 @@ impl DocFetcher {
         let allowed = (parsed.scheme() == "https" && DOC_HOSTS.contains(&host.as_str()))
             || (self.allow_loopback && loopback && parsed.scheme() == "http");
         if !allowed {
-            return Err(NvidiaError::Fetch(format!("{host} is not a documentation host")));
+            return Err(NvidiaError::Fetch(format!(
+                "{host} is not a documentation host"
+            )));
         }
         if let Some(last) = self.last_request.get(&host) {
             tokio::time::sleep_until(*last + self.spacing).await;
@@ -128,7 +130,10 @@ impl DocFetcher {
             return Ok(FetchOutcome::NotModified);
         }
         if !response.status().is_success() {
-            return Err(NvidiaError::Fetch(format!("HTTP {}", response.status().as_u16())));
+            return Err(NvidiaError::Fetch(format!(
+                "HTTP {}",
+                response.status().as_u16()
+            )));
         }
         if response
             .content_length()

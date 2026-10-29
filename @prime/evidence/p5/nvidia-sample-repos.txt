@@ -1,0 +1,70 @@
+# P5 evidence: polaris nv-profile / nv-verify on the synthetic sample repositories
+# Fixtures: tests/fixtures/nvidia/* (materialized without the .fixture suffix into a temp dir)
+# Binary: target/debug/polaris.exe (3dce43a + working tree), 2026-10-29T13:39Z
+# nvidia-smi on this machine: Quadro RTX 4000 with Max-Q Design, 7.5
+
+$ polaris --workspace <tmp>/cuda-vector-add nv-profile
+NVIDIA profile
+$nvidia(auto) — replies get this profile and its invariants when a stack is found
+Stack: cuda
+Build targets: sm_75, sm_90
+Evidence:
+  CMakeLists.txt: build uses CUDA
+  CMakeLists.txt: sm_75
+  CMakeLists.txt: sm_90
+Local GPU: Quadro RTX 4000 with Max-Q Design (sm_75)
+Note: the build targets sm_90, but the newest local GPU is sm_75: test sm_90-only features (for example TMA, wgmma or FP8 on sm_90) on the target machine
+(exit 0, 248 ms)
+
+$ polaris --workspace <tmp>/cuda-vector-add nv-verify
+CUDA advisor
+Checked 2 CUDA sources: 10 warnings, 2 suggestions.
+src/vector_add.cu
+  src/vector_add.cu:7 warning [missing-grid-bounds] kernel `add` indexes with `i` without comparing it to the data size; the last block reads and writes past the end unless the grid divides the size exactly (add `if (i >= n) return;` or a grid-stride loop)
+  src/vector_add.cu:14 info [strided-global-access] `[i * 16]` makes neighbouring threads touch addresses 16 elements apart, so a warp's loads are not coalesced; index by thread first (`[row * width + threadIdx.x]`) or stage the tile through shared memory
+  src/vector_add.cu:19 info [shared-bank-conflict] `__shared__ tile[32][32]`: a row width that is a multiple of 32 puts a column in one bank, so column-wise access (transposes) serialises 32 ways; pad it to [32][33]
+  src/vector_add.cu:31 warning [barrier-in-divergent-branch] kernel `halve` calls __syncthreads() inside a branch that depends on threadIdx; threads that skip the branch never reach the barrier and the block can hang
+  src/vector_add.cu:40 warning [unchecked-api-call] the cudaError_t returned by `cudaMalloc` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:41 warning [unchecked-api-call] the cudaError_t returned by `cudaMalloc` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:42 warning [unchecked-api-call] the cudaError_t returned by `cudaMalloc` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:43 warning [unchecked-launch] the launch of `add` is not followed by cudaGetLastError(); launch errors (bad grid size, too many registers) stay silent until a later call fails
+  src/vector_add.cu:44 warning [unchecked-api-call] the cudaError_t returned by `cudaDeviceSynchronize` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:45 warning [unchecked-api-call] the cudaError_t returned by `cudaFree` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:46 warning [unchecked-api-call] the cudaError_t returned by `cudaFree` is ignored; wrap it in an error-checking macro
+  src/vector_add.cu:47 warning [unchecked-api-call] the cudaError_t returned by `cudaFree` is ignored; wrap it in an error-checking macro
+Lexical rules: advice, not proof — confirm each finding in the code.
+(exit 0, 173 ms)
+
+$ polaris --workspace <tmp>/trtllm-serving nv-profile
+NVIDIA profile
+$nvidia(auto) — replies get this profile and its invariants when a stack is found
+Stack: tensorrt-llm, triton
+Build targets: sm_90
+Evidence:
+  build_engine.sh: sm_90
+  requirements.txt: tensorrt_llm
+  requirements.txt: tritonclient
+Local GPU: Quadro RTX 4000 with Max-Q Design (sm_75)
+Note: the build targets sm_90, but the newest local GPU is sm_75: test sm_90-only features (for example TMA, wgmma or FP8 on sm_90) on the target machine
+(exit 0, 255 ms)
+
+$ polaris --workspace <tmp>/trtllm-serving nv-verify
+CUDA advisor
+Checked 0 CUDA sources: 0 warnings, 0 suggestions.
+No .cu or .cuh sources in this workspace.
+Lexical rules: advice, not proof — confirm each finding in the code.
+(exit 0, 147 ms)
+
+$ polaris --workspace <tmp>/plain-rust nv-profile
+NVIDIA profile
+$nvidia(auto) — replies get this profile and its invariants when a stack is found
+No NVIDIA stack found in this workspace.
+Local GPU: Quadro RTX 4000 with Max-Q Design (sm_75)
+(exit 0, 232 ms)
+
+$ polaris --workspace <tmp>/plain-rust nv-verify
+CUDA advisor
+Checked 0 CUDA sources: 0 warnings, 0 suggestions.
+No .cu or .cuh sources in this workspace.
+Lexical rules: advice, not proof — confirm each finding in the code.
+(exit 0, 156 ms)

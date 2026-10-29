@@ -247,6 +247,70 @@ impl KernelClient {
         })
     }
 
+    fn session_wire(&self) -> Result<pb::Uuid, ClientError> {
+        Ok(pb::Uuid {
+            hi: u64::try_from(self.session.as_uuid().as_u128() >> 64)
+                .map_err(|_| ClientError::Protocol("session overflow"))?,
+            lo: u64::try_from(self.session.as_uuid().as_u128() & u128::from(u64::MAX))
+                .map_err(|_| ClientError::Protocol("session overflow"))?,
+        })
+    }
+
+    /// Record one typed line in this session (or apply it as one directive) through the
+    /// server's own command authority (protocol 1.3).
+    /// # Errors
+    /// Oversized text, authentication, peer rejection or transport failure.
+    pub async fn submit_text(
+        &self,
+        text: &str,
+        directive: bool,
+    ) -> Result<CommandReceipt, ClientError> {
+        if text.len() > crate::MAX_SESSION_TEXT_BYTES {
+            return Err(ClientError::Protocol("text exceeds 64 KiB"));
+        }
+        let mut request = self.request(pb::SubmitTextRequest {
+            session: Some(self.session_wire()?),
+            text: text.to_owned(),
+            directive,
+        })?;
+        request.set_timeout(REQUEST_TIMEOUT);
+        let response = self.inner.clone().submit_text(request).await?.into_inner();
+        let command = CommandId::from(
+            response
+                .command_id
+                .ok_or(ClientError::Protocol("receipt command missing"))?,
+        );
+        let accepted_at = response.accepted_at.ok_or(ClientError::Protocol(
+            "peer did not provide an acceptance sequence",
+        ))?;
+        Ok(CommandReceipt {
+            command,
+            accepted_at: Seq::new(accepted_at),
+        })
+    }
+
+    /// The text a directive or user-input event of this session references (protocol 1.3).
+    /// # Errors
+    /// Authentication, an unknown digest, peer rejection or transport failure.
+    pub async fn read_text(&self, cid: polaris_sdk::ids::Cid) -> Result<String, ClientError> {
+        let mut request = self.request(pb::ReadTextRequest {
+            session: Some(self.session_wire()?),
+            text: Some(pb::Cid::from(&cid)),
+        })?;
+        request.set_timeout(REQUEST_TIMEOUT);
+        let text = self
+            .inner
+            .clone()
+            .read_text(request)
+            .await?
+            .into_inner()
+            .text;
+        if text.len() > crate::MAX_SESSION_TEXT_BYTES {
+            return Err(ClientError::Protocol("text exceeds 64 KiB"));
+        }
+        Ok(text)
+    }
+
     /// Subscribe to this exact session and preserve typed remote-stream failures.
     /// # Errors
     /// Authentication, peer rejection or transport failure.

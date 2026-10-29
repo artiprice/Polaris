@@ -529,6 +529,8 @@ enum BackendRequest {
     SetEffort(Effort),
     /// Activity across every local session.
     Stats,
+    /// `/nv-profile` or `/nv-verify` on the session's workspace.
+    Nvidia(polaris_ui_session::nvidia::NvidiaCommand),
     Sessions,
     Resume(SessionId),
     /// Apply or decline the change the running turn waits on.
@@ -807,6 +809,15 @@ pub async fn run(
                                 Err(error) => BackendMessage::QueryFailed(error.to_string()),
                             })
                         }
+                        BackendRequest::Nvidia(command) => Some(
+                            match command.run(active.kernel(), active.workspace()).await {
+                                Ok(lines) => BackendMessage::Sheet {
+                                    title: command.title().to_owned(),
+                                    lines,
+                                },
+                                Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                            },
+                        ),
                         BackendRequest::Sessions => Some(match active.list_sessions().await {
                             Ok(rows) => BackendMessage::Sheet {
                                 title: "Sessions".to_owned(),
@@ -2747,11 +2758,21 @@ fn submit_draft(
                     }
                 }
             },
+            SlashCommand::NvProfile | SlashCommand::NvVerify => {
+                let nvidia = if matches!(command, SlashCommand::NvProfile) {
+                    polaris_ui_session::nvidia::NvidiaCommand::Profile
+                } else {
+                    polaris_ui_session::nvidia::NvidiaCommand::Verify
+                };
+                if let Err(error) = queue_request(commands, BackendRequest::Nvidia(nvidia)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
             SlashCommand::Plan
             | SlashCommand::Goal(_)
             | SlashCommand::SessionReplay { .. }
-            | SlashCommand::NvProfile
-            | SlashCommand::NvVerify
             | SlashCommand::NebiusStatus
             | SlashCommand::ContreeBranches
             | SlashCommand::DatalabSync

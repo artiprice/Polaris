@@ -92,6 +92,13 @@ pub enum WebEvent {
         /// Text.
         text: String,
     },
+    /// A command's report (`/nv-profile`, `/nv-verify`).
+    Report {
+        /// Title.
+        title: String,
+        /// Lines, shown verbatim.
+        lines: Vec<String>,
+    },
     /// The reply waits for a decision on this change.
     Review {
         /// Request id to answer.

@@ -101,11 +101,22 @@ pub enum Action {
         /// One bounded task goal.
         task: String,
     },
+    /// Profile the workspace's NVIDIA stack, target architectures and local GPUs (`/nv-profile`).
+    NvProfile,
+    /// Run the CUDA advisor over the workspace's `.cu`/`.cuh` sources (`/nv-verify`).
+    NvVerify,
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
         #[arg(long, default_value_t = 8787)]
         port: u16,
+        /// Attach to the `polarisd` listening here (a `polaris-*` pipe name or a socket path);
+        /// `--session` names the daemon's session.
+        #[arg(long, requires = "token_file")]
+        connect: Option<String>,
+        /// Credential file written by `polarisd --client-token-out`.
+        #[arg(long, requires = "connect")]
+        token_file: Option<PathBuf>,
     },
     /// Inspect recovery resources and configured credential references.
     Doctor {
@@ -229,21 +240,71 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
-            Some(Action::Web { port }) => {
-                let server = polaris_ui_web::WebServer::bind(polaris_ui_web::WebOptions {
-                    bind: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
-                    state_dir: args.state_dir.clone(),
-                    workspace: args.workspace.clone(),
-                    config: loaded.config.clone(),
-                    env_file: polaris_ui_session::default_env_file(
-                        args.env_file.as_deref(),
-                        &dirs.global,
-                    ),
-                })
+            Some(Action::NvProfile) | Some(Action::NvVerify) => {
+                let command = if matches!(args.command, Some(Action::NvProfile)) {
+                    polaris_ui_session::nvidia::NvidiaCommand::Profile
+                } else {
+                    polaris_ui_session::nvidia::NvidiaCommand::Verify
+                };
+                let lines = command
+                    .run_with(
+                        polaris_kernel::directives::directive::NvidiaMode::Auto,
+                        &args.workspace,
+                    )
+                    .await
+                    .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                writeln!(out, "{}", command.title())?;
+                for line in lines {
+                    writeln!(out, "{line}")?;
+                }
+                out.flush()?;
+                Ok(())
+            }
+            Some(Action::Web {
+                port,
+                connect,
+                token_file,
+            }) => {
+                let attach = match (connect, token_file) {
+                    (Some(endpoint), Some(token_file)) => {
+                        let session = args.session.ok_or(CliError::Unavailable(
+                            "--connect needs --session with the daemon's session id",
+                        ))?;
+                        let credential = std::fs::read_to_string(token_file)?;
+                        Some(
+                            polaris_ui_web::AttachTarget::new(
+                                &endpoint,
+                                &session.to_string(),
+                                &credential,
+                            )
+                            .map_err(|error| CliError::Ui(error.to_string()))?,
+                        )
+                    }
+                    _ => None,
+                };
+                let attached = attach.as_ref().map(|target| target.endpoint.clone());
+                let server = polaris_ui_web::WebServer::bind_with(
+                    polaris_ui_web::WebOptions {
+                        bind: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+                        state_dir: args.state_dir.clone(),
+                        workspace: args.workspace.clone(),
+                        config: loaded.config.clone(),
+                        env_file: polaris_ui_session::default_env_file(
+                            args.env_file.as_deref(),
+                            &dirs.global,
+                        ),
+                    },
+                    None,
+                    attach,
+                )
                 .await
                 .map_err(|error| CliError::Ui(error.to_string()))?;
                 let mut out = std::io::stdout().lock();
                 writeln!(out, "Polaris web UI: {}", server.url())?;
+                if let Some(endpoint) = attached {
+                    writeln!(out, "Attached to polarisd at {endpoint}.")?;
+                }
                 writeln!(
                     out,
                     "Open it in a browser on this machine; Ctrl+C stops the server."
