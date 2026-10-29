@@ -559,6 +559,15 @@ impl SessionController {
                 self.screen = Screen::Session;
                 vec![BackendRequest::List]
             }
+            BackendEvent::Message {
+                kind: crate::backend::MessageKind::Assistant,
+                text,
+            } => {
+                if let Err(error) = self.view.push_assistant(text) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
+            }
             BackendEvent::Message { kind: _, text } => {
                 if let Err(error) = self.view.push_user(text) {
                     self.notice = format!("Conversation view is full: {error}.");

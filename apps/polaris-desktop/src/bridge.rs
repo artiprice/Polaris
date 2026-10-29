@@ -33,7 +33,7 @@ const LIST_LIMIT: u32 = 100;
 /// Search hits returned per query.
 const SEARCH_LIMIT: u32 = 50;
 /// Why replies are absent while attached.
-const ATTACHED: &str = "Attached to polarisd: messages are recorded in the daemon's session; model replies are not served in attached mode yet.";
+const ATTACHED: &str = "Attached to polarisd: the daemon answers each message (read-only; changes are shown as patches) and replies appear when they finish.";
 /// Why search and activity are absent while attached.
 const LOCAL_ONLY: &str = "Search and activity cover the local session store; they are not available while attached to polarisd.";
 
@@ -230,6 +230,7 @@ impl Bridgework {
                     let kind = match kind {
                         RecordTextKind::Directive => MessageKind::Directive,
                         RecordTextKind::UserInput => MessageKind::UserInput,
+                        RecordTextKind::Assistant => MessageKind::Assistant,
                     };
                     let _sent = self.emit(BackendEvent::Message { kind, text });
                 }
@@ -548,6 +549,7 @@ impl Bridgework {
                     let kind = match kind {
                         RecordTextKind::Directive => MessageKind::Directive,
                         RecordTextKind::UserInput => MessageKind::UserInput,
+                        RecordTextKind::Assistant => MessageKind::Assistant,
                     };
                     let _sent = self.emit(BackendEvent::Message { kind, text });
                 }

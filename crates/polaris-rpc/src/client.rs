@@ -39,6 +39,13 @@ impl From<Status> for ClientError {
         Self::Status(Box::new(status))
     }
 }
+impl ClientError {
+    /// The peer answered `NOT_FOUND`: the request was valid, the thing it names does not exist.
+    #[must_use]
+    pub fn is_not_found(&self) -> bool {
+        matches!(self, Self::Status(status) if status.code() == tonic::Code::NotFound)
+    }
+}
 
 /// Retained terminal reason for a checked event stream.
 #[derive(Debug, Clone, thiserror::Error)]

@@ -224,7 +224,7 @@ pub struct BackendConfig {
 }
 
 /// Why replies are absent while attached.
-const ATTACHED: &str = "Attached to polarisd: messages are recorded in the daemon's session; model replies are not served in attached mode yet.";
+const ATTACHED: &str = "Attached to polarisd: the daemon answers each message (read-only; changes are shown as patches) and replies appear when they finish.";
 
 struct Owner {
     config: BackendConfig,
@@ -286,6 +286,7 @@ impl Owner {
                     let kind = match kind {
                         RecordTextKind::Directive => "directive",
                         RecordTextKind::UserInput => "user",
+                        RecordTextKind::Assistant => "assistant",
                     };
                     self.publisher.publish(WebEvent::Message {
                         kind: kind.to_owned(),
@@ -471,6 +472,7 @@ impl Owner {
                     let kind = match kind {
                         RecordTextKind::Directive => "directive",
                         RecordTextKind::UserInput => "user",
+                        RecordTextKind::Assistant => "assistant",
                     };
                     self.publisher.publish(WebEvent::Message {
                         kind: kind.to_owned(),

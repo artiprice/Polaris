@@ -25,6 +25,9 @@ pub enum RecordTextKind {
     Directive,
     /// Verbatim text of a `UserInputSubmitted` event.
     UserInput,
+    /// The model's reply of a `FrameStepRecorded` step, served by `polarisd` to attached
+    /// frontends (a local session streams its replies through [`crate::ChatProgress`] instead).
+    Assistant,
 }
 
 #[derive(Debug)]
@@ -231,7 +234,7 @@ impl OfflineSession {
                     RecordTextKind::Directive => {
                         format!("committed directive payload unavailable: {error}")
                     }
-                    RecordTextKind::UserInput => {
+                    RecordTextKind::UserInput | RecordTextKind::Assistant => {
                         format!("committed user input payload unavailable: {error}")
                     }
                 })
@@ -240,7 +243,9 @@ impl OfflineSession {
             .map_err(|_| {
                 SessionHostError::Unavailable(match pending.kind {
                     RecordTextKind::Directive => "committed directive is not UTF-8",
-                    RecordTextKind::UserInput => "committed user input is not UTF-8",
+                    RecordTextKind::UserInput | RecordTextKind::Assistant => {
+                        "committed user input is not UTF-8"
+                    }
                 })
             })?
             .to_owned();

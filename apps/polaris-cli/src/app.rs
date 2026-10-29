@@ -117,6 +117,18 @@ pub enum Action {
         /// Words to search for.
         query: String,
     },
+    /// Search the web through the local SearXNG instance (`/search-web`).
+    SearchWeb {
+        /// Words to search for.
+        query: String,
+    },
+    /// Download or refresh the local NVIDIA documentation seed (`/nv-docs-sync`).
+    NvDocsSync,
+    /// Search the local NVIDIA documentation seed (`/nv-docs`).
+    NvDocs {
+        /// Words to search for.
+        query: String,
+    },
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
@@ -257,7 +269,10 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             | Some(Action::Hack)
             | Some(Action::Ci)
             | Some(Action::CiRun)
-            | Some(Action::SearchLocal { .. }) => {
+            | Some(Action::SearchLocal { .. })
+            | Some(Action::SearchWeb { .. })
+            | Some(Action::NvDocsSync)
+            | Some(Action::NvDocs { .. }) => {
                 use polaris_ui_session::commands::LocalCommand;
                 let command = match args.command {
                     Some(Action::NvProfile) => LocalCommand::NvProfile,
@@ -265,6 +280,9 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                     Some(Action::Ci) => LocalCommand::Ci,
                     Some(Action::CiRun) => LocalCommand::CiRun,
                     Some(Action::SearchLocal { query }) => LocalCommand::SearchLocal(query),
+                    Some(Action::SearchWeb { query }) => LocalCommand::SearchWeb(query),
+                    Some(Action::NvDocsSync) => LocalCommand::NvDocsSync,
+                    Some(Action::NvDocs { query }) => LocalCommand::NvDocs(query),
                     _ => LocalCommand::Hack,
                 };
                 let lines = command
@@ -299,7 +317,9 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                                 &session.to_string(),
                                 &credential,
                             )
-                            .map_err(|error| CliError::Ui(error.to_string()))?,
+                            .map_err(|error| CliError::Ui(error.to_string()))?
+                            // `tcp://` off loopback: mutual TLS files from POLARIS_TLS_*.
+                            .with_env_tls(),
                         )
                     }
                     _ => None,

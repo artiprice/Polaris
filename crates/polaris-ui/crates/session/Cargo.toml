@@ -31,7 +31,11 @@ polaris-nvidia-docs = { workspace = true }
 polaris-hacker = { workspace = true }
 polaris-code-intel = { workspace = true }
 polaris-devenv = { workspace = true }
+polaris-search = { workspace = true }
+polaris-ratelimit = { workspace = true }
 blake3 = { workspace = true }
+url = { workspace = true }
+secrecy = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

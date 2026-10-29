@@ -1,7 +1,7 @@
 //! Slash commands every frontend answers locally, on the session's workspace, without the model:
-//! `/nv-profile`, `/nv-verify`, `/search-local <query>` (P5), `/hack` (P7), `/ci` and `/ci-run`
-//! (P8). Each returns report lines that the terminal shows as a sheet and the web and desktop
-//! views as a report entry.
+//! `/nv-profile`, `/nv-verify`, `/search-local <query>`, `/nv-docs-sync`, `/nv-docs <query>`,
+//! `/search-web <query>` (P5), `/hack` (P7), `/ci` and `/ci-run` (P8). Each returns report lines
+//! that the terminal shows as a sheet and the web and desktop views as a report entry.
 
 use std::path::Path;
 
@@ -26,17 +26,36 @@ pub enum LocalCommand {
     Ci,
     /// `/ci-run`: run the pipeline in Docker with cache volumes.
     CiRun,
+    /// `/nv-docs-sync` or `$nvidia-docs(sync)`: download the NVIDIA documentation seed.
+    NvDocsSync,
+    /// `/nv-docs <query>`: search the local NVIDIA documentation seed.
+    NvDocs(String),
+    /// `/search-web <query>`: results from the configured SearXNG instance.
+    SearchWeb(String),
+    /// `/diff`: the changes this session applied.
+    Diff,
+    /// `/undo`: restore the newest applied change still in place.
+    Undo,
 }
 
 impl LocalCommand {
-    /// The command `text` is, if any (`/hack` with arguments is not one; `/search-local` needs a
-    /// query, quoted or not).
+    /// The command `text` is, if any (`/hack` with arguments is not one; the search commands
+    /// need a query, quoted or not).
     #[must_use]
     pub fn parse(text: &str) -> Option<Self> {
         let text = text.trim();
-        if let Some(query) = text.strip_prefix("/search-local ") {
-            let query = query.trim().trim_matches('"').trim();
-            return (!query.is_empty()).then(|| Self::SearchLocal(query.to_owned()));
+        let query = |rest: &str| {
+            let query = rest.trim().trim_matches('"').trim();
+            (!query.is_empty()).then(|| query.to_owned())
+        };
+        if let Some(rest) = text.strip_prefix("/search-local ") {
+            return query(rest).map(Self::SearchLocal);
+        }
+        if let Some(rest) = text.strip_prefix("/nv-docs ") {
+            return query(rest).map(Self::NvDocs);
+        }
+        if let Some(rest) = text.strip_prefix("/search-web ") {
+            return query(rest).map(Self::SearchWeb);
         }
         match text {
             "/nv-profile" => Some(Self::NvProfile),
@@ -44,6 +63,10 @@ impl LocalCommand {
             "/hack" => Some(Self::Hack),
             "/ci" => Some(Self::Ci),
             "/ci-run" => Some(Self::CiRun),
+            "/diff" => Some(Self::Diff),
+            "/undo" => Some(Self::Undo),
+            // The directive is an action, not session state: it runs once here.
+            "/nv-docs-sync" | "$nvidia-docs(sync)" | "$nvidia-docs" => Some(Self::NvDocsSync),
             _ => None,
         }
     }
@@ -58,6 +81,11 @@ impl LocalCommand {
             Self::Hack => "Hack audit",
             Self::Ci => "CI pipeline",
             Self::CiRun => "CI run",
+            Self::NvDocsSync => "NVIDIA docs sync",
+            Self::NvDocs(_) => "NVIDIA docs",
+            Self::SearchWeb(_) => "Web search",
+            Self::Diff => "Applied changes",
+            Self::Undo => "Undo",
         }
     }
 
@@ -74,6 +102,8 @@ impl LocalCommand {
         match self {
             Self::Ci => crate::ci::plan_report(workspace, env.as_ref()).await,
             Self::CiRun => crate::ci::run_report(workspace, env.as_ref()).await,
+            Self::Diff => crate::changes::diff_lines(kernel).await,
+            Self::Undo => crate::changes::undo_lines(kernel, workspace).await,
             _ => self.run_with(nvidia_mode(kernel), workspace).await,
         }
     }
@@ -109,6 +139,18 @@ impl LocalCommand {
             }
             Self::Ci => crate::ci::plan_report(workspace, None).await,
             Self::CiRun => crate::ci::run_report(workspace, None).await,
+            Self::NvDocsSync => crate::nvidia::docs_sync_lines(workspace).await,
+            Self::NvDocs(query) => {
+                let root = workspace.to_owned();
+                let owned = query.clone();
+                tokio::task::spawn_blocking(move || crate::nvidia::docs_search_lines(&root, &owned))
+                    .await
+                    .map_err(|_| SessionHostError::Unavailable("docs search task failed"))?
+            }
+            Self::SearchWeb(query) => crate::web_search::search_lines(workspace, query).await,
+            Self::Diff | Self::Undo => Err(SessionHostError::Unavailable(
+                "/diff and /undo need an open session",
+            )),
         }
     }
 }

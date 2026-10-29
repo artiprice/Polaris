@@ -1,7 +1,8 @@
 //! `polarisd` command-line entry point.
 use clap::Parser;
 use polaris_daemon::{
-    DaemonConfig, DaemonSettings, EndpointSettings, read_token_public_key, serve_daemon,
+    DaemonConfig, DaemonSettings, EndpointSettings, ReplyConfig, read_token_public_key,
+    serve_daemon_with_replies,
 };
 use polaris_kernel::LocalKernelConfig;
 use polaris_sdk::ids::{FrameId, SessionId};
@@ -75,6 +76,13 @@ struct Args {
     /// Graceful transport drain deadline in seconds (1..=120).
     #[arg(long, default_value_t = 10)]
     shutdown_grace_secs: u64,
+    /// Dotenv file with provider keys for model replies (default: `~/.polaris/.env` when
+    /// present; a repository `.env` is never read implicitly).
+    #[arg(long)]
+    env_file: Option<PathBuf>,
+    /// Record messages without answering them.
+    #[arg(long)]
+    no_replies: bool,
 }
 
 fn main() -> ExitCode {
@@ -146,6 +154,11 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
         settings,
     }
     .validate()?;
+    let replies = if args.no_replies {
+        None
+    } else {
+        Some(reply_config(&args)?)
+    };
 
     let redactor = polaris_security_automata::DfaRedactor::default_redactor().map_err(|_| {
         polaris_daemon::DaemonError::Configuration("default log redactor unavailable")
@@ -160,7 +173,7 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
         .map_err(polaris_daemon::DaemonError::Runtime)?;
     let result = runtime.block_on(async {
         let shutdown = shutdown_signal()?;
-        serve_daemon(config, shutdown).await
+        serve_daemon_with_replies(config, replies, shutdown).await
     });
     let flushed = log_guard.flush(Duration::from_secs(2));
     match (result, flushed) {
@@ -168,6 +181,25 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
         (Ok(()), true) => Ok(()),
         (Ok(()), false) => Err(polaris_daemon::DaemonError::LogFlush),
     }
+}
+
+/// Provider order and models from the configuration layers of the workspace, keys from an
+/// explicit dotenv file or the global one.
+fn reply_config(args: &Args) -> Result<ReplyConfig, polaris_daemon::DaemonError> {
+    let invalid = |_| polaris_daemon::DaemonError::Configuration("configuration layers rejected");
+    let dirs = polaris_config::discover(&args.workspace).map_err(invalid)?;
+    let layers = polaris_config::read_layers(
+        &dirs,
+        &polaris_config::EnvSnapshot::capture(),
+        &polaris_config::SessionOverrides::default(),
+    )
+    .map_err(invalid)?;
+    let loaded =
+        polaris_config::load(&layers, &polaris_config::TrustGrant::none()).map_err(invalid)?;
+    Ok(ReplyConfig {
+        config: loaded.config,
+        env_file: polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),
+    })
 }
 
 /// Create `path` (never overwrite) readable by the owner only where the platform allows it.

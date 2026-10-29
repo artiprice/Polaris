@@ -193,7 +193,8 @@ fn preference_overrides(args: &Args) -> PreferenceOverrides {
 }
 fn options_from_preferences(
     preferences: polaris_config::CliPreferences,
-    dump: bool,
+    // Only the Windows live-TTY colour policy reads it.
+    #[cfg_attr(not(windows), allow(unused_variables))] dump: bool,
 ) -> RenderOptions {
     use polaris_config::{CliColorDepth, CliColorPolicy, CliTheme};
     let no_color = std::env::var_os("NO_COLOR").is_some();
@@ -2677,14 +2678,22 @@ fn submit_draft(
                 open_sheet(state, "Providers", lines)
             }
             SlashCommand::Onboarding => open_sheet(state, "Getting started", onboarding_lines()),
-            SlashCommand::Diff => {
-                state.notice =
-                    "Each change is shown with its diff for your decision before it is written"
-                        .to_owned();
+            SlashCommand::Diff | SlashCommand::Undo => {
+                use polaris_ui_session::commands::LocalCommand;
+                let local = if matches!(command, SlashCommand::Undo) {
+                    LocalCommand::Undo
+                } else {
+                    LocalCommand::Diff
+                };
+                if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
             }
-            SlashCommand::Undo | SlashCommand::Rollback(_) => {
+            SlashCommand::Rollback(_) => {
                 state.notice =
-                    "Undo is not available yet; decline a change to keep it out of your files"
+                    "Rollback to a step is not available; /undo restores the newest applied change"
                         .to_owned();
             }
             SlashCommand::Sessions => {
@@ -2779,7 +2788,10 @@ fn submit_draft(
             | SlashCommand::Hack
             | SlashCommand::Ci
             | SlashCommand::CiRun
-            | SlashCommand::SearchLocal(_) => {
+            | SlashCommand::SearchLocal(_)
+            | SlashCommand::SearchWeb(_)
+            | SlashCommand::NvDocs(_)
+            | SlashCommand::NvDocsSync => {
                 use polaris_ui_session::commands::LocalCommand;
                 let local = match command {
                     SlashCommand::NvProfile => LocalCommand::NvProfile,
@@ -2790,6 +2802,12 @@ fn submit_draft(
                         LocalCommand::CiRun
                     }
                     SlashCommand::SearchLocal(query) => LocalCommand::SearchLocal(query),
+                    SlashCommand::SearchWeb(query) => LocalCommand::SearchWeb(query),
+                    SlashCommand::NvDocs(query) => LocalCommand::NvDocs(query),
+                    SlashCommand::NvDocsSync => {
+                        state.notice = "Downloading the NVIDIA documentation seed…".to_owned();
+                        LocalCommand::NvDocsSync
+                    }
                     _ => LocalCommand::Hack,
                 };
                 if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {

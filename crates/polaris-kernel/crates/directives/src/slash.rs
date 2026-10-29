@@ -140,6 +140,12 @@ pub enum SlashCommand {
     Redteam,
     /// `/search-local <query>`.
     SearchLocal(String),
+    /// `/search-web <query>`.
+    SearchWeb(String),
+    /// `/nv-docs <query>`.
+    NvDocs(String),
+    /// `/nv-docs-sync`.
+    NvDocsSync,
     /// `/ci`.
     Ci,
     /// `/ci-run`.
@@ -365,6 +371,15 @@ pub(crate) fn parse_command(
             .free_text()
             .map(SlashCommand::SearchLocal)
             .ok_or_else(|| bad("expected a query")),
+        "search-web" => args
+            .free_text()
+            .map(SlashCommand::SearchWeb)
+            .ok_or_else(|| bad("expected a query")),
+        "nv-docs" => args
+            .free_text()
+            .map(SlashCommand::NvDocs)
+            .ok_or_else(|| bad("expected a query")),
+        "nv-docs-sync" => no_args(SlashCommand::NvDocsSync),
         "ci" => no_args(SlashCommand::Ci),
         "ci-run" => no_args(SlashCommand::CiRun),
         "nix-flake" => no_args(SlashCommand::NixFlake),

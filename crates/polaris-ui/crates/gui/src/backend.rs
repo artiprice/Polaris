@@ -61,6 +61,8 @@ pub enum MessageKind {
     UserInput,
     /// A `$directive` applied to the session.
     Directive,
+    /// A finished model reply recorded by `polarisd` (attached mode).
+    Assistant,
 }
 
 /// One session as listed by the registry.

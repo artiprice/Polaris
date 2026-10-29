@@ -369,6 +369,11 @@ impl UiState {
             WebEvent::Message { kind, text } => self.push(match kind.as_str() {
                 "user" => EntryKind::User(text),
                 "directive" => EntryKind::Directive(text),
+                // A reply `polarisd` recorded (attached mode).
+                "assistant" => EntryKind::Assistant {
+                    text,
+                    streaming: false,
+                },
                 _ => EntryKind::System(text),
             }),
             WebEvent::Committed => {

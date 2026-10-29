@@ -18,8 +18,13 @@ futures = { workspace = true }
 thiserror = { workspace = true }
 clap = { workspace = true }
 secrecy = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
+polaris-config = { workspace = true }
+polaris-runtime = { workspace = true }
+polaris-ui-session = { workspace = true }
 polaris-kernel = { workspace = true }
 polaris-rpc = { workspace = true }
 polaris-log = { workspace = true }

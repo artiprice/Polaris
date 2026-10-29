@@ -9,15 +9,69 @@ use polaris_sdk::registry::CommandReceipt;
 
 use crate::{RecordTextKind, ResolvedRecord, SessionHostError, is_single_directive};
 
-/// Where `polarisd` listens: a `polaris-*` named pipe on Windows, else a Unix socket path.
+/// Where `polarisd` listens: a `polaris-*` named pipe on Windows, a Unix socket path, or
+/// `tcp://host:port` for a daemon started with `--listen` (P9-X-2; off loopback only with
+/// mutual TLS, [`AttachTls`]).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AttachTarget {
-    /// Pipe name (`polaris-…`) or absolute socket path.
+    /// Pipe name (`polaris-…`), absolute socket path or `tcp://host:port`.
     pub endpoint: String,
     /// The daemon's session.
     pub session: SessionId,
     /// Credential bytes (decoded from the hex file `polarisd --client-token-out` wrote).
     pub credential: Vec<u8>,
+    /// Mutual TLS for a `tcp://` endpoint.
+    pub tls: Option<AttachTls>,
+}
+
+/// The client side of `polarisd --tls-cert/--tls-key/--client-ca`: PEM files read at attach
+/// time, so the key never sits in a long-lived value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachTls {
+    /// CA that signed the daemon's certificate.
+    pub server_ca: std::path::PathBuf,
+    /// This client's certificate, signed by the daemon's `--client-ca`.
+    pub certificate: std::path::PathBuf,
+    /// This client's private key.
+    pub key: std::path::PathBuf,
+    /// Name the daemon's certificate must carry (defaults to the endpoint's host).
+    pub server_name: Option<String>,
+}
+
+impl AttachTls {
+    /// From `POLARIS_TLS_CA`, `POLARIS_TLS_CERT` and `POLARIS_TLS_KEY` (paths), with
+    /// `POLARIS_TLS_SERVER_NAME` optional; `None` unless all three paths are set.
+    #[must_use]
+    pub fn from_env() -> Option<Self> {
+        let path = |name: &str| {
+            std::env::var_os(name)
+                .filter(|value| !value.is_empty())
+                .map(std::path::PathBuf::from)
+        };
+        Some(Self {
+            server_ca: path("POLARIS_TLS_CA")?,
+            certificate: path("POLARIS_TLS_CERT")?,
+            key: path("POLARIS_TLS_KEY")?,
+            server_name: std::env::var("POLARIS_TLS_SERVER_NAME")
+                .ok()
+                .filter(|name| !name.is_empty()),
+        })
+    }
+}
+
+/// Largest PEM file read for [`AttachTls`].
+const MAX_PEM_BYTES: u64 = 256 * 1024;
+
+fn read_pem(path: &std::path::Path) -> Result<Vec<u8>, SessionHostError> {
+    let size = std::fs::metadata(path)
+        .map_err(|_| SessionHostError::Unavailable("a TLS file cannot be read"))?
+        .len();
+    if size == 0 || size > MAX_PEM_BYTES {
+        return Err(SessionHostError::Unavailable(
+            "a TLS file is empty or larger than 256 KiB",
+        ));
+    }
+    std::fs::read(path).map_err(|_| SessionHostError::Unavailable("a TLS file cannot be read"))
 }
 
 impl AttachTarget {
@@ -60,10 +114,65 @@ impl AttachTarget {
             endpoint: endpoint.to_owned(),
             session,
             credential,
+            tls: None,
         })
     }
 
-    fn transport(&self) -> Result<ClientTransport, SessionHostError> {
+    /// Use mutual TLS for a `tcp://` endpoint.
+    #[must_use]
+    pub fn with_tls(mut self, tls: AttachTls) -> Self {
+        self.tls = Some(tls);
+        self
+    }
+
+    /// Use the mutual TLS files the environment names ([`AttachTls::from_env`]), if any.
+    #[must_use]
+    pub fn with_env_tls(self) -> Self {
+        match AttachTls::from_env() {
+            Some(tls) => self.with_tls(tls),
+            None => self,
+        }
+    }
+
+    async fn transport(&self) -> Result<ClientTransport, SessionHostError> {
+        if let Some(address) = self.endpoint.strip_prefix("tcp://") {
+            let resolved = tokio::net::lookup_host(address)
+                .await
+                .map_err(|_| SessionHostError::Unavailable("the daemon's host does not resolve"))?
+                .next()
+                .ok_or(SessionHostError::Unavailable(
+                    "the daemon's host does not resolve",
+                ))?;
+            let tls = match &self.tls {
+                Some(tls) => {
+                    let host = address
+                        .rsplit_once(':')
+                        .map_or(address, |(host, _)| host)
+                        .trim_matches(['[', ']']);
+                    let key = String::from_utf8(read_pem(&tls.key)?)
+                        .map_err(|_| SessionHostError::Unavailable("the TLS key is not PEM"))?;
+                    Some(
+                        polaris_rpc::TlsClientConfig::new(
+                            read_pem(&tls.server_ca)?,
+                            read_pem(&tls.certificate)?,
+                            secrecy::SecretString::from(key),
+                            tls.server_name.as_deref().unwrap_or(host),
+                        )
+                        .map_err(|_| SessionHostError::Unavailable("TLS files rejected"))?,
+                    )
+                }
+                None if resolved.ip().is_loopback() => None,
+                None => {
+                    return Err(SessionHostError::Unavailable(
+                        "a daemon off loopback needs --tls-ca, --tls-cert and --tls-key",
+                    ));
+                }
+            };
+            return Ok(ClientTransport::Tcp {
+                addr: resolved,
+                tls,
+            });
+        }
         let endpoint = if self.endpoint.starts_with("polaris-") {
             LocalEndpoint::named_pipe(&self.endpoint)
         } else {
@@ -110,7 +219,7 @@ impl RemoteSession {
     /// Unreachable endpoint, refused credential or an incompatible daemon.
     pub async fn attach(target: &AttachTarget) -> Result<Self, SessionHostError> {
         let client = KernelClient::connect(
-            target.transport()?,
+            target.transport().await?,
             target.session,
             TokenBytes::from(target.credential.clone()),
         )
@@ -135,9 +244,9 @@ impl RemoteSession {
         &self.endpoint
     }
 
-    /// The next committed record of the session, from the first one on, with directive and
-    /// user-input text read back from the daemon. Cancel-safe: dropping the future before it
-    /// resolves never skips a record.
+    /// The next committed record of the session, from the first one on, with directive,
+    /// user-input and model-reply text read back from the daemon. Cancel-safe: dropping the
+    /// future before it resolves never skips a record.
     /// # Errors
     /// A refused or broken stream, or text the daemon will not serve.
     pub async fn next_record(&mut self) -> Result<Option<ResolvedRecord>, SessionHostError> {
@@ -154,16 +263,23 @@ impl RemoteSession {
             Some(polaris_sdk::contracts::Event::UserInputSubmitted { text }) => {
                 Some((RecordTextKind::UserInput, *text))
             }
+            // The daemon serves the reply of a step that ended with one; a tool round or a
+            // failed step has none and answers NOT_FOUND.
+            Some(polaris_sdk::contracts::Event::FrameStepRecorded {
+                transcript,
+                outcome:
+                    polaris_sdk::contracts::FrameStepOutcome::Accepted
+                    | polaris_sdk::contracts::FrameStepOutcome::ClaimedDone,
+                ..
+            }) => Some((RecordTextKind::Assistant, *transcript)),
             _ => None,
         };
         let text = match target {
-            Some((kind, cid)) => Some((
-                kind,
-                self.client
-                    .read_text(cid)
-                    .await
-                    .map_err(|error| remote(&error))?,
-            )),
+            Some((kind, cid)) => match self.client.read_text(cid).await {
+                Ok(text) => Some((kind, text)),
+                Err(error) if kind == RecordTextKind::Assistant && error.is_not_found() => None,
+                Err(error) => return Err(remote(&error)),
+            },
             None => None,
         };
         let Some(record) = self.pending.take() else {

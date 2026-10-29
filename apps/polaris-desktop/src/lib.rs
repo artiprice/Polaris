@@ -267,7 +267,9 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
                 &connect.session,
                 &credential,
             )
-            .map_err(|error| DesktopError::Attach(error.to_string()))?;
+            .map_err(|error| DesktopError::Attach(error.to_string()))?
+            // A `tcp://` daemon off loopback takes its mutual TLS files from POLARIS_TLS_*.
+            .with_env_tls();
             tracing::info!(endpoint = %connect.endpoint, "desktop attaching to polarisd");
             bridge::spawn_attached(state_dir.clone(), args.workspace.clone(), target)?
         }

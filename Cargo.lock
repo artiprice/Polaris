@@ -8604,17 +8604,22 @@ version = "0.1.0-alpha"
 dependencies = [
  "clap",
  "futures",
+ "polaris-config",
  "polaris-kernel",
  "polaris-log",
  "polaris-proto",
  "polaris-rpc",
+ "polaris-runtime",
  "polaris-sdk",
  "polaris-security-automata",
  "polaris-security-capability",
+ "polaris-ui-session",
  "secrecy",
+ "serde_json",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "tokio-util",
  "tonic",
 ]
 
@@ -9887,16 +9892,20 @@ dependencies = [
  "polaris-kernel",
  "polaris-nebius-cloud-token-factory",
  "polaris-nvidia-docs",
+ "polaris-ratelimit",
  "polaris-rpc",
  "polaris-runtime",
  "polaris-sdk",
+ "polaris-search",
  "polaris-security",
  "polaris-system-one",
  "polaris-ui-model",
+ "secrecy",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "tokio-util",
+ "url",
 ]
 
 [[package]]

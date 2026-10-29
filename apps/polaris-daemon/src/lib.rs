@@ -12,6 +12,7 @@ use polaris_sdk::contracts::Event;
 use polaris_sdk::ids::{Cid, Seq, SessionId};
 use polaris_sdk::registry::{CommandReceipt, EventSource, KernelApi};
 use polaris_security_capability::{PublicKeyBytes, ResourcePath, Right};
+pub use polaris_ui_session::responder::ReplyConfig;
 use secrecy::SecretString;
 use std::{
     future::Future,
@@ -412,14 +413,51 @@ pub async fn serve_daemon<F>(config: DaemonConfig, shutdown: F) -> Result<(), Da
 where
     F: Future<Output = ()> + Send,
 {
+    serve_daemon_with_replies(config, None, shutdown).await
+}
+
+/// [`serve_daemon`], and with `replies` the daemon also answers every message typed into its
+/// session with a read-only model turn ([`polaris_ui_session::responder`]); attached frontends
+/// read the reply back as the step's record. Reply progress and failures go to standard error.
+/// # Errors
+/// Kernel startup, listener/service setup, RPC serving or kernel shutdown failure. A reply
+/// failure (no provider, a failed turn) never stops the daemon.
+pub async fn serve_daemon_with_replies<F>(
+    config: DaemonConfig,
+    replies: Option<ReplyConfig>,
+    shutdown: F,
+) -> Result<(), DaemonError>
+where
+    F: Future<Output = ()> + Send,
+{
     let config = config.validate()?;
     let settings = config.settings.validate()?;
     let session = config.kernel.session;
+    let workspace = config.kernel.workspace.clone();
     let kernel = Kernel::start(config.kernel).await?;
     let readiness = DaemonReadiness::new();
     let resolver = DaemonResolver::new(session)?;
     let shutdown_handle = kernel.clone();
     let text: Arc<dyn SessionTextApi> = Arc::new(DaemonText::new(kernel.clone(), session));
+    let stop_replies = tokio_util::sync::CancellationToken::new();
+    let responder = replies.map(|reply| {
+        let kernel = kernel.clone();
+        let stop = stop_replies.clone();
+        tokio::spawn(async move {
+            let answered = polaris_ui_session::responder::answer_session_input(
+                kernel,
+                session,
+                workspace,
+                reply,
+                stop,
+                |line| report(&line),
+            )
+            .await;
+            if let Err(error) = answered {
+                report(&format!("model replies are off: {error}"));
+            }
+        })
+    });
     readiness.set(true);
     let shutdown = close_readiness_when_signaled(shutdown, readiness.clone());
     let served = serve_kernel_api(
@@ -434,6 +472,11 @@ where
         },
         shutdown,
         move || async move {
+            // A running reply is cancelled and settles before the kernel stops.
+            stop_replies.cancel();
+            if let Some(responder) = responder {
+                let _settled = tokio::time::timeout(Duration::from_secs(30), responder).await;
+            }
             let _report = shutdown_handle.shutdown().await?;
             Ok(())
         },
@@ -441,6 +484,12 @@ where
     .await;
     readiness.set(false);
     served
+}
+
+/// One line on standard error; a closed stream drops it.
+fn report(line: &str) {
+    use std::io::Write as _;
+    let _written = writeln!(std::io::stderr().lock(), "polarisd: {line}");
 }
 
 /// Host an injected real SDK kernel API and authentication policy. This is the embedding seam for
@@ -573,28 +622,39 @@ impl TrustedFactsResolver for DaemonResolver {
 
 /// Attached-frontend text over the daemon's own kernel: typed lines go through the kernel's
 /// control authority (the client never mints commands), and only text that a directive or
-/// user-input event of this session references can be read back.
+/// user-input event of this session references can be read back. For a step transcript a
+/// `FrameStepRecorded` event of this session references, only the model's reply is served,
+/// never the prompt or the tool results it carries.
 pub struct DaemonText {
     kernel: KernelHandle,
     session: SessionId,
-    /// Text digests referenced by this session's events, kept current by a subscription.
-    known: Arc<std::sync::Mutex<std::collections::BTreeSet<Cid>>>,
+    /// Digests referenced by this session's events, kept current by a subscription.
+    known: Arc<std::sync::Mutex<std::collections::BTreeMap<Cid, TextKind>>>,
+}
+
+/// What a referenced digest holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TextKind {
+    /// Directive or typed user-input text, served verbatim.
+    Text,
+    /// A frame-step transcript; only its reply is served.
+    Step,
 }
 
 impl DaemonText {
     /// Serve text for `session` of `kernel`. Must be called inside a tokio runtime.
     #[must_use]
     pub fn new(kernel: KernelHandle, session: SessionId) -> Self {
-        let known = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
+        let known = Arc::new(std::sync::Mutex::new(std::collections::BTreeMap::new()));
         let index = Arc::clone(&known);
         let mut events = kernel.context().subscribe();
         tokio::spawn(async move {
             while let Ok(record) = events.next().await {
                 if record.session() == session
-                    && let Some(cid) = text_reference(record.event())
+                    && let Some((cid, kind)) = text_reference(record.event())
                     && let Ok(mut known) = index.lock()
                 {
-                    known.insert(cid);
+                    known.insert(cid, kind);
                 }
             }
         });
@@ -613,8 +673,11 @@ impl DaemonText {
         }
     }
 
-    fn is_known(&self, cid: &Cid) -> bool {
-        self.known.lock().is_ok_and(|known| known.contains(cid))
+    fn kind_of(&self, cid: &Cid) -> Option<TextKind> {
+        self.known
+            .lock()
+            .ok()
+            .and_then(|known| known.get(cid).copied())
     }
 
     /// Rebuild the index from the durable log (events committed before the subscription).
@@ -642,12 +705,41 @@ impl DaemonText {
     }
 }
 
-fn text_reference(event: &Event) -> Option<Cid> {
+fn text_reference(event: &Event) -> Option<(Cid, TextKind)> {
+    use polaris_sdk::contracts::FrameStepOutcome;
     match event {
-        Event::DirectiveApplied { directive } => Some(*directive),
-        Event::UserInputSubmitted { text } => Some(*text),
+        Event::DirectiveApplied { directive } => Some((*directive, TextKind::Text)),
+        Event::UserInputSubmitted { text } => Some((*text, TextKind::Text)),
+        Event::FrameStepRecorded {
+            transcript,
+            outcome: FrameStepOutcome::Accepted | FrameStepOutcome::ClaimedDone,
+            ..
+        } => Some((*transcript, TextKind::Step)),
         _ => None,
     }
+}
+
+/// The model's reply in a stored step transcript: the final text of a step that answered, cut
+/// to the RPC text bound on a character boundary. `None` for a tool round or an aborted step.
+fn step_reply(bytes: &[u8]) -> Option<String> {
+    use polaris_runtime::frames::{FrameStepRecord, StepOutcome};
+    let record: FrameStepRecord = serde_json::from_slice(bytes).ok()?;
+    let mut text = match record.result? {
+        StepOutcome::Continue { text } => text,
+        StepOutcome::ClaimedDone { claim } => claim,
+        StepOutcome::ToolResults { .. } | StepOutcome::Aborted => return None,
+    };
+    if text.trim().is_empty() {
+        return None;
+    }
+    if text.len() > MAX_SESSION_TEXT_BYTES {
+        let mut end = MAX_SESSION_TEXT_BYTES;
+        while !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        text.truncate(end);
+    }
+    Some(text)
 }
 
 fn text_status(error: &polaris_sdk::registry::KernelError) -> Status {
@@ -685,19 +777,23 @@ impl SessionTextApi for DaemonText {
         Box::pin(async move {
             use polaris_kernel::verifier::EvidenceStore;
             self.scope(session)?;
-            if !self.is_known(&cid) {
+            if self.kind_of(&cid).is_none() {
                 self.reindex().await?;
             }
-            if !self.is_known(&cid) {
+            let Some(kind) = self.kind_of(&cid) else {
                 return Err(Status::not_found(
                     "no text event of this session references that digest",
                 ));
-            }
+            };
             let store = polaris_kernel::KernelEvidence::new(Arc::clone(self.kernel.context()));
             let bytes = store
                 .get(&cid)
                 .map_err(|_| Status::unavailable("content store unavailable"))?
                 .ok_or_else(|| Status::not_found("text is not in the content store"))?;
+            if kind == TextKind::Step {
+                return step_reply(&bytes)
+                    .ok_or_else(|| Status::not_found("this step has no model reply"));
+            }
             if bytes.len() > MAX_SESSION_TEXT_BYTES {
                 return Err(Status::resource_exhausted("text exceeds 64 KiB"));
             }

@@ -26,7 +26,8 @@ struct Args {
     /// Site built by `cargo leptos build` (holds `pkg/`).
     #[arg(long, default_value = "target/site")]
     site_root: String,
-    /// Attach to the `polarisd` listening here (a `polaris-*` pipe name or a socket path).
+    /// Attach to the `polarisd` listening here (a `polaris-*` pipe name, a socket path, or
+    /// `tcp://host:port` with mutual TLS files in `POLARIS_TLS_CA/CERT/KEY`).
     #[arg(long, requires_all = ["session", "token_file"])]
     connect: Option<String>,
     /// The daemon's session id (as passed to `polarisd --session`).
@@ -56,8 +57,9 @@ fn attach_target(args: &Args) -> Result<Option<polaris_ui_web::AttachTarget>, We
         return Ok(None);
     };
     let credential = std::fs::read_to_string(token_file)?;
+    // A `tcp://` daemon off loopback takes its mutual TLS files from POLARIS_TLS_*.
     polaris_ui_web::AttachTarget::new(endpoint, session, &credential)
-        .map(Some)
+        .map(|target| Some(target.with_env_tls()))
         .map_err(|error| WebAppError::Attach(error.to_string()))
 }
 

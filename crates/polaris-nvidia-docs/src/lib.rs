@@ -26,11 +26,13 @@
 //! - [`DocFetcher`]: incremental refresh over HTTPS from NVIDIA documentation hosts only
 //!   ([`DOC_HOSTS`]), with `If-None-Match` / `If-Modified-Since`, a bounded body and a pause
 //!   between requests to one host.
+//! - [`sync`]: `$nvidia-docs(sync)` — the `llms.txt` listings into a local offline seed with
+//!   per-page provenance, incrementally on later runs.
 //!
 //! ## Not here yet
 //!
-//! Vector search over the same chunks, and the xtask that builds the offline seed (which must
-//! review each documentation set's licence before shipping it).
+//! Vector search over the same chunks. The seed is built on the user's machine and never shipped
+//! (each documentation set's licence would need a review first).
 //!
 //! ## Internal dependencies
 //!
@@ -40,6 +42,7 @@ pub mod advisor;
 pub mod docs;
 pub mod fetch;
 pub mod profile;
+pub mod sync;
 
 pub use advisor::{AdvisorFinding, Severity, advise_cuda};
 pub use docs::{

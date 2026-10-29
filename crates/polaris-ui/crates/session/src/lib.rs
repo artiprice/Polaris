@@ -11,6 +11,7 @@
 //! registry holds, and no production code currently feeds the registry's message index.
 #![forbid(unsafe_code)]
 
+pub mod changes;
 pub mod chat;
 pub mod ci;
 pub mod commands;
@@ -22,8 +23,10 @@ pub mod nvidia;
 mod offline;
 mod queries;
 mod remote;
+pub mod responder;
 pub mod stats;
 mod walk;
+pub mod web_search;
 
 pub use chat::{
     ChangeReview, ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, answer_review,
@@ -36,4 +39,4 @@ pub use host::{
 pub use offline::{OfflineSession, RecordTextKind, ResolvedRecord, is_single_directive};
 pub use polaris_kernel::storage::registry::{Hit, SessionMeta};
 pub use queries::{list_sessions, search_history, session_exists};
-pub use remote::{AttachTarget, RemoteSession};
+pub use remote::{AttachTarget, AttachTls, RemoteSession};
