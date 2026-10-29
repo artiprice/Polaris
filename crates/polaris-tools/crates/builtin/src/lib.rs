@@ -40,6 +40,7 @@ mod read;
 mod registry;
 mod search;
 mod shell;
+mod text_match;
 
 use std::time::Duration;
 
@@ -93,6 +94,7 @@ pub struct ToolOutput {
 }
 
 pub use patch::{PatchError, apply_unified_patch};
+pub use text_match::{MatchLevel, Replacement, TextMatchError, replace_text};
 pub use path::{PathError, WorkspacePath, is_secret_path, resolve_in_workspace};
 pub use proposal::{
     CasKernelProposalBackend, DiffProposal, EditFileRequest, NoProposalBackend, PreparedDiff,

@@ -7,7 +7,7 @@ Generated from P1 and P2 builtin schemas plus typed tool specs; checked by the f
 | `apply_patch` | workspace proposal | E0 | P2 | Validate and propose a single-file unified patch against the current workspace file; include its full base CID. No host file is written. |
 | `classify_command` | pure / persisted context read | E0 | P2 | Classify an explicit argv command as heavy, destructive, or unknown without executing it. |
 | `diff_apply` | pure / persisted context read | E0 | P1 | Apply a unified patch to caller-provided text as a pure operation; no files are changed. |
-| `edit_file` | workspace proposal | E0 | P2 | Propose an exact text replacement in a workspace file. One match is required unless replace_all is true; include the current full base CID. |
+| `edit_file` | workspace proposal | E0 | P2 | Propose a text replacement in a workspace file; include the current full base CID. One match is required unless replace_all is true. Exact text is preferred; whole-line whitespace and typographic punctuation differences are tolerated, and a miss reports the closest lines. |
 | `glob` | workspace read | E0 | P1 | Find workspace paths using a glob and repository ignore rules. |
 | `grep` | workspace read | E0 | P1 | Search workspace text using a size-guarded regular expression. |
 | `json_query` | pure / persisted context read | E0 | P1 | Select a value from caller-provided JSON using JSON Pointer. |

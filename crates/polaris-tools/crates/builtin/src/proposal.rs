@@ -349,17 +349,14 @@ where
                 "proposal source is not UTF-8 text".to_owned(),
             )
         })?;
-        let matches = source.match_indices(request.old_text).count();
-        if matches == 0 || (!request.replace_all && matches != 1) {
-            return Err(polaris_sdk::registry::ToolError::InvalidInput(
-                "edit requires one exact match unless replace_all is true".to_owned(),
-            ));
-        }
-        let updated = if request.replace_all {
-            source.replace(request.old_text, request.new_text)
-        } else {
-            source.replacen(request.old_text, request.new_text, 1)
-        };
+        let updated = crate::text_match::replace_text(
+            source,
+            request.old_text,
+            request.new_text,
+            request.replace_all,
+        )
+        .map_err(|error| polaris_sdk::registry::ToolError::InvalidInput(error.to_string()))?
+        .text;
         let diff = full_replacement_diff(request.path, &base_bytes, &updated)?;
         let (proposal, _receipt) = self
             .submit_patch(

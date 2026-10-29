@@ -1369,9 +1369,12 @@ async fn independent_runners_share_one_workspace_mutation_lease() -> TestResult 
     let a_result = tokio::time::timeout(Duration::from_secs(3), a_task).await??;
     let b_result = tokio::time::timeout(Duration::from_secs(3), b_task).await??;
     assert!(a_result.is_ok(), "first holder must commit");
+    let b_content = b_result
+        .map(|result| result.content)
+        .map_err(|error| format!("a stale base is reported to the model, not raised: {error}"))?;
     assert!(
-        b_result.is_err(),
-        "second holder must observe the committed new base"
+        b_content.contains("\"rejected\"") && b_content.contains("stale"),
+        "second holder must observe the committed new base: {b_content}"
     );
     assert_eq!(
         calls.load(std::sync::atomic::Ordering::SeqCst),
@@ -1388,7 +1391,7 @@ async fn independent_runners_share_one_workspace_mutation_lease() -> TestResult 
 #[tokio::test]
 async fn write_requires_explicit_absence_or_revision() -> TestResult {
     let fixture = Fixture::new(&[Right::Read, Right::ProposeDiff]).await?;
-    let result = fixture
+    let permit = fixture
         .runner
         .authorize(
             &fixture.token,
@@ -1398,10 +1401,15 @@ async fn write_requires_explicit_absence_or_revision() -> TestResult {
                 arguments: json!({"path":"created.rs","contents":"fn created() {}\n"}).to_string(),
             },
         )
-        .await;
+        .await?;
+    let result = fixture
+        .runner
+        .execute(permit, fixture.frame.view().id, 8192)
+        .await?;
     assert!(
-        result.is_err(),
-        "omitting expected_base must not silently authorize create-new"
+        result.content.contains("\"rejected\""),
+        "omitting expected_base must not silently authorize create-new: {}",
+        result.content
     );
     assert!(!fixture.workspace.path().join("created.rs").exists());
     let _report = fixture.kernel.shutdown().await?;
@@ -1968,6 +1976,63 @@ async fn host_cancels_waiting_child_preserving_root_and_sibling() -> TestResult 
         .execute(permit, fixture.frame.view().id, 65536)
         .await?;
     host.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn edit_file_tolerates_whitespace_drift_and_explains_misses() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let fixture = Fixture::new(&[Right::Read, Right::ProposeDiff]).await?;
+    let base = polaris_storage::cas::content_id(b"fn before() {}\n");
+    let frame = fixture.frame.view().id;
+    let call = |id: &str, old_text: &str| {
+        ToolCall {
+        id: id.into(),
+        name: "edit_file".into(),
+        arguments: json!({"path":"sample.rs","old_text":old_text,"new_text":"fn after() {}","expected_base":base}).to_string(),
+    }
+    };
+
+    let permit = fixture
+        .runner
+        .authorize(&fixture.token, call("miss", "fn missing() {}"))
+        .await?;
+    let missed = fixture.runner.execute(permit, frame, 8192).await?;
+    assert!(
+        missed.content.contains("\"rejected\""),
+        "{}",
+        missed.content
+    );
+    assert!(missed.content.contains("not found"), "{}", missed.content);
+    assert!(
+        missed.content.contains("1| fn before() {}"),
+        "the hint shows the closest line: {}",
+        missed.content
+    );
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("sample.rs"))?,
+        b"fn before() {}\n",
+        "a missed edit changes nothing"
+    );
+
+    let permit = fixture
+        .runner
+        .authorize(&fixture.token, call("drift", "fn before() {}   \n"))
+        .await?;
+    let applied = fixture.runner.execute(permit, frame, 8192).await?;
+    let value: serde_json::Value = serde_json::from_str(&applied.content)?;
+    assert_eq!(value["status"], "applied", "{}", applied.content);
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("sample.rs"))?,
+        b"fn after() {}\n"
+    );
+    let receipt: polaris_sdk::ids::Cid = serde_json::from_value(value["receipt"].clone())?;
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let stored: serde_json::Value =
+        serde_json::from_slice(&store.get(&receipt)?.ok_or("missing receipt")?)?;
+    assert_eq!(stored["schema"], 2);
+    assert_eq!(stored["match_level"], "trailing_whitespace");
+    fixture.kernel.shutdown().await?;
     Ok(())
 }
 

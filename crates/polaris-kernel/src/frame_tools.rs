@@ -129,7 +129,7 @@ pub struct AuthorizedFrameTool {
 }
 
 /// Errors the model can fix by retrying with different arguments.
-fn model_correctable(error: &ToolError) -> bool {
+pub(crate) fn model_correctable(error: &ToolError) -> bool {
     matches!(error, ToolError::InvalidInput(_) | ToolError::NotFound(_))
 }
 

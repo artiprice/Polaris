@@ -28,7 +28,8 @@ use polaris_security::capability::{
 };
 use polaris_system_one::verifier::{MutationSafety, SafetyRequest};
 use polaris_tools::builtin::{
-    WorkspacePath, apply_unified_patch, is_secret_path, resolve_in_workspace,
+    MatchLevel, WorkspacePath, apply_unified_patch, is_secret_path, replace_text,
+    resolve_in_workspace,
 };
 use serde::Serialize;
 use std::{
@@ -152,6 +153,8 @@ pub struct PreparedFrameMutation {
     churn_lines: u32,
     touches_unsafe: bool,
     mutation_binding: Cid,
+    /// How an `edit_file` target was located; `None` for whole-file writes and patches.
+    match_level: Option<MatchLevel>,
 }
 
 impl fmt::Debug for PreparedFrameMutation {
@@ -444,8 +447,12 @@ fn prepare_owned(
     }
     let target = normalized.as_str().to_owned();
     let root = owner.workspace_root().to_owned();
-    let MutationCandidate { base, old, new } =
-        snapshot_candidate(&root, &target, expected_base, old_text, new_text, mode)?;
+    let MutationCandidate {
+        base,
+        old,
+        new,
+        match_level,
+    } = snapshot_candidate(&root, &target, expected_base, old_text, new_text, mode)?;
     if old.len() > MAX_SOURCE_BYTES || new.len() > MAX_SOURCE_BYTES {
         return Err(FrameMutationError::Limit);
     }
@@ -520,6 +527,7 @@ fn prepare_owned(
         churn_lines: facts.churn_lines,
         touches_unsafe: facts.touches_unsafe,
         mutation_binding,
+        match_level,
     })
 }
 
@@ -534,6 +542,7 @@ struct MutationCandidate {
     base: Option<Cid>,
     old: Vec<u8>,
     new: Vec<u8>,
+    match_level: Option<MatchLevel>,
 }
 
 fn snapshot_candidate(
@@ -587,23 +596,17 @@ fn snapshot_candidate(
     if old.len() > MAX_SOURCE_BYTES || input.len() > MAX_SOURCE_BYTES {
         return Err(FrameMutationError::Limit);
     }
+    let mut match_level = None;
     let new = match mode {
         ProposalMode::Write => input.into_bytes(),
         ProposalMode::Edit => {
             let (needle, replace_all) = old_text.ok_or(FrameMutationError::InvalidProposal)?;
-            if needle.is_empty() {
-                return Err(FrameMutationError::InvalidProposal);
-            }
             let source =
                 std::str::from_utf8(&old).map_err(|_| FrameMutationError::InvalidProposal)?;
-            if !source.contains(&needle) {
-                return Err(FrameMutationError::InvalidProposal);
-            }
-            if replace_all {
-                source.replace(&needle, &input).into_bytes()
-            } else {
-                source.replacen(&needle, &input, 1).into_bytes()
-            }
+            let replacement = replace_text(source, &needle, &input, replace_all)
+                .map_err(|error| FrameMutationError::EditTarget(error.to_string()))?;
+            match_level = Some(replacement.level);
+            replacement.text.into_bytes()
         }
         ProposalMode::Patch => {
             let patch = input;
@@ -616,7 +619,12 @@ fn snapshot_candidate(
     if old == new {
         return Err(FrameMutationError::InvalidProposal);
     }
-    Ok(MutationCandidate { base, old, new })
+    Ok(MutationCandidate {
+        base,
+        old,
+        new,
+        match_level,
+    })
 }
 
 fn patch_header_matches(patch: &str, target: &str) -> bool {
@@ -823,7 +831,8 @@ fn apply_owned(
             }
             let diff = content_id(&prepared.diff_bytes);
             let receipt_record = StoredReceipt {
-                schema: 1,
+                schema: 2,
+                match_level: prepared.match_level,
                 command: approved.command_id(),
                 frame: approved.agent(),
                 path: prepared.path.clone(),
@@ -918,6 +927,9 @@ struct StoredReceipt {
     new_cid: Cid,
     diff: Cid,
     approval_evidence: Cid,
+    /// How the edit target was located (schema 2); absent for writes and patches.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    match_level: Option<MatchLevel>,
 }
 
 fn persist_json(
@@ -1053,6 +1065,9 @@ pub enum FrameMutationError {
     /// Candidate could not be produced from the exact base.
     #[error("frame mutation proposal is invalid")]
     InvalidProposal,
+    /// `edit_file` could not locate `old_text`; the text explains how to fix the call.
+    #[error("{0}")]
+    EditTarget(String),
     /// Expected base did not match the actual workspace state.
     #[error("frame mutation base is stale")]
     StaleBase,
