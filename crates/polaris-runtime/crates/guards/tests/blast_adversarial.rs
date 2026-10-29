@@ -1,3 +1,5 @@
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 use std::collections::BTreeSet;
 use std::time::Instant;
 

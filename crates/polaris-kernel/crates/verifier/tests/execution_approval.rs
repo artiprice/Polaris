@@ -1,3 +1,5 @@
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 use polaris_kernel_verifier::{EvidenceError, EvidenceStore, LocalExecutionVerifier};
 use polaris_sdk::{
     contracts::{Command, CommandBody},

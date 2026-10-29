@@ -1,3 +1,5 @@
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 use std::time::{Duration, Instant};
 
 use polaris_security_automata::{Category, CompileLimits, RuleSetBuilder};

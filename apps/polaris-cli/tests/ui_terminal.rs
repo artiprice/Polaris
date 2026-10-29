@@ -1,4 +1,6 @@
 //! Physical terminal smoke tests against the actual CLI binary through a bounded PTY.
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 use crossterm::event::{KeyCode, KeyEventKind, KeyModifiers};
 use polaris_ui_cli::input::{InputReader, NormalizedInput, TerminalInput};
 use portable_pty::{Child, CommandBuilder, ExitStatus, MasterPty, PtySize, native_pty_system};

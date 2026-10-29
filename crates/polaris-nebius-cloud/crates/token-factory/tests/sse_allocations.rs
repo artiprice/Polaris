@@ -1,3 +1,7 @@
+//! Allocation counting needs a `GlobalAlloc`, whose trait methods are `unsafe` by definition;
+//! they only forward to the system allocator.
+#![allow(unsafe_code)]
+
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},

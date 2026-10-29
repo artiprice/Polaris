@@ -1,9 +1,10 @@
+//! Print a tree-sitter outline: `scratch <rust|python|cpp|cuda|ts> <file> [depth] [all]`.
 use tree_sitter::{Language, Parser};
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let a: Vec<String> = std::env::args().collect();
     let which = a.get(1).cloned().unwrap_or_default();
     let maxd: usize = a.get(3).and_then(|s| s.parse().ok()).unwrap_or(3);
-    let src = std::fs::read_to_string(a.get(2).cloned().unwrap_or_default()).unwrap();
+    let src = std::fs::read_to_string(a.get(2).cloned().unwrap_or_default())?;
     let lang: Language = match which.as_str() {
         "rust" => tree_sitter_rust::LANGUAGE.into(),
         "python" => tree_sitter_python::LANGUAGE.into(),
@@ -12,8 +13,8 @@ fn main() {
         _ => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
     };
     let mut p = Parser::new();
-    p.set_language(&lang).unwrap();
-    let t = p.parse(&src, None).unwrap();
+    p.set_language(&lang)?;
+    let t = p.parse(&src, None).ok_or("parse failed")?;
     println!(
         "== {which} abi={} err={}",
         lang.abi_version(),
@@ -24,7 +25,9 @@ fn main() {
         let n = c.node();
         let d = c.depth() as usize;
         if (n.is_named() || a.get(4).is_some()) && d <= maxd {
-            let txt: String = src[n.byte_range()]
+            let txt: String = src
+                .get(n.byte_range())
+                .unwrap_or_default()
                 .chars()
                 .take(30)
                 .collect::<String>()
@@ -49,7 +52,7 @@ fn main() {
                 break;
             }
             if !c.goto_parent() {
-                return;
+                return Ok(());
             }
         }
     }

@@ -1,4 +1,6 @@
 //! Redaction Layer (descriptor: specs/descriptors/log_redaction_layer.json).
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::error::Error;
 use std::sync::Arc;

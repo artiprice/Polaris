@@ -1,4 +1,6 @@
 //! Explicitly fake transport contract tests; live gateway acceptance has a separate gate.
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 use polaris_kernel::{ExecutionRequest, Kernel, LocalKernelConfig, SandboxExecution};
 use polaris_sdk::{
     contracts::{Command, CommandBody, Event},

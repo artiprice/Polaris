@@ -1,4 +1,6 @@
 //! Task Supervision (descriptor: specs/descriptors/supervisor_task_supervision.json).
+// Test doubles and fixtures fail loudly: a panic is this test's failure signal.
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::error::Error;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
