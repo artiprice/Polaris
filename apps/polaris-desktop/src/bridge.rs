@@ -1,5 +1,7 @@
 //! Kernel bridge: implements the window's [`polaris_ui_gui::backend`] contract over an offline
-//! kernel session ([`polaris_ui_session::OfflineSession`]).
+//! kernel session ([`polaris_ui_session::OfflineSession`]) and, when chat is enabled, answers typed
+//! messages through the shared [`polaris_ui_session::ConversationHost`] (the same provider chain
+//! and read-only agent the terminal uses).
 //!
 //! One background thread owns a tokio runtime. Requests arrive on a std channel (forwarded into
 //! the runtime by a blocking task); one loop selects over requests and the open session's record
@@ -15,7 +17,8 @@ use polaris_ui_gui::backend::{
     BackendEvent, BackendLink, BackendRequest, MessageKind, SearchHit, SessionSummary,
 };
 use polaris_ui_session::{
-    OfflineSession, RecordTextKind, SessionHostError, SessionMeta, list_sessions, search_history,
+    ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind, SessionHostError,
+    SessionMeta, is_single_directive, list_sessions, records_until_own_input, search_history,
 };
 
 use crate::DesktopError;
@@ -46,14 +49,36 @@ impl Bridge {
     }
 }
 
+/// Model replies for typed messages: the layered configuration and the dotenv file to read
+/// provider keys from.
+#[derive(Debug, Clone)]
+pub struct ChatOptions {
+    /// Loaded configuration (provider order and models).
+    pub config: polaris_config::PolarisConfig,
+    /// Dotenv file with provider keys, if any.
+    pub env_file: Option<PathBuf>,
+}
+
 /// Starts the bridge thread for the session store at `state_dir` and new sessions in
-/// `workspace`.
+/// `workspace`, recording messages without replies.
 ///
 /// # Errors
 /// [`DesktopError::Bridge`] when the thread or its runtime cannot start.
 pub fn spawn(
     state_dir: PathBuf,
     workspace: PathBuf,
+) -> Result<(BackendLink, Bridge), DesktopError> {
+    spawn_with_chat(state_dir, workspace, None)
+}
+
+/// As [`spawn`], answering typed messages through the provider chain when `chat` is set.
+///
+/// # Errors
+/// [`DesktopError::Bridge`] when the thread or its runtime cannot start.
+pub fn spawn_with_chat(
+    state_dir: PathBuf,
+    workspace: PathBuf,
+    chat: Option<ChatOptions>,
 ) -> Result<(BackendLink, Bridge), DesktopError> {
     let (request_tx, request_rx) = mpsc::channel::<BackendRequest>();
     let (event_tx, event_rx) = mpsc::channel::<BackendEvent>();
@@ -66,7 +91,7 @@ pub fn spawn(
     let thread = std::thread::Builder::new()
         .name(String::from("polaris-bridge"))
         .spawn(move || {
-            runtime.block_on(run(state_dir, workspace, request_rx, event_tx));
+            runtime.block_on(run(state_dir, workspace, chat, request_rx, event_tx));
         })
         .map_err(|_| DesktopError::Bridge("bridge thread failed to start"))?;
     Ok((
@@ -108,6 +133,11 @@ struct Bridgework {
     workspace: PathBuf,
     events: Sender<BackendEvent>,
     session: Option<OfflineSession>,
+    chat: Option<ConversationHost>,
+    /// Model requests and tokens of the open session, from its committed records.
+    usage: (u64, u64, u64),
+    /// Plan mode of the composer (the window starts in plan mode).
+    plan: bool,
 }
 
 impl Bridgework {
@@ -117,6 +147,9 @@ impl Bridgework {
     }
 
     async fn close_session(&mut self) {
+        if let Some(chat) = self.chat.as_mut() {
+            chat.reset_conversation();
+        }
         if let Some(mut session) = self.session.take() {
             if let Err(error) = session.close().await {
                 tracing::warn!(%error, "session close reported a failure");
@@ -154,6 +187,7 @@ impl Bridgework {
             None => SessionId::new_v7(),
         };
         let started = std::time::Instant::now();
+        self.usage = (0, 0, 0);
         match OfflineSession::open(&self.state_dir, &self.workspace, id).await {
             Ok(session) => {
                 tracing::info!(
@@ -182,14 +216,97 @@ impl Bridgework {
         }
     }
 
-    async fn submit(&self, text: &str) {
-        let Some(session) = self.session.as_ref() else {
+    async fn submit(&mut self, text: &str) {
+        let Some(session) = self.session.as_mut() else {
             let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
             return;
         };
-        let event = match session.submit(text).await {
-            Ok(_receipt) => BackendEvent::Committed,
-            Err(error) => BackendEvent::Rejected(error.to_string()),
+        let answer = !is_single_directive(text)
+            && self.chat.as_ref().is_some_and(ConversationHost::is_ready);
+        if answer && self.chat.as_ref().is_some_and(ConversationHost::is_running) {
+            let _sent = self.emit(BackendEvent::Rejected(String::from(
+                "a reply is still running; stop it first",
+            )));
+            return;
+        }
+        if let Err(error) = session.submit(text).await {
+            let _sent = self.emit(BackendEvent::Rejected(error.to_string()));
+            return;
+        }
+        if !answer {
+            let _sent = self.emit(BackendEvent::Committed);
+            return;
+        }
+        // Show the recorded prompt before the reply starts streaming.
+        let records = records_until_own_input(session).await;
+        match records {
+            Ok(records) => {
+                for record in records {
+                    self.record(Ok(Some(record)));
+                }
+            }
+            Err(error) => self.record(Err(error)),
+        }
+        let _sent = self.emit(BackendEvent::Committed);
+        let (Some(session), Some(chat)) = (self.session.as_ref(), self.chat.as_mut()) else {
+            return;
+        };
+        let event = match chat.start_turn(session, text.to_owned(), self.plan).await {
+            Ok(()) => BackendEvent::ReplyStarted,
+            Err(error) => BackendEvent::ReplyFailed(error.to_string()),
+        };
+        let _sent = self.emit(event);
+    }
+
+    fn set_effort(&mut self, effort: polaris_sdk::effort::Effort) {
+        let event = match self.chat.as_mut() {
+            Some(chat) => match chat.set_effort(effort) {
+                Ok(model) => BackendEvent::ModelSwitched { model, effort },
+                Err(reason) => BackendEvent::Failed(reason),
+            },
+            None => BackendEvent::Failed(String::from("model replies are not enabled")),
+        };
+        let _sent = self.emit(event);
+    }
+
+    async fn stats(&self) {
+        let event = match list_sessions(&self.state_dir, 10_000).await {
+            Ok(rows) => {
+                let now = jiff::Zoned::now();
+                BackendEvent::Stats(polaris_ui_session::stats::stats_lines(
+                    &rows,
+                    now.date(),
+                    now.time_zone(),
+                ))
+            }
+            Err(error) => BackendEvent::Failed(describe("Reading activity failed", &error)),
+        };
+        let _sent = self.emit(event);
+    }
+
+    fn host_event(&self, event: HostEvent) {
+        let event = match event {
+            HostEvent::ProviderReady {
+                provider,
+                model,
+                effort,
+                models,
+                ..
+            } => BackendEvent::ProviderReady {
+                provider: provider.to_owned(),
+                model,
+                effort,
+                models,
+            },
+            HostEvent::ProviderUnavailable(reason) => BackendEvent::ProviderUnavailable(reason),
+            HostEvent::Progress(ChatProgress::Text(text)) => BackendEvent::ReplyText(text),
+            HostEvent::Progress(ChatProgress::Request) => BackendEvent::ReplyStep,
+            HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
+            HostEvent::Finished(report) => BackendEvent::ReplyFinished {
+                summary: report.summary(),
+                answer: report.answer,
+            },
+            HostEvent::Failed(reason) => BackendEvent::ReplyFailed(reason),
         };
         let _sent = self.emit(event);
     }
@@ -238,6 +355,24 @@ impl Bridgework {
                 if resolved.record.session() != open_id(open) {
                     return;
                 }
+                if let polaris_sdk::contracts::Event::ModelRequestCompleted {
+                    prompt_tokens,
+                    completion_tokens,
+                    ..
+                } = resolved.record.event()
+                {
+                    let (requests, prompt, completion) = self.usage;
+                    self.usage = (
+                        requests.saturating_add(1),
+                        prompt.saturating_add(u64::from(prompt_tokens.get())),
+                        completion.saturating_add(u64::from(completion_tokens.get())),
+                    );
+                    let _sent = self.emit(BackendEvent::Usage {
+                        requests: self.usage.0,
+                        prompt_tokens: self.usage.1,
+                        completion_tokens: self.usage.2,
+                    });
+                }
                 if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
                     let kind = match kind {
                         RecordTextKind::Directive => MessageKind::Directive,
@@ -277,9 +412,18 @@ async fn next_record(
     }
 }
 
+async fn next_host_event(chat: &mut Option<ConversationHost>) -> HostEvent {
+    match chat.as_mut() {
+        Some(chat) => chat.next_event().await,
+        // Never resolves: chat is disabled.
+        None => std::future::pending().await,
+    }
+}
+
 async fn run(
     state_dir: PathBuf,
     workspace: PathBuf,
+    chat: Option<ChatOptions>,
     requests: Receiver<BackendRequest>,
     events: Sender<BackendEvent>,
 ) {
@@ -296,7 +440,13 @@ async fn run(
         workspace,
         events,
         session: None,
+        chat: chat.map(|options| ConversationHost::new(options.config, options.env_file)),
+        usage: (0, 0, 0),
+        plan: true,
     };
+    if let Some(chat) = work.chat.as_mut() {
+        chat.start_pick();
+    }
     loop {
         tokio::select! {
             request = forward_rx.recv() => {
@@ -309,10 +459,22 @@ async fn run(
                     BackendRequest::List => work.list().await,
                     BackendRequest::Search { query } => work.search(&query).await,
                     BackendRequest::Close => work.close_session().await,
+                    BackendRequest::Interrupt => {
+                        if let Some(chat) = work.chat.as_ref() {
+                            chat.cancel_turn();
+                        }
+                    }
+                    BackendRequest::SetEffort(effort) => work.set_effort(effort),
+                    BackendRequest::Stats => work.stats().await,
+                    BackendRequest::Mode { plan } => work.plan = plan,
                 }
             }
             next = next_record(&mut work.session) => work.record(next),
+            event = next_host_event(&mut work.chat) => work.host_event(event),
         }
+    }
+    if let Some(chat) = work.chat.as_mut() {
+        chat.shutdown().await;
     }
     work.close_session().await;
     if forwarder.await.is_err() {

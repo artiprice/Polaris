@@ -20,7 +20,7 @@
 //! - **Honest controls.** Messages are recorded locally and nothing replies (model execution is
 //!   P3). Attach and voice input are disabled with a tooltip; sidebar pages the desktop shell
 //!   does not have yet say so in their tooltip.
-//! - **Licence.** Slint is used under its royalty-free licence (PLAN ADR-014); the About panel
+//! - **Licence.** Slint is used under its royalty-free licence (PLAN ADR-014); the Settings panel's About section
 //!   shows the `AboutSlint` widget the licence requires.
 //!
 //! Test-first descriptors: `specs/descriptors/ui_gui_*.json`.
@@ -33,6 +33,7 @@ mod app;
 mod aurora_driver;
 pub mod backend;
 mod error;
+pub mod markdown;
 pub mod palette;
 pub mod session_view;
 
@@ -55,3 +56,10 @@ mod generated {
 }
 
 pub use generated::AppWindow;
+
+/// Short composer label of a model id: its last path segment without a `:tag` suffix.
+#[must_use]
+pub fn short_model_label(model: &str) -> String {
+    let last = model.rsplit('/').next().unwrap_or(model);
+    last.split(':').next().unwrap_or(last).to_owned()
+}

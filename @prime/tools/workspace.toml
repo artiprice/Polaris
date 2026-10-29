@@ -278,7 +278,7 @@ layer = 7
 kind = "app"
 phase = "P1"
 summary = "Terminal client: ratatui TUI (default) and headless `polaris run` mode; binary name `polaris`."
-deps = ["polaris-kernel", "polaris-ui-cli", "polaris-ui-model", "polaris-ui-session", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform", "polaris-tools-builtin", "polaris-models", "polaris-runtime", "polaris-system-one", "polaris-nebius-cloud-token-factory"]
+deps = ["polaris-kernel", "polaris-ui-cli", "polaris-ui-model", "polaris-ui-session", "polaris-ui-web", "polaris-rpc", "polaris-config", "polaris-log", "polaris-sdk", "polaris-security", "polaris-tools-rtk", "polaris-storage-cas", "polaris-openshell", "polaris-platform", "polaris-tools-builtin", "polaris-models", "polaris-runtime", "polaris-system-one", "polaris-nebius-cloud-token-factory"]
 ext = ["tokio", "tokio-util", "clap", "crossterm", "ratatui", "miette", "mimalloc", "rustls", "serde", "serde_json", "blake3", "tracing", "jiff", "toml", "keyring", "portable-pty"]
 responsibilities = [
   "Parse CLI arguments (clap) and resolve config layers.",
@@ -300,7 +300,7 @@ kind = "app"
 phase = "P9"
 summary = "Native desktop GUI built with Slint (femtovg/software renderer); mobile targets in v2."
 deps = ["polaris-ui-gui", "polaris-ui-session", "polaris-log", "polaris-security", "polaris-sdk", "polaris-config"]
-ext = ["slint", "miette", "tracing", "tokio", "rustls"]
+ext = ["slint", "miette", "tracing", "tokio", "rustls", "jiff"]
 responsibilities = [
   "Host the Slint UI from polaris-ui-gui and bridge it to the kernel event stream.",
   "Run embedded kernel or connect to the daemon over a named pipe.",
@@ -1945,26 +1945,30 @@ layer = 6
 kind = "lib"
 phase = "P9"
 summary = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
-deps = ["polaris-sdk", "polaris-kernel"]
-ext = ["tokio", "thiserror"]
+deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model"]
+ext = ["tokio", "tokio-util", "thiserror", "jiff"]
 responsibilities = [
+  "Run interactive read-only chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas for the frontend.",
   "Open or resume one durable local session and stream its ordered committed records with bounded, validated text for directives and typed user input.",
   "Route a submitted line to the signed directive path or to typed user input recording, without any model execution.",
   "Answer session list, existence and history-search queries directly from the registry without starting a kernel.",
 ]
-api = ["struct OfflineSession", "struct ResolvedRecord", "enum RecordTextKind", "enum SessionHostError", "async fn list_sessions", "async fn session_exists", "async fn search_history"]
+api = ["struct OfflineSession", "struct ChatAgent", "struct ConversationHost", "enum HostEvent", "enum ChatProgress", "async fn choose_provider", "struct ResolvedRecord", "enum RecordTextKind", "enum SessionHostError", "async fn list_sessions", "async fn session_exists", "async fn search_history"]
 
 [[crate]]
 name = "polaris-ui-web"
 path = "crates/polaris-ui/crates/web"
+implemented = true
+status = "IN PROGRESS"
+evidence = "2026-10-29 loopback web UI: embedded SPA, token+Host-checked JSON API, SSE stream over the shared ConversationHost; router tests in tests/crates/polaris-ui/crates/web."
 parent = "polaris-ui"
 layer = 6
 kind = "lib"
 phase = "P9"
 member_setup = ["win-wasm32", "win-cargo-tools"]
-summary = "Leptos components (SSR + hydrate), the approved welcome page design, PWA manifest and service worker assets."
-deps = ["polaris-sdk", "polaris-ui-model"]
-ext = ["leptos", "leptos_router", "leptos_meta", "wasm-bindgen"]
+summary = "Local web UI: embedded single-page app, JSON command API and Server-Sent Events over the shared session host."
+deps = ["polaris-sdk", "polaris-config", "polaris-ui-session"]
+ext = ["axum", "futures", "getrandom", "jiff", "serde", "serde_json", "tokio", "tracing", "thiserror"]
 responsibilities = [
   "Rebuild the approved welcome page (aurora/stars atmosphere, composer pill, model popover) as Leptos components.",
   "Provide streaming chat, sessions and usage views; service worker for offline shell caching.",

@@ -1037,7 +1037,7 @@ pub fn p2_builtin_specs() -> Vec<ToolSpec> {
         ),
         spec(
             "edit_file",
-            "Propose an exact text replacement in a workspace file. One match is required unless replace_all is true; include the current full base CID.",
+            "Propose a text replacement in a workspace file; include the current full base CID. One match is required unless replace_all is true. Exact text is preferred; whole-line whitespace and typographic punctuation differences are tolerated, and a miss reports the closest lines.",
             r#"{"type":"object","properties":{"path":{"type":"string","minLength":1},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean","default":false},"expected_base":{"type":"string","pattern":"^[0-9a-f]{64}$"}},"required":["path","old_text","new_text","expected_base"],"additionalProperties":false}"#,
             writes,
         ),

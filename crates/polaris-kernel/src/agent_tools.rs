@@ -143,6 +143,31 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
         self.readonly.allow_reference(cid)
     }
 
+    /// A permit that performs no tool work and records `error` as the call's result. Only built
+    /// after `admit` validated the token and step origin and failed on the arguments.
+    fn rejection(
+        &self,
+        token: &Token,
+        call: ToolCall,
+        origin: Option<&FrameStepBinding>,
+        error: ToolError,
+    ) -> AgentFramePermit {
+        AgentFramePermit {
+            state: Arc::clone(&self.state),
+            token: token.clone(),
+            call: StoredCall {
+                version: 1,
+                frame: self.state.binding.frame_id(),
+                step: origin.map(FrameStepBinding::step),
+                id: call.id,
+                name: call.name,
+                arguments: serde_json::from_str(&call.arguments).unwrap_or(Value::Null),
+            },
+            kind: PermitKind::Rejected(error),
+            result_limit: origin.map(FrameStepBinding::max_result_bytes),
+        }
+    }
+
     async fn admit(
         &self,
         token: &Token,
@@ -365,6 +390,9 @@ impl fmt::Debug for AgentFramePermit {
     }
 }
 enum PermitKind {
+    /// Admission failed in a way the model can correct; executing records the error as the
+    /// call's result instead of aborting the frame.
+    Rejected(ToolError),
     Math(polaris_tools::math::MathInput),
     Tests(crate::ExecutionRequest),
     Read(Box<AuthorizedFrameTool>),
@@ -466,7 +494,13 @@ impl<S: MutationSafety + 'static> ToolRunner for KernelAgentToolRunner<S> {
         token: &Token,
         call: ToolCall,
     ) -> Result<Self::Authorized, Self::Error> {
-        self.admit(token, call, None).await
+        let fallback = call.clone();
+        match self.admit(token, call, None).await {
+            Err(error) if crate::frame_tools::model_correctable(&error) => {
+                Ok(self.rejection(token, fallback, None, error))
+            }
+            admitted => admitted,
+        }
     }
     async fn authorize_at_step(
         &self,
@@ -474,7 +508,13 @@ impl<S: MutationSafety + 'static> ToolRunner for KernelAgentToolRunner<S> {
         origin: &FrameStepBinding,
         call: ToolCall,
     ) -> Result<Self::Authorized, Self::Error> {
-        self.admit(token, call, Some(origin)).await
+        let fallback = call.clone();
+        match self.admit(token, call, Some(origin)).await {
+            Err(error) if crate::frame_tools::model_correctable(&error) => {
+                Ok(self.rejection(token, fallback, Some(origin), error))
+            }
+            admitted => admitted,
+        }
     }
     async fn execute(
         &self,
@@ -547,6 +587,7 @@ async fn execute_owned<S: MutationSafety + 'static>(
     let began = Instant::now();
     let context = Arc::clone(owner.context());
     let session = owner.session();
+    let tool_name = call.name.clone();
     let call_cid = tokio::task::spawn_blocking(move || {
         let bytes = serialize_bounded(&call, MAX_ARGS.saturating_add(4096))?;
         let cid = put_verified(&context, &bytes)?;
@@ -565,9 +606,10 @@ async fn execute_owned<S: MutationSafety + 'static>(
         PermitKind::Ask { .. } => Some(("tools/ask_user".to_owned(), Right::ExecuteTool)),
         PermitKind::Tests(_) => Some(("tools/run_tests".to_owned(), Right::ExecuteTool)),
         PermitKind::Revision(path) => Some((path.clone(), Right::Read)),
-        PermitKind::Mutation { .. } | PermitKind::Read(_) => None,
+        PermitKind::Mutation { .. } | PermitKind::Read(_) | PermitKind::Rejected(_) => None,
     };
     let output = match kind {
+        PermitKind::Rejected(error) => Err(error),
         PermitKind::Math(input) => {
             let operation_cancel = cancel.clone();
             let math_state = Arc::clone(&state);
@@ -678,6 +720,19 @@ async fn execute_owned<S: MutationSafety + 'static>(
         }
         PermitKind::Read(_) => Err(invalid("readonly permit was not delegated")),
     };
+    // Argument, target and verifier problems go back to the model as this call's result.
+    let output = match output {
+        Err(error) if crate::frame_tools::model_correctable(&error) => Ok(Output {
+            ok: false,
+            value: json!({
+                "tool": tool_name,
+                "status": "rejected",
+                "error": error.to_string(),
+                "hint": "Nothing was changed. Fix the arguments (read the file again, copy old_text exactly, use file_revision for expected_base) and call the tool again.",
+            }),
+        }),
+        other => other,
+    };
     let context = Arc::clone(owner.context());
     tokio::task::spawn_blocking(move || {
         let output=output.and_then(|result| {
@@ -787,7 +842,7 @@ impl<S: MutationSafety + 'static> FrameToolAccess for KernelAgentToolRunner<S> {
                 write_effects(),
             ),
             "edit_file" => (
-                "Replace exact text in one current file revision. Obtain its revision with file_revision.",
+                "Replace text in one current file revision (expected_base comes from file_revision). old_text must match one place; copy it from the file. Whole-line whitespace and typographic punctuation differences are tolerated and reported; a miss returns the closest lines.",
                 r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"old_text":{"type":"string"},"new_text":{"type":"string"},"replace_all":{"type":"boolean"},"expected_base":{"type":"string"}},"required":["path","old_text","new_text","expected_base"]}"#,
                 write_effects(),
             ),
@@ -842,12 +897,16 @@ fn mutation_error(error: FrameMutationError) -> ToolError {
         FrameMutationError::Limit | FrameMutationError::InvalidProposal => {
             invalid("mutation proposal exceeds bounds or is invalid")
         }
+        FrameMutationError::EditTarget(message) => ToolError::InvalidInput(message),
+        // A verifier rejection is about the proposed bytes, so the model can revise them.
+        FrameMutationError::Rejected(rejection) => ToolError::InvalidInput(format!(
+            "the verifier rejected this change ({rejection:?}); revise it and try again"
+        )),
         FrameMutationError::Owner
         | FrameMutationError::Workspace
         | FrameMutationError::Lease
         | FrameMutationError::Analysis
         | FrameMutationError::Verifier
-        | FrameMutationError::Rejected(_)
         | FrameMutationError::NeedsApproval { .. }
         | FrameMutationError::Persistence => owner_error(),
     }

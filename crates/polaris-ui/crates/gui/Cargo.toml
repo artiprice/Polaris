@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-ui-gui"
 description = "Slint components and controllers (desktop now, mobile v2) bound to ui-model view state."
 version.workspace = true
@@ -28,3 +29,24 @@ polaris-ui-model = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 i-slint-backend-testing = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "composer"
+path = "../../../../tests/crates/polaris-ui/crates/gui/composer.rs"
+
+[[test]]
+name = "render"
+path = "../../../../tests/crates/polaris-ui/crates/gui/render.rs"
+
+[[test]]
+name = "session_view"
+path = "../../../../tests/crates/polaris-ui/crates/gui/session_view.rs"
+
+[[test]]
+name = "tokens"
+path = "../../../../tests/crates/polaris-ui/crates/gui/tokens.rs"
+
+[[test]]
+name = "welcome"
+path = "../../../../tests/crates/polaris-ui/crates/gui/welcome.rs"

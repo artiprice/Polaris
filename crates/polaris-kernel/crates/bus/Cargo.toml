@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-kernel-bus"
 description = "CQRS command/event bus: bounded commands in, broadcast events out, log-then-publish."
 version.workspace = true
@@ -25,3 +26,24 @@ loom = { workspace = true }
 
 [features]
 kani = []
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "command_backpressure"
+path = "../../../../tests/crates/polaris-kernel/crates/bus/command_backpressure.rs"
+
+[[test]]
+name = "lag_recovery"
+path = "../../../../tests/crates/polaris-kernel/crates/bus/lag_recovery.rs"
+
+[[test]]
+name = "log_then_publish"
+path = "../../../../tests/crates/polaris-kernel/crates/bus/log_then_publish.rs"
+
+[[test]]
+name = "loom_ordering"
+path = "../../../../tests/crates/polaris-kernel/crates/bus/loom_ordering.rs"
+
+[[test]]
+name = "zero_alloc_hot_path"
+path = "../../../../tests/crates/polaris-kernel/crates/bus/zero_alloc_hot_path.rs"

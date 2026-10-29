@@ -1,9 +1,11 @@
 //! # polaris-desktop
 //!
 //! Native desktop GUI built with Slint: the welcome screen and the session view of
-//! [`polaris_ui_gui`], backed by an embedded offline kernel session ([`bridge`]). Sending records
-//! the message (or `$directive`) in the local session store shared with the terminal app;
-//! model execution (P3) and `--connect` to the daemon (P9) are not available, so nothing replies.
+//! [`polaris_ui_gui`], backed by an embedded kernel session ([`bridge`]). Sending records the
+//! message (or `$directive`) in the local session store shared with the terminal app; typed
+//! messages are answered by the same provider chain and read-only agent as the terminal
+//! (provider keys from `--env-file` or `~/.polaris/.env`). `--connect` to the daemon (P9) is not
+//! available yet.
 //!
 //! | Property | Value |
 //! |---|---|
@@ -16,7 +18,7 @@
 //! The session store defaults to `<workspace>/.polaris/state`, like the terminal app.
 //!
 //! Slint is used under its royalty-free licence (PLAN ADR-014); the attribution is the
-//! `AboutSlint` widget in the window's About panel.
+//! `AboutSlint` widget in the Settings panel's About section.
 //!
 //! Test-first descriptors: `specs/descriptors/ui_desktop_main.json`.
 
@@ -65,10 +67,11 @@ pub struct DesktopArgs {
     pub state_dir: Option<PathBuf>,
     /// Directory of the rotating log file.
     pub log_dir: PathBuf,
+    /// Dotenv file with provider keys; `None` means `~/.polaris/.env` when it exists.
+    pub env_file: Option<PathBuf>,
 }
 
-const USAGE: &str =
-    "usage: polaris-desktop [--static] [--workspace <dir>] [--state-dir <dir>] [--log-dir <dir>]";
+const USAGE: &str = "usage: polaris-desktop [--static] [--workspace <dir>] [--state-dir <dir>] [--log-dir <dir>] [--env-file <file>]";
 
 /// Parses the arguments after the program name.
 ///
@@ -94,6 +97,7 @@ pub fn parse_args(
         None => workspace.join(".polaris").join("logs"),
     };
     let mut state_dir = None;
+    let mut env_file = None;
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
         match arg.to_str() {
@@ -123,6 +127,14 @@ pub fn parse_args(
                 };
                 log_dir = PathBuf::from(value);
             }
+            Some("--env-file") => {
+                let Some(value) = args.next() else {
+                    return Err(DesktopError::Usage(format!(
+                        "--env-file needs a file\n{USAGE}"
+                    )));
+                };
+                env_file = Some(PathBuf::from(value));
+            }
             Some("--connect") => {
                 return Err(DesktopError::Usage(String::from(
                     "--connect is not available yet: the daemon bridge arrives with P9",
@@ -146,6 +158,7 @@ pub fn parse_args(
         workspace,
         state_dir,
         log_dir,
+        env_file,
     })
 }
 
@@ -174,7 +187,7 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
     tracing::info!(
         version = env!("CARGO_PKG_VERSION"),
         reduced_motion = args.reduced_motion,
-        "desktop starting (offline kernel session, no model execution)"
+        "desktop starting (kernel session with provider-chain replies)"
     );
     // Same layered configuration as the terminal app; the model list comes from it.
     let dirs = polaris_config::discover(&args.workspace)?;
@@ -185,7 +198,12 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
     let (models, default_model) = models::model_options(&loaded.config.nebius.effort);
-    let (link, bridge) = bridge::spawn(state_dir.clone(), args.workspace.clone())?;
+    let chat = bridge::ChatOptions {
+        env_file: polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),
+        config: loaded.config.clone(),
+    };
+    let (link, bridge) =
+        bridge::spawn_with_chat(state_dir.clone(), args.workspace.clone(), Some(chat))?;
     let options = AppOptions {
         version: String::from(env!("CARGO_PKG_VERSION")),
         workspace: args.workspace.display().to_string(),

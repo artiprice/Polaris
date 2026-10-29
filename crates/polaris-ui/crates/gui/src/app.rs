@@ -15,7 +15,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use crate::aurora_driver::{AuroraDriver, FRAME_STEP};
 use crate::backend::{BackendEvent, BackendLink, BackendRequest};
 use crate::generated::{
-    DirectiveChip, EntryRow, SearchHitUi, SessionGroup as SlintGroup, SessionRowUi,
+    BlockRow, DirectiveChip, EntryRow, ModelRowUi, SearchHitUi, SessionGroup as SlintGroup,
+    SessionRowUi,
 };
 use crate::session_view::{Screen, SessionController};
 use crate::{AppWindow, FrameHistogram, GuiError};
@@ -43,7 +44,7 @@ pub const TRAY_DIRECTIVES: [&str; 5] = ["websearch", "subagents", "skills", "mcp
 /// What the window shows that comes from outside the UI.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppOptions {
-    /// Application version shown in the About panel.
+    /// Application version shown in the Settings panel's About section.
     pub version: String,
     /// Workspace directory shown in the Context panel and status line.
     pub workspace: String,
@@ -149,7 +150,29 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
     }
     ui.set_notice(SharedString::from(controller.notice()));
     ui.set_pending(controller.pending());
+    ui.set_working(controller.working());
+    ui.set_status_connection(SharedString::from(controller.status_line()));
+    ui.set_status_state(SharedString::from(controller.status_state()));
     ui.set_starting(controller.starting());
+    let (provider_models, current) = controller.composer_models();
+    if !provider_models.is_empty() {
+        let labels: Vec<SharedString> = provider_models
+            .iter()
+            .map(|name| SharedString::from(crate::short_model_label(name)))
+            .collect();
+        let names: Vec<SharedString> = provider_models
+            .iter()
+            .map(|name| SharedString::from(name.as_str()))
+            .collect();
+        ui.set_model_names(ModelRc::new(VecModel::from(names)));
+        ui.set_model_short_names(ModelRc::new(VecModel::from(labels)));
+        if let Some(index) = current.and_then(|index| i32::try_from(index).ok()) {
+            ui.set_model_index(index);
+        }
+        if let Ok(index) = i32::try_from(controller.effort_index()) {
+            ui.set_effort_index(index);
+        }
+    }
     ui.set_session_title(SharedString::from(controller.title()));
     let (workspace, branch) = match controller.open_session() {
         Some(open) => (
@@ -169,9 +192,36 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
         .map(|entry| EntryRow {
             kind: SharedString::from(entry_kind(entry.kind)),
             text: SharedString::from(entry.text.as_str()),
+            blocks: ModelRc::new(VecModel::from(if entry.kind == EntryKind::Assistant {
+                crate::markdown::blocks(&entry.text)
+                    .into_iter()
+                    .map(|block| BlockRow {
+                        kind: SharedString::from(block.kind),
+                        text: SharedString::from(block.text),
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            })),
         })
         .collect();
     ui.set_entries(ModelRc::new(VecModel::from(entries)));
+    let models: Vec<ModelRowUi> = controller
+        .model_rows()
+        .into_iter()
+        .map(|row| ModelRowUi {
+            effort: SharedString::from(row.effort),
+            model: SharedString::from(row.model),
+            active: row.active,
+        })
+        .collect();
+    ui.set_model_rows(ModelRc::new(VecModel::from(models)));
+    let usage: Vec<SharedString> = controller
+        .usage_lines()
+        .into_iter()
+        .map(SharedString::from)
+        .collect();
+    ui.set_usage_lines(ModelRc::new(VecModel::from(usage)));
     let groups: Vec<SlintGroup> = controller
         .groups(now_ms())
         .into_iter()
@@ -303,6 +353,9 @@ fn drain(
     }
     if changed {
         sync(ui, &controller, workspace);
+    } else if controller.working() {
+        // Keep the elapsed time in the status bar moving while a reply streams.
+        ui.set_status_connection(SharedString::from(controller.status_line()));
     }
 }
 
@@ -343,6 +396,21 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
         Vec::new()
     });
     on!(on_submit, |c| c.submit());
+    on!(on_interrupt, |c| c.interrupt());
+    on!(on_choose_model, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_model(index),
+        Err(_) => Vec::new(),
+    });
+    on!(on_usage_opened, |c| c.refresh_usage());
+    on!(on_mode_chosen, |c, index| c.set_mode(index));
+    on!(on_model_chosen, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_composer_model(index),
+        Err(_) => Vec::new(),
+    });
+    on!(on_effort_chosen, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_effort(index),
+        Err(_) => Vec::new(),
+    });
     on!(on_new_conversation, |c| c.new_session());
     on!(on_open_session, |c, id| c.open_listed(id.as_str()));
     on!(on_search_edited, |c, query| c.search(query.as_str()));

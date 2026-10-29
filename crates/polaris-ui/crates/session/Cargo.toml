@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-ui-session"
 description = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
 version.workspace = true
@@ -14,10 +15,31 @@ workspace = true
 [dependencies]
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
+jiff = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-kernel = { workspace = true }
+polaris-config = { workspace = true }
+polaris-runtime = { workspace = true }
+polaris-security = { workspace = true }
+polaris-system-one = { workspace = true }
+polaris-nebius-cloud-token-factory = { workspace = true }
+polaris-ui-model = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "chat"
+path = "../../../../tests/crates/polaris-ui/crates/session/chat.rs"
+
+[[test]]
+name = "open_latency"
+path = "../../../../tests/crates/polaris-ui/crates/session/open_latency.rs"
+
+[[test]]
+name = "session_host"
+path = "../../../../tests/crates/polaris-ui/crates/session/session_host.rs"

@@ -285,6 +285,17 @@ fn verify_step_owned(
         }
         let value: Value =
             serde_json::from_slice(&content).map_err(|_| FrameVerificationError::Evidence)?;
+        // A rejected call performed no tool work: its recorded failure is the whole evidence.
+        if value.get("status").and_then(Value::as_str) == Some("rejected") {
+            if !matches!(
+                completed.event(),
+                Event::ToolExecutionCompleted { ok: false, .. }
+            ) || value.get("tool").and_then(Value::as_str) != Some(call.name.as_str())
+            {
+                return Err(FrameVerificationError::Evidence);
+            }
+            continue;
+        }
         match call.name.as_str() {
             "write_file" | "edit_file" | "apply_patch" => {
                 match value.get("status").and_then(Value::as_str) {
@@ -378,7 +389,8 @@ fn verify_mutation_result(
         serde_json::from_slice(bytes).map_err(|_| FrameVerificationError::Evidence)?;
     let receipt: StoredReceipt = decode_cas(owner.cas(), result.receipt, 16 * 1024)?;
     if result.status != "applied"
-        || receipt.schema != 1
+        || !matches!(receipt.schema, 1 | 2)
+        || (receipt.schema == 1 && receipt.match_level.is_some())
         || receipt.frame != frame
         || receipt.path != result.path
         || receipt.base != result.base
@@ -619,6 +631,9 @@ struct StoredReceipt {
     new_cid: Cid,
     diff: Cid,
     approval_evidence: Cid,
+    /// Schema 2: how an edit target was located (audit only).
+    #[serde(default)]
+    match_level: Option<String>,
 }
 // These mandatory identity and threshold fields are validated; additional audit fields stay in CAS.
 #[derive(Deserialize)]

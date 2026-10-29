@@ -1,0 +1,372 @@
+---
+source: crates/polaris-tools/crates/math/src/../../../../../tests/crates/polaris-tools/crates/math/src/tool.rs
+expression: snapshot_value
+---
+{
+  "description": "Deterministic math: fixed-scale decimal arithmetic (28–29 significant digits, not arbitrary precision; rational fractions such as 1/3 are rounded to this scale), finite interpolation/statistics, and first-order GPU occupancy from a bundled curated NVIDIA table with per-row citations. Operations have bounded inputs and return typed validation errors; occupancy excludes compiler allocation granularity and spills.",
+  "effects": {
+    "executes": false,
+    "network": false,
+    "reads_workspace": false,
+    "writes_workspace": false
+  },
+  "input_schema": {
+    "$defs": {
+      "ComputeCapability": {
+        "description": "Compute capability identifier.",
+        "properties": {
+          "major": {
+            "description": "major version",
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minor": {
+            "description": "minor version",
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "major",
+          "minor"
+        ],
+        "type": "object"
+      },
+      "Finite": {
+        "description": "An `f64` known to be finite.",
+        "format": "double",
+        "type": "number"
+      },
+      "Grid2": {
+        "description": "A rectangular grid: z values are `[z00, z10, z01, z11]`.",
+        "properties": {
+          "x": {
+            "description": "lower and upper x bounds",
+            "items": {
+              "$ref": "#/$defs/Finite"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "y": {
+            "description": "lower and upper y bounds",
+            "items": {
+              "$ref": "#/$defs/Finite"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "type": "array"
+          },
+          "z": {
+            "description": "row-major values at lower/lower, upper/lower, lower/upper, upper/upper",
+            "items": {
+              "$ref": "#/$defs/Finite"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "type": "object"
+      },
+      "Interp": {
+        "description": "Interpolation method for a knot sequence.",
+        "enum": [
+          "linear",
+          "step",
+          "catmull_rom",
+          "bezier"
+        ],
+        "type": "string"
+      },
+      "Knot": {
+        "description": "A finite sample point.",
+        "properties": {
+          "x": {
+            "$ref": "#/$defs/Finite",
+            "description": "x coordinate"
+          },
+          "y": {
+            "$ref": "#/$defs/Finite",
+            "description": "y coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      "LaunchConfig": {
+        "description": "Block resources supplied by a kernel launch estimate.",
+        "properties": {
+          "regs_per_thread": {
+            "description": "32-bit registers per thread.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "shared_bytes_per_block": {
+            "description": "Shared-memory bytes allocated per block.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "threads_per_block": {
+            "description": "Threads per block.",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "threads_per_block",
+          "regs_per_thread",
+          "shared_bytes_per_block"
+        ],
+        "type": "object"
+      },
+      "Point2": {
+        "description": "Finite point in two dimensions.",
+        "properties": {
+          "x": {
+            "$ref": "#/$defs/Finite",
+            "description": "x coordinate"
+          },
+          "y": {
+            "$ref": "#/$defs/Finite",
+            "description": "y coordinate"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Tagged math operation input. Decimal values are JSON strings to avoid lossy JSON numbers.",
+    "oneOf": [
+      {
+        "additionalProperties": false,
+        "description": "Fixed-scale exact decimal expression.",
+        "properties": {
+          "expression": {
+            "type": "string"
+          },
+          "operation": {
+            "const": "calc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "expression"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Floating-point expression including whitelisted transcendental functions.",
+        "properties": {
+          "expression": {
+            "type": "string"
+          },
+          "operation": {
+            "const": "calc_f64",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "expression"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Knot interpolation.",
+        "properties": {
+          "knots": {
+            "items": {
+              "$ref": "#/$defs/Knot"
+            },
+            "type": "array"
+          },
+          "method": {
+            "$ref": "#/$defs/Interp"
+          },
+          "operation": {
+            "const": "interpolate",
+            "type": "string"
+          },
+          "x": {
+            "$ref": "#/$defs/Finite"
+          }
+        },
+        "required": [
+          "operation",
+          "knots",
+          "method",
+          "x"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Bilinear rectangle interpolation.",
+        "properties": {
+          "grid": {
+            "$ref": "#/$defs/Grid2"
+          },
+          "operation": {
+            "const": "bilinear",
+            "type": "string"
+          },
+          "x": {
+            "$ref": "#/$defs/Finite"
+          },
+          "y": {
+            "$ref": "#/$defs/Finite"
+          }
+        },
+        "required": [
+          "operation",
+          "grid",
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "De Casteljau Bezier evaluation.",
+        "properties": {
+          "control": {
+            "items": {
+              "$ref": "#/$defs/Point2"
+            },
+            "type": "array"
+          },
+          "operation": {
+            "const": "bezier",
+            "type": "string"
+          },
+          "t": {
+            "$ref": "#/$defs/Finite"
+          }
+        },
+        "required": [
+          "operation",
+          "control",
+          "t"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Descriptive statistics.",
+        "properties": {
+          "operation": {
+            "const": "summarize",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/$defs/Finite"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "operation",
+          "values"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "CUDA occupancy estimate from caller-supplied sourced table TOML.",
+        "properties": {
+          "capability": {
+            "$ref": "#/$defs/ComputeCapability"
+          },
+          "launch": {
+            "$ref": "#/$defs/LaunchConfig"
+          },
+          "operation": {
+            "const": "occupancy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "capability",
+          "launch"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Effective bandwidth from byte count and elapsed time (decimal strings).",
+        "properties": {
+          "bytes": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "elapsed_seconds": {
+            "type": "string"
+          },
+          "operation": {
+            "const": "effective_bandwidth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "bytes",
+          "elapsed_seconds"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "description": "Theoretical peak bandwidth from GT/s and bus width (decimal strings).",
+        "properties": {
+          "bus_bits": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "data_rate_gtps": {
+            "type": "string"
+          },
+          "operation": {
+            "const": "peak_bandwidth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation",
+          "data_rate_gtps",
+          "bus_bits"
+        ],
+        "type": "object"
+      }
+    ],
+    "title": "MathInput"
+  },
+  "name": "math"
+}

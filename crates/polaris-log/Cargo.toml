@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-log"
 description = "tracing facade with spdlog-style async sinks (rotating file, TUI ring, telemetry ring) and a redaction layer."
 version.workspace = true
@@ -23,3 +24,40 @@ polaris-sdk = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
 dhat = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "drain_queue"
+path = "../../tests/crates/polaris-log/drain_queue.rs"
+
+[[test]]
+name = "file_rotation"
+path = "../../tests/crates/polaris-log/file_rotation.rs"
+
+[[test]]
+name = "filter_resolution"
+path = "../../tests/crates/polaris-log/filter_resolution.rs"
+
+[[test]]
+name = "line_format"
+path = "../../tests/crates/polaris-log/line_format.rs"
+
+[[test]]
+name = "log_enqueue_zero_alloc"
+path = "../../tests/crates/polaris-log/log_enqueue_zero_alloc.rs"
+
+[[test]]
+name = "log_init_lifecycle"
+path = "../../tests/crates/polaris-log/log_init_lifecycle.rs"
+
+[[test]]
+name = "redaction_layer"
+path = "../../tests/crates/polaris-log/redaction_layer.rs"
+
+[[test]]
+name = "ring_push_zero_alloc"
+path = "../../tests/crates/polaris-log/ring_push_zero_alloc.rs"
+
+[[test]]
+name = "ring_sink"
+path = "../../tests/crates/polaris-log/ring_sink.rs"

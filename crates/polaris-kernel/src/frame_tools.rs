@@ -122,6 +122,15 @@ pub struct AuthorizedFrameTool {
     admission: ResourcePath,
     right: Right,
     reference: Option<Cid>,
+    /// A model-correctable rejection (malformed arguments, unknown tool). Executing it performs
+    /// no tool work and returns the reason to the model so it can retry; policy denials never
+    /// take this path.
+    rejection: Option<ToolError>,
+}
+
+/// Errors the model can fix by retrying with different arguments.
+pub(crate) fn model_correctable(error: &ToolError) -> bool {
+    matches!(error, ToolError::InvalidInput(_) | ToolError::NotFound(_))
 }
 
 impl fmt::Debug for AuthorizedFrameTool {
@@ -368,6 +377,56 @@ impl ToolRunner for KernelToolRunner {
         if !self.state.binding.matches_token(token) {
             return Err(denied("token does not match active frame binding"));
         }
+        let name: String = call.name.chars().take(128).collect();
+        match self.authorize_call(token, call).await {
+            Err(error) if model_correctable(&error) => Ok(AuthorizedFrameTool {
+                state: Arc::clone(&self.state),
+                token: token.clone(),
+                name,
+                arguments: Value::Null,
+                admission: resource_path("__polaris_workspace__")?,
+                right: Right::Read,
+                reference: None,
+                rejection: Some(error),
+            }),
+            other => other,
+        }
+    }
+
+    async fn execute(
+        &self,
+        permit: Self::Authorized,
+        frame: FrameId,
+        max_result_bytes: usize,
+    ) -> Result<ToolResultRef, ToolError> {
+        if !Arc::ptr_eq(&self.state, &permit.state) || frame != self.state.binding.frame_id() {
+            return Err(denied("permit frame or runner mismatch"));
+        }
+        if max_result_bytes == 0 {
+            return Err(invalid("result bound must be positive"));
+        }
+        self.state.check_cancel()?;
+        let owner = tokio::select! {
+            biased;
+            () = self.state.cancellation.cancelled() => return Err(denied("frame cancelled")),
+            owner = self.kernel.inspection_owner() => owner?,
+        };
+        let cap = max_result_bytes.min(MAX_RESULT_BYTES);
+        let operation = self.state.cancellation.child_token();
+        let _cancel = CancelOnDrop(operation.clone());
+        tokio::task::spawn_blocking(move || execute_owned(owner, permit, frame, cap, &operation))
+            .await
+            .map_err(|_| owner_error())?
+    }
+}
+
+impl KernelToolRunner {
+    /// Full admission of one call; the trait method turns correctable errors into rejections.
+    async fn authorize_call(
+        &self,
+        token: &Token,
+        call: ToolCall,
+    ) -> Result<AuthorizedFrameTool, ToolError> {
         if call.arguments.len() > MAX_ARGUMENT_BYTES || call.name.len() > 128 || call.id.len() > 256
         {
             return Err(invalid("tool call exceeds input bound"));
@@ -411,36 +470,11 @@ impl ToolRunner for KernelToolRunner {
                 admission,
                 right,
                 reference,
+                rejection: None,
             })
         })
         .await
         .map_err(|_| owner_error())?
-    }
-
-    async fn execute(
-        &self,
-        permit: Self::Authorized,
-        frame: FrameId,
-        max_result_bytes: usize,
-    ) -> Result<ToolResultRef, ToolError> {
-        if !Arc::ptr_eq(&self.state, &permit.state) || frame != self.state.binding.frame_id() {
-            return Err(denied("permit frame or runner mismatch"));
-        }
-        if max_result_bytes == 0 {
-            return Err(invalid("result bound must be positive"));
-        }
-        self.state.check_cancel()?;
-        let owner = tokio::select! {
-            biased;
-            () = self.state.cancellation.cancelled() => return Err(denied("frame cancelled")),
-            owner = self.kernel.inspection_owner() => owner?,
-        };
-        let cap = max_result_bytes.min(MAX_RESULT_BYTES);
-        let operation = self.state.cancellation.child_token();
-        let _cancel = CancelOnDrop(operation.clone());
-        tokio::task::spawn_blocking(move || execute_owned(owner, permit, frame, cap, &operation))
-            .await
-            .map_err(|_| owner_error())?
     }
 }
 
@@ -555,6 +589,9 @@ fn execute_owned(
         operation,
     };
     policy.check()?;
+    if let Some(rejection) = permit.rejection.as_ref() {
+        return correctable_result(&owner, &permit, rejection, cap);
+    }
     permit
         .state
         .authorize(&permit.token, &permit.admission, permit.right)?;
@@ -563,7 +600,13 @@ fn execute_owned(
     }
     let cap_u64 = u64::try_from(cap).map_err(|_| invalid("result bound exceeds platform"))?;
     let output =
-        owner.invoke_authorized(&permit.name, &permit.arguments, frame, cap_u64, &policy)?;
+        match owner.invoke_authorized(&permit.name, &permit.arguments, frame, cap_u64, &policy) {
+            Ok(output) => output,
+            Err(error) if model_correctable(&error) => {
+                return correctable_result(&owner, &permit, &error, cap);
+            }
+            Err(error) => return Err(error),
+        };
     policy.check()?;
     // Preserve both the value and its truncation metadata. The envelope itself must fit.
     let value_bytes = serialize_bounded(&output.value, cap)?;
@@ -591,6 +634,38 @@ fn execute_owned(
     permit
         .state
         .authorize(&permit.token, &permit.admission, permit.right)?;
+    permit.state.add_reference(cid)?;
+    let content = String::from_utf8(envelope).map_err(|_| owner_error())?;
+    Ok(ToolResultRef {
+        cid,
+        content_cid: cid,
+        content,
+    })
+}
+
+/// Publish a model-correctable failure as an ordinary CAS-backed tool result. The message is a
+/// static kernel diagnostic (never file content), so the model can fix its arguments and retry.
+fn correctable_result(
+    owner: &InspectionOwner,
+    permit: &AuthorizedFrameTool,
+    error: &ToolError,
+    cap: usize,
+) -> Result<ToolResultRef, ToolError> {
+    let envelope = serde_json::to_vec(&serde_json::json!({
+        "tool": permit.name,
+        "error": error.to_string(),
+        "hint": "No tool work was performed. Correct the arguments (workspace-relative paths, existing files, the documented schema) and call the tool again.",
+    }))
+    .map_err(|_| owner_error())?;
+    if envelope.len() > cap {
+        return Err(invalid("tool error exceeds the result bound"));
+    }
+    owner.ensure_open()?;
+    let expected = content_id(&envelope);
+    let cid = owner.cas().put(&envelope).map_err(|_| owner_error())?;
+    if cid != expected {
+        return Err(owner_error());
+    }
     permit.state.add_reference(cid)?;
     let content = String::from_utf8(envelope).map_err(|_| owner_error())?;
     Ok(ToolResultRef {
@@ -656,22 +731,5 @@ pub(crate) fn frame_tool_effects(name: &str, declared: Effects) -> Effects {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::serialize_bounded;
-    use proptest::prelude::*;
-
-    proptest! {
-        #[test]
-        fn bounded_serialization_preserves_exact_json_or_rejects(text in ".{0,1024}", cap in 0_usize..4096) {
-            let expected = serde_json::to_vec(&text);
-            let result = serialize_bounded(&text, cap);
-            match expected {
-                Ok(bytes) if bytes.len() <= cap => {
-                    prop_assert!(matches!(result, Ok(actual) if actual == bytes));
-                }
-                Ok(_) => prop_assert!(result.is_err()),
-                Err(_) => prop_assert!(result.is_err()),
-            }
-        }
-    }
-}
+#[path = "../../../tests/crates/polaris-kernel/src/frame_tools.rs"]
+mod tests;

@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-storage-cas"
 description = "Content-addressable blob store: BLAKE3 ids, zstd compression, xxh3 dirty-checks, short §ref ids."
 version.workspace = true
@@ -27,3 +28,36 @@ dhat = { workspace = true }
 
 [features]
 kani = []
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "atomic_write_with_retry"
+path = "../../../../tests/crates/polaris-storage/crates/cas/atomic_write_with_retry.rs"
+
+[[test]]
+name = "blob_store_round_trip"
+path = "../../../../tests/crates/polaris-storage/crates/cas/blob_store_round_trip.rs"
+
+[[test]]
+name = "decompression_bound"
+path = "../../../../tests/crates/polaris-storage/crates/cas/decompression_bound.rs"
+
+[[test]]
+name = "disk_full"
+path = "../../../../tests/crates/polaris-storage/crates/cas/disk_full.rs"
+
+[[test]]
+name = "encoded_read_bound"
+path = "../../../../tests/crates/polaris-storage/crates/cas/encoded_read_bound.rs"
+
+[[test]]
+name = "load"
+path = "../../../../tests/crates/polaris-storage/crates/cas/load.rs"
+
+[[test]]
+name = "short_reference_folding"
+path = "../../../../tests/crates/polaris-storage/crates/cas/short_reference_folding.rs"
+
+[[test]]
+name = "zero_alloc_hot_path"
+path = "../../../../tests/crates/polaris-storage/crates/cas/zero_alloc_hot_path.rs"

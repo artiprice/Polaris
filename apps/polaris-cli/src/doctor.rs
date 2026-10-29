@@ -102,6 +102,35 @@ fn native(cwd: &Path, program: &str, args: &[&str], contains: Option<&str>) -> V
         ),
     }
 }
+/// Ask the default local Ollama server for its model list and look for `model`.
+fn ollama_http(model: &str) -> Value {
+    use std::io::{Read, Write};
+    const ENDPOINT: &str = "http://127.0.0.1:11434/api/tags";
+    let address = std::net::SocketAddr::from(([127, 0, 0, 1], 11434));
+    let Ok(mut stream) = std::net::TcpStream::connect_timeout(&address, Duration::from_secs(2))
+    else {
+        return observation("MISSING", "Ollama is not listening on 127.0.0.1:11434");
+    };
+    let timeouts = stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .and_then(|()| stream.set_write_timeout(Some(Duration::from_secs(5))));
+    let request = b"GET /api/tags HTTP/1.0\r\nHost: 127.0.0.1:11434\r\nConnection: close\r\n\r\n";
+    let mut response = Vec::new();
+    let exchanged = timeouts
+        .and_then(|()| stream.write_all(request))
+        .and_then(|()| stream.take(1 << 20).read_to_end(&mut response));
+    if exchanged.is_err() {
+        return observation("FAIL", "Ollama did not answer its model list request");
+    }
+    let text = String::from_utf8_lossy(&response);
+    let status_ok = text
+        .lines()
+        .next()
+        .is_some_and(|line| line.starts_with("HTTP/1.") && line.contains(" 200"));
+    let listed =
+        text.contains(&format!("\"{model}")) || text.contains(&format!("\"name\":\"{model}"));
+    json!({"status":if status_ok && listed {"PASS"} else {"FAIL"},"endpoint":ENDPOINT,"model":model,"listed":listed})
+}
 fn group(checks: Vec<Value>) -> Value {
     let pass = checks.iter().all(|check| check["status"] == "PASS");
     json!({"status":if pass{"PASS"}else{"FAIL"},"checks":checks})
@@ -144,13 +173,12 @@ fn native_probes(
     tavily: Option<&SecretRef>,
 ) -> BTreeMap<String, Value> {
     let mut probes = BTreeMap::new();
-    let commands: [(&str, &str, &[&str], Option<&str>); 10] = [
+    let commands: [(&str, &str, &[&str], Option<&str>); 9] = [
         ("win-git", "git", &["--version"], None),
         ("win-rust", "rustc", &["--version"], Some("1.99.0")),
         ("win-python", "python", &["--version"], Some("3.14")),
         ("win-protoc", "protoc", &["--version"], None),
         ("win-uv", "python", &["-m", "uv", "--version"], None),
-        ("win-ollama", "ollama", &["list"], Some("nemotron-mini")),
         ("win-cuda", "nvcc", &["--version"], None),
         (
             "win-wasm32",
@@ -176,6 +204,9 @@ fn native_probes(
             },
         );
     }
+    // The Ollama CLI writes logs relative to the probe's cleared environment (an `Ollama/`
+    // directory in the working tree), so the local server is asked over loopback HTTP instead.
+    probes.insert("win-ollama".into(), ollama_http("nemotron-mini"));
     probes.insert(
         "win-cmake-nasm".into(),
         if cfg!(windows) {
@@ -551,131 +582,5 @@ async fn collect_wsl(probes: &mut BTreeMap<String, Value>) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn every_setup_item_has_a_probe() -> Result<(), CliError> {
-        let report = assemble(BTreeMap::new())?;
-        let inventory: toml::Value =
-            toml::from_str(INVENTORY).map_err(|_| CliError::Unavailable("inventory"))?;
-        let entries = inventory
-            .get("member_setup")
-            .and_then(toml::Value::as_array)
-            .ok_or(CliError::Unavailable("items"))?;
-        let items = report
-            .get("items")
-            .and_then(serde_json::Value::as_array)
-            .ok_or(CliError::Unavailable("report"))?;
-        assert_eq!(
-            items.len(),
-            entries.len(),
-            "inventory cannot silently shrink"
-        );
-        for (item, source) in items.iter().zip(entries) {
-            assert_eq!(
-                item.get("id")
-                    .and_then(serde_json::Value::as_str)
-                    .ok_or(CliError::Unavailable("report id missing"))?,
-                source
-                    .get("id")
-                    .and_then(toml::Value::as_str)
-                    .ok_or(CliError::Unavailable("inventory id missing"))?,
-                "every authoritative id retained"
-            );
-            assert_eq!(
-                item.get("observation")
-                    .and_then(|value| value.get("status"))
-                    .and_then(serde_json::Value::as_str),
-                Some("UNKNOWN"),
-                "absent probe is not success"
-            );
-            assert!(
-                item.get("onboarding")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|text| !text.is_empty()),
-                "concrete action retained"
-            );
-        }
-        assert_eq!(
-            report.get("ready").and_then(serde_json::Value::as_bool),
-            Some(false),
-            "unknown required item prevents readiness"
-        );
-        assert!(
-            !is_ready(&report),
-            "unknown required item blocks CLI readiness"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn optional_missing_item_does_not_block_readiness() -> Result<(), CliError> {
-        let inventory: toml::Value =
-            toml::from_str(INVENTORY).map_err(|_| CliError::Unavailable("inventory"))?;
-        let entries = inventory
-            .get("member_setup")
-            .and_then(toml::Value::as_array)
-            .ok_or(CliError::Unavailable("items"))?;
-        let mut probes = BTreeMap::new();
-        for entry in entries {
-            let id = entry
-                .get("id")
-                .and_then(toml::Value::as_str)
-                .ok_or(CliError::Unavailable("setup item has no id"))?;
-            probes.insert(
-                id.to_owned(),
-                observation("PASS", "synthetic contract fixture"),
-            );
-        }
-        probes.insert(
-            "win-keyring".to_owned(),
-            observation("MISSING", "optional credentials are not configured"),
-        );
-
-        let report = assemble(probes)?;
-
-        assert_eq!(
-            report.get("ready").and_then(serde_json::Value::as_bool),
-            Some(true),
-            "optional absence does not block setup"
-        );
-        assert_eq!(
-            report
-                .get("required_missing")
-                .and_then(serde_json::Value::as_u64),
-            Some(0)
-        );
-        assert!(is_ready(&report));
-        Ok(())
-    }
-
-    #[test]
-    fn credential_metadata_probe_never_renders_secret_values() {
-        let secret = std::ffi::OsStr::new("sensitive-value-do-not-render-4950");
-        let present = environment_presence(Some(secret));
-        assert_eq!(
-            present.get("status").and_then(serde_json::Value::as_str),
-            Some("PASS"),
-            "nonempty is present"
-        );
-        assert!(
-            !present.to_string().contains("4950"),
-            "secret payload must never render"
-        );
-        assert_eq!(
-            environment_presence(None)
-                .get("status")
-                .and_then(serde_json::Value::as_str),
-            Some("MISSING"),
-            "absent is missing"
-        );
-        assert_eq!(
-            environment_presence(Some(std::ffi::OsStr::new("")))
-                .get("status")
-                .and_then(serde_json::Value::as_str),
-            Some("MISSING"),
-            "empty is missing"
-        );
-    }
-}
+#[path = "../../../tests/apps/polaris-cli/src/doctor.rs"]
+mod tests;

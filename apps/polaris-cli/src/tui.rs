@@ -5,7 +5,7 @@ use crate::{
     demo::DemoRuntime,
     demo_gallery::{DemoGallery, GalleryEffect, GalleryPage},
     key_trace::KeyTrace,
-    session::{OfflineSession, ResolvedRecord},
+    session::{ChatProgress, OfflineSession, ResolvedRecord},
     ui_services::{
         ClipboardResult, ClipboardService, IndexLimits, PreferenceOverrides, WorkspaceFileIndex,
     },
@@ -31,6 +31,7 @@ use polaris_ui_model::{
     session::SessionViews,
     view::ViewState,
 };
+use polaris_ui_session::{ConversationHost, HostEvent, TurnReport};
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend, layout::Rect};
 use std::{
     io::{self, IsTerminal, Write},
@@ -438,14 +439,11 @@ fn effective_bindings() -> Vec<keymap::KeyBinding> {
                 }
             }
             if binding.action == keymap::Action::ToggleMode {
-                effective.description =
-                    "Toggle the local mode preference; model execution unavailable"
+                effective.description = "Toggle plan mode"
             } else if binding.action == keymap::Action::EffortUp {
-                effective.description =
-                    "Raise the local effort preference; model execution unavailable"
+                effective.description = "Raise effort (switches to the provider's model for it)"
             } else if binding.action == keymap::Action::EffortDown {
-                effective.description =
-                    "Lower the local effort preference; model execution unavailable"
+                effective.description = "Lower effort (switches to the provider's model for it)"
             } else if binding.action == keymap::Action::InterruptOrExit {
                 effective.description = "Close overlays, clear draft; twice on empty draft exits"
             }
@@ -484,10 +482,20 @@ fn footer_text(state: &UiState) -> String {
     )
 }
 fn help_lines() -> Vec<String> {
-    let mut lines=vec!["Offline: /help /status /stats /sessions /session resume <id> /clear /quit".to_owned(),
-  "Cockpit: /panel [tasks|agents|questions|review|proof|context|system|off], F4 toggle, F6 focus".to_owned(),
-  "Enter sends; Shift+Enter inserts a newline. Ctrl+J or Alt+Enter are compatibility fallbacks.".to_owned(),
-  "Model execution, live human questions and advanced services require their real execution profiles.".to_owned()];
+    let mut lines = vec![
+        "Commands: /help /status /model /providers /usage /sessions /session resume <id> /clear /quit"
+            .to_owned(),
+        "Ask anything about the workspace; the model reads files with its tools. Esc interrupts a reply."
+            .to_owned(),
+        "Mention files with @path; switch models with /model or Shift+Up/Shift+Down effort. /onboarding explains setup."
+            .to_owned(),
+        "Cockpit: /panel [tasks|agents|questions|review|proof|context|system|off], F4 toggle, F6 focus"
+            .to_owned(),
+        "Enter sends; Shift+Enter inserts a newline. Ctrl+J or Alt+Enter are compatibility fallbacks."
+            .to_owned(),
+        "This conversation is read-only: the model proposes changes as patches; nothing is written."
+            .to_owned(),
+    ];
     lines.push(
         "Ctrl+V/Shift+Insert paste text; Ctrl+C copies selection; Ctrl+X cuts after clipboard acknowledgement. Images are unavailable."
             .to_owned(),
@@ -501,7 +509,25 @@ fn help_lines() -> Vec<String> {
 #[derive(Debug)]
 enum BackendRequest {
     StartOffline,
-    Directive { session: SessionId, text: String },
+    Directive {
+        session: SessionId,
+        text: String,
+    },
+    /// Record typed input, then answer it with a chat turn on the session kernel.
+    Prompt {
+        session: SessionId,
+        text: String,
+        /// Plan mode: ask for a plan rather than a full answer.
+        plan: bool,
+    },
+    /// Interrupt the running turn.
+    CancelTurn,
+    /// Forget the conversation carried into the next turn.
+    ClearChat,
+    /// Continue on the provider's model for this effort.
+    SetEffort(Effort),
+    /// Activity across every local session.
+    Stats,
     Sessions,
     Resume(SessionId),
 }
@@ -513,9 +539,37 @@ enum BackendMessage {
     Rejected(String),
     QueryFailed(String),
     ResumeRejected(String),
-    Sheet { title: String, lines: Vec<String> },
-    Resumed { id: SessionId, workspace: String },
+    Sheet {
+        title: String,
+        lines: Vec<String>,
+    },
+    Resumed {
+        id: SessionId,
+        workspace: String,
+    },
+    /// The provider chain selected a model for this run.
+    ProviderReady {
+        provider: &'static str,
+        model: String,
+        effort: Effort,
+        /// The provider's model for every effort, for `/model`.
+        models: Vec<(Effort, String)>,
+        skipped: Vec<String>,
+    },
+    /// The conversation continues on another model or effort.
+    ModelSwitched {
+        model: String,
+        effort: Effort,
+    },
+    /// No provider is usable; typed input is still recorded.
+    ProviderUnavailable(String),
+    /// Typed input was recorded and its turn is starting.
+    PromptAccepted,
+    TurnProgress(ChatProgress),
+    TurnFinished(TurnReport),
+    TurnFailed(String),
 }
+
 fn send_message(
     tx: &mpsc::Sender<BackendMessage>,
     message: BackendMessage,
@@ -593,55 +647,184 @@ pub async fn run(
         )
     });
     let mut ui_observed = false;
-    let backend_result=async {loop {
-  tokio::select! {
-   result=&mut ui=>{ui_observed=true;break result.map_err(|_|CliError::Unavailable("terminal owner failed"))?},
-   signal=crate::app::shutdown_signal()=>{
-    signal?;stop_tx.send_replace(true);break Ok(());
-   },
-   changed=stop_rx.changed()=>{if changed.is_err()||*stop_rx.borrow(){break Ok(())}},
-   item=next_offline_record(&mut session)=>match item {
-    Ok(Some(item))=>{if let Err(error)=send_message(&events_tx,BackendMessage::Record(item)){break Err(error)}},
-    Ok(None)=>break Err(CliError::Unavailable("kernel event stream closed")),
-    Err(error)=>break Err(error),
-   },
-   request=commands_rx.recv()=>{
-    let Some(request)=request else {break Ok(())};
-    if matches!(request, BackendRequest::StartOffline) {
-        if session.is_none() { session=Some(OfflineSession::open(&root,&config_workspace,id).await?); }
-        send_message(&events_tx,BackendMessage::OfflineReady)?;
-        continue;
+    let mut chat = ConversationHost::new(
+        loaded.config.clone(),
+        polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),
+    );
+    if !demo {
+        chat.start_pick();
     }
-    let Some(active)=session.as_mut() else {
-        send_message(&events_tx,BackendMessage::Rejected("Offline profile is not active".to_owned()))?;
-        continue;
-    };
-    match request {
-     BackendRequest::StartOffline=>{},
-     BackendRequest::Directive{session:expected,text}=>{
-      if expected!=active.id {send_message(&events_tx,BackendMessage::Rejected("Session changed; directive was not executed".to_owned()))?;continue}
-      let result=active.apply_directive(&text).await;
-      let message=match result{Ok(_)=>BackendMessage::Committed,Err(error)=>BackendMessage::Rejected(error.to_string())};
-      if let Err(error)=send_message(&events_tx,message){break Err(error)}
-     },
-     BackendRequest::Sessions=>{
-      let result=active.list_sessions().await;
-      let message=match result{Ok(rows)=>BackendMessage::Sheet{title:"Sessions".to_owned(),lines:rows.into_iter().map(|s|format!("{}  {:?}  {}  {}",s.id,s.status,s.name,s.workspace.display())).collect()},Err(error)=>BackendMessage::QueryFailed(error.to_string())};
-      if let Err(error)=send_message(&events_tx,message){break Err(error)}
-     },
-     BackendRequest::Resume(target)=>{
-      if !active.session_exists(target).await?{send_message(&events_tx,BackendMessage::ResumeRejected("Unknown session; no new session was created".to_owned()))?;continue}
-      active.close().await?;
-      drop(session.take());
-      match OfflineSession::open(&root,&config_workspace,target).await {
-       Ok(next)=>{let workspace=next.workspace().display().to_string();session=Some(next);send_message(&events_tx,BackendMessage::Resumed{id:target,workspace})?;},
-       Err(error)=>break Err(CliError::from(error)),
-      }
-     },
+    let backend_result = async {
+        loop {
+            tokio::select! {
+                result = &mut ui => {
+                    ui_observed = true;
+                    break result.map_err(|_| CliError::Unavailable("terminal owner failed"))?;
+                }
+                signal = crate::app::shutdown_signal() => {
+                    signal?;
+                    stop_tx.send_replace(true);
+                    break Ok(());
+                }
+                changed = stop_rx.changed() => {
+                    if changed.is_err() || *stop_rx.borrow() {
+                        break Ok(());
+                    }
+                }
+                item = next_offline_record(&mut session) => match item {
+                    Ok(Some(item)) => {
+                        if let Err(error) = send_message(&events_tx, BackendMessage::Record(item)) {
+                            break Err(error);
+                        }
+                    }
+                    Ok(None) => break Err(CliError::Unavailable("kernel event stream closed")),
+                    Err(error) => break Err(error),
+                },
+                event = chat.next_event() => {
+                    if let Err(error) = handle_chat_event(event, &events_tx) {
+                        break Err(error);
+                    }
+                }
+                request = commands_rx.recv() => {
+                    let Some(request) = request else { break Ok(()) };
+                    if matches!(request, BackendRequest::StartOffline) {
+                        if session.is_none() {
+                            session = Some(OfflineSession::open(&root, &config_workspace, id).await?);
+                        }
+                        chat.start_pick();
+                        send_message(&events_tx, BackendMessage::OfflineReady)?;
+                        continue;
+                    }
+                    let Some(active) = session.as_mut() else {
+                        send_message(
+                            &events_tx,
+                            BackendMessage::Rejected("Offline profile is not active".to_owned()),
+                        )?;
+                        continue;
+                    };
+                    let reply = match request {
+                        BackendRequest::StartOffline => None,
+                        BackendRequest::Directive { session: expected, text } => {
+                            if expected == active.id {
+                                Some(match active.apply_directive(&text).await {
+                                    Ok(_) => BackendMessage::Committed,
+                                    Err(error) => BackendMessage::Rejected(error.to_string()),
+                                })
+                            } else {
+                                Some(BackendMessage::Rejected(
+                                    "Session changed; directive was not executed".to_owned(),
+                                ))
+                            }
+                        }
+                        BackendRequest::Prompt {
+                            session: expected,
+                            text,
+                            plan,
+                        } => {
+                            if expected != active.id {
+                                Some(BackendMessage::Rejected(
+                                    "Session changed; prompt was not sent".to_owned(),
+                                ))
+                            } else if chat.is_running() {
+                                Some(BackendMessage::Rejected(
+                                    "A reply is still running; press Esc to interrupt it".to_owned(),
+                                ))
+                            } else if !chat.is_ready() {
+                                Some(BackendMessage::Rejected(chat.unavailable_reason()))
+                            } else if let Err(error) = active.submit_user_input(&text).await {
+                                Some(BackendMessage::Rejected(error.to_string()))
+                            } else {
+                                for record in polaris_ui_session::records_until_own_input(active).await? {
+                                    send_message(&events_tx, BackendMessage::Record(record))?;
+                                }
+                                send_message(&events_tx, BackendMessage::PromptAccepted)?;
+                                chat.start_turn(active, text, plan)
+                                    .await
+                                    .err()
+                                    .map(|error| BackendMessage::TurnFailed(error.to_string()))
+                            }
+                        }
+                        BackendRequest::CancelTurn => {
+                            chat.cancel_turn();
+                            None
+                        }
+                        BackendRequest::ClearChat => {
+                            chat.clear();
+                            None
+                        }
+                        BackendRequest::SetEffort(effort) => Some(match chat.set_effort(effort) {
+                            Ok(model) => BackendMessage::ModelSwitched { model, effort },
+                            Err(reason) => BackendMessage::Rejected(reason),
+                        }),
+                        BackendRequest::Stats => {
+                            Some(match polaris_ui_session::list_sessions(&root, 10_000).await {
+                                Ok(rows) => {
+                                    let now = jiff::Zoned::now();
+                                    BackendMessage::Sheet {
+                                        title: "Stats".to_owned(),
+                                        lines: polaris_ui_session::stats::stats_lines(
+                                            &rows,
+                                            now.date(),
+                                            now.time_zone(),
+                                        ),
+                                    }
+                                }
+                                Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                            })
+                        }
+                        BackendRequest::Sessions => Some(match active.list_sessions().await {
+                            Ok(rows) => BackendMessage::Sheet {
+                                title: "Sessions".to_owned(),
+                                lines: rows
+                                    .into_iter()
+                                    .map(|s| {
+                                        format!(
+                                            "{}  {:?}  {}  {}",
+                                            s.id,
+                                            s.status,
+                                            s.name,
+                                            s.workspace.display()
+                                        )
+                                    })
+                                    .collect(),
+                            },
+                            Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                        }),
+                        BackendRequest::Resume(target) => {
+                            if chat.is_running() {
+                                Some(BackendMessage::ResumeRejected(
+                                    "A reply is still running; interrupt it first".to_owned(),
+                                ))
+                            } else if !active.session_exists(target).await? {
+                                Some(BackendMessage::ResumeRejected(
+                                    "Unknown session; no new session was created".to_owned(),
+                                ))
+                            } else {
+                                active.close().await?;
+                                drop(session.take());
+                                chat.reset_conversation();
+                                match OfflineSession::open(&root, &config_workspace, target).await {
+                                    Ok(next) => {
+                                        let workspace = next.workspace().display().to_string();
+                                        session = Some(next);
+                                        Some(BackendMessage::Resumed { id: target, workspace })
+                                    }
+                                    Err(error) => break Err(CliError::from(error)),
+                                }
+                            }
+                        }
+                    };
+                    if let Some(message) = reply {
+                        if let Err(error) = send_message(&events_tx, message) {
+                            break Err(error);
+                        }
+                    }
+                }
+            }
+        }
     }
-   }
-  }
- }}.await;
+    .await;
+    chat.shutdown().await;
     stop_tx.send_replace(true);
     let cleanup = match session.as_mut() {
         Some(session) => session.close().await.map_err(CliError::from),
@@ -671,12 +854,89 @@ pub async fn run(
     }
 }
 
+fn handle_chat_event(event: HostEvent, tx: &mpsc::Sender<BackendMessage>) -> Result<(), CliError> {
+    let message = match event {
+        HostEvent::ProviderReady {
+            provider,
+            model,
+            effort,
+            models,
+            skipped,
+        } => BackendMessage::ProviderReady {
+            provider,
+            model,
+            effort,
+            models,
+            skipped,
+        },
+        HostEvent::ProviderUnavailable(reason) => BackendMessage::ProviderUnavailable(reason),
+        HostEvent::Progress(item) => BackendMessage::TurnProgress(item),
+        HostEvent::Finished(report) => BackendMessage::TurnFinished(report),
+        HostEvent::Failed(reason) => BackendMessage::TurnFailed(reason),
+    };
+    send_message(tx, message)
+}
+
 async fn next_offline_record(
     session: &mut Option<OfflineSession>,
 ) -> Result<Option<ResolvedRecord>, CliError> {
     match session.as_mut() {
         Some(active) => active.next_record().await.map_err(CliError::from),
         None => std::future::pending().await,
+    }
+}
+
+/// Model provider state as the terminal sees it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ProviderState {
+    Connecting,
+    Ready { provider: &'static str },
+    Unavailable(String),
+}
+
+/// What the running turn is doing, for the status row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TurnPhase {
+    Waiting,
+    Thinking,
+    Writing,
+}
+
+/// Terminal-side state of the running chat turn.
+#[derive(Debug)]
+struct TurnUi {
+    started: Instant,
+    /// Conversation entry receiving streamed text.
+    entry: Option<usize>,
+    /// A new model request began after text was shown; separate the next text.
+    break_pending: bool,
+    phase: TurnPhase,
+}
+impl TurnUi {
+    fn new() -> Self {
+        Self {
+            started: Instant::now(),
+            entry: None,
+            break_pending: false,
+            phase: TurnPhase::Waiting,
+        }
+    }
+    fn label(&self) -> String {
+        const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+        let elapsed = self.started.elapsed();
+        let frame = usize::try_from(elapsed.as_millis() / 100).unwrap_or(0) % SPINNER.len();
+        let phase = match self.phase {
+            TurnPhase::Waiting => "Working",
+            TurnPhase::Thinking => "Thinking",
+            TurnPhase::Writing => "Writing",
+        };
+        format!(
+            "{} {phase} {} · Esc to interrupt",
+            SPINNER[frame],
+            polaris_ui_model::view::format_duration_ms(
+                u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX)
+            )
+        )
     }
 }
 
@@ -799,6 +1059,19 @@ struct UiState {
     selection_owner: Option<SelectionSurface>,
     transcript_selection: Option<screen::TranscriptSelection>,
     transcript_span: Option<screen::TranscriptSpanSelection>,
+    provider: ProviderState,
+    /// Words in the text being copied, for the confirmation.
+    copy_words: usize,
+    /// A confirmation notice and when it disappears, unless replaced meanwhile.
+    transient_notice: Option<(Instant, String)>,
+    /// The provider's model per effort, when connected.
+    provider_models: Vec<(Effort, String)>,
+    /// Providers skipped before the selection, with reasons.
+    provider_skipped: Vec<String>,
+    /// Short footer label of the live model (`vendor/name:tag` -> `name`).
+    model_label: Option<String>,
+    turn: Option<TurnUi>,
+    activity: String,
 }
 impl UiState {
     fn new(
@@ -873,7 +1146,106 @@ impl UiState {
             selection_owner: None,
             transcript_selection: None,
             transcript_span: None,
+            provider: ProviderState::Connecting,
+            copy_words: 0,
+            transient_notice: None,
+            provider_models: Vec::new(),
+            provider_skipped: Vec::new(),
+            model_label: None,
+            turn: None,
+            activity: String::new(),
         })
+    }
+    /// Profile label beside the model control.
+    fn profile_label(&self) -> &'static str {
+        if self.demo_active {
+            return "demo";
+        }
+        match &self.provider {
+            ProviderState::Ready { provider } => provider,
+            ProviderState::Connecting => "connecting",
+            ProviderState::Unavailable(_) => "offline",
+        }
+    }
+    /// Show `model` and `effort` in every live view.
+    fn show_model(&mut self, model: &str, effort: Effort) {
+        let last = model.rsplit('/').next().unwrap_or(model);
+        self.model_label = Some(last.split(':').next().unwrap_or(last).to_owned());
+        if let Ok(model) = ModelId::new(model) {
+            self.empty.set_model(model.clone());
+            self.empty.set_effort(effort);
+            if let Some(view) = self.views.get_mut(self.id) {
+                view.set_model(model);
+                view.set_effort(effort);
+            }
+        }
+    }
+    /// Whether model and effort changes go to a connected provider.
+    fn live_model(&self) -> bool {
+        !self.demo_active && matches!(self.provider, ProviderState::Ready { .. })
+    }
+    /// One line describing the model connection, for status sheets and panels.
+    fn provider_line(&self) -> String {
+        match &self.provider {
+            ProviderState::Ready { provider } => {
+                format!("Model {} via {provider}", self.view().model)
+            }
+            ProviderState::Connecting => "Connecting to a model provider…".to_owned(),
+            ProviderState::Unavailable(reason) => format!("No model provider: {reason}"),
+        }
+    }
+    /// Append streamed text to the running turn's entry; capacity limits only drop text.
+    fn stream_text(&mut self, delta: &str) {
+        let Some(turn) = self.turn.as_mut() else {
+            return;
+        };
+        turn.phase = TurnPhase::Writing;
+        let separator = if turn.break_pending && turn.entry.is_some() {
+            "\n\n"
+        } else {
+            ""
+        };
+        turn.break_pending = false;
+        let entry = turn.entry;
+        let view = self.offline_view_mut();
+        let result = match entry {
+            Some(index) => view
+                .append_to_entry(index, separator)
+                .and_then(|()| view.append_to_entry(index, delta)),
+            None => {
+                let index = view.conversation.len();
+                view.push_assistant(delta.to_owned()).map(|()| {
+                    if let Some(turn) = self.turn.as_mut() {
+                        turn.entry = Some(index);
+                    }
+                })
+            }
+        };
+        if let Err(error) = result {
+            self.notice = format!("Reply display limit reached: {error}");
+        }
+    }
+    /// Close the running turn with its final answer and a short work summary.
+    fn finish_turn(&mut self, report: TurnReport) {
+        let streamed = self.turn.take().is_some_and(|turn| turn.entry.is_some());
+        let view = self.offline_view_mut();
+        let mut result = Ok(());
+        if !streamed {
+            result = match report.answer.as_deref().map(str::trim) {
+                Some(answer) if !answer.is_empty() => view.push_assistant(answer.to_owned()),
+                _ => view.push_warning(format!(
+                    "The model stopped without an answer ({})",
+                    report.stop
+                )),
+            };
+        }
+        let summary = report.summary();
+        result = result.and_then(|()| view.push_system(summary));
+        if let Err(error) = result {
+            self.notice = format!("Reply display limit reached: {error}");
+        }
+        self.activity.clear();
+        self.history_scroll = 0;
     }
     fn view(&self) -> &ViewState {
         if self.demo_active {
@@ -1062,6 +1434,71 @@ impl UiState {
                     scroll: 0,
                 })
             }
+            BackendMessage::ProviderReady {
+                provider,
+                model,
+                effort,
+                models,
+                skipped,
+            } => {
+                self.provider = ProviderState::Ready { provider };
+                self.provider_models = models;
+                self.provider_skipped = skipped.clone();
+                self.show_model(&model, effort);
+                if !skipped.is_empty() {
+                    self.notice = format!("Using {provider}; skipped {}", skipped.join(", "));
+                }
+            }
+            BackendMessage::ModelSwitched { model, effort } => {
+                self.show_model(&model, effort);
+                self.notice = format!("Model {model} · {} effort", effort.name());
+            }
+            BackendMessage::ProviderUnavailable(reason) => {
+                self.provider_skipped = reason.split("; ").map(str::to_owned).collect();
+                self.notice = format!("No model provider ({reason}); prompts are not sent");
+                self.provider = ProviderState::Unavailable(reason);
+            }
+            BackendMessage::PromptAccepted => {
+                if let Some(prepared) = self.pending.take() {
+                    self.composer
+                        .commit_submit(prepared)
+                        .map_err(|e| CliError::Ui(e.to_string()))?;
+                }
+                self.notice.clear();
+                self.completion_dismissed = false;
+                self.history_scroll = 0;
+                self.turn = Some(TurnUi::new());
+            }
+            BackendMessage::TurnProgress(item) => match item {
+                ChatProgress::Text(delta) => self.stream_text(&delta),
+                ChatProgress::Reasoning(_) => {
+                    if let Some(turn) = self.turn.as_mut() {
+                        if turn.phase != TurnPhase::Writing {
+                            turn.phase = TurnPhase::Thinking;
+                        }
+                    }
+                }
+                ChatProgress::Request => {
+                    if let Some(turn) = self.turn.as_mut() {
+                        turn.break_pending = turn.entry.is_some();
+                        turn.phase = TurnPhase::Waiting;
+                    }
+                }
+            },
+            BackendMessage::TurnFinished(report) => self.finish_turn(report),
+            BackendMessage::TurnFailed(reason) => {
+                self.turn = None;
+                self.activity.clear();
+                let view = self.offline_view_mut();
+                let shown = if reason == polaris_ui_session::host::INTERRUPTED {
+                    view.push_warning("Interrupted")
+                } else {
+                    view.push_error(reason)
+                };
+                if let Err(error) = shown {
+                    self.notice = format!("Reply display limit reached: {error}");
+                }
+            }
             BackendMessage::Resumed { id, workspace } => {
                 self.clipboard_generation = self
                     .clipboard_generation
@@ -1089,22 +1526,35 @@ impl UiState {
         let view = self.view();
         match self.panel_kind {
             PanelKind::Tasks => vec![
-                "No task execution profile is attached.".to_owned(),
-                "Plan/goal task controls require P3.".to_owned(),
+                match &self.turn {
+                    Some(turn) => format!("Running: {}", turn.label()),
+                    None => "Idle - type a request to start a turn.".to_owned(),
+                },
+                format!("Model requests this session: {}", view.hud.requests),
+                format!("Tool calls this session: {}", view.tools.len()),
             ],
             PanelKind::Agents => vec![
-                format!("Main - local control session {}", self.id),
-                "Child-frame execution is unavailable in this profile.".to_owned(),
+                format!(
+                    "Main · {} · {}",
+                    view.model,
+                    if self.turn.is_some() {
+                        "working"
+                    } else {
+                        "idle"
+                    }
+                ),
+                format!("Session {}", self.id),
+                "Delegated child agents are not started by read-only conversations.".to_owned(),
             ],
             PanelKind::Questions => vec![
-                "Human request service is not connected.".to_owned(),
-                "No pending request count can be inferred.".to_owned(),
-                "Live ask/answer requires P3-X-5.".to_owned(),
+                "No pending questions.".to_owned(),
+                "Read-only conversations answer directly instead of asking.".to_owned(),
             ],
             PanelKind::Review => vec![
                 format!("Approved diffs observed: {}", view.status.diffs_approved),
                 format!("Rejected diffs observed: {}", view.status.diffs_rejected),
-                "Interactive execution approval is not connected.".to_owned(),
+                "Read-only conversations propose patches in the reply; nothing is applied."
+                    .to_owned(),
             ],
             PanelKind::Proof => vec![
                 match view.status.proof_of_done {
@@ -1116,7 +1566,7 @@ impl UiState {
             PanelKind::Context => vec![
                 "Durable source is retained in local CAS/eventlog.".to_owned(),
                 format!("Loaded conversation entries: {}", view.conversation.len()),
-                "Folded-reference navigation requires the context profile.".to_owned(),
+                format!("Last prompt size: {} tokens", view.hud.last_prompt_tokens),
             ],
             PanelKind::System => vec![
                 format!("Session {}", self.id),
@@ -1129,7 +1579,7 @@ impl UiState {
                     "Worker restarts observed: {:?}",
                     view.status.worker_restarts
                 ),
-                "Provider quota, model capacity and billing: unavailable".to_owned(),
+                self.provider_line(),
             ],
         }
     }
@@ -1195,6 +1645,7 @@ fn request_copy_text(state: &mut UiState, text: String) -> Result<(), CliError> 
         .ok_or(CliError::Unavailable("clipboard generation exhausted"))?;
     state.pending_cut = None;
     state.paste_target = None;
+    state.copy_words = text.split_whitespace().count();
     state.notice = match worker.request_copy(state.clipboard_generation, text) {
         Ok(()) => "Copying text…".to_owned(),
         Err(error) => format!("Clipboard: {error}"),
@@ -1246,7 +1697,14 @@ fn receive_clipboard_result(state: &mut UiState, result: ClipboardResult) -> boo
         {
             match result {
                 Ok(()) => {
-                    state.notice = "Text copied".to_owned();
+                    state.notice = match state.copy_words {
+                        1 => "Copied 1 word".to_owned(),
+                        words => format!("Copied {words} words"),
+                    };
+                    state.transient_notice = Some((
+                        Instant::now() + Duration::from_secs(2),
+                        state.notice.clone(),
+                    ));
                     if let Some((pending_generation, draft, range)) = state.pending_cut.take() {
                         if pending_generation == generation
                             && state.composer.text() == draft
@@ -1332,22 +1790,44 @@ fn open_effort_picker(state: &mut UiState) {
     refresh_effort_picker(state);
 }
 fn refresh_effort_picker(state: &mut UiState) {
+    let live = state.live_model();
     let mut lines: Vec<String> = Effort::ALL
         .iter()
         .map(|effort| {
-            format!(
-                "{} {}",
-                if state.effort_picker == Some(*effort) {
-                    ">"
-                } else {
-                    " "
-                },
-                effort.name()
-            )
+            let marker = if state.effort_picker == Some(*effort) {
+                ">"
+            } else {
+                " "
+            };
+            let model = state
+                .provider_models
+                .iter()
+                .find(|(level, _)| level == effort)
+                .map(|(_, model)| model.as_str());
+            match (live, model) {
+                (true, Some(model)) => format!("{marker} {:<7} {model}", effort.name()),
+                _ => format!("{marker} {}", effort.name()),
+            }
         })
         .collect();
-    lines.push("This is a local preference; no provider capability is implied.".to_owned());
-    open_sheet(state, "Effort", lines);
+    lines.push(if live {
+        "The conversation continues on the chosen model.".to_owned()
+    } else {
+        "This is a local preference; no provider capability is implied.".to_owned()
+    });
+    open_sheet(state, if live { "Model" } else { "Effort" }, lines);
+}
+/// Apply an effort choice: through the provider when connected, locally otherwise.
+fn choose_effort(state: &mut UiState, effort: Effort, commands: &mpsc::Sender<BackendRequest>) {
+    if state.live_model() {
+        match queue_request(commands, BackendRequest::SetEffort(effort)) {
+            Ok(()) => state.notice = "Switching model…".to_owned(),
+            Err(error) => state.notice = error.to_string(),
+        }
+    } else {
+        state.view_mut().set_effort(effort);
+        state.notice = "Local effort preference changed".to_owned();
+    }
 }
 
 fn apply_profile_choice(
@@ -1378,7 +1858,7 @@ fn refresh_profile_picker(state: &mut UiState) {
         "Profile",
         vec![
             format!(
-                "{} Offline · signed local directives; model execution unavailable",
+                "{} Live · local session, replies from the provider chain",
                 if !selected { ">" } else { " " }
             ),
             format!(
@@ -1587,6 +2067,93 @@ fn handle_question_key(state: &mut UiState, key: KeyEvent) -> Result<bool, CliEr
     }
     refresh_demo_question(state);
     Ok(true)
+}
+
+/// Observed usage of this session, from committed model request records.
+fn usage_lines(state: &UiState) -> Vec<String> {
+    let view = state.view();
+    let hud = &view.hud;
+    let mut lines = vec![
+        state.provider_line(),
+        format!("Model requests      {}", hud.requests),
+        format!("Prompt tokens       {}", hud.prompt_tokens),
+        format!("Completion tokens   {}", hud.completion_tokens),
+        format!(
+            "Cached prompt       {}{}",
+            hud.cached_tokens,
+            hud.cache_hit_permille()
+                .map(|permille| format!(" ({}.{}%)", permille / 10, permille % 10))
+                .unwrap_or_default()
+        ),
+        format!("Last prompt         {} tokens", hud.last_prompt_tokens),
+    ];
+    if let Some(latency) = hud.last_s2_latency_us {
+        lines.push(format!(
+            "Last reply          {}",
+            polaris_ui_model::view::format_duration_ms(latency / 1000)
+        ));
+    }
+    if hud.cost_micro_usd > 0 {
+        lines.push(format!(
+            "Reported cost       ${}.{:06}",
+            hud.cost_micro_usd / 1_000_000,
+            hud.cost_micro_usd % 1_000_000
+        ));
+    }
+    lines.push(format!(
+        "Directives applied  {}",
+        view.status.directives_applied
+    ));
+    lines.push(
+        "Counts come from committed records of this session; provider quotas are not queried."
+            .to_owned(),
+    );
+    lines
+}
+/// Provider chain state: the selection, its models per effort and every skip reason.
+fn provider_lines(state: &UiState) -> Vec<String> {
+    let mut lines = vec![state.provider_line()];
+    if !state.provider_models.is_empty() {
+        lines.push(String::new());
+        lines.push("Models by effort:".to_owned());
+        for (effort, model) in &state.provider_models {
+            let marker = if *effort == state.view().effort {
+                ">"
+            } else {
+                " "
+            };
+            lines.push(format!("{marker} {:<7} {model}", effort.name()));
+        }
+    }
+    if !state.provider_skipped.is_empty() {
+        lines.push(String::new());
+        lines.push("Skipped:".to_owned());
+        lines.extend(
+            state
+                .provider_skipped
+                .iter()
+                .map(|skip| format!("  {skip}")),
+        );
+    }
+    lines.push(String::new());
+    lines.push("Order and models come from provider.order and the [nebius], [openrouter] and [local] tables in ~/.polaris/config.toml.".to_owned());
+    lines
+}
+fn onboarding_lines() -> Vec<String> {
+    [
+        "1. Pick a provider. Polaris tries provider.order: token_factory, openrouter, local.",
+        "2. Hosted keys: put NEBIUS_API_KEY or OPENROUTER_API_KEY in ~/.polaris/.env",
+        "   (or pass --env-file). A repository .env is never read implicitly.",
+        "3. Local models: run Ollama or llama.cpp on 127.0.0.1 and set local.model",
+        "   in ~/.polaris/config.toml, for example local.model = \"qwen3:8b\".",
+        "4. Optional System One: set system_one.decide_model_dir and system_one.ort_dylib",
+        "   for semantic privacy and tool screening; without it masking stays deterministic.",
+        "5. Ask about the workspace. Use @path to point at files and /model to switch.",
+        "6. /status shows the session, /providers the chain, /usage the token counts.",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
 }
 
 fn queue_request(
@@ -1950,16 +2517,33 @@ fn submit_draft(
                 let mut lines = vec![
                     format!("Session {}", state.id),
                     format!("Workspace {}", state.workspace),
+                    state.provider_line(),
                     "Actual configuration source layers:".to_owned(),
                 ];
                 lines.extend(state.provenance.clone());
                 lines.push("Use /settings to edit CLI preferences.".to_owned());
                 open_sheet(state, "Status", lines)
             }
-            SlashCommand::Stats | SlashCommand::Usage | SlashCommand::Quota => {
-                let view = state.view();
-                let lines=vec![format!("Observed model requests: {}",view.hud.requests),format!("Observed directives: {}",view.status.directives_applied),format!("Observed generated tokens: {}",view.hud.completion_tokens),"Provider capacity, current quotas, prices and billing availability are not reported by this local profile.".to_owned()];
-                open_sheet(state, "Observed statistics", lines)
+            SlashCommand::Stats => {
+                if let Err(error) = queue_request(commands, BackendRequest::Stats) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::Usage | SlashCommand::Quota => {
+                let lines = usage_lines(state);
+                open_sheet(state, "Usage", lines)
+            }
+            SlashCommand::Providers => {
+                let lines = provider_lines(state);
+                open_sheet(state, "Providers", lines)
+            }
+            SlashCommand::Onboarding => open_sheet(state, "Getting started", onboarding_lines()),
+            SlashCommand::Diff | SlashCommand::Undo | SlashCommand::Rollback(_) => {
+                state.notice =
+                    "No files changed: this conversation is read-only and proposes patches only"
+                        .to_owned();
             }
             SlashCommand::Sessions => {
                 if let Err(error) = queue_request(commands, BackendRequest::Sessions) {
@@ -1984,6 +2568,9 @@ fn submit_draft(
                     state.gallery.open(GalleryPage::Welcome);
                 }
                 state.view_mut().conversation.clear();
+                if !state.demo_active && state.turn.is_none() {
+                    let _queued = queue_request(commands, BackendRequest::ClearChat);
+                }
                 state.transcript_selection = None;
                 state.transcript_span = None;
                 state.history_scroll = 0;
@@ -2020,15 +2607,34 @@ fn submit_draft(
                 state.panel = true;
                 state.panel_scroll = 0
             }
-            SlashCommand::Model(_)
-            | SlashCommand::Plan
+            SlashCommand::Model(argument) => match argument.as_deref().map(str::trim) {
+                None | Some("") => open_effort_picker(state),
+                Some(name) => {
+                    let wanted = Effort::ALL
+                        .iter()
+                        .copied()
+                        .find(|effort| effort.name().eq_ignore_ascii_case(name))
+                        .or_else(|| {
+                            state
+                                .provider_models
+                                .iter()
+                                .find(|(_, model)| model == name)
+                                .map(|(effort, _)| *effort)
+                        });
+                    match wanted {
+                        Some(effort) => choose_effort(state, effort, commands),
+                        None => {
+                            state.notice =
+                                format!("Unknown model or effort {name}; /model lists the choices");
+                            state.composer.cancel_submit(prepared);
+                            return Ok(false);
+                        }
+                    }
+                }
+            },
+            SlashCommand::Plan
             | SlashCommand::Goal(_)
-            | SlashCommand::Diff
-            | SlashCommand::Rollback(_)
-            | SlashCommand::Undo
             | SlashCommand::SessionReplay { .. }
-            | SlashCommand::Providers
-            | SlashCommand::Onboarding
             | SlashCommand::NvProfile
             | SlashCommand::NvVerify
             | SlashCommand::NebiusStatus
@@ -2078,9 +2684,37 @@ fn submit_draft(
         state.pending = Some(prepared);
         state.notice = "Pending signed directive admission".to_owned();
         state.completion.clear();
-    } else {
+    } else if state.turn.is_some() {
         state.composer.cancel_submit(prepared);
-        state.notice = "Task execution unavailable; draft retained".to_owned()
+        state.notice = "A reply is still running; Esc interrupts it. Draft retained".to_owned();
+    } else {
+        match &state.provider {
+            ProviderState::Ready { .. } => {
+                if let Err(error) = queue_request(
+                    commands,
+                    BackendRequest::Prompt {
+                        session: state.id,
+                        text: prepared.submission().text.clone(),
+                        plan: state.view().mode == polaris_ui_model::view::Mode::Plan,
+                    },
+                ) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+                state.pending = Some(prepared);
+                state.notice = "Sending…".to_owned();
+                state.completion.clear();
+            }
+            ProviderState::Connecting => {
+                state.composer.cancel_submit(prepared);
+                state.notice = "Still connecting to a model provider; draft retained".to_owned();
+            }
+            ProviderState::Unavailable(reason) => {
+                state.notice = format!("No model provider ({reason}); draft retained");
+                state.composer.cancel_submit(prepared);
+            }
+        }
     }
     Ok(false)
 }
@@ -2247,6 +2881,13 @@ fn handle_key(
         if selected_entry || selected_span {
             return Ok((false, true));
         }
+        if state.turn.is_some() && !control {
+            match queue_request(commands, BackendRequest::CancelTurn) {
+                Ok(()) => state.notice = "Interrupting…".to_owned(),
+                Err(error) => state.notice = error.to_string(),
+            }
+            return Ok((false, true));
+        }
         if state.pending.is_some() {
             state.notice =
                 "Directive admission is pending; its durable result must be reconciled before exit"
@@ -2275,7 +2916,7 @@ fn handle_key(
             state.notice = "Press Ctrl+C again within one second to exit".to_owned();
             return Ok((false, true));
         }
-        state.notice = "No model work is running; draft retained".to_owned();
+        state.notice = "Nothing is running; draft retained".to_owned();
         return Ok((false, true));
     }
     state.exit_armed = None;
@@ -2297,10 +2938,9 @@ fn handle_key(
                 refresh_effort_picker(state);
             }
             KeyCode::Enter if key.modifiers.is_empty() => {
-                state.view_mut().effort = selected;
                 state.effort_picker = None;
                 state.sheet = None;
-                state.notice = "Local effort preference changed".to_owned();
+                choose_effort(state, selected, commands);
             }
             _ => {}
         }
@@ -2367,7 +3007,7 @@ fn handle_key(
         let lines = vec![
             format!("Session {}", state.id),
             format!("Workspace {}", state.workspace),
-            "Signed local controls active; model execution unavailable.".to_owned(),
+            state.provider_line(),
         ];
         open_sheet(state, "Status", lines);
         return Ok((false, true));
@@ -2486,13 +3126,30 @@ fn handle_key(
         state.view_mut().toggle_all_tools();
     } else if action == Some(keymap::Action::ToggleMode) {
         state.view_mut().toggle_mode();
-        state.notice = "Mode preference changed; no model execution profile is attached".to_owned();
-    } else if action == Some(keymap::Action::EffortUp) {
-        let _changed = state.view_mut().effort_up();
-        state.notice = "Effort preference only; model capabilities unavailable".to_owned();
-    } else if action == Some(keymap::Action::EffortDown) {
-        let _changed = state.view_mut().effort_down();
-        state.notice = "Effort preference only; model capabilities unavailable".to_owned();
+        state.notice = match state.view().mode {
+            polaris_ui_model::view::Mode::Plan => {
+                "Plan mode: the model plans before answering".to_owned()
+            }
+            polaris_ui_model::view::Mode::Auto => "Auto mode".to_owned(),
+        };
+    } else if action == Some(keymap::Action::EffortUp) || action == Some(keymap::Action::EffortDown)
+    {
+        let current = state.view().effort;
+        let index = Effort::ALL
+            .iter()
+            .position(|effort| *effort == current)
+            .unwrap_or(0);
+        let next = if action == Some(keymap::Action::EffortUp) {
+            index
+                .saturating_add(1)
+                .min(Effort::ALL.len().saturating_sub(1))
+        } else {
+            index.saturating_sub(1)
+        };
+        match Effort::ALL.get(next).copied() {
+            Some(effort) if effort != current => choose_effort(state, effort, commands),
+            _ => state.notice = format!("Effort is already {}", current.name()),
+        }
     } else if action == Some(keymap::Action::Paste) {
         request_paste(state)?;
     } else {
@@ -2594,11 +3251,11 @@ fn projection<'a>(
         } else {
             &[]
         })
-        .with_profile_label(Some(if state.demo_active { "demo" } else { "offline" }))
+        .with_profile_label(Some(state.profile_label()))
         .with_model_label(if state.demo_active {
             state.demo_model_label
         } else {
-            None
+            state.model_label.as_deref()
         })
         .with_editor_focus(
             !state.panel_focus
@@ -2613,6 +3270,11 @@ fn projection<'a>(
             None
         } else {
             Some(&state.notice)
+        })
+        .with_activity(if state.activity.is_empty() || state.demo_active {
+            None
+        } else {
+            Some(&state.activity)
         })
         .with_footer(Some(footer))
         .with_history_scroll(state.history_scroll)
@@ -3693,6 +4355,23 @@ fn terminal_loop(
             if state.demo_active && state.demo.question().is_some() && state.sheet.is_none() {
                 refresh_demo_question(&mut state);
             }
+            if let Some((until, notice)) = state.transient_notice.as_ref() {
+                if Instant::now() >= *until {
+                    if state.notice == *notice {
+                        state.notice.clear();
+                        state.layout_dirty = true;
+                        scheduler.mark_dirty();
+                    }
+                    state.transient_notice = None;
+                }
+            }
+            if let Some(turn) = state.turn.as_ref() {
+                let label = turn.label();
+                if label != state.activity {
+                    state.activity = label;
+                    scheduler.mark_dirty();
+                }
+            }
             let effective = state.settings.as_ref().map(CliSettings::effective);
             if effective != preferences {
                 if let Some(effective) = effective {
@@ -3856,5 +4535,5 @@ fn present_frame<W: Write>(
     presenter.commit().map_err(ui_error)
 }
 #[cfg(test)]
-#[path = "../tests/controller/mod.rs"]
+#[path = "../../../tests/apps/polaris-cli/controller/mod.rs"]
 mod controller_tests;

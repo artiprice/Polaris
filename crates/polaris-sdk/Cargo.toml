@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-sdk"
 description = "Domain newtypes, error kinds, API-registry traits (prompt.md §6.2), the Backends bundle, PlatformOps and command/event contracts."
 version.workspace = true
@@ -29,3 +30,56 @@ serde_json = { workspace = true }
 proptest = { workspace = true }
 insta = { workspace = true, features = ["json"] }
 tokio = { workspace = true, features = ["rt", "macros"] }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "blast_alert_schema"
+path = "../../tests/crates/polaris-sdk/blast_alert_schema.rs"
+
+[[test]]
+name = "command_typestate"
+path = "../../tests/crates/polaris-sdk/command_typestate.rs"
+
+[[test]]
+name = "content_identifiers"
+path = "../../tests/crates/polaris-sdk/content_identifiers.rs"
+
+[[test]]
+name = "content_store_dispatch"
+path = "../../tests/crates/polaris-sdk/content_store_dispatch.rs"
+
+[[test]]
+name = "effort_parsing"
+path = "../../tests/crates/polaris-sdk/effort_parsing.rs"
+
+[[test]]
+name = "event_envelope"
+path = "../../tests/crates/polaris-sdk/event_envelope.rs"
+
+[[test]]
+name = "human_contract"
+path = "../../tests/crates/polaris-sdk/human_contract.rs"
+
+[[test]]
+name = "interactive_contract"
+path = "../../tests/crates/polaris-sdk/interactive_contract.rs"
+
+[[test]]
+name = "probability_validation"
+path = "../../tests/crates/polaris-sdk/probability_validation.rs"
+
+[[test]]
+name = "prompt_tokenizer"
+path = "../../tests/crates/polaris-sdk/prompt_tokenizer.rs"
+
+[[test]]
+name = "registry_dispatch"
+path = "../../tests/crates/polaris-sdk/registry_dispatch.rs"
+
+[[test]]
+name = "secret_source_contract"
+path = "../../tests/crates/polaris-sdk/secret_source_contract.rs"
+
+[[test]]
+name = "session_lifecycle"
+path = "../../tests/crates/polaris-sdk/session_lifecycle.rs"

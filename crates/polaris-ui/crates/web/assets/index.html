@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<title>Polaris</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cpath fill='%231C1C1C' d='M15 15h34v34H15z'/%3E%3Cpath d='M21 32h8m6 0h8' stroke='%2376B900'/%3E%3Cpath d='m32 27 1.7 3.3L37 32l-3.3 1.7L32 37l-1.7-3.3L27 32l3.3-1.7L32 27Z' fill='%2324D046'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#composer-text">Skip to the message box</a>
+<div class="app" data-view="welcome">
+
+  <!-- Welcome rail (the session view swaps it for the sessions sidebar) -->
+  <nav class="rail" aria-label="Main">
+    <span class="brand" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M20 2v12M32 2v12M44 2v12M20 50v12M32 50v12M44 50v12M2 32h12M50 32h12" stroke="#6B6B6B"/><path d="M14 50V14h36" stroke="#B8B8B8"/><path d="M50 14v36H14" stroke="#6B6B6B"/><path fill="#1C1C1C" d="M15 15h34v34H15z"/><path d="M21 32h8m6 0h8" stroke="#76B900"/><path d="m32 27 1.7 3.3L37 32l-3.3 1.7L32 37l-1.7-3.3L27 32l3.3-1.7L32 27Z" fill="#24D046"/></svg></span>
+    <button class="rail-button" type="button" data-action="new" aria-label="New conversation" data-tip="New conversation"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="rail-button" type="button" data-action="sessions" aria-label="Sessions" data-tip="Sessions"><svg class="icon" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.6 7M3 4v7h7M12 7v5l3 2"/></svg></button>
+    <button class="rail-button" type="button" data-panel="models" aria-label="Models" data-tip="Models"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
+    <button class="rail-button" type="button" data-panel="usage" aria-label="Usage" data-tip="Usage"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-5 4 2 4-7"/></svg></button>
+    <button class="rail-button" type="button" data-panel="settings" aria-label="Settings" data-tip="Settings"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h4m4 0h8M4 17h8m4 0h4"/><circle cx="10" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg></button>
+  </nav>
+
+  <aside class="sidebar" aria-label="Sessions">
+    <div class="sidebar-head">
+      <span class="brand small" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path fill="#1C1C1C" d="M15 15h34v34H15z"/><path d="M21 32h8m6 0h8" stroke="#76B900"/><path d="m32 27 1.7 3.3L37 32l-3.3 1.7L32 37l-1.7-3.3L27 32l3.3-1.7L32 27Z" fill="#24D046"/></svg></span>
+      <span class="wordmark">Polaris</span>
+    </div>
+    <button class="side-action" type="button" data-action="new"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New session</button>
+    <label class="side-search"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg><input id="session-filter" type="search" placeholder="Filter sessions" aria-label="Filter sessions" autocomplete="off"></label>
+    <div class="session-list" id="session-list" role="list"></div>
+    <div class="sidebar-foot">
+      <div class="foot-text"><strong id="foot-workspace">workspace</strong><span id="foot-connection" class="muted">Connecting…</span></div>
+      <button class="foot-button" type="button" data-panel="models" aria-label="Models" data-tip="Models"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
+      <button class="foot-button" type="button" data-panel="usage" aria-label="Usage" data-tip="Usage"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-5 4 2 4-7"/></svg></button>
+      <button class="foot-button" type="button" data-panel="settings" aria-label="Settings" data-tip="Settings"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h4m4 0h8M4 17h8m4 0h4"/><circle cx="10" cy="7" r="2"/><circle cx="14" cy="17" r="2"/></svg></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 class="session-title" id="session-title">New session</h1>
+    </header>
+
+    <section class="welcome" aria-labelledby="welcome-title">
+      <div class="atmosphere" aria-hidden="true">
+        <span class="light mesh"></span><span class="light nebula"></span><span class="light aurora"></span><span class="light aurora two"></span>
+        <canvas class="stars" data-layer="1"></canvas><canvas class="stars" data-layer="2"></canvas><canvas class="stars" data-layer="3"></canvas>
+        <span class="grain"></span>
+      </div>
+      <h2 id="welcome-title">What’s on your mind for Polaris?</h2>
+    </section>
+
+    <section class="conversation" id="conversation" aria-live="polite" aria-label="Conversation"></section>
+
+    <form class="composer" id="composer" autocomplete="off">
+      <div class="composer-box">
+        <label class="sr-only" for="composer-text">Message for Polaris</label>
+        <textarea id="composer-text" rows="1" placeholder="Ask Polaris anything…" spellcheck="false"></textarea>
+        <div class="composer-row">
+          <button class="mode-chip" type="button" id="mode-chip" aria-pressed="false" title="Plan mode asks for a plan before code"><span class="dot"></span><span id="mode-label">Auto</span></button>
+          <span class="spacer"></span>
+          <button class="model-pill" type="button" data-panel="models" id="model-pill"><span id="model-label">Connecting…</span><svg class="icon" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></button>
+          <button class="send" type="submit" id="send" aria-label="Send message" disabled><svg class="icon send-icon" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg><svg class="icon stop-icon" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
+        </div>
+      </div>
+      <p class="notice" id="notice" role="status" hidden></p>
+      <p class="status-line"><span class="status-dot" id="status-dot"></span><span id="status-text">Connecting to a model…</span></p>
+    </form>
+  </main>
+
+  <section class="panel" id="panel-models" role="dialog" aria-labelledby="models-title" hidden>
+    <h2 id="models-title">Models</h2>
+    <p class="muted" id="models-connection">Connecting…</p>
+    <div id="models-list" class="model-rows" role="list"></div>
+  </section>
+  <section class="panel" id="panel-usage" role="dialog" aria-labelledby="usage-title" hidden>
+    <h2 id="usage-title">Usage</h2>
+    <pre id="usage-lines" class="usage-lines">Loading…</pre>
+  </section>
+  <section class="panel" id="panel-settings" role="dialog" aria-labelledby="settings-title" hidden>
+    <h2 id="settings-title">Settings</h2>
+    <h3>Appearance</h3>
+    <label class="toggle"><input type="checkbox" id="reduce-motion"><span>Reduce motion</span></label>
+    <h3>About</h3>
+    <p><strong>Polaris</strong> <span class="muted" id="about-version">local web UI</span></p>
+    <p class="muted">A focused coding workspace. Replies come from the provider chain on this machine; the conversation is read-only and proposes patches.</p>
+  </section>
+</div>
+</body>
+</html>

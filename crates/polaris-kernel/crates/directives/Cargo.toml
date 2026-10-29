@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-kernel-directives"
 description = "Recursive-descent grammar for $directives, /commands and @mentions (nested parentheses, quoted items, effort ranges)."
 version.workspace = true
@@ -22,3 +23,36 @@ polaris-sdk = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "directive_persistence"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/directive_persistence.rs"
+
+[[test]]
+name = "directive_rendering"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/directive_rendering.rs"
+
+[[test]]
+name = "input_parser"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/input_parser.rs"
+
+[[test]]
+name = "load"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/load.rs"
+
+[[test]]
+name = "mention_parser"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/mention_parser.rs"
+
+[[test]]
+name = "slash_command_table"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/slash_command_table.rs"
+
+[[test]]
+name = "subagent_model_ranges"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/subagent_model_ranges.rs"
+
+[[test]]
+name = "ui_navigation"
+path = "../../../../tests/crates/polaris-kernel/crates/directives/ui_navigation.rs"

@@ -297,4 +297,5 @@ pub fn to_markdown_blocks<'a>(blocks: impl IntoIterator<Item = &'a DocBlock>) ->
 }
 
 #[cfg(test)]
+#[path = "../../../tests/crates/polaris-ingest/src/tests.rs"]
 mod tests;

@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-storage-cache"
 description = "Tiered caches: L1 quick_cache (in-RAM) and the L2 exact store behind the sdk ExactCacheStore trait, with scope-isolated blake3 keys and single-flight compute."
 version.workspace = true
@@ -22,3 +23,28 @@ polaris-sdk = { workspace = true }
 proptest = { workspace = true }
 tokio = { workspace = true }
 loom = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "cache_key_derivation"
+path = "../../../../tests/crates/polaris-storage/crates/cache/cache_key_derivation.rs"
+
+[[test]]
+name = "cache_purge"
+path = "../../../../tests/crates/polaris-storage/crates/cache/cache_purge.rs"
+
+[[test]]
+name = "load"
+path = "../../../../tests/crates/polaris-storage/crates/cache/load.rs"
+
+[[test]]
+name = "single_flight_compute"
+path = "../../../../tests/crates/polaris-storage/crates/cache/single_flight_compute.rs"
+
+[[test]]
+name = "single_flight_loom"
+path = "../../../../tests/crates/polaris-storage/crates/cache/single_flight_loom.rs"
+
+[[test]]
+name = "tier_promotion"
+path = "../../../../tests/crates/polaris-storage/crates/cache/tier_promotion.rs"

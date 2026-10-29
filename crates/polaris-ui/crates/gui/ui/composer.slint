@@ -80,6 +80,8 @@ export component Composer {
     in-out property <string> text;
     in property <string> placeholder: "Ask Polaris anything…";
     in property <bool> pending;
+    // A reply is being generated: the send button becomes Stop, Esc stops it.
+    in property <bool> working;
     in property <string> notice;
     in property <[string]> model-names;
     in property <[string]> model-short-names;
@@ -90,11 +92,17 @@ export component Composer {
     in-out property <int> mode-index: 0;
     in-out property <int> effort-index: 2;
     in-out property <bool> menu-open;
-    out property <bool> send-enabled: root.text != "" && !root.pending;
+    out property <bool> send-enabled: root.text != "" && !root.pending && !root.working;
+    out property <bool> action-enabled: root.working || root.send-enabled;
     out property <bool> input-focused: input.has-focus;
 
     callback edited(string);
     callback submit();
+    callback interrupt();
+    // The user picked a mode, model or effort (indices into the lists above).
+    callback mode-chosen(int);
+    callback model-chosen(int);
+    callback effort-chosen(int);
 
     property <string> attach-reason: "Attachments need the model/ingest profile (not set up yet)";
     property <string> mic-reason: "Speech input is not available yet";
@@ -114,6 +122,14 @@ export component Composer {
     function try-submit() {
         if (root.send-enabled) {
             root.submit();
+        }
+    }
+
+    function primary-action() {
+        if (root.working) {
+            root.interrupt();
+        } else {
+            root.try-submit();
         }
     }
 
@@ -163,6 +179,10 @@ export component Composer {
                                 root.try-submit();
                                 return accept;
                             }
+                            if (event.text == Key.Escape && root.working) {
+                                root.interrupt();
+                                return accept;
+                            }
                             return reject;
                         }
                     }
@@ -199,10 +219,10 @@ export component Composer {
                             border-color: root.mode-index == 0 ? Tokens.mode-plan-line : Tokens.mode-auto-line;
                             accessible-role: button;
                             accessible-label: root.mode-index == 0 ? "Mode: plan, asks before acting" : "Mode: auto";
-                            accessible-action-default => { root.mode-index = 1 - root.mode-index; }
+                            accessible-action-default => { root.mode-index = 1 - root.mode-index; root.mode-chosen(root.mode-index); }
                             mode-touch := TouchArea {
                                 mouse-cursor: pointer;
-                                clicked => { root.mode-index = 1 - root.mode-index; }
+                                clicked => { root.mode-index = 1 - root.mode-index; root.mode-chosen(root.mode-index); }
                             }
                             mode-row := HorizontalLayout {
                                 x: 10px;
@@ -270,23 +290,23 @@ export component Composer {
                             width: 32px;
                             height: 32px;
                             border-radius: 16px;
-                            background: root.send-enabled ? Tokens.accent : Tokens.send-idle-bg;
+                            background: root.action-enabled ? Tokens.accent : Tokens.send-idle-bg;
                             animate background { duration: Motion.fast; }
                             accessible-role: button;
-                            accessible-label: root.pending ? "Send message — waiting for the previous message" : "Send message";
-                            accessible-enabled: root.send-enabled;
-                            accessible-action-default => { root.try-submit(); }
+                            accessible-label: root.working ? "Stop the reply" : (root.pending ? "Send message — waiting for the previous message" : "Send message");
+                            accessible-enabled: root.action-enabled;
+                            accessible-action-default => { root.primary-action(); }
                             send-touch := TouchArea {
-                                mouse-cursor: root.send-enabled ? pointer : default;
-                                clicked => { root.try-submit(); }
+                                mouse-cursor: root.action-enabled ? pointer : default;
+                                clicked => { root.primary-action(); }
                             }
                             Icon {
                                 x: (parent.width - self.width) / 2;
                                 y: (parent.height - self.height) / 2;
                                 width: 16px;
                                 height: 16px;
-                                commands: IconPaths.send;
-                                color: root.send-enabled ? Tokens.canvas : Tokens.muted;
+                                commands: root.working ? IconPaths.stop : IconPaths.send;
+                                color: root.action-enabled ? Tokens.canvas : Tokens.muted;
                             }
                         }
                     }
@@ -388,7 +408,7 @@ export component Composer {
             for name[index] in root.model-names: ModelRow {
                 label: name;
                 selected: index == root.model-index;
-                clicked => { root.model-index = index; }
+                clicked => { root.model-index = index; root.model-chosen(index); }
             }
             Rectangle {
                 height: 9px;
@@ -420,7 +440,7 @@ export component Composer {
                             mono: true;
                             selected: root.effort-index == index;
                             selected-color: Tokens.mode-plan;
-                            clicked => { root.effort-index = index; }
+                            clicked => { root.effort-index = index; root.effort-chosen(index); }
                         }
                     }
                 }

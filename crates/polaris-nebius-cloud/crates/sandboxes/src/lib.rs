@@ -1307,6 +1307,7 @@ enum PortContent {
 }
 
 #[cfg(test)]
+#[path = "../../../../../tests/crates/polaris-nebius-cloud/crates/sandboxes/src/tests.rs"]
 mod tests;
 
 mod env_resolver;
