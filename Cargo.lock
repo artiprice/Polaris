@@ -5379,6 +5379,7 @@ checksum = "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104"
 dependencies = [
  "bytemuck",
  "byteorder-lite",
+ "image-webp",
  "moxcms",
  "num-traits",
  "png",
@@ -7857,9 +7858,14 @@ dependencies = [
 name = "polaris-browser"
 version = "0.1.0-alpha"
 dependencies = [
+ "blake3",
+ "image",
  "polaris-proto",
  "polaris-sdk",
+ "serde",
+ "serde_json",
  "thiserror 2.0.21",
+ "tokio",
 ]
 
 [[package]]
@@ -8360,12 +8366,21 @@ dependencies = [
 name = "polaris-nvidia-docs"
 version = "0.1.0-alpha"
 dependencies = [
+ "htmd",
  "polaris-code-intel",
  "polaris-ratelimit",
  "polaris-sdk",
  "polaris-storage-registry",
  "polaris-storage-vector",
+ "pulldown-cmark",
+ "regex",
+ "reqwest 0.13.5",
+ "serde",
+ "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -8823,8 +8838,15 @@ dependencies = [
 name = "polaris-spike-web"
 version = "0.1.0-alpha"
 dependencies = [
+ "futures",
+ "hdrhistogram",
+ "polaris-config",
  "polaris-ui-web",
- "thiserror 2.0.21",
+ "reqwest 0.13.5",
+ "serde_json",
+ "sysinfo",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -9129,7 +9151,6 @@ dependencies = [
  "polaris-ui-model",
  "polaris-ui-session",
  "polaris-ui-web",
- "thiserror 2.0.21",
 ]
 
 [[package]]
