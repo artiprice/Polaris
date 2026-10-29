@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "xtask"
 description = "Repository automation for Polaris: workspace member and layer checks driven by @prime/tools/workspace.toml."
 version.workspace = true
@@ -22,3 +23,24 @@ polaris-sdk = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "calibration"
+path = "../tests/xtask/calibration.rs"
+
+[[test]]
+name = "check_layers"
+path = "../tests/xtask/check_layers.rs"
+
+[[test]]
+name = "check_members"
+path = "../tests/xtask/check_members.rs"
+
+[[test]]
+name = "check_witness"
+path = "../tests/xtask/check_witness.rs"
+
+[[test]]
+name = "release_sbom"
+path = "../tests/xtask/release_sbom.rs"

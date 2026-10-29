@@ -101,6 +101,12 @@ pub enum Action {
         /// One bounded task goal.
         task: String,
     },
+    /// Serve the local web UI on loopback and print its address (with this run's access token).
+    Web {
+        /// Loopback port; 0 picks a free one.
+        #[arg(long, default_value_t = 8787)]
+        port: u16,
+    },
     /// Inspect recovery resources and configured credential references.
     Doctor {
         /// Emit machine-readable JSON.
@@ -223,6 +229,34 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
+            Some(Action::Web { port }) => {
+                let server = polaris_ui_web::WebServer::bind(polaris_ui_web::WebOptions {
+                    bind: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+                    state_dir: args.state_dir.clone(),
+                    workspace: args.workspace.clone(),
+                    config: loaded.config.clone(),
+                    env_file: polaris_ui_session::default_env_file(
+                        args.env_file.as_deref(),
+                        &dirs.global,
+                    ),
+                })
+                .await
+                .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                writeln!(out, "Polaris web UI: {}", server.url())?;
+                writeln!(
+                    out,
+                    "Open it in a browser on this machine; Ctrl+C stops the server."
+                )?;
+                out.flush()?;
+                drop(out);
+                server
+                    .serve(async {
+                        let _signal = crate::app::shutdown_signal().await;
+                    })
+                    .await
+                    .map_err(|error| CliError::Ui(error.to_string()))
+            }
             Some(Action::Run { task }) => {
                 headless(&args.state_dir, &args.workspace, args.session, &task).await
             }
@@ -391,53 +425,5 @@ pub(crate) async fn shutdown_signal() -> Result<(), std::io::Error> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{Action, Args};
-    use clap::Parser;
-
-    #[test]
-    fn status_json_is_a_headless_cli_action() -> Result<(), clap::Error> {
-        let args = Args::try_parse_from(["polaris", "status", "--json"])?;
-        assert!(
-            matches!(args.command, Some(Action::Status { json: true })),
-            "status --json must route to the headless status action"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn task_command_accepts_explicit_profile_and_goal() -> Result<(), clap::Error> {
-        let args = Args::try_parse_from([
-            "polaris",
-            "task",
-            "--profile",
-            "local.toml",
-            "inspect the current workspace",
-        ])?;
-        assert!(
-            matches!(
-                args.command,
-                Some(Action::Task { ref profile, ref task })
-                    if profile.as_deref() == Some(std::path::Path::new("local.toml"))
-                        && task == "inspect the current workspace"
-            ),
-            "task must parse as its dedicated non-UI action"
-        );
-        let hosted = Args::try_parse_from([
-            "polaris",
-            "--env-file",
-            ".env",
-            "task",
-            "summarize the workspace",
-        ])?;
-        assert!(
-            matches!(hosted.command, Some(Action::Task { profile: None, .. })),
-            "without --profile the provider chain serves the task"
-        );
-        assert_eq!(
-            hosted.env_file.as_deref(),
-            Some(std::path::Path::new(".env"))
-        );
-        Ok(())
-    }
-}
+#[path = "../../../tests/apps/polaris-cli/src/app.rs"]
+mod tests;

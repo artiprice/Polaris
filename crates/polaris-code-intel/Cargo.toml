@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-code-intel"
 description = "tree-sitter parsing, PageRank repo map, file skeletons, AST diff/merge and code metrics (churn, cyclomatic, tree-edit distance)."
 version.workspace = true
@@ -32,3 +33,56 @@ polaris-sdk = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 sysinfo = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "ast_pattern_match"
+path = "../../tests/crates/polaris-code-intel/ast_pattern_match.rs"
+
+[[test]]
+name = "hostile_depth"
+path = "../../tests/crates/polaris-code-intel/hostile_depth.rs"
+
+[[test]]
+name = "language_detection"
+path = "../../tests/crates/polaris-code-intel/language_detection.rs"
+
+[[test]]
+name = "mutation_metrics"
+path = "../../tests/crates/polaris-code-intel/mutation_metrics.rs"
+
+[[test]]
+name = "parser_pool"
+path = "../../tests/crates/polaris-code-intel/parser_pool.rs"
+
+[[test]]
+name = "repo_map_ranking"
+path = "../../tests/crates/polaris-code-intel/repo_map_ranking.rs"
+
+[[test]]
+name = "rust_unsafe_coverage"
+path = "../../tests/crates/polaris-code-intel/rust_unsafe_coverage.rs"
+
+[[test]]
+name = "safety_observations"
+path = "../../tests/crates/polaris-code-intel/safety_observations.rs"
+
+[[test]]
+name = "safety_stress"
+path = "../../tests/crates/polaris-code-intel/safety_stress.rs"
+
+[[test]]
+name = "scalability"
+path = "../../tests/crates/polaris-code-intel/scalability.rs"
+
+[[test]]
+name = "skeleton_extraction"
+path = "../../tests/crates/polaris-code-intel/skeleton_extraction.rs"
+
+[[test]]
+name = "subtree_fingerprints"
+path = "../../tests/crates/polaris-code-intel/subtree_fingerprints.rs"
+
+[[test]]
+name = "symbol_merge"
+path = "../../tests/crates/polaris-code-intel/symbol_merge.rs"

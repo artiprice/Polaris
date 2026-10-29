@@ -38,6 +38,11 @@ pub enum BackendRequest {
     SetEffort(Effort),
     /// Activity across every local session (the Usage panel).
     Stats,
+    /// Plan mode (the model plans changes before writing code) on or off.
+    Mode {
+        /// Plan mode.
+        plan: bool,
+    },
 }
 
 /// How a committed message entered the session.

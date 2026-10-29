@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-proto"
 description = "Protobuf contracts and generated tonic/prost code for the kernel, worker and guest services."
 version.workspace = true
@@ -30,3 +31,36 @@ protoc-bin-vendored = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "command_conversion"
+path = "../../tests/crates/polaris-proto/command_conversion.rs"
+
+[[test]]
+name = "decision_conversion"
+path = "../../tests/crates/polaris-proto/decision_conversion.rs"
+
+[[test]]
+name = "event_conversion"
+path = "../../tests/crates/polaris-proto/event_conversion.rs"
+
+[[test]]
+name = "generated_status"
+path = "../../tests/crates/polaris-proto/generated_status.rs"
+
+[[test]]
+name = "message_size_guard"
+path = "../../tests/crates/polaris-proto/message_size_guard.rs"
+
+[[test]]
+name = "protocol_version_negotiation"
+path = "../../tests/crates/polaris-proto/protocol_version_negotiation.rs"
+
+[[test]]
+name = "wire_schema_contract"
+path = "../../tests/crates/polaris-proto/wire_schema_contract.rs"
+
+[[test]]
+name = "worker_auth"
+path = "../../tests/crates/polaris-proto/worker_auth.rs"

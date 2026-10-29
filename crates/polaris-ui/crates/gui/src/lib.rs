@@ -33,6 +33,7 @@ mod app;
 mod aurora_driver;
 pub mod backend;
 mod error;
+pub mod markdown;
 pub mod palette;
 pub mod session_view;
 
@@ -55,3 +56,10 @@ mod generated {
 }
 
 pub use generated::AppWindow;
+
+/// Short composer label of a model id: its last path segment without a `:tag` suffix.
+#[must_use]
+pub fn short_model_label(model: &str) -> String {
+    let last = model.rsplit('/').next().unwrap_or(model);
+    last.split(':').next().unwrap_or(last).to_owned()
+}

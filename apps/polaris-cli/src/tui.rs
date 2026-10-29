@@ -1068,6 +1068,8 @@ struct UiState {
     provider_models: Vec<(Effort, String)>,
     /// Providers skipped before the selection, with reasons.
     provider_skipped: Vec<String>,
+    /// Short footer label of the live model (`vendor/name:tag` -> `name`).
+    model_label: Option<String>,
     turn: Option<TurnUi>,
     activity: String,
 }
@@ -1149,6 +1151,7 @@ impl UiState {
             transient_notice: None,
             provider_models: Vec::new(),
             provider_skipped: Vec::new(),
+            model_label: None,
             turn: None,
             activity: String::new(),
         })
@@ -1166,6 +1169,8 @@ impl UiState {
     }
     /// Show `model` and `effort` in every live view.
     fn show_model(&mut self, model: &str, effort: Effort) {
+        let last = model.rsplit('/').next().unwrap_or(model);
+        self.model_label = Some(last.split(':').next().unwrap_or(last).to_owned());
         if let Ok(model) = ModelId::new(model) {
             self.empty.set_model(model.clone());
             self.empty.set_effort(effort);
@@ -3250,7 +3255,7 @@ fn projection<'a>(
         .with_model_label(if state.demo_active {
             state.demo_model_label
         } else {
-            None
+            state.model_label.as_deref()
         })
         .with_editor_focus(
             !state.panel_focus
@@ -4530,5 +4535,5 @@ fn present_frame<W: Write>(
     presenter.commit().map_err(ui_error)
 }
 #[cfg(test)]
-#[path = "../tests/controller/mod.rs"]
+#[path = "../../../tests/apps/polaris-cli/controller/mod.rs"]
 mod controller_tests;

@@ -13,9 +13,9 @@
 pub mod chat;
 mod error;
 pub mod host;
-pub mod stats;
 mod offline;
 mod queries;
+pub mod stats;
 
 pub use chat::{ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, choose_provider};
 pub use error::SessionHostError;

@@ -136,6 +136,8 @@ struct Bridgework {
     chat: Option<ConversationHost>,
     /// Model requests and tokens of the open session, from its committed records.
     usage: (u64, u64, u64),
+    /// Plan mode of the composer (the window starts in plan mode).
+    plan: bool,
 }
 
 impl Bridgework {
@@ -249,7 +251,7 @@ impl Bridgework {
         let (Some(session), Some(chat)) = (self.session.as_ref(), self.chat.as_mut()) else {
             return;
         };
-        let event = match chat.start_turn(session, text.to_owned(), false).await {
+        let event = match chat.start_turn(session, text.to_owned(), self.plan).await {
             Ok(()) => BackendEvent::ReplyStarted,
             Err(error) => BackendEvent::ReplyFailed(error.to_string()),
         };
@@ -440,6 +442,7 @@ async fn run(
         session: None,
         chat: chat.map(|options| ConversationHost::new(options.config, options.env_file)),
         usage: (0, 0, 0),
+        plan: true,
     };
     if let Some(chat) = work.chat.as_mut() {
         chat.start_pick();
@@ -463,6 +466,7 @@ async fn run(
                     }
                     BackendRequest::SetEffort(effort) => work.set_effort(effort),
                     BackendRequest::Stats => work.stats().await,
+                    BackendRequest::Mode { plan } => work.plan = plan,
                 }
             }
             next = next_record(&mut work.session) => work.record(next),

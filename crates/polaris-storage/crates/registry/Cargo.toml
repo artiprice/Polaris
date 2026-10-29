@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-storage-registry"
 description = "Global session registry on SQLite (registry.db) with FTS5 trigram search over history."
 version.workspace = true
@@ -21,3 +22,32 @@ polaris-sdk = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "database_open"
+path = "../../../../tests/crates/polaris-storage/crates/registry/database_open.rs"
+
+[[test]]
+name = "fts_query_sanitising"
+path = "../../../../tests/crates/polaris-storage/crates/registry/fts_query_sanitising.rs"
+
+[[test]]
+name = "history_indexing"
+path = "../../../../tests/crates/polaris-storage/crates/registry/history_indexing.rs"
+
+[[test]]
+name = "history_search"
+path = "../../../../tests/crates/polaris-storage/crates/registry/history_search.rs"
+
+[[test]]
+name = "process_and_load"
+path = "../../../../tests/crates/polaris-storage/crates/registry/process_and_load.rs"
+
+[[test]]
+name = "schema_migration"
+path = "../../../../tests/crates/polaris-storage/crates/registry/schema_migration.rs"
+
+[[test]]
+name = "session_registry_crud"
+path = "../../../../tests/crates/polaris-storage/crates/registry/session_registry_crud.rs"

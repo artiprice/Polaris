@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-tools-rtk"
 description = "RTK diagnostic engine (port of @prime/tmp/setup rtk-engine): filter compiler/linter streams and keep an atomic issue ledger (.polaris/issues.md)."
 version.workspace = true
@@ -26,3 +27,52 @@ proptest = { workspace = true }
 tempfile = { workspace = true }
 insta = { workspace = true }
 blake3 = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "atomic_ledger_write"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/atomic_ledger_write.rs"
+
+[[test]]
+name = "cargo_json_diagnostics"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/cargo_json_diagnostics.rs"
+
+[[test]]
+name = "exit_code"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/exit_code.rs"
+
+[[test]]
+name = "format_detection"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/format_detection.rs"
+
+[[test]]
+name = "ledger_parse_and_render"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/ledger_parse_and_render.rs"
+
+[[test]]
+name = "ledger_path_resolution"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/ledger_path_resolution.rs"
+
+[[test]]
+name = "ledger_reconcile"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/ledger_reconcile.rs"
+
+[[test]]
+name = "load"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/load.rs"
+
+[[test]]
+name = "recorded_fixtures"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/recorded_fixtures.rs"
+
+[[test]]
+name = "run_pipeline"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/run_pipeline.rs"
+
+[[test]]
+name = "stream_decoding"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/stream_decoding.rs"
+
+[[test]]
+name = "text_filter"
+path = "../../../../tests/crates/polaris-tools/crates/rtk/text_filter.rs"

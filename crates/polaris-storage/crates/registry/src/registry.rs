@@ -76,6 +76,7 @@ enum Request {
     Get(SessionId, Reply<Option<SessionMeta>>),
     List(SessionFilter, Reply<Vec<SessionMeta>>),
     SetStatus(SessionId, SessionStatus, Timestamp, Reply<bool>),
+    AddUsage(SessionId, u64, u64, Timestamp, Reply<bool>),
     Index(SessionId, ChatRole, String, Timestamp, Reply<()>),
     Search(String, u32, Reply<Vec<Hit>>),
     SearchForSession(SessionId, String, u32, Reply<Vec<Hit>>),
@@ -115,6 +116,11 @@ fn serve(conn: &Connection, requests: &Receiver<Request>, cfg: &RegistryConfig) 
             Request::SetStatus(id, status, at, reply) => {
                 let _ = reply.send(with_retry(cfg, || {
                     sessions::set_status(conn, id, status, at)
+                }));
+            }
+            Request::AddUsage(id, prompt, completion, at, reply) => {
+                let _ = reply.send(with_retry(cfg, || {
+                    sessions::add_usage(conn, id, prompt, completion, at)
                 }));
             }
             Request::Index(session, role, text, at, reply) => {
@@ -237,6 +243,21 @@ impl Registry {
         at: Timestamp,
     ) -> Result<bool, RegistryError> {
         self.call(|reply| Request::SetStatus(id, status, at, reply))
+    }
+
+    /// Adds one model request's tokens to the session's totals and bumps `updated_at`; `false`
+    /// when the id is unknown. Reopening a session recomputes the totals from its event log.
+    ///
+    /// # Errors
+    /// SQLite errors.
+    pub fn add_usage(
+        &self,
+        id: SessionId,
+        prompt_tokens: u64,
+        completion_tokens: u64,
+        at: Timestamp,
+    ) -> Result<bool, RegistryError> {
+        self.call(|reply| Request::AddUsage(id, prompt_tokens, completion_tokens, at, reply))
     }
 
     /// Marks the session [`SessionStatus::Archived`]; `false` when the id is unknown.

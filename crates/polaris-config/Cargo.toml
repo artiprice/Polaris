@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-config"
 description = "Layered configuration: defaults < ~/.polaris < .polaris < env < session, with provenance, a repo trust filter and secret references."
 version.workspace = true
@@ -24,3 +25,28 @@ polaris-sdk = { workspace = true }
 insta = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "config_cli_preferences"
+path = "../../tests/crates/polaris-config/config_cli_preferences.rs"
+
+[[test]]
+name = "config_layer_merge"
+path = "../../tests/crates/polaris-config/config_layer_merge.rs"
+
+[[test]]
+name = "directory_discovery"
+path = "../../tests/crates/polaris-config/directory_discovery.rs"
+
+[[test]]
+name = "golden_provenance"
+path = "../../tests/crates/polaris-config/golden_provenance.rs"
+
+[[test]]
+name = "repo_layer_trust_filter"
+path = "../../tests/crates/polaris-config/repo_layer_trust_filter.rs"
+
+[[test]]
+name = "secret_reference_parsing"
+path = "../../tests/crates/polaris-config/secret_reference_parsing.rs"

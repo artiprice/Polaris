@@ -226,6 +226,22 @@ pub(crate) fn list(
 }
 
 /// Sets the status and `updated_at`; false when the session does not exist.
+pub(crate) fn add_usage(
+    conn: &Connection,
+    id: SessionId,
+    prompt_tokens: u64,
+    completion_tokens: u64,
+    at: Timestamp,
+) -> Result<bool, RegistryError> {
+    let prompt = i64::try_from(prompt_tokens).unwrap_or(i64::MAX);
+    let completion = i64::try_from(completion_tokens).unwrap_or(i64::MAX);
+    let mut stmt = conn.prepare_cached(
+        "UPDATE sessions SET prompt_tokens = prompt_tokens + ?2, completion_tokens = completion_tokens + ?3, updated_at = MAX(updated_at, ?4) WHERE id = ?1",
+    )?;
+    let changed = stmt.execute((id.to_string(), prompt, completion, to_micros(at)))?;
+    Ok(changed > 0)
+}
+
 pub(crate) fn set_status(
     conn: &Connection,
     id: SessionId,

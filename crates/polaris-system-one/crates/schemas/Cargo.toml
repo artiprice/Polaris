@@ -1,5 +1,6 @@
 # Owned implementation; dependency metadata is mirrored in @prime/tools/workspace.toml.
 [package]
+autotests = false
 name = "polaris-system-one-schemas"
 description = "Decision schemas as data (intent, effort 1-5, tool relevance, safety, congruence, PII) with calibrated thresholds and failure modes."
 version.workspace = true
@@ -18,3 +19,16 @@ serde = { workspace = true }
 toml = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "calibration"
+path = "../../../../tests/crates/polaris-system-one/crates/schemas/calibration.rs"
+
+[[test]]
+name = "sdk_catalog"
+path = "../../../../tests/crates/polaris-system-one/crates/schemas/sdk_catalog.rs"
+
+[[test]]
+name = "watchdog_config"
+path = "../../../../tests/crates/polaris-system-one/crates/schemas/watchdog_config.rs"

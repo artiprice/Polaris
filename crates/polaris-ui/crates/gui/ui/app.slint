@@ -14,9 +14,9 @@ import { Tokens } from "tokens.slint";
 import { Icon, IconPaths } from "icons.slint";
 import { Brand, NavButton, Motion } from "parts.slint";
 import { Composer, DirectiveChip } from "composer.slint";
-import { SessionScreen, EntryRow, SessionRowUi, SessionGroup, SearchHitUi } from "session.slint";
+import { SessionScreen, EntryRow, BlockRow, SessionRowUi, SessionGroup, SearchHitUi } from "session.slint";
 
-export { Tokens, DirectiveChip, EntryRow, SessionRowUi, SessionGroup, SearchHitUi }
+export { Tokens, DirectiveChip, EntryRow, BlockRow, SessionRowUi, SessionGroup, SearchHitUi }
 
 // One row of the Models panel: an effort level and the provider's model for it.
 export struct ModelRowUi {
@@ -61,7 +61,8 @@ export component AppWindow inherits Window {
     in property <[SearchHitUi]> hits;
     in property <string> status-workspace;
     in property <string> status-branch;
-    in property <string> status-connection: "Offline · no model replies";
+    in property <string> status-connection: "Connecting to a model…";
+    in property <string> status-state: "connecting";
 
     // ---- window state, readable and writable from Rust -------------------------------------
     in-out property <bool> in-session;
@@ -83,6 +84,9 @@ export component AppWindow inherits Window {
     callback draft-edited(string);
     callback submit();
     callback interrupt();
+    callback mode-chosen(int);
+    callback model-chosen(int);
+    callback effort-chosen(int);
     callback choose-model(int);
     callback usage-opened();
     callback new-conversation();
@@ -170,6 +174,9 @@ export component AppWindow inherits Window {
                     edited(text) => { root.draft-edited(text); }
                     submit => { root.submit(); }
                     interrupt => { root.interrupt(); }
+                    mode-chosen(index) => { root.mode-chosen(index); }
+                    model-chosen(index) => { root.model-chosen(index); }
+                    effort-chosen(index) => { root.effort-chosen(index); }
                 }
             }
         }
@@ -267,6 +274,10 @@ export component AppWindow inherits Window {
 
     // ---- session screen ---------------------------------------------------------------------
     if root.in-session: SessionScreen {
+        // Welcome → session: the session view fades in over the aurora.
+        opacity: 0;
+        animate opacity { duration: 260ms; easing: ease-out; }
+        init => { self.opacity = 1; }
         width: root.width - (root.context-docked ? 344px : 0px);
         height: root.height;
         title: root.session-title;
@@ -276,6 +287,7 @@ export component AppWindow inherits Window {
         status-workspace: root.status-workspace;
         status-branch: root.status-branch;
         status-connection: root.status-connection;
+        status-state: root.status-state;
         state-dir: root.state-dir;
         starting: root.starting;
         notice: root.notice;
@@ -293,6 +305,9 @@ export component AppWindow inherits Window {
         draft-edited(text) => { root.draft-edited(text); }
         submit => { root.submit(); }
         interrupt => { root.interrupt(); }
+        mode-chosen(index) => { root.mode-chosen(index); }
+        model-chosen(index) => { root.model-chosen(index); }
+        effort-chosen(index) => { root.effort-chosen(index); }
         new-session => { root.new-conversation(); }
         open-session(id) => { root.open-session(id); }
         search-edited(query) => { root.search-edited(query); }

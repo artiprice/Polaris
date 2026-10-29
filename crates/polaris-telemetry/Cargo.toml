@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-telemetry"
 description = "Usage, cost, latency and cache metrics fed by bus events; backs /usage /stats /quota /context-map and the token-weather HUD."
 version.workspace = true
@@ -23,3 +24,36 @@ polaris-sdk = { workspace = true }
 insta = { workspace = true }
 proptest = { workspace = true }
 serde_json = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "aggregate_merge"
+path = "../../tests/crates/polaris-telemetry/aggregate_merge.rs"
+
+[[test]]
+name = "budget_monitor"
+path = "../../tests/crates/polaris-telemetry/budget_monitor.rs"
+
+[[test]]
+name = "cost_accounting"
+path = "../../tests/crates/polaris-telemetry/cost_accounting.rs"
+
+[[test]]
+name = "hud_view"
+path = "../../tests/crates/polaris-telemetry/hud_view.rs"
+
+[[test]]
+name = "load"
+path = "../../tests/crates/polaris-telemetry/load.rs"
+
+[[test]]
+name = "replay_idempotence"
+path = "../../tests/crates/polaris-telemetry/replay_idempotence.rs"
+
+[[test]]
+name = "snapshot_publication"
+path = "../../tests/crates/polaris-telemetry/snapshot_publication.rs"
+
+[[test]]
+name = "usage_aggregation"
+path = "../../tests/crates/polaris-telemetry/usage_aggregation.rs"

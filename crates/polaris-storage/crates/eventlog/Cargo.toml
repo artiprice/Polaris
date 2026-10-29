@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-storage-eventlog"
 description = "Append-only event journal on redb (events.redb): replay, checkpoints, lease locks and the L2 exact cache."
 version.workspace = true
@@ -23,3 +24,44 @@ polaris-sdk = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 tempfile = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "async_owner"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/async_owner.rs"
+
+[[test]]
+name = "crash_recovery"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/crash_recovery.rs"
+
+[[test]]
+name = "disk_full"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/disk_full.rs"
+
+[[test]]
+name = "event_append_and_read"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/event_append_and_read.rs"
+
+[[test]]
+name = "event_codec"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/event_codec.rs"
+
+[[test]]
+name = "exact_cache_store"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/exact_cache_store.rs"
+
+[[test]]
+name = "lazy_replay"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/lazy_replay.rs"
+
+[[test]]
+name = "load"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/load.rs"
+
+[[test]]
+name = "lock_table_recovery"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/lock_table_recovery.rs"
+
+[[test]]
+name = "replay_to_step"
+path = "../../../../tests/crates/polaris-storage/crates/eventlog/replay_to_step.rs"

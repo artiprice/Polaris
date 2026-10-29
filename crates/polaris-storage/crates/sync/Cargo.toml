@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-storage-sync"
 description = "Byte-exact, blake3-incremental workspace mirroring into sandboxes, governed by .polarisignore and a non-overridable secret deny-list."
 version.workspace = true
@@ -29,3 +30,28 @@ polaris-sdk = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "ignore_and_deny_rules"
+path = "../../../../tests/crates/polaris-storage/crates/sync/ignore_and_deny_rules.rs"
+
+[[test]]
+name = "manifest_scan"
+path = "../../../../tests/crates/polaris-storage/crates/sync/manifest_scan.rs"
+
+[[test]]
+name = "path_conflict_detection"
+path = "../../../../tests/crates/polaris-storage/crates/sync/path_conflict_detection.rs"
+
+[[test]]
+name = "rel_path_validation"
+path = "../../../../tests/crates/polaris-storage/crates/sync/rel_path_validation.rs"
+
+[[test]]
+name = "sync_apply"
+path = "../../../../tests/crates/polaris-storage/crates/sync/sync_apply.rs"
+
+[[test]]
+name = "sync_plan"
+path = "../../../../tests/crates/polaris-storage/crates/sync/sync_plan.rs"

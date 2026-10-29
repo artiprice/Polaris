@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-ui-ascii-aurora"
 description = "Pure-Rust animated ASCII aurora: procedural field, glyph ramp, baked glyph atlas and RGBA blitter for the desktop welcome background."
 version.workspace = true
@@ -18,3 +19,24 @@ ab_glyph = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 insta = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "atlas"
+path = "../../../../tests/crates/polaris-ui/crates/ascii-aurora/atlas.rs"
+
+[[test]]
+name = "blit"
+path = "../../../../tests/crates/polaris-ui/crates/ascii-aurora/blit.rs"
+
+[[test]]
+name = "clock"
+path = "../../../../tests/crates/polaris-ui/crates/ascii-aurora/clock.rs"
+
+[[test]]
+name = "field"
+path = "../../../../tests/crates/polaris-ui/crates/ascii-aurora/field.rs"
+
+[[test]]
+name = "ramp"
+path = "../../../../tests/crates/polaris-ui/crates/ascii-aurora/ramp.rs"

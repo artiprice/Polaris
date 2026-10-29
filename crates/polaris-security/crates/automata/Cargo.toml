@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-security-automata"
 description = "Startup-compiled multi-pattern scanners for secrets, PII and dangerous shell commands, a user-regex guard, integer entropy and a redactor."
 version.workspace = true
@@ -25,3 +26,36 @@ polaris-sdk = { workspace = true }
 proptest = { workspace = true }
 regex = { workspace = true }
 dhat = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "bypass_corpus"
+path = "../../../../tests/crates/polaris-security/crates/automata/bypass_corpus.rs"
+
+[[test]]
+name = "dfa_redactor"
+path = "../../../../tests/crates/polaris-security/crates/automata/dfa_redactor.rs"
+
+[[test]]
+name = "entropy_candidate_detection"
+path = "../../../../tests/crates/polaris-security/crates/automata/entropy_candidate_detection.rs"
+
+[[test]]
+name = "multi_pattern_dfa_scan"
+path = "../../../../tests/crates/polaris-security/crates/automata/multi_pattern_dfa_scan.rs"
+
+[[test]]
+name = "performance_gates"
+path = "../../../../tests/crates/polaris-security/crates/automata/performance_gates.rs"
+
+[[test]]
+name = "stream_boundaries"
+path = "../../../../tests/crates/polaris-security/crates/automata/stream_boundaries.rs"
+
+[[test]]
+name = "user_regex_guard"
+path = "../../../../tests/crates/polaris-security/crates/automata/user_regex_guard.rs"
+
+[[test]]
+name = "zero_alloc_scan"
+path = "../../../../tests/crates/polaris-security/crates/automata/zero_alloc_scan.rs"

@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-kernel-reaper"
 description = "Deterministic deallocation: cancellation tree, process kill-trees via PlatformOps, sandbox/temp teardown, shared-memory cleanup."
 version.workspace = true
@@ -25,3 +26,44 @@ polaris-kernel-bus = { workspace = true }
 [dev-dependencies]
 proptest = { workspace = true }
 tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "cancellation_cascade"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/cancellation_cascade.rs"
+
+[[test]]
+name = "cancellation_safe_shutdown"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/cancellation_safe_shutdown.rs"
+
+[[test]]
+name = "crash_safe_journal"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/crash_safe_journal.rs"
+
+[[test]]
+name = "deadline_enforcement"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/deadline_enforcement.rs"
+
+[[test]]
+name = "leak_report"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/leak_report.rs"
+
+[[test]]
+name = "ordered_teardown"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/ordered_teardown.rs"
+
+[[test]]
+name = "outcome_accounting"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/outcome_accounting.rs"
+
+[[test]]
+name = "pending_orphans"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/pending_orphans.rs"
+
+[[test]]
+name = "process_seam"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/process_seam.rs"
+
+[[test]]
+name = "temp_dir_cleanup"
+path = "../../../../tests/crates/polaris-kernel/crates/reaper/temp_dir_cleanup.rs"

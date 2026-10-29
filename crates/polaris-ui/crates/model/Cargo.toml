@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-ui-model"
 description = "Shared UI view models and reducers over the event stream, plus design tokens from the demo (#76B900 accent, palette, typography)."
 version.workspace = true
@@ -23,3 +24,56 @@ polaris-kernel-directives = { workspace = true }
 proptest = { workspace = true }
 insta = { workspace = true, features = ["json"] }
 serde_json = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "cockpit_state"
+path = "../../../../tests/crates/polaris-ui/crates/model/cockpit_state.rs"
+
+[[test]]
+name = "completion_ranking"
+path = "../../../../tests/crates/polaris-ui/crates/model/completion_ranking.rs"
+
+[[test]]
+name = "composer_buffer"
+path = "../../../../tests/crates/polaris-ui/crates/model/composer_buffer.rs"
+
+[[test]]
+name = "continuation_editor"
+path = "../../../../tests/crates/polaris-ui/crates/model/continuation_editor.rs"
+
+[[test]]
+name = "design_tokens"
+path = "../../../../tests/crates/polaris-ui/crates/model/design_tokens.rs"
+
+[[test]]
+name = "keymap_table"
+path = "../../../../tests/crates/polaris-ui/crates/model/keymap_table.rs"
+
+[[test]]
+name = "logo_grids"
+path = "../../../../tests/crates/polaris-ui/crates/model/logo_grids.rs"
+
+[[test]]
+name = "mouse_selection_model"
+path = "../../../../tests/crates/polaris-ui/crates/model/mouse_selection_model.rs"
+
+[[test]]
+name = "prompt_history"
+path = "../../../../tests/crates/polaris-ui/crates/model/prompt_history.rs"
+
+[[test]]
+name = "questionnaire_editor"
+path = "../../../../tests/crates/polaris-ui/crates/model/questionnaire_editor.rs"
+
+[[test]]
+name = "questionnaire_state"
+path = "../../../../tests/crates/polaris-ui/crates/model/questionnaire_state.rs"
+
+[[test]]
+name = "token_classification"
+path = "../../../../tests/crates/polaris-ui/crates/model/token_classification.rs"
+
+[[test]]
+name = "view_reducer"
+path = "../../../../tests/crates/polaris-ui/crates/model/view_reducer.rs"

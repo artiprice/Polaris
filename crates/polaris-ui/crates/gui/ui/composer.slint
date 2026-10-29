@@ -99,6 +99,10 @@ export component Composer {
     callback edited(string);
     callback submit();
     callback interrupt();
+    // The user picked a mode, model or effort (indices into the lists above).
+    callback mode-chosen(int);
+    callback model-chosen(int);
+    callback effort-chosen(int);
 
     property <string> attach-reason: "Attachments need the model/ingest profile (not set up yet)";
     property <string> mic-reason: "Speech input is not available yet";
@@ -215,10 +219,10 @@ export component Composer {
                             border-color: root.mode-index == 0 ? Tokens.mode-plan-line : Tokens.mode-auto-line;
                             accessible-role: button;
                             accessible-label: root.mode-index == 0 ? "Mode: plan, asks before acting" : "Mode: auto";
-                            accessible-action-default => { root.mode-index = 1 - root.mode-index; }
+                            accessible-action-default => { root.mode-index = 1 - root.mode-index; root.mode-chosen(root.mode-index); }
                             mode-touch := TouchArea {
                                 mouse-cursor: pointer;
-                                clicked => { root.mode-index = 1 - root.mode-index; }
+                                clicked => { root.mode-index = 1 - root.mode-index; root.mode-chosen(root.mode-index); }
                             }
                             mode-row := HorizontalLayout {
                                 x: 10px;
@@ -404,7 +408,7 @@ export component Composer {
             for name[index] in root.model-names: ModelRow {
                 label: name;
                 selected: index == root.model-index;
-                clicked => { root.model-index = index; }
+                clicked => { root.model-index = index; root.model-chosen(index); }
             }
             Rectangle {
                 height: 9px;
@@ -436,7 +440,7 @@ export component Composer {
                             mono: true;
                             selected: root.effort-index == index;
                             selected-color: Tokens.mode-plan;
-                            clicked => { root.effort-index = index; }
+                            clicked => { root.effort-index = index; root.effort-chosen(index); }
                         }
                     }
                 }

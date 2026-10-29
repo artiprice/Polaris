@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-security-capability"
 description = "Biscuit capability tokens: session authority, per-frame attenuation (path, churn, TTL, no-unsafe), authorization."
 version.workspace = true
@@ -23,3 +24,8 @@ polaris-sdk = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "capability_contract"
+path = "../../../../tests/crates/polaris-security/crates/capability/capability_contract.rs"

@@ -94,7 +94,6 @@ pub struct ToolOutput {
 }
 
 pub use patch::{PatchError, apply_unified_patch};
-pub use text_match::{MatchLevel, Replacement, TextMatchError, replace_text};
 pub use path::{PathError, WorkspacePath, is_secret_path, resolve_in_workspace};
 pub use proposal::{
     CasKernelProposalBackend, DiffProposal, EditFileRequest, NoProposalBackend, PreparedDiff,
@@ -115,3 +114,4 @@ pub use shell::{
     CommandClass, NoShellBackend, SandboxShellBackend, ShellFlavor, ShellInput, ShellOutput,
     ShellToolBackend, classify_command,
 };
+pub use text_match::{MatchLevel, Replacement, TextMatchError, replace_text};

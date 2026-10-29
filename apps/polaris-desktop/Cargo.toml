@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-desktop"
 description = "Native desktop GUI built with Slint (femtovg/software renderer); mobile targets in v2."
 version.workspace = true
@@ -33,3 +34,20 @@ polaris-config = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "args"
+path = "../../tests/apps/polaris-desktop/args.rs"
+
+[[test]]
+name = "bridge"
+path = "../../tests/apps/polaris-desktop/bridge.rs"
+
+[[test]]
+name = "bridge_chat"
+path = "../../tests/apps/polaris-desktop/bridge_chat.rs"
+
+[[test]]
+name = "models"
+path = "../../tests/apps/polaris-desktop/models.rs"

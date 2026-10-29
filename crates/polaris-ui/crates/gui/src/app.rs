@@ -15,7 +15,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use crate::aurora_driver::{AuroraDriver, FRAME_STEP};
 use crate::backend::{BackendEvent, BackendLink, BackendRequest};
 use crate::generated::{
-    DirectiveChip, EntryRow, ModelRowUi, SearchHitUi, SessionGroup as SlintGroup, SessionRowUi,
+    BlockRow, DirectiveChip, EntryRow, ModelRowUi, SearchHitUi, SessionGroup as SlintGroup,
+    SessionRowUi,
 };
 use crate::session_view::{Screen, SessionController};
 use crate::{AppWindow, FrameHistogram, GuiError};
@@ -151,7 +152,27 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
     ui.set_pending(controller.pending());
     ui.set_working(controller.working());
     ui.set_status_connection(SharedString::from(controller.status_line()));
+    ui.set_status_state(SharedString::from(controller.status_state()));
     ui.set_starting(controller.starting());
+    let (provider_models, current) = controller.composer_models();
+    if !provider_models.is_empty() {
+        let labels: Vec<SharedString> = provider_models
+            .iter()
+            .map(|name| SharedString::from(crate::short_model_label(name)))
+            .collect();
+        let names: Vec<SharedString> = provider_models
+            .iter()
+            .map(|name| SharedString::from(name.as_str()))
+            .collect();
+        ui.set_model_names(ModelRc::new(VecModel::from(names)));
+        ui.set_model_short_names(ModelRc::new(VecModel::from(labels)));
+        if let Some(index) = current.and_then(|index| i32::try_from(index).ok()) {
+            ui.set_model_index(index);
+        }
+        if let Ok(index) = i32::try_from(controller.effort_index()) {
+            ui.set_effort_index(index);
+        }
+    }
     ui.set_session_title(SharedString::from(controller.title()));
     let (workspace, branch) = match controller.open_session() {
         Some(open) => (
@@ -171,6 +192,17 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
         .map(|entry| EntryRow {
             kind: SharedString::from(entry_kind(entry.kind)),
             text: SharedString::from(entry.text.as_str()),
+            blocks: ModelRc::new(VecModel::from(if entry.kind == EntryKind::Assistant {
+                crate::markdown::blocks(&entry.text)
+                    .into_iter()
+                    .map(|block| BlockRow {
+                        kind: SharedString::from(block.kind),
+                        text: SharedString::from(block.text),
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            })),
         })
         .collect();
     ui.set_entries(ModelRc::new(VecModel::from(entries)));
@@ -370,6 +402,15 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
         Err(_) => Vec::new(),
     });
     on!(on_usage_opened, |c| c.refresh_usage());
+    on!(on_mode_chosen, |c, index| c.set_mode(index));
+    on!(on_model_chosen, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_composer_model(index),
+        Err(_) => Vec::new(),
+    });
+    on!(on_effort_chosen, |c, index| match usize::try_from(index) {
+        Ok(index) => c.choose_effort(index),
+        Err(_) => Vec::new(),
+    });
     on!(on_new_conversation, |c| c.new_session());
     on!(on_open_session, |c, id| c.open_listed(id.as_str()));
     on!(on_search_edited, |c, query| c.search(query.as_str()));

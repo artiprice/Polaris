@@ -8,10 +8,18 @@ import { Icon, IconPaths } from "icons.slint";
 import { Brand, Motion } from "parts.slint";
 import { Composer, DirectiveChip } from "composer.slint";
 
+// One block of an assistant reply: "p" paragraph, "h" heading, "li" list item, "code" code.
+export struct BlockRow {
+    kind: string,
+    text: string,
+}
+
 // One conversation entry; `kind` is "user", "assistant", "system", "warning" or "error".
+// Assistant entries carry their Markdown as `blocks`; others use `text`.
 export struct EntryRow {
     kind: string,
     text: string,
+    blocks: [BlockRow],
 }
 
 // One session in the sidebar.
@@ -122,6 +130,10 @@ component Entry {
     in property <EntryRow> entry;
     in property <length> column-width;
     height: layout.preferred-height;
+    // New entries rise into place.
+    opacity: 0;
+    animate opacity { duration: 220ms; easing: ease-out; }
+    init => { self.opacity = 1; }
     layout := HorizontalLayout {
         alignment: root.entry.kind == "user" ? end : start;
         padding-top: 8px;
@@ -146,7 +158,46 @@ component Entry {
                 }
             }
         }
-        if root.entry.kind != "user": HorizontalLayout {
+        if root.entry.kind == "assistant": HorizontalLayout {
+            spacing: 10px;
+            Icon {
+                y: 3px;
+                width: 15px;
+                height: 15px;
+                commands: IconPaths.sparkle;
+                color: Tokens.accent;
+            }
+            VerticalLayout {
+                spacing: 8px;
+                for block in root.entry.blocks: Rectangle {
+                    max-width: root.column-width - 30px;
+                    height: block-layout.preferred-height;
+                    border-radius: block.kind == "code" ? 10px : 0px;
+                    background: block.kind == "code" ? Tokens.field-bg : transparent;
+                    border-width: block.kind == "code" ? 1px : 0px;
+                    border-color: Tokens.line;
+                    block-layout := HorizontalLayout {
+                        padding: block.kind == "code" ? 12px : 0px;
+                        spacing: 8px;
+                        if block.kind == "li": Text {
+                            text: "•";
+                            font-size: 14px;
+                            color: Tokens.muted-web;
+                        }
+                        Text {
+                            text: block.text;
+                            wrap: word-wrap;
+                            font-size: block.kind == "code" ? 12px : (block.kind == "h" ? 15px : 14px);
+                            font-family: block.kind == "code" ? Tokens.font-mono : (block.kind == "h" ? Tokens.font-display : "");
+                            font-weight: block.kind == "h" ? 500 : 400;
+                            color: block.kind == "code" ? Tokens.green-light : Tokens.text;
+                            accessible-role: text;
+                        }
+                    }
+                }
+            }
+        }
+        if root.entry.kind != "user" && root.entry.kind != "assistant": HorizontalLayout {
             spacing: 8px;
             Icon {
                 y: 2px;
@@ -176,6 +227,8 @@ export component SessionScreen {
     in property <string> status-workspace;
     in property <string> status-branch;
     in property <string> status-connection;
+    // "ready", "working", "connecting" or "offline": colours the status dot.
+    in property <string> status-state;
     in property <string> state-dir;
     in property <bool> starting;
     in property <string> notice;
@@ -196,6 +249,9 @@ export component SessionScreen {
     callback draft-edited(string);
     callback submit();
     callback interrupt();
+    callback mode-chosen(int);
+    callback model-chosen(int);
+    callback effort-chosen(int);
     callback new-session();
     callback open-session(string);
     callback search-edited(string);
@@ -552,6 +608,9 @@ export component SessionScreen {
                             edited(text) => { root.draft-edited(text); }
                             submit => { root.submit(); }
                             interrupt => { root.interrupt(); }
+                            mode-chosen(index) => { root.mode-chosen(index); }
+                            model-chosen(index) => { root.model-chosen(index); }
+                            effort-chosen(index) => { root.effort-chosen(index); }
                         }
                     }
                     HorizontalLayout {
@@ -613,7 +672,7 @@ export component SessionScreen {
                                     width: 7px;
                                     height: 7px;
                                     border-radius: 3.5px;
-                                    background: Tokens.warning;
+                                    background: root.status-state == "ready" ? Tokens.accent : (root.status-state == "offline" ? Tokens.error : Tokens.warning);
                                 }
                                 Text {
                                     text: root.status-connection;

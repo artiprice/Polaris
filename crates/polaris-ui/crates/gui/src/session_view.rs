@@ -234,6 +234,81 @@ impl SessionController {
         lines
     }
 
+    /// Plan mode toggled in the composer (index 0 is plan).
+    #[must_use]
+    pub fn set_mode(&self, index: i32) -> Vec<BackendRequest> {
+        vec![BackendRequest::Mode { plan: index == 0 }]
+    }
+
+    /// Effort picked in the composer menu (index into low…max).
+    pub fn choose_effort(&mut self, index: usize) -> Vec<BackendRequest> {
+        match Effort::ALL.get(index) {
+            Some(effort) if self.models.iter().any(|(level, _)| level == effort) => {
+                if self.reply.is_some() {
+                    "Change the model after the reply finishes.".clone_into(&mut self.notice);
+                    return Vec::new();
+                }
+                if *effort == self.effort {
+                    Vec::new()
+                } else {
+                    vec![BackendRequest::SetEffort(*effort)]
+                }
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    /// The provider's distinct models in effort order, and the index of the one in use.
+    #[must_use]
+    pub fn composer_models(&self) -> (Vec<String>, Option<usize>) {
+        let mut names: Vec<String> = Vec::new();
+        for (_, model) in &self.models {
+            if !names.contains(model) {
+                names.push(model.clone());
+            }
+        }
+        let current = self
+            .models
+            .iter()
+            .find(|(effort, _)| *effort == self.effort)
+            .and_then(|(_, model)| names.iter().position(|name| name == model));
+        (names, current)
+    }
+
+    /// Composer model menu pick: the lowest effort served by that model.
+    pub fn choose_composer_model(&mut self, index: usize) -> Vec<BackendRequest> {
+        let (names, _) = self.composer_models();
+        let Some(name) = names.get(index) else {
+            return Vec::new();
+        };
+        match self.models.iter().position(|(_, model)| model == name) {
+            Some(row) => self.choose_model(row),
+            None => Vec::new(),
+        }
+    }
+
+    /// Current effort as an index into low…max.
+    #[must_use]
+    pub fn effort_index(&self) -> usize {
+        Effort::ALL
+            .iter()
+            .position(|effort| *effort == self.effort)
+            .unwrap_or(0)
+    }
+
+    /// "ready", "working", "connecting" or "offline".
+    #[must_use]
+    pub const fn status_state(&self) -> &'static str {
+        if self.reply.is_some() {
+            return "working";
+        }
+        match self.connection {
+            Connection::Ready { .. } => "ready",
+            Connection::Connecting => "connecting",
+            Connection::Offline(_) => "offline",
+        }
+    }
+
     /// Ask for fresh activity lines (the Usage panel opened).
     #[must_use]
     pub fn refresh_usage(&self) -> Vec<BackendRequest> {

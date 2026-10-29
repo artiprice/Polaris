@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "polaris-kernel-supervisor"
 description = "OTP-style supervision: one-for-one restart, restart intensity limits, circuit breakers, dead-letter queue, worker process pool."
 version.workspace = true
@@ -28,3 +29,24 @@ polaris-kernel-bus = { workspace = true }
 proptest = { workspace = true }
 # `test-util` gives `start_paused` / `advance`; it is not in the root feature list (flag 8).
 tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+
+# Tests live in the root tests/ tree, mirroring this package's path.
+[[test]]
+name = "circuit_breaker"
+path = "../../../../tests/crates/polaris-kernel/crates/supervisor/circuit_breaker.rs"
+
+[[test]]
+name = "dead_letter_queue"
+path = "../../../../tests/crates/polaris-kernel/crates/supervisor/dead_letter_queue.rs"
+
+[[test]]
+name = "restart_intensity"
+path = "../../../../tests/crates/polaris-kernel/crates/supervisor/restart_intensity.rs"
+
+[[test]]
+name = "task_supervision"
+path = "../../../../tests/crates/polaris-kernel/crates/supervisor/task_supervision.rs"
+
+[[test]]
+name = "worker_bootstrap"
+path = "../../../../tests/crates/polaris-kernel/crates/supervisor/worker_bootstrap.rs"
