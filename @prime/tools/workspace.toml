@@ -316,8 +316,9 @@ kind = "app"
 phase = "P9"
 member_setup = ["win-wasm32", "win-cargo-tools"]
 summary = "Axum + Leptos SSR web UI with streaming, per-route lazy loading and a PWA service worker."
-deps = ["polaris-kernel", "polaris-ui-web", "polaris-rpc", "polaris-config", "polaris-log"]
-ext = ["tokio", "axum", "tower-http", "leptos", "leptos_axum", "leptos_router", "leptos_meta", "wasm-bindgen"]
+# The kernel is reached through polaris-ui-web; polaris-rpc joins when pages attach to polarisd.
+deps = ["polaris-ui-web", "polaris-config"]
+ext = ["tokio", "axum", "tower-http", "clap", "leptos", "leptos_axum", "leptos_router", "leptos_meta", "wasm-bindgen", "wasm-bindgen-futures", "js-sys", "web-sys", "console_error_panic_hook"]
 responsibilities = [
   "Serve SSR pages with out-of-order streaming and hydration (cargo-leptos dual-feature layout: ssr + hydrate).",
   "Ship a PWA manifest and the single hand-written JS file: the service worker.",
@@ -2715,6 +2716,22 @@ group = "web"
 [[ext]]
 name = "wasm-bindgen"
 version = "0.2.129"
+group = "web"
+[[ext]]
+name = "wasm-bindgen-futures"
+version = "0.4.79"
+group = "web"
+[[ext]]
+name = "js-sys"
+version = "0.3.106"
+group = "web"
+[[ext]]
+name = "web-sys"
+version = "0.3.106"
+group = "web"
+[[ext]]
+name = "console_error_panic_hook"
+version = "0.1.7"
 group = "web"
 
 [[ext]]

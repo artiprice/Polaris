@@ -92,6 +92,18 @@ impl WebServer {
     /// # Errors
     /// A non-loopback address, a busy port or no randomness for the token.
     pub async fn bind(options: WebOptions) -> Result<Self, WebError> {
+        Self::bind_with_pages(options, None).await
+    }
+
+    /// As [`Self::bind`], with `pages` serving the document routes (`/` and anything the API does
+    /// not claim) instead of the embedded single-page app. The JSON API, the event stream,
+    /// `/app.css` and `/fonts/*` stay, so another frontend (the Leptos app) can share them.
+    /// # Errors
+    /// As [`Self::bind`].
+    pub async fn bind_with_pages(
+        options: WebOptions,
+        pages: Option<Router>,
+    ) -> Result<Self, WebError> {
         if !options.bind.ip().is_loopback() {
             return Err(WebError::NotLoopback(options.bind));
         }
@@ -114,14 +126,17 @@ impl WebServer {
         let hosts: Arc<[String]> =
             Arc::from(vec![address.to_string(), format!("localhost:{port}")]);
         let (closing, closing_rx) = watch::channel(false);
-        let router = router(AppState {
-            token: Arc::from(token.as_str()),
-            hosts,
-            commands,
-            publisher,
-            state_dir: Arc::new(options.state_dir),
-            closing: closing_rx,
-        });
+        let router = router(
+            AppState {
+                token: Arc::from(token.as_str()),
+                hosts,
+                commands,
+                publisher,
+                state_dir: Arc::new(options.state_dir),
+                closing: closing_rx,
+            },
+            pages,
+        );
         Ok(Self {
             listener,
             router,
@@ -169,11 +184,9 @@ impl WebServer {
     }
 }
 
-fn router(state: AppState) -> Router {
-    Router::new()
-        .route("/", get(index))
+fn router(state: AppState, pages: Option<Router>) -> Router {
+    let mut api = Router::new()
         .route("/app.css", get(stylesheet))
-        .route("/app.js", get(script))
         .route("/fonts/{name}", get(font))
         .route("/api/events", get(events))
         .route("/api/sessions", get(sessions))
@@ -183,8 +196,15 @@ fn router(state: AppState) -> Router {
         .route("/api/interrupt", post(interrupt))
         .route("/api/effort", post(effort))
         .route("/api/close", post(close))
-        .route("/api/review", post(review))
-        .with_state(state)
+        .route("/api/review", post(review));
+    if pages.is_none() {
+        api = api.route("/", get(index)).route("/app.js", get(script));
+    }
+    let api = api.with_state(state);
+    match pages {
+        Some(pages) => api.merge(pages),
+        None => api,
+    }
 }
 
 fn host_allowed(state: &AppState, headers: &HeaderMap) -> bool {

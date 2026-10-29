@@ -63,3 +63,27 @@ Spacing on a 4 px grid; one type scale per surface; line height 1.5 for prose, 1
 every popover dismissible by Esc and outside click; focus rings visible; disabled controls say
 why; empty states explain the next step; errors name the cause and the fix; no truncated text
 without a tooltip; status colours: green connected, amber connecting/working, red failed.
+
+## 7. Leptos frontend (`apps/polaris-web`, 2026-10-29)
+
+The upgrade path from §1 is built. `polaris-web` serves the same API, event stream, stylesheet and
+fonts as `polaris-ui-web` (`WebServer::bind_with_pages`) and replaces the embedded JavaScript page
+with Leptos pages:
+
+- **SSR + hydration.** The server streams the HTML (out-of-order) with a per-response CSP nonce
+  (`script-src 'self' 'nonce-…' 'wasm-unsafe-eval'`, `frame-ancestors 'none'`); the browser hydrates
+  the same components from the wasm bundle under `/pkg`.
+- **Behaviour in Rust.** `state::UiState` reduces server events and clicks into network effects
+  (`Open`, `Submit`, `Interrupt`, `Review`, `Effort`, `RefreshSessions`); the browser client performs
+  them with the token from `#token=` (kept in `sessionStorage`, removed from the address bar).
+- **PWA.** `/manifest.webmanifest`, `/icon.svg` and `/sw.js` — the only hand-written JavaScript:
+  network-first pages with an offline shell, cache-first bundle/styles/fonts, never the API.
+- **Build and run.**
+  ```
+  rustup target add wasm32-unknown-unknown --toolchain 1.99.0
+  cargo +1.99.0 install cargo-leptos --locked
+  cd apps/polaris-web && cargo leptos build
+  target/debug/polaris-web --site-root target/site --env-file <keys>.env
+  ```
+- **Not yet:** per-route lazy loading (one route today), WebSocket terminal channels, attaching to
+  `polarisd` over `polaris-rpc` instead of an in-process session owner.
