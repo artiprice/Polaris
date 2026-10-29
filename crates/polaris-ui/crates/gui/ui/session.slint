@@ -130,10 +130,6 @@ component Entry {
     in property <EntryRow> entry;
     in property <length> column-width;
     height: layout.preferred-height;
-    // New entries rise into place.
-    opacity: 0;
-    animate opacity { duration: 220ms; easing: ease-out; }
-    init => { self.opacity = 1; }
     layout := HorizontalLayout {
         alignment: root.entry.kind == "user" ? end : start;
         padding-top: 8px;
@@ -177,14 +173,17 @@ component Entry {
                     border-width: block.kind == "code" ? 1px : 0px;
                     border-color: Tokens.line;
                     block-layout := HorizontalLayout {
+                        alignment: start;
                         padding: block.kind == "code" ? 12px : 0px;
                         spacing: 8px;
                         if block.kind == "li": Text {
+                            horizontal-stretch: 0;
                             text: "•";
                             font-size: 14px;
                             color: Tokens.muted-web;
                         }
                         Text {
+                            horizontal-stretch: 1;
                             text: block.text;
                             wrap: word-wrap;
                             font-size: block.kind == "code" ? 12px : (block.kind == "h" ? 15px : 14px);

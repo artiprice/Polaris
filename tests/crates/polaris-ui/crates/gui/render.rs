@@ -230,10 +230,13 @@ fn main() {
     Ok(())
 }
 
-/// Lets the 160 ms fade animations finish (they run on real time here).
+/// Lets the fade animations finish (they run on real time here). An animation starts when its
+/// property is first read, so wait, tick, wait and tick again.
 fn settle() {
-    std::thread::sleep(std::time::Duration::from_millis(400));
-    slint::platform::update_timers_and_animations();
+    for _ in 0..2 {
+        std::thread::sleep(std::time::Duration::from_millis(400));
+        slint::platform::update_timers_and_animations();
+    }
 }
 
 fn draw(
