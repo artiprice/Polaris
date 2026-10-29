@@ -13,9 +13,35 @@ use polaris_ui_model::view::{Entry, ViewState};
 
 use crate::backend::{BackendEvent, BackendRequest, SearchHit, SessionSummary};
 
-/// Local note added to every opened session. It is shown, never recorded, and never implies a
-/// reply is coming.
-pub const OFFLINE_NOTE: &str = "Offline session · messages are recorded locally; model execution is unavailable until the P3 model path exists, so nothing will reply.";
+/// Local note added to an opened session when no model provider is usable. It is shown, never
+/// recorded, and never implies a reply is coming.
+pub const OFFLINE_NOTE: &str = "Offline session · messages are recorded locally. No model provider is configured, so nothing will reply; see Settings for setup.";
+
+/// Model connection as the window shows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Connection {
+    /// Provider selection is still running.
+    Connecting,
+    /// Replies come from this provider and model.
+    Ready {
+        /// Provider name.
+        provider: String,
+        /// Model id.
+        model: String,
+    },
+    /// No provider is usable.
+    Offline(String),
+}
+
+/// The reply being streamed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Reply {
+    started: std::time::Instant,
+    /// Conversation entry receiving streamed text.
+    entry: Option<usize>,
+    /// Separate the next text from earlier text (a tool round happened).
+    break_pending: bool,
+}
 
 /// Which screen the window shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,6 +144,8 @@ pub struct SessionController {
     sessions: Vec<SessionSummary>,
     hits: Vec<SearchHit>,
     notice: String,
+    connection: Connection,
+    reply: Option<Reply>,
 }
 
 impl SessionController {
@@ -136,6 +164,74 @@ impl SessionController {
             sessions: Vec::new(),
             hits: Vec::new(),
             notice: String::new(),
+            connection: Connection::Connecting,
+            reply: None,
+        }
+    }
+
+    /// Model connection state.
+    #[must_use]
+    pub const fn connection(&self) -> &Connection {
+        &self.connection
+    }
+
+    /// Whether a reply is being generated.
+    #[must_use]
+    pub const fn working(&self) -> bool {
+        self.reply.is_some()
+    }
+
+    /// Status-bar text: the connection, or the running reply with its elapsed time.
+    #[must_use]
+    pub fn status_line(&self) -> String {
+        if let Some(reply) = &self.reply {
+            return format!(
+                "Working {} · Esc to stop",
+                polaris_ui_model::view::format_duration_ms(
+                    u64::try_from(reply.started.elapsed().as_millis()).unwrap_or(u64::MAX)
+                )
+            );
+        }
+        match &self.connection {
+            Connection::Connecting => String::from("Connecting to a model…"),
+            Connection::Ready { provider, model } => format!("{model} · {provider}"),
+            Connection::Offline(_) => String::from("Offline · no model replies"),
+        }
+    }
+
+    /// Stop the running reply.
+    pub fn interrupt(&mut self) -> Vec<BackendRequest> {
+        if self.reply.is_some() {
+            "Stopping…".clone_into(&mut self.notice);
+            vec![BackendRequest::Interrupt]
+        } else {
+            Vec::new()
+        }
+    }
+
+    fn stream(&mut self, delta: &str) {
+        let Some(reply) = self.reply.as_mut() else {
+            return;
+        };
+        let separator = if reply.break_pending && reply.entry.is_some() {
+            "\n\n"
+        } else {
+            ""
+        };
+        reply.break_pending = false;
+        let result = match reply.entry {
+            Some(index) => self
+                .view
+                .append_to_entry(index, separator)
+                .and_then(|()| self.view.append_to_entry(index, delta)),
+            None => {
+                let index = self.view.conversation.len();
+                reply.entry = Some(index);
+                self.view.push_assistant(delta.to_owned())
+            }
+        };
+        if let Err(error) = result {
+            self.notice = format!("Conversation view is full: {error}.");
         }
     }
 
@@ -206,6 +302,11 @@ impl SessionController {
                 .clone_into(&mut self.notice);
             return Vec::new();
         }
+        if self.reply.is_some() {
+            "A reply is still running; press Esc to stop it. Draft kept."
+                .clone_into(&mut self.notice);
+            return Vec::new();
+        }
         if self.draft.trim().is_empty() {
             return Vec::new();
         }
@@ -249,9 +350,12 @@ impl SessionController {
                 branch,
             } => {
                 self.starting = false;
+                self.reply = None;
                 self.view.conversation.clear();
-                if let Err(error) = self.view.push_system(OFFLINE_NOTE) {
-                    self.notice = format!("Conversation view is full: {error}.");
+                if matches!(self.connection, Connection::Offline(_)) {
+                    if let Err(error) = self.view.push_system(OFFLINE_NOTE) {
+                        self.notice = format!("Conversation view is full: {error}.");
+                    }
                 }
                 self.open = Some(OpenSession {
                     id,
@@ -303,6 +407,69 @@ impl SessionController {
             }
             BackendEvent::Closed => {
                 self.open = None;
+                self.reply = None;
+                Vec::new()
+            }
+            BackendEvent::ProviderReady { provider, model } => {
+                if let Ok(id) = ModelId::new(&model) {
+                    self.view.set_model(id);
+                }
+                self.connection = Connection::Ready { provider, model };
+                Vec::new()
+            }
+            BackendEvent::ProviderUnavailable(reason) => {
+                self.connection = Connection::Offline(reason);
+                Vec::new()
+            }
+            BackendEvent::ReplyStarted => {
+                self.reply = Some(Reply {
+                    started: std::time::Instant::now(),
+                    entry: None,
+                    break_pending: false,
+                });
+                Vec::new()
+            }
+            BackendEvent::ReplyText(delta) => {
+                self.stream(&delta);
+                Vec::new()
+            }
+            BackendEvent::ReplyStep => {
+                if let Some(reply) = self.reply.as_mut() {
+                    reply.break_pending = reply.entry.is_some();
+                }
+                Vec::new()
+            }
+            BackendEvent::ReplyFinished { answer, summary } => {
+                let streamed = self.reply.take().is_some_and(|reply| reply.entry.is_some());
+                let mut result = Ok(());
+                if !streamed {
+                    result = match answer.as_deref().map(str::trim) {
+                        Some(text) if !text.is_empty() => self.view.push_assistant(text.to_owned()),
+                        _ => self
+                            .view
+                            .push_warning("The model stopped without an answer."),
+                    };
+                }
+                if let Err(error) = result.and_then(|()| self.view.push_system(summary)) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                if self.notice == "Stopping…" {
+                    self.notice.clear();
+                }
+                vec![BackendRequest::List]
+            }
+            BackendEvent::ReplyFailed(reason) => {
+                self.reply = None;
+                let shown = if reason == "Interrupted" {
+                    self.view.push_warning("Stopped.")
+                } else {
+                    self.view.push_error(reason)
+                };
+                if let Err(error) = shown {
+                    self.notice = format!("Conversation view is full: {error}.");
+                } else if self.notice == "Stopping…" {
+                    self.notice.clear();
+                }
                 Vec::new()
             }
         }
@@ -310,6 +477,10 @@ impl SessionController {
 
     /// "New session": close the open one and return to the welcome screen.
     pub fn new_session(&mut self) -> Vec<BackendRequest> {
+        if self.reply.is_some() {
+            "A reply is still running; press Esc to stop it first.".clone_into(&mut self.notice);
+            return Vec::new();
+        }
         self.screen = Screen::Welcome;
         self.view.conversation.clear();
         self.notice.clear();
@@ -322,6 +493,10 @@ impl SessionController {
 
     /// Open (resume) a listed session.
     pub fn open_listed(&mut self, id: &str) -> Vec<BackendRequest> {
+        if self.reply.is_some() {
+            "A reply is still running; press Esc to stop it first.".clone_into(&mut self.notice);
+            return Vec::new();
+        }
         self.screen = Screen::Session;
         if self.open.as_ref().is_some_and(|open| open.id == id) {
             return Vec::new();

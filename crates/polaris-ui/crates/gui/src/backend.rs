@@ -30,6 +30,8 @@ pub enum BackendRequest {
     },
     /// Close the open session (stop admissions, persist pause).
     Close,
+    /// Interrupt the running reply.
+    Interrupt,
 }
 
 /// How a committed message entered the session.
@@ -102,6 +104,30 @@ pub enum BackendEvent {
     Failed(String),
     /// The open session was closed.
     Closed,
+    /// A model provider was selected; replies are possible.
+    ProviderReady {
+        /// Provider name (`token_factory`, `openrouter`, `local`).
+        provider: String,
+        /// Selected model id.
+        model: String,
+    },
+    /// No model provider is usable; messages are recorded without replies.
+    ProviderUnavailable(String),
+    /// The model started answering the last message.
+    ReplyStarted,
+    /// Streamed assistant text.
+    ReplyText(String),
+    /// The model began another request after a tool round.
+    ReplyStep,
+    /// The reply finished; `answer` is the final text when nothing was streamed.
+    ReplyFinished {
+        /// Final assistant text, if any.
+        answer: Option<String>,
+        /// Work summary ("Worked for 3s · 2 requests").
+        summary: String,
+    },
+    /// The reply failed or was interrupted.
+    ReplyFailed(String),
 }
 
 /// The two channel ends the window uses.

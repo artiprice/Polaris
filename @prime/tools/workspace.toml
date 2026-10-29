@@ -1945,7 +1945,7 @@ layer = 6
 kind = "lib"
 phase = "P9"
 summary = "Frontend-neutral offline session host over the real local kernel, registry and bounded CAS: open/resume, routed submit, ordered resolved records, kernel-free session queries."
-deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory"]
+deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model"]
 ext = ["tokio", "tokio-util", "thiserror"]
 responsibilities = [
   "Run interactive read-only chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas for the frontend.",
@@ -1953,7 +1953,7 @@ responsibilities = [
   "Route a submitted line to the signed directive path or to typed user input recording, without any model execution.",
   "Answer session list, existence and history-search queries directly from the registry without starting a kernel.",
 ]
-api = ["struct OfflineSession", "struct ChatAgent", "enum ChatProgress", "async fn choose_provider", "struct ResolvedRecord", "enum RecordTextKind", "enum SessionHostError", "async fn list_sessions", "async fn session_exists", "async fn search_history"]
+api = ["struct OfflineSession", "struct ChatAgent", "struct ConversationHost", "enum HostEvent", "enum ChatProgress", "async fn choose_provider", "struct ResolvedRecord", "enum RecordTextKind", "enum SessionHostError", "async fn list_sessions", "async fn session_exists", "async fn search_history"]
 
 [[crate]]
 name = "polaris-ui-web"

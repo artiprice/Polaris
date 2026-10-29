@@ -151,6 +151,9 @@ fn message_events_append_user_entries() -> TestResult {
 #[test]
 fn opened_resets_view_and_adds_offline_note() -> TestResult {
     let mut c = controller()?;
+    let _none = c.apply(BackendEvent::ProviderUnavailable(String::from(
+        "local: no model",
+    )));
     let _list = c.apply(opened("s1"));
     let _m = c.apply(BackendEvent::Message {
         kind: MessageKind::UserInput,
@@ -291,6 +294,86 @@ fn failed_event_surfaces_notice_and_clears_pending() -> TestResult {
         c.notice().contains("in use"),
         "reason shown: {}",
         c.notice()
+    );
+    Ok(())
+}
+
+#[test]
+fn connected_session_has_no_offline_note_and_streams_one_reply() -> TestResult {
+    let mut c = controller()?;
+    let _none = c.apply(BackendEvent::ProviderReady {
+        provider: String::from("openrouter"),
+        model: String::from("nvidia/nemotron-test"),
+    });
+    assert_eq!(c.status_line(), "nvidia/nemotron-test · openrouter");
+    let _list = c.apply(opened("s1"));
+    assert!(
+        c.entries().is_empty(),
+        "no offline note when a provider is ready"
+    );
+    c.edit("explain the parser");
+    let _sent = c.submit();
+    let _list = c.apply(BackendEvent::Message {
+        kind: MessageKind::UserInput,
+        text: String::from("explain the parser"),
+    });
+    let _list = c.apply(BackendEvent::Committed);
+    let _none = c.apply(BackendEvent::ReplyStarted);
+    assert!(c.working());
+    assert!(
+        c.status_line().starts_with("Working"),
+        "{}",
+        c.status_line()
+    );
+    c.edit("next question");
+    assert!(c.submit().is_empty(), "no second prompt while a reply runs");
+    for event in [
+        BackendEvent::ReplyText(String::from("Let me look.")),
+        BackendEvent::ReplyStep,
+        BackendEvent::ReplyText(String::from("It is LL(1).")),
+        BackendEvent::ReplyFinished {
+            answer: Some(String::from("It is LL(1).")),
+            summary: String::from("Worked for 2s · 2 requests · 1 tool round"),
+        },
+    ] {
+        let _follow = c.apply(event);
+    }
+    assert!(!c.working());
+    let texts: Vec<(&EntryKind, &str)> = c
+        .entries()
+        .iter()
+        .map(|entry| (&entry.kind, entry.text.as_str()))
+        .collect();
+    assert_eq!(
+        texts,
+        vec![
+            (&EntryKind::User, "explain the parser"),
+            (
+                &EntryKind::Assistant,
+                "Let me look.
+
+It is LL(1)."
+            ),
+            (
+                &EntryKind::System,
+                "Worked for 2s · 2 requests · 1 tool round"
+            ),
+        ]
+    );
+    Ok(())
+}
+
+#[test]
+fn interrupt_sends_a_request_only_while_working() -> TestResult {
+    let mut c = controller()?;
+    assert!(c.interrupt().is_empty());
+    let _none = c.apply(BackendEvent::ReplyStarted);
+    assert_eq!(c.interrupt(), vec![BackendRequest::Interrupt]);
+    let _none = c.apply(BackendEvent::ReplyFailed(String::from("Interrupted")));
+    assert!(!c.working());
+    assert_eq!(
+        c.entries().last().map(|entry| entry.text.as_str()),
+        Some("Stopped.")
     );
     Ok(())
 }

@@ -12,11 +12,15 @@
 
 pub mod chat;
 mod error;
+pub mod host;
 mod offline;
 mod queries;
 
 pub use chat::{ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, choose_provider};
 pub use error::SessionHostError;
-pub use offline::{OfflineSession, RecordTextKind, ResolvedRecord};
+pub use host::{
+    ConversationHost, HostEvent, TurnReport, default_env_file, records_until_own_input,
+};
+pub use offline::{OfflineSession, RecordTextKind, ResolvedRecord, is_single_directive};
 pub use polaris_kernel::storage::registry::{Hit, SessionMeta};
 pub use queries::{list_sessions, search_history, session_exists};

@@ -186,6 +186,7 @@ export component SessionScreen {
     // ---- shared state with the welcome screen ----------------------------------------------
     in-out property <string> draft;
     in property <bool> pending;
+    in property <bool> working;
     in-out property <int> model-index;
     in-out property <int> mode-index;
     in-out property <int> effort-index;
@@ -194,6 +195,7 @@ export component SessionScreen {
 
     callback draft-edited(string);
     callback submit();
+    callback interrupt();
     callback new-session();
     callback open-session(string);
     callback search-edited(string);
@@ -489,6 +491,7 @@ export component SessionScreen {
                             width: column.inner;
                             text <=> root.draft;
                             pending: root.pending;
+                            working: root.working;
                             notice: root.notice;
                             model-names: root.model-names;
                             model-short-names: root.model-short-names;
@@ -500,6 +503,7 @@ export component SessionScreen {
                             menu-open <=> root.menu-open;
                             edited(text) => { root.draft-edited(text); }
                             submit => { root.submit(); }
+                            interrupt => { root.interrupt(); }
                         }
                     }
                     HorizontalLayout {

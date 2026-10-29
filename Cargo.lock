@@ -9171,6 +9171,7 @@ dependencies = [
  "polaris-sdk",
  "polaris-security",
  "polaris-system-one",
+ "polaris-ui-model",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",

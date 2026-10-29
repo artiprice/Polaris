@@ -59,7 +59,8 @@ fn text_target(event: &Event) -> Option<(RecordTextKind, Cid)> {
 
 /// `true` exactly when `text` is one session directive and nothing else: no prose, slash command
 /// or mention. Text the directive grammar rejects is not a directive and counts as prose.
-fn is_single_directive(text: &str) -> bool {
+#[must_use]
+pub fn is_single_directive(text: &str) -> bool {
     polaris_kernel::directives::parse(text, &polaris_kernel::directives::ParseLimits::default())
         .is_ok_and(|parsed| {
             parsed.directives.len() == 1

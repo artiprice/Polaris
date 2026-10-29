@@ -149,6 +149,8 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
     }
     ui.set_notice(SharedString::from(controller.notice()));
     ui.set_pending(controller.pending());
+    ui.set_working(controller.working());
+    ui.set_status_connection(SharedString::from(controller.status_line()));
     ui.set_starting(controller.starting());
     ui.set_session_title(SharedString::from(controller.title()));
     let (workspace, branch) = match controller.open_session() {
@@ -303,6 +305,9 @@ fn drain(
     }
     if changed {
         sync(ui, &controller, workspace);
+    } else if controller.working() {
+        // Keep the elapsed time in the status bar moving while a reply streams.
+        ui.set_status_connection(SharedString::from(controller.status_line()));
     }
 }
 
@@ -343,6 +348,7 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
         Vec::new()
     });
     on!(on_submit, |c| c.submit());
+    on!(on_interrupt, |c| c.interrupt());
     on!(on_new_conversation, |c| c.new_session());
     on!(on_open_session, |c, id| c.open_listed(id.as_str()));
     on!(on_search_edited, |c, query| c.search(query.as_str()));

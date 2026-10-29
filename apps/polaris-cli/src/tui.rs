@@ -5,17 +5,12 @@ use crate::{
     demo::DemoRuntime,
     demo_gallery::{DemoGallery, GalleryEffect, GalleryPage},
     key_trace::KeyTrace,
-    session::{
-        ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, OfflineSession, RecordTextKind,
-        ResolvedRecord, choose_provider, skipped_reasons,
-    },
+    session::{ChatProgress, OfflineSession, ResolvedRecord},
     ui_services::{
         ClipboardResult, ClipboardService, IndexLimits, PreferenceOverrides, WorkspaceFileIndex,
     },
 };
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseEventKind};
-use polaris_config::ProviderName;
-use polaris_nebius_cloud_token_factory::{HostedChatModel, ProviderChoice, provider_model};
 use polaris_sdk::{
     effort::Effort,
     ids::{ModelId, SessionId},
@@ -36,8 +31,8 @@ use polaris_ui_model::{
     session::SessionViews,
     view::ViewState,
 };
+use polaris_ui_session::{ConversationHost, HostEvent, TurnReport};
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend, layout::Rect};
-use std::sync::Arc;
 use std::{
     io::{self, IsTerminal, Write},
     path::PathBuf,
@@ -45,7 +40,6 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::sync::{mpsc, watch};
-use tokio_util::sync::CancellationToken;
 
 /// Validated finite dump size, checked before any backend allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -537,15 +531,6 @@ enum BackendRequest {
     Sessions,
     Resume(SessionId),
 }
-/// Sanitized summary of one finished chat turn.
-#[derive(Debug)]
-struct TurnReport {
-    answer: Option<String>,
-    attempts: u32,
-    tool_rounds: u32,
-    stop: String,
-    elapsed: Duration,
-}
 #[derive(Debug)]
 enum BackendMessage {
     OfflineReady,
@@ -585,241 +570,6 @@ enum BackendMessage {
     TurnFailed(String),
 }
 
-/// The selected provider's model, shared by every conversation of this run.
-struct ReadyModel {
-    provider: ProviderName,
-    effort: Effort,
-    model_id: ModelId,
-    model: Arc<HostedChatModel>,
-    context_tokens: u32,
-}
-
-type TurnOutput = (ChatAgent<HostedChatModel>, Result<ChatTurn, ChatError>);
-
-struct RunningTurn {
-    handle: tokio::task::JoinHandle<TurnOutput>,
-    cancel: CancellationToken,
-    progress: mpsc::Receiver<ChatProgress>,
-    progress_closed: bool,
-    started: Instant,
-}
-
-enum ChatEvent {
-    Picked(Result<ProviderChoice, ChatError>),
-    Progress(ChatProgress),
-    Finished {
-        tail: Vec<ChatProgress>,
-        joined: Result<TurnOutput, tokio::task::JoinError>,
-        elapsed: Duration,
-    },
-}
-
-/// Provider selection, the active session's conversation and its running turn, owned by the
-/// backend task. One conversation is bound to one session kernel; resuming starts a new one.
-struct ChatHost {
-    config: polaris_config::PolarisConfig,
-    env_file: Option<PathBuf>,
-    pick: Option<tokio::task::JoinHandle<Result<ProviderChoice, ChatError>>>,
-    ready: Option<ReadyModel>,
-    unavailable: Option<String>,
-    agent: Option<ChatAgent<HostedChatModel>>,
-    turn: Option<RunningTurn>,
-}
-impl ChatHost {
-    fn new(config: polaris_config::PolarisConfig, env_file: Option<PathBuf>) -> Self {
-        Self {
-            config,
-            env_file,
-            pick: None,
-            ready: None,
-            unavailable: None,
-            agent: None,
-            turn: None,
-        }
-    }
-    /// Start provider selection once; later calls are no-ops.
-    fn start_pick(&mut self) {
-        if self.pick.is_some() || self.ready.is_some() || self.unavailable.is_some() {
-            return;
-        }
-        let config = self.config.clone();
-        let env_file = self.env_file.clone();
-        self.pick = Some(tokio::spawn(async move {
-            choose_provider(&config, env_file.as_deref(), ChatSettings::default().effort).await
-        }));
-    }
-    fn unavailable_reason(&self) -> String {
-        match (&self.unavailable, &self.pick) {
-            (Some(reason), _) => format!("No model provider is available: {reason}"),
-            (None, Some(_)) => "Still connecting to a model provider; draft retained".to_owned(),
-            (None, None) => "No model provider is configured; draft retained".to_owned(),
-        }
-    }
-    async fn start_turn(
-        &mut self,
-        session: &OfflineSession,
-        text: String,
-        plan: bool,
-    ) -> Result<(), ChatError> {
-        let ready = self
-            .ready
-            .as_ref()
-            .ok_or(ChatError::Setup("no model provider"))?;
-        let mut agent = match self.agent.take() {
-            Some(agent) => agent,
-            None => {
-                ChatAgent::new(
-                    session.kernel(),
-                    session.workspace(),
-                    ready.model_id.clone(),
-                    Arc::clone(&ready.model),
-                    ready.context_tokens,
-                    ChatSettings {
-                        effort: ready.effort,
-                        ..ChatSettings::default()
-                    },
-                )
-                .await?
-            }
-        };
-        agent.set_plan_mode(plan);
-        let kernel = session.kernel().clone();
-        let cancel = CancellationToken::new();
-        let token = cancel.clone();
-        let (progress_tx, progress) = mpsc::channel(64);
-        let handle = tokio::spawn(async move {
-            let result = agent.turn(&kernel, &text, &token, progress_tx).await;
-            (agent, result)
-        });
-        self.turn = Some(RunningTurn {
-            handle,
-            cancel,
-            progress,
-            progress_closed: false,
-            started: Instant::now(),
-        });
-        Ok(())
-    }
-    /// Move the conversation to the provider's model for `effort`.
-    fn set_effort(&mut self, effort: Effort) -> BackendMessage {
-        if self.turn.is_some() {
-            return BackendMessage::Rejected(
-                "A reply is still running; change the model after it finishes".to_owned(),
-            );
-        }
-        let Some(ready) = self.ready.as_mut() else {
-            return BackendMessage::Rejected(self.unavailable_reason());
-        };
-        let Some(model_id) = provider_model(&self.config, ready.provider, effort).cloned() else {
-            return BackendMessage::Rejected("The provider has no model configured".to_owned());
-        };
-        let model = if model_id == ready.model_id {
-            Arc::clone(&ready.model)
-        } else {
-            Arc::new(ready.model.rebind(model_id.clone()))
-        };
-        if let Some(agent) = self.agent.as_mut() {
-            if let Err(error) = agent.switch_model(
-                model_id.clone(),
-                Arc::clone(&model),
-                ready.context_tokens,
-                effort,
-            ) {
-                return BackendMessage::Rejected(error.to_string());
-            }
-        }
-        ready.model = model;
-        ready.model_id = model_id.clone();
-        ready.effort = effort;
-        BackendMessage::ModelSwitched {
-            model: model_id.as_str().to_owned(),
-            effort,
-        }
-    }
-    /// Next selection result, progress item or turn completion. Cancel-safe.
-    async fn next_event(&mut self) -> ChatEvent {
-        if let Some(pick) = self.pick.as_mut() {
-            let result = pick.await;
-            self.pick = None;
-            return ChatEvent::Picked(
-                result.unwrap_or(Err(ChatError::Setup("provider selection task failed"))),
-            );
-        }
-        let joined = {
-            let Some(turn) = self.turn.as_mut() else {
-                return std::future::pending().await;
-            };
-            tokio::select! {
-                biased;
-                progress = turn.progress.recv(), if !turn.progress_closed => match progress {
-                    Some(item) => return ChatEvent::Progress(item),
-                    None => {
-                        turn.progress_closed = true;
-                        (&mut turn.handle).await
-                    }
-                },
-                joined = &mut turn.handle => joined,
-            }
-        };
-        let Some(mut turn) = self.turn.take() else {
-            return std::future::pending().await;
-        };
-        let mut tail = Vec::new();
-        while let Ok(item) = turn.progress.try_recv() {
-            tail.push(item);
-        }
-        ChatEvent::Finished {
-            tail,
-            joined,
-            elapsed: turn.started.elapsed(),
-        }
-    }
-    /// Cancel a running turn and wait a bounded time for it to settle.
-    async fn shutdown(&mut self) {
-        if let Some(mut turn) = self.turn.take() {
-            turn.cancel.cancel();
-            let _settled = tokio::time::timeout(Duration::from_secs(10), &mut turn.handle).await;
-        }
-        if let Some(pick) = self.pick.take() {
-            pick.abort();
-        }
-    }
-}
-
-/// Forward records until the active session's own typed input arrives, so the transcript
-/// shows the prompt before any streamed reply. Gives up quietly after a short wait.
-async fn forward_until_own_input(
-    session: &mut OfflineSession,
-    tx: &mpsc::Sender<BackendMessage>,
-) -> Result<(), CliError> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
-    loop {
-        match tokio::time::timeout_at(deadline, session.next_record()).await {
-            Ok(Ok(Some(item))) => {
-                let own = item.record.session() == session.id
-                    && item.text_kind == Some(RecordTextKind::UserInput);
-                send_message(tx, BackendMessage::Record(item))?;
-                if own {
-                    return Ok(());
-                }
-            }
-            Ok(Ok(None)) => return Err(CliError::Unavailable("kernel event stream closed")),
-            Ok(Err(error)) => return Err(CliError::from(error)),
-            Err(_elapsed) => return Ok(()),
-        }
-    }
-}
-
-/// Default dotenv file: an explicit `--env-file`, else `~/.polaris/.env` when it exists.
-/// A repository `.env` is never read implicitly: an untrusted checkout must not choose the
-/// account that receives the user's prompts.
-fn default_env_file(args: &Args, dirs: &polaris_config::Dirs) -> Option<PathBuf> {
-    if let Some(path) = args.env_file.clone() {
-        return Some(path);
-    }
-    let global = dirs.global.join(".env");
-    global.is_file().then_some(global)
-}
 fn send_message(
     tx: &mpsc::Sender<BackendMessage>,
     message: BackendMessage,
@@ -897,7 +647,10 @@ pub async fn run(
         )
     });
     let mut ui_observed = false;
-    let mut chat = ChatHost::new(loaded.config.clone(), default_env_file(args, dirs));
+    let mut chat = ConversationHost::new(
+        loaded.config.clone(),
+        polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),
+    );
     if !demo {
         chat.start_pick();
     }
@@ -928,7 +681,7 @@ pub async fn run(
                     Err(error) => break Err(error),
                 },
                 event = chat.next_event() => {
-                    if let Err(error) = handle_chat_event(&mut chat, event, &events_tx) {
+                    if let Err(error) = handle_chat_event(event, &events_tx) {
                         break Err(error);
                     }
                 }
@@ -972,16 +725,18 @@ pub async fn run(
                                 Some(BackendMessage::Rejected(
                                     "Session changed; prompt was not sent".to_owned(),
                                 ))
-                            } else if chat.turn.is_some() {
+                            } else if chat.is_running() {
                                 Some(BackendMessage::Rejected(
                                     "A reply is still running; press Esc to interrupt it".to_owned(),
                                 ))
-                            } else if chat.ready.is_none() {
+                            } else if !chat.is_ready() {
                                 Some(BackendMessage::Rejected(chat.unavailable_reason()))
                             } else if let Err(error) = active.submit_user_input(&text).await {
                                 Some(BackendMessage::Rejected(error.to_string()))
                             } else {
-                                forward_until_own_input(active, &events_tx).await?;
+                                for record in polaris_ui_session::records_until_own_input(active).await? {
+                                    send_message(&events_tx, BackendMessage::Record(record))?;
+                                }
                                 send_message(&events_tx, BackendMessage::PromptAccepted)?;
                                 chat.start_turn(active, text, plan)
                                     .await
@@ -990,18 +745,17 @@ pub async fn run(
                             }
                         }
                         BackendRequest::CancelTurn => {
-                            if let Some(turn) = chat.turn.as_ref() {
-                                turn.cancel.cancel();
-                            }
+                            chat.cancel_turn();
                             None
                         }
                         BackendRequest::ClearChat => {
-                            if let Some(agent) = chat.agent.as_mut() {
-                                agent.clear();
-                            }
+                            chat.clear();
                             None
                         }
-                        BackendRequest::SetEffort(effort) => Some(chat.set_effort(effort)),
+                        BackendRequest::SetEffort(effort) => Some(match chat.set_effort(effort) {
+                            Ok(model) => BackendMessage::ModelSwitched { model, effort },
+                            Err(reason) => BackendMessage::Rejected(reason),
+                        }),
                         BackendRequest::Stats => {
                             Some(match polaris_ui_session::list_sessions(&root, 10_000).await {
                                 Ok(rows) => {
@@ -1037,7 +791,7 @@ pub async fn run(
                             Err(error) => BackendMessage::QueryFailed(error.to_string()),
                         }),
                         BackendRequest::Resume(target) => {
-                            if chat.turn.is_some() {
+                            if chat.is_running() {
                                 Some(BackendMessage::ResumeRejected(
                                     "A reply is still running; interrupt it first".to_owned(),
                                 ))
@@ -1048,7 +802,7 @@ pub async fn run(
                             } else {
                                 active.close().await?;
                                 drop(session.take());
-                                chat.agent = None;
+                                chat.reset_conversation();
                                 match OfflineSession::open(&root, &config_workspace, target).await {
                                     Ok(next) => {
                                         let workspace = next.workspace().display().to_string();
@@ -1100,90 +854,27 @@ pub async fn run(
     }
 }
 
-fn handle_chat_event(
-    chat: &mut ChatHost,
-    event: ChatEvent,
-    tx: &mpsc::Sender<BackendMessage>,
-) -> Result<(), CliError> {
-    match event {
-        ChatEvent::Picked(Ok(choice)) => {
-            let skipped: Vec<String> = choice
-                .skipped
-                .iter()
-                .map(|skip| format!("{}: {}", skip.provider.as_str(), skip.reason.as_str()))
-                .collect();
-            let reasons = skipped_reasons(&choice);
-            match choice.selected {
-                Some(selected) => {
-                    let model_id = selected.model.model().clone();
-                    let effort = ChatSettings::default().effort;
-                    let models = Effort::ALL
-                        .iter()
-                        .filter_map(|level| {
-                            provider_model(&chat.config, selected.provider, *level)
-                                .map(|model| (*level, model.as_str().to_owned()))
-                        })
-                        .collect();
-                    let message = BackendMessage::ProviderReady {
-                        provider: selected.provider.as_str(),
-                        model: model_id.as_str().to_owned(),
-                        effort,
-                        models,
-                        skipped,
-                    };
-                    chat.ready = Some(ReadyModel {
-                        provider: selected.provider,
-                        effort,
-                        context_tokens: selected.model.max_context_tokens().get(),
-                        model_id,
-                        model: Arc::new(selected.model),
-                    });
-                    send_message(tx, message)
-                }
-                None => {
-                    chat.unavailable = Some(reasons.clone());
-                    send_message(tx, BackendMessage::ProviderUnavailable(reasons))
-                }
-            }
-        }
-        ChatEvent::Picked(Err(error)) => {
-            let reason = error.to_string();
-            chat.unavailable = Some(reason.clone());
-            send_message(tx, BackendMessage::ProviderUnavailable(reason))
-        }
-        ChatEvent::Progress(item) => send_message(tx, BackendMessage::TurnProgress(item)),
-        ChatEvent::Finished {
-            tail,
-            joined,
-            elapsed,
-        } => {
-            for item in tail {
-                send_message(tx, BackendMessage::TurnProgress(item))?;
-            }
-            let message = match joined {
-                Ok((agent, result)) => {
-                    chat.agent = Some(agent);
-                    match result {
-                        Ok(turn) => BackendMessage::TurnFinished(TurnReport {
-                            answer: turn.answer,
-                            attempts: turn.attempts,
-                            tool_rounds: turn.tool_rounds,
-                            stop: turn.stop,
-                            elapsed,
-                        }),
-                        Err(ChatError::Cancelled) => {
-                            BackendMessage::TurnFailed("Interrupted".to_owned())
-                        }
-                        Err(error) => BackendMessage::TurnFailed(error.to_string()),
-                    }
-                }
-                Err(_) => BackendMessage::TurnFailed(
-                    "The conversation task failed; start a new session to continue".to_owned(),
-                ),
-            };
-            send_message(tx, message)
-        }
-    }
+fn handle_chat_event(event: HostEvent, tx: &mpsc::Sender<BackendMessage>) -> Result<(), CliError> {
+    let message = match event {
+        HostEvent::ProviderReady {
+            provider,
+            model,
+            effort,
+            models,
+            skipped,
+        } => BackendMessage::ProviderReady {
+            provider,
+            model,
+            effort,
+            models,
+            skipped,
+        },
+        HostEvent::ProviderUnavailable(reason) => BackendMessage::ProviderUnavailable(reason),
+        HostEvent::Progress(item) => BackendMessage::TurnProgress(item),
+        HostEvent::Finished(report) => BackendMessage::TurnFinished(report),
+        HostEvent::Failed(reason) => BackendMessage::TurnFailed(reason),
+    };
+    send_message(tx, message)
 }
 
 async fn next_offline_record(
@@ -1543,22 +1234,7 @@ impl UiState {
                 )),
             };
         }
-        let requests = if report.attempts == 1 {
-            "1 request".to_owned()
-        } else {
-            format!("{} requests", report.attempts)
-        };
-        let tools = match report.tool_rounds {
-            0 => String::new(),
-            1 => " · 1 tool round".to_owned(),
-            rounds => format!(" · {rounds} tool rounds"),
-        };
-        let summary = format!(
-            "Worked for {} · {requests}{tools}",
-            polaris_ui_model::view::format_duration_ms(
-                u64::try_from(report.elapsed.as_millis()).unwrap_or(u64::MAX)
-            )
-        );
+        let summary = report.summary();
         result = result.and_then(|()| view.push_system(summary));
         if let Err(error) = result {
             self.notice = format!("Reply display limit reached: {error}");
@@ -1809,7 +1485,7 @@ impl UiState {
                 self.turn = None;
                 self.activity.clear();
                 let view = self.offline_view_mut();
-                let shown = if reason == "Interrupted" {
+                let shown = if reason == polaris_ui_session::host::INTERRUPTED {
                     view.push_warning("Interrupted")
                 } else {
                     view.push_error(reason)
