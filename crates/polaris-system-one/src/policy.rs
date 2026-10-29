@@ -340,12 +340,7 @@ fn recover_admission(state: &AtomicU64, model_ready: bool) -> Result<bool, Polic
             state.fetch_or(OPEN, Ordering::AcqRel);
             return Err(PolicyError::EpochExhausted);
         };
-        match state.compare_exchange_weak(
-            old,
-            epoch_bits,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        ) {
+        match state.compare_exchange_weak(old, epoch_bits, Ordering::AcqRel, Ordering::Acquire) {
             Ok(_) => return Ok(true),
             Err(observed) => old = observed,
         }

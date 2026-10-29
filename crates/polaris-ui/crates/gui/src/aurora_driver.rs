@@ -42,10 +42,7 @@ pub struct FrameHistogram {
 impl FrameHistogram {
     /// Adds one frame time.
     pub fn record(&mut self, took: Duration) {
-        let micros = match u64::try_from(took.as_micros()) {
-            Ok(micros) => micros,
-            Err(_) => u64::MAX,
-        };
+        let micros = u64::try_from(took.as_micros()).unwrap_or(u64::MAX);
         let millis = match micros.checked_div(1000) {
             Some(millis) => millis,
             None => 0,

@@ -670,8 +670,7 @@ async fn zero_tests_tampered_source_and_name_collision_never_complete() {
             assert!(
                 result
                     .as_ref()
-                    .err()
-                    .expect("release must fail")
+                    .expect_err("release must fail")
                     .to_string()
                     .contains("reaper journal")
             );

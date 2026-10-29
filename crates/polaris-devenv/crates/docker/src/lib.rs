@@ -406,7 +406,7 @@ impl Docker {
             DockerEndpoint::NamedPipe(path) => {
                 #[cfg(windows)]
                 {
-                    BollardClient::connect_with_named_pipe(path, 30, &bollard::API_DEFAULT_VERSION)
+                    BollardClient::connect_with_named_pipe(path, 30, bollard::API_DEFAULT_VERSION)
                 }
                 #[cfg(not(windows))]
                 {
@@ -1345,10 +1345,9 @@ fn dockerfile_image_references(dockerfile: &str) -> Result<Vec<String>, DockerEr
         if let Some(as_index) = words
             .iter()
             .position(|word| word.eq_ignore_ascii_case("AS"))
+            && let Some(stage) = words.get(as_index + 1)
         {
-            if let Some(stage) = words.get(as_index + 1) {
-                stages.insert((*stage).to_owned());
-            }
+            stages.insert((*stage).to_owned());
         }
     }
     for line in dockerfile.lines() {

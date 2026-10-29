@@ -275,12 +275,12 @@ fn decode_csi(sequence: &str) -> Option<NormalizedInput> {
         .first()
         .copied()
         .filter(|value| *value != 0)
-        .map_or(1, |value| value);
+        .unwrap_or(1);
     let second = values
         .get(1)
         .copied()
         .filter(|value| *value != 0)
-        .map_or(1, |value| value);
+        .unwrap_or(1);
 
     let event = match final_byte {
         'A' => key_event(KeyCode::Up, modifier_bits(second)),
@@ -320,10 +320,7 @@ fn decode_csi_u(parameters: &str) -> Option<NormalizedInput> {
     let mut fields = parameters.split(';');
     let code_field = fields.next()?;
     let code_point = code_field.split(':').next()?.parse::<u32>().ok()?;
-    let modifier_field = match fields.next() {
-        Some(value) => value,
-        None => "1",
-    };
+    let modifier_field = fields.next().unwrap_or("1");
     let mut modifier_parts = modifier_field.split(':');
     let encoded_modifiers = match modifier_parts.next() {
         Some(value) if !value.is_empty() => value.parse::<usize>().ok()?,

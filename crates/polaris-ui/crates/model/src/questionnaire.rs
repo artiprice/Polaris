@@ -726,17 +726,17 @@ impl QuestionnaireState {
                 }
             }
             QuestionnaireAction::Undo => {
-                if let Some(mut candidate) = self.active_editor().cloned() {
-                    if candidate.undo() {
-                        self.commit_editor(candidate)?;
-                    }
+                if let Some(mut candidate) = self.active_editor().cloned()
+                    && candidate.undo()
+                {
+                    self.commit_editor(candidate)?;
                 }
             }
             QuestionnaireAction::Redo => {
-                if let Some(mut candidate) = self.active_editor().cloned() {
-                    if candidate.redo() {
-                        self.commit_editor(candidate)?;
-                    }
+                if let Some(mut candidate) = self.active_editor().cloned()
+                    && candidate.redo()
+                {
+                    self.commit_editor(candidate)?;
                 }
             }
         }

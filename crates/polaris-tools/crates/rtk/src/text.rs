@@ -28,10 +28,10 @@ fn parse_header(line: &str) -> Option<(Level, Option<&str>, &str)> {
             let (code, message) = coded.split_once("]:")?;
             return Some((level, Some(code), message.trim()));
         }
-        if let Some(message) = rest.strip_prefix(':') {
-            if message.is_empty() || message.starts_with(char::is_whitespace) {
-                return Some((level, None, message.trim()));
-            }
+        if let Some(message) = rest.strip_prefix(':')
+            && (message.is_empty() || message.starts_with(char::is_whitespace))
+        {
+            return Some((level, None, message.trim()));
         }
     }
     None

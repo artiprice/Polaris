@@ -15,7 +15,12 @@ fn profile_name() -> &'static str {
 }
 
 fn repeated_to_size(line: &str, size: usize) -> String {
-    let count = size / line.len() + if size % line.len() == 0 { 0 } else { 1 };
+    let count = size / line.len()
+        + if size.is_multiple_of(line.len()) {
+            0
+        } else {
+            1
+        };
     let mut text = String::with_capacity(count.saturating_mul(line.len()));
     for _ in 0..count {
         text.push_str(line);

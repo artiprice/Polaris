@@ -124,10 +124,7 @@ fn folder_label(path: &str) -> String {
 
 fn now_ms() -> i64 {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(elapsed) => match i64::try_from(elapsed.as_millis()) {
-            Ok(ms) => ms,
-            Err(_) => i64::MAX,
-        },
+        Ok(elapsed) => i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX),
         Err(_) => 0,
     }
 }

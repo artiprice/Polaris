@@ -545,10 +545,10 @@ impl SessionController {
                 self.reply = None;
                 self.usage = (0, 0, 0);
                 self.view.conversation.clear();
-                if matches!(self.connection, Connection::Offline(_)) {
-                    if let Err(error) = self.view.push_system(OFFLINE_NOTE) {
-                        self.notice = format!("Conversation view is full: {error}.");
-                    }
+                if matches!(self.connection, Connection::Offline(_))
+                    && let Err(error) = self.view.push_system(OFFLINE_NOTE)
+                {
+                    self.notice = format!("Conversation view is full: {error}.");
                 }
                 self.open = Some(OpenSession {
                     id,

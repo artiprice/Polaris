@@ -374,15 +374,14 @@ impl TaskProfile {
         {
             return Err(ProfileError::Invalid);
         }
-        if let Some(agent) = &self.agent {
-            if !valid_blake3(&agent.safety_schemas_blake3)
+        if let Some(agent) = &self.agent
+            && (!valid_blake3(&agent.safety_schemas_blake3)
                 || !valid_blake3(&agent.fixture_blake3)
                 || !valid_blake3(&agent.checkpoint_blake3)
                 || agent.max_churn_lines == 0
-                || agent.max_churn_lines > 10_000
-            {
-                return Err(ProfileError::Invalid);
-            }
+                || agent.max_churn_lines > 10_000)
+        {
+            return Err(ProfileError::Invalid);
         }
         if let Some(checkpoint) = &self.checkpoint {
             let _location = checkpoint.key.location()?;
@@ -751,7 +750,7 @@ async fn run_inner(
     } else {
         None
     };
-    let result = run_started(&kernel, &profile, &workspace, goal, &cancellation).await;
+    let result = run_started(&kernel, &profile, &workspace, goal, cancellation).await;
     control_stop.cancel();
     let control_failed = match control {
         Some(control) => !matches!(control.await, Ok(Ok(()))),

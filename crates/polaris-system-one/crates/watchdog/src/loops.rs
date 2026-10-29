@@ -132,10 +132,10 @@ impl LoopWindow {
     pub fn highest_similarity(&self, next: &StepRecord) -> ShingleSimilarity {
         let mut highest = ShingleSimilarity::zero();
         for previous in &self.records {
-            if let Some(similarity) = jaccard(&previous.shingles, &next.shingles) {
-                if ratio_greater(similarity, highest) {
-                    highest = similarity;
-                }
+            if let Some(similarity) = jaccard(&previous.shingles, &next.shingles)
+                && ratio_greater(similarity, highest)
+            {
+                highest = similarity;
             }
         }
         highest

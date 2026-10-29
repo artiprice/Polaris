@@ -105,7 +105,7 @@ pub fn screen_layout(area: Rect, request: LayoutRequest) -> ScreenLayout {
     let max_rows = height
         .saturating_mul(3)
         .checked_div(8)
-        .map_or(1, |rows| rows)
+        .unwrap_or(1)
         .max(1)
         .min(
             height

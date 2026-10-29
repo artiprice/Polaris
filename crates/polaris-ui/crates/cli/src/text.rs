@@ -147,10 +147,7 @@ fn bounded_prefix(input: &str, limit: usize) -> &str {
         .take_while(|(start, ch)| start.saturating_add(ch.len_utf8()) <= limit)
         .last()
         .map_or(0, |(start, ch)| start.saturating_add(ch.len_utf8()));
-    match input.get(..end) {
-        Some(prefix) => prefix,
-        None => "",
-    }
+    input.get(..end).unwrap_or_default()
 }
 
 fn safe_grapheme(grapheme: &str) -> String {
@@ -158,9 +155,7 @@ fn safe_grapheme(grapheme: &str) -> String {
 }
 
 fn safe_char(ch: char) -> Option<char> {
-    if is_bidi_control(ch) {
-        None
-    } else if ch == '\n' {
+    if is_bidi_control(ch) || ch == '\n' {
         None
     } else if ch == '\t' {
         Some(' ')

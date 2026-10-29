@@ -849,11 +849,10 @@ pub async fn run(
                             }
                         }
                     };
-                    if let Some(message) = reply {
-                        if let Err(error) = send_message(&events_tx, message) {
+                    if let Some(message) = reply
+                        && let Err(error) = send_message(&events_tx, message) {
                             break Err(error);
                         }
-                    }
                 }
             }
         }
@@ -1429,34 +1428,37 @@ impl UiState {
             && self.gallery.page() == GalleryPage::Welcome
             && !question_focused(self)
             && !self.completion_dismissed
-        {
-            if let Some(token) =
+            && let Some(token) =
                 completion::detect_token(self.composer.text(), self.composer.cursor())
-            {
-                if token.kind == completion::CompletionKind::Command {
-                    for (name, _page, description) in LOCAL_VIEW_COMMANDS {
-                        if name.trim_start_matches('/').starts_with(token.query) {
-                            if let Some(existing) =
-                                self.completion.iter_mut().find(|item| item.insert == *name)
-                            {
-                                if self.demo_active {
-                                    existing.description = description;
-                                }
-                            } else if *name == "/preview" {
-                                self.completion.push(completion::Suggestion {
-                                    label: (*name).to_owned(),
-                                    insert: (*name).to_owned(),
-                                    description,
-                                    kind: completion::CompletionKind::Command,
-                                    range: token.start..token.end,
-                                });
-                            }
+            && token.kind == completion::CompletionKind::Command
+        {
+            for (name, _page, description) in LOCAL_VIEW_COMMANDS {
+                if name.trim_start_matches('/').starts_with(token.query) {
+                    if let Some(existing) =
+                        self.completion.iter_mut().find(|item| item.insert == *name)
+                    {
+                        if self.demo_active {
+                            existing.description = description;
                         }
-                    }
-                    if self.demo_active && "demo".starts_with(token.query) {
-                        self.completion.push(completion::Suggestion { label: "/demo".to_owned(), insert: "/demo".to_owned(), description: "Demo gallery; /demo reset, replay, cancel, long or questions", kind: completion::CompletionKind::Command, range: token.start..token.end });
+                    } else if *name == "/preview" {
+                        self.completion.push(completion::Suggestion {
+                            label: (*name).to_owned(),
+                            insert: (*name).to_owned(),
+                            description,
+                            kind: completion::CompletionKind::Command,
+                            range: token.start..token.end,
+                        });
                     }
                 }
+            }
+            if self.demo_active && "demo".starts_with(token.query) {
+                self.completion.push(completion::Suggestion {
+                    label: "/demo".to_owned(),
+                    insert: "/demo".to_owned(),
+                    description: "Demo gallery; /demo reset, replay, cancel, long or questions",
+                    kind: completion::CompletionKind::Command,
+                    range: token.start..token.end,
+                });
             }
         }
         if self
@@ -1476,23 +1478,23 @@ impl UiState {
                 self.switch_profile(false)?;
             }
             BackendMessage::Record(item) => {
-                if let Some(text) = item.text.as_ref() {
-                    if item.record.session() == self.id {
-                        match self.views.get(self.id) {
-                            Some(view) => view,
-                            None => &self.empty,
-                        }
-                        .check_user_capacity(text)
-                        .map_err(ui_error)?;
+                if let Some(text) = item.text.as_ref()
+                    && item.record.session() == self.id
+                {
+                    match self.views.get(self.id) {
+                        Some(view) => view,
+                        None => &self.empty,
                     }
+                    .check_user_capacity(text)
+                    .map_err(ui_error)?;
                 }
                 self.views
                     .apply_selected(&item.record, self.id)
                     .map_err(|e| CliError::Ui(format!("projection requires recovery: {e}")))?;
-                if item.record.session() == self.id {
-                    if let Some(text) = item.text {
-                        self.offline_view_mut().push_user(text).map_err(ui_error)?;
-                    }
+                if item.record.session() == self.id
+                    && let Some(text) = item.text
+                {
+                    self.offline_view_mut().push_user(text).map_err(ui_error)?;
                 }
             }
             BackendMessage::Committed => {
@@ -1563,10 +1565,10 @@ impl UiState {
             BackendMessage::TurnProgress(item) => match item {
                 ChatProgress::Text(delta) => self.stream_text(&delta),
                 ChatProgress::Reasoning(_) => {
-                    if let Some(turn) = self.turn.as_mut() {
-                        if turn.phase != TurnPhase::Writing {
-                            turn.phase = TurnPhase::Thinking;
-                        }
+                    if let Some(turn) = self.turn.as_mut()
+                        && turn.phase != TurnPhase::Writing
+                    {
+                        turn.phase = TurnPhase::Thinking;
                     }
                 }
                 ChatProgress::Request => {
@@ -1736,10 +1738,10 @@ fn request_copy(state: &mut UiState, cut: bool) -> Result<(), CliError> {
         None
     };
     request_copy_text(state, text)?;
-    if let Some((draft, range)) = pending {
-        if state.notice == "Copying text…" {
-            state.pending_cut = Some((state.clipboard_generation, draft, range));
-        }
+    if let Some((draft, range)) = pending
+        && state.notice == "Copying text…"
+    {
+        state.pending_cut = Some((state.clipboard_generation, draft, range));
     }
     Ok(())
 }
@@ -1849,41 +1851,39 @@ fn poll_services(state: &mut UiState) -> Result<bool, CliError> {
         let Some(result) = result else { break };
         changed |= receive_clipboard_result(state, result);
     }
-    if let Some(result) = state.index.as_ref().and_then(WorkspaceFileIndex::try_recv) {
-        if result.generation == state.index_generation {
-            match result.result {
-                Ok(snapshot) => {
-                    state.paths = StaticPathIndex::new(snapshot.paths);
-                    state.refresh_completion();
-                    if snapshot.truncated {
-                        state.notice =
-                            "File suggestions use a bounded workspace snapshot".to_owned();
-                    }
+    if let Some(result) = state.index.as_ref().and_then(WorkspaceFileIndex::try_recv)
+        && result.generation == state.index_generation
+    {
+        match result.result {
+            Ok(snapshot) => {
+                state.paths = StaticPathIndex::new(snapshot.paths);
+                state.refresh_completion();
+                if snapshot.truncated {
+                    state.notice = "File suggestions use a bounded workspace snapshot".to_owned();
                 }
-                Err(error) => state.notice = format!("File index: {error}"),
             }
-            changed = true;
+            Err(error) => state.notice = format!("File index: {error}"),
         }
+        changed = true;
     }
     if let Some(result) = state
         .settings_worker
         .as_ref()
         .and_then(SettingsService::try_recv)
+        && result.generation == state.settings_generation
     {
-        if result.generation == state.settings_generation {
-            state.settings_pending = false;
-            match result.result {
-                Ok(settings) => {
-                    state.settings = Some(settings);
-                    state.notice = "Selected CLI preference saved to global config".to_owned();
-                }
-                Err(reason) => state.notice = reason,
+        state.settings_pending = false;
+        match result.result {
+            Ok(settings) => {
+                state.settings = Some(settings);
+                state.notice = "Selected CLI preference saved to global config".to_owned();
             }
-            if state.settings_open {
-                refresh_settings_sheet(state);
-            }
-            changed = true;
+            Err(reason) => state.notice = reason,
         }
+        if state.settings_open {
+            refresh_settings_sheet(state);
+        }
+        changed = true;
     }
     if changed {
         state.layout_dirty = true;
@@ -2863,15 +2863,15 @@ fn composer_area(state: &UiState) -> Rect {
     screen::composer_rect(&projection(state, &lines, ""), state.viewport)
 }
 fn accept_completion(state: &mut UiState) -> Result<(), CliError> {
-    if let Some(index) = state.completion_selected {
-        if let Some(s) = state.completion.get(index) {
-            let range = s.range.clone();
-            let insert = s.insert.clone();
-            state
-                .composer
-                .apply_completion(range, &insert)
-                .map_err(ui_error)?;
-        }
+    if let Some(index) = state.completion_selected
+        && let Some(s) = state.completion.get(index)
+    {
+        let range = s.range.clone();
+        let insert = s.insert.clone();
+        state
+            .composer
+            .apply_completion(range, &insert)
+            .map_err(ui_error)?;
     }
     state.completion_dismissed = true;
     state.notice.clear();
@@ -2960,11 +2960,10 @@ fn handle_key(
         && !question_focused(state)
         && !state.panel_focus
         && matches!(key.code, KeyCode::Char('c' | 'C'))
+        && let Some(text) = selected_transcript_text(state)
     {
-        if let Some(text) = selected_transcript_text(state) {
-            request_copy_text(state, text)?;
-            return Ok((false, true));
-        }
+        request_copy_text(state, text)?;
+        return Ok((false, true));
     }
     if let Some(id) = state.chip_preview {
         match key.code {
@@ -3100,7 +3099,7 @@ fn handle_key(
                 let index = Effort::ALL
                     .iter()
                     .position(|effort| *effort == selected)
-                    .map_or(0, |index| index);
+                    .unwrap_or(0);
                 let next = if matches!(key.code, KeyCode::Up | KeyCode::Left) {
                     index.saturating_sub(1)
                 } else {
@@ -3497,12 +3496,12 @@ fn projection<'a>(
             }),
             scroll: sheet.scroll,
         }));
-    if question_focused(state) {
-        if let Some(question) = state.demo.question() {
-            return screen
-                .with_questionnaire(question, state.question_review)
-                .with_questionnaire_scroll(state.question_scroll);
-        }
+    if question_focused(state)
+        && let Some(question) = state.demo.question()
+    {
+        return screen
+            .with_questionnaire(question, state.question_review)
+            .with_questionnaire_scroll(state.question_scroll);
     }
     screen
 }
@@ -3719,7 +3718,7 @@ fn begin_editor_selection(
                 state
                     .composer
                     .selection_anchor()
-                    .map_or(state.composer.cursor(), |value| value),
+                    .unwrap_or(state.composer.cursor()),
                 range,
             )
         }
@@ -3740,12 +3739,7 @@ fn begin_editor_selection(
                     granularity,
                 )
             };
-            (
-                editor
-                    .selection_anchor()
-                    .map_or(editor.cursor(), |value| value),
-                range,
-            )
+            (editor.selection_anchor().unwrap_or(editor.cursor()), range)
         }
         SelectionSurface::Transcript => return Ok(()),
     };
@@ -4067,13 +4061,14 @@ fn handle_mouse(
         apply_gallery_effect(state, effect)?;
         return Ok((false, true));
     }
-    if mouse.kind == MouseEventKind::Moved && !state.layout_dirty {
-        if let Some(metadata) = state.last_metadata.as_ref() {
-            let target = metadata.hit_at(mouse.column, mouse.row);
-            let changed = state.hover != target;
-            state.hover = target;
-            return Ok((false, changed));
-        }
+    if mouse.kind == MouseEventKind::Moved
+        && !state.layout_dirty
+        && let Some(metadata) = state.last_metadata.as_ref()
+    {
+        let target = metadata.hit_at(mouse.column, mouse.row);
+        let changed = state.hover != target;
+        state.hover = target;
+        return Ok((false, changed));
     }
     let metadata = current_metadata(state, options, area);
     let target = metadata.hit_at(mouse.column, mouse.row);
@@ -4400,25 +4395,25 @@ fn handle_input(
                 apply_gallery_effect(state, effect)?;
                 return Ok((false, true));
             }
-            if question_focused(state) {
-                if let Some(question) = state.demo.question_mut() {
-                    use polaris_ui_model::questionnaire::{
-                        QuestionKind, QuestionnaireAction, QuestionnaireFocus,
-                    };
-                    if question.focus() == QuestionnaireFocus::Notes
-                        || question
-                            .current_question()
-                            .is_some_and(|q| q.kind == QuestionKind::FreeText)
-                    {
-                        if let Err(error) = question.apply(QuestionnaireAction::InsertText(text)) {
-                            state.notice = format!("DEMO paste rejected: {error}");
-                        }
-                        refresh_demo_question(state);
-                        return Ok((false, true));
+            if question_focused(state)
+                && let Some(question) = state.demo.question_mut()
+            {
+                use polaris_ui_model::questionnaire::{
+                    QuestionKind, QuestionnaireAction, QuestionnaireFocus,
+                };
+                if question.focus() == QuestionnaireFocus::Notes
+                    || question
+                        .current_question()
+                        .is_some_and(|q| q.kind == QuestionKind::FreeText)
+                {
+                    if let Err(error) = question.apply(QuestionnaireAction::InsertText(text)) {
+                        state.notice = format!("DEMO paste rejected: {error}");
                     }
-                    state.notice = "Tab focuses question notes before pasting".to_owned();
+                    refresh_demo_question(state);
                     return Ok((false, true));
                 }
+                state.notice = "Tab focuses question notes before pasting".to_owned();
+                return Ok((false, true));
             }
             if state.pending.is_some()
                 || state.switch_pending
@@ -4532,15 +4527,15 @@ fn terminal_loop(
             if state.demo_active && state.demo.question().is_some() && state.sheet.is_none() {
                 refresh_demo_question(&mut state);
             }
-            if let Some((until, notice)) = state.transient_notice.as_ref() {
-                if Instant::now() >= *until {
-                    if state.notice == *notice {
-                        state.notice.clear();
-                        state.layout_dirty = true;
-                        scheduler.mark_dirty();
-                    }
-                    state.transient_notice = None;
+            if let Some((until, notice)) = state.transient_notice.as_ref()
+                && Instant::now() >= *until
+            {
+                if state.notice == *notice {
+                    state.notice.clear();
+                    state.layout_dirty = true;
+                    scheduler.mark_dirty();
                 }
+                state.transient_notice = None;
             }
             if let Some(turn) = state.turn.as_ref() {
                 let label = turn.label();

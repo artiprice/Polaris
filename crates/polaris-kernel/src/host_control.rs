@@ -94,10 +94,10 @@ pub async fn serve_host_control_directory(
             return Err(HostControlError::Directory);
         }
         let lock_path = directory.join(".polaris-host-control.lock");
-        if let Ok(metadata) = std::fs::symlink_metadata(&lock_path) {
-            if !metadata.is_file() || metadata.file_type().is_symlink() {
-                return Err(HostControlError::Directory);
-            }
+        if let Ok(metadata) = std::fs::symlink_metadata(&lock_path)
+            && (!metadata.is_file() || metadata.file_type().is_symlink())
+        {
+            return Err(HostControlError::Directory);
         }
         let mut options = std::fs::OpenOptions::new();
         options.read(true).write(true).create(true).truncate(false);

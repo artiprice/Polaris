@@ -75,14 +75,12 @@ impl FixtureClient {
         if name == "run" && !include_run_image {
             properties.remove("image");
         }
-        let input_schema_json = match serde_json::to_vec(&json!({
+        let input_schema_json = serde_json::to_vec(&json!({
             "type": "object",
             "properties": properties,
             "required": required,
-        })) {
-            Ok(value) => value,
-            Err(_) => Vec::new(),
-        };
+        }))
+        .unwrap_or_default();
         McpToolDefinition {
             name: name.to_owned(),
             input_schema_json,

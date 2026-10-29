@@ -127,9 +127,7 @@ fn measure_parallel_l1_hits() -> Result<(), Box<dyn std::error::Error>> {
             key_for_s1(
                 CacheScope::Global,
                 &[0x91; 32],
-                &u64::try_from(index)
-                    .map_or(u64::MAX, |value| value)
-                    .to_le_bytes(),
+                &u64::try_from(index).unwrap_or(u64::MAX).to_le_bytes(),
             )
         })
         .collect();

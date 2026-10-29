@@ -332,10 +332,7 @@ fn trace_key_category(key: &KeyEvent) {
 }
 
 fn console_coordinate(value: i16) -> u16 {
-    match u16::try_from(value) {
-        Ok(converted) => converted,
-        Err(_) => 0,
-    }
+    u16::try_from(value).unwrap_or_default()
 }
 
 fn mouse_kind(

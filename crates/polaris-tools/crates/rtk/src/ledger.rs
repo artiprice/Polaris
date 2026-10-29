@@ -259,14 +259,14 @@ impl Ledger {
         let mut still_open: HashSet<IssueId> = HashSet::new();
         let mut newly_closed = 0u32;
         for line in &mut self.lines {
-            if let LedgerLine::Issue(issue) = line {
-                if issue.is_open() {
-                    if seen.contains(&issue.id) {
-                        still_open.insert(issue.id.clone());
-                    } else {
-                        issue.closed = Some(stamp.clone());
-                        newly_closed = newly_closed.saturating_add(1);
-                    }
+            if let LedgerLine::Issue(issue) = line
+                && issue.is_open()
+            {
+                if seen.contains(&issue.id) {
+                    still_open.insert(issue.id.clone());
+                } else {
+                    issue.closed = Some(stamp.clone());
+                    newly_closed = newly_closed.saturating_add(1);
                 }
             }
         }

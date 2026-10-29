@@ -173,10 +173,11 @@ fn normalize_cursor_suffix(bytes: &mut Vec<u8>, previous: CursorState) -> Option
         bytes.extend_from_slice(SHOW);
     } else if previous == state {
         bytes.truncate(cursor_start);
-    } else if matches!(previous, CursorState::Visible(_, _)) && shown_at.is_some() {
-        if let Some(start) = shown_at {
-            bytes.drain(start..esc);
-        }
+    } else if matches!(previous, CursorState::Visible(_, _))
+        && shown_at.is_some()
+        && let Some(start) = shown_at
+    {
+        bytes.drain(start..esc);
     }
     Some(state)
 }
@@ -285,10 +286,10 @@ impl<W: Write> BufferedPresenter<W> {
         if self.style_reset_known {
             if redundant_style_reset_prefix(&bytes) == Some(bytes.len()) {
                 bytes.clear();
-            } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes) {
-                if bytes.get(reset_len..).is_some_and(is_cursor_suffix) {
-                    bytes.drain(..reset_len);
-                }
+            } else if let Some(reset_len) = redundant_style_reset_prefix(&bytes)
+                && bytes.get(reset_len..).is_some_and(is_cursor_suffix)
+            {
+                bytes.drain(..reset_len);
             }
         }
         if bytes.is_empty() {

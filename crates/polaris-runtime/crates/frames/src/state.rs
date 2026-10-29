@@ -674,11 +674,11 @@ impl AgentContextFrame<Active> {
         if record.index.get() != self.steps || record.shingles.len() > 4096 {
             return Err(FrameError::Accounting);
         }
-        if let Some(latest) = self.watchdog_recent.back_mut() {
-            if latest.index == record.index {
-                *latest = record;
-                return Ok(());
-            }
+        if let Some(latest) = self.watchdog_recent.back_mut()
+            && latest.index == record.index
+        {
+            *latest = record;
+            return Ok(());
         }
         if self.watchdog_recent.len() >= 128 {
             let _ = self.watchdog_recent.pop_front();
