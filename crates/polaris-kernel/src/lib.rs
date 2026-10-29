@@ -94,7 +94,7 @@ mod tools;
 pub use agent_tools::{AgentFramePermit, KernelAgentToolRunner};
 pub use configured_frame::{
     ConfiguredFrameError, ConfiguredFrameOutcome, ConfiguredFramePolicy, ConfiguredFrameServices,
-    ConfiguredWatchdogPolicy, FrameCompletionCheck,
+    ConfiguredWatchdogPolicy, FrameCompletionCheck, SystemOneCoverage,
 };
 pub use configured_tools::{
     ConfiguredAgentToolRunner, ConfiguredDecisionEngine, ConfiguredMutationSafety,

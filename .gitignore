@@ -116,7 +116,6 @@ desktop.ini
 /shell-snapshots/
 /todos/
 /statsig/
-/docs/
 /projects/
 /ide/
 /plans/
@@ -125,6 +124,10 @@ desktop.ini
 # Local development
 /local/
 *.local
+# Local secrets (e.g. OPENROUTER_API_KEY for live provider tests); never commit.
+.env
+.env.*
+!.env.example
 .claude/settings.local.json
 
 # Node modules if any

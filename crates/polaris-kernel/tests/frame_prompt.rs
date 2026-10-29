@@ -118,8 +118,8 @@ async fn assembler_masks_goal_before_failed_attempt_journal() -> TestResult {
 }
 
 #[tokio::test]
-async fn configured_agent_frame_requires_s1_before_provider() -> TestResult {
-    use polaris_kernel::{ConfiguredFrameError, ConfiguredFrameServices};
+async fn configured_agent_frame_runs_degraded_without_s1() -> TestResult {
+    use polaris_kernel::{ConfiguredFrameError, ConfiguredFrameServices, SystemOneCoverage};
     use polaris_runtime::frames::FrameRunInput;
     let mut fixture = Fixture::new(AgentRole::Orchestrator).await?;
     let counter = Arc::new(CountingFixture::default());
@@ -128,7 +128,7 @@ async fn configured_agent_frame_requires_s1_before_provider() -> TestResult {
         .run_agent_frame(
             FrameRunInput {
                 frame: &mut fixture.frame,
-                goal: "Inspect parser",
+                goal: "Inspect parser owned by degraded.owner@example.test",
                 cancellation: &CancellationToken::new(),
                 limits: configured_run_limits(),
             },
@@ -146,21 +146,35 @@ async fn configured_agent_frame_requires_s1_before_provider() -> TestResult {
             },
         )
         .await;
-    assert!(matches!(
-        result,
-        Err(ConfiguredFrameError::MissingSystemOne)
-    ));
+    // The fixture refuses dispatch, so the run ends in an execution error after prompt counting.
+    match result {
+        Ok(outcome) => assert_eq!(outcome.system_one, SystemOneCoverage::Degraded),
+        Err(ConfiguredFrameError::Execution(_)) => {}
+        Err(other) => return Err(format!("unexpected degraded-mode error: {other:?}").into()),
+    }
+    let requests = counter
+        .requests
+        .lock()
+        .map_err(|_| "fixture state")?
+        .clone();
     assert!(
-        counter
-            .requests
-            .lock()
-            .map_err(|_| "fixture state")?
-            .is_empty()
+        !requests.is_empty(),
+        "without S1 the frame still reaches the provider"
     );
-    assert_eq!(
-        fixture.frame.steps(),
-        0,
-        "missing composition must reject before reserving model work"
+    for request in &requests {
+        for message in &request.messages {
+            assert!(
+                !message.content.contains("degraded.owner@example.test"),
+                "deterministic masking stays fail-closed without S1"
+            );
+        }
+    }
+    assert!(
+        requests.iter().any(|request| request
+            .messages
+            .iter()
+            .any(|message| message.content.contains("<PII"))),
+        "the goal reaches the provider in masked form"
     );
     fixture.kernel.shutdown().await?;
     Ok(())

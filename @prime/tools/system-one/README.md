@@ -23,3 +23,24 @@ python -I @prime/tools/system-one/test_gliner_export.py -v
 
 This pipeline does not claim the native Rust parity gate is satisfied; compare generated Python references to actual Rust outputs using the S0-4 comparator after export/build, and retain per-precision parity results.
 
+
+## int8 evaluation (2026-10-28)
+
+`quantize_int8.py` derives encoder-only variants from a complete fp32 export (heads stay fp32;
+gliner2-rs `Precision::Fp32` file names, real precision in `manifest.json`). Measured with the S0-4
+Rust harness (4 threads, i7-10850H, ONNX Runtime 1.23.2 unless noted) on the 200-row golden set:
+
+| Variant | top-1 vs Python | max \|dp\| | RSS after load | p50 1-task |
+|---|---|---|---|---|
+| fp32 (reference export) | 260/260 = 100% | 0.000004 | 2114 MB | 239 ms |
+| dynamic int8, per-tensor | 201/260 = 77.3% | 0.709 | 1256 MB | 199 ms |
+| dynamic int8, per-channel | 210/260 = 80.8% | 0.679 | 1257 MB | 203 ms |
+| dynamic int8, FFN only, per-channel | 204/260 = 78.5% | 0.687 | 1542 MB | 351 ms |
+| 8-bit block-32 weight-only (MatMulNBits) | 260/260 = 100% | 0.0196 | 1282 MB | 1753 ms |
+| same, `--accuracy-level 4` | 260/260 = 100% | 0.0196 | 1283 MB | 2149 ms |
+| same, ONNX Runtime 1.31 DLL | 260/260 = 100% | 0.0196 | 1285 MB | 1515 ms |
+
+Dynamic activation quantization breaks the parity gate (score/intent labels have tiny Python
+margins). Block-wise 8-bit weights keep exact parity and cut memory 39 %, but the CPU MatMulNBits
+8-bit path is 6–9× slower than fp32. No variant passes both the ≥ 99 % parity gate and the latency
+budget yet; fp32 remains the only fully passing Decide artifact.

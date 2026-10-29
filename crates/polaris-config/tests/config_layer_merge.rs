@@ -3,7 +3,10 @@
 use std::error::Error;
 use std::path::PathBuf;
 
-use polaris_config::{ConfigError, Layer, LayerInput, SandboxTier, StorageLevel, TrustGrant, load};
+use polaris_config::{
+    ConfigError, Layer, LayerInput, ProviderName, SandboxTier, SecretRef, StorageLevel, TrustGrant,
+    load,
+};
 use polaris_sdk::effort::Effort;
 use proptest::prelude::*;
 
@@ -118,11 +121,72 @@ fn defaults_only_is_valid() -> TestResult {
         cfg.nebius.effort.model(Effort::Max).as_str(),
         "nvidia/Nemotron-3-Ultra-550b-a55b"
     );
-    assert!(
-        cfg.nebius.api_key.is_none(),
-        "no secret reference until configured"
+    assert_eq!(
+        cfg.nebius
+            .api_key
+            .as_ref()
+            .map(SecretRef::to_reference_string),
+        Some("env:NEBIUS_API_KEY".to_owned()),
+        "defaults name an environment reference, never a value"
     );
+    assert_eq!(
+        cfg.provider.order,
+        [
+            ProviderName::TokenFactory,
+            ProviderName::OpenRouter,
+            ProviderName::Local
+        ]
+    );
+    assert_eq!(cfg.openrouter.base_url, "https://openrouter.ai/api/v1/");
+    assert_eq!(
+        cfg.openrouter
+            .api_key
+            .as_ref()
+            .map(SecretRef::to_reference_string),
+        Some("env:OPENROUTER_API_KEY".to_owned())
+    );
+    assert_eq!(
+        cfg.openrouter.effort.model(Effort::Medium).as_str(),
+        "nvidia/nemotron-3.5-lightning:free"
+    );
+    assert_eq!(cfg.local.base_url, "http://127.0.0.1:11434/v1/");
+    assert!(cfg.local.model.is_none(), "local provider is opt-in");
     assert!(cfg.concurrency.inference > 0 && cfg.ratelimit.rpm > 0);
+    Ok(())
+}
+
+#[test]
+fn provider_order_rejects_unknown_and_repeated_names() -> TestResult {
+    for order in [r#"["token_factory", "bogus"]"#, r#"["local", "local"]"#] {
+        let layer = LayerInput::parse(
+            Layer::Global,
+            &format!("[provider]\norder = {order}\n"),
+            None,
+        )?;
+        assert!(
+            load(&[layer], &TrustGrant::none()).is_err(),
+            "order {order} must be rejected"
+        );
+    }
+    let empty = LayerInput::parse(Layer::Global, "[provider]\norder = []\n", None)?;
+    assert!(
+        load(&[empty], &TrustGrant::none())?
+            .config
+            .provider
+            .order
+            .is_empty()
+    );
+    Ok(())
+}
+
+#[test]
+fn local_provider_requires_literal_loopback() -> TestResult {
+    let remote = LayerInput::parse(
+        Layer::Global,
+        "[local]\nbase_url = \"http://192.168.1.5:11434/v1/\"\n",
+        None,
+    )?;
+    assert!(load(&[remote], &TrustGrant::none()).is_err());
     Ok(())
 }
 

@@ -1117,18 +1117,6 @@ mod tests {
             Duration::ZERO
         }
     }
-    use crate::{Clock, DualLimiter, Estimate, Priority, Quota, ShedPolicy};
-    use polaris_sdk::ids::TokenCount;
-    use std::num::NonZeroU32;
-
-    #[derive(Clone, Copy)]
-    struct ZeroClock;
-
-    impl Clock for ZeroClock {
-        fn now(&self) -> Duration {
-            Duration::ZERO
-        }
-    }
 
     #[test]
     fn max_plus_composition_preserves_later_floor() {
@@ -1280,11 +1268,15 @@ mod tests {
         {
             return Err("owner did not release the completed intent".into());
         }
-        let (reused_slot, reused_generation) = ledger.claim_intent()?;
+        let (reused_slot, reused_generation) = ledger
+            .claim_intent()
+            .map_err(|()| "intent slot was not reusable")?;
         if reused_slot != reservation.slot || reused_generation <= reservation.generation {
             return Err("intent generation was not advanced on reuse".into());
         }
-        ledger.ack_snapshot_result(result_snapshot)?;
+        ledger
+            .ack_snapshot_result(result_snapshot)
+            .map_err(|()| "stale result acknowledgement was rejected")?;
         let state = intent.state.load(Ordering::Acquire);
         if generation_part(state) != reused_generation || state_part(state) != INTENT_RESERVED {
             return Err("stale result acknowledgement changed the reused intent".into());

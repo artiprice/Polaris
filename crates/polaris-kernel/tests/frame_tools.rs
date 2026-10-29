@@ -338,15 +338,29 @@ async fn cas_visibility_and_output_caps_are_enforced() -> TestResult {
 async fn malformed_mutating_and_closed_calls_are_denied() -> TestResult {
     let f = Fixture::new(ResourceScope::Workspace).await?;
     let runner = f.runner()?;
+    // Policy denials (a mutating/executing builtin in a read-only frame) stay hard errors.
+    assert!(
+        runner
+            .authorize(&f.token, call("shell", serde_json::json!({})))
+            .await
+            .is_err()
+    );
+    // Malformed and escaping calls perform no tool work; the model receives the reason.
     for c in [
         call(
             "read_file",
             serde_json::json!({"path":"sample.txt","unknown":true}),
         ),
-        call("shell", serde_json::json!({})),
         call("read_file", serde_json::json!({"path":"../outside"})),
+        call("read_file", serde_json::json!({"path":"missing.txt"})),
     ] {
-        assert!(runner.authorize(&f.token, c).await.is_err());
+        let p = runner.authorize(&f.token, c).await?;
+        let result = runner
+            .execute(p, f.frame.tool_binding().frame_id(), 4096)
+            .await?;
+        let envelope: serde_json::Value = serde_json::from_str(&result.content)?;
+        assert!(envelope.get("error").and_then(serde_json::Value::as_str).is_some());
+        assert!(!result.content.contains("synthetic exact bytes"));
     }
     let p = runner
         .authorize(
@@ -501,7 +515,13 @@ async fn cancellation_and_input_bounds_reject_without_execution() -> TestResult 
         name: "read_file".to_owned(),
         arguments: " ".repeat(65_537),
     };
-    assert!(active.authorize(&f.token, oversized).await.is_err());
+    // Oversized arguments are never parsed; only the bounded tool name is echoed back.
+    let p = active.authorize(&f.token, oversized).await?;
+    let result = active
+        .execute(p, f.frame.tool_binding().frame_id(), 4096)
+        .await?;
+    assert!(result.content.contains("exceeds input bound"));
+    assert!(result.content.len() < 1024);
     let p = active
         .authorize(
             &f.token,

@@ -61,6 +61,16 @@ pub enum FrameCompletionCheck {
     Unverified(FrameVerificationError),
 }
 
+/// Whether the frame ran with the local System One host or in its deterministic degraded mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SystemOneCoverage {
+    /// Semantic PII detection, watchdog advice and tool pruning ran on the owned S1 host.
+    Active,
+    /// No S1 host: PII masking used the deterministic DFA/entropy vault only, and the advisory
+    /// watchdog and tool pruning were off (fail-open: the full permitted catalog was offered).
+    Degraded,
+}
+
 /// Actual run and current-tree completion check. A normal terminal response alone is not done.
 #[derive(Debug)]
 pub struct ConfiguredFrameOutcome {
@@ -68,6 +78,8 @@ pub struct ConfiguredFrameOutcome {
     pub execution: FrameRunOutcome,
     /// Separate proof check, never fabricated from an S1/model opinion.
     pub completion: FrameCompletionCheck,
+    /// System One coverage for this run.
+    pub system_one: SystemOneCoverage,
     /// Observed coverage of the last successful prompt sanitization. Deterministic fallback
     /// remains explicit when the optional PII companion is unavailable or its work budget ends.
     pub semantic_privacy: Option<crate::SemanticPrivacyReport>,
@@ -105,9 +117,10 @@ impl KernelHandle {
     /// tokenizer/chat owner, sealed runner, durable journal and independent workspace verifier.
     /// This entry point neither selects nor grants a model, role, tool, mutation or test right.
     /// Callers construct those through their existing trusted host policies before invoking it.
+    /// Without an S1 host the frame runs in [`SystemOneCoverage::Degraded`] mode.
     ///
     /// # Errors
-    /// Foreign identity or missing S1 rejects before model work. Setup, provider, tool, verifier,
+    /// Foreign identity rejects before model work. Setup, provider, tool, verifier,
     /// cancellation and journal errors propagate; successful execution still checks actual proof.
     pub async fn run_agent_frame<M, T>(
         &self,
@@ -183,9 +196,7 @@ impl KernelHandle {
         {
             return Err(ConfiguredFrameError::Identity);
         }
-        let host = self
-            .s1_host()
-            .ok_or(ConfiguredFrameError::MissingSystemOne)?;
+        let host = self.s1_host();
         let journal = KernelFrameJournal::new(
             self.clone(),
             input.frame.tool_binding(),
@@ -203,17 +214,26 @@ impl KernelHandle {
             services.context,
             services.prompt,
         )
-        .await?
-        .with_semantic_privacy(host.detector(), services.semantic_privacy)?;
-        let assembler = match policy.watchdog {
-            Some(watchdog) => assembler.with_current_watchdog_policy(
-                watchdog.schemas,
-                services.role_table,
-                watchdog.calibration,
-            )?,
-            None => assembler.with_current_watchdog(services.role_table)?,
-        }
-        .with_current_tool_pruning(prune_limit)?;
+        .await?;
+        let (assembler, system_one) = match host {
+            Some(host) => {
+                let assembler =
+                    assembler.with_semantic_privacy(host.detector(), services.semantic_privacy)?;
+                let assembler = match policy.watchdog {
+                    Some(watchdog) => assembler.with_current_watchdog_policy(
+                        watchdog.schemas,
+                        services.role_table,
+                        watchdog.calibration,
+                    )?,
+                    None => assembler.with_current_watchdog(services.role_table)?,
+                }
+                .with_current_tool_pruning(prune_limit)?;
+                (assembler, SystemOneCoverage::Active)
+            }
+            // Degraded mode: the vault's deterministic masking stays fail-closed; the advisory
+            // watchdog and pruning are fail-open, so they are simply not attached.
+            None => (assembler, SystemOneCoverage::Degraded),
+        };
         let journal = match policy.checkpoints {
             Some(checkpoints) => journal
                 .with_private_checkpoints(checkpoints, Arc::clone(assembler.privacy_vault()))?,
@@ -244,6 +264,7 @@ impl KernelHandle {
         Ok(ConfiguredFrameOutcome {
             execution,
             completion,
+            system_one,
             semantic_privacy: assembler.semantic_privacy_report()?,
             privacy_vault: Arc::clone(assembler.privacy_vault()),
         })

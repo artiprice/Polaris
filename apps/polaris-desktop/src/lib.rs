@@ -16,7 +16,7 @@
 //! The session store defaults to `<workspace>/.polaris/state`, like the terminal app.
 //!
 //! Slint is used under its royalty-free licence (PLAN ADR-014); the attribution is the
-//! `AboutSlint` widget in the window's About panel.
+//! `AboutSlint` widget in the Settings panel's About section.
 //!
 //! Test-first descriptors: `specs/descriptors/ui_desktop_main.json`.
 

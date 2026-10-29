@@ -100,22 +100,31 @@ fn context_panel_toggles() -> TestResult {
 }
 
 #[test]
-fn about_panel_shows_slint_attribution() -> TestResult {
+fn settings_contains_about_with_slint_attribution() -> TestResult {
     let h = harness()?;
-    element(&h.ui, "About Polaris")?.invoke_accessible_default_action();
-    assert!(h.ui.get_about_open(), "About opens");
+    assert!(
+        ElementHandle::find_by_accessible_label(&h.ui, "About Polaris")
+            .next()
+            .is_none(),
+        "About lives inside Settings, not as a separate button"
+    );
+    element(&h.ui, "Settings")?.invoke_accessible_default_action();
+    assert!(h.ui.get_settings_open(), "Settings opens");
+    element(&h.ui, "Settings panel")?;
     let about_slint = ElementHandle::find_by_element_type_name(&h.ui, "AboutSlint").count();
     assert_eq!(
         about_slint, 1,
-        "the About panel must contain exactly one AboutSlint widget"
+        "the Settings panel must contain exactly one AboutSlint widget"
     );
+    element(&h.ui, "Settings")?.invoke_accessible_default_action();
+    assert!(!h.ui.get_settings_open(), "Settings closes");
     Ok(())
 }
 
 #[test]
 fn unbuilt_pages_say_so() -> TestResult {
     let h = harness()?;
-    for page in ["Models", "Usage", "Settings"] {
+    for page in ["Models", "Usage"] {
         element(&h.ui, &format!("{page} · not in the desktop shell yet"))?;
     }
     Ok(())

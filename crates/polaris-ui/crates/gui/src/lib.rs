@@ -20,7 +20,7 @@
 //! - **Honest controls.** Messages are recorded locally and nothing replies (model execution is
 //!   P3). Attach and voice input are disabled with a tooltip; sidebar pages the desktop shell
 //!   does not have yet say so in their tooltip.
-//! - **Licence.** Slint is used under its royalty-free licence (PLAN ADR-014); the About panel
+//! - **Licence.** Slint is used under its royalty-free licence (PLAN ADR-014); the Settings panel's About section
 //!   shows the `AboutSlint` widget the licence requires.
 //!
 //! Test-first descriptors: `specs/descriptors/ui_gui_*.json`.

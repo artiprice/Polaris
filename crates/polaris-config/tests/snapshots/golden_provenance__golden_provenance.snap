@@ -9,14 +9,26 @@ concurrency.inference    Defaults -
 concurrency.s1           Defaults -
 concurrency.sandbox      Defaults -
 concurrency.web          Env -
+local.base_url           Defaults -
+local.context_window     Defaults -
 log.level                Global ~/.polaris/config.toml
 nebius.api_key           Global ~/.polaris/config.toml
 nebius.base_url          Defaults -
+nebius.context_window    Defaults -
 nebius.effort.high       Defaults -
 nebius.effort.low        Defaults -
 nebius.effort.max        Defaults -
 nebius.effort.medium     Defaults -
 nebius.effort.xhigh      Defaults -
+openrouter.api_key       Defaults -
+openrouter.base_url      Defaults -
+openrouter.context_window Defaults -
+openrouter.effort.high   Defaults -
+openrouter.effort.low    Defaults -
+openrouter.effort.max    Defaults -
+openrouter.effort.medium Defaults -
+openrouter.effort.xhigh  Defaults -
+provider.order           Defaults -
 ratelimit.rpm            Repo .polaris/config.toml
 ratelimit.tpm            Global ~/.polaris/config.toml
 sandbox.tier             Session -
@@ -48,6 +60,13 @@ PolarisConfig {
     sandbox: SandboxConfig {
         tier: Contree,
     },
+    provider: ProviderConfig {
+        order: [
+            TokenFactory,
+            OpenRouter,
+            Local,
+        ],
+    },
     nebius: NebiusConfig {
         base_url: "https://api.tokenfactory.nebius.com/v1/",
         api_key: Some(
@@ -56,6 +75,7 @@ PolarisConfig {
                 user: "nebius",
             },
         ),
+        context_tokens: 262144,
         effort: EffortModels {
             low: ModelId(
                 "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
@@ -73,6 +93,43 @@ PolarisConfig {
                 "nvidia/Nemotron-3-Ultra-550b-a55b",
             ),
         },
+    },
+    openrouter: HostedProviderConfig {
+        base_url: "https://openrouter.ai/api/v1/",
+        api_key: Some(
+            Env(
+                "OPENROUTER_API_KEY",
+            ),
+        ),
+        context_tokens: 262144,
+        effort: EffortModels {
+            low: ModelId(
+                "nvidia/nemotron-3.5-lightning:free",
+            ),
+            medium: ModelId(
+                "nvidia/nemotron-3.5-lightning:free",
+            ),
+            high: ModelId(
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+            ),
+            xhigh: ModelId(
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+            ),
+            max: ModelId(
+                "nvidia/nemotron-3-ultra-550b-a55b:free",
+            ),
+        },
+    },
+    local: LocalProviderConfig {
+        base_url: "http://127.0.0.1:11434/v1/",
+        model: None,
+        context_tokens: 8192,
+    },
+    system_one: SystemOneConfig {
+        worker: None,
+        decide_model_dir: None,
+        pii_model_dir: None,
+        ort_dylib: None,
     },
     search: SearchConfig {
         tavily_api_key: None,

@@ -36,8 +36,13 @@ level = "global"
 [sandbox]
 tier = "auto"
 
+[provider]
+order = ["token_factory", "openrouter", "local"]
+
 [nebius]
 base_url = "https://api.tokenfactory.nebius.com/v1/"
+api_key = "env:NEBIUS_API_KEY"
+context_window = 262144
 
 [nebius.effort]
 low = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
@@ -45,6 +50,22 @@ medium = "nvidia/Nemotron-3_5-Lightning"
 high = "nvidia/nemotron-3-super-120b-a12b"
 xhigh = "nvidia/nemotron-3-super-120b-a12b"
 max = "nvidia/Nemotron-3-Ultra-550b-a55b"
+
+[openrouter]
+base_url = "https://openrouter.ai/api/v1/"
+api_key = "env:OPENROUTER_API_KEY"
+context_window = 262144
+
+[openrouter.effort]
+low = "nvidia/nemotron-3.5-lightning:free"
+medium = "nvidia/nemotron-3.5-lightning:free"
+high = "nvidia/nemotron-3-ultra-550b-a55b:free"
+xhigh = "nvidia/nemotron-3-ultra-550b-a55b:free"
+max = "nvidia/nemotron-3-ultra-550b-a55b:free"
+
+[local]
+base_url = "http://127.0.0.1:11434/v1/"
+context_window = 8192
 
 [search]
 
@@ -77,13 +98,30 @@ pub const KNOWN_KEYS: &[&str] = &[
     "concurrency.sandbox",
     "storage.level",
     "sandbox.tier",
+    "provider.order",
     "nebius.base_url",
     "nebius.api_key",
+    "nebius.context_window",
     "nebius.effort.low",
     "nebius.effort.medium",
     "nebius.effort.high",
     "nebius.effort.xhigh",
     "nebius.effort.max",
+    "openrouter.base_url",
+    "openrouter.api_key",
+    "openrouter.context_window",
+    "openrouter.effort.low",
+    "openrouter.effort.medium",
+    "openrouter.effort.high",
+    "openrouter.effort.xhigh",
+    "openrouter.effort.max",
+    "local.base_url",
+    "local.model",
+    "local.context_window",
+    "system_one.worker",
+    "system_one.decide_model_dir",
+    "system_one.pii_model_dir",
+    "system_one.ort_dylib",
     "search.tavily_api_key",
     "search.searxng_url",
     "log.level",
@@ -198,8 +236,79 @@ pub struct NebiusConfig {
     pub base_url: String,
     /// API key reference.
     pub api_key: Option<SecretRef>,
+    /// Context capacity assumed for prompt fitting (input plus reserved output).
+    pub context_tokens: u32,
     /// Effort → model map.
     pub effort: EffortModels,
+}
+
+/// A model provider in the selection chain (`provider.order`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ProviderName {
+    /// Nebius Token Factory (`[nebius]`).
+    TokenFactory,
+    /// OpenRouter (`[openrouter]`).
+    OpenRouter,
+    /// A local OpenAI-compatible server such as Ollama or llama.cpp (`[local]`).
+    Local,
+}
+
+impl ProviderName {
+    /// The configuration spelling.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::TokenFactory => "token_factory",
+            Self::OpenRouter => "openrouter",
+            Self::Local => "local",
+        }
+    }
+}
+
+/// Local System One (GLiNER) worker paths. S1 runs only when the decision model and ONNX Runtime
+/// are configured; otherwise frames run in degraded mode. Paths are host-local and are never
+/// accepted from an untrusted repository layer.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SystemOneConfig {
+    /// `polaris-worker` executable; when unset, the binary next to the running executable is used.
+    pub worker: Option<std::path::PathBuf>,
+    /// fp32 GLiNER2.5-Decide fragment directory.
+    pub decide_model_dir: Option<std::path::PathBuf>,
+    /// Optional fp32 GLiNER2 PII companion fragment directory.
+    pub pii_model_dir: Option<std::path::PathBuf>,
+    /// ONNX Runtime shared library (1.23 or newer).
+    pub ort_dylib: Option<std::path::PathBuf>,
+}
+
+/// Provider selection: the first usable provider in `order` serves the session.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderConfig {
+    /// Ordered, duplicate-free candidates; an empty list means offline.
+    pub order: Vec<ProviderName>,
+}
+
+/// A hosted OpenAI-compatible provider reached with a bearer key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HostedProviderConfig {
+    /// HTTPS base URL (ends with `/`).
+    pub base_url: String,
+    /// API key reference; the provider is skipped when it is absent or resolves to nothing.
+    pub api_key: Option<SecretRef>,
+    /// Context capacity assumed for prompt fitting (input plus reserved output).
+    pub context_tokens: u32,
+    /// Effort → model map.
+    pub effort: EffortModels,
+}
+
+/// A local OpenAI-compatible server on a literal loopback address.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocalProviderConfig {
+    /// `http://127.0.0.1:<port>/…/` base URL (ends with `/`).
+    pub base_url: String,
+    /// Served model name; the provider is skipped while this is unset.
+    pub model: Option<ModelId>,
+    /// Context capacity configured on the server.
+    pub context_tokens: u32,
 }
 
 /// Web search settings.
@@ -373,8 +482,16 @@ pub struct PolarisConfig {
     pub storage: StorageConfig,
     /// Sandbox.
     pub sandbox: SandboxConfig,
+    /// Model provider selection chain.
+    pub provider: ProviderConfig,
     /// Nebius Token Factory.
     pub nebius: NebiusConfig,
+    /// OpenRouter.
+    pub openrouter: HostedProviderConfig,
+    /// Local OpenAI-compatible server.
+    pub local: LocalProviderConfig,
+    /// Local System One worker.
+    pub system_one: SystemOneConfig,
     /// Web search.
     pub search: SearchConfig,
     /// Logging.
@@ -467,6 +584,62 @@ impl Reader<'_> {
         ModelId::new(self.str(key)?).map_err(|e| invalid(key, e.to_string()))
     }
 
+    fn opt_path(&self, key: &str) -> Result<Option<std::path::PathBuf>, ConfigError> {
+        match self.opt_str(key)? {
+            None => Ok(None),
+            Some(value) => {
+                let path = std::path::PathBuf::from(value);
+                if path.is_absolute() {
+                    Ok(Some(path))
+                } else {
+                    Err(invalid(key, "expected an absolute path"))
+                }
+            }
+        }
+    }
+
+    fn opt_model(&self, key: &str) -> Result<Option<ModelId>, ConfigError> {
+        self.opt_str(key)?
+            .map(|value| ModelId::new(value).map_err(|e| invalid(key, e.to_string())))
+            .transpose()
+    }
+
+    fn effort_models(&self, prefix: &str) -> Result<EffortModels, ConfigError> {
+        Ok(EffortModels {
+            low: self.model(&format!("{prefix}.effort.low"))?,
+            medium: self.model(&format!("{prefix}.effort.medium"))?,
+            high: self.model(&format!("{prefix}.effort.high"))?,
+            xhigh: self.model(&format!("{prefix}.effort.xhigh"))?,
+            max: self.model(&format!("{prefix}.effort.max"))?,
+        })
+    }
+
+    fn provider_order(&self, key: &str) -> Result<Vec<ProviderName>, ConfigError> {
+        let items = self
+            .value(key)
+            .and_then(toml::Value::as_array)
+            .ok_or_else(|| invalid(key, "expected an array of provider names"))?;
+        let mut order = Vec::with_capacity(items.len());
+        for item in items {
+            let name = match item.as_str() {
+                Some("token_factory") => ProviderName::TokenFactory,
+                Some("openrouter") => ProviderName::OpenRouter,
+                Some("local") => ProviderName::Local,
+                _ => {
+                    return Err(invalid(
+                        key,
+                        "expected only token_factory, openrouter or local",
+                    ));
+                }
+            };
+            if order.contains(&name) {
+                return Err(invalid(key, "provider names must not repeat"));
+            }
+            order.push(name);
+        }
+        Ok(order)
+    }
+
     fn secret(&self, key: &str) -> Result<Option<SecretRef>, ConfigError> {
         self.opt_str(key)?
             .map(|v| SecretRef::parse_for(key, v))
@@ -499,6 +672,22 @@ pub(crate) fn build(table: &toml::Table) -> Result<PolarisConfig, ConfigError> {
         return Err(invalid(
             "nebius.base_url",
             "expected an https:// (or local http://) URL ending with /",
+        ));
+    }
+    let openrouter_url = r.str("openrouter.base_url")?;
+    if !openrouter_url.starts_with("https://") || !openrouter_url.ends_with('/') {
+        return Err(invalid(
+            "openrouter.base_url",
+            "expected an https:// URL ending with /",
+        ));
+    }
+    let local_url = r.str("local.base_url")?;
+    if !(local_url.starts_with("http://127.0.0.1:") || local_url.starts_with("http://[::1]:"))
+        || !local_url.ends_with('/')
+    {
+        return Err(invalid(
+            "local.base_url",
+            "expected an http://127.0.0.1:<port>/ or http://[::1]:<port>/ URL ending with /",
         ));
     }
     let searxng_url = r.opt_str("search.searxng_url")?;
@@ -539,16 +728,31 @@ pub(crate) fn build(table: &toml::Table) -> Result<PolarisConfig, ConfigError> {
                 ],
             )?,
         },
+        provider: ProviderConfig {
+            order: r.provider_order("provider.order")?,
+        },
         nebius: NebiusConfig {
             base_url: base_url.to_owned(),
             api_key: r.secret("nebius.api_key")?,
-            effort: EffortModels {
-                low: r.model("nebius.effort.low")?,
-                medium: r.model("nebius.effort.medium")?,
-                high: r.model("nebius.effort.high")?,
-                xhigh: r.model("nebius.effort.xhigh")?,
-                max: r.model("nebius.effort.max")?,
-            },
+            context_tokens: r.positive_u32("nebius.context_window")?,
+            effort: r.effort_models("nebius")?,
+        },
+        openrouter: HostedProviderConfig {
+            base_url: openrouter_url.to_owned(),
+            api_key: r.secret("openrouter.api_key")?,
+            context_tokens: r.positive_u32("openrouter.context_window")?,
+            effort: r.effort_models("openrouter")?,
+        },
+        local: LocalProviderConfig {
+            base_url: local_url.to_owned(),
+            model: r.opt_model("local.model")?,
+            context_tokens: r.positive_u32("local.context_window")?,
+        },
+        system_one: SystemOneConfig {
+            worker: r.opt_path("system_one.worker")?,
+            decide_model_dir: r.opt_path("system_one.decide_model_dir")?,
+            pii_model_dir: r.opt_path("system_one.pii_model_dir")?,
+            ort_dylib: r.opt_path("system_one.ort_dylib")?,
         },
         search: SearchConfig {
             tavily_api_key: r.secret("search.tavily_api_key")?,

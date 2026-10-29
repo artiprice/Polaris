@@ -216,7 +216,9 @@ impl LocalS1Config {
                 program: self.worker_executable.clone(),
                 args,
                 cwd: Some(self.model_dir.clone()),
-                env: Vec::new(),
+                // The engines refuse to load unless the device is explicit; CPU is the only
+                // provider verified by S0-4, and the host environment must not change it.
+                env: vec![(OsString::from("GLINER2_DEVICE"), OsString::from("cpu"))],
             },
             poll_interval: self.poll_interval,
             stop_grace: self.stop_grace,
@@ -590,9 +592,13 @@ mod tests {
             Some(&profile.model_dir),
             "worker cwd must be the configured model directory"
         );
-        assert!(
-            spec.env.is_empty(),
-            "worker receives no ambient environment overrides"
+        assert_eq!(
+            spec.env,
+            [(
+                std::ffi::OsString::from("GLINER2_DEVICE"),
+                std::ffi::OsString::from("cpu")
+            )],
+            "worker receives only the fixed CPU device pin, never ambient environment"
         );
         assert!(
             spec.args

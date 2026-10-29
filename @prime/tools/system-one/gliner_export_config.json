@@ -13,7 +13,7 @@
     "exporter": {
       "root": "workspace",
       "path": "@prime/tools/system-one/upstream/export_span_v3.py",
-      "sha256": "88c9f6ccfe3064806b4c1ccb46c55e881a06106682925354775cfd9d13637f24"
+      "sha256": "383d02e9d617a4b2c4ca52b8330a8cc5e24d7c8b50d0c77b785f81d820b896de"
     },
     "golden_generator": {
       "root": "spike",

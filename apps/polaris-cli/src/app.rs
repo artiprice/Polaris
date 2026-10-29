@@ -63,6 +63,9 @@ pub struct Args {
     /// Create a new diagnostic trace containing categories only, never text.
     #[arg(long)]
     pub key_trace: Option<PathBuf>,
+    /// Read `env:NAME` credential references from this `.env` file before the process environment.
+    #[arg(long, global = true)]
+    pub env_file: Option<PathBuf>,
 }
 /// Non-UI operations available in the local profile.
 #[derive(Debug, Subcommand)]
@@ -89,11 +92,12 @@ pub enum Action {
         /// Exactly one session directive.
         task: String,
     },
-    /// Execute one bounded local model task through the configured System-One host.
+    /// Execute one bounded model task. Without --profile the provider chain selects the model
+    /// (Token Factory, OpenRouter, local server) and System One runs in degraded mode.
     Task {
-        /// Explicit trusted local model and System-One profile TOML.
+        /// Explicit trusted local llama.cpp and System-One profile TOML.
         #[arg(long)]
-        profile: PathBuf,
+        profile: Option<PathBuf>,
         /// One bounded task goal.
         task: String,
     },
@@ -223,8 +227,20 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 headless(&args.state_dir, &args.workspace, args.session, &task).await
             }
             Some(Action::Task { profile, task }) => {
-                let summary =
-                    crate::task::run(&args.state_dir, &args.workspace, &profile, &task).await?;
+                let summary = crate::task::run(
+                    &args.state_dir,
+                    &args.workspace,
+                    profile.as_deref(),
+                    &task,
+                    &loaded.config,
+                    args.env_file.as_deref(),
+                )
+                .await?;
+                if let Some(answer) = summary.answer.as_deref() {
+                    let mut err = std::io::stderr().lock();
+                    writeln!(err, "{answer}")?;
+                    err.flush()?;
+                }
                 let mut out = std::io::stdout().lock();
                 serde_json::to_writer(&mut out, &summary)?;
                 writeln!(out)?;
@@ -401,10 +417,25 @@ mod tests {
             matches!(
                 args.command,
                 Some(Action::Task { ref profile, ref task })
-                    if profile == std::path::Path::new("local.toml")
+                    if profile.as_deref() == Some(std::path::Path::new("local.toml"))
                         && task == "inspect the current workspace"
             ),
             "task must parse as its dedicated non-UI action"
+        );
+        let hosted = Args::try_parse_from([
+            "polaris",
+            "--env-file",
+            ".env",
+            "task",
+            "summarize the workspace",
+        ])?;
+        assert!(
+            matches!(hosted.command, Some(Action::Task { profile: None, .. })),
+            "without --profile the provider chain serves the task"
+        );
+        assert_eq!(
+            hosted.env_file.as_deref(),
+            Some(std::path::Path::new(".env"))
         );
         Ok(())
     }

@@ -633,9 +633,16 @@ async fn counted_prompt_matches_dispatched_http_and_durable_frame() -> TestResul
         durable_request.model.as_str() == SYNTHETIC_MODEL && durable_request.effort == Effort::High,
         "durable request did not retain the frame-selected model and high effort",
     )?;
+    let durable_goal = transcript
+        .get("goal")
+        .and_then(Value::as_str)
+        .ok_or("durable transcript omitted the goal")?;
     require(
-        transcript.get("goal").and_then(Value::as_str) == Some(goal),
-        "durable transcript did not retain the input goal for the audit record",
+        durable_goal != goal
+            && !durable_goal.contains("person@example.com")
+            && durable_goal.contains("<PII1:")
+            && durable_goal.contains("src/lib.rs"),
+        "durable transcript must retain the reversible masked goal, never the raw PII",
     )?;
     let response = transcript
         .get("assistant_response")

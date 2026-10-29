@@ -2027,9 +2027,10 @@ fn render_entry_rows(
         };
     }
     let mut rows = Vec::new();
+    // User, assistant and system notices carry no role heading (reference design); system
+    // notices are distinguished by their muted body color instead.
     let (label, color) = match entry.kind {
-        EntryKind::User | EntryKind::Assistant => ("", TEXT),
-        EntryKind::System => ("System", MUTED),
+        EntryKind::User | EntryKind::Assistant | EntryKind::System => ("", TEXT),
         EntryKind::Warning => ("Warning", WARNING),
         EntryKind::Error => ("Error", ERROR),
     };
@@ -2118,10 +2119,10 @@ fn render_entry_rows(
                         .cloned()
                         .collect(),
                     gutter: None,
-                    fg: if entry.kind == EntryKind::Warning {
-                        WARNING
-                    } else {
-                        TEXT
+                    fg: match entry.kind {
+                        EntryKind::Warning => WARNING,
+                        EntryKind::System => MUTED,
+                        EntryKind::User | EntryKind::Assistant | EntryKind::Error => TEXT,
                     },
                     bg: None,
                     entry_index,

@@ -958,12 +958,19 @@ fn worker_client(channel: Channel) -> pb::worker_service_client::WorkerServiceCl
 }
 
 fn status_error(status: Status) -> DecisionError {
+    // The worker only sends static diagnostics; keep a bounded, control-free copy for logs.
+    let detail: String = status
+        .message()
+        .chars()
+        .filter(|character| !character.is_control())
+        .take(160)
+        .collect();
     match status.code() {
         tonic::Code::DeadlineExceeded => DecisionError::Timeout,
-        tonic::Code::Unavailable | tonic::Code::ResourceExhausted => {
-            DecisionError::Unavailable(format!("worker RPC returned {}", status.code()))
-        }
-        _ => DecisionError::Model(format!("worker RPC returned {}", status.code())),
+        tonic::Code::Unavailable | tonic::Code::ResourceExhausted => DecisionError::Unavailable(
+            format!("worker RPC returned {}: {detail}", status.code()),
+        ),
+        _ => DecisionError::Model(format!("worker RPC returned {}: {detail}", status.code())),
     }
 }
 

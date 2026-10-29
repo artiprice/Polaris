@@ -100,13 +100,13 @@ fn welcome_renders_without_panic_in_software_renderer() -> TestResult {
         write_ppm(&dir.join("welcome-menus.ppm"), &open)?;
         ui.set_popover_open(false);
         ui.set_context_open(false);
-        ui.set_about_open(true);
+        ui.set_settings_open(true);
         settle();
-        let about = draw(&window, stride)?.ok_or("about did not redraw")?;
-        write_ppm(&dir.join("welcome-about.ppm"), &about)?;
+        let settings = draw(&window, stride)?.ok_or("settings did not redraw")?;
+        write_ppm(&dir.join("welcome-settings.ppm"), &settings)?;
 
         // Session screen with a committed message and a sidebar list.
-        ui.set_about_open(false);
+        ui.set_settings_open(false);
         ui.set_draft("draft for the next message".into());
         ui.invoke_draft_edited("draft for the next message".into());
         ui.invoke_show_sessions();

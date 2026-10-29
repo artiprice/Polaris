@@ -1343,8 +1343,11 @@ impl ProviderStream {
                     if choice.index != 0 {
                         return Err(TfError::Protocol);
                     }
-                    let has_delta = choice.delta.content.is_some()
-                        || choice.delta.reasoning_content.is_some()
+                    // OpenRouter repeats `"content": ""` on the usage chunk after the finish
+                    // reason; empty strings carry no output, so only real deltas count here.
+                    let reasoning = choice.delta.reasoning_content.or(choice.delta.reasoning);
+                    let has_delta = choice.delta.content.as_ref().is_some_and(|c| !c.is_empty())
+                        || reasoning.as_ref().is_some_and(|r| !r.is_empty())
                         || !choice.delta.tool_calls.is_empty();
                     if self.finish_reason.is_some() && has_delta {
                         return Err(TfError::Protocol);
@@ -1356,7 +1359,7 @@ impl ProviderStream {
                                 .push_back(Ok(ChatChunk::Text(content.into_owned())));
                         }
                     }
-                    if let Some(reasoning) = choice.delta.reasoning_content {
+                    if let Some(reasoning) = reasoning {
                         self.add_text_bytes(reasoning.len())?;
                         if !reasoning.is_empty() {
                             self.pending
@@ -1686,7 +1689,10 @@ struct ChoiceWire<'a> {
 #[serde(bound(deserialize = "'de: 'a"))]
 struct DeltaWire<'a> {
     content: Option<Cow<'a, str>>,
+    /// vLLM / Token Factory reasoning field.
     reasoning_content: Option<Cow<'a, str>>,
+    /// OpenRouter reasoning field; used only when `reasoning_content` is absent.
+    reasoning: Option<Cow<'a, str>>,
     #[serde(default)]
     tool_calls: Vec<ToolCallDeltaWire<'a>>,
 }
@@ -1769,7 +1775,7 @@ fn parse_finish_reason(value: &str) -> FinishReason {
 /// Conservative lower-cost bound used before constructing the duplicated wire JSON tree.
 /// JSON escaping and field names can increase the final size, so the serialized-size check remains
 /// authoritative after construction.
-fn chat_request_input_bound(req: &ChatRequest) -> Result<usize, TfError> {
+pub(crate) fn chat_request_input_bound(req: &ChatRequest) -> Result<usize, TfError> {
     let mut total = req
         .model
         .as_str()
@@ -2555,6 +2561,88 @@ mod tests {
         ) {
             return Err(super::TfError::Protocol);
         }
+        Ok(())
+    }
+
+    /// Shape recorded from OpenRouter (nemotron-3.5-lightning:free, 2026-10-28): `reasoning`
+    /// instead of `reasoning_content`, extra provider fields, and a usage chunk that repeats
+    /// `"content":""` together with the already-sent finish reason.
+    #[tokio::test]
+    async fn openrouter_stream_shape_is_accepted() -> Result<(), Box<dyn std::error::Error>> {
+        let body = concat!(
+            ": OPENROUTER PROCESSING\n\n",
+            "data: {\"id\":\"gen-1\",\"provider\":\"Nvidia\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":\"We need\",\"reasoning_details\":[{\"type\":\"reasoning.text\",\"text\":\"We need\",\"format\":\"unknown\",\"index\":0}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\n",
+            "data: {\"id\":\"gen-1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":null,\"role\":\"assistant\",\"tool_calls\":[{\"index\":0,\"id\":\"call-1\",\"type\":\"function\",\"function\":{\"name\":\"read_file\",\"arguments\":\"\"}}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\n",
+            "data: {\"id\":\"gen-1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":null,\"role\":\"assistant\",\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"{\\\"path\\\":\\\"Cargo.toml\\\"}\"}}]},\"finish_reason\":null,\"native_finish_reason\":null}]}\n\n",
+            "data: {\"id\":\"gen-1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\",\"reasoning\":null},\"finish_reason\":\"tool_calls\",\"native_finish_reason\":\"tool_calls\"}]}\n\n",
+            "data: {\"id\":\"gen-1\",\"service_tier\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\",\"role\":\"assistant\"},\"finish_reason\":\"tool_calls\",\"native_finish_reason\":\"tool_calls\"}],\"usage\":{\"prompt_tokens\":272,\"completion_tokens\":81,\"total_tokens\":353,\"cost\":0,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0}}}\n\n",
+            "data: [DONE]\n\n"
+        );
+        let (base, server) = fixture_server(vec![(
+            200,
+            vec![("Content-Type", "text/event-stream")],
+            body.to_owned(),
+        )])?;
+        let client = client(base, config())?;
+        let request = ChatRequest {
+            model: ModelId::new("nvidia/nemotron-3.5-lightning:free")?,
+            messages: vec![ChatMessage::text(ChatRole::User, "prompt".to_owned())],
+            tools: Vec::new(),
+            max_output_tokens: Some(TokenCount::new(64)),
+            effort: Effort::Medium,
+        };
+        let mut stream = client.stream(request).await?;
+        let mut chunks = Vec::new();
+        while let Some(chunk) = stream.next_chunk().await {
+            chunks.push(chunk?);
+        }
+        let _captured = server
+            .join()
+            .map_err(|_| io::Error::other("fixture server panicked"))??;
+        assert!(chunks.contains(&ChatChunk::Reasoning("We need".to_owned())));
+        assert!(chunks.contains(&ChatChunk::ToolCallDelta {
+            index: 0,
+            id: Some("call-1".to_owned()),
+            name: Some("read_file".to_owned()),
+            arguments_fragment: String::new(),
+        }));
+        assert!(chunks.contains(&ChatChunk::Finished(FinishReason::ToolCalls)));
+        assert!(chunks.iter().any(|chunk| matches!(chunk, ChatChunk::Usage(_))));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn non_empty_content_after_finish_is_still_rejected()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let body = concat!(
+            "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"done\"},\"finish_reason\":\"stop\"}]}\n\n",
+            "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"late\"},\"finish_reason\":\"stop\"}]}\n\n",
+            "data: [DONE]\n\n"
+        );
+        let (base, server) = fixture_server(vec![(
+            200,
+            vec![("Content-Type", "text/event-stream")],
+            body.to_owned(),
+        )])?;
+        let client = client(base, config())?;
+        let request = ChatRequest {
+            model: ModelId::new("fixture-model")?,
+            messages: vec![ChatMessage::text(ChatRole::User, "prompt".to_owned())],
+            tools: Vec::new(),
+            max_output_tokens: Some(TokenCount::new(64)),
+            effort: Effort::Low,
+        };
+        let mut stream = client.stream(request).await?;
+        let mut failed = false;
+        while let Some(chunk) = stream.next_chunk().await {
+            if chunk.is_err() {
+                failed = true;
+            }
+        }
+        let _captured = server
+            .join()
+            .map_err(|_| io::Error::other("fixture server panicked"))??;
+        assert!(failed, "real content after the finish reason stays a protocol error");
         Ok(())
     }
 

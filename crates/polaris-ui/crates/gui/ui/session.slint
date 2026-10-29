@@ -197,7 +197,7 @@ export component SessionScreen {
     callback new-session();
     callback open-session(string);
     callback search-edited(string);
-    callback about();
+    callback settings();
 
     property <length> sidebar-width: 280px;
     property <length> content-max: 760px;
@@ -392,26 +392,27 @@ export component SessionScreen {
                     color: Tokens.muted;
                 }
                 }
-                about-btn := Rectangle {
+                settings-btn := Rectangle {
                     width: 30px;
                     height: 30px;
                     y: (parent.height - self.height) / 2;
                     border-radius: 15px;
-                    background: about-touch.has-hover ? Tokens.nav-hover : transparent;
+                    background: settings-touch.has-hover ? Tokens.nav-hover : transparent;
+                    animate background { duration: Motion.fast; }
                     accessible-role: button;
-                    accessible-label: "About Polaris";
-                    accessible-action-default => { root.about(); }
-                    about-touch := TouchArea {
+                    accessible-label: "Settings";
+                    accessible-action-default => { root.settings(); }
+                    settings-touch := TouchArea {
                         mouse-cursor: pointer;
-                        clicked => { root.about(); }
+                        clicked => { root.settings(); }
                     }
                     Icon {
                         x: (parent.width - self.width) / 2;
                         y: (parent.height - self.height) / 2;
                         width: 15px;
                         height: 15px;
-                        commands: IconPaths.sparkle;
-                        color: about-touch.has-hover ? Tokens.text : Tokens.muted;
+                        commands: IconPaths.settings;
+                        color: settings-touch.has-hover ? Tokens.text : Tokens.muted;
                     }
                 }
             }

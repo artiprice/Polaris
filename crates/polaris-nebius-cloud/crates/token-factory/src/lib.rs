@@ -37,7 +37,13 @@
 
 mod client;
 mod error;
+mod hosted;
 mod sse;
+
+pub use hosted::{
+    HostedChatModel, ProviderChoice, ProviderCredentials, SelectedProvider, SkipReason,
+    SkippedProvider, hosted_client_config, select_provider,
+};
 
 pub use client::{
     ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig,

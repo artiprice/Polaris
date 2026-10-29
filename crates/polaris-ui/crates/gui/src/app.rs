@@ -43,7 +43,7 @@ pub const TRAY_DIRECTIVES: [&str; 5] = ["websearch", "subagents", "skills", "mcp
 /// What the window shows that comes from outside the UI.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppOptions {
-    /// Application version shown in the About panel.
+    /// Application version shown in the Settings panel's About section.
     pub version: String,
     /// Workspace directory shown in the Context panel and status line.
     pub workspace: String,

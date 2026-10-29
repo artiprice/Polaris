@@ -24,10 +24,12 @@
 //! writing or replacing it. The vault's encryption only protects values from accidental
 //! plaintext retention; it does not defend against an attacker executing in the same process.
 
+mod dotenv;
 mod error;
 mod source;
 mod vault;
 
+pub use dotenv::{DotenvError, DotenvSecretSource, MAX_DOTENV_BYTES};
 pub use error::{CapacityResource, SecretsError};
 pub use polaris_sdk::secrets::{EnvName, KeyringLocation, SecretLocation, SecretSource};
 pub use source::SystemSecretSource;
