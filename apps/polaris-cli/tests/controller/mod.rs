@@ -76,16 +76,129 @@ fn new_session_starts_without_a_persistent_notice() -> Result<(), crate::CliErro
 }
 
 #[test]
-fn rejected_ordinary_task_keeps_draft_with_a_short_notice() -> Result<(), Box<dyn std::error::Error>>
-{
+fn prompt_before_a_provider_is_ready_keeps_draft_with_a_short_notice()
+-> Result<(), Box<dyn std::error::Error>> {
     let mut state = state()?;
     state.composer.insert("please change a file")?;
-    let (tx, _rx) = mpsc::channel(1);
+    let (tx, mut rx) = mpsc::channel(1);
     let _quit = submit_draft(&mut state, &tx)?;
     assert_eq!(state.composer.text(), "please change a file");
     assert_eq!(
-        state.notice, "Task execution unavailable; draft retained",
-        "ordinary task rejection should state the limit concisely"
+        state.notice, "Still connecting to a model provider; draft retained",
+        "a prompt sent while connecting should state the limit concisely"
+    );
+    assert!(rx.try_recv().is_err(), "nothing is queued while connecting");
+
+    state.receive(BackendMessage::ProviderUnavailable(
+        "openrouter: credential_missing".to_owned(),
+    ))?;
+    let _quit = submit_draft(&mut state, &tx)?;
+    assert_eq!(state.composer.text(), "please change a file");
+    assert!(
+        state.notice.contains("credential_missing"),
+        "{}",
+        state.notice
+    );
+    assert!(
+        rx.try_recv().is_err(),
+        "nothing is queued without a provider"
+    );
+    Ok(())
+}
+
+#[test]
+fn prompt_with_a_provider_streams_one_reply_and_a_work_summary()
+-> Result<(), Box<dyn std::error::Error>> {
+    use crate::session::ChatProgress;
+    let mut state = state()?;
+    state.receive(BackendMessage::ProviderReady {
+        provider: "openrouter",
+        model: "nvidia/nemotron-test".to_owned(),
+        skipped: Vec::new(),
+    })?;
+    assert_eq!(state.profile_label(), "openrouter");
+    assert_eq!(state.view().model.as_str(), "nvidia/nemotron-test");
+    state.composer.insert("explain the parser")?;
+    let (tx, mut rx) = mpsc::channel(1);
+    let _quit = submit_draft(&mut state, &tx)?;
+    match rx.try_recv() {
+        Ok(BackendRequest::Prompt { text, .. }) => assert_eq!(text, "explain the parser"),
+        other => return Err(format!("expected a prompt request, got {other:?}").into()),
+    }
+    state.receive(BackendMessage::PromptAccepted)?;
+    assert!(
+        state.composer.is_empty(),
+        "accepted prompt leaves the composer"
+    );
+    assert!(state.turn.is_some());
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Request))?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Text(
+        "Let me look.".to_owned(),
+    )))?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Request))?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Text(
+        "The parser ".to_owned(),
+    )))?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Text(
+        "is LL(1).".to_owned(),
+    )))?;
+    state.receive(BackendMessage::TurnFinished(super::TurnReport {
+        answer: Some("The parser is LL(1).".to_owned()),
+        attempts: 2,
+        tool_rounds: 1,
+        stop: "Completed".to_owned(),
+        elapsed: std::time::Duration::from_secs(3),
+    }))?;
+    assert!(state.turn.is_none());
+    let texts: Vec<&str> = state
+        .view()
+        .conversation
+        .iter()
+        .map(|entry| entry.text.as_str())
+        .collect();
+    assert_eq!(
+        texts,
+        [
+            "Let me look.\n\nThe parser is LL(1).",
+            "Worked for 3s · 2 requests · 1 tool round"
+        ]
+    );
+    Ok(())
+}
+
+#[test]
+fn escape_interrupts_a_running_turn() -> Result<(), Box<dyn std::error::Error>> {
+    let mut state = state()?;
+    state.receive(BackendMessage::ProviderReady {
+        provider: "local",
+        model: "llama".to_owned(),
+        skipped: vec!["openrouter: credential_missing".to_owned()],
+    })?;
+    assert!(
+        state.notice.contains("skipped openrouter"),
+        "{}",
+        state.notice
+    );
+    state.receive(BackendMessage::PromptAccepted)?;
+    let (tx, mut rx) = mpsc::channel(1);
+    let mut area = Rect::new(0, 0, 80, 24);
+    let _outcome = handle_input(
+        &mut state,
+        NormalizedInput::Key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)),
+        &tx,
+        &mut area,
+        &RenderOptions::default(),
+    )?;
+    assert!(matches!(rx.try_recv(), Ok(BackendRequest::CancelTurn)));
+    state.receive(BackendMessage::TurnFailed("Interrupted".to_owned()))?;
+    assert!(state.turn.is_none());
+    assert_eq!(
+        state
+            .view()
+            .conversation
+            .last()
+            .map(|entry| entry.text.as_str()),
+        Some("Interrupted")
     );
     Ok(())
 }

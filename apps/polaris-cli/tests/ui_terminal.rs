@@ -26,6 +26,8 @@ struct PtySession {
     receiver: Receiver<ReadMessage>,
     bytes: Vec<u8>,
     cursor_query_answered: bool,
+    /// Private home of the child, removed with the session.
+    _home: Option<tempfile::TempDir>,
 }
 
 impl PtySession {
@@ -94,13 +96,16 @@ impl PtySession {
             command.arg(initial);
         }
         command.env("TERM", "xterm-256color");
+        let home = isolate_home(&mut command)?;
         if auto_color {
             command.env_remove("NO_COLOR");
             command.env_remove("COLORTERM");
         } else {
             command.env("NO_COLOR", "1");
         }
-        Self::spawn_command(command)
+        let mut session = Self::spawn_command(command)?;
+        session._home = Some(home);
+        Ok(session)
     }
 
     fn spawn_native_probe(test_name: &str, child_marker: &str) -> TestResult<Self> {
@@ -164,6 +169,7 @@ impl PtySession {
             receiver,
             bytes: Vec::new(),
             cursor_query_answered: false,
+            _home: None,
         })
     }
 
@@ -582,6 +588,18 @@ fn terminal_parser_observes_autowrap_and_erase_characters() -> TestResult<()> {
         "CSI X left an obsolete glyph",
     )?;
     Ok(())
+}
+
+/// Point the child's home at a private directory and drop provider keys, so a developer's
+/// `~/.polaris` configuration, `.env` and keys never change what these tests observe.
+fn isolate_home(command: &mut CommandBuilder) -> TestResult<tempfile::TempDir> {
+    let home = tempfile::tempdir()?;
+    command.env("USERPROFILE", home.path());
+    command.env("HOME", home.path());
+    for key in ["NEBIUS_API_KEY", "OPENROUTER_API_KEY"] {
+        command.env_remove(key);
+    }
+    Ok(home)
 }
 
 fn deadline_after(duration: Duration) -> TestResult<Instant> {
@@ -1325,6 +1343,198 @@ fn native_conpty_mouse_click_selects_demo_profile() -> TestResult<()> {
     pty.wait_for_text("Demo", Duration::from_secs(5))?;
     click_visible_label(&mut pty, "Demo · scripted UI")?;
     pty.wait_for_text("DEMO", Duration::from_secs(5))?;
+    exit_with_quit(&mut pty)?;
+    Ok(())
+}
+
+/// Loopback OpenAI-compatible provider: lists one model and streams a fixed reply.
+struct FakeProvider {
+    port: u16,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    thread: Option<thread::JoinHandle<Vec<String>>>,
+}
+
+impl FakeProvider {
+    const MODEL: &'static str = "fake-model";
+
+    fn start(reply: &'static str) -> TestResult<Self> {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")?;
+        listener.set_nonblocking(true)?;
+        let port = listener.local_addr()?.port();
+        let stop = std::sync::Arc::new(AtomicBool::new(false));
+        let flag = std::sync::Arc::clone(&stop);
+        let thread = thread::Builder::new()
+            .name("fake-provider".to_owned())
+            .spawn(move || {
+                let mut requests = Vec::new();
+                while !flag.load(Ordering::Acquire) {
+                    match listener.accept() {
+                        Ok((stream, _)) => {
+                            if let Some(request) = Self::serve(stream, reply) {
+                                requests.push(request);
+                            }
+                        }
+                        Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                            thread::sleep(Duration::from_millis(10));
+                        }
+                        Err(_) => break,
+                    }
+                }
+                requests
+            })?;
+        Ok(Self {
+            port,
+            stop,
+            thread: Some(thread),
+        })
+    }
+
+    fn base_url(&self) -> String {
+        format!("http://127.0.0.1:{}/v1/", self.port)
+    }
+
+    /// Answer one request; returns its head and body for later assertions.
+    fn serve(mut stream: std::net::TcpStream, reply: &str) -> Option<String> {
+        stream.set_nonblocking(false).ok()?;
+        stream.set_read_timeout(Some(Duration::from_secs(5))).ok()?;
+        let mut request = Vec::new();
+        let mut buffer = [0_u8; 8192];
+        let body_start = loop {
+            let read = stream.read(&mut buffer).ok()?;
+            if read == 0 {
+                return None;
+            }
+            request.extend_from_slice(buffer.get(..read)?);
+            if let Some(at) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                break at + 4;
+            }
+        };
+        let head = String::from_utf8_lossy(request.get(..body_start)?).to_ascii_lowercase();
+        let length = head
+            .lines()
+            .find_map(|line| line.strip_prefix("content-length:"))
+            .and_then(|value| value.trim().parse::<usize>().ok())
+            .unwrap_or(0);
+        while request.len() < body_start + length {
+            let read = stream.read(&mut buffer).ok()?;
+            if read == 0 {
+                break;
+            }
+            request.extend_from_slice(buffer.get(..read)?);
+        }
+        let text = String::from_utf8_lossy(&request).into_owned();
+        let response = if text.starts_with("GET ") {
+            let body = format!(
+                "{{\"object\":\"list\",\"data\":[{{\"id\":\"{}\",\"object\":\"model\"}}]}}",
+                Self::MODEL
+            );
+            format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            )
+        } else {
+            let (first, rest) = reply.split_at(reply.len() / 2);
+            let chunk = |delta: &str| {
+                format!(
+                    "data: {{\"id\":\"c1\",\"choices\":[{{\"index\":0,\"delta\":{{\"role\":\"assistant\",\"content\":\"{delta}\"}},\"finish_reason\":null}}]}}\n\n"
+                )
+            };
+            format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\nconnection: close\r\n\r\n{}{}data: {{\"id\":\"c1\",\"choices\":[{{\"index\":0,\"delta\":{{}},\"finish_reason\":\"stop\"}}],\"usage\":{{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18}}}}\n\ndata: [DONE]\n\n",
+                chunk(first),
+                chunk(rest)
+            )
+        };
+        stream.write_all(response.as_bytes()).ok()?;
+        let _flushed = stream.flush();
+        Some(text)
+    }
+
+    fn finish(mut self) -> TestResult<Vec<String>> {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+        self.thread
+            .take()
+            .ok_or("fake provider already stopped")?
+            .join()
+            .map_err(|_| io::Error::other("fake provider panicked").into())
+    }
+}
+
+impl Drop for FakeProvider {
+    fn drop(&mut self) {
+        self.stop.store(true, std::sync::atomic::Ordering::Release);
+    }
+}
+
+#[test]
+fn prompt_streams_a_reply_from_a_loopback_provider() -> TestResult<()> {
+    let (state, workspace) = new_dirs()?;
+    let provider = FakeProvider::start("Hello from the fake model")?;
+    let mut command = CommandBuilder::new(env!("CARGO_BIN_EXE_polaris"));
+    command.arg("--state-dir");
+    command.arg(state.path());
+    command.arg("--workspace");
+    command.arg(workspace.path());
+    command.arg("--color");
+    command.arg("never");
+    command.env("TERM", "xterm-256color");
+    command.env("NO_COLOR", "1");
+    let home = isolate_home(&mut command)?;
+    command.env("POLARIS_LOCAL__BASE_URL", provider.base_url());
+    command.env("POLARIS_LOCAL__MODEL", FakeProvider::MODEL);
+    command.env("POLARIS_LOCAL__CONTEXT_WINDOW", "131072");
+    let mut pty = PtySession::spawn_command(command)?;
+    pty._home = Some(home);
+    pty.wait_for_text("[ local ]", Duration::from_secs(20))?;
+    pty.type_text("say hello")?;
+    pty.wait_for_text("say hello", Duration::from_secs(5))?;
+    pty.send(b"\r")?;
+    pty.wait_for_text("Hello from the fake model", Duration::from_secs(30))?;
+    pty.wait_for_text("Worked for", Duration::from_secs(10))?;
+    exit_with_quit(&mut pty)?;
+    let requests = provider.finish()?;
+    require(
+        requests
+            .iter()
+            .any(|request| request.starts_with("POST ") && request.contains("say hello")),
+        "the prompt reached the provider",
+    )?;
+    Ok(())
+}
+
+/// Live check against the first hosted provider configured in the repository `.env`.
+/// The workspace is synthetic: free hosted endpoints may log prompts.
+#[test]
+#[ignore = "needs network and a provider key in the repository .env"]
+fn live_provider_answers_a_workspace_question() -> TestResult<()> {
+    let (state, workspace) = new_dirs()?;
+    std::fs::write(
+        workspace.path().join("notes.txt"),
+        "The launch code word is PELICAN.\n",
+    )?;
+    let env_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.env");
+    let mut command = CommandBuilder::new(env!("CARGO_BIN_EXE_polaris"));
+    command.arg("--state-dir");
+    command.arg(state.path());
+    command.arg("--workspace");
+    command.arg(workspace.path());
+    command.arg("--color");
+    command.arg("never");
+    command.arg("--env-file");
+    command.arg(&env_file);
+    command.env("TERM", "xterm-256color");
+    command.env("NO_COLOR", "1");
+    let home = isolate_home(&mut command)?;
+    let mut pty = PtySession::spawn_command(command)?;
+    pty._home = Some(home);
+    pty.wait_for_text("[ openrouter ]", Duration::from_secs(30))?;
+    pty.type_text("Read notes.txt and tell me the code word.")?;
+    pty.send(b"\r")?;
+    pty.wait_for_text("Worked for", Duration::from_secs(240))?;
+    let screen = terminal_screen_text(&pty.bytes);
+    println!("{screen}");
+    require(screen.contains("PELICAN"), "the answer names the code word")?;
     exit_with_quit(&mut pty)?;
     Ok(())
 }

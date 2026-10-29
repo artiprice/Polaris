@@ -14,9 +14,15 @@ workspace = true
 [dependencies]
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-kernel = { workspace = true }
+polaris-config = { workspace = true }
+polaris-runtime = { workspace = true }
+polaris-security = { workspace = true }
+polaris-system-one = { workspace = true }
+polaris-nebius-cloud-token-factory = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

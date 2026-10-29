@@ -69,7 +69,8 @@ fn is_single_directive(text: &str) -> bool {
         })
 }
 
-/// One real local session and its ordered replay/live stream. It never generates model replies.
+/// One real local session and its ordered replay/live stream. Model replies come from
+/// [`crate::ChatAgent`] running on [`Self::kernel`].
 #[derive(Debug)]
 pub struct OfflineSession {
     /// Stable session selected at creation or resume.
@@ -144,6 +145,11 @@ impl OfflineSession {
     #[must_use]
     pub fn workspace(&self) -> &Path {
         &self.workspace
+    }
+    /// The session's kernel, for agent frames that must commit into this same log.
+    #[must_use]
+    pub const fn kernel(&self) -> &KernelHandle {
+        &self.handle
     }
     /// Commit exactly one directive through the signed kernel admission/verifier path.
     /// # Errors

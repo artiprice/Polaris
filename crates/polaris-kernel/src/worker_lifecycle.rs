@@ -341,7 +341,7 @@ impl<P: WorkerBootstrapPlatform> S1WorkerLifecycle<P> {
     fn advance_admission_revision(&self) -> Result<(), TaskError> {
         let _previous = self
             .admission_revision
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |current| {
                 current.checked_add(1)
             })
             .map_err(|_| TaskError::fatal("S1 admission revision exhausted"))?;
@@ -559,7 +559,7 @@ impl<P: WorkerBootstrapPlatform + 'static> S1WorkerLifecycle<P> {
             }
             let previous = self
                 .pause_counter
-                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+                .try_update(Ordering::AcqRel, Ordering::Acquire, |current| {
                     current.checked_add(1)
                 })
                 .map_err(|_| TaskError::fatal("S1 model pause epoch exhausted"))?;
@@ -596,7 +596,7 @@ impl<P: WorkerBootstrapPlatform + 'static> S1WorkerLifecycle<P> {
         }
         let previous = self
             .pause_counter
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |current| {
                 current.checked_add(1)
             })
             .map_err(|_| TaskError::fatal("S1 model pause epoch exhausted"))?;

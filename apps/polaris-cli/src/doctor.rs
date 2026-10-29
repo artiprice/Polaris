@@ -102,6 +102,35 @@ fn native(cwd: &Path, program: &str, args: &[&str], contains: Option<&str>) -> V
         ),
     }
 }
+/// Ask the default local Ollama server for its model list and look for `model`.
+fn ollama_http(model: &str) -> Value {
+    use std::io::{Read, Write};
+    const ENDPOINT: &str = "http://127.0.0.1:11434/api/tags";
+    let address = std::net::SocketAddr::from(([127, 0, 0, 1], 11434));
+    let Ok(mut stream) = std::net::TcpStream::connect_timeout(&address, Duration::from_secs(2))
+    else {
+        return observation("MISSING", "Ollama is not listening on 127.0.0.1:11434");
+    };
+    let timeouts = stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .and_then(|()| stream.set_write_timeout(Some(Duration::from_secs(5))));
+    let request = b"GET /api/tags HTTP/1.0\r\nHost: 127.0.0.1:11434\r\nConnection: close\r\n\r\n";
+    let mut response = Vec::new();
+    let exchanged = timeouts
+        .and_then(|()| stream.write_all(request))
+        .and_then(|()| stream.take(1 << 20).read_to_end(&mut response));
+    if exchanged.is_err() {
+        return observation("FAIL", "Ollama did not answer its model list request");
+    }
+    let text = String::from_utf8_lossy(&response);
+    let status_ok = text
+        .lines()
+        .next()
+        .is_some_and(|line| line.starts_with("HTTP/1.") && line.contains(" 200"));
+    let listed =
+        text.contains(&format!("\"{model}")) || text.contains(&format!("\"name\":\"{model}"));
+    json!({"status":if status_ok && listed {"PASS"} else {"FAIL"},"endpoint":ENDPOINT,"model":model,"listed":listed})
+}
 fn group(checks: Vec<Value>) -> Value {
     let pass = checks.iter().all(|check| check["status"] == "PASS");
     json!({"status":if pass{"PASS"}else{"FAIL"},"checks":checks})
@@ -144,13 +173,12 @@ fn native_probes(
     tavily: Option<&SecretRef>,
 ) -> BTreeMap<String, Value> {
     let mut probes = BTreeMap::new();
-    let commands: [(&str, &str, &[&str], Option<&str>); 10] = [
+    let commands: [(&str, &str, &[&str], Option<&str>); 9] = [
         ("win-git", "git", &["--version"], None),
         ("win-rust", "rustc", &["--version"], Some("1.99.0")),
         ("win-python", "python", &["--version"], Some("3.14")),
         ("win-protoc", "protoc", &["--version"], None),
         ("win-uv", "python", &["-m", "uv", "--version"], None),
-        ("win-ollama", "ollama", &["list"], Some("nemotron-mini")),
         ("win-cuda", "nvcc", &["--version"], None),
         (
             "win-wasm32",
@@ -176,6 +204,9 @@ fn native_probes(
             },
         );
     }
+    // The Ollama CLI writes logs relative to the probe's cleared environment (an `Ollama/`
+    // directory in the working tree), so the local server is asked over loopback HTTP instead.
+    probes.insert("win-ollama".into(), ollama_http("nemotron-mini"));
     probes.insert(
         "win-cmake-nasm".into(),
         if cfg!(windows) {

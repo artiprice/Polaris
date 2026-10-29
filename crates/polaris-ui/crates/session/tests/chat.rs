@@ -1,0 +1,179 @@
+//! Interactive chat turns on the session's own kernel with a scripted model.
+use polaris_sdk::{
+    ids::{ModelId, SessionId, TokenCount},
+    registry::{
+        ChatChunk, ChatChunkSource, ChatModel, ChatRequest, FinishReason, ModelError,
+        PromptTokenCount, PromptTokenizer,
+    },
+};
+use polaris_ui_session::{ChatAgent, ChatProgress, ChatSettings, OfflineSession};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, Mutex},
+};
+use tokio_util::sync::CancellationToken;
+
+type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+struct ScriptedModel {
+    turns: Mutex<VecDeque<Vec<ChatChunk>>>,
+    requests: Mutex<Vec<ChatRequest>>,
+}
+impl ScriptedModel {
+    fn new(turns: Vec<Vec<ChatChunk>>) -> Self {
+        Self {
+            turns: Mutex::new(turns.into()),
+            requests: Mutex::new(Vec::new()),
+        }
+    }
+    fn requests(&self) -> Vec<ChatRequest> {
+        self.requests
+            .lock()
+            .map(|requests| requests.clone())
+            .unwrap_or_default()
+    }
+}
+struct ScriptedStream(VecDeque<ChatChunk>);
+impl ChatChunkSource for ScriptedStream {
+    async fn next_chunk(&mut self) -> Option<Result<ChatChunk, ModelError>> {
+        self.0.pop_front().map(Ok)
+    }
+}
+impl ChatModel for ScriptedModel {
+    type Stream = ScriptedStream;
+    async fn stream(&self, req: ChatRequest) -> Result<Self::Stream, ModelError> {
+        if let Ok(mut requests) = self.requests.lock() {
+            requests.push(req);
+        }
+        let next = self
+            .turns
+            .lock()
+            .ok()
+            .and_then(|mut turns| turns.pop_front());
+        next.map(|chunks| ScriptedStream(chunks.into()))
+            .ok_or_else(|| ModelError::Protocol("script exhausted".to_owned()))
+    }
+}
+impl PromptTokenizer for ScriptedModel {
+    async fn count_prompt(&self, request: &ChatRequest) -> Result<PromptTokenCount, ModelError> {
+        let bytes: usize = request.messages.iter().map(|m| m.content.len()).sum();
+        Ok(PromptTokenCount {
+            input_tokens: TokenCount::new(u32::try_from(bytes).unwrap_or(u32::MAX)),
+            max_context_tokens: TokenCount::new(131_072),
+        })
+    }
+}
+
+fn text_turn(text: &str) -> Vec<ChatChunk> {
+    vec![
+        ChatChunk::Text(text.to_owned()),
+        ChatChunk::Finished(FinishReason::Stop),
+    ]
+}
+
+fn read_turn(path: &str) -> Vec<ChatChunk> {
+    vec![
+        ChatChunk::ToolCallDelta {
+            index: 0,
+            id: Some("call_1".to_owned()),
+            name: Some("read_file".to_owned()),
+            arguments_fragment: format!("{{\"path\":\"{path}\"}}"),
+        },
+        ChatChunk::Finished(FinishReason::ToolCalls),
+    ]
+}
+
+fn drain(rx: &mut tokio::sync::mpsc::Receiver<ChatProgress>) -> String {
+    let mut text = String::new();
+    while let Ok(item) = rx.try_recv() {
+        if let ChatProgress::Text(delta) = item {
+            text.push_str(&delta);
+        }
+    }
+    text
+}
+
+#[tokio::test]
+async fn consecutive_turns_share_one_frame_and_carry_the_conversation() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(workspace.path().join("notes.txt"), "the answer is 42")?;
+    let mut session =
+        OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![
+        read_turn("notes.txt"),
+        text_turn("notes.txt says 42."),
+        text_turn("Still 42."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancel = CancellationToken::new();
+
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    let first = agent
+        .turn(session.kernel(), "What is in notes.txt?", &cancel, tx)
+        .await?;
+    assert_eq!(first.answer.as_deref(), Some("notes.txt says 42."));
+    assert_eq!(first.tool_rounds, 1);
+    assert_eq!(drain(&mut rx), "notes.txt says 42.");
+
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    let second = agent
+        .turn(session.kernel(), "And now?", &cancel, tx)
+        .await?;
+    assert_eq!(second.answer.as_deref(), Some("Still 42."));
+    assert_eq!(drain(&mut rx), "Still 42.");
+    assert_eq!(agent.exchanges(), 2);
+
+    let requests = model.requests();
+    assert_eq!(requests.len(), 3);
+    let tool_result_seen = requests[1]
+        .messages
+        .iter()
+        .any(|message| message.content.contains("the answer is 42"));
+    assert!(tool_result_seen, "the read tool result reaches the model");
+    let carried = requests[2].messages.iter().any(|message| {
+        message.content.contains("What is in notes.txt?")
+            && message.content.contains("notes.txt says 42.")
+    });
+    assert!(carried, "the second turn carries the first exchange");
+    session.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn cancelled_turn_leaves_the_agent_usable() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    let mut session =
+        OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![text_turn("after cancel")]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancelled = CancellationToken::new();
+    cancelled.cancel();
+    let (tx, _rx) = tokio::sync::mpsc::channel(8);
+    let result = agent.turn(session.kernel(), "first", &cancelled, tx).await;
+    assert!(result.is_err(), "a cancelled turn reports failure");
+    let (tx, _rx) = tokio::sync::mpsc::channel(8);
+    let next = agent
+        .turn(session.kernel(), "second", &CancellationToken::new(), tx)
+        .await?;
+    assert_eq!(next.answer.as_deref(), Some("after cancel"));
+    session.close().await?;
+    Ok(())
+}

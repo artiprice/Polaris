@@ -12,10 +12,11 @@ fn doctor_installs_aws_lc_provider() -> Result<(), Box<dyn std::error::Error>> {
             "--json",
         ])
         .output()?;
+    // Doctor exits non-zero while required host setup is missing, but always reports first.
+    let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        output.status.success(),
-        "doctor failed: {}",
-        String::from_utf8_lossy(&output.stderr)
+        output.status.success() || stderr.contains("required setup prerequisites are missing"),
+        "doctor failed unexpectedly: {stderr}"
     );
     let report: serde_json::Value = serde_json::from_slice(&output.stdout)?;
     assert_eq!(

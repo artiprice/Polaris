@@ -3,7 +3,10 @@
 //! The adapter itself lives in `polaris-ui-session` so the desktop frontend shares it; this
 //! module re-exports it and maps its error into [`CliError`] without changing any message.
 use crate::CliError;
-pub use polaris_ui_session::{OfflineSession, RecordTextKind, ResolvedRecord, SessionHostError};
+pub use polaris_ui_session::{
+    ChatAgent, ChatError, ChatProgress, ChatSettings, ChatTurn, OfflineSession, RecordTextKind,
+    ResolvedRecord, SessionHostError, chat::skipped_reasons, choose_provider,
+};
 
 impl From<SessionHostError> for CliError {
     fn from(error: SessionHostError) -> Self {

@@ -9164,11 +9164,17 @@ dependencies = [
 name = "polaris-ui-session"
 version = "0.1.0-alpha"
 dependencies = [
+ "polaris-config",
  "polaris-kernel",
+ "polaris-nebius-cloud-token-factory",
+ "polaris-runtime",
  "polaris-sdk",
+ "polaris-security",
+ "polaris-system-one",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

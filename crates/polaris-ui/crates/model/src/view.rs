@@ -362,6 +362,31 @@ impl ViewState {
     pub fn push_error(&mut self, text: impl Into<String>) -> Result<(), ViewError> {
         self.push(EntryKind::Error, text)
     }
+    /// Append streamed text to the entry at `index`, keeping one response in one entry.
+    ///
+    /// # Errors
+    /// Unknown entry, conversation byte limit or allocation failure; the view is unchanged.
+    pub fn append_to_entry(&mut self, index: usize, delta: &str) -> Result<(), ViewError> {
+        let current = self.conversation_bytes()?;
+        let attempted = current
+            .checked_add(delta.len())
+            .ok_or(ViewError::AccountingOverflow)?;
+        if attempted > MAX_CONVERSATION_BYTES {
+            return Err(ViewError::ConversationBytes {
+                limit: MAX_CONVERSATION_BYTES,
+            });
+        }
+        let entry = self
+            .conversation
+            .get_mut(index)
+            .ok_or(ViewError::AccountingOverflow)?;
+        entry
+            .text
+            .try_reserve_exact(delta.len())
+            .map_err(|_| ViewError::AllocationFailed)?;
+        entry.text.push_str(delta);
+        Ok(())
+    }
     pub(crate) fn tool_metadata_bytes(&self) -> Result<usize, ViewError> {
         let base = self
             .tools
