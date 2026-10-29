@@ -125,6 +125,60 @@ fn wide_grapheme_caret_geometry_matches_composer() -> Result<(), Box<dyn Error>>
 }
 
 #[test]
+fn assistant_markdown_hides_markers_and_keeps_prose_bullets_uncolored() -> Result<(), Box<dyn Error>>
+{
+    let (mut view, composer) = fixture()?;
+    view.push_assistant(
+        "## Parser notes
+- **Bold** claim with `fn parse()`
+- second point
+keep **unclosed",
+    )?;
+    let state = ScreenState::new(&view, &composer);
+    let options = RenderOptions::default();
+    let text = dump_text(&state, &options, 80, 24)?;
+    assert!(text.contains("Parser notes"), "{text}");
+    assert!(
+        !text.contains("## Parser"),
+        "heading marker is hidden: {text}"
+    );
+    assert!(text.contains("• Bold claim with fn parse()"), "{text}");
+    assert!(text.contains("• second point"), "{text}");
+    assert!(
+        text.contains("keep **unclosed"),
+        "unmatched markers stay: {text}"
+    );
+    Ok(())
+}
+
+#[test]
+fn diff_fences_number_old_and_new_lines_from_hunk_headers() -> Result<(), Box<dyn Error>> {
+    let (mut view, composer) = fixture()?;
+    view.push_assistant(
+        "```diff
+@@ -10,3 +10,3 @@
+ context
+-old line
++new line
+ tail
+```",
+    )?;
+    let state = ScreenState::new(&view, &composer);
+    let text = dump_text(&state, &RenderOptions::default(), 80, 24)?;
+    let row = |needle: &str| {
+        text.lines()
+            .find(|line| line.contains(needle))
+            .map(str::to_owned)
+            .unwrap_or_default()
+    };
+    assert!(row("context").contains("  10   10 "), "{text}");
+    assert!(row("-old line").contains("  11      "), "{text}");
+    assert!(row("+new line").contains("       11 "), "{text}");
+    assert!(row("tail").contains("  12   12 "), "{text}");
+    Ok(())
+}
+
+#[test]
 fn untrusted_controls_and_bidi_are_inert_in_dump() -> Result<(), Box<dyn Error>> {
     let (mut view, composer) = fixture()?;
     view.push_assistant("safe \u{1b}]52;c;secret\u{7} text \u{202e}still readable")?;

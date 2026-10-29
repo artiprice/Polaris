@@ -493,7 +493,7 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "Ask anything about the workspace; the model reads files with its tools. Esc interrupts a reply."
             .to_owned(),
-        "Mention files with @path; switch models with /model or Ctrl+Up/Ctrl+Down effort. /onboarding explains setup."
+        "Mention files with @path; switch models with /model or Shift+Up/Shift+Down effort. /onboarding explains setup."
             .to_owned(),
         "Cockpit: /panel [tasks|agents|questions|review|proof|context|system|off], F4 toggle, F6 focus"
             .to_owned(),
@@ -532,6 +532,8 @@ enum BackendRequest {
     ClearChat,
     /// Continue on the provider's model for this effort.
     SetEffort(Effort),
+    /// Activity across every local session.
+    Stats,
     Sessions,
     Resume(SessionId),
 }
@@ -1000,6 +1002,22 @@ pub async fn run(
                             None
                         }
                         BackendRequest::SetEffort(effort) => Some(chat.set_effort(effort)),
+                        BackendRequest::Stats => {
+                            Some(match polaris_ui_session::list_sessions(&root, 10_000).await {
+                                Ok(rows) => {
+                                    let now = jiff::Zoned::now();
+                                    BackendMessage::Sheet {
+                                        title: "Stats".to_owned(),
+                                        lines: crate::stats::stats_lines(
+                                            &rows,
+                                            now.date(),
+                                            now.time_zone(),
+                                        ),
+                                    }
+                                }
+                                Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                            })
+                        }
                         BackendRequest::Sessions => Some(match active.list_sessions().await {
                             Ok(rows) => BackendMessage::Sheet {
                                 title: "Sessions".to_owned(),
@@ -1351,6 +1369,10 @@ struct UiState {
     transcript_selection: Option<screen::TranscriptSelection>,
     transcript_span: Option<screen::TranscriptSpanSelection>,
     provider: ProviderState,
+    /// Words in the text being copied, for the confirmation.
+    copy_words: usize,
+    /// A confirmation notice and when it disappears, unless replaced meanwhile.
+    transient_notice: Option<(Instant, String)>,
     /// The provider's model per effort, when connected.
     provider_models: Vec<(Effort, String)>,
     /// Providers skipped before the selection, with reasons.
@@ -1432,6 +1454,8 @@ impl UiState {
             transcript_selection: None,
             transcript_span: None,
             provider: ProviderState::Connecting,
+            copy_words: 0,
+            transient_notice: None,
             provider_models: Vec::new(),
             provider_skipped: Vec::new(),
             turn: None,
@@ -1940,6 +1964,7 @@ fn request_copy_text(state: &mut UiState, text: String) -> Result<(), CliError> 
         .ok_or(CliError::Unavailable("clipboard generation exhausted"))?;
     state.pending_cut = None;
     state.paste_target = None;
+    state.copy_words = text.split_whitespace().count();
     state.notice = match worker.request_copy(state.clipboard_generation, text) {
         Ok(()) => "Copying text…".to_owned(),
         Err(error) => format!("Clipboard: {error}"),
@@ -1991,7 +2016,14 @@ fn receive_clipboard_result(state: &mut UiState, result: ClipboardResult) -> boo
         {
             match result {
                 Ok(()) => {
-                    state.notice = "Text copied".to_owned();
+                    state.notice = match state.copy_words {
+                        1 => "Copied 1 word".to_owned(),
+                        words => format!("Copied {words} words"),
+                    };
+                    state.transient_notice = Some((
+                        Instant::now() + Duration::from_secs(2),
+                        state.notice.clone(),
+                    ));
                     if let Some((pending_generation, draft, range)) = state.pending_cut.take() {
                         if pending_generation == generation
                             && state.composer.text() == draft
@@ -2811,7 +2843,14 @@ fn submit_draft(
                 lines.push("Use /settings to edit CLI preferences.".to_owned());
                 open_sheet(state, "Status", lines)
             }
-            SlashCommand::Stats | SlashCommand::Usage | SlashCommand::Quota => {
+            SlashCommand::Stats => {
+                if let Err(error) = queue_request(commands, BackendRequest::Stats) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::Usage | SlashCommand::Quota => {
                 let lines = usage_lines(state);
                 open_sheet(state, "Usage", lines)
             }
@@ -4634,6 +4673,16 @@ fn terminal_loop(
             }
             if state.demo_active && state.demo.question().is_some() && state.sheet.is_none() {
                 refresh_demo_question(&mut state);
+            }
+            if let Some((until, notice)) = state.transient_notice.as_ref() {
+                if Instant::now() >= *until {
+                    if state.notice == *notice {
+                        state.notice.clear();
+                        state.layout_dirty = true;
+                        scheduler.mark_dirty();
+                    }
+                    state.transient_notice = None;
+                }
             }
             if let Some(turn) = state.turn.as_ref() {
                 let label = turn.label();

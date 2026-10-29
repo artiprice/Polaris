@@ -391,15 +391,19 @@ where
         if SystemClock.now().as_microsecond() >= self.expires_at_micros {
             return Err(ChatError::Expired);
         }
-        let goal = if self.plan {
-            compose_goal(&self.history, &format!("{PLAN_INSTRUCTION}{prompt}"))
-        } else {
-            compose_goal(&self.history, prompt)
-        };
         let map_root = self.workspace.clone();
-        let repo_map = tokio::task::spawn_blocking(move || workspace_map(&map_root))
-            .await
-            .map_err(|_| ChatError::Workspace)??;
+        let mention_text = prompt.to_owned();
+        let (repo_map, references) = tokio::task::spawn_blocking(move || {
+            workspace_map(&map_root).map(|map| (map, mention_hint(&map_root, &mention_text)))
+        })
+        .await
+        .map_err(|_| ChatError::Workspace)??;
+        let request = format!(
+            "{}{prompt}{}",
+            if self.plan { PLAN_INSTRUCTION } else { "" },
+            references.unwrap_or_default()
+        );
+        let goal = compose_goal(&self.history, &request);
         let turn_cancellation = cancellation.child_token();
         let runner = Arc::new(
             KernelToolRunner::new(
@@ -517,6 +521,44 @@ fn cut(text: &str, limit: usize) -> &str {
         end -= 1;
     }
     text.get(..end).unwrap_or_default()
+}
+
+/// Most `@` references listed for one turn.
+const MAX_MENTIONS: usize = 16;
+
+/// A note naming the workspace paths the prompt mentions with `@`, so the model reads them
+/// with its tools. Paths outside the workspace are reported as such and never resolved further.
+fn mention_hint(workspace: &Path, prompt: &str) -> Option<String> {
+    use polaris_kernel::directives::{ParseLimits, mention::Mention, parse};
+    let parsed = parse(prompt, &ParseLimits::default()).ok()?;
+    let root = workspace.canonicalize().ok()?;
+    let mut notes = Vec::new();
+    for spanned in parsed.mentions.iter().take(MAX_MENTIONS) {
+        let (path, kind) = match &spanned.value {
+            Mention::File(path) => (path, "file"),
+            Mention::Docx(path) => (path, "Word document"),
+            Mention::Pdf(path) => (path, "PDF document"),
+            Mention::Xlsx(Some(path)) | Mention::Img(Some(path)) | Mention::Scans(Some(path)) => {
+                (path, "document")
+            }
+            Mention::Xlsx(None) | Mention::Img(None) | Mention::Scans(None) => continue,
+        };
+        let shown = path.as_str().replace('\\', "/");
+        let state = match root.join(path.as_str()).canonicalize() {
+            Ok(resolved) if !resolved.starts_with(&root) => "outside the workspace; do not read",
+            Ok(resolved) if resolved.is_dir() => "directory",
+            Ok(_) => kind,
+            Err(_) => "not found",
+        };
+        notes.push(format!("`{shown}` ({state})"));
+    }
+    if notes.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "\n\nThe user referenced: {}. Read the referenced files before answering.",
+        notes.join(", ")
+    ))
 }
 
 fn read_tools(kernel: &KernelHandle) -> Result<(Vec<String>, RoleTable), ChatError> {
@@ -683,8 +725,31 @@ impl<M: PromptTokenizer> PromptTokenizer for TappedModel<M> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Exchange, MAX_GOAL_BYTES, compose_goal, cut};
+    use super::{Exchange, MAX_GOAL_BYTES, compose_goal, cut, mention_hint};
     use std::collections::VecDeque;
+
+    #[test]
+    fn mentions_name_workspace_paths_and_flag_escapes() -> Result<(), Box<dyn std::error::Error>> {
+        let outer = tempfile::tempdir()?;
+        let workspace = outer.path().join("ws");
+        std::fs::create_dir_all(workspace.join("src"))?;
+        std::fs::write(workspace.join("src/lib.rs"), "pub fn f() {}")?;
+        std::fs::write(outer.path().join("secret.txt"), "x")?;
+        let hint = mention_hint(
+            &workspace,
+            "compare @src/lib.rs with @src and @missing.rs, not @../secret.txt",
+        )
+        .ok_or("expected a hint")?;
+        assert!(hint.contains("`src/lib.rs` (file)"), "{hint}");
+        assert!(hint.contains("`src` (directory)"), "{hint}");
+        assert!(hint.contains("`missing.rs` (not found)"), "{hint}");
+        assert!(
+            hint.contains("`../secret.txt` (outside the workspace"),
+            "{hint}"
+        );
+        assert!(mention_hint(&workspace, "mail dev@example.com").is_none());
+        Ok(())
+    }
 
     #[test]
     fn goal_without_history_is_the_prompt() {
