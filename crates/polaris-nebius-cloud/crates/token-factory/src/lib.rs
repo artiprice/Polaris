@@ -42,7 +42,7 @@ mod sse;
 
 pub use hosted::{
     HostedChatModel, ProviderChoice, ProviderCredentials, SelectedProvider, SkipReason,
-    SkippedProvider, hosted_client_config, select_provider,
+    SkippedProvider, hosted_client_config, provider_model, select_provider,
 };
 
 pub use client::{

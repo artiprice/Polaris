@@ -2607,7 +2607,11 @@ mod tests {
             arguments_fragment: String::new(),
         }));
         assert!(chunks.contains(&ChatChunk::Finished(FinishReason::ToolCalls)));
-        assert!(chunks.iter().any(|chunk| matches!(chunk, ChatChunk::Usage(_))));
+        assert!(
+            chunks
+                .iter()
+                .any(|chunk| matches!(chunk, ChatChunk::Usage(_)))
+        );
         Ok(())
     }
 
@@ -2642,7 +2646,10 @@ mod tests {
         let _captured = server
             .join()
             .map_err(|_| io::Error::other("fixture server panicked"))??;
-        assert!(failed, "real content after the finish reason stays a protocol error");
+        assert!(
+            failed,
+            "real content after the finish reason stays a protocol error"
+        );
         Ok(())
     }
 

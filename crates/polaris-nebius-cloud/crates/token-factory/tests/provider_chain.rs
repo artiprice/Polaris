@@ -20,9 +20,10 @@ struct Env(BTreeMap<&'static str, &'static str>);
 impl SecretSource for Env {
     fn load(&self, location: &SecretLocation) -> Result<Option<SecretString>, SecretSourceError> {
         Ok(match location {
-            SecretLocation::Environment(name) => {
-                self.0.get(name.as_str()).map(|value| SecretString::from(*value))
-            }
+            SecretLocation::Environment(name) => self
+                .0
+                .get(name.as_str())
+                .map(|value| SecretString::from(*value)),
             SecretLocation::Keyring(_) => None,
         })
     }
@@ -74,8 +75,12 @@ async fn first_provider_with_a_key_is_selected_and_earlier_ones_are_explained() 
 async fn effort_selects_the_mapped_model() -> TestResult {
     let config = config("")?;
     let env = Env(BTreeMap::from([("OPENROUTER_API_KEY", "synthetic-key")]));
-    let choice = select_provider(&config, Effort::Max, ProviderCredentials::resolve(&config, &env))
-        .await;
+    let choice = select_provider(
+        &config,
+        Effort::Max,
+        ProviderCredentials::resolve(&config, &env),
+    )
+    .await;
     let selected = choice.selected.ok_or("expected a provider")?;
     assert_eq!(
         selected.model.model().as_str(),
@@ -118,8 +123,12 @@ async fn no_usable_provider_means_offline_with_every_reason() -> TestResult {
 async fn empty_order_is_offline_without_probing() -> TestResult {
     let config = config("[provider]\norder = []\n")?;
     let env = Env(BTreeMap::from([("OPENROUTER_API_KEY", "synthetic-key")]));
-    let choice =
-        select_provider(&config, Effort::Low, ProviderCredentials::resolve(&config, &env)).await;
+    let choice = select_provider(
+        &config,
+        Effort::Low,
+        ProviderCredentials::resolve(&config, &env),
+    )
+    .await;
     assert!(choice.selected.is_none());
     assert!(choice.skipped.is_empty());
     Ok(())
@@ -226,8 +235,12 @@ fn request(model: &str, content: &str) -> Result<ChatRequest, Box<dyn std::error
 async fn hosted_count_is_a_conservative_upper_bound() -> TestResult {
     let config = config("")?;
     let env = Env(BTreeMap::from([("OPENROUTER_API_KEY", "synthetic-key")]));
-    let choice = select_provider(&config, Effort::Medium, ProviderCredentials::resolve(&config, &env))
-        .await;
+    let choice = select_provider(
+        &config,
+        Effort::Medium,
+        ProviderCredentials::resolve(&config, &env),
+    )
+    .await;
     let model = choice.selected.ok_or("expected a provider")?.model;
     let content = "fn main() { println!(\"héllo\"); }".repeat(50);
     let count = model

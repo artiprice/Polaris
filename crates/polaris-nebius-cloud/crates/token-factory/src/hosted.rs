@@ -102,6 +102,31 @@ impl HostedChatModel {
     pub const fn max_context_tokens(&self) -> TokenCount {
         self.max_context_tokens
     }
+
+    /// The same endpoint, credential and capacity bound to another model of the provider.
+    #[must_use]
+    pub fn rebind(&self, model: ModelId) -> Self {
+        Self {
+            client: self.client.clone(),
+            model,
+            max_context_tokens: self.max_context_tokens,
+        }
+    }
+}
+
+/// The model `provider` serves for `effort`: the provider's effort table, or the single
+/// configured local model.
+#[must_use]
+pub fn provider_model(
+    config: &PolarisConfig,
+    provider: ProviderName,
+    effort: Effort,
+) -> Option<&ModelId> {
+    match provider {
+        ProviderName::TokenFactory => Some(config.nebius.effort.model(effort)),
+        ProviderName::OpenRouter => Some(config.openrouter.effort.model(effort)),
+        ProviderName::Local => config.local.model.as_ref(),
+    }
 }
 
 impl ChatModel for HostedChatModel {
@@ -298,7 +323,8 @@ async fn local(config: &PolarisConfig) -> Result<HostedChatModel, SkipReason> {
         .model
         .as_ref()
         .ok_or(SkipReason::NotConfigured)?;
-    let base = BaseUrl::parse(&config.local.base_url).map_err(|_| SkipReason::InvalidConfiguration)?;
+    let base =
+        BaseUrl::parse(&config.local.base_url).map_err(|_| SkipReason::InvalidConfiguration)?;
     let probe = TokenFactoryClient::anonymous_loopback(base.clone(), probe_client_config())
         .map_err(|_| SkipReason::InvalidConfiguration)?;
     let served = probe

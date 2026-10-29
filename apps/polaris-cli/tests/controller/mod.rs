@@ -61,7 +61,7 @@ fn unavailable_action_notice_survives_navigation_until_an_edit()
         &mut area,
         &options,
     )?;
-    assert!(state.notice.contains("Mode preference changed"));
+    assert!(state.notice.contains("Plan mode"), "{}", state.notice);
     Ok(())
 }
 
@@ -114,6 +114,17 @@ fn prompt_with_a_provider_streams_one_reply_and_a_work_summary()
     state.receive(BackendMessage::ProviderReady {
         provider: "openrouter",
         model: "nvidia/nemotron-test".to_owned(),
+        effort: polaris_sdk::effort::Effort::Medium,
+        models: vec![
+            (
+                polaris_sdk::effort::Effort::Medium,
+                "nvidia/nemotron-test".to_owned(),
+            ),
+            (
+                polaris_sdk::effort::Effort::High,
+                "nvidia/nemotron-ultra".to_owned(),
+            ),
+        ],
         skipped: Vec::new(),
     })?;
     assert_eq!(state.profile_label(), "openrouter");
@@ -163,6 +174,18 @@ fn prompt_with_a_provider_streams_one_reply_and_a_work_summary()
             "Worked for 3s · 2 requests · 1 tool round"
         ]
     );
+    state.composer.insert("/model nvidia/nemotron-ultra")?;
+    let _quit = submit_draft(&mut state, &tx)?;
+    assert!(matches!(
+        rx.try_recv(),
+        Ok(BackendRequest::SetEffort(polaris_sdk::effort::Effort::High))
+    ));
+    state.receive(BackendMessage::ModelSwitched {
+        model: "nvidia/nemotron-ultra".to_owned(),
+        effort: polaris_sdk::effort::Effort::High,
+    })?;
+    assert_eq!(state.view().model.as_str(), "nvidia/nemotron-ultra");
+    assert_eq!(state.view().effort, polaris_sdk::effort::Effort::High);
     Ok(())
 }
 
@@ -172,6 +195,8 @@ fn escape_interrupts_a_running_turn() -> Result<(), Box<dyn std::error::Error>> 
     state.receive(BackendMessage::ProviderReady {
         provider: "local",
         model: "llama".to_owned(),
+        effort: polaris_sdk::effort::Effort::Medium,
+        models: Vec::new(),
         skipped: vec!["openrouter: credential_missing".to_owned()],
     })?;
     assert!(

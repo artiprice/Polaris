@@ -685,11 +685,11 @@ fn slash_menu_opens_help_and_escape_returns_to_editor() -> TestResult<()> {
     pty.type_text("hel")?;
     pty.wait_for_text("/help", Duration::from_secs(5))?;
     pty.send(b"\t\r")?;
-    pty.wait_for_text("Offline: /help /status", Duration::from_secs(5))?;
+    pty.wait_for_text("Commands: /help /status", Duration::from_secs(5))?;
     pty.send(b"\x1b")?;
     pty.drain_for(Duration::from_millis(150))?;
     require(
-        !contains_visible_text(&pty.bytes, "Offline: /help /status"),
+        !contains_visible_text(&pty.bytes, "Commands: /help /status"),
         "Escape left the help sheet visible",
     )?;
     exit_with_quit(&mut pty)?;
@@ -1304,7 +1304,7 @@ fn profile_picker_switches_between_offline_and_demo_and_ignores_hover_bytes() ->
     )?;
 
     pty.send(b"\x1b[15~")?;
-    pty.wait_for_text("Offline", Duration::from_secs(5))?;
+    pty.wait_for_text("Live", Duration::from_secs(5))?;
     pty.send(b"\x1b[A\r")?;
     pty.wait_for_text("[ offline ]", Duration::from_secs(5))?;
     exit_with_quit(&mut pty)?;

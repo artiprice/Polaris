@@ -177,3 +177,61 @@ async fn cancelled_turn_leaves_the_agent_usable() -> TestResult {
     session.close().await?;
     Ok(())
 }
+
+#[tokio::test]
+async fn switching_models_keeps_the_conversation_on_the_same_root() -> TestResult {
+    use polaris_sdk::effort::Effort;
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    let mut session =
+        OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let first = Arc::new(ScriptedModel::new(vec![text_turn("from the first model")]));
+    let second = Arc::new(ScriptedModel::new(vec![
+        text_turn("from the second model"),
+        text_turn("still the second model"),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("first-model")?,
+        Arc::clone(&first),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancel = CancellationToken::new();
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    agent.turn(session.kernel(), "one", &cancel, tx).await?;
+    agent.switch_model(
+        ModelId::new("second-model")?,
+        Arc::clone(&second),
+        65_536,
+        Effort::High,
+    )?;
+    assert_eq!(agent.model_id().as_str(), "second-model");
+    assert_eq!(agent.effort(), Effort::High);
+    for prompt in ["two", "three"] {
+        let (tx, _rx) = tokio::sync::mpsc::channel(64);
+        let turn = agent.turn(session.kernel(), prompt, &cancel, tx).await?;
+        assert!(
+            turn.answer
+                .is_some_and(|answer| answer.contains("second model"))
+        );
+    }
+    let requests = second.requests();
+    assert_eq!(requests.len(), 2);
+    assert!(
+        requests[0]
+            .messages
+            .iter()
+            .any(|message| message.content.contains("from the first model")),
+        "the switched model sees the earlier exchange"
+    );
+    assert!(
+        requests
+            .iter()
+            .all(|request| request.model.as_str() == "second-model")
+    );
+    session.close().await?;
+    Ok(())
+}
