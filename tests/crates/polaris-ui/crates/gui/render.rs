@@ -226,6 +226,36 @@ fn main() {
         settle();
         let usage = draw(&window, stride)?.ok_or("usage did not redraw")?;
         write_ppm(&dir.join("session-usage.ppm"), &usage)?;
+
+        // A change waiting for a decision: the diff in the conversation, the bar above the composer.
+        ui.set_usage_open(false);
+        event_tx.send(BackendEvent::ReplyStarted)?;
+        event_tx.send(BackendEvent::Review {
+            request_id: String::from("r1"),
+            prompt: String::from(
+                "Change `crates/polaris-ui/src/lib.rs`?
+
+The semantic safety check is not available.
+
+```diff
+--- a/crates/polaris-ui/src/lib.rs
++++ b/crates/polaris-ui/src/lib.rs
+@@ -1,3 +1,3 @@
+ //! Polaris UI facade.
+-pub fn version() -> &'static str { \"0.1\" }
++pub fn version() -> &'static str { env!(\"CARGO_PKG_VERSION\") }
+ pub use polaris_ui_model as model;
+```",
+            ),
+        })?;
+        wiring.pump(&ui);
+        settle();
+        assert_eq!(
+            ui.get_review_title().as_str(),
+            "Change crates/polaris-ui/src/lib.rs?"
+        );
+        let review = draw(&window, stride)?.ok_or("review did not redraw")?;
+        write_ppm(&dir.join("session-review.ppm"), &review)?;
     }
     Ok(())
 }

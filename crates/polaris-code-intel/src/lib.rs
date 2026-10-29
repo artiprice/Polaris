@@ -49,8 +49,8 @@ pub use graph::SymbolGraph;
 pub use lang::{Lang, detect_lang};
 pub use merge::{MergeOutcome, merge3};
 pub use metrics::{
-    MetricsConfig, MutationMetrics, cyclomatic_complexity, metrics, metrics_with,
-    subtree_fingerprints,
+    MetricsConfig, MutationMetrics, churn_lines, cyclomatic_complexity, metrics, metrics_with,
+    review_diff, subtree_fingerprints,
 };
 pub use parse::{ByteSpan, ParseLimits, Parsed, ParserPool};
 pub use repomap::{RankedFile, RepoMap, RepoMapBudget, RepoMapVersion, rank_files, repo_map};

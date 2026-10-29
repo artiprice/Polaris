@@ -3,7 +3,8 @@
 //! Native desktop GUI built with Slint: the welcome screen and the session view of
 //! [`polaris_ui_gui`], backed by an embedded kernel session ([`bridge`]). Sending records the
 //! message (or `$directive`) in the local session store shared with the terminal app; typed
-//! messages are answered by the same provider chain and read-only agent as the terminal
+//! messages are answered by the same provider chain and agent as the terminal, and file changes
+//! wait for a decision in the review bar
 //! (provider keys from `--env-file` or `~/.polaris/.env`). `--connect` to the daemon (P9) is not
 //! available yet.
 //!

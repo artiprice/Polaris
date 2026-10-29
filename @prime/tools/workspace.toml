@@ -1948,7 +1948,7 @@ summary = "Frontend-neutral offline session host over the real local kernel, reg
 deps = ["polaris-sdk", "polaris-kernel", "polaris-config", "polaris-runtime", "polaris-security", "polaris-system-one", "polaris-nebius-cloud-token-factory", "polaris-ui-model"]
 ext = ["tokio", "tokio-util", "thiserror", "jiff"]
 responsibilities = [
-  "Run interactive read-only chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas for the frontend.",
+  "Run interactive chat turns on the session's own kernel: one root frame per session, a provider chosen once from the configured chain, live text deltas, and file changes that wait for the person's review (plan mode is read-only).",
   "Open or resume one durable local session and stream its ordered committed records with bounded, validated text for directives and typed user input.",
   "Route a submitted line to the signed directive path or to typed user input recording, without any model execution.",
   "Answer session list, existence and history-search queries directly from the registry without starting a kernel.",

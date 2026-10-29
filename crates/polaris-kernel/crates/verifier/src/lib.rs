@@ -25,7 +25,8 @@ pub use frame_cancellation::{
 pub use human::{HumanRequestVerifier, HumanRequestVerifierError};
 pub use local::{LocalDirectiveVerifier, LocalVerificationError};
 pub use verify::{
-    ApprovalReason, ApprovedMutation, HybridMutationVerifier, InputField, MAX_DIFF_BYTES,
-    MAX_EVIDENCE_BYTES, MAX_INTENT_BYTES, MAX_SOURCE_BYTES, MAX_TARGET_BYTES, MAX_TOKEN_BYTES,
-    Metric, MutationRequest, Rejection, VerificationDecision, VerifierConfig, VerifierError,
+    ApprovalReason, ApprovedMutation, HumanApproval, HybridMutationVerifier, InputField,
+    MAX_DIFF_BYTES, MAX_EVIDENCE_BYTES, MAX_INTENT_BYTES, MAX_SOURCE_BYTES, MAX_TARGET_BYTES,
+    MAX_TOKEN_BYTES, Metric, MutationRequest, Rejection, VerificationDecision, VerifierConfig,
+    VerifierError,
 };

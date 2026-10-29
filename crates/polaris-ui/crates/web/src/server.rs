@@ -183,6 +183,7 @@ fn router(state: AppState) -> Router {
         .route("/api/interrupt", post(interrupt))
         .route("/api/effort", post(effort))
         .route("/api/close", post(close))
+        .route("/api/review", post(review))
         .with_state(state)
 }
 
@@ -407,6 +408,44 @@ async fn submit(
         Command::Submit {
             text: body.text,
             plan: body.plan,
+        },
+    )
+    .await
+}
+
+/// Longest note accepted with a decision.
+const MAX_NOTE_BYTES: usize = 4096;
+
+#[derive(Deserialize)]
+struct ReviewBody {
+    request_id: String,
+    apply: bool,
+    #[serde(default)]
+    note: Option<String>,
+}
+
+async fn review(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(body): Json<ReviewBody>,
+) -> StatusCode {
+    if let Err(status) = authorize(&state, &headers, None) {
+        return status;
+    }
+    if body.request_id.len() > 64
+        || body
+            .note
+            .as_ref()
+            .is_some_and(|note| note.len() > MAX_NOTE_BYTES)
+    {
+        return StatusCode::UNPROCESSABLE_ENTITY;
+    }
+    send(
+        &state,
+        Command::Review {
+            request_id: body.request_id,
+            apply: body.apply,
+            note: body.note,
         },
     )
     .await

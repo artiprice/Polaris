@@ -2108,3 +2108,212 @@ async fn production_verifier_accepts_real_mutation_and_rejects_forged_link() -> 
     fixture.kernel.shutdown().await?;
     Ok(())
 }
+
+impl Fixture {
+    /// Swap in a runner that puts escalated changes to the host as review questions.
+    fn review_changes(&mut self) -> TestResult {
+        self.runner = Arc::new(
+            KernelAgentToolRunner::new(
+                self.kernel.clone(),
+                self.frame.tool_binding(),
+                self.authority.public_key(),
+                Arc::new(SyntheticSafety),
+                FrameMutationConfig {
+                    verifier: VerifierConfig::default(),
+                    intent: "scripted fixture task".into(),
+                    cancellation: self.cancel.clone(),
+                },
+            )?
+            .with_change_review(),
+        );
+        Ok(())
+    }
+}
+
+fn review_answer(
+    question: &polaris_sdk::human::HumanQuestion,
+    option: &str,
+    notes: Option<&str>,
+) -> TestResult<Vec<HumanQuestionAnswer>> {
+    Ok(vec![HumanQuestionAnswer {
+        question_id: question.id.clone(),
+        response: HumanResponse::Single {
+            selection: polaris_sdk::human::HumanSelection::Option(
+                polaris_sdk::human::HumanOptionId::new(option)?,
+            ),
+        },
+        notes: notes.map(str::to_owned),
+    }])
+}
+
+#[tokio::test]
+async fn escalated_change_waits_for_review_then_applies_with_human_evidence() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let mut fixture = Fixture::new(&[Right::Read, Right::ProposeDiff, Right::ExecuteTool]).await?;
+    fixture.review_changes()?;
+    let model = Arc::new(ScriptModel::new(vec![
+        call(
+            "write_file",
+            "write-notes",
+            json!({"path":"notes.md","contents":"# Notes\n\nhello\n","expected_base":null}),
+        ),
+        vec![
+            ChatChunk::Text("Written.".into()),
+            ChatChunk::Finished(FinishReason::Stop),
+        ],
+    ]));
+    let assembler = fixture.assembler(Arc::clone(&model)).await?;
+    let journal = fixture.journal()?;
+    let host = fixture.kernel.clone();
+    let notes = fixture.workspace.path().join("notes.md");
+    let answer = async {
+        let request = pending(&host).await?;
+        let question = request.request.questions.first().ok_or("no question")?;
+        assert!(
+            question
+                .id
+                .as_str()
+                .starts_with(polaris_kernel::CHANGE_REVIEW_PREFIX)
+        );
+        assert!(
+            question.prompt.starts_with("Create `notes.md`?")
+                && question.prompt.contains("```diff")
+                && question.prompt.contains("+hello"),
+            "{}",
+            question.prompt
+        );
+        assert!(!notes.exists(), "nothing is written before the answer");
+        host.answer_human_request(
+            request.ticket.request_id,
+            request.ticket.revision,
+            review_answer(question, polaris_kernel::CHANGE_REVIEW_APPLY, None)?,
+        )
+        .await?;
+        Ok::<_, Box<dyn std::error::Error>>(())
+    };
+    let source = ActualSourceVerifier(fixture.workspace.path().join("sample.rs"));
+    let run = assembler.run_frame(
+        FrameRunInput {
+            frame: &mut fixture.frame,
+            goal: "Write the notes.",
+            cancellation: &fixture.cancel,
+            limits: limits(),
+        },
+        &source,
+        &journal,
+    );
+    let (outcome, answered) = tokio::join!(run, answer);
+    answered?;
+    assert_eq!(outcome?.stop, FrameRunStop::ModelTurnComplete);
+    assert_eq!(std::fs::read(&notes)?, b"# Notes\n\nhello\n");
+
+    let records = fixture
+        .kernel
+        .context()
+        .records(Seq::new(1), Seq::new(u64::MAX))?;
+    let result = records
+        .iter()
+        .find_map(|r| match r.event() {
+            Event::FrameToolResultRecorded { result, .. } => Some(*result),
+            _ => None,
+        })
+        .ok_or("no recorded tool result")?;
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let envelope: serde_json::Value =
+        serde_json::from_slice(&store.get(&result)?.ok_or("missing envelope")?)?;
+    let content_cid: Cid = serde_json::from_value(envelope["content"].clone())?;
+    let content = String::from_utf8(store.get(&content_cid)?.ok_or("missing content")?)?;
+    let value: serde_json::Value = serde_json::from_str(&content)?;
+    assert_eq!(value["status"], "applied", "{value}");
+    let approval: Cid = serde_json::from_value(value["approval"].clone())?;
+    let evidence: serde_json::Value =
+        serde_json::from_slice(&store.get(&approval)?.ok_or("missing evidence")?)?;
+    assert_eq!(evidence["safety_result"], "human_approved");
+    assert_eq!(evidence["analysis"], "text");
+
+    let verifier = polaris_kernel::KernelFrameVerifier::new(
+        fixture.kernel.clone(),
+        fixture.frame.tool_binding(),
+    )?;
+    let step = StepTool {
+        reasoning: String::new(),
+        finish_reason: FinishReason::ToolCalls,
+        text: String::new(),
+        tool_results: vec![polaris_runtime::frames::ExecutedToolResult {
+            tool_call_id: "write-notes".into(),
+            result: polaris_runtime::frames::ToolResultRef {
+                cid: result,
+                content_cid,
+                content,
+            },
+        }],
+    };
+    let verified = verifier.verify_step(&fixture.frame.view(), &step).await?;
+    assert_eq!(verified.verified_diffs().len(), 1);
+    fixture.kernel.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn declined_change_writes_nothing_and_returns_the_reason_to_the_model() -> TestResult {
+    let mut fixture = Fixture::new(&[Right::Read, Right::ProposeDiff, Right::ExecuteTool]).await?;
+    fixture.review_changes()?;
+    let model = Arc::new(ScriptModel::new(vec![
+        call(
+            "write_file",
+            "write-notes",
+            json!({"path":"notes.md","contents":"hello\n","expected_base":null}),
+        ),
+        vec![
+            ChatChunk::Text("Understood.".into()),
+            ChatChunk::Finished(FinishReason::Stop),
+        ],
+    ]));
+    let assembler = fixture.assembler(Arc::clone(&model)).await?;
+    let journal = fixture.journal()?;
+    let host = fixture.kernel.clone();
+    let answer = async {
+        let request = pending(&host).await?;
+        let question = request.request.questions.first().ok_or("no question")?;
+        host.answer_human_request(
+            request.ticket.request_id,
+            request.ticket.revision,
+            review_answer(
+                question,
+                polaris_kernel::CHANGE_REVIEW_DECLINE,
+                Some("Name it TODO.md instead."),
+            )?,
+        )
+        .await?;
+        Ok::<_, Box<dyn std::error::Error>>(())
+    };
+    let source = ActualSourceVerifier(fixture.workspace.path().join("sample.rs"));
+    let run = assembler.run_frame(
+        FrameRunInput {
+            frame: &mut fixture.frame,
+            goal: "Write the notes.",
+            cancellation: &fixture.cancel,
+            limits: limits(),
+        },
+        &source,
+        &journal,
+    );
+    let (outcome, answered) = tokio::join!(run, answer);
+    answered?;
+    assert_eq!(outcome?.stop, FrameRunStop::ModelTurnComplete);
+    assert!(!fixture.workspace.path().join("notes.md").exists());
+    {
+        let requests = model
+            .requests
+            .lock()
+            .map_err(|_| "model requests poisoned")?;
+        let last = requests.last().ok_or("missing continuation prompt")?;
+        assert!(
+            last.messages.iter().any(|m| m.content.contains("declined")
+                && m.content.contains("Name it TODO.md instead.")),
+            "the decline and the note must reach the model"
+        );
+    }
+    fixture.kernel.shutdown().await?;
+    Ok(())
+}

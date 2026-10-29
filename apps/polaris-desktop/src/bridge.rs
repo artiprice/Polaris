@@ -1,7 +1,7 @@
 //! Kernel bridge: implements the window's [`polaris_ui_gui::backend`] contract over an offline
 //! kernel session ([`polaris_ui_session::OfflineSession`]) and, when chat is enabled, answers typed
 //! messages through the shared [`polaris_ui_session::ConversationHost`] (the same provider chain
-//! and read-only agent the terminal uses).
+//! and agent the terminal uses; file changes wait for the review bar).
 //!
 //! One background thread owns a tokio runtime. Requests arrive on a std channel (forwarded into
 //! the runtime by a blocking task); one loop selects over requests and the open session's record
@@ -17,8 +17,9 @@ use polaris_ui_gui::backend::{
     BackendEvent, BackendLink, BackendRequest, MessageKind, SearchHit, SessionSummary,
 };
 use polaris_ui_session::{
-    ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind, SessionHostError,
-    SessionMeta, is_single_directive, list_sessions, records_until_own_input, search_history,
+    ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind,
+    SessionHostError, SessionMeta, answer_review, is_single_directive, list_sessions,
+    records_until_own_input, search_history,
 };
 
 use crate::DesktopError;
@@ -138,6 +139,8 @@ struct Bridgework {
     usage: (u64, u64, u64),
     /// Plan mode of the composer (the window starts in plan mode).
     plan: bool,
+    /// Changes the running reply waits on, by request id.
+    reviews: std::collections::BTreeMap<String, ChangeReview>,
 }
 
 impl Bridgework {
@@ -284,7 +287,20 @@ impl Bridgework {
         let _sent = self.emit(event);
     }
 
-    fn host_event(&self, event: HostEvent) {
+    async fn review(&mut self, request_id: &str, apply: bool, note: Option<String>) {
+        let (Some(review), Some(session)) = (self.reviews.get(request_id), self.session.as_ref())
+        else {
+            let _sent = self.emit(BackendEvent::Failed(
+                "That change is no longer waiting for a decision.".to_owned(),
+            ));
+            return;
+        };
+        if let Err(error) = answer_review(session.kernel(), review, apply, note).await {
+            let _sent = self.emit(BackendEvent::Failed(error.to_string()));
+        }
+    }
+
+    fn host_event(&mut self, event: HostEvent) {
         let event = match event {
             HostEvent::ProviderReady {
                 provider,
@@ -302,11 +318,29 @@ impl Bridgework {
             HostEvent::Progress(ChatProgress::Text(text)) => BackendEvent::ReplyText(text),
             HostEvent::Progress(ChatProgress::Request) => BackendEvent::ReplyStep,
             HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
-            HostEvent::Finished(report) => BackendEvent::ReplyFinished {
-                summary: report.summary(),
-                answer: report.answer,
-            },
-            HostEvent::Failed(reason) => BackendEvent::ReplyFailed(reason),
+            HostEvent::Progress(ChatProgress::Review(review)) => {
+                let request_id = review.request_id.to_string();
+                let prompt = review.prompt.clone();
+                self.reviews.insert(request_id.clone(), review);
+                BackendEvent::Review { request_id, prompt }
+            }
+            HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                let request_id = id.to_string();
+                self.reviews.remove(&request_id);
+                BackendEvent::ReviewClosed(request_id)
+            }
+            HostEvent::Progress(ChatProgress::Applied(path)) => BackendEvent::Applied(path),
+            HostEvent::Finished(report) => {
+                self.reviews.clear();
+                BackendEvent::ReplyFinished {
+                    summary: report.summary(),
+                    answer: report.answer,
+                }
+            }
+            HostEvent::Failed(reason) => {
+                self.reviews.clear();
+                BackendEvent::ReplyFailed(reason)
+            }
         };
         let _sent = self.emit(event);
     }
@@ -443,6 +477,7 @@ async fn run(
         chat: chat.map(|options| ConversationHost::new(options.config, options.env_file)),
         usage: (0, 0, 0),
         plan: true,
+        reviews: std::collections::BTreeMap::new(),
     };
     if let Some(chat) = work.chat.as_mut() {
         chat.start_pick();
@@ -467,6 +502,9 @@ async fn run(
                     BackendRequest::SetEffort(effort) => work.set_effort(effort),
                     BackendRequest::Stats => work.stats().await,
                     BackendRequest::Mode { plan } => work.plan = plan,
+                    BackendRequest::Review { request_id, apply, note } => {
+                        work.review(&request_id, apply, note).await;
+                    }
                 }
             }
             next = next_record(&mut work.session) => work.record(next),

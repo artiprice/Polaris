@@ -156,4 +156,18 @@ pub const WELCOME_ROLES: &[ColorRole] = &[
         "desktop session view: user message bubble",
     ),
     local("field-bg", "#0F110E", "desktop session view: search field"),
+    local("diff-add-bg", "#2E4A1F55", "styles.css (.code .add)"),
+    local("diff-add-fg", "#9FD67A", "styles.css (.code .add)"),
+    local("diff-del-bg", "#4A1F1F55", "styles.css (.code .del)"),
+    local("diff-del-fg", "#E79C9C", "styles.css (.code .del)"),
+    local(
+        "review-bg",
+        "#16140D",
+        "desktop session view: change waiting for a decision",
+    ),
+    local(
+        "review-border",
+        "#F9E2AF40",
+        "desktop session view: change waiting for a decision",
+    ),
 ];

@@ -365,7 +365,8 @@ async fn traversal_secret_and_git_targets_are_rejected() -> TestResult {
 #[tokio::test]
 async fn mutation_diff_reconstructs_exact_missing_final_newline() -> TestResult {
     use polaris_kernel::verifier::EvidenceStore;
-    let fixture = Fixture::new(&[Right::ProposeDiff]).await?;
+    let fixture =
+        Fixture::new_with_resource(&[Right::ProposeDiff], ResourceScope::Workspace).await?;
     let service = fixture.service(SyntheticAllow)?;
     let prepared = service
         .prepare(
@@ -492,5 +493,117 @@ async fn readonly_frame_roles_cannot_construct_a_mutation_service() -> TestResul
         );
         let _report = fixture.kernel.shutdown().await?;
     }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy)]
+struct SyntheticBlock;
+
+impl MutationSafety for SyntheticBlock {
+    fn assess(
+        &self,
+        _request: &SafetyRequest<'_>,
+    ) -> impl std::future::Future<Output = Result<SafetyAssessment, VerifierError>> + Send {
+        std::future::ready(Ok(SafetyAssessment::Block {
+            findings: Vec::new(),
+        }))
+    }
+}
+
+fn synthetic_approval() -> polaris_kernel::verifier::HumanApproval {
+    polaris_kernel::verifier::HumanApproval {
+        request: Cid::from_bytes([7; 32]),
+        answer: Cid::from_bytes([8; 32]),
+    }
+}
+
+#[tokio::test]
+async fn text_target_escalates_then_applies_with_human_evidence() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let fixture =
+        Fixture::new_with_resource(&[Right::ProposeDiff], ResourceScope::Workspace).await?;
+    let service = fixture.service(SyntheticAllow)?;
+    let request = || FrameMutationRequest::WriteFile {
+        path: "notes.md".to_owned(),
+        contents: "# Notes\n\nhello\n".to_owned(),
+        expected_base: None,
+    };
+    let prepared = service.prepare(&fixture.token, request()).await?;
+    assert_eq!(prepared.path(), "notes.md");
+    assert!(prepared.old_source().is_empty());
+    let escalated = service.apply(prepared, &fixture.token).await;
+    assert!(
+        matches!(
+            escalated,
+            Err(polaris_kernel::FrameMutationError::NeedsApproval {
+                reason: polaris_kernel::verifier::ApprovalReason::UnsupportedLanguage,
+                ..
+            })
+        ),
+        "{escalated:?}"
+    );
+    assert!(!fixture.workspace.path().join("notes.md").exists());
+
+    let prepared = service.prepare(&fixture.token, request()).await?;
+    let receipt = service
+        .apply_with_human_approval(prepared, &fixture.token, synthetic_approval())
+        .await?;
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("notes.md"))?,
+        b"# Notes\n\nhello\n"
+    );
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let evidence: serde_json::Value = serde_json::from_slice(
+        &store
+            .get(&receipt.approval_evidence())?
+            .ok_or("missing approval evidence")?,
+    )?;
+    assert_eq!(evidence["schema"], 2);
+    assert_eq!(evidence["safety_result"], "human_approved");
+    assert_eq!(evidence["analysis"], "text");
+    assert_eq!(evidence["churn_lines"], 3);
+    assert_eq!(evidence["human"]["reason"], "UnsupportedLanguage");
+    assert_eq!(
+        evidence["human"]["answer"],
+        serde_json::json!(Cid::from_bytes([8; 32]))
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn human_approval_accepts_degraded_safety_but_not_a_block() -> TestResult {
+    let fixture = Fixture::new(&[Right::ProposeDiff]).await?;
+    let request = || FrameMutationRequest::WriteFile {
+        path: "base.rs".to_owned(),
+        contents: "fn after() {}\n".to_owned(),
+        expected_base: Some(polaris_storage::cas::content_id(b"fn before() {}\n")),
+    };
+    let blocking = fixture.service(SyntheticBlock)?;
+    let prepared = blocking.prepare(&fixture.token, request()).await?;
+    let blocked = blocking
+        .apply_with_human_approval(prepared, &fixture.token, synthetic_approval())
+        .await;
+    assert!(
+        matches!(
+            blocked,
+            Err(polaris_kernel::FrameMutationError::Rejected(
+                polaris_kernel::verifier::Rejection::Safety
+            ))
+        ),
+        "{blocked:?}"
+    );
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("base.rs"))?,
+        b"fn before() {}\n"
+    );
+    let degraded = fixture.service(SyntheticNeedsApproval)?;
+    let prepared = degraded.prepare(&fixture.token, request()).await?;
+    let _receipt = degraded
+        .apply_with_human_approval(prepared, &fixture.token, synthetic_approval())
+        .await?;
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("base.rs"))?,
+        b"fn after() {}\n"
+    );
     Ok(())
 }

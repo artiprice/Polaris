@@ -29,10 +29,12 @@ pub struct TurnReport {
     pub stop: String,
     /// Wall-clock duration of the turn.
     pub elapsed: Duration,
+    /// Workspace paths of the changes applied in this turn, in order, each once.
+    pub changed_files: Vec<String>,
 }
 
 impl TurnReport {
-    /// "Worked for 3s · 2 requests · 1 tool round".
+    /// "Worked for 3s · 2 requests · 1 tool round · 1 file changed".
     #[must_use]
     pub fn summary(&self) -> String {
         let requests = if self.attempts == 1 {
@@ -45,8 +47,13 @@ impl TurnReport {
             1 => " · 1 tool round".to_owned(),
             rounds => format!(" · {rounds} tool rounds"),
         };
+        let files = match self.changed_files.len() {
+            0 => String::new(),
+            1 => " · 1 file changed".to_owned(),
+            count => format!(" · {count} files changed"),
+        };
         format!(
-            "Worked for {} · {requests}{tools}",
+            "Worked for {} · {requests}{tools}{files}",
             polaris_ui_model::view::format_duration_ms(
                 u64::try_from(self.elapsed.as_millis()).unwrap_or(u64::MAX)
             )
@@ -101,6 +108,18 @@ struct RunningTurn {
     started: Instant,
     /// Deltas received while the join result was being collected.
     tail: Vec<ChatProgress>,
+    /// Paths of applied changes, in order, each once.
+    changed: Vec<String>,
+}
+
+impl RunningTurn {
+    fn note(&mut self, item: &ChatProgress) {
+        if let ChatProgress::Applied(path) = item
+            && !self.changed.contains(path)
+        {
+            self.changed.push(path.clone());
+        }
+    }
 }
 
 /// Provider selection, one session's conversation and its running turn. One conversation is
@@ -237,6 +256,7 @@ impl ConversationHost {
             progress_closed: false,
             started: Instant::now(),
             tail: Vec::new(),
+            changed: Vec::new(),
         });
         Ok(())
     }
@@ -312,7 +332,10 @@ impl ConversationHost {
             tokio::select! {
                 biased;
                 progress = turn.progress.recv(), if !turn.progress_closed => match progress {
-                    Some(item) => return HostEvent::Progress(item),
+                    Some(item) => {
+                        turn.note(&item);
+                        return HostEvent::Progress(item);
+                    }
                     None => {
                         turn.progress_closed = true;
                         (&mut turn.handle).await
@@ -325,6 +348,7 @@ impl ConversationHost {
             return std::future::pending().await;
         };
         while let Ok(item) = turn.progress.try_recv() {
+            turn.note(&item);
             turn.tail.push(item);
         }
         self.queued
@@ -339,6 +363,7 @@ impl ConversationHost {
                         tool_rounds: done.tool_rounds,
                         stop: done.stop,
                         elapsed: turn.started.elapsed(),
+                        changed_files: std::mem::take(&mut turn.changed),
                     }),
                     Err(ChatError::Cancelled) => HostEvent::Failed(INTERRUPTED.to_owned()),
                     Err(error) => HostEvent::Failed(error.to_string()),

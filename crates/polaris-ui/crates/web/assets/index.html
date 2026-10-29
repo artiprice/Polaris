@@ -61,7 +61,7 @@
         <label class="sr-only" for="composer-text">Message for Polaris</label>
         <textarea id="composer-text" rows="1" placeholder="Ask Polaris anything…" spellcheck="false"></textarea>
         <div class="composer-row">
-          <button class="mode-chip" type="button" id="mode-chip" aria-pressed="false" title="Plan mode asks for a plan before code"><span class="dot"></span><span id="mode-label">Auto</span></button>
+          <button class="mode-chip" type="button" id="mode-chip" aria-pressed="false" title="Auto: Polaris may change files and asks before each change. Plan: read-only, answers with a plan."><span class="dot"></span><span id="mode-label">Auto</span></button>
           <span class="spacer"></span>
           <button class="model-pill" type="button" data-panel="models" id="model-pill"><span id="model-label">Connecting…</span><svg class="icon" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg></button>
           <button class="send" type="submit" id="send" aria-label="Send message" disabled><svg class="icon send-icon" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></svg><svg class="icon stop-icon" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
@@ -87,7 +87,7 @@
     <label class="toggle"><input type="checkbox" id="reduce-motion"><span>Reduce motion</span></label>
     <h3>About</h3>
     <p><strong>Polaris</strong> <span class="muted" id="about-version">local web UI</span></p>
-    <p class="muted">A focused coding workspace. Replies come from the provider chain on this machine; the conversation is read-only and proposes patches.</p>
+    <p class="muted">A focused coding workspace. Replies come from the provider chain on this machine; in Auto mode each file change shows its diff and waits for your decision; Plan mode only reads.</p>
   </section>
 </div>
 </body>

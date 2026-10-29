@@ -235,3 +235,193 @@ async fn switching_models_keeps_the_conversation_on_the_same_root() -> TestResul
     session.close().await?;
     Ok(())
 }
+
+fn call_turn(id: &str, name: &str, arguments: &str) -> Vec<ChatChunk> {
+    vec![
+        ChatChunk::ToolCallDelta {
+            index: 0,
+            id: Some(id.to_owned()),
+            name: Some(name.to_owned()),
+            arguments_fragment: arguments.to_owned(),
+        },
+        ChatChunk::Finished(FinishReason::ToolCalls),
+    ]
+}
+
+/// Answers every review with `apply` and `note`; returns the applied paths and closed reviews.
+async fn review_all(
+    kernel: polaris_kernel::KernelHandle,
+    mut rx: tokio::sync::mpsc::Receiver<ChatProgress>,
+    apply: bool,
+    note: Option<&str>,
+) -> Result<(Vec<String>, Vec<String>, usize), polaris_ui_session::ChatError> {
+    let mut prompts = Vec::new();
+    let mut applied = Vec::new();
+    let mut closed = 0;
+    while let Some(item) = rx.recv().await {
+        match item {
+            ChatProgress::Review(review) => {
+                prompts.push(review.prompt.clone());
+                polaris_ui_session::answer_review(&kernel, &review, apply, note.map(str::to_owned))
+                    .await?;
+            }
+            ChatProgress::ReviewClosed(_) => closed += 1,
+            ChatProgress::Applied(path) => applied.push(path),
+            _ => {}
+        }
+    }
+    Ok((prompts, applied, closed))
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn auto_mode_change_is_reviewed_then_written() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(workspace.path().join("notes.txt"), "status: draft\n")?;
+    let session = OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let base = polaris_kernel::storage::cas::content_id(b"status: draft\n");
+    let model = Arc::new(ScriptedModel::new(vec![
+        call_turn(
+            "edit-1",
+            "edit_file",
+            &format!(
+                r#"{{"path":"notes.txt","old_text":"draft","new_text":"final","expected_base":"{base}"}}"#
+            ),
+        ),
+        text_turn("Changed notes.txt."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancel = CancellationToken::new();
+    let (tx, rx) = tokio::sync::mpsc::channel(64);
+    let reviewer = tokio::spawn(review_all(session.kernel().clone(), rx, true, None));
+    let turn = agent
+        .turn(session.kernel(), "Mark the notes final.", &cancel, tx)
+        .await?;
+    let (prompts, applied, closed) = reviewer.await.map_err(|_| "reviewer panicked")??;
+    assert_eq!(turn.answer.as_deref(), Some("Changed notes.txt."));
+    assert_eq!(
+        std::fs::read_to_string(workspace.path().join("notes.txt"))?,
+        "status: final\n"
+    );
+    assert_eq!(prompts.len(), 1);
+    assert!(
+        prompts[0].starts_with("Change `notes.txt`?")
+            && prompts[0].contains("-status: draft")
+            && prompts[0].contains("+status: final"),
+        "{}",
+        prompts[0]
+    );
+    assert_eq!(applied, vec!["notes.txt".to_owned()]);
+    assert_eq!(closed, 1);
+    let first = model.requests().into_iter().next().ok_or("no request")?;
+    assert!(
+        first
+            .tools
+            .iter()
+            .any(|tool| tool.name.as_ref() == "edit_file"),
+        "auto mode offers the edit tools"
+    );
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn plan_mode_offers_no_edit_tools() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    let session = OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![text_turn("1. Edit notes.txt.")]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    agent.set_plan_mode(true);
+    let (tx, _rx) = tokio::sync::mpsc::channel(64);
+    let _turn = agent
+        .turn(
+            session.kernel(),
+            "Plan the change.",
+            &CancellationToken::new(),
+            tx,
+        )
+        .await?;
+    let first = model.requests().into_iter().next().ok_or("no request")?;
+    assert!(
+        !first.tools.iter().any(|tool| {
+            matches!(
+                tool.name.as_ref(),
+                "edit_file" | "write_file" | "apply_patch"
+            )
+        }),
+        "plan mode is read-only"
+    );
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn declined_change_is_not_written() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    let session = OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![
+        call_turn(
+            "write-1",
+            "write_file",
+            r#"{"path":"todo.md","contents":"- ship\n","expected_base":null}"#,
+        ),
+        text_turn("Left it."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let (tx, rx) = tokio::sync::mpsc::channel(64);
+    let reviewer = tokio::spawn(review_all(
+        session.kernel().clone(),
+        rx,
+        false,
+        Some("Not now."),
+    ));
+    let _turn = agent
+        .turn(
+            session.kernel(),
+            "Add a todo file.",
+            &CancellationToken::new(),
+            tx,
+        )
+        .await?;
+    let (prompts, applied, _closed) = reviewer.await.map_err(|_| "reviewer panicked")??;
+    assert_eq!(prompts.len(), 1);
+    assert!(
+        prompts[0].starts_with("Create `todo.md`?"),
+        "{}",
+        prompts[0]
+    );
+    assert!(applied.is_empty());
+    assert!(!workspace.path().join("todo.md").exists());
+    let last = model.requests().into_iter().last().ok_or("no request")?;
+    assert!(
+        last.messages
+            .iter()
+            .any(|message| message.content.contains("Not now.")),
+        "the note reaches the model"
+    );
+    Ok(())
+}

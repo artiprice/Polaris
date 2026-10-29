@@ -35,6 +35,16 @@
 - `KernelAgentToolRunner`: ошибки аргументов, промах `old_text`, устаревшая база и отказ верификатора возвращаются модели результатом вызова `{"status":"rejected","error","hint"}` (`ok: false`), кадр не обрывается; верификатор шага принимает такие результаты без изменений файлов.
 - Осталось: `delete_file`/`move_file` (вместе с ChangeSet этапа 2), единая схема инструментов ядро = registry.
 
+### Сделано 2026-10-29 (правки из чата с одобрением человека, часть этапа 4)
+
+- **Верификатор:** `HybridMutationVerifier::verify_with_human_approval(request, HumanApproval { request, answer })`. Все детерминированные проверки (лимиты, привязка команды, подпись, Datalog, метрики) идут как раньше, `Block` от S1 по-прежнему отклоняет; принимаются только исходы «нужен человек». Доказательство — schema 2: `safety_result: human_approved`, `analysis: syntax|text`, `human { request, answer, reason }`.
+- **Текстовые файлы:** для языков без грамматики (md, toml, json, txt…) автоматический путь даёт `NeedsApproval(UnsupportedLanguage)`, путь с одобрением меряет только churn строк (`polaris_code_intel::churn_lines`).
+- **Раннер:** `KernelAgentToolRunner::with_change_review()` — на `NeedsApproval` создаёт долговременный запрос человеку (вопрос `apply-change:<hex mutation binding>`, варианты `apply`/`decline`, в тексте — минимальный дифф `polaris_code_intel::review_diff`), ждёт ответ, применяет через `apply_with_human_approval`; отказ с заметкой возвращается модели как `rejected` с текстом заметки.
+- **Проверка шага:** `frame_verification` принимает schema 2 только если ответ в CAS выбирает `apply` для вопроса этой мутации, а запрос создан и отвечен внутри того же вызова инструмента.
+- **Чат:** в режиме Auto агент получает `file_revision`/`write_file`/`edit_file`/`apply_patch`; безопасность — детерминированный префлайт S1 (сканер секретов, AST) без движка, поэтому каждая правка идёт человеку. План-режим — только чтение. `answer_review()` отвечает на запрос; прогресс хода сообщает `Review`/`ReviewClosed`/`Applied`, итог — «N files changed».
+- **UI:** карточка с диффом и решением в TUI (`y`/`n`, Enter с текстом — отказ с заметкой), десктопе (панель над композером, раскрашенный дифф) и вебе (`POST /api/review`).
+- Осталось из этапа 4: подсветка уровня fuzz в диффе, откат (`/undo`, `/rollback`) по квитанциям, одобрение набора файлов (ждёт ChangeSet этапа 2).
+
 ## 3. Целевое устройство
 
 ```

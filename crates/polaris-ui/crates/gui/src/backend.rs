@@ -43,6 +43,15 @@ pub enum BackendRequest {
         /// Plan mode.
         plan: bool,
     },
+    /// Apply or decline the change the reply waits on.
+    Review {
+        /// Request id from [`BackendEvent::Review`].
+        request_id: String,
+        /// Write the change.
+        apply: bool,
+        /// Note for the model, sent with a decline.
+        note: Option<String>,
+    },
 }
 
 /// How a committed message entered the session.
@@ -161,6 +170,17 @@ pub enum BackendEvent {
     },
     /// The reply failed or was interrupted.
     ReplyFailed(String),
+    /// The reply waits until the person applies or declines this change.
+    Review {
+        /// Request id to answer with [`BackendRequest::Review`].
+        request_id: String,
+        /// Markdown: the target, why the person decides, and the diff.
+        prompt: String,
+    },
+    /// The review was answered or withdrawn.
+    ReviewClosed(String),
+    /// A reviewed change was written to this workspace path.
+    Applied(String),
 }
 
 /// The two channel ends the window uses.

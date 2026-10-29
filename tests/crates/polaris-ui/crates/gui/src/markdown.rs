@@ -1,5 +1,5 @@
 // Unit tests of crates/polaris-ui/crates/gui/src/markdown.rs (`tests`); compiled into that module via #[path].
-use super::{Block, blocks};
+use super::{Block, blocks, diff_line_kind};
 
 fn block(kind: &'static str, text: &str) -> Block {
     Block {
@@ -30,4 +30,21 @@ fn an_open_fence_while_streaming_is_still_code() {
         blocks("Look:\n```\nlet x = 1;"),
         vec![block("p", "Look:"), block("code", "let x = 1;")]
     );
+}
+
+#[test]
+fn diff_fences_become_diff_blocks_with_line_kinds() {
+    let reply = "Change it?\n\n```diff\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-old\n+new\n same\n```";
+    assert_eq!(
+        blocks(reply),
+        vec![
+            block("p", "Change it?"),
+            block("diff", "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-old\n+new\n same"),
+        ]
+    );
+    let kinds: Vec<&str> = ["--- a/x", "+++ b/x", "@@ -1 +1 @@", "-old", "+new", " same"]
+        .into_iter()
+        .map(diff_line_kind)
+        .collect();
+    assert_eq!(kinds, ["head", "head", "hunk", "del", "add", "ctx"]);
 }

@@ -15,8 +15,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use crate::aurora_driver::{AuroraDriver, FRAME_STEP};
 use crate::backend::{BackendEvent, BackendLink, BackendRequest};
 use crate::generated::{
-    BlockRow, DirectiveChip, EntryRow, ModelRowUi, SearchHitUi, SessionGroup as SlintGroup,
-    SessionRowUi,
+    BlockRow, DiffLine, DirectiveChip, EntryRow, ModelRowUi, SearchHitUi,
+    SessionGroup as SlintGroup, SessionRowUi,
 };
 use crate::session_view::{Screen, SessionController};
 use crate::{AppWindow, FrameHistogram, GuiError};
@@ -153,6 +153,7 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
     ui.set_working(controller.working());
     ui.set_status_connection(SharedString::from(controller.status_line()));
     ui.set_status_state(SharedString::from(controller.status_state()));
+    ui.set_review_title(SharedString::from(controller.review().unwrap_or_default()));
     ui.set_starting(controller.starting());
     let (provider_models, current) = controller.composer_models();
     if !provider_models.is_empty() {
@@ -197,6 +198,18 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
                     .into_iter()
                     .map(|block| BlockRow {
                         kind: SharedString::from(block.kind),
+                        lines: ModelRc::new(VecModel::from(if block.kind == "diff" {
+                            block
+                                .text
+                                .lines()
+                                .map(|line| DiffLine {
+                                    kind: SharedString::from(crate::markdown::diff_line_kind(line)),
+                                    text: SharedString::from(line),
+                                })
+                                .collect()
+                        } else {
+                            Vec::new()
+                        })),
                         text: SharedString::from(block.text),
                     })
                     .collect()
@@ -397,6 +410,10 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
     });
     on!(on_submit, |c| c.submit());
     on!(on_interrupt, |c| c.interrupt());
+    on!(on_review_apply, |c, note| c
+        .decide_review(true, note.as_str()));
+    on!(on_review_decline, |c, note| c
+        .decide_review(false, note.as_str()));
     on!(on_choose_model, |c, index| match usize::try_from(index) {
         Ok(index) => c.choose_model(index),
         Err(_) => Vec::new(),

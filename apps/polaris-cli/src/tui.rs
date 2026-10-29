@@ -34,6 +34,7 @@ use polaris_ui_model::{
 use polaris_ui_session::{ConversationHost, HostEvent, TurnReport};
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend, layout::Rect};
 use std::{
+    collections::{BTreeMap, VecDeque},
     io::{self, IsTerminal, Write},
     path::PathBuf,
     str::FromStr,
@@ -493,7 +494,7 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "Enter sends; Shift+Enter inserts a newline. Ctrl+J or Alt+Enter are compatibility fallbacks."
             .to_owned(),
-        "This conversation is read-only: the model proposes changes as patches; nothing is written."
+        "Auto mode may change files: each change shows its diff; y applies, n declines, Enter with a note declines with it. Plan mode only reads."
             .to_owned(),
     ];
     lines.push(
@@ -530,6 +531,12 @@ enum BackendRequest {
     Stats,
     Sessions,
     Resume(SessionId),
+    /// Apply or decline the change the running turn waits on.
+    Review {
+        request_id: polaris_sdk::human::HumanRequestId,
+        apply: bool,
+        note: Option<String>,
+    },
 }
 #[derive(Debug)]
 enum BackendMessage {
@@ -654,6 +661,8 @@ pub async fn run(
     if !demo {
         chat.start_pick();
     }
+    // Changes the running turn waits on, by request id, for answers from the terminal.
+    let mut reviews = BTreeMap::new();
     let backend_result = async {
         loop {
             tokio::select! {
@@ -681,6 +690,16 @@ pub async fn run(
                     Err(error) => break Err(error),
                 },
                 event = chat.next_event() => {
+                    match &event {
+                        HostEvent::Progress(ChatProgress::Review(review)) => {
+                            reviews.insert(review.request_id, review.clone());
+                        }
+                        HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                            reviews.remove(id);
+                        }
+                        HostEvent::Finished(_) | HostEvent::Failed(_) => reviews.clear(),
+                        _ => {}
+                    }
                     if let Err(error) = handle_chat_event(event, &events_tx) {
                         break Err(error);
                     }
@@ -747,6 +766,22 @@ pub async fn run(
                         BackendRequest::CancelTurn => {
                             chat.cancel_turn();
                             None
+                        }
+                        BackendRequest::Review { request_id, apply, note } => {
+                            match reviews.get(&request_id) {
+                                Some(review) => polaris_ui_session::answer_review(
+                                    active.kernel(),
+                                    review,
+                                    apply,
+                                    note,
+                                )
+                                .await
+                                .err()
+                                .map(|error| BackendMessage::QueryFailed(error.to_string())),
+                                None => Some(BackendMessage::QueryFailed(
+                                    "That change is no longer waiting for a decision".to_owned(),
+                                )),
+                            }
                         }
                         BackendRequest::ClearChat => {
                             chat.clear();
@@ -911,6 +946,10 @@ struct TurnUi {
     /// A new model request began after text was shown; separate the next text.
     break_pending: bool,
     phase: TurnPhase,
+    /// A change waits for the person's decision.
+    waiting: bool,
+    /// A review card ended the streamed text; a later answer goes below it.
+    after_review: bool,
 }
 impl TurnUi {
     fn new() -> Self {
@@ -919,9 +958,15 @@ impl TurnUi {
             entry: None,
             break_pending: false,
             phase: TurnPhase::Waiting,
+            waiting: false,
+            after_review: false,
         }
     }
     fn label(&self) -> String {
+        if self.waiting {
+            return "◆ Waiting for your decision · y apply · n don't apply · or type a note and Enter"
+                .to_owned();
+        }
         const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         let elapsed = self.started.elapsed();
         let frame = usize::try_from(elapsed.as_millis() / 100).unwrap_or(0) % SPINNER.len();
@@ -1071,6 +1116,8 @@ struct UiState {
     /// Short footer label of the live model (`vendor/name:tag` -> `name`).
     model_label: Option<String>,
     turn: Option<TurnUi>,
+    /// Changes the running turn waits on, oldest first.
+    reviews: VecDeque<polaris_ui_session::ChangeReview>,
     activity: String,
 }
 impl UiState {
@@ -1153,6 +1200,7 @@ impl UiState {
             provider_skipped: Vec::new(),
             model_label: None,
             turn: None,
+            reviews: VecDeque::new(),
             activity: String::new(),
         })
     }
@@ -1226,14 +1274,57 @@ impl UiState {
         }
     }
     /// Close the running turn with its final answer and a short work summary.
+    /// Show a change the turn waits on: its prompt (with the diff) and how to decide.
+    fn show_review(&mut self, review: polaris_ui_session::ChangeReview) {
+        if self
+            .reviews
+            .iter()
+            .any(|known| known.request_id == review.request_id)
+        {
+            return;
+        }
+        if let Some(turn) = self.turn.as_mut() {
+            turn.entry = None;
+            turn.break_pending = false;
+            turn.waiting = true;
+            turn.after_review = true;
+        }
+        let view = self.offline_view_mut();
+        let shown = view.push_assistant(review.prompt.clone()).and_then(|()| {
+            view.push_system(
+                "y apply · n don't apply · or type a note and press Enter to decline with it",
+            )
+        });
+        if let Err(error) = shown {
+            self.notice = format!("Reply display limit reached: {error}");
+        }
+        self.reviews.push_back(review);
+        self.history_scroll = 0;
+    }
+    fn close_review(&mut self, id: polaris_sdk::human::HumanRequestId) {
+        self.reviews.retain(|review| review.request_id != id);
+        let waiting = !self.reviews.is_empty();
+        if let Some(turn) = self.turn.as_mut() {
+            turn.waiting = waiting;
+        }
+    }
     fn finish_turn(&mut self, report: TurnReport) {
-        let streamed = self.turn.take().is_some_and(|turn| turn.entry.is_some());
+        let (streamed, after_review) = self.turn.take().map_or((false, false), |turn| {
+            (turn.entry.is_some(), turn.after_review)
+        });
+        self.reviews.clear();
         let view = self.offline_view_mut();
         let mut result = Ok(());
+        let answer = report
+            .answer
+            .as_deref()
+            .map(str::trim)
+            .filter(|answer| !answer.is_empty());
         if !streamed {
-            result = match report.answer.as_deref().map(str::trim) {
-                Some(answer) if !answer.is_empty() => view.push_assistant(answer.to_owned()),
-                _ => view.push_warning(format!(
+            result = match answer {
+                Some(answer) => view.push_assistant(answer.to_owned()),
+                None if after_review => Ok(()),
+                None => view.push_warning(format!(
                     "The model stopped without an answer ({})",
                     report.stop
                 )),
@@ -1484,10 +1575,21 @@ impl UiState {
                         turn.phase = TurnPhase::Waiting;
                     }
                 }
+                ChatProgress::Review(review) => self.show_review(review),
+                ChatProgress::ReviewClosed(id) => self.close_review(id),
+                ChatProgress::Applied(path) => {
+                    if let Err(error) = self
+                        .offline_view_mut()
+                        .push_system(format!("✓ Edited {path}"))
+                    {
+                        self.notice = format!("Reply display limit reached: {error}");
+                    }
+                }
             },
             BackendMessage::TurnFinished(report) => self.finish_turn(report),
             BackendMessage::TurnFailed(reason) => {
                 self.turn = None;
+                self.reviews.clear();
                 self.activity.clear();
                 let view = self.offline_view_mut();
                 let shown = if reason == polaris_ui_session::host::INTERRUPTED {
@@ -2540,9 +2642,14 @@ fn submit_draft(
                 open_sheet(state, "Providers", lines)
             }
             SlashCommand::Onboarding => open_sheet(state, "Getting started", onboarding_lines()),
-            SlashCommand::Diff | SlashCommand::Undo | SlashCommand::Rollback(_) => {
+            SlashCommand::Diff => {
                 state.notice =
-                    "No files changed: this conversation is read-only and proposes patches only"
+                    "Each change is shown with its diff for your decision before it is written"
+                        .to_owned();
+            }
+            SlashCommand::Undo | SlashCommand::Rollback(_) => {
+                state.notice =
+                    "Undo is not available yet; decline a change to keep it out of your files"
                         .to_owned();
             }
             SlashCommand::Sessions => {
@@ -2763,6 +2870,65 @@ fn accept_completion(state: &mut UiState) -> Result<(), CliError> {
     state.refresh_completion();
     Ok(())
 }
+/// While a change waits: `y` applies and `n` declines it when the composer is empty, and Enter
+/// declines it with the composer text as the note for the model.
+fn handle_review_key(
+    state: &mut UiState,
+    key: KeyEvent,
+    commands: &mpsc::Sender<BackendRequest>,
+) -> Result<bool, CliError> {
+    if state.reviews.is_empty() || state.sheet.is_some() || state.panel_focus {
+        return Ok(false);
+    }
+    let plain = key.modifiers.is_empty() || key.modifiers == KeyModifiers::SHIFT;
+    let draft = state.composer.text().trim().to_owned();
+    let decision = match key.code {
+        KeyCode::Char('y' | 'Y') if plain && draft.is_empty() => (true, None),
+        KeyCode::Char('n' | 'N') if plain && draft.is_empty() => (false, None),
+        KeyCode::Enter
+            if key.modifiers.is_empty() && !draft.is_empty() && !draft.starts_with('/') =>
+        {
+            (false, Some(draft))
+        }
+        _ => return Ok(false),
+    };
+    let Some(review) = state.reviews.pop_front() else {
+        return Ok(false);
+    };
+    let (apply, note) = decision;
+    queue_request(
+        commands,
+        BackendRequest::Review {
+            request_id: review.request_id,
+            apply,
+            note: note.clone(),
+        },
+    )?;
+    if note.is_some() {
+        let len = state.composer.text().len();
+        state
+            .composer
+            .apply_completion(0..len, "")
+            .map_err(ui_error)?;
+        state.refresh_completion();
+    }
+    let waiting = !state.reviews.is_empty();
+    if let Some(turn) = state.turn.as_mut() {
+        turn.waiting = waiting;
+    }
+    if !apply {
+        let line = match note {
+            Some(note) => format!("Not applied · {note}"),
+            None => "Not applied".to_owned(),
+        };
+        if let Err(error) = state.offline_view_mut().push_system(line) {
+            state.notice = format!("Reply display limit reached: {error}");
+        }
+    }
+    state.history_scroll = 0;
+    Ok(true)
+}
+
 fn handle_key(
     state: &mut UiState,
     key: KeyEvent,
@@ -2994,6 +3160,9 @@ fn handle_key(
         return Ok((false, true));
     }
     if handle_question_key(state, key)? {
+        return Ok((false, true));
+    }
+    if handle_review_key(state, key, commands)? {
         return Ok((false, true));
     }
     if key.code == KeyCode::F(5) {

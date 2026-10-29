@@ -21,6 +21,10 @@ const state = {
   usage: { requests: 0, prompt_tokens: 0, completion_tokens: 0 },
   sessions: [],
   startedAt: 0,
+  // Change reviews the reply waits on, by request id; `afterReview` notes that the reply text
+  // shown so far ended before a review card.
+  reviews: new Map(),
+  afterReview: false,
 };
 
 // ---- access token: from the URL fragment once, then from this tab's storage ----------------
@@ -217,6 +221,8 @@ function startReply() {
 }
 
 function streamReply(text, separator) {
+  if (separator && !state.reply) return;
+  if (text) state.afterReview = false;
   if (!state.reply) startReply();
   const reply = state.reply;
   if (separator) {
@@ -232,6 +238,77 @@ function streamReply(text, separator) {
       scrollToEnd();
     });
   }
+}
+
+// ---- change reviews --------------------------------------------------------------------------
+function endReplySegment() {
+  if (!state.reply) return;
+  if (state.reply.frame) cancelAnimationFrame(state.reply.frame);
+  if (state.reply.text) renderMarkdown(state.reply.text, state.reply.prose);
+  else state.reply.entry.remove();
+  state.reply = null;
+}
+
+function showReview(event) {
+  if (state.reviews.has(event.request_id)) return;
+  endReplySegment();
+  state.afterReview = true;
+  const card = document.createElement("section");
+  card.className = "entry review";
+  card.setAttribute("aria-label", "Change waiting for your decision");
+  const head = document.createElement("div");
+  head.className = "review-head";
+  head.textContent = "Review change";
+  const prose = document.createElement("div");
+  prose.className = "prose";
+  renderMarkdown(event.prompt, prose);
+  const actions = document.createElement("div");
+  actions.className = "review-actions";
+  const note = document.createElement("input");
+  note.type = "text";
+  note.className = "review-note";
+  note.maxLength = 2000;
+  note.placeholder = "Note for Polaris (optional)";
+  note.setAttribute("aria-label", "Note for Polaris");
+  const decline = document.createElement("button");
+  decline.type = "button";
+  decline.className = "review-decline";
+  decline.textContent = "Don't apply";
+  const apply = document.createElement("button");
+  apply.type = "button";
+  apply.className = "review-apply";
+  apply.textContent = "Apply";
+  const decide = (yes) => {
+    card.dataset.decision = yes ? "applied" : "declined";
+    for (const control of [note, decline, apply]) control.disabled = true;
+    api("/api/review", { request_id: event.request_id, apply: yes, note: note.value.trim() || null });
+  };
+  apply.addEventListener("click", () => decide(true));
+  decline.addEventListener("click", () => decide(false));
+  note.addEventListener("keydown", (key) => {
+    if (key.key === "Enter" && note.value.trim()) { key.preventDefault(); decide(false); }
+  });
+  actions.append(note, decline, apply);
+  card.append(head, prose, actions);
+  conversation.appendChild(card);
+  state.reviews.set(event.request_id, card);
+  scrollToEnd();
+  updateStatus();
+  apply.focus({ preventScroll: true });
+}
+
+function closeReview(id, outcome) {
+  const card = state.reviews.get(id);
+  if (!card) return;
+  state.reviews.delete(id);
+  const decided = card.dataset.decision || outcome;
+  const actions = card.querySelector(".review-actions");
+  const label = document.createElement("div");
+  label.className = "review-outcome";
+  label.textContent = { applied: "Applied", declined: "Not applied", withdrawn: "Withdrawn" }[decided] || "Answered";
+  actions.replaceWith(label);
+  card.dataset.closed = decided || "answered";
+  updateStatus();
 }
 
 function setWorking(working) {
@@ -251,7 +328,11 @@ function updateStatus() {
   const dot = $("#status-dot");
   const text = $("#status-text");
   let line;
-  if (state.working) {
+  if (state.reviews.size) {
+    dot.dataset.state = "waiting";
+    line = "Waiting for your decision on a change";
+  } else if (state.working) {
+    dot.dataset.state = "";
     const seconds = Math.floor((Date.now() - state.startedAt) / 1000);
     line = `Working ${seconds}s · Esc to stop`;
   } else if (state.provider && state.provider.type === "provider") {
@@ -421,11 +502,13 @@ function handle(event) {
     case "opening":
       conversation.textContent = "";
       state.reply = null;
+      state.reviews.clear();
       break;
     case "opened":
       // Also the first event of a replay after a reconnect: rebuild the conversation from here.
       conversation.textContent = "";
       state.reply = null;
+      state.reviews.clear();
       setWorking(false);
       state.openId = event.id;
       $("#session-title").textContent = event.title || "Untitled session";
@@ -464,23 +547,38 @@ function handle(event) {
       streamReply("", true);
       break;
     case "reply-finished":
+      for (const id of [...state.reviews.keys()]) closeReview(id, "withdrawn");
       if (state.reply && !state.reply.streamed) {
         if (event.answer && event.answer.trim()) renderMarkdown(event.answer, state.reply.prose);
         else { state.reply.entry.remove(); addEntry("warning", "The model stopped without an answer."); }
       } else if (state.reply) {
         renderMarkdown(state.reply.text, state.reply.prose);
+      } else if (state.afterReview && event.answer && event.answer.trim()) {
+        addEntry("assistant", event.answer);
       }
       state.reply = null;
+      state.afterReview = false;
       addEntry("system", event.summary);
       setWorking(false);
       if (notice.textContent === "Stopping…") showNotice("");
       break;
     case "reply-failed":
+      for (const id of [...state.reviews.keys()]) closeReview(id, "withdrawn");
       if (state.reply && !state.reply.streamed) state.reply.entry.remove();
       state.reply = null;
+      state.afterReview = false;
       addEntry(event.reason === "Interrupted" ? "warning" : "error", event.reason === "Interrupted" ? "Stopped." : event.reason);
       setWorking(false);
       if (notice.textContent === "Stopping…") showNotice("");
+      break;
+    case "review":
+      showReview(event);
+      break;
+    case "review-closed":
+      closeReview(event.request_id);
+      break;
+    case "applied":
+      addEntry("change", `Edited ${event.path}`);
       break;
     case "usage":
       state.usage = event;

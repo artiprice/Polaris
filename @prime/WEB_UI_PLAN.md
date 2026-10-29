@@ -10,7 +10,7 @@
 | Layer | Decision | Why |
 |---|---|---|
 | Server | `polaris-ui-web`: axum router on loopback (`polaris web`, default `127.0.0.1:8787`) | axum is already in the workspace; the session host, provider chain and kernel stay in-process, exactly as in the terminal and desktop. |
-| Conversation | `polaris_ui_session::ConversationHost` + `OfflineSession` | One implementation for all three frontends: same provider chain, read-only agent, model switching, interruption. |
+| Conversation | `polaris_ui_session::ConversationHost` + `OfflineSession` | One implementation for all three frontends: same provider chain, agent with reviewed file changes, model switching, interruption. |
 | Transport | JSON for commands (`POST /api/…`), Server-Sent Events for the live stream (`GET /api/events`) | SSE is one-way, survives proxies, needs no extra client library; commands are plain fetches. |
 | Frontend | Embedded static HTML/CSS/JS (no build step), served from the binary (`include_str!`) | Leptos (the original plan) needs `wasm32-unknown-unknown` and `cargo-leptos`, which are not installed on the team machines; the page must work offline from the binary. Leptos stays the upgrade path: the API is the contract. |
 | Security | Loopback bind only; a per-run random token in the page URL and required on every API call (`Authorization: Bearer`); `Host` header checked against the bound address; strict CSP (no inline script, `connect-src 'self'`) | A local web UI is reachable by any page in the browser: DNS rebinding and CSRF are the real threats. |

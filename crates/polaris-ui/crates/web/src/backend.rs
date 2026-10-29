@@ -2,12 +2,13 @@
 //! [`ConversationHost`], fed by HTTP commands and publishing [`WebEvent`]s to every open page.
 use polaris_sdk::{contracts::Event, effort::Effort, ids::SessionId};
 use polaris_ui_session::{
-    ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind, ResolvedRecord,
-    SessionHostError, is_single_directive, list_sessions, records_until_own_input,
+    ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind,
+    ResolvedRecord, SessionHostError, answer_review, is_single_directive, list_sessions,
+    records_until_own_input,
 };
 use serde::Serialize;
 use std::{
-    collections::VecDeque,
+    collections::{BTreeMap, VecDeque},
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -31,6 +32,12 @@ pub enum Command {
     SetEffort(Effort),
     /// Close the open session.
     Close,
+    /// Apply or decline the change a reply waits on; `note` reaches the model with a decline.
+    Review {
+        request_id: String,
+        apply: bool,
+        note: Option<String>,
+    },
     /// Report the session list.
     List {
         reply: oneshot::Sender<Vec<SessionRow>>,
@@ -94,6 +101,13 @@ pub enum WebEvent {
     },
     /// The reply failed or was interrupted.
     ReplyFailed { reason: String },
+    /// The reply waits until the person applies or declines this change (Markdown prompt with
+    /// a diff).
+    Review { request_id: String, prompt: String },
+    /// The review was answered or withdrawn.
+    ReviewClosed { request_id: String },
+    /// A reviewed change was written to this workspace path.
+    Applied { path: String },
     /// Token use of the open session.
     Usage {
         requests: u64,
@@ -209,9 +223,26 @@ struct Owner {
     session: Option<OfflineSession>,
     chat: ConversationHost,
     usage: (u64, u64, u64),
+    /// Changes the running reply waits on, by request id.
+    reviews: BTreeMap<String, ChangeReview>,
 }
 
 impl Owner {
+    async fn review(&mut self, request_id: &str, apply: bool, note: Option<String>) {
+        let (Some(review), Some(session)) = (self.reviews.get(request_id), self.session.as_ref())
+        else {
+            self.publisher.publish(WebEvent::Notice {
+                text: "That change is no longer waiting for a decision.".to_owned(),
+            });
+            return;
+        };
+        if let Err(error) = answer_review(session.kernel(), review, apply, note).await {
+            self.publisher.publish(WebEvent::Notice {
+                text: error.to_string(),
+            });
+        }
+    }
+
     async fn open(&mut self, resume: Option<String>) {
         if self.chat.is_running() {
             self.publisher.publish(WebEvent::Notice {
@@ -365,7 +396,7 @@ impl Owner {
         }
     }
 
-    fn host_event(&self, event: HostEvent) {
+    fn host_event(&mut self, event: HostEvent) {
         let event = match event {
             HostEvent::ProviderReady {
                 provider,
@@ -386,11 +417,29 @@ impl Owner {
             HostEvent::Progress(ChatProgress::Text(text)) => WebEvent::ReplyText { text },
             HostEvent::Progress(ChatProgress::Request) => WebEvent::ReplyStep,
             HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
-            HostEvent::Finished(report) => WebEvent::ReplyFinished {
-                summary: report.summary(),
-                answer: report.answer,
-            },
-            HostEvent::Failed(reason) => WebEvent::ReplyFailed { reason },
+            HostEvent::Progress(ChatProgress::Review(review)) => {
+                let request_id = review.request_id.to_string();
+                let prompt = review.prompt.clone();
+                self.reviews.insert(request_id.clone(), review);
+                WebEvent::Review { request_id, prompt }
+            }
+            HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                let request_id = id.to_string();
+                self.reviews.remove(&request_id);
+                WebEvent::ReviewClosed { request_id }
+            }
+            HostEvent::Progress(ChatProgress::Applied(path)) => WebEvent::Applied { path },
+            HostEvent::Finished(report) => {
+                self.reviews.clear();
+                WebEvent::ReplyFinished {
+                    summary: report.summary(),
+                    answer: report.answer,
+                }
+            }
+            HostEvent::Failed(reason) => {
+                self.reviews.clear();
+                WebEvent::ReplyFailed { reason }
+            }
         };
         self.publisher.publish(event);
     }
@@ -438,6 +487,7 @@ pub async fn run(
         session: None,
         chat,
         usage: (0, 0, 0),
+        reviews: BTreeMap::new(),
     };
     owner.chat.start_pick();
     loop {
@@ -459,6 +509,9 @@ pub async fn run(
                         owner.publisher.publish(event);
                     }
                     Command::Close => owner.close().await,
+                    Command::Review { request_id, apply, note } => {
+                        owner.review(&request_id, apply, note).await;
+                    }
                     Command::List { reply } => {
                         let _delivered = reply.send(owner.list().await);
                     }
