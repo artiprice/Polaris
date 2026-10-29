@@ -245,7 +245,8 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 serde_json::to_writer(&mut out, &summary)?;
                 writeln!(out)?;
                 out.flush()?;
-                if summary.proof_status == "verified" {
+                // Proof of Done covers changes; a read-only answer has nothing to verify.
+                if summary.proof_status == "verified" || summary.rights == ["read"] {
                     Ok(())
                 } else {
                     Err(CliError::TaskUnverified)
