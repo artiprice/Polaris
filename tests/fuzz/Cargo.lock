@@ -80,6 +80,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ast-grep-core"
+version = "0.51.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dea8fe60a16a988662ebb1b14aafc94e03260a987fb909a54525555188473269"
+dependencies = [
+ "bit-set",
+ "regex",
+ "thiserror 2.0.21",
+ "tree-sitter",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -230,6 +242,25 @@ dependencies = [
  "quote",
  "thiserror 1.0.69",
  "time",
+]
+
+[[package]]
+name = "bit-set"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56d87354e4229f54a44f7bf2435906a4656dba36026ab6eaca629a2c436a691c"
+dependencies = [
+ "bit-vec",
+]
+
+[[package]]
+name = "bit-vec"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5727b15fa97d4f4fee0a3b7c3d550ed0269f54329207b86388de918604e31269"
+dependencies = [
+ "borsh",
+ "serde",
 ]
 
 [[package]]
@@ -1691,6 +1722,7 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 name = "polaris-code-intel"
 version = "0.1.0-alpha"
 dependencies = [
+ "ast-grep-core",
  "imara-diff",
  "polaris-sdk",
  "thiserror 2.0.21",
@@ -1780,14 +1812,18 @@ dependencies = [
 name = "polaris-proto"
 version = "0.1.0-alpha"
 dependencies = [
+ "blake3",
+ "getrandom 0.4.3",
  "polaris-sdk",
  "prost 0.14.4",
  "prost-types 0.14.4",
  "protoc-bin-vendored",
+ "secrecy",
  "thiserror 2.0.21",
  "tonic",
  "tonic-prost",
  "tonic-prost-build",
+ "zeroize",
 ]
 
 [[package]]
@@ -1807,8 +1843,11 @@ version = "0.1.0-alpha"
 dependencies = [
  "bytes",
  "jiff",
+ "secrecy",
  "serde",
+ "serde_json",
  "thiserror 2.0.21",
+ "tokio-util",
  "uuid",
 ]
 
@@ -1888,6 +1927,9 @@ dependencies = [
 name = "polaris-tools-builtin"
 version = "0.1.0-alpha"
 dependencies = [
+ "bytes",
+ "cap-primitives",
+ "cap-std",
  "encoding_rs",
  "globset",
  "ignore",
@@ -2579,6 +2621,15 @@ dependencies = [
  "pkcs8 0.10.2",
  "serdect",
  "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
  "zeroize",
 ]
 

@@ -412,3 +412,20 @@ fn minimal_pdf(text: Option<&str>) -> Vec<u8> {
     ));
     pdf.into_bytes()
 }
+
+/// RUSTSEC-2026-0414: `[[a|]]` wikilinks made pulldown-cmark's event count double per link. Ingest
+/// keeps wikilinks off, so a document of many such links parses in linear time as plain text.
+#[test]
+fn wikilink_bombs_parse_as_plain_text() -> Result<(), Box<dyn std::error::Error>> {
+    let bomb = "[[a|]] ".repeat(64);
+    let started = std::time::Instant::now();
+    let parsed = DefaultDocParser::default().ingest_bytes("bomb.md", None, bomb.as_bytes())?;
+    assert!(started.elapsed() < std::time::Duration::from_secs(2));
+    let text: String = parsed
+        .blocks
+        .iter()
+        .map(|block| format!("{block:?}"))
+        .collect();
+    assert!(text.contains("[[a|]]"), "{text}");
+    Ok(())
+}

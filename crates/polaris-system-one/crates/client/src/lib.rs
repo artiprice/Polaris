@@ -613,7 +613,8 @@ impl S1Client {
                         "Unix socket peer PID is unavailable",
                     )
                 })?;
-                if peer_pid != expected_server_pid {
+                // `pid_t` is signed; a negative PID never matches.
+                if u32::try_from(peer_pid).ok() != Some(expected_server_pid) {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
                         "Unix socket peer process identity mismatch",

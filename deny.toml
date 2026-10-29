@@ -8,7 +8,17 @@ all-features = false
 [advisories]
 # RustSec advisory DB; yanked crates are rejected.
 yanked = "deny"
-ignore = []
+# Accepted after review (2026-10-29, @prime/SECURITY_REVIEW.md §4). Each entry says why it does not
+# apply here; revisit when the upstream crate that pulls it in moves on.
+ignore = [
+    { id = "RUSTSEC-2026-0387", reason = "crypto-bigint 0.5 timing variability in secret-dependent ops; reached only via biscuit-auth's always-compiled P-256 support, while Polaris creates, signs and parses Ed25519 keys only (token verification touches public data). The fix needs crypto-bigint 0.7, which elliptic-curve 0.13 cannot use." },
+    { id = "RUSTSEC-2024-0436", reason = "paste (unmaintained proc macro, compile time only) via leptos/either_of." },
+    { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile (unmaintained thin wrapper over rustls-pki-types) via the pinned NVIDIA OpenShell SDK." },
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser (unmaintained) via pdf-extract/lopdf and ab_glyph; fonts parsed are local or from ingested PDFs within the ingest limits." },
+    { id = "RUSTSEC-2026-0370", reason = "zvariant (unmaintained as a standalone crate) via Slint's accesskit AT-SPI support on Linux." },
+    { id = "RUSTSEC-2026-0371", reason = "zbus_names (unmaintained as a standalone crate) via Slint's accesskit AT-SPI support on Linux." },
+    { id = "RUSTSEC-2026-0372", reason = "zvariant_derive (unmaintained as a standalone crate) via Slint's accesskit AT-SPI support on Linux." },
+]
 
 [licenses]
 # Permissive licences acceptable for an Apache-2.0 workspace.
