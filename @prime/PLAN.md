@@ -907,15 +907,15 @@ Example descriptor (the canonical shape; every module plan lists its descriptors
 
 ### 11.4 Budgets (targets, not claims; measured and recorded when first run)
 
-| Area | Target |
-|---|---|
-| Bus publish→subscribe p99 | < 50 µs in-process |
-| GCRA check | < 1 µs, zero alloc |
-| DFA scan | ≥ 500 MB/s single core |
-| SSE frame parse | zero alloc per frame |
-| S1 multi-task decision p95 | CPU ≤ 400 ms; CUDA EP ≤ 80 ms (S0-4) |
-| Sync 10k-file repo, no changes | < 2 s manifest diff |
-| TUI frame render | < 8 ms at 200×60 |
+| Area | Target | Measured 2026-10-29 (`@prime/evidence/p10/budgets.txt`) |
+|---|---|---|
+| Bus publish→subscribe p99 | < 50 µs in-process | publish p99 0.5–4.5 µs with 1/8/64 subscribers, 1M events — met |
+| GCRA check | < 1 µs, zero alloc | p50 0.7 µs, p99 1.1 µs; 0 allocations — p99 just over |
+| DFA scan | ≥ 500 MB/s single core | 438 MB/s (default pack, 64 MiB, no LTO) — not met |
+| SSE frame parse | zero alloc per frame | 0 allocations over 10k warm frames; 244 ns/frame — met |
+| S1 multi-task decision p95 | CPU ≤ 400 ms; CUDA EP ≤ 80 ms (S0-4) | fp32 CPU 758 ms (S0-4 spike); int8 decision pending — not met |
+| Sync 10k-file repo, no changes | < 2 s manifest diff | 1.14 s rescan with cache + diff — met |
+| TUI frame render | < 8 ms at 200×60 | p99 5.1 ms uncached, 80 entries — met |
 
 ### 11.5 Fixtures catalogue (planned)
 

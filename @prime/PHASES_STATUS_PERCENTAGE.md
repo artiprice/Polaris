@@ -29,12 +29,12 @@
 | P2 — Execution plane | 87% | **75%** | PAUSED by user — prior live evidence retained; composition/final gates remain open. |
 | P3 — S2 loop, providers, models and frames | 62% | **44%** | OPEN — complete phase acceptance not demonstrated. |
 | P4 — System One, inference and safety | 65% | **38%** | OPEN — complete phase acceptance not demonstrated. |
-| P5 — Knowledge, search, vectors and ingest | 41% | **30%** | OPEN — complete phase acceptance not demonstrated. |
-| P6 — Nebius depth and remote execution | 23% | **9%** | OPEN — complete phase acceptance not demonstrated. |
-| P7 — Advanced agentics, research and extensions | 50% | **35%** | OPEN — complete phase acceptance not demonstrated. |
-| P8 — DevEnv and Needle | 46% | **30%** | OPEN — complete phase acceptance not demonstrated. |
-| P9 — Daemon, RPC and interfaces | 59% | **45%** | OPEN — complete phase acceptance not demonstrated. |
-| P10 — Hardening and submission | 34% | **19%** | OPEN — complete phase acceptance not demonstrated. |
+| P5 — Knowledge, search, vectors and ingest | 55% | **42%** | OPEN — 2026-10-29: `$nvidia(...)`/`/nv-*` (E54) and keyless `/search-local` + `$rag` (E57) done; SearXNG, Tavily (key), docs sync open; embeddings descoped (D10). |
+| P6 — Nebius depth and remote execution | 23% | **9%** | DESCOPED (D10, 2026-10-29) — Nebius is not available to the team; excluded from further work. |
+| P7 — Advanced agentics, research and extensions | 58% | **42%** | OPEN — `/hack` seeded acceptance PASS (E55); `/research` composition and the microVM browser loop wait for the sandbox setup. |
+| P8 — DevEnv and Needle | 58% | **45%** | OPEN — `/ci` with cache mounts runs live in Docker (E56); `$env(nix)` and Needle need downloads. |
+| P9 — Daemon, RPC and interfaces | 72% | **60%** | OPEN — desktop and web attach to `polarisd` over the named pipe with token auth (E53); model replies in attached mode and an external audit remain. |
+| P10 — Hardening and submission | 60% | **45%** | OPEN — budgets measured and dist package built (E57); security review and test matrix need tool installs; demo video open. |
 
 **Use the bold Verified % as the conservative progress indicator.** No percentage converts the current system into a production-ready release.
 
@@ -293,10 +293,10 @@
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P10-1` | 30% | 20% | Many P1/P2 suites exist; complete system mutation/formal/load/security matrix not delivered. |
-| `P10-2` | 35% | 15% | Locked/offline full Cargo-graph SPDX inventory, lockfile digest, deterministic bytes, official schema and negative checks now have evidence. This is not a licence/security audit; current deny/vet and full unsafe/licence review remain open; E43. |
-| `P10-3` | 35% | 25% | Actual P1/P2 budgets recorded; all-phase latency/RSS/throughput table incomplete. |
-| `P10-4` | 20% | 0% | Dist profile/build settings exist; no verified full submission/installer artifacts and hashes. |
+| `P10-1` | 60% | 50% | Full workspace run (2,630 passed, 4 known ratelimit failures), loom and load/stress spikes pass (E57); fuzz/Miri/Kani/mutants need tools. |
+| `P10-2` | 60% | 40% | SPDX SBOM evidence; security review report against the §6.11 threat model, unsafe inventory and offline licence audit (E57); advisories/vet need tools, no external review. |
+| `P10-3` | 100% | 90% | All seven PLAN §11.4 budgets measured and recorded (E57); DFA throughput, GCRA p99 and S1 CPU p95 miss their targets. |
+| `P10-4` | 90% | 80% | Dist build of five binaries + site packaged with README, SHA256SUMS and build-info (E57); no signed installer. |
 | `P10-5` | 0% | 0% | Demo/video and judge fallback acceptance absent; UI deferred and keys missing. **UI deferred; excluded from aggregate.** |
 | `P10-6` | 50% | 35% | Real Linux check legs exist; full current portability matrix/macOS adaptation not delivered. |
 

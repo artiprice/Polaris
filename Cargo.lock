@@ -9722,12 +9722,21 @@ dependencies = [
 name = "polaris-tests"
 version = "0.1.0-alpha"
 dependencies = [
+ "dhat",
  "polaris-config",
  "polaris-ext-skills",
  "polaris-kernel",
+ "polaris-nebius-cloud-token-factory",
+ "polaris-ratelimit",
  "polaris-sdk",
+ "polaris-security-automata",
  "polaris-storage",
+ "polaris-storage-sync",
+ "polaris-ui-cli",
  "polaris-ui-model",
+ "polaris-ui-session",
+ "ratatui",
+ "tempfile",
  "thiserror 2.0.21",
 ]
 

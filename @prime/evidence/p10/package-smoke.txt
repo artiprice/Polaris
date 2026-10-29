@@ -1,0 +1,13 @@
+# P10-4 smoke test of the packaged binaries (target/package/polaris-0.1.0-alpha-x86_64-pc-windows-msvc), run from the package folder
+polaris --version: polaris 0.1.0-alpha
+polarisd --version: polarisd 0.1.0-alpha
+polaris-web --version: polaris-web 0.1.0-alpha
+polaris-worker --version: Error: "worker accepts at most eight option/value pairs"
+polaris search-local on the package itself:
+Local search
+2 results for "attach daemon credential" (lexical BM25 over workspace text files; no embeddings):
+1. README.md:1-40 (score 3.21)
+     6: available from a terminal UI, a native desktop window, a web page on loopback, and a daemon that
+     7: other frontends attach to.
+     22: | `polarisd` | Headless daemon: one kernel session served over a `polaris-*` named pipe (Unix socket elsewhere) with Biscuit token auth |
+(polaris-worker is started by the kernel with option/value pairs; it has no --version flag.)

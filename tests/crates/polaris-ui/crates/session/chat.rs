@@ -535,3 +535,71 @@ async fn a_cuda_workspace_turn_carries_the_profile_until_nvidia_is_off() -> Test
     session.close().await?;
     Ok(())
 }
+
+/// P5 keyless `$rag`: with `$rag` on, a turn's request carries the best workspace passages with
+/// their provenance; without it, none.
+#[tokio::test]
+async fn rag_carries_workspace_passages_into_the_request() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(
+        workspace.path().join("billing.rs"),
+        "/// Monthly invoice total with the regional tax rate applied.\npub fn invoice_total(amount: u64, tax_rate: u64) -> u64 {\n    amount + amount * tax_rate / 100\n}\n",
+    )?;
+    let mut session =
+        OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let model = Arc::new(ScriptedModel::new(vec![
+        text_turn("It adds the tax."),
+        text_turn("Still adds the tax."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let cancel = CancellationToken::new();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    agent
+        .turn(
+            session.kernel(),
+            "How is the invoice total taxed?",
+            &cancel,
+            tx,
+        )
+        .await?;
+    let _shown = drain(&mut rx);
+    session.apply_directive("$rag").await?;
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    agent
+        .turn(
+            session.kernel(),
+            "How is the invoice total taxed?",
+            &cancel,
+            tx,
+        )
+        .await?;
+    let _shown = drain(&mut rx);
+    let requests = model.requests();
+    let carries = |request: &ChatRequest, needle: &str| {
+        request
+            .messages
+            .iter()
+            .any(|message| message.content.contains(needle))
+    };
+    assert_eq!(requests.len(), 2);
+    assert!(!carries(
+        &requests[0],
+        "Workspace passages for this question"
+    ));
+    assert!(carries(
+        &requests[1],
+        "Workspace passages for this question ($rag"
+    ));
+    assert!(carries(&requests[1], "--- billing.rs:1-4"));
+    session.close().await?;
+    Ok(())
+}

@@ -1,0 +1,54 @@
+# P10-1 evidence: test matrix run on this machine, 2026-10-29 (81dd3d3 + working tree), rustc 1.99.0, Windows 11
+
+## Full workspace: cargo test --workspace --no-fail-fast (dev profile)
+test binaries 549, passed 2630, failed 4, ignored 50
+failures (all in polaris-ratelimit, the in-progress refund-ledger work; same four as before this session):
+  test ledger::tests::background_admission_helps_deferred_refund_before_shedding ... FAILED
+  test expired_older_reservation_cannot_refund_newer_live_debt ... FAILED
+  test concurrent_refund_preserves_other_reservations ... FAILED
+  test late_refund_never_erases_another_request_charge ... FAILED
+
+## Loom models and load/stress spikes: cargo test --profile budget (optimized)
+== loom: polaris-kernel-bus loom_ordering
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+== loom: polaris-storage-cache single_flight_loom
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+== loom: polaris-runtime-leases (feature loom)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+== spike: polaris-spike-bus
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.81s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+== spike: polaris-spike-ratelimit
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+== spike: polaris-spike-web
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+== spike: polaris-spike-sandbox
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.33s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+== spike: polaris-spike-s1
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+## Not run here (tools or environment missing on this machine)
+- fuzz (25 targets in tests/fuzz): needs cargo-fuzz and a nightly toolchain
+- Miri: needs the nightly toolchain with the miri component
+- Kani (13 proofs): needs Kani (Linux/WSL)
+- mutants: needs cargo-mutants
+- live sandbox spike tests (7 ignored above): need the OpenShell gateway in WSL (P2 paused)

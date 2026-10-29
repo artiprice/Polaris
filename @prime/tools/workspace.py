@@ -742,7 +742,7 @@ def cmd_check_docs(args: argparse.Namespace) -> int:
 # --------------------------------------------------------------------------- render-docs
 
 GEN_MARKER = re.compile(r"^<!-- generated: .+ -->$")
-STATUS_WORDS = ["PASS", "FAIL", "IN PROGRESS", "BLOCKED-ON-ACCESS", "BLOCKED", "NOT STARTED"]
+STATUS_WORDS = ["PASS", "FAIL", "IN PROGRESS", "BLOCKED-ON-ACCESS", "BLOCKED", "DESCOPED", "NOT STARTED"]
 STATUS_CELL = re.compile(r"^\**(" + "|".join(re.escape(s) for s in STATUS_WORDS) + r")\b")
 SUMMARY_MARKER = "<!-- generated: status summary -->"
 

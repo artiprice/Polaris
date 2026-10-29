@@ -61,6 +61,10 @@ name = "hack"
 path = "../../../../tests/crates/polaris-ui/crates/session/hack.rs"
 
 [[test]]
+name = "local_search"
+path = "../../../../tests/crates/polaris-ui/crates/session/local_search.rs"
+
+[[test]]
 name = "nvidia"
 path = "../../../../tests/crates/polaris-ui/crates/session/nvidia.rs"
 

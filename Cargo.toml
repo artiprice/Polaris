@@ -409,3 +409,10 @@ strip = true
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+# PLAN §11.4 budget measurements (tests/tests/budgets.rs): optimized like release, but without fat
+# LTO so the measurement binaries build in minutes. Numbers are therefore slightly conservative.
+[profile.budget]
+inherits = "release"
+lto = false
+codegen-units = 16

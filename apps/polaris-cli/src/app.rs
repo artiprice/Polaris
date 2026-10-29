@@ -112,6 +112,11 @@ pub enum Action {
     Ci,
     /// Run the CI pipeline in Docker with cache volumes (`/ci-run`).
     CiRun,
+    /// Rank workspace passages for a query, with path and lines (`/search-local`).
+    SearchLocal {
+        /// Words to search for.
+        query: String,
+    },
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
@@ -251,13 +256,15 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             | Some(Action::NvVerify)
             | Some(Action::Hack)
             | Some(Action::Ci)
-            | Some(Action::CiRun) => {
+            | Some(Action::CiRun)
+            | Some(Action::SearchLocal { .. }) => {
                 use polaris_ui_session::commands::LocalCommand;
                 let command = match args.command {
                     Some(Action::NvProfile) => LocalCommand::NvProfile,
                     Some(Action::NvVerify) => LocalCommand::NvVerify,
                     Some(Action::Ci) => LocalCommand::Ci,
                     Some(Action::CiRun) => LocalCommand::CiRun,
+                    Some(Action::SearchLocal { query }) => LocalCommand::SearchLocal(query),
                     _ => LocalCommand::Hack,
                 };
                 let lines = command

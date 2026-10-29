@@ -1,0 +1,18 @@
+# P10-3 evidence: PLAN §11.4 budgets measured (2026-10-29, 81dd3d3 + working tree)
+# Machine: this PC (Windows 11, 12 logical CPUs, 16 GB), rustc 1.99.0, profile `budget` (release opt-level 3, no LTO, codegen-units 16).
+# Commands:
+#   cargo test --profile budget -p polaris-tests --test budgets --test budget_alloc -- --nocapture --test-threads 1
+#   cargo test --profile budget -p polaris-spike-bus --test flood -- --nocapture --test-threads 1
+
+budget SSE frame parse allocations: 0 blocks over 10000 warm frames (target zero alloc per frame)
+budget GCRA check allocations: 0 blocks over 10000 warm admissions (target zero alloc)
+budget DFA scan: 438 MB/s single core over 64 MiB, default pack (secrets, PII, shell) (target ≥ 500 MB/s)
+budget GCRA check: try_acquire p50 700 ns, p99 1100 ns over 100k admitted calls (RPM + TPM cells) (target < 1 µs, zero alloc)
+budget SSE frame parse: 100000 frames in 24.4 ms (244 ns/frame, 397 MB/s); allocations: see budget_alloc (target zero alloc per frame)
+budget Sync 10k files, no changes: rescan with cache + manifest diff in 1140 ms (10000 files, 0 actions) (target < 2 s)
+budget TUI frame render: 200×60 with 80 transcript entries, uncached: p50 2.96 ms, p99 5.08 ms (TestBackend, includes buffer diff) (target < 8 ms)
+test million_event_flood_with_eight_subscribers ... bus flood: subscribers=8 events=1000000 elapsed=755.4484ms publish_p50=400ns publish_p99=4503ns rss_delta_bytes=Some(168415232)
+test million_event_flood_with_one_subscriber ... bus flood: subscribers=1 events=1000000 elapsed=360.235ms publish_p50=200ns publish_p99=1000ns rss_delta_bytes=Some(167792640)
+test million_event_flood_with_sixty_four_subscribers ... bus flood: subscribers=64 events=1000000 elapsed=429.4264ms publish_p50=300ns publish_p99=500ns rss_delta_bytes=Some(167874560)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.72s
+budget Local search (/search-local, $rag): this repository: first query 5085 ms (indexing), next query 329 ms (cached index); 10 and 10 hits (no PLAN budget; interactive)

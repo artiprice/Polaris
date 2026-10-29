@@ -486,20 +486,30 @@ where
         let map_root = self.workspace.clone();
         let mention_text = prompt.to_owned();
         let nvidia_mode = crate::nvidia::nvidia_mode(kernel);
-        let (repo_map, references, nvidia) = tokio::task::spawn_blocking(move || {
+        let rag = crate::local_search::rag_enabled(kernel);
+        let (repo_map, references, nvidia, passages) = tokio::task::spawn_blocking(move || {
             let map = workspace_map(&map_root)?;
             let references = mention_hint(&map_root, &mention_text);
             // `$nvidia(auto)`: the profile and its invariants, only when a stack is found.
             let nvidia = crate::nvidia::context_for_turn(nvidia_mode, &map_root, &mention_text)
                 .unwrap_or_default();
-            Ok::<_, ChatError>((map, references, nvidia))
+            // `$rag`: ranked workspace passages, carried as data in the request.
+            let passages = if rag {
+                crate::local_search::rag_context(&map_root, &mention_text).unwrap_or_default()
+            } else {
+                None
+            };
+            Ok::<_, ChatError>((map, references, nvidia, passages))
         })
         .await
         .map_err(|_| ChatError::Workspace)??;
         let request = format!(
-            "{}{prompt}{}",
+            "{}{prompt}{}{}",
             if self.plan { PLAN_INSTRUCTION } else { "" },
-            references.unwrap_or_default()
+            references.unwrap_or_default(),
+            passages
+                .map(|passages| format!("\n\n{passages}"))
+                .unwrap_or_default()
         );
         let goal = compose_goal(&self.history, &request);
         let turn_cancellation = cancellation.child_token();

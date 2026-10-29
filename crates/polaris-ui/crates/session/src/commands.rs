@@ -1,6 +1,7 @@
 //! Slash commands every frontend answers locally, on the session's workspace, without the model:
-//! `/nv-profile`, `/nv-verify` (P5), `/hack` (P7), `/ci` and `/ci-run` (P8). Each returns report lines that the terminal
-//! shows as a sheet and the web and desktop views as a report entry.
+//! `/nv-profile`, `/nv-verify`, `/search-local <query>` (P5), `/hack` (P7), `/ci` and `/ci-run`
+//! (P8). Each returns report lines that the terminal shows as a sheet and the web and desktop
+//! views as a report entry.
 
 use std::path::Path;
 
@@ -11,12 +12,14 @@ use crate::SessionHostError;
 use crate::nvidia::{nvidia_mode, report_lines};
 
 /// A command answered locally.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LocalCommand {
     /// `/nv-profile`: the NVIDIA stack, build targets and local GPUs.
     NvProfile,
     /// `/nv-verify`: the CUDA advisor over `.cu`/`.cuh` sources.
     NvVerify,
+    /// `/search-local <query>`: ranked workspace passages with their provenance.
+    SearchLocal(String),
     /// `/hack`: races, blocking calls in async code, unsafe code, secrets and CUDA bugs.
     Hack,
     /// `/ci`: the workspace's CI pipeline, its caches and whether Docker can run it.
@@ -26,10 +29,16 @@ pub enum LocalCommand {
 }
 
 impl LocalCommand {
-    /// The command `text` is exactly, if any (`/hack` with arguments is not one).
+    /// The command `text` is, if any (`/hack` with arguments is not one; `/search-local` needs a
+    /// query, quoted or not).
     #[must_use]
     pub fn parse(text: &str) -> Option<Self> {
-        match text.trim() {
+        let text = text.trim();
+        if let Some(query) = text.strip_prefix("/search-local ") {
+            let query = query.trim().trim_matches('"').trim();
+            return (!query.is_empty()).then(|| Self::SearchLocal(query.to_owned()));
+        }
+        match text {
             "/nv-profile" => Some(Self::NvProfile),
             "/nv-verify" => Some(Self::NvVerify),
             "/hack" => Some(Self::Hack),
@@ -41,21 +50,23 @@ impl LocalCommand {
 
     /// Report title.
     #[must_use]
-    pub const fn title(self) -> &'static str {
+    pub const fn title(&self) -> &'static str {
         match self {
             Self::NvProfile => "NVIDIA profile",
             Self::NvVerify => "CUDA advisor",
+            Self::SearchLocal(_) => "Local search",
             Self::Hack => "Hack audit",
             Self::Ci => "CI pipeline",
             Self::CiRun => "CI run",
         }
     }
 
-    /// Run the command for a session (the NVIDIA ones under its `$nvidia` mode).
+    /// Run the command for a session (the NVIDIA ones under its `$nvidia` mode, the CI ones
+    /// noting its `$env`).
     /// # Errors
     /// The workspace cannot be listed, or an analyzer fails.
     pub async fn run(
-        self,
+        &self,
         kernel: &KernelHandle,
         workspace: &Path,
     ) -> Result<Vec<String>, SessionHostError> {
@@ -72,13 +83,23 @@ impl LocalCommand {
     /// # Errors
     /// The workspace cannot be listed, or an analyzer fails.
     pub async fn run_with(
-        self,
+        &self,
         mode: NvidiaMode,
         workspace: &Path,
     ) -> Result<Vec<String>, SessionHostError> {
         match self {
             Self::NvProfile => report_lines(false, mode, workspace).await,
             Self::NvVerify => report_lines(true, mode, workspace).await,
+            Self::SearchLocal(query) => {
+                let root = workspace.to_owned();
+                let owned = query.clone();
+                let hits = tokio::task::spawn_blocking(move || {
+                    crate::local_search::search(&root, &owned, crate::local_search::SEARCH_HITS)
+                })
+                .await
+                .map_err(|_| SessionHostError::Unavailable("search task failed"))??;
+                Ok(crate::local_search::search_lines(query, &hits))
+            }
             Self::Hack => {
                 let root = workspace.to_owned();
                 let report = tokio::task::spawn_blocking(move || crate::hack::hack(&root))

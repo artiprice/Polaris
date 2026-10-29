@@ -502,6 +502,8 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "/ci shows the workspace's CI pipeline; /ci-run runs it in Docker with cached cargo home and target."
             .to_owned(),
+        "/search-local <words> ranks workspace passages (lexical); $rag adds the best ones to each question."
+            .to_owned(),
     ];
     lines.push(
         "Ctrl+V/Shift+Insert paste text; Ctrl+C copies selection; Ctrl+X cuts after clipboard acknowledgement. Images are unavailable."
@@ -2776,7 +2778,8 @@ fn submit_draft(
             | SlashCommand::NvVerify
             | SlashCommand::Hack
             | SlashCommand::Ci
-            | SlashCommand::CiRun => {
+            | SlashCommand::CiRun
+            | SlashCommand::SearchLocal(_) => {
                 use polaris_ui_session::commands::LocalCommand;
                 let local = match command {
                     SlashCommand::NvProfile => LocalCommand::NvProfile,
@@ -2786,6 +2789,7 @@ fn submit_draft(
                         state.notice = "Running the CI pipeline in Docker…".to_owned();
                         LocalCommand::CiRun
                     }
+                    SlashCommand::SearchLocal(query) => LocalCommand::SearchLocal(query),
                     _ => LocalCommand::Hack,
                 };
                 if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
@@ -2812,7 +2816,6 @@ fn submit_draft(
             | SlashCommand::Browser(_)
             | SlashCommand::UiDiff
             | SlashCommand::Redteam
-            | SlashCommand::SearchLocal(_)
             | SlashCommand::NixFlake
             | SlashCommand::ProofOfDone => {
                 state.notice = "This command requires its real backend profile and is unavailable here; draft retained".to_owned();

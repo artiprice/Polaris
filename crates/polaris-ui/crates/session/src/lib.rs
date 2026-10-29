@@ -17,6 +17,7 @@ pub mod commands;
 mod error;
 pub mod hack;
 pub mod host;
+pub mod local_search;
 pub mod nvidia;
 mod offline;
 mod queries;
