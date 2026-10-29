@@ -349,6 +349,37 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
                     step,
                 }
             }
+            "delete_file" => {
+                let input: DeleteArgs = decode(arguments)?;
+                let service = self
+                    .mutations
+                    .as_ref()
+                    .ok_or_else(|| denied("frame cannot mutate"))?;
+                let result_bound = result_bound(&input.path)?;
+                if result_bound > admission_cap {
+                    return Err(denied("mutation receipt exceeds driver result budget"));
+                }
+                PermitKind::Mutation {
+                    prepared: Box::new(
+                        service
+                            .prepare_with_id(
+                                token,
+                                match input.command_id {
+                                    Some(id) => id,
+                                    None => CommandId::new_v7(),
+                                },
+                                FrameMutationRequest::DeleteFile {
+                                    path: input.path,
+                                    expected_base: input.expected_base,
+                                },
+                            )
+                            .await
+                            .map_err(mutation_error)?,
+                    ),
+                    result_bound,
+                    step,
+                }
+            }
             "file_revision" => {
                 let input: PathArgs = decode(arguments)?;
                 let path = WorkspacePath::parse(&input.path)
@@ -469,6 +500,14 @@ struct EditArgs {
 struct PatchArgs {
     path: String,
     patch: String,
+    expected_base: Cid,
+    #[serde(default)]
+    command_id: Option<CommandId>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeleteArgs {
+    path: String,
     expected_base: Cid,
     #[serde(default)]
     command_id: Option<CommandId>,
@@ -961,7 +1000,9 @@ fn change_question(
             "The change is too large to measure exactly."
         }
     };
-    let verb = if prepared.old_source().is_empty() {
+    let verb = if prepared.deletes() {
+        "Delete"
+    } else if prepared.old_source().is_empty() {
         "Create"
     } else {
         "Change"
@@ -1088,7 +1129,7 @@ impl<S: MutationSafety + 'static> FrameToolAccess for KernelAgentToolRunner<S> {
                 },
             ),
             "write_file" => (
-                "Replace an exact revision or create an absent UTF-8 file. Obtain existing revisions with file_revision.",
+                "Replace an exact revision or create an absent UTF-8 file (expected_base null; missing directories are created). Obtain existing revisions with file_revision.",
                 r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"contents":{"type":"string"},"expected_base":{"type":["string","null"]}},"required":["path","contents","expected_base"]}"#,
                 write_effects(),
             ),
@@ -1098,8 +1139,13 @@ impl<S: MutationSafety + 'static> FrameToolAccess for KernelAgentToolRunner<S> {
                 write_effects(),
             ),
             "apply_patch" => (
-                "Apply a single-file unified patch against an exact current revision.",
+                "Apply a unified diff to one file (expected_base comes from file_revision). Each hunk is found by its context and '-' lines, so line numbers may be approximate; keep two or three unchanged lines around every change.",
                 r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"patch":{"type":"string"},"expected_base":{"type":"string"}},"required":["path","patch","expected_base"]}"#,
+                write_effects(),
+            ),
+            "delete_file" => (
+                "Delete one existing file (expected_base comes from file_revision). Use it only when the user asked for the file to go.",
+                r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"expected_base":{"type":"string"}},"required":["path","expected_base"]}"#,
                 write_effects(),
             ),
             "file_revision" => (

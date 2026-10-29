@@ -362,7 +362,7 @@ async fn plan_mode_offers_no_edit_tools() -> TestResult {
         !first.tools.iter().any(|tool| {
             matches!(
                 tool.name.as_ref(),
-                "edit_file" | "write_file" | "apply_patch"
+                "edit_file" | "write_file" | "apply_patch" | "delete_file"
             )
         }),
         "plan mode is read-only"
@@ -423,5 +423,59 @@ async fn declined_change_is_not_written() -> TestResult {
             .any(|message| message.content.contains("Not now.")),
         "the note reaches the model"
     );
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_reviewed_deletion_is_reported_as_deleted() -> TestResult {
+    let state = tempfile::tempdir()?;
+    let workspace = tempfile::tempdir()?;
+    std::fs::write(workspace.path().join("old.md"), "# Old\n")?;
+    let session = OfflineSession::open(state.path(), workspace.path(), SessionId::new_v7()).await?;
+    let base = polaris_kernel::storage::cas::content_id(b"# Old\n");
+    let model = Arc::new(ScriptedModel::new(vec![
+        call_turn(
+            "delete-1",
+            "delete_file",
+            &format!(r#"{{"path":"old.md","expected_base":"{base}"}}"#),
+        ),
+        text_turn("Removed old.md."),
+    ]));
+    let mut agent = ChatAgent::new(
+        session.kernel(),
+        session.workspace(),
+        ModelId::new("scripted-model")?,
+        Arc::clone(&model),
+        131_072,
+        ChatSettings::default(),
+    )
+    .await?;
+    let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+    let kernel = session.kernel().clone();
+    let reviewer = tokio::spawn(async move {
+        let mut deleted = Vec::new();
+        while let Some(item) = rx.recv().await {
+            match item {
+                ChatProgress::Review(review) => {
+                    polaris_ui_session::answer_review(&kernel, &review, true, None).await?;
+                }
+                ChatProgress::Deleted(path) => deleted.push(path),
+                _ => {}
+            }
+        }
+        Ok::<_, polaris_ui_session::ChatError>(deleted)
+    });
+    let turn = agent
+        .turn(
+            session.kernel(),
+            "Delete old.md.",
+            &CancellationToken::new(),
+            tx,
+        )
+        .await?;
+    let deleted = reviewer.await.map_err(|_| "reviewer panicked")??;
+    assert_eq!(turn.answer.as_deref(), Some("Removed old.md."));
+    assert_eq!(deleted, vec!["old.md".to_owned()]);
+    assert!(!workspace.path().join("old.md").exists());
     Ok(())
 }

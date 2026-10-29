@@ -28,7 +28,7 @@ use polaris_security::capability::{
 };
 use polaris_system_one::verifier::{MutationSafety, SafetyRequest};
 use polaris_tools::builtin::{
-    MatchLevel, WorkspacePath, apply_unified_patch, is_secret_path, replace_text,
+    MatchLevel, WorkspacePath, apply_hunks, apply_unified_patch, is_secret_path, replace_text,
     resolve_in_workspace,
 };
 use serde::Serialize;
@@ -77,6 +77,13 @@ pub enum FrameMutationRequest {
         path: String,
         /// Single-file unified patch.
         patch: String,
+        /// Digest of the exact existing source.
+        expected_base: Cid,
+    },
+    /// Remove one existing, nonempty file.
+    DeleteFile {
+        /// Normalized workspace-relative target.
+        path: String,
         /// Digest of the exact existing source.
         expected_base: Cid,
     },
@@ -153,8 +160,10 @@ pub struct PreparedFrameMutation {
     churn_lines: u32,
     touches_unsafe: bool,
     mutation_binding: Cid,
-    /// How an `edit_file` target was located; `None` for whole-file writes and patches.
+    /// How an `edit_file` or `apply_patch` target was located; `None` for whole-file writes.
     match_level: Option<MatchLevel>,
+    /// The commit removes the file; the new snapshot is empty.
+    deletes: bool,
 }
 
 impl PreparedFrameMutation {
@@ -168,10 +177,15 @@ impl PreparedFrameMutation {
     pub fn old_source(&self) -> &[u8] {
         &self.old
     }
-    /// Exact proposed bytes.
+    /// Exact proposed bytes; empty for a deletion.
     #[must_use]
     pub fn new_source(&self) -> &[u8] {
         &self.new
+    }
+    /// Whether the proposal removes the file.
+    #[must_use]
+    pub const fn deletes(&self) -> bool {
+        self.deletes
     }
     /// Digest binding command, frame, target, diff and both snapshots; a human request for this
     /// proposal names it so the answer cannot be replayed onto another mutation.
@@ -196,6 +210,7 @@ impl PreparedFrameMutation {
             touches_unsafe: self.touches_unsafe,
             mutation_binding: self.mutation_binding,
             match_level: self.match_level,
+            deletes: self.deletes,
         }
     }
 }
@@ -499,6 +514,16 @@ fn prepare_owned(
             patch,
             expected_base,
         } => (path, Some(expected_base), None, patch, ProposalMode::Patch),
+        FrameMutationRequest::DeleteFile {
+            path,
+            expected_base,
+        } => (
+            path,
+            Some(expected_base),
+            None,
+            String::new(),
+            ProposalMode::Delete,
+        ),
     };
     if raw_path.len() > MAX_PATH_BYTES {
         return Err(FrameMutationError::Limit);
@@ -514,6 +539,7 @@ fn prepare_owned(
     }
     let target = normalized.as_str().to_owned();
     let root = owner.workspace_root().to_owned();
+    let deletes = matches!(mode, ProposalMode::Delete);
     let MutationCandidate {
         base,
         old,
@@ -582,6 +608,7 @@ fn prepare_owned(
         touches_unsafe,
         mutation_binding,
         match_level,
+        deletes,
     })
 }
 
@@ -623,6 +650,7 @@ fn candidate_facts(
 
 #[derive(Debug, Clone, Copy)]
 enum ProposalMode {
+    Delete,
     Write,
     Edit,
     Patch,
@@ -675,7 +703,9 @@ fn snapshot_candidate(
             } else {
                 parent.to_str().ok_or(FrameMutationError::Path)?
             };
-            let parent_path = resolve_parent(root, parent)?;
+            // Missing directories are only checked here; the commit creates them.
+            let (ancestor, missing) = existing_ancestor(root, parent)?;
+            let parent_path = missing.iter().fold(ancestor, |path, name| path.join(name));
             let file_name = Path::new(target)
                 .file_name()
                 .ok_or(FrameMutationError::Path)?;
@@ -689,6 +719,8 @@ fn snapshot_candidate(
     let mut match_level = None;
     let new = match mode {
         ProposalMode::Write => input.into_bytes(),
+        // The proposal's new snapshot is empty; the commit removes the file instead.
+        ProposalMode::Delete => Vec::new(),
         ProposalMode::Edit => {
             let (needle, replace_all) = old_text.ok_or(FrameMutationError::InvalidProposal)?;
             let source =
@@ -700,10 +732,27 @@ fn snapshot_candidate(
         }
         ProposalMode::Patch => {
             let patch = input;
-            if !patch_header_matches(&patch, target) {
-                return Err(FrameMutationError::InvalidProposal);
+            if !patch_headers_name(&patch, target) {
+                return Err(FrameMutationError::EditTarget(format!(
+                    "the patch headers name another file; apply_patch changes only `{target}`"
+                )));
             }
-            apply_unified_patch(&old, &patch).map_err(|_| FrameMutationError::InvalidProposal)?
+            // Exact line numbers first; a model's numbers are often off, so then find each
+            // hunk by its old lines.
+            match apply_unified_patch(&old, &patch) {
+                Ok(bytes) => {
+                    match_level = Some(MatchLevel::Exact);
+                    bytes
+                }
+                Err(_) => {
+                    let source = std::str::from_utf8(&old)
+                        .map_err(|_| FrameMutationError::InvalidProposal)?;
+                    let applied = apply_hunks(source, &patch)
+                        .map_err(|error| FrameMutationError::EditTarget(error.to_string()))?;
+                    match_level = Some(applied.level);
+                    applied.text.into_bytes()
+                }
+            }
         }
     };
     if old == new {
@@ -717,10 +766,21 @@ fn snapshot_candidate(
     })
 }
 
-fn patch_header_matches(patch: &str, target: &str) -> bool {
-    let old = format!("--- a/{target}");
-    let new = format!("+++ b/{target}");
-    patch.lines().any(|line| line == old) && patch.lines().any(|line| line == new)
+/// File headers are optional; any `---`/`+++` header present must name `target`.
+fn patch_headers_name(patch: &str, target: &str) -> bool {
+    patch.lines().all(|line| {
+        let named = line
+            .strip_prefix("--- ")
+            .map(|path| path.strip_prefix("a/").unwrap_or(path))
+            .or_else(|| {
+                line.strip_prefix("+++ ")
+                    .map(|path| path.strip_prefix("b/").unwrap_or(path))
+            });
+        match named {
+            Some(path) => path.split('\t').next().map(str::trim_end) == Some(target),
+            None => true,
+        }
+    })
 }
 
 fn render_diff(path: &str, old: &[u8], new: &[u8]) -> Result<Vec<u8>, FrameMutationError> {
@@ -916,13 +976,27 @@ fn apply_owned(
                 .map_err(|_| FrameMutationError::Lease)?;
             let path =
                 resolve_for_commit(owner.workspace_root(), &prepared.path, actual.is_some())?;
-            atomic_commit(&path, &prepared.new, actual.is_some())?;
-            let committed = read_source_bounded(&path).map_err(|_| {
-                FrameMutationError::AppliedButUnrecorded {
-                    path: prepared.path.clone(),
-                    actual: content_id(&prepared.new),
+            let committed = if prepared.deletes {
+                fs::remove_file(&path).map_err(|_| FrameMutationError::Workspace)?;
+                // A removed file reads back as the empty snapshot the verifier approved.
+                match fs::symlink_metadata(&path) {
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+                    _ => {
+                        return Err(FrameMutationError::AppliedButUnrecorded {
+                            path: prepared.path.clone(),
+                            actual: prepared.lease_base,
+                        });
+                    }
                 }
-            })?;
+            } else {
+                atomic_commit(&path, &prepared.new, actual.is_some())?;
+                read_source_bounded(&path).map_err(|_| {
+                    FrameMutationError::AppliedButUnrecorded {
+                        path: prepared.path.clone(),
+                        actual: content_id(&prepared.new),
+                    }
+                })?
+            };
             let actual_cid = content_id(&committed);
             if committed != prepared.new {
                 return Err(FrameMutationError::AppliedButUnrecorded {
@@ -934,6 +1008,7 @@ fn apply_owned(
             let receipt_record = StoredReceipt {
                 schema: 2,
                 match_level: prepared.match_level,
+                deleted: prepared.deletes,
                 command: approved.command_id(),
                 frame: approved.agent(),
                 path: prepared.path.clone(),
@@ -1028,9 +1103,12 @@ struct StoredReceipt {
     new_cid: Cid,
     diff: Cid,
     approval_evidence: Cid,
-    /// How the edit target was located (schema 2); absent for writes and patches.
+    /// How the edit or patch target was located (schema 2); absent for whole-file writes.
     #[serde(skip_serializing_if = "Option::is_none")]
     match_level: Option<MatchLevel>,
+    /// Schema 2: the file was removed; `new_cid` is the empty snapshot.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    deleted: bool,
 }
 
 fn persist_json(
@@ -1081,8 +1159,53 @@ fn resolve_for_commit(
     } else {
         parent.to_str().ok_or(FrameMutationError::Path)?
     };
+    let (mut directory, missing) = existing_ancestor(root, parent)?;
+    for name in missing {
+        directory.push(name);
+        match fs::create_dir(&directory) {
+            Ok(()) => {}
+            Err(error)
+                if error.kind() == std::io::ErrorKind::AlreadyExists && directory.is_dir() => {}
+            Err(_) => return Err(FrameMutationError::Workspace),
+        }
+    }
+    // Re-resolve what now exists, so the created directories are proven inside the workspace.
     let parent_path = resolve_parent(root, parent)?;
     Ok(parent_path.join(relative.file_name().ok_or(FrameMutationError::Path)?))
+}
+
+/// The deepest existing workspace directory on the way to `parent`, and the names below it that
+/// do not exist yet. Anything that exists but is not a contained directory (a file in the way, a
+/// link out of the workspace) is refused rather than walked past.
+fn existing_ancestor(
+    root: &Path,
+    parent: &str,
+) -> Result<(PathBuf, Vec<String>), FrameMutationError> {
+    const MAX_NEW_DIRECTORIES: usize = 32;
+    let mut missing = Vec::new();
+    let mut current = parent.to_owned();
+    loop {
+        match resolve_parent(root, &current) {
+            Ok(path) => {
+                missing.reverse();
+                return Ok((path, missing));
+            }
+            Err(error) => {
+                if current == "."
+                    || missing.len() >= MAX_NEW_DIRECTORIES
+                    || fs::symlink_metadata(root.join(&current)).is_ok()
+                {
+                    return Err(error);
+                }
+                let (rest, name) = match current.rsplit_once('/') {
+                    Some((rest, name)) => (rest.to_owned(), name.to_owned()),
+                    None => (".".to_owned(), current.clone()),
+                };
+                missing.push(name);
+                current = rest;
+            }
+        }
+    }
 }
 
 fn resolve_parent(root: &Path, parent: &str) -> Result<PathBuf, FrameMutationError> {

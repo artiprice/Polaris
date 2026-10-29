@@ -1585,6 +1585,14 @@ impl UiState {
                         self.notice = format!("Reply display limit reached: {error}");
                     }
                 }
+                ChatProgress::Deleted(path) => {
+                    if let Err(error) = self
+                        .offline_view_mut()
+                        .push_system(format!("✓ Deleted {path}"))
+                    {
+                        self.notice = format!("Reply display limit reached: {error}");
+                    }
+                }
             },
             BackendMessage::TurnFinished(report) => self.finish_turn(report),
             BackendMessage::TurnFailed(reason) => {

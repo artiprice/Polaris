@@ -108,6 +108,8 @@ pub enum WebEvent {
     ReviewClosed { request_id: String },
     /// A reviewed change was written to this workspace path.
     Applied { path: String },
+    /// A reviewed deletion removed this workspace path.
+    Deleted { path: String },
     /// Token use of the open session.
     Usage {
         requests: u64,
@@ -429,6 +431,7 @@ impl Owner {
                 WebEvent::ReviewClosed { request_id }
             }
             HostEvent::Progress(ChatProgress::Applied(path)) => WebEvent::Applied { path },
+            HostEvent::Progress(ChatProgress::Deleted(path)) => WebEvent::Deleted { path },
             HostEvent::Finished(report) => {
                 self.reviews.clear();
                 WebEvent::ReplyFinished {

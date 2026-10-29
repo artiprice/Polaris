@@ -181,6 +181,8 @@ pub enum BackendEvent {
     ReviewClosed(String),
     /// A reviewed change was written to this workspace path.
     Applied(String),
+    /// A reviewed deletion removed this workspace path.
+    Deleted(String),
 }
 
 /// The two channel ends the window uses.

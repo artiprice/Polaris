@@ -297,7 +297,7 @@ fn verify_step_owned(
             continue;
         }
         match call.name.as_str() {
-            "write_file" | "edit_file" | "apply_patch" => {
+            "write_file" | "edit_file" | "apply_patch" | "delete_file" => {
                 match value.get("status").and_then(Value::as_str) {
                     Some("applied") => {
                         if !matches!(
@@ -390,7 +390,8 @@ fn verify_mutation_result(
     let receipt: StoredReceipt = decode_cas(owner.cas(), result.receipt, 16 * 1024)?;
     if result.status != "applied"
         || !matches!(receipt.schema, 1 | 2)
-        || (receipt.schema == 1 && receipt.match_level.is_some())
+        || (receipt.schema == 1 && (receipt.match_level.is_some() || receipt.deleted))
+        || (receipt.deleted && receipt.new_cid != crate::storage::cas::content_id(b""))
         || receipt.frame != frame
         || receipt.path != result.path
         || receipt.base != result.base
@@ -421,11 +422,11 @@ fn verify_mutation_result(
         }
     }
     let path = sync::RelPath::new(&receipt.path).map_err(|_| FrameVerificationError::Evidence)?;
-    if !manifest
+    let present = manifest
         .entries
         .get(&path)
-        .is_some_and(|e| e.kind == EntryKind::File && e.hash == receipt.new_cid)
-    {
+        .is_some_and(|e| e.kind == EntryKind::File && e.hash == receipt.new_cid);
+    if present == receipt.deleted || (receipt.deleted && manifest.entries.contains_key(&path)) {
         return Err(FrameVerificationError::Evidence);
     }
     let approval: ApprovalEvidence =
@@ -701,6 +702,9 @@ struct StoredReceipt {
     /// Schema 2: how an edit target was located (audit only).
     #[serde(default)]
     match_level: Option<String>,
+    /// Schema 2: the file was removed.
+    #[serde(default)]
+    deleted: bool,
 }
 // These mandatory identity and threshold fields are validated; additional audit fields stay in CAS.
 #[derive(Deserialize)]

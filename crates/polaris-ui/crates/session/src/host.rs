@@ -114,7 +114,7 @@ struct RunningTurn {
 
 impl RunningTurn {
     fn note(&mut self, item: &ChatProgress) {
-        if let ChatProgress::Applied(path) = item
+        if let ChatProgress::Applied(path) | ChatProgress::Deleted(path) = item
             && !self.changed.contains(path)
         {
             self.changed.push(path.clone());

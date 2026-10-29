@@ -330,6 +330,7 @@ impl Bridgework {
                 BackendEvent::ReviewClosed(request_id)
             }
             HostEvent::Progress(ChatProgress::Applied(path)) => BackendEvent::Applied(path),
+            HostEvent::Progress(ChatProgress::Deleted(path)) => BackendEvent::Deleted(path),
             HostEvent::Finished(report) => {
                 self.reviews.clear();
                 BackendEvent::ReplyFinished {

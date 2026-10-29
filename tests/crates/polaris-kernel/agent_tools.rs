@@ -329,6 +329,7 @@ impl Fixture {
                     "write_file".into(),
                     "edit_file".into(),
                     "apply_patch".into(),
+                    "delete_file".into(),
                     "ask_user".into(),
                 ],
             },
@@ -2314,6 +2315,154 @@ async fn declined_change_writes_nothing_and_returns_the_reason_to_the_model() ->
             "the decline and the note must reach the model"
         );
     }
+    fixture.kernel.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn patches_with_wrong_line_numbers_are_placed_by_their_context() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let fixture = Fixture::new(&[Right::Read, Right::ProposeDiff]).await?;
+    std::fs::write(
+        fixture.workspace.path().join("sample.rs"),
+        b"fn before() {}\n\nfn keep() {}\n",
+    )?;
+    let base = polaris_storage::cas::content_id(b"fn before() {}\n\nfn keep() {}\n");
+    // The header claims line 7 and wrong counts; the context is at line 3.
+    let patch = "--- a/sample.rs\n+++ b/sample.rs\n@@ -7,4 +7,4 @@\n-fn keep() {}\n+fn kept() {}\n";
+    let permit = fixture
+        .runner
+        .authorize(
+            &fixture.token,
+            ToolCall {
+                id: "patch-1".into(),
+                name: "apply_patch".into(),
+                arguments: json!({"path":"sample.rs","patch":patch,"expected_base":base})
+                    .to_string(),
+            },
+        )
+        .await?;
+    let result = fixture
+        .runner
+        .execute(permit, fixture.frame.view().id, 65536)
+        .await?;
+    let value: serde_json::Value = serde_json::from_str(&result.content)?;
+    assert_eq!(value["status"], "applied", "{value}");
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("sample.rs"))?,
+        b"fn before() {}\n\nfn kept() {}\n"
+    );
+    let receipt: Cid = serde_json::from_value(value["receipt"].clone())?;
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let stored: serde_json::Value =
+        serde_json::from_slice(&store.get(&receipt)?.ok_or("missing receipt")?)?;
+    assert_eq!(stored["match_level"], "exact");
+    fixture.kernel.shutdown().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn reviewed_deletion_is_verified_against_the_missing_file() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let mut fixture = Fixture::new(&[Right::Read, Right::ProposeDiff, Right::ExecuteTool]).await?;
+    fixture.review_changes()?;
+    std::fs::write(fixture.workspace.path().join("old.md"), b"# Old\n")?;
+    let base = polaris_storage::cas::content_id(b"# Old\n");
+    let model = Arc::new(ScriptModel::new(vec![
+        call(
+            "delete_file",
+            "delete-old",
+            json!({"path":"old.md","expected_base":base}),
+        ),
+        vec![
+            ChatChunk::Text("Removed.".into()),
+            ChatChunk::Finished(FinishReason::Stop),
+        ],
+    ]));
+    let assembler = fixture.assembler(Arc::clone(&model)).await?;
+    let journal = fixture.journal()?;
+    let host = fixture.kernel.clone();
+    let answer = async {
+        let request = pending(&host).await?;
+        let question = request.request.questions.first().ok_or("no question")?;
+        assert!(
+            question.prompt.starts_with("Delete `old.md`?") && question.prompt.contains("-# Old"),
+            "{}",
+            question.prompt
+        );
+        host.answer_human_request(
+            request.ticket.request_id,
+            request.ticket.revision,
+            review_answer(question, polaris_kernel::CHANGE_REVIEW_APPLY, None)?,
+        )
+        .await?;
+        Ok::<_, Box<dyn std::error::Error>>(())
+    };
+    let source = ActualSourceVerifier(fixture.workspace.path().join("sample.rs"));
+    let run = assembler.run_frame(
+        FrameRunInput {
+            frame: &mut fixture.frame,
+            goal: "Remove the old notes.",
+            cancellation: &fixture.cancel,
+            limits: limits(),
+        },
+        &source,
+        &journal,
+    );
+    let (outcome, answered) = tokio::join!(run, answer);
+    answered?;
+    assert_eq!(outcome?.stop, FrameRunStop::ModelTurnComplete);
+    assert!(!fixture.workspace.path().join("old.md").exists());
+
+    let records = fixture
+        .kernel
+        .context()
+        .records(Seq::new(1), Seq::new(u64::MAX))?;
+    let result = records
+        .iter()
+        .find_map(|r| match r.event() {
+            Event::FrameToolResultRecorded { result, .. } => Some(*result),
+            _ => None,
+        })
+        .ok_or("no recorded tool result")?;
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let envelope: serde_json::Value =
+        serde_json::from_slice(&store.get(&result)?.ok_or("missing envelope")?)?;
+    let content_cid: Cid = serde_json::from_value(envelope["content"].clone())?;
+    let content = String::from_utf8(store.get(&content_cid)?.ok_or("missing content")?)?;
+    let verifier = polaris_kernel::KernelFrameVerifier::new(
+        fixture.kernel.clone(),
+        fixture.frame.tool_binding(),
+    )?;
+    let step = StepTool {
+        reasoning: String::new(),
+        finish_reason: FinishReason::ToolCalls,
+        text: String::new(),
+        tool_results: vec![polaris_runtime::frames::ExecutedToolResult {
+            tool_call_id: "delete-old".into(),
+            result: polaris_runtime::frames::ToolResultRef {
+                cid: result,
+                content_cid,
+                content,
+            },
+        }],
+    };
+    assert_eq!(
+        verifier
+            .verify_step(&fixture.frame.view(), &step)
+            .await?
+            .verified_diffs()
+            .len(),
+        1
+    );
+    // Recreating the file makes the recorded deletion untrue.
+    std::fs::write(fixture.workspace.path().join("old.md"), b"# Old\n")?;
+    assert!(
+        verifier
+            .verify_step(&fixture.frame.view(), &step)
+            .await
+            .is_err()
+    );
     fixture.kernel.shutdown().await?;
     Ok(())
 }

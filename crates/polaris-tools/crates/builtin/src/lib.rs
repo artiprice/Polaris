@@ -114,4 +114,4 @@ pub use shell::{
     CommandClass, NoShellBackend, SandboxShellBackend, ShellFlavor, ShellInput, ShellOutput,
     ShellToolBackend, classify_command,
 };
-pub use text_match::{MatchLevel, Replacement, TextMatchError, replace_text};
+pub use text_match::{MatchLevel, Replacement, TextMatchError, apply_hunks, replace_text};

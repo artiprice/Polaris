@@ -580,6 +580,9 @@ function handle(event) {
     case "applied":
       addEntry("change", `Edited ${event.path}`);
       break;
+    case "deleted":
+      addEntry("change", `Deleted ${event.path}`);
+      break;
     case "usage":
       state.usage = event;
       break;

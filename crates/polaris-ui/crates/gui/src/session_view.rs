@@ -686,6 +686,12 @@ impl SessionController {
                 }
                 Vec::new()
             }
+            BackendEvent::Deleted(path) => {
+                if let Err(error) = self.view.push_system(format!("✓ Deleted {path}")) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
+            }
             BackendEvent::ReplyText(delta) => {
                 self.stream(&delta);
                 Vec::new()

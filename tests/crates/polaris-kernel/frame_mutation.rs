@@ -607,3 +607,88 @@ async fn human_approval_accepts_degraded_safety_but_not_a_block() -> TestResult 
     );
     Ok(())
 }
+
+#[tokio::test]
+async fn new_files_may_create_missing_directories_inside_the_workspace() -> TestResult {
+    let fixture =
+        Fixture::new_with_resource(&[Right::ProposeDiff], ResourceScope::Workspace).await?;
+    let service = fixture.service(SyntheticAllow)?;
+    let prepared = service
+        .prepare(
+            &fixture.token,
+            FrameMutationRequest::WriteFile {
+                path: "src/deep/nested/made.rs".to_owned(),
+                contents: "fn made() {}\n".to_owned(),
+                expected_base: None,
+            },
+        )
+        .await?;
+    assert!(
+        !fixture.workspace.path().join("src").exists(),
+        "preparing writes nothing"
+    );
+    let _receipt = service.apply(prepared, &fixture.token).await?;
+    assert_eq!(
+        std::fs::read(fixture.workspace.path().join("src/deep/nested/made.rs"))?,
+        b"fn made() {}\n"
+    );
+    // A file standing where a directory is needed is refused, not replaced.
+    std::fs::write(fixture.workspace.path().join("blocker"), b"x")?;
+    let blocked = service
+        .prepare(
+            &fixture.token,
+            FrameMutationRequest::WriteFile {
+                path: "blocker/inner.rs".to_owned(),
+                contents: "fn inner() {}\n".to_owned(),
+                expected_base: None,
+            },
+        )
+        .await;
+    assert!(
+        matches!(blocked, Err(polaris_kernel::FrameMutationError::Path)),
+        "{blocked:?}"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn deletion_needs_review_and_records_the_removed_file() -> TestResult {
+    use polaris_kernel::verifier::EvidenceStore;
+    let fixture = Fixture::new(&[Right::ProposeDiff]).await?;
+    let base = polaris_storage::cas::content_id(b"fn before() {}\n");
+    let request = || FrameMutationRequest::DeleteFile {
+        path: "base.rs".to_owned(),
+        expected_base: base,
+    };
+    let service = fixture.service(SyntheticNeedsApproval)?;
+    let prepared = service.prepare(&fixture.token, request()).await?;
+    assert!(prepared.deletes());
+    assert!(prepared.new_source().is_empty());
+    let escalated = service.apply(prepared, &fixture.token).await;
+    assert!(
+        matches!(
+            escalated,
+            Err(polaris_kernel::FrameMutationError::NeedsApproval { .. })
+        ),
+        "{escalated:?}"
+    );
+    assert!(fixture.workspace.path().join("base.rs").exists());
+    let prepared = service.prepare(&fixture.token, request()).await?;
+    let receipt = service
+        .apply_with_human_approval(prepared, &fixture.token, synthetic_approval())
+        .await?;
+    assert!(!fixture.workspace.path().join("base.rs").exists());
+    assert_eq!(receipt.base(), Some(base));
+    assert_eq!(receipt.new_cid(), polaris_storage::cas::content_id(b""));
+    let store = polaris_kernel::KernelEvidence::new(Arc::clone(fixture.kernel.context()));
+    let stored: serde_json::Value =
+        serde_json::from_slice(&store.get(&receipt.cid())?.ok_or("missing receipt")?)?;
+    assert_eq!(stored["deleted"], true);
+    // The file is gone, so a second deletion has no base to match.
+    let again = service.prepare(&fixture.token, request()).await;
+    assert!(
+        matches!(again, Err(polaris_kernel::FrameMutationError::StaleBase)),
+        "{again:?}"
+    );
+    Ok(())
+}
