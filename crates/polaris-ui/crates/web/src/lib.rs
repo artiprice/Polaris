@@ -24,4 +24,10 @@ mod server;
 pub use backend::{SessionRow, WebEvent};
 /// Where an attached page records (P9), re-exported for the binaries.
 pub use polaris_ui_session::AttachTarget;
+/// Attach the OpenShell sandbox `~/.polaris/sandbox.json` names to the sessions this process
+/// opens (see `polaris_ui_session::sandbox`); returns its status line.
+pub use polaris_ui_session::sandbox::configure as sandbox_configure;
+/// Configure System One for the sessions this process opens (see
+/// `polaris_ui_session::system_one`); returns its status line.
+pub use polaris_ui_session::system_one::configure as system_one_configure;
 pub use server::{WebError, WebOptions, WebServer};

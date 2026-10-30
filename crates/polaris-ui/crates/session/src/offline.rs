@@ -85,6 +85,8 @@ pub struct OfflineSession {
     root: PathBuf,
     workspace: PathBuf,
     pending_record: Option<PendingRecord>,
+    sandbox: crate::sandbox::SandboxGuard,
+    sandbox_note: Option<String>,
 }
 impl OfflineSession {
     /// Start or reopen local durable state and subscribe from the first global record.
@@ -95,16 +97,40 @@ impl OfflineSession {
         workspace: &Path,
         id: SessionId,
     ) -> Result<Self, SessionHostError> {
-        let handle = Kernel::start(LocalKernelConfig::new(
-            root,
-            workspace,
-            id,
-            FrameId::new_v7(),
-        ))
-        .await?;
+        let mut config = LocalKernelConfig::new(root, workspace, id, FrameId::new_v7());
+        config.s1 = crate::system_one::local_s1(root);
+        let with_s1 = config.s1.is_some();
+        // An unreachable sandbox or a System One worker that cannot start never keeps the
+        // session closed: the session opens without them and says why.
+        let (sandboxed, sandbox_note) = match crate::sandbox::start_kernel(config.clone()).await {
+            Some(Ok((handle, guard))) => (Some((handle, guard)), None),
+            Some(Err(reason)) => (None, Some(reason)),
+            None => (None, None),
+        };
+        let (handle, guard) = match sandboxed {
+            Some(started) => started,
+            None => match Kernel::start(config).await {
+                Ok(handle) => (handle, crate::sandbox::SandboxGuard::default()),
+                Err(_) if with_s1 => (
+                    Kernel::start(LocalKernelConfig::new(
+                        root,
+                        workspace,
+                        id,
+                        FrameId::new_v7(),
+                    ))
+                    .await?,
+                    crate::sandbox::SandboxGuard::default(),
+                ),
+                Err(error) => return Err(error.into()),
+            },
+        };
         let initialized = Self::initialize(handle.clone(), id).await;
         match initialized {
-            Ok(session) => Ok(session),
+            Ok(mut session) => {
+                session.sandbox = guard;
+                session.sandbox_note = sandbox_note;
+                Ok(session)
+            }
             Err(primary) => match handle.shutdown().await {
                 Ok(report) => match check_shutdown_report(&report) {
                     Ok(()) => Err(primary),
@@ -143,7 +169,14 @@ impl OfflineSession {
             root,
             workspace,
             pending_record: None,
+            sandbox: crate::sandbox::SandboxGuard::default(),
+            sandbox_note: None,
         })
+    }
+    /// Why a configured OpenShell sandbox is not attached to this session, if it is not.
+    #[must_use]
+    pub fn sandbox_note(&self) -> Option<&str> {
+        self.sandbox_note.as_deref()
     }
     /// Actual workspace stored with the session, including when resumed.
     #[must_use]

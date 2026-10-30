@@ -653,6 +653,12 @@ impl KernelHandle {
         .await
     }
 
+    /// Whether this kernel was started with a sandbox execution profile (`run_tests` works).
+    #[must_use]
+    pub fn has_sandbox(&self) -> bool {
+        self.shared.execution.is_some()
+    }
+
     /// Prepare an immutable P2 review from actual workspace, policy and image facts.
     /// # Errors
     /// Execution is unconfigured, kernel closed, or review preparation failed.

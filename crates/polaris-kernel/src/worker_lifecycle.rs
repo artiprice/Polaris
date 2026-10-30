@@ -129,6 +129,19 @@ impl<P: WorkerBootstrapPlatform + 'static> DecisionEngine for CurrentS1Engine<P>
 }
 
 impl<P: WorkerBootstrapPlatform + 'static> CurrentS1Engine<P> {
+    /// BLAKE3 identity of the model the current worker has loaded (what a calibration pins),
+    /// `None` while no model is loaded.
+    /// # Errors
+    /// Missing/retired worker or authenticated transport failure.
+    pub async fn loaded_model_digest(&self) -> Result<Option<[u8; 32]>, DecisionError> {
+        let ready = self
+            .lifecycle
+            .connection()
+            .map_err(|_| DecisionError::Unavailable("S1 worker state unavailable".to_owned()))?
+            .ok_or_else(|| DecisionError::Unavailable("S1 worker is restarting".to_owned()))?;
+        ready.client.loaded_model_digest().await
+    }
+
     /// Perform calibrated inference on the current exact owned worker generation.
     /// # Errors
     /// Missing/retired worker, pinned model mismatch, authenticated transport or inference failure.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# POLARIS_ROOT lets a caller run a converted (LF) copy of this script from elsewhere.
+ROOT="${POLARIS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
 BASE_REPOSITORY="nvcr.io/nvidia/base/ubuntu:24.04"
 IMAGE_TAG="${POLARIS_SANDBOX_TAG:-polaris-sandbox:p2}"
 

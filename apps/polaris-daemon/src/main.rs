@@ -147,18 +147,21 @@ fn run(args: Args) -> Result<(), polaris_daemon::DaemonError> {
         shutdown_grace: Duration::from_secs(args.shutdown_grace_secs),
     }
     .validate()?;
-    let config = DaemonConfig {
-        kernel: LocalKernelConfig::new(&args.state_dir, &args.workspace, session, frame),
-        endpoint,
-        token_root,
-        settings,
-    }
-    .validate()?;
     let replies = if args.no_replies {
         None
     } else {
         Some(reply_config(&args)?)
     };
+    let mut kernel = LocalKernelConfig::new(&args.state_dir, &args.workspace, session, frame);
+    // The daemon's kernel starts the local System One worker the user's configuration names.
+    kernel.s1 = polaris_ui_session::system_one::local_s1(&args.state_dir);
+    let config = DaemonConfig {
+        kernel,
+        endpoint,
+        token_root,
+        settings,
+    }
+    .validate()?;
 
     let redactor = polaris_security_automata::DfaRedactor::default_redactor().map_err(|_| {
         polaris_daemon::DaemonError::Configuration("default log redactor unavailable")
@@ -196,6 +199,10 @@ fn reply_config(args: &Args) -> Result<ReplyConfig, polaris_daemon::DaemonError>
     .map_err(invalid)?;
     let loaded =
         polaris_config::load(&layers, &polaris_config::TrustGrant::none()).map_err(invalid)?;
+    let system_one = polaris_ui_session::system_one::configure(&loaded.config, &dirs.global);
+    let _reported = writeln!(std::io::stderr().lock(), "polarisd: {system_one}");
+    let sandbox = polaris_ui_session::sandbox::configure(&dirs.global);
+    let _reported = writeln!(std::io::stderr().lock(), "polarisd: {sandbox}");
     Ok(ReplyConfig {
         config: loaded.config,
         env_file: polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),

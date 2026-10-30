@@ -318,6 +318,7 @@ impl Bridgework {
                     "offline session opened"
                 );
                 let workspace = session.workspace().to_path_buf();
+                let sandbox_note = session.sandbox_note().map(str::to_owned);
                 self.session = Some(session);
                 let (title, branch) = match self.meta_of(id).await {
                     Some(meta) => (meta.name.clone(), branch_of(&meta.branch)),
@@ -329,6 +330,11 @@ impl Bridgework {
                     workspace,
                     branch,
                 });
+                if let Some(note) = sandbox_note {
+                    let _sent = self.emit(BackendEvent::Notice(format!(
+                        "Tests cannot run in the sandbox in this session: {note}."
+                    )));
+                }
             }
             Err(error) => {
                 let _sent = self.emit(BackendEvent::Failed(describe(
@@ -433,8 +439,17 @@ impl Bridgework {
             ));
             return;
         };
-        if let Err(error) = answer_review(session.kernel(), review, apply, note).await {
-            let _sent = self.emit(BackendEvent::Failed(error.to_string()));
+        match answer_review(session.kernel(), review, apply, note).await {
+            Ok(()) => {}
+            // A declined test run stops the reply waiting on it.
+            Err(polaris_ui_session::ChatError::Cancelled) => {
+                if let Some(chat) = self.chat.as_ref() {
+                    chat.cancel_turn();
+                }
+            }
+            Err(error) => {
+                let _sent = self.emit(BackendEvent::Failed(error.to_string()));
+            }
         }
     }
 
@@ -641,6 +656,14 @@ fn environment(
             dirs.global.join("config.toml").display().to_string(),
         ));
     }
+    paths.push((
+        String::from("SYSTEM ONE"),
+        polaris_ui_session::system_one::status(),
+    ));
+    paths.push((
+        String::from("SANDBOX"),
+        polaris_ui_session::sandbox::status(),
+    ));
     paths.push((
         String::from("PROVIDER KEYS"),
         match env_file {

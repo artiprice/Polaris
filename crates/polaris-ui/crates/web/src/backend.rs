@@ -312,10 +312,13 @@ impl Owner {
             });
             return;
         };
-        if let Err(error) = answer_review(session.kernel(), review, apply, note).await {
-            self.publisher.publish(WebEvent::Notice {
+        match answer_review(session.kernel(), review, apply, note).await {
+            Ok(()) => {}
+            // A declined test run stops the reply waiting on it.
+            Err(polaris_ui_session::ChatError::Cancelled) => self.chat.cancel_turn(),
+            Err(error) => self.publisher.publish(WebEvent::Notice {
                 text: error.to_string(),
-            });
+            }),
         }
     }
 
@@ -342,6 +345,7 @@ impl Owner {
         match OfflineSession::open(&self.config.state_dir, &self.config.workspace, id).await {
             Ok(session) => {
                 let workspace = session.workspace().display().to_string();
+                let sandbox_note = session.sandbox_note().map(str::to_owned);
                 self.session = Some(session);
                 let title = match list_sessions(&self.config.state_dir, LIST_LIMIT).await {
                     Ok(rows) => rows
@@ -356,6 +360,11 @@ impl Owner {
                     title,
                     workspace,
                 });
+                if let Some(note) = sandbox_note {
+                    self.publisher.publish(WebEvent::Notice {
+                        text: format!("Tests cannot run in the sandbox in this session: {note}."),
+                    });
+                }
             }
             Err(error) => self.publisher.publish(WebEvent::Notice {
                 text: format!(

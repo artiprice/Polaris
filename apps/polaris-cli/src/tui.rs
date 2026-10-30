@@ -723,6 +723,14 @@ pub async fn run(
                         }
                         chat.start_pick();
                         send_message(&events_tx, BackendMessage::OfflineReady)?;
+                        if let Some(note) = session.as_ref().and_then(OfflineSession::sandbox_note) {
+                            send_message(
+                                &events_tx,
+                                BackendMessage::QueryFailed(format!(
+                                    "Tests cannot run in the sandbox in this session: {note}"
+                                )),
+                            )?;
+                        }
                         continue;
                     }
                     let Some(active) = session.as_mut() else {
@@ -780,15 +788,24 @@ pub async fn run(
                         }
                         BackendRequest::Review { request_id, apply, note } => {
                             match reviews.get(&request_id) {
-                                Some(review) => polaris_ui_session::answer_review(
+                                Some(review) => match polaris_ui_session::answer_review(
                                     active.kernel(),
                                     review,
                                     apply,
                                     note,
                                 )
                                 .await
-                                .err()
-                                .map(|error| BackendMessage::QueryFailed(error.to_string())),
+                                {
+                                    Ok(()) => None,
+                                    // A declined test run stops the reply waiting on it.
+                                    Err(polaris_ui_session::ChatError::Cancelled) => {
+                                        chat.cancel_turn();
+                                        None
+                                    }
+                                    Err(error) => {
+                                        Some(BackendMessage::QueryFailed(error.to_string()))
+                                    }
+                                },
                                 None => Some(BackendMessage::QueryFailed(
                                     "That change is no longer waiting for a decision".to_owned(),
                                 )),
@@ -2837,25 +2854,65 @@ fn submit_draft(
                     return Ok(false);
                 }
             }
-            SlashCommand::Plan
-            | SlashCommand::Goal(_)
-            | SlashCommand::SessionReplay { .. }
-            | SlashCommand::NebiusStatus
+            SlashCommand::Plan => {
+                state.view_mut().toggle_mode();
+                state.notice = match state.view().mode {
+                    polaris_ui_model::view::Mode::Plan => {
+                        "Plan mode: the model plans before answering".to_owned()
+                    }
+                    polaris_ui_model::view::Mode::Auto => "Auto mode".to_owned(),
+                };
+            }
+            SlashCommand::ProofOfDone | SlashCommand::ContextMap | SlashCommand::ParallelDag => {
+                state.panel_kind = match command {
+                    SlashCommand::ProofOfDone => PanelKind::Proof,
+                    SlashCommand::ContextMap => PanelKind::Context,
+                    _ => PanelKind::Agents,
+                };
+                state.panel = true;
+                state.panel_scroll = 0
+            }
+            SlashCommand::ConcurrencyStats | SlashCommand::CacheStats => {
+                if let Err(error) = queue_request(commands, BackendRequest::Stats) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::SessionReplay { id, .. } => {
+                if let Err(error) = queue_request(commands, BackendRequest::Resume(id)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+                state.switch_pending = true;
+                state.notice = "Replaying the session's records".to_owned();
+            }
+            SlashCommand::Redteam => {
+                use polaris_ui_session::commands::LocalCommand;
+                if let Err(error) =
+                    queue_request(commands, BackendRequest::Local(LocalCommand::Hack))
+                {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::NebiusStatus
             | SlashCommand::ContreeBranches
             | SlashCommand::DatalabSync
-            | SlashCommand::DatalabFinetune
-            | SlashCommand::ConcurrencyStats
-            | SlashCommand::CacheStats
+            | SlashCommand::DatalabFinetune => {
+                state.notice = "Nebius services are out of scope for this build (not available in this region); draft retained".to_owned();
+                state.composer.cancel_submit(prepared);
+                return Ok(false);
+            }
+            SlashCommand::Goal(_)
             | SlashCommand::CachePurge
-            | SlashCommand::ContextMap
             | SlashCommand::ContextExpand(_)
-            | SlashCommand::ParallelDag
             | SlashCommand::Screenshot
             | SlashCommand::Browser(_)
             | SlashCommand::UiDiff
-            | SlashCommand::Redteam
-            | SlashCommand::NixFlake
-            | SlashCommand::ProofOfDone => {
+            | SlashCommand::NixFlake => {
                 state.notice = "This command requires its real backend profile and is unavailable here; draft retained".to_owned();
                 state.composer.cancel_submit(prepared);
                 return Ok(false);

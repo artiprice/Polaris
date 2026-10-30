@@ -252,6 +252,11 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    // Sessions start the local System One worker the user's configuration names.
+    let system_one = polaris_ui_session::system_one::configure(&loaded.config, &dirs.global);
+    tracing::info!(status = %system_one, "system one");
+    let sandbox = polaris_ui_session::sandbox::configure(&dirs.global);
+    tracing::info!(status = %sandbox, "sandbox");
     // `--static` or POLARIS_REDUCED_MOTION, else the preference the Settings page saved (shared
     // with the terminal UI); an unreadable preference file keeps full motion.
     let reduced_motion = args.reduced_motion

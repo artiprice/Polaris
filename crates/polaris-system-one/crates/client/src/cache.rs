@@ -19,6 +19,9 @@ impl ModelIdentity {
     pub(crate) fn has_digest(self, expected: [u8; 32]) -> bool {
         self.digest == expected
     }
+    pub(crate) const fn digest(self) -> [u8; 32] {
+        self.digest
+    }
     pub(crate) fn from_health(response: &pb::HealthResponse) -> Result<Option<Self>, ()> {
         if response.loaded_model_identity_blake3.is_empty() && response.loaded_model_generation == 0
         {

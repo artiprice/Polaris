@@ -23,7 +23,7 @@ pub use postflight::{
     FalsifierEvidence, MutationEvidence, ProofEvidence, ProofVerdict, TestRunFacts,
 };
 pub use scan::{SafetyScanner, Scanner};
-pub use semantic::{CalibrationBindings, Verifier, VerifierConfig};
+pub use semantic::{CalibrationBindings, Verifier, VerifierConfig, mutation_decision_input};
 pub use types::{
     DegradedReason, Finding, GateVerdict, MergeDecision, MutationSafety, PostflightReport,
     PreflightReport, SafetyAssessment, SafetyRequest, SourceLocation, TamperKind,

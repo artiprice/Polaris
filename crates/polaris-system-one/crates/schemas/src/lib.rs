@@ -313,6 +313,11 @@ impl SchemaSet {
     pub fn load_builtin() -> Result<Self, SchemaError> {
         Self::from_toml(BUILTINS)
     }
+    /// The builtin catalog's TOML source, the base a host-calibrated catalog is written from.
+    #[must_use]
+    pub const fn builtin_toml() -> &'static str {
+        BUILTINS
+    }
     /// Parse a TOML document with a schemas array.
     ///
     /// # Errors

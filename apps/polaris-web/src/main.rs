@@ -74,6 +74,9 @@ async fn main() -> Result<(), WebAppError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    // Sessions start the local System One worker the user's configuration names.
+    let system_one = polaris_ui_web::system_one_configure(&loaded.config, &dirs.global);
+    let sandbox = polaris_ui_web::sandbox_configure(&dirs.global);
     // A repository `.env` is never read implicitly: only an explicit file or the global one.
     let env_file = args.env_file.clone().or_else(|| {
         let global = dirs.global.join(".env");
@@ -96,6 +99,8 @@ async fn main() -> Result<(), WebAppError> {
     .await?;
     let mut out = std::io::stdout().lock();
     writeln!(out, "Polaris web UI (Leptos): {}", server.url())?;
+    writeln!(out, "{system_one}.")?;
+    writeln!(out, "{sandbox}.")?;
     if let Some(endpoint) = attached {
         writeln!(out, "Attached to polarisd at {endpoint}.")?;
     }

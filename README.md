@@ -95,6 +95,53 @@ Build the CI image once (needs Docker Desktop and pulls `rust:1.99.0-bookworm`):
 docker build -t polaris-ci-rust:1.99.0 @prime/tools/ci
 ```
 
+## System One and the OpenShell sandbox
+
+**System One** is a local classifier (GLiNER2.5-Decide, ONNX on CPU) that every session starts as a
+worker process. It screens each proposed change against the safety schemas (tampering with
+review/CI/test files, secrets in the new text, a diff that does not match its stated intent);
+once a schema is calibrated, changes it accepts are applied without asking, everything else still
+waits for you. Point it at the models in `~/.polaris/config.toml` (global layer only):
+
+```toml
+[system_one]
+decide_model_dir = "D:/polaris-models/gliner2.5-decide-onnx-fp32"
+ort_dylib = "D:/polaris-models/onnxruntime/onnxruntime.dll"
+pii_model_dir = "D:/polaris-models/gliner2-pii-fp32"   # optional
+# worker = "…/polaris-worker.exe"                      # default: next to the program
+```
+
+Calibrate once on a labelled set (`@prime/tools/system-one/make_safety_fixtures.py` writes a
+synthetic one); a schema is kept only where its measured precision reaches 99 %:
+
+```powershell
+polaris s1-calibrate D:\polaris-models\calibration\safety-v1.jsonl
+```
+
+**OpenShell** (NVIDIA, v0.1.4, Docker driver in WSL Ubuntu) runs the model's `run_tests`: the
+reply asks to run a test command, you approve the exact commands in the review panel, the
+workspace is copied into an isolated sandbox with a deny-by-default policy, and the result is a
+Proof of Done verdict. Bring it up once, then describe the gateway in `~/.polaris/sandbox.json`:
+
+```powershell
+wsl -d Ubuntu -u root -- bash /mnt/d/Polaris/@prime/tools/setup/setup-wsl-root.sh <user>
+wsl -d Ubuntu -- bash /mnt/d/Polaris/@prime/tools/sandbox/bringup-wsl.sh /mnt/d/Polaris
+```
+
+```json
+{
+  "endpoint": "https://127.0.0.1:17670",
+  "server_name": "localhost",
+  "mtls_dir": "\\\\wsl.localhost\\Ubuntu\\home\\<user>\\.config\\openshell\\gateways\\openshell\\mtls",
+  "policy": "D:/Polaris/@prime/tools/sandbox/acceptance-policy.yaml",
+  "image": "sha256:<image_id printed by bringup-wsl.sh>",
+  "wsl_distro": "Ubuntu"
+}
+```
+
+The status of both is shown at startup and on the desktop's Settings page; a session whose
+gateway is unreachable opens without the sandbox and says why.
+
 ## Safety model, in short
 
 - File changes are proposed by the model and written only after you apply them; each change is

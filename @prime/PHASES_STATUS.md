@@ -198,7 +198,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-openshell-client` | `polaris-openshell-client` | P2 | IN PROGRESS | Pinned real SDK adapter, explicit policy CID binding, mTLS, bounded transfer/exec and cancellation guards implemented; live acceptance pending. |
 | `crate:polaris-openshell-policy` | `polaris-openshell-policy` | P2 | IN PROGRESS | Actual upstream pinned schema, policy validation, role/tier documents and provider YAML implemented; targeted contracts pass, live policy matrix pending. |
 | `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | P2 | IN PROGRESS | Native versioned blueprint validation, canonical digest, actual backend apply and protocol handshake implemented; image/live evidence pending. |
-| `crate:polaris-openshell` | `polaris-openshell` | P2 | IN PROGRESS | Actual client/policy/blueprint facades compile; child live gates remain open. |
+| `crate:polaris-openshell` | `polaris-openshell` | P2 | IN PROGRESS | Actual client/policy/blueprint facades compile. 2026-10-30 E60: live on this machine (gateway 0.1.4, Docker driver in WSL): smoke test PASS and headless acceptance 4/4 (@prime/evidence/p2/openshell-live-acceptance-20261030.json). Policy matrix and fault gates remain open. |
 | `crate:polaris-security` | `polaris-security` | P2 | IN PROGRESS | Facade reexports implemented children; child completion tracked separately. |
 | `crate:polaris-runtime-leases` | `polaris-runtime-leases` | P2 | IN PROGRESS | 2026-10-23: authority, diagnostics, allocation and path contracts pass. Admission now preserves FIFO among conflicting scopes while allowing independent work; three Loom models exercise actual state transitions. Tokio wake delivery, ArcSwap publication and Kani remain separate open gates. |
 | `crate:polaris-runtime-guards` | `polaris-runtime-guards` | P2 | IN PROGRESS | P2 proof regressions: 7 passed, including all Cargo groups, stderr binding, hidden earlier failures and malformed/overflow counts. Blast/AST and live/performance gates remain open; see @prime/P2_LOGIC_STATUS.md. |
@@ -236,7 +236,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-security-rules` | `polaris-security-rules` | P4 | IN PROGRESS | Versioned AST/DFA rule packs, bounded diff/command audits, explicit partial-language coverage, fail-closed canonical S1 arbitration, finite same-block UAF indicator and caller-baseline manifest near-name audit implemented; flow-sensitive UAF/taint, broad symlink-race, registry-backed supply-chain and CUDA dataflow coverage remain open. Focused raw test and strict Clippy evidence: @prime/evidence/phase4/security-rules/. |
 | `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | P4 | IN PROGRESS | E50: bounded exact-identity binary calibration metrics and xtask measured-candidate reports implemented; production thresholds remain uncalibrated pending real labelled held-out evidence. |
 | `crate:polaris-system-one-router` | `polaris-system-one-router` | P4 | IN PROGRESS | E50: combined intent/effort/parallel/vision request, Medium constrained fallback, bounded input and hard directives checked; labelled ranking/calibration, environments and complete workload matrices remain open. |
-| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | P4 | IN PROGRESS | Production deterministic safety, preflight/postflight and merge arbitration in progress; UNVERIFIED, validation deferred by user. |
+| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | P4 | IN PROGRESS | Production deterministic safety, preflight/postflight and merge arbitration in progress; UNVERIFIED, validation deferred by user. 2026-10-30 E60: the mutation gates read the changed lines (bounded to the encoder window) instead of whole files, which had exhausted the worker's memory. |
 | `crate:polaris-system-one-watchdog` | `polaris-system-one-watchdog` | P4 | IN PROGRESS | Production bounded loop detection, advisory role/context guards and semantic drift inspection in progress; UNVERIFIED, validation deferred by user. |
 | `crate:polaris-system-one` | `polaris-system-one` | P4 | IN PROGRESS | E50: explicit per-consumer failure policy, bounded admission, circuit and host epoch fencing checked; whole P4 parity/calibration/MVP acceptance remains open. |
 | `crate:polaris-spike-s1` | `polaris-spike-s1` | P4 | IN PROGRESS | E50: real-engine burst dispatch, bounded owned tasks, sanitized per-request outcomes and observed latency quantiles implemented; real crash/load matrices remain open. |
@@ -297,7 +297,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. 2026-10-30 E58: frontends reach a `tcp://` daemon through the same client (mutual TLS off loopback). Full P9 acceptance remains open. |
 | `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. 2026-10-30 E59: Models (model per effort, provider chain with skip reasons, setup), Usage (session tiles, activity) and Settings (reduced-motion switch saved to ui.cli.reduce_motion and applied live, connection, storage paths, keyboard, About + Slint attribution) pages over the content; not rendered or tested yet. OPEN: attachments, speech input. |
 | `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` attach done 2026-10-29 (E53). |
-| `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. 2026-10-29: composition root of the local commands and context — RemoteSession attach (E53), `$nvidia(...)`/`/nv-profile`/`/nv-verify` (E54), `/hack` (E55), `/ci`/`/ci-run` (E56), keyless `/search-local` and `$rag` (E57). 2026-10-30 E58: daemon `responder`, attached replies, `tcp://` attach with mutual TLS, `/nv-docs-sync`/`/nv-docs`, `/search-web`/`$websearch`, `/diff`/`/undo`. Message history is not indexed yet. |
+| `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. 2026-10-29: composition root of the local commands and context — RemoteSession attach (E53), `$nvidia(...)`/`/nv-profile`/`/nv-verify` (E54), `/hack` (E55), `/ci`/`/ci-run` (E56), keyless `/search-local` and `$rag` (E57). 2026-10-30 E58: daemon `responder`, attached replies, `tcp://` attach with mutual TLS, `/nv-docs-sync`/`/nv-docs`, `/search-web`/`$websearch`, `/diff`/`/undo`. E60: every session kernel starts the local System One worker (`system_one`, `s1-calibrate`) and, with `~/.polaris/sandbox.json`, the OpenShell sandbox (`sandbox`, model `run_tests` with review). Message history is not indexed yet. |
 | `crate:polaris-ui-web` | `polaris-ui-web` | P9 | IN PROGRESS | 2026-10-29: loopback web UI (token + host checks, CSP), SSE events, chat with reviewed edits; attached mode over `RemoteSession` (`WebServer::bind_with`, E53); 2026-10-30 E58: daemon replies shown in attached mode. |
 | `crate:polaris-spike-web` | `polaris-spike-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
@@ -2080,3 +2080,52 @@ rendered or tested). The three rail panels of the desktop window become pages ov
   (path only), keyboard notes, and About with the Slint attribution (ADR-014).
 
 Attachments and speech input stay open.
+
+## E60 — System One and the OpenShell sandbox in every session (2026-10-30)
+
+Release builds only (`cargo build --release -p polaris-cli -p polaris-worker -p polaris-desktop
+-p polaris-daemon -p polaris-web` passes); live results below are from this machine.
+
+- **OpenShell live (P2).** Docker Engine in WSL Ubuntu (disk moved to D:), OpenShell gateway
+  v0.1.4 with the Docker driver on `https://127.0.0.1:17670` (mTLS). `verify-openshell.sh`:
+  `RESULT: PASS` — create 10.1 s, exec 172 ms, exit-code propagation, byte-exact upload, delete.
+  Sandbox image `polaris-sandbox:p2` = `sha256:50163fb3…7137` on
+  `nvcr.io/nvidia/base/ubuntu@sha256:d9461f42…e378`, `polaris-guest --protocol-version` = 1,
+  rustc/cargo 1.99.0 inside (`@prime/tools/sandbox/bringup-wsl.sh`; root steps in
+  `@prime/tools/setup/setup-wsl-root.sh`; apt forced to IPv4 because WSL IPv6 is broken).
+  Live headless acceptance (`verify-headless.ps1`, release binary, std-only fixture):
+  positive → `proof_passed` (exit 0, 1.4 s in the sandbox); zero-tests, failing-command and
+  minimum-tests → `blocked`; one sandbox run each, no unresolved resources; replaying the
+  consumed approval after a restart is refused without a second run
+  (`@prime/evidence/p2/openshell-live-acceptance-20261030.json`).
+- **Sandbox in chat sessions.** `polaris_ui_session::sandbox`: `~/.polaris/sandbox.json` (endpoint,
+  server name, mTLS directory, policy, immutable image id, WSL distro, quotas) makes every
+  session kernel start with `Kernel::start_sandbox`; the WSL distro is kept awake while the
+  session is open. The model gets `run_tests`; the kernel's immutable execution review is shown
+  in the review panel (commands, independent check, timeout), approval runs it in the sandbox
+  with Proof of Done, a decline stops the reply. An unreachable gateway opens the session
+  without the sandbox and says why. Status in every frontend and on the desktop Settings page.
+- **System One in chat sessions (P4).** Sessions start the local GLiNER2.5-Decide worker (fp32,
+  CPU) named in `~/.polaris/config.toml` `[system_one]`; agent changes go through the configured
+  verifier (safety.diff_tamper, safety.secret_semantic, watch.congruence) with change review.
+  `polaris s1-calibrate <fixtures>` measures every schema on a labelled set with the running
+  worker (calibration context = fixture BLAKE3 + the worker's model identity) and keeps a schema
+  only at ≥ 99 % precision with ≥ 10 accepted; the catalog is `~/.polaris/system-one/
+  safety-schemas.toml`. Synthetic labelled set: `@prime/tools/system-one/make_safety_fixtures.py`
+  (400 rows: 100 real changes from this repository's history, 100 test tampers, 100 secrets,
+  100 intent mismatches). Measured with the worker (model identity `fdc0f0ab8f3cb9e1…`, ~1.6 s
+  per decision on CPU): **safety.diff_tamper** accepts at P ≥ 0.753 with precision 100 % and
+  recall 14 % (300 cases), **safety.secret_semantic** at P ≥ 0.521 with precision 100 % and
+  recall 21 % (300 cases); **watch.congruence** did not reach 99 % at any threshold (200 cases)
+  and stays uncalibrated, so such changes always go to the person. Synthetic data: the numbers
+  say the model separates these generated cases, not that it is safe on real changes. The first
+  run measured almost nothing: whole BEFORE/AFTER files (13 KB on average) exhausted the
+  worker's memory; the gates now read the changed lines bounded to the encoder window.
+- **Stubs removed.** TUI `/plan`, `/proof-of-done`, `/context-map`, `/parallel-dag`,
+  `/concurrency-stats`, `/cache stats`, `/session replay`, `/redteam` act; the Nebius commands say
+  they are descoped (D10). Stale "documentation-only" headers of `polaris-guest` and
+  `polaris-openshell-policy` replaced.
+
+**Still open:** `/goal`, `/context-expand`, `/cache purge`, `/screenshot`, `/browser`, `/ui-diff`,
+`/nix-flake` (P7 browser and microVM profiles), the daemon terminal (no host shell by design),
+System One nano (S0-6).

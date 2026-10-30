@@ -129,6 +129,12 @@ pub enum Action {
         /// Words to search for.
         query: String,
     },
+    /// Calibrate System One's change-safety schemas on a labelled fixture file with the local
+    /// worker and write `~/.polaris/system-one/safety-schemas.toml`.
+    S1Calibrate {
+        /// Labelled JSON lines (`id`, `target`, `intent`, `before`, `after`, `labels`).
+        fixtures: PathBuf,
+    },
     /// Run the workspace's `program.md` research loop (`/research`): a goal starts it,
     /// `status`, `report` or `resume` act on the existing run.
     Research {
@@ -220,6 +226,10 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    // Sessions start the local System One worker the user's configuration names.
+    let system_one = polaris_ui_session::system_one::configure(&loaded.config, &dirs.global);
+    // ...and attach the OpenShell sandbox `~/.polaris/sandbox.json` names.
+    let sandbox = polaris_ui_session::sandbox::configure(&dirs.global);
     if args.demo {
         // No log sink or durable owner is initialized for the presentation demo.
         return crate::tui::run(&args, &loaded, &dirs).await;
@@ -242,6 +252,8 @@ pub async fn run(args: Args) -> Result<(), CliError> {
     }
     .to_owned();
     let guard = Arc::new(polaris_log::init(log_config, redactor)?);
+    tracing::info!(status = %system_one, "system one");
+    tracing::info!(status = %sandbox, "sandbox");
     let weak_log = Arc::downgrade(&guard);
     // Process-owned cold-path hook. The default hook may expose secrets in panic payloads.
     std::panic::set_hook(Box::new(move |_| {
@@ -270,6 +282,25 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
+            Some(Action::S1Calibrate { fixtures }) => {
+                let lines = polaris_ui_session::system_one::calibrate(
+                    &fixtures,
+                    &args.workspace,
+                    &args.state_dir,
+                    &dirs.global,
+                    |line| {
+                        let _shown = writeln!(std::io::stderr().lock(), "{line}");
+                    },
+                )
+                .await
+                .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                for line in lines {
+                    writeln!(out, "{line}")?;
+                }
+                out.flush()?;
+                Ok(())
+            }
             Some(Action::NvProfile)
             | Some(Action::NvVerify)
             | Some(Action::Hack)

@@ -9884,6 +9884,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "blake3",
  "bytes",
+ "futures",
  "jiff",
  "polaris-code-intel",
  "polaris-config",
@@ -9893,6 +9894,8 @@ dependencies = [
  "polaris-kernel",
  "polaris-nebius-cloud-token-factory",
  "polaris-nvidia-docs",
+ "polaris-openshell",
+ "polaris-platform",
  "polaris-ratelimit",
  "polaris-rpc",
  "polaris-runtime",

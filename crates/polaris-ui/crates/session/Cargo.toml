@@ -33,11 +33,14 @@ polaris-code-intel = { workspace = true }
 polaris-devenv = { workspace = true }
 polaris-search = { workspace = true }
 polaris-ratelimit = { workspace = true }
+polaris-openshell = { workspace = true }
+polaris-platform = { workspace = true }
 blake3 = { workspace = true }
 url = { workspace = true }
 secrecy = { workspace = true }
 serde_json = { workspace = true }
 bytes = { workspace = true }
+futures = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
