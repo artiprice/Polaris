@@ -1,7 +1,7 @@
 // Models, Usage and Settings pages: one sheet over the content area with a title, a close
 // button and scrolling content. Every colour comes from the generated `Tokens` global.
 
-import { AboutSlint, ScrollView, Switch } from "std-widgets.slint";
+import { AboutSlint, ScrollView } from "std-widgets.slint";
 import { Tokens } from "tokens.slint";
 import { Icon, IconPaths } from "icons.slint";
 import { Motion } from "parts.slint";
@@ -39,12 +39,53 @@ component Body inherits Text {
     color: Tokens.muted-web;
 }
 
+// On/off switch in the shell's accent colour (the std-widgets one follows the platform palette).
+component Toggle {
+    in-out property <bool> checked;
+    in property <string> label;
+    callback toggled(bool);
+    width: 40px;
+    height: 22px;
+    accessible-role: checkbox;
+    accessible-label: root.label;
+    accessible-checked: root.checked;
+    accessible-action-default => {
+        root.checked = !root.checked;
+        root.toggled(root.checked);
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+    Rectangle {
+        border-radius: self.height / 2;
+        background: root.checked ? Tokens.accent : Tokens.field-bg;
+        border-width: 1px;
+        border-color: root.checked ? Tokens.accent : Tokens.line-strong;
+        animate background { duration: Motion.fast; }
+    }
+    Rectangle {
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        y: 3px;
+        width: parent.height - 6px;
+        height: parent.height - 6px;
+        border-radius: self.height / 2;
+        background: root.checked ? Tokens.canvas : Tokens.muted-web;
+        animate x { duration: Motion.fast; }
+    }
+}
+
 // The page frame: title, subtitle, close button, scrolling content (`@children`).
 export component PageSheet inherits Rectangle {
     in property <string> title;
     in property <string> subtitle;
     in property <string> label;
     callback close();
+    // Height of the whole page without scrolling; the host caps it to the window.
+    out property <length> natural-height: header.preferred-height + content.preferred-height + 48px + 28px + 1px + 4px;
     background: Tokens.surface;
     border-width: 1px;
     border-color: Tokens.line-strong;
@@ -60,7 +101,7 @@ export component PageSheet inherits Rectangle {
     VerticalLayout {
         padding: 24px;
         spacing: 14px;
-        HorizontalLayout {
+        header := HorizontalLayout {
             spacing: 12px;
             VerticalLayout {
                 spacing: 4px;
@@ -100,7 +141,7 @@ export component PageSheet inherits Rectangle {
             background: Tokens.line;
         }
         ScrollView {
-            VerticalLayout {
+            content := VerticalLayout {
                 spacing: 8px;
                 alignment: start;
                 padding-right: 8px;
@@ -309,10 +350,11 @@ export component SettingsPage inherits PageSheet {
                     text: root.reduce-motion ? "The welcome aurora is a still frame." : "The welcome aurora animates at 20 fps and pauses in a session.";
                 }
             }
-            Switch {
+            Toggle {
+                y: (parent.height - self.height) / 2;
                 checked <=> root.reduce-motion;
-                accessible-label: "Reduce motion";
-                toggled => { root.motion-toggled(self.checked); }
+                label: "Reduce motion";
+                toggled(on) => { root.motion-toggled(on); }
             }
         }
         Body {

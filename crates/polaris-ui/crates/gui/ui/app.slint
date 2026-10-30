@@ -479,7 +479,7 @@ export component AppWindow inherits Window {
             x: (parent.width - self.width) / 2;
             y: 40px;
             width: min(760px, parent.width - 64px);
-            height: parent.height - 80px;
+            height: min(parent.height - 80px, self.natural-height);
             connection: root.status-connection;
             rows: root.model-rows;
             providers: root.provider-rows;
@@ -490,7 +490,7 @@ export component AppWindow inherits Window {
             x: (parent.width - self.width) / 2;
             y: 40px;
             width: min(760px, parent.width - 64px);
-            height: parent.height - 80px;
+            height: min(parent.height - 80px, self.natural-height);
             tiles: root.usage-tiles;
             activity: root.usage-lines;
             close => { root.close-pages(); }
@@ -499,7 +499,7 @@ export component AppWindow inherits Window {
             x: (parent.width - self.width) / 2;
             y: 40px;
             width: min(760px, parent.width - 64px);
-            height: parent.height - 80px;
+            height: min(parent.height - 80px, self.natural-height);
             app-version: root.app-version;
             paths: root.settings-paths;
             connection-mode: root.connection-mode;

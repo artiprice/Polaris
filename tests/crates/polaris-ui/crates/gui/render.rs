@@ -8,7 +8,9 @@ use std::error::Error;
 use std::rc::Rc;
 
 use polaris_ui_ascii_aurora::{Aurora, AuroraConfig};
-use polaris_ui_gui::backend::{BackendEvent, BackendLink, MessageKind, SessionSummary};
+use polaris_ui_gui::backend::{
+    BackendEvent, BackendLink, Environment, MessageKind, ProviderState, SessionSummary,
+};
 use polaris_ui_gui::{AppOptions, attach, build_window};
 use slint::platform::software_renderer::{MinimalSoftwareWindow, RepaintBufferType};
 use slint::platform::{Platform, WindowAdapter};
@@ -101,9 +103,30 @@ fn welcome_renders_without_panic_in_software_renderer() -> TestResult {
         write_ppm(&dir.join("welcome-menus.ppm"), &open)?;
         ui.set_popover_open(false);
         ui.set_context_open(false);
+        event_tx.send(BackendEvent::Environment(Environment {
+            connection: String::from(
+                "Local session store; replies come from the provider chain and every change waits for your review.",
+            ),
+            paths: vec![
+                (String::from("WORKSPACE"), String::from("C:/work/polaris")),
+                (
+                    String::from("SESSION STORE"),
+                    String::from("C:/work/polaris/.polaris/state"),
+                ),
+                (
+                    String::from("PREFERENCES"),
+                    String::from("C:/Users/demo/.polaris/config.toml"),
+                ),
+                (
+                    String::from("PROVIDER KEYS"),
+                    String::from("C:/Users/demo/.polaris/.env (values are never shown)"),
+                ),
+            ],
+        }))?;
+        wiring.pump(&ui);
         ui.set_settings_open(true);
         settle();
-        let settings = draw(&window, stride)?.ok_or("settings did not redraw")?;
+        let settings = draw_settled(&window, stride)?.ok_or("settings did not redraw")?;
         write_ppm(&dir.join("welcome-settings.ppm"), &settings)?;
 
         // Session screen with a committed message and a sidebar list.
@@ -183,6 +206,18 @@ fn welcome_renders_without_panic_in_software_renderer() -> TestResult {
                 .map(|(effort, model)| (*effort, (*model).to_owned()))
                 .collect(),
         })?;
+        event_tx.send(BackendEvent::Providers(vec![
+            ProviderState {
+                name: String::from("token_factory"),
+                state: String::from("skipped: no NEBIUS_API_KEY"),
+                ready: false,
+            },
+            ProviderState {
+                name: String::from("openrouter"),
+                state: String::from("answers replies (nvidia/nemotron-3.5-lightning:free)"),
+                ready: true,
+            },
+        ]))?;
         event_tx.send(BackendEvent::ReplyStarted)?;
         event_tx.send(BackendEvent::ReplyText(String::from(
             "Here is the plan:
@@ -211,7 +246,7 @@ fn main() {
         write_ppm(&dir.join("session-reply.ppm"), &reply)?;
         ui.set_models_open(true);
         settle();
-        let models = draw(&window, stride)?.ok_or("models did not redraw")?;
+        let models = draw_settled(&window, stride)?.ok_or("models did not redraw")?;
         write_ppm(&dir.join("session-models.ppm"), &models)?;
         ui.set_models_open(false);
         ui.set_usage_open(true);
@@ -224,11 +259,16 @@ fn main() {
         ]))?;
         wiring.pump(&ui);
         settle();
-        let usage = draw(&window, stride)?.ok_or("usage did not redraw")?;
+        let usage = draw_settled(&window, stride)?.ok_or("usage did not redraw")?;
         write_ppm(&dir.join("session-usage.ppm"), &usage)?;
+        ui.set_usage_open(false);
+        ui.set_settings_open(true);
+        settle();
+        let settings = draw_settled(&window, stride)?.ok_or("session settings did not redraw")?;
+        write_ppm(&dir.join("session-settings.ppm"), &settings)?;
 
         // A change waiting for a decision: the diff in the conversation, the bar above the composer.
-        ui.set_usage_open(false);
+        ui.set_settings_open(false);
         event_tx.send(BackendEvent::ReplyStarted)?;
         event_tx.send(BackendEvent::Review {
             request_id: String::from("r1"),
@@ -267,6 +307,16 @@ fn settle() {
         std::thread::sleep(std::time::Duration::from_millis(400));
         slint::platform::update_timers_and_animations();
     }
+}
+
+/// Draws once so the page's fade-in starts, lets it finish, and draws the settled frame.
+fn draw_settled(
+    window: &MinimalSoftwareWindow,
+    stride: usize,
+) -> Result<Option<Vec<Rgb8Pixel>>, Box<dyn Error>> {
+    let _first = draw(window, stride)?;
+    settle();
+    draw(window, stride)
 }
 
 fn draw(
