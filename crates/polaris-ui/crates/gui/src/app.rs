@@ -151,6 +151,7 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
     ui.set_status_connection(SharedString::from(controller.status_line()));
     ui.set_status_state(SharedString::from(controller.status_state()));
     ui.set_review_title(SharedString::from(controller.review().unwrap_or_default()));
+    ui.set_review_tests(controller.review_is_test_run());
     ui.set_starting(controller.starting());
     let (provider_models, current) = controller.composer_models();
     if !provider_models.is_empty() {

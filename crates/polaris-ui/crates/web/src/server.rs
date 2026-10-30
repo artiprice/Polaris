@@ -32,6 +32,11 @@ pub enum WebError {
     /// The address is not a loopback address.
     #[error("the web UI binds only to loopback addresses, not {0}")]
     NotLoopback(SocketAddr),
+    /// The port is taken or reserved (Windows keeps ranges for Hyper-V and WSL).
+    #[error(
+        "port {0} is in use or reserved by the system (on Windows see `netsh int ipv4 show excludedportrange protocol=tcp`); choose another with --port or --bind"
+    )]
+    PortUnavailable(u16),
     /// Binding or serving failed.
     #[error("web server: {0}")]
     Io(#[from] std::io::Error),
@@ -119,7 +124,14 @@ impl WebServer {
         if !options.bind.ip().is_loopback() {
             return Err(WebError::NotLoopback(options.bind));
         }
-        let listener = tokio::net::TcpListener::bind(options.bind).await?;
+        let listener = tokio::net::TcpListener::bind(options.bind)
+            .await
+            .map_err(|error| match error.kind() {
+                std::io::ErrorKind::AddrInUse | std::io::ErrorKind::PermissionDenied => {
+                    WebError::PortUnavailable(options.bind.port())
+                }
+                _ => WebError::Io(error),
+            })?;
         let address = listener.local_addr()?;
         let token = random_token()?;
         let publisher = Publisher::new(EVENT_BACKLOG);

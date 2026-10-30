@@ -310,8 +310,27 @@ fn review_card(
             .unwrap_or_default();
         run(ui, effects);
     };
+    // A sandbox test run is decided like a change, but its words say what happens.
+    let tests = ui.with_untracked(|current| current.test_reviews.contains(&request_id));
+    let (heading, aria, decline_label, apply_label) = if tests {
+        (
+            "Run tests in the sandbox",
+            "Test run waiting for your decision",
+            "Don't run",
+            "Run tests",
+        )
+    } else {
+        (
+            "Review change",
+            "Change waiting for your decision",
+            "Don't apply",
+            "Apply",
+        )
+    };
     let closed = match state {
         ReviewState::Waiting | ReviewState::Deciding { .. } => None,
+        ReviewState::Applied if tests => Some(("applied", "Tests started")),
+        ReviewState::Declined if tests => Some(("declined", "Not run")),
         ReviewState::Applied => Some(("applied", "Applied")),
         ReviewState::Declined => Some(("declined", "Not applied")),
         ReviewState::Withdrawn => Some(("withdrawn", "Withdrawn")),
@@ -321,8 +340,8 @@ fn review_card(
     let decline_id = request_id.clone();
     let enter_id = request_id;
     view! {
-        <section class="entry review" aria-label="Change waiting for your decision" data-closed=closed.map(|(key, _)| key)>
-            <div class="review-head">"Review change"</div>
+        <section class="entry review" aria-label=aria data-closed=closed.map(|(key, _)| key)>
+            <div class="review-head">{heading}</div>
             <div class="prose">{markdown_view(prompt)}</div>
             {match closed {
                 Some((_, label)) => view! { <div class="review-outcome">{label}</div> }.into_any(),
@@ -338,8 +357,8 @@ fn review_card(
                                     decide(false, &enter_id);
                                 }
                             }/>
-                        <button type="button" class="review-decline" disabled=deciding on:click=move |_| decide(false, &decline_id)>"Don't apply"</button>
-                        <button type="button" class="review-apply" disabled=deciding on:click=move |_| decide(true, &apply_id)>"Apply"</button>
+                        <button type="button" class="review-decline" disabled=deciding on:click=move |_| decide(false, &decline_id)>{decline_label}</button>
+                        <button type="button" class="review-apply" disabled=deciding on:click=move |_| decide(true, &apply_id)>{apply_label}</button>
                     </div>
                 }.into_any(),
             }}

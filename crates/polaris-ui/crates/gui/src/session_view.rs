@@ -53,6 +53,8 @@ struct PendingReview {
     id: String,
     /// First line of the prompt ("Change `src/lib.rs`?").
     title: String,
+    /// A sandbox test run rather than a file change.
+    tests: bool,
 }
 
 /// Which screen the window shows.
@@ -399,7 +401,11 @@ impl SessionController {
     #[must_use]
     pub fn status_line(&self) -> String {
         if !self.reviews.is_empty() {
-            return String::from("Waiting for your decision on a change");
+            return String::from(if self.review_is_test_run() {
+                "Waiting for your decision on a test run"
+            } else {
+                "Waiting for your decision on a change"
+            });
         }
         if let Some(reply) = &self.reply {
             return format!(
@@ -420,6 +426,43 @@ impl SessionController {
     #[must_use]
     pub fn review(&self) -> Option<&str> {
         self.reviews.front().map(|review| review.title.as_str())
+    }
+
+    /// Whether the oldest waiting decision is a sandbox test run (its buttons say so).
+    #[must_use]
+    pub fn review_is_test_run(&self) -> bool {
+        self.reviews.front().is_some_and(|review| review.tests)
+    }
+
+    /// Show a decision the reply waits on: its prompt in the conversation and its bar.
+    fn add_review(
+        &mut self,
+        request_id: String,
+        prompt: String,
+        tests: bool,
+    ) -> Vec<BackendRequest> {
+        if self.reviews.iter().any(|review| review.id == request_id) {
+            return Vec::new();
+        }
+        if let Some(reply) = self.reply.as_mut() {
+            reply.entry = None;
+            reply.break_pending = false;
+            reply.after_review = true;
+        }
+        let title = prompt
+            .lines()
+            .next()
+            .unwrap_or("Apply this change?")
+            .replace('`', "");
+        if let Err(error) = self.view.push_assistant(prompt) {
+            self.notice = format!("Conversation view is full: {error}.");
+        }
+        self.reviews.push_back(PendingReview {
+            id: request_id,
+            title,
+            tests,
+        });
+        Vec::new()
     }
 
     /// Apply or decline the oldest waiting change; `note` reaches the model with a decline.
@@ -734,28 +777,22 @@ impl SessionController {
                 });
                 Vec::new()
             }
-            BackendEvent::Review { request_id, prompt } => {
-                if self.reviews.iter().any(|review| review.id == request_id) {
-                    return Vec::new();
-                }
-                if let Some(reply) = self.reply.as_mut() {
-                    reply.entry = None;
-                    reply.break_pending = false;
-                    reply.after_review = true;
-                }
-                let title = prompt
-                    .lines()
-                    .next()
-                    .unwrap_or("Apply this change?")
-                    .replace('`', "");
-                if let Err(error) = self.view.push_assistant(prompt) {
+            BackendEvent::TestResult { passed, summary } => {
+                let shown = if passed {
+                    self.view.push_system(format!("✓ {summary}"))
+                } else {
+                    self.view.push_warning(&summary)
+                };
+                if let Err(error) = shown {
                     self.notice = format!("Conversation view is full: {error}.");
                 }
-                self.reviews.push_back(PendingReview {
-                    id: request_id,
-                    title,
-                });
                 Vec::new()
+            }
+            BackendEvent::Review { request_id, prompt } => {
+                self.add_review(request_id, prompt, false)
+            }
+            BackendEvent::TestReview { request_id, prompt } => {
+                self.add_review(request_id, prompt, true)
             }
             BackendEvent::ReviewClosed(id) => {
                 self.reviews.retain(|review| review.id != id);

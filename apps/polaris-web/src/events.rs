@@ -105,6 +105,16 @@ pub enum WebEvent {
         request_id: String,
         /// Markdown prompt with the diff.
         prompt: String,
+        /// A sandbox test run rather than a file change.
+        #[serde(default)]
+        tests: bool,
+    },
+    /// An approved sandbox test run ended with its Proof of Done verdict.
+    TestResult {
+        /// Proof of Done passed.
+        passed: bool,
+        /// Command, exit code, duration, reason.
+        summary: String,
     },
     /// The review was answered or withdrawn.
     ReviewClosed {

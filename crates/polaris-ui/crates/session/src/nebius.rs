@@ -257,6 +257,33 @@ fn now_micros() -> i64 {
 
 // --------------------------------------------------------------------------------- status
 
+/// One status line for settings pages: whether the Nebius key is set and which services are
+/// configured. Reads local files only (blocking, no request).
+#[must_use]
+pub fn summary(workspace: &Path) -> String {
+    let Ok((config, global)) = workspace_config(workspace) else {
+        return String::from("configuration unreadable");
+    };
+    let key = config
+        .nebius
+        .api_key
+        .as_ref()
+        .map(|reference| load_secret(reference, &global, "Nebius key"));
+    let key = match key {
+        Some(Ok(Some(_))) => "key set",
+        Some(Ok(None)) | None => "no NEBIUS_API_KEY",
+        Some(Err(_)) => "key unreadable",
+    };
+    let settings = read_settings(&global).unwrap_or_default();
+    let on = |enabled: bool| if enabled { "on" } else { "off" };
+    format!(
+        "Token Factory: {key} · embeddings: {} · Contree: {} · AI Cloud: {} — details in /nebius-status",
+        settings.embedding_model.as_deref().unwrap_or("off"),
+        on(settings.contree_consent),
+        on(cloud_settings(&settings).is_ok())
+    )
+}
+
 /// `/nebius-status`: what of Token Factory, Contree, Data Lab and AI Cloud this machine can
 /// reach, and with what settings.
 /// # Errors

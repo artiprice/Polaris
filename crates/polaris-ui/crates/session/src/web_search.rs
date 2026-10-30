@@ -143,6 +143,34 @@ async fn tavily(workspace: &Path) -> Result<Option<Tavily>, String> {
     .map_err(|_| "Tavily configuration rejected (the API base must be HTTPS)".to_owned())
 }
 
+/// One status line for settings pages: which provider answers `/search-web` and `$websearch`.
+/// Reads local files only (blocking, no request).
+#[must_use]
+pub fn summary(workspace: &Path) -> String {
+    let configured = crate::nebius::workspace_config(workspace).ok();
+    let searxng_url = std::env::var("POLARIS_SEARXNG_URL")
+        .ok()
+        .or_else(|| {
+            configured
+                .as_ref()
+                .and_then(|(config, _)| config.search.searxng_url.clone())
+        })
+        .unwrap_or_else(|| DEFAULT_URL.to_owned());
+    let tavily = configured.and_then(|(config, global)| {
+        let reference = config
+            .search
+            .tavily_api_key
+            .unwrap_or_else(|| polaris_config::SecretRef::Env("TAVILY_API_KEY".to_owned()));
+        crate::nebius::load_secret(&reference, &global, "Tavily key")
+            .ok()
+            .flatten()
+    });
+    match tavily {
+        Some(_) => format!("Tavily (key set), SearXNG at {searxng_url} if it fails"),
+        None => format!("SearXNG at {searxng_url} (set TAVILY_API_KEY for Tavily)"),
+    }
+}
+
 /// Results for `query` from Tavily, or SearXNG without a Tavily key or when Tavily fails, with
 /// the provider that answered and a note on why Tavily did not.
 async fn search(

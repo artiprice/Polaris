@@ -122,10 +122,12 @@ component ReviewButton {
 // diff itself is the last assistant entry above.
 component ReviewBar {
     in property <string> title;
+    // A sandbox test run rather than a file change: the decision runs or skips the tests.
+    in property <bool> tests;
     callback apply(string);
     callback decline(string);
     accessible-role: groupbox;
-    accessible-label: "Change waiting for your decision";
+    accessible-label: root.tests ? "Test run waiting for your decision" : "Change waiting for your decision";
     Rectangle {
         border-radius: 16px;
         background: Tokens.review-bg;
@@ -140,7 +142,7 @@ component ReviewBar {
             spacing: 10px;
             Text {
                 horizontal-stretch: 0;
-                text: "REVIEW";
+                text: root.tests ? "TESTS" : "REVIEW";
                 font-size: 11px;
                 letter-spacing: 0.6px;
                 vertical-alignment: center;
@@ -171,6 +173,8 @@ component ReviewBar {
                     height: parent.height;
                     vertical-alignment: center;
                     single-line: true;
+                    // Declining a test run stops the reply, so no note reaches the model.
+                    enabled: !root.tests;
                     font-size: 13px;
                     color: Tokens.text;
                     accessible-role: text-input;
@@ -187,20 +191,20 @@ component ReviewBar {
                     x: 14px;
                     height: parent.height;
                     vertical-alignment: center;
-                    text: "Note for Polaris (optional)";
+                    text: root.tests ? "Not running them stops the reply" : "Note for Polaris (optional)";
                     font-size: 13px;
                     color: Tokens.muted-web;
                 }
             }
             ReviewButton {
-                label: "Don't apply";
+                label: root.tests ? "Don't run" : "Don't apply";
                 clicked => {
                     root.decline(note.text);
                     note.text = "";
                 }
             }
             ReviewButton {
-                label: "Apply";
+                label: root.tests ? "Run tests" : "Apply";
                 primary: true;
                 clicked => {
                     root.apply(note.text);
@@ -385,6 +389,7 @@ export component SessionScreen {
     in property <string> notice;
     // Question of the change the reply waits on; empty when none.
     in property <string> review-title;
+    in property <bool> review-tests;
     in property <[string]> model-names;
     in property <[string]> model-short-names;
     in property <[DirectiveChip]> directives;
@@ -759,6 +764,7 @@ export component SessionScreen {
                         ReviewBar {
                             width: column.inner;
                             title: root.review-title;
+                            tests: root.review-tests;
                             apply(note) => { root.review-apply(note); }
                             decline(note) => { root.review-decline(note); }
                         }

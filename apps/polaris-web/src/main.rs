@@ -38,7 +38,7 @@ struct Args {
     token_file: Option<PathBuf>,
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(thiserror::Error)]
 enum WebAppError {
     #[error(transparent)]
     Config(#[from] polaris_config::ConfigError),
@@ -48,6 +48,13 @@ enum WebAppError {
     Io(#[from] std::io::Error),
     #[error("--connect: {0}")]
     Attach(String),
+}
+
+/// `main` prints its error with `Debug`: show the sentence, not the variant tree.
+impl std::fmt::Debug for WebAppError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self, formatter)
+    }
 }
 
 fn attach_target(args: &Args) -> Result<Option<polaris_ui_web::AttachTarget>, WebAppError> {
