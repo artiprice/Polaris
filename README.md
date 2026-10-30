@@ -9,8 +9,9 @@ other frontends attach to.
 > Status: active development. What works, what is verified and what is open is tracked phase by
 > phase in [`@prime/PHASES_STATUS.md`](@prime/PHASES_STATUS.md); the design is in
 > [`@prime/PLAN.md`](@prime/PLAN.md). Nebius services (Token Factory, Contree, AI Cloud, Data Lab)
-> are not available to the team, so the features that need them are descoped (D10 in
-> [`@prime/PHASES.md`](@prime/PHASES.md)); models run through OpenRouter or a local server.
+> are not available to the team, so their integration is written but has never run against the
+> real services (D10 in [`@prime/PHASES.md`](@prime/PHASES.md)); see "Nebius services" below.
+> Models run through OpenRouter or a local server.
 
 ## Frontends
 
@@ -141,6 +142,32 @@ wsl -d Ubuntu -- bash /mnt/d/Polaris/@prime/tools/sandbox/bringup-wsl.sh /mnt/d/
 
 The status of both is shown at startup and on the desktop's Settings page; a session whose
 gateway is unreachable opens without the sandbox and says why.
+
+## Nebius services
+
+Everything Nebius-specific is opt-in and uses your own access; without it the commands say what is
+missing. The integration follows the published API, MCP and CLI documentation but has not been run
+against the live services from this repository.
+
+| Service | What Polaris does with it | Setup |
+|---|---|---|
+| **Token Factory** | First provider of the chat chain (Nemotron by effort); `/nebius-status` lists models and fine-tuning jobs | `NEBIUS_API_KEY` in `~/.polaris/.env`; `[nebius]` in `~/.polaris/config.toml` |
+| **Embeddings** | `/search-local` and `$rag` passages re-ranked by Token Factory embeddings of masked text | `"embedding_model": "BAAI/bge-en-icl"` in `~/.polaris/nebius.json` |
+| **Data Lab** | `/datalab-sync` exports the session's trajectories with a passed Proof of Done (consent recorded by the command, masked, rescanned) and uploads them through the Files API; `/datalab-finetune [model]` starts a fine-tuning job | `data_lab` {`base_model`, `license`, `suffix`, `hyperparameters`} |
+| **Contree** | `/contree-branches`; `polaris nebius contree-run [--sync] <image> <cmd>…` runs up to 8 branches from one image and workspace state; `polaris nebius swe-run <owner/repo> <commit> <cmd>` resolves the SWE environment image first | `contree-mcp --mode http` running locally; `contree` {`endpoint`, `egress_consent`}; trusted image annotations in `~/.polaris/contree-images.json` |
+| **AI Cloud** | `polaris nebius cloud-up \| cloud-status \| cloud-down`: a remote OpenShell gateway VM under a budget reservation, a hard lifetime and an owner label, through the official `nebius` CLI | `ai_cloud` {`parent_id`, `subnet_id`, `platform`, `preset`, `hourly_usd`, `budget_usd`, `max_hours`} |
+| **`$budget`** | `$budget(usd=…)` / `$budget(tokens=…)` stops new turns once the session's model spending reaches it | — |
+
+```json
+{
+  "embedding_model": "BAAI/bge-en-icl",
+  "contree": { "endpoint": "http://127.0.0.1:9452/mcp", "egress_consent": true },
+  "data_lab": { "base_model": "meta-llama/Llama-3.1-8B-Instruct", "license": "Apache-2.0",
+                "suffix": "polaris", "hyperparameters": { "n_epochs": 3, "lora": true } },
+  "ai_cloud": { "parent_id": "project-…", "subnet_id": "vpcsubnet-…", "platform": "<platform>",
+                "preset": "<preset>", "hourly_usd": "0.50", "budget_usd": "10", "max_hours": 4 }
+}
+```
 
 ## Safety model, in short
 

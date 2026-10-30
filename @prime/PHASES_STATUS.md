@@ -19,11 +19,11 @@
 |---|---|
 | PASS | 48 |
 | FAIL | 3 |
-| IN PROGRESS | 90 |
+| IN PROGRESS | 91 |
 | BLOCKED-ON-ACCESS | 2 |
-| DESCOPED | 13 |
-| NOT STARTED | 9 |
-| **total** | 165 |
+| DESCOPED | 8 |
+| NOT STARTED | 8 |
+| **total** | 160 |
 
 **Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
@@ -88,7 +88,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
 | P3-X-1 walking skeleton (local endpoint) | IN PROGRESS (§E45–§E46: production readonly tools and durable journal with synthetic-provider multi-turn evidence; complete live tokenizer/provider/edit/test/proof loop remains open) |
 | P3-X-2 same loop on Nemotron | DESCOPED (Token Factory; Nemotron runs through OpenRouter instead, live web/TUI turns E53–E54) |
-| P3-X-3 Contree sidecar + E3 run | DESCOPED (Nebius unavailable; local Docker sandbox E56) |
+| P3-X-3 Contree sidecar + E3 run | CODE ONLY (E61: the MCP hub reaches a user-run `contree-mcp --mode http` sidecar; `polaris nebius contree-run` and `swe-run`; never run — Nebius unavailable, local Docker/OpenShell sandboxes E56/E60) |
 | P3-X-4 live re-recording of SSE fixtures | DESCOPED (Nebius unavailable; fixtures stay labelled synthetic) |
 | P4-X-1 ONNX export script + goldens | NOT STARTED |
 | P4-X-2 threshold calibration v1 | IN PROGRESS (E60: `polaris s1-calibrate` on the 400-row synthetic set with the live worker; diff_tamper and secret_semantic calibrated at 100 % precision, congruence not reached; real-change calibration open) |
@@ -96,10 +96,10 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P5-X-1 SearXNG container + provider | IN PROGRESS (E58: `/search-web` and `$websearch` over the redacting SearXNG adapter; loopback container script `@prime/tools/searxng/`; live query transcript open) |
 | P5-X-2 Tavily provider live | BLOCKED-ON-ACCESS |
 | P5-X-3 NVIDIA docs sync | IN PROGRESS (E58: incremental llms.txt sync into a local seed with per-page provenance, `/nv-docs-sync`, `/nv-docs`, `$nvidia(auto)` passages; a live run with page counts open) |
-| P5-X-4 embeddings via Token Factory | DESCOPED (Nebius unavailable; lexical BM25/FTS search is the keyless path) |
-| P6-X-1 SWE env resolver + branching | DESCOPED (Nebius unavailable) |
-| P6-X-2 remote OpenShell gateway (E4) | DESCOPED (Nebius unavailable) |
-| P6-X-3 Data Lab export + fine-tune trigger | DESCOPED (Nebius unavailable) |
+| P5-X-4 embeddings via Token Factory | CODE ONLY (E61: `/search-local` and `$rag` re-ranked by Token Factory embeddings of masked text when `embedding_model` is set; lexical BM25 stays the keyless path; never run) |
+| P6-X-1 SWE env resolver + branching | CODE ONLY (E61: `swe-run` resolves the image with `resolve_environment` over the catalog and trusted annotations; `contree-run` branches up to 8 runs and `/contree-branches` shows the tree; never run) |
+| P6-X-2 remote OpenShell gateway (E4) | CODE ONLY (E61: `polaris nebius cloud-up`, `cloud-status`, `cloud-down` through the `nebius` CLI with budget reservation, lifetime and owner label; the gateway stays on the VM's loopback behind an SSH tunnel; never run) |
+| P6-X-3 Data Lab export + fine-tune trigger | CODE ONLY (E61: `/datalab-sync` collects proved trajectories, masks and exports them and uploads through the Files API; `/datalab-finetune` starts a job; never run) |
 | P7-X-1 `/research` long run | IN PROGRESS (E58: `/research` composes the research loop with the model and a no-network Docker metric sandbox, checkpoints and `/research resume`; a live 20-iteration run with a kill open) |
 | P7-X-2 `/hack` on seeded-bug repos | PASS (E55: 5/5 seeded races, blocking-in-async and CUDA barrier bugs, 0 false positives; synthetic repo) |
 | P7-X-3 microVM browser loop | NOT STARTED |
@@ -213,9 +213,9 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | E50 baseline plus active refund-ledger work: shared-snapshot replay, owned deferred settlement, and saturation-aware accounting implemented; focused behavioral, race, zero-allocation, performance, and formal acceptance checks remain open. Preserve the three contradictory reservation_refund fixtures unchanged. |
 | `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | 2026-10-26 §E45 adds explicit Workspace scope while preserving right/time/churn/unsafe/diff checks and monotone child attenuation. New frame-root/token binding and actual kernel readonly authorization have scoped native/Linux evidence; full mutation assembly and security audit remain open. |
 | `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | IN PROGRESS | 2026-10-24 E32: bounded zeroizing AEAD vault, SDK source, identifier/storage limits and isolated real Windows keyring store/load/delete pass. Other host backends and full P3 assembly remain open. |
-| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | E50: same-owner pinned llama.cpp token counting/chat adapter and local real token-usage parity checked; keyed Token Factory and full provider matrices remain open. |
-| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | IN PROGRESS | E48: stateless typed upstream Contree MCP adapter, exact 19-tool inventory, bounded branch/cancel and approved-path sync contracts. Actual MCP hub registry port preserves effect authorization. Live sidecar/SWE acceptance remains BLOCKED-ON-ACCESS. |
-| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | IN PROGRESS | 2026-10-26 §E41: facade exports the implemented Nebius AI Cloud surface. Provider transport and live cloud execution remain absent; child contracts do not establish production integration. |
+| `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | E50: same-owner pinned llama.cpp token counting/chat adapter and local real token-usage parity checked; keyed Token Factory and full provider matrices remain open. E61: Files upload and fine-tuning jobs (create/get/list) per the OpenAI-compatible reference; never run (no Nebius access). |
+| `crate:polaris-nebius-cloud-sandboxes` | `polaris-nebius-cloud-sandboxes` | P3 | IN PROGRESS | E48: stateless typed upstream Contree MCP adapter, exact 19-tool inventory, bounded branch/cancel and approved-path sync contracts. Actual MCP hub registry port preserves effect authorization. Live sidecar/SWE acceptance remains BLOCKED-ON-ACCESS. E61: reached from polaris-ui-session through the MCP hub over streamable HTTP (`polaris nebius contree-run`, `swe-run`, `/contree-branches`); never run. |
+| `crate:polaris-nebius-cloud` | `polaris-nebius-cloud` | P3 | IN PROGRESS | 2026-10-26 §E41: facade exports the implemented Nebius AI Cloud surface. E61: polaris-ui-session composes all four services (Token Factory files/fine-tuning/embeddings, Contree over MCP, Data Lab export/upload, AI Cloud through the CLI); no live Nebius run exists. |
 | `crate:polaris-models` | `polaris-models` | P3 | IN PROGRESS | E50: production local process loader, exact listener ownership, registry selection, leases through stream EOF and observed owned-tree shutdown checked; full resource/load/formal matrices remain open. |
 | `crate:polaris-tools-math` | `polaris-tools-math` | P3 | IN PROGRESS | E50: compound exponent/depth guards, interpolation edge cases and exact NVIDIA citation hosts repaired; 33 focused tests and scoped lint pass; numerical corpus, fuzz/formal/performance acceptance remains open. |
 | `crate:polaris-runtime-frames` | `polaris-runtime-frames` | P3 | IN PROGRESS | 2026-10-27 E49: sealed actual ancestry/step/result budgets integrate with the production kernel agent runner, durable questions and subtree cancellation. Native frame/domain tests pass; live M3/M4 and formal acceptance remain open. |
@@ -258,8 +258,8 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P6 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-nebius-cloud-data-lab` | `polaris-nebius-cloud-data-lab` | P6 | IN PROGRESS | Production local consent-gated trajectory masking/export in progress; UNVERIFIED. Remote API and fine-tuning remain pending API/access. |
-| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | P6 | IN PROGRESS | 2026-10-26 §E41: real checked budget reservations, terminal TTL handling, strict mTLS/IP ingress checks and owner-label selection. Provider transport is not implemented; live cloud integration and phase acceptance remain open. |
+| `crate:polaris-nebius-cloud-data-lab` | `polaris-nebius-cloud-data-lab` | P6 | IN PROGRESS | Production local consent-gated trajectory masking/export in progress; UNVERIFIED. Remote API and fine-tuning remain pending API/access. E61: `/datalab-sync` drives collect → verified (event-bound proof resolver) → mask → export from the session log, then uploads through the Token Factory Files API; never run. |
+| `crate:polaris-nebius-cloud-ai-cloud` | `polaris-nebius-cloud-ai-cloud` | P6 | IN PROGRESS | 2026-10-26 §E41: real checked budget reservations, terminal TTL handling, strict mTLS/IP ingress checks and owner-label selection. Provider transport is not implemented in this crate; E61: `polaris nebius cloud-up|cloud-status|cloud-down` apply this policy around the official `nebius` CLI (the AI Cloud API is gRPC only); never run. |
 
 ### P7
 
@@ -2129,3 +2129,43 @@ Release builds only (`cargo build --release -p polaris-cli -p polaris-worker -p 
 **Still open:** `/goal`, `/context-expand`, `/cache purge`, `/screenshot`, `/browser`, `/ui-diff`,
 `/nix-flake` (P7 browser and microVM profiles), the daemon terminal (no host shell by design),
 System One nano (S0-6).
+
+## E61 — Nebius integration written for teams with access; never run (2026-10-30)
+
+The team has no Nebius access (D10), so this entry is code only: `cargo clippy --release` of the
+changed crates and the release build pass; no Nebius endpoint was contacted. Contracts follow the
+published documentation (Token Factory OpenAI-compatible reference for files, fine-tuning and
+embeddings; `contree-mcp` configuration; the `nebius` CLI page for compute instances — the AI
+Cloud API itself is gRPC only). Settings: `~/.polaris/nebius.json` (global layer only).
+
+- **Token Factory client:** `upload_file` (multipart `POST files`, purpose `fine-tune`),
+  `create_fine_tuning_job`, `fine_tuning_job`, `list_fine_tuning_jobs`, through the same bounded,
+  retrying, key-redacting transport as chat and embeddings.
+- **P5-X-4:** `/search-local` and `$rag` take three times the lexical candidates and re-rank them
+  by cosine similarity of Token Factory embeddings of redactor-masked text (`embedding_model`).
+- **P6-X-3 Data Lab:** `/datalab-sync` reads the session log for frames with an applied change, a
+  sandbox run and a passed Proof of Done, records consent for that session (the command is the
+  user's decision), binds each proof through an event-bound `ProofResolver`, masks and rescans
+  through `polaris-nebius-cloud-data-lab`, exports ChatML JSONL and uploads the conversations;
+  `/datalab-finetune [model]` starts a job (`data_lab.base_model`, `suffix`, `hyperparameters`).
+- **P3-X-3 / P6-X-1 Contree:** the MCP hub connects over streamable HTTP to a user-run
+  `contree-mcp --mode http` on loopback (no host process is launched), `ContreeBackend` verifies
+  the pinned tool inventory; `polaris nebius contree-run [--sync] <image> <cmd>…` syncs the
+  workspace (secrets and build output excluded) and runs up to eight branches, recorded in
+  `.polaris/contree/branches.json` and shown by `/contree-branches`; `swe-run <owner/repo>
+  <commit> <cmd>` resolves the image with `resolve_environment` over the catalog and the user's
+  trusted annotations (`~/.polaris/contree-images.json`, newest first on a tie).
+- **P6-X-2 AI Cloud:** `polaris nebius cloud-up | cloud-status | cloud-down` drive the `nebius`
+  CLI: a `ValidatedVmSpec` (disk, hard lifetime, idle limit, mTLS ingress), a `BudgetGuard`
+  reservation of the whole lifetime, an owner label selected with `select_owned_resources`, and
+  cloud-init installing Docker and the pinned OpenShell gateway on the VM's loopback (reached
+  through an SSH tunnel; `sandbox.json` then points at it).
+- **`/nebius-status`** reports the key, model listing with each effort's model, fine-tuning
+  jobs, embeddings, Contree reachability, the last Data Lab upload and job, and AI Cloud settings.
+- **`$budget(usd=…|tokens=…)`** is enforced: a new turn is refused once the session's
+  `ModelRequestCompleted` costs or tokens reach it.
+- TUI `/nebius-status`, `/contree-branches`, `/datalab-sync`, `/datalab-finetune` act (desktop and
+  web through the shared local commands); `polaris nebius <command>` on the command line.
+
+**Unverified by construction:** every Nebius request shape above, the CLI flags marked in the
+code, and the dataset format the fine-tuning service accepts.

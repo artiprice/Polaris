@@ -963,6 +963,159 @@ impl TokenFactoryClient {
         url: Url,
         body: Option<Value>,
     ) -> Result<Response, TfError> {
+        self.send_payload(method, url, body.map(Payload::Json).as_ref())
+            .await
+    }
+
+    /// GET a bounded JSON document below the base URL.
+    async fn get_json<T: serde::de::DeserializeOwned>(&self, path: &str) -> Result<T, TfError> {
+        let response = self
+            .send_with_429_retry(Method::GET, self.inner.base.endpoint(path)?, None)
+            .await?;
+        self.json_response(response).await
+    }
+
+    async fn json_response<T: serde::de::DeserializeOwned>(
+        &self,
+        response: Response,
+    ) -> Result<T, TfError> {
+        let bytes = read_bounded(
+            response,
+            self.inner.config.max_json_response_bytes,
+            self.inner.config.stream_idle_timeout,
+        )
+        .await?;
+        serde_json::from_slice(&bytes).map_err(|_| TfError::Json)
+    }
+
+    /// Upload one file through the OpenAI-compatible Files API (`POST files`, multipart), for
+    /// example a fine-tuning dataset with `purpose` `fine-tune`.
+    /// # Errors
+    /// Invalid name or purpose, a file over the request bound, HTTP or protocol failure.
+    pub async fn upload_file(
+        &self,
+        purpose: &str,
+        filename: &str,
+        bytes: Bytes,
+    ) -> Result<ProviderFile, TfError> {
+        let plain = |text: &str, limit: usize| {
+            !text.is_empty()
+                && text.len() <= limit
+                && text
+                    .chars()
+                    .all(|c| c.is_ascii_graphic() && !matches!(c, '"' | '\\' | ';'))
+        };
+        if !plain(purpose, 64) || !plain(filename, 255) || bytes.is_empty() {
+            return Err(TfError::Configuration);
+        }
+        let boundary = format!("polaris-{:032x}", rand::rng().random::<u128>());
+        if bytes
+            .windows(boundary.len())
+            .any(|window| window == boundary.as_bytes())
+        {
+            return Err(TfError::Configuration);
+        }
+        let mut body = BytesMut::with_capacity(bytes.len().saturating_add(512));
+        body.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"purpose\"\r\n\r\n{purpose}\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: application/octet-stream\r\n\r\n"
+            )
+            .as_bytes(),
+        );
+        body.extend_from_slice(&bytes);
+        body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+        if body.len() > self.inner.config.max_request_bytes {
+            return Err(TfError::TooLarge);
+        }
+        let payload = Payload::Raw {
+            content_type: format!("multipart/form-data; boundary={boundary}"),
+            bytes: body.freeze(),
+        };
+        let response = self
+            .send_payload(
+                Method::POST,
+                self.inner.base.endpoint("files")?,
+                Some(&payload),
+            )
+            .await?;
+        let file: ProviderFile = self.json_response(response).await?;
+        if file.id.is_empty() || file.id.chars().any(char::is_control) {
+            return Err(TfError::Protocol);
+        }
+        Ok(file)
+    }
+
+    /// Start a fine-tuning job (`POST fine_tuning/jobs`) on an uploaded training file.
+    /// # Errors
+    /// Invalid request, HTTP or protocol failure.
+    pub async fn create_fine_tuning_job(
+        &self,
+        request: &FineTuningRequest,
+    ) -> Result<FineTuningJob, TfError> {
+        if request.model.is_empty() || request.training_file.is_empty() {
+            return Err(TfError::Configuration);
+        }
+        let mut body = json!({"model": request.model, "training_file": request.training_file});
+        let object = body.as_object_mut().ok_or(TfError::Json)?;
+        if let Some(suffix) = &request.suffix {
+            let _previous = object.insert("suffix".to_owned(), json!(suffix));
+        }
+        if let Some(validation) = &request.validation_file {
+            let _previous = object.insert("validation_file".to_owned(), json!(validation));
+        }
+        if !request.hyperparameters.is_empty() {
+            let _previous = object.insert(
+                "hyperparameters".to_owned(),
+                Value::Object(request.hyperparameters.clone()),
+            );
+        }
+        let response = self
+            .send_with_429_retry(
+                Method::POST,
+                self.inner.base.endpoint("fine_tuning/jobs")?,
+                Some(body),
+            )
+            .await?;
+        let job: FineTuningJob = self.json_response(response).await?;
+        job.validate()?;
+        Ok(job)
+    }
+
+    /// One fine-tuning job (`GET fine_tuning/jobs/{id}`).
+    /// # Errors
+    /// Invalid id, HTTP or protocol failure.
+    pub async fn fine_tuning_job(&self, id: &str) -> Result<FineTuningJob, TfError> {
+        if id.is_empty()
+            || !id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c))
+        {
+            return Err(TfError::Configuration);
+        }
+        let job: FineTuningJob = self.get_json(&format!("fine_tuning/jobs/{id}")).await?;
+        job.validate()?;
+        Ok(job)
+    }
+
+    /// The newest fine-tuning jobs of this credential (`GET fine_tuning/jobs`), at most `limit`.
+    /// # Errors
+    /// HTTP or protocol failure.
+    pub async fn list_fine_tuning_jobs(&self, limit: u8) -> Result<Vec<FineTuningJob>, TfError> {
+        let page: FineTuningJobListWire = self
+            .get_json(&format!("fine_tuning/jobs?limit={}", limit.max(1)))
+            .await?;
+        for job in &page.data {
+            job.validate()?;
+        }
+        Ok(page.data)
+    }
+
+    async fn send_payload(
+        &self,
+        method: Method,
+        url: Url,
+        body: Option<&Payload>,
+    ) -> Result<Response, TfError> {
         let mut retries = 0_u8;
         let start = tokio::time::Instant::now();
         let Some(deadline) = start.checked_add(self.inner.config.request_timeout) else {
@@ -977,8 +1130,17 @@ impl TokenFactoryClient {
             if let Credentials::Bearer(key) = &self.inner.credentials {
                 request = request.bearer_auth(key.0.expose_secret());
             }
-            if let Some(json_body) = body.as_ref() {
-                request = request.json(json_body);
+            match body {
+                Some(Payload::Json(json_body)) => request = request.json(json_body),
+                Some(Payload::Raw {
+                    content_type,
+                    bytes,
+                }) => {
+                    request = request
+                        .header(reqwest::header::CONTENT_TYPE, content_type.as_str())
+                        .body(bytes.clone());
+                }
+                None => {}
             }
             let response = match tokio::time::timeout(remaining, request.send()).await {
                 Err(_) => return Err(TfError::Timeout),
@@ -1113,6 +1275,84 @@ struct LlamaInputTokensWire {
 #[derive(Deserialize)]
 struct ModelListEntryWire {
     id: String,
+}
+
+/// A request body: JSON, or exact bytes with their content type (multipart uploads).
+enum Payload {
+    Json(Value),
+    Raw { content_type: String, bytes: Bytes },
+}
+
+/// A file held by the provider's OpenAI-compatible Files API.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct ProviderFile {
+    /// Provider file id, used as a fine-tuning `training_file`.
+    pub id: String,
+    /// Stored size, when reported.
+    #[serde(default)]
+    pub bytes: Option<u64>,
+    /// File name as stored.
+    #[serde(default)]
+    pub filename: Option<String>,
+    /// Declared purpose.
+    #[serde(default)]
+    pub purpose: Option<String>,
+}
+
+/// A new fine-tuning job. `hyperparameters` passes provider-specific settings through as they
+/// are (for example `n_epochs`, or LoRA options where the provider supports them).
+#[derive(Debug, Clone, Default)]
+pub struct FineTuningRequest {
+    /// Base model to tune.
+    pub model: String,
+    /// Uploaded training file id.
+    pub training_file: String,
+    /// Optional uploaded validation file id.
+    pub validation_file: Option<String>,
+    /// Name suffix of the tuned model.
+    pub suffix: Option<String>,
+    /// Provider hyperparameters.
+    pub hyperparameters: serde_json::Map<String, Value>,
+}
+
+/// A fine-tuning job as the provider reports it.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct FineTuningJob {
+    /// Job id.
+    pub id: String,
+    /// Base model.
+    #[serde(default)]
+    pub model: String,
+    /// Provider status (`queued`, `running`, `succeeded`, `failed`, `cancelled`, …).
+    #[serde(default)]
+    pub status: String,
+    /// The tuned model, once the job succeeded.
+    #[serde(default)]
+    pub fine_tuned_model: Option<String>,
+    /// Training file id.
+    #[serde(default)]
+    pub training_file: Option<String>,
+    /// Creation time in Unix seconds, when reported.
+    #[serde(default)]
+    pub created_at: Option<i64>,
+}
+
+impl FineTuningJob {
+    fn validate(&self) -> Result<(), TfError> {
+        if self.id.is_empty()
+            || self.id.len() > 256
+            || self.id.chars().any(char::is_control)
+            || self.status.chars().any(char::is_control)
+        {
+            return Err(TfError::Protocol);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Deserialize)]
+struct FineTuningJobListWire {
+    data: Vec<FineTuningJob>,
 }
 
 #[derive(Deserialize)]
