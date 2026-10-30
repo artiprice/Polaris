@@ -129,6 +129,8 @@ pub(crate) struct AuroraDriver {
     scale: f32,
     last_tick: Instant,
     histogram: FrameHistogram,
+    /// Reduced motion as the clock was built for; the Settings switch can change it.
+    reduced_motion: bool,
 }
 
 impl AuroraDriver {
@@ -146,6 +148,7 @@ impl AuroraDriver {
             scale: 1.0,
             last_tick: Instant::now(),
             histogram: FrameHistogram::default(),
+            reduced_motion,
         })
     }
 
@@ -160,6 +163,12 @@ impl AuroraDriver {
         let elapsed = now.saturating_duration_since(self.last_tick);
         self.last_tick = now;
 
+        let reduced_motion = ui.get_motion_static();
+        if reduced_motion != self.reduced_motion {
+            // A fresh clock draws one still frame (reduced) or resumes animating.
+            self.clock = FrameClock::new(FRAME_STEP, reduced_motion);
+            self.reduced_motion = reduced_motion;
+        }
         let window = ui.window();
         // The session screen has no aurora: treat it like a hidden window (no frames, no CPU).
         let visible = window.is_visible() && !window.is_minimized() && !ui.get_in_session();

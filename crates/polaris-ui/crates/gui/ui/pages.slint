@@ -1,0 +1,382 @@
+// Models, Usage and Settings pages: one sheet over the content area with a title, a close
+// button and scrolling content. Every colour comes from the generated `Tokens` global.
+
+import { AboutSlint, ScrollView, Switch } from "std-widgets.slint";
+import { Tokens } from "tokens.slint";
+import { Icon, IconPaths } from "icons.slint";
+import { Motion } from "parts.slint";
+
+// One row of the Models page: an effort level and the provider's model for it.
+export struct ModelRowUi {
+    effort: string,
+    model: string,
+    active: bool,
+}
+
+// One provider of the configured order and what became of it.
+export struct ProviderRowUi {
+    name: string,
+    state: string,
+    ready: bool,
+}
+
+// A labelled value (a path, a count).
+export struct LabelValueUi {
+    label: string,
+    value: string,
+}
+
+component SectionLabel inherits Text {
+    font-family: Tokens.font-mono;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    color: Tokens.muted-web;
+}
+
+component Body inherits Text {
+    wrap: word-wrap;
+    font-size: 12px;
+    color: Tokens.muted-web;
+}
+
+// The page frame: title, subtitle, close button, scrolling content (`@children`).
+export component PageSheet inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+    in property <string> label;
+    callback close();
+    background: Tokens.surface;
+    border-width: 1px;
+    border-color: Tokens.line-strong;
+    border-radius: 14px;
+    drop-shadow-blur: 50px;
+    drop-shadow-offset-y: 12px;
+    drop-shadow-color: Tokens.panel-shadow;
+    clip: true;
+    accessible-role: groupbox;
+    accessible-label: root.label;
+    // Clicks inside the sheet never reach the scrim behind it.
+    TouchArea { }
+    VerticalLayout {
+        padding: 24px;
+        spacing: 14px;
+        HorizontalLayout {
+            spacing: 12px;
+            VerticalLayout {
+                spacing: 4px;
+                Text {
+                    text: root.title;
+                    font-family: Tokens.font-display;
+                    font-weight: 500;
+                    font-size: 22px;
+                    color: Tokens.text;
+                }
+                Body {
+                    text: root.subtitle;
+                }
+            }
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                background: close-touch.has-hover ? Tokens.topbar-hover : transparent;
+                accessible-role: button;
+                accessible-label: "Close " + root.title;
+                accessible-action-default => { root.close(); }
+                close-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.close(); }
+                }
+                Icon {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    commands: IconPaths.close;
+                    color: close-touch.has-hover ? Tokens.text : Tokens.muted-web;
+                }
+            }
+        }
+        Rectangle {
+            height: 1px;
+            background: Tokens.line;
+        }
+        ScrollView {
+            VerticalLayout {
+                spacing: 8px;
+                alignment: start;
+                padding-right: 8px;
+                @children
+            }
+        }
+    }
+}
+
+// A bordered block grouping one section of a page.
+component Card inherits Rectangle {
+    background: Tokens.context-bg;
+    border-width: 1px;
+    border-color: Tokens.line;
+    border-radius: 10px;
+    VerticalLayout {
+        padding: 14px;
+        spacing: 6px;
+        @children
+    }
+}
+
+// Models: what answers now, the model for every effort, the provider chain and how to set it up.
+export component ModelsPage inherits PageSheet {
+    in property <string> connection;
+    in property <[ModelRowUi]> rows;
+    in property <[ProviderRowUi]> providers;
+    callback choose(int);
+    title: "Models";
+    subtitle: "Replies come from the first usable provider of provider.order.";
+    label: "Models panel";
+
+    SectionLabel { text: "IN USE"; }
+    Card {
+        Text {
+            text: root.connection;
+            wrap: word-wrap;
+            font-size: 13px;
+            color: Tokens.text;
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "MODEL PER EFFORT"; }
+    if root.rows.length == 0: Body {
+        text: "No model provider is connected yet, so there is nothing to choose from.";
+    }
+    for row[index] in root.rows: Rectangle {
+        height: 36px;
+        border-radius: 8px;
+        background: row.active ? Tokens.row-checked-bg : (model-touch.has-hover ? Tokens.row-hover-bg : transparent);
+        animate background { duration: Motion.fast; }
+        accessible-role: button;
+        accessible-label: "Use " + row.model + " (" + row.effort + " effort)";
+        accessible-checked: row.active;
+        accessible-action-default => { root.choose(index); }
+        model-touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { root.choose(index); }
+        }
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            spacing: 12px;
+            Text {
+                width: 64px;
+                vertical-alignment: center;
+                text: row.effort;
+                font-family: Tokens.font-mono;
+                font-size: 11px;
+                color: row.active ? Tokens.accent : Tokens.muted-web;
+            }
+            Text {
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+                text: row.model;
+                overflow: elide;
+                font-size: 13px;
+                color: Tokens.text;
+            }
+            Icon {
+                y: (parent.height - self.height) / 2;
+                width: 14px;
+                height: 14px;
+                commands: IconPaths.check;
+                color: Tokens.check;
+                opacity: row.active ? 1 : 0;
+            }
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "PROVIDERS"; }
+    if root.providers.length == 0: Body {
+        text: "Waiting for provider selection…";
+    }
+    for provider in root.providers: HorizontalLayout {
+        spacing: 10px;
+        Rectangle {
+            width: 8px;
+            height: 8px;
+            y: 5px;
+            border-radius: 4px;
+            background: provider.ready ? Tokens.green-light : Tokens.muted;
+        }
+        Text {
+            width: 110px;
+            text: provider.name;
+            font-family: Tokens.font-mono;
+            font-size: 11px;
+            color: Tokens.text;
+        }
+        Text {
+            horizontal-stretch: 1;
+            text: provider.state;
+            wrap: word-wrap;
+            font-size: 12px;
+            color: Tokens.muted-web;
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "SET UP"; }
+    Card {
+        Body {
+            text: "OpenRouter: put OPENROUTER_API_KEY in ~/.polaris/.env (or pass --env-file). A repository .env is never read.";
+        }
+        Body {
+            text: "Local server: set local.model (and local.base_url when it is not Ollama on 127.0.0.1:11434) in ~/.polaris/config.toml.";
+        }
+        Body {
+            text: "The model for each effort comes from the provider's effort table in the same file; restart Polaris after a change.";
+        }
+    }
+}
+
+// Usage: the open session's tokens, then activity across every local session.
+export component UsagePage inherits PageSheet {
+    in property <[LabelValueUi]> tiles;
+    in property <[string]> activity;
+    title: "Usage";
+    subtitle: "Counted from the committed model requests of the session log.";
+    label: "Usage panel";
+
+    SectionLabel { text: "THIS SESSION"; }
+    HorizontalLayout {
+        spacing: 10px;
+        for tile in root.tiles: Rectangle {
+            horizontal-stretch: 1;
+            height: 70px;
+            background: Tokens.context-bg;
+            border-width: 1px;
+            border-color: Tokens.line;
+            border-radius: 10px;
+            VerticalLayout {
+                padding: 12px;
+                spacing: 4px;
+                Text {
+                    text: tile.value;
+                    font-family: Tokens.font-display;
+                    font-size: 20px;
+                    color: Tokens.text;
+                }
+                Text {
+                    text: tile.label;
+                    font-family: Tokens.font-mono;
+                    font-size: 10px;
+                    color: Tokens.muted-web;
+                }
+            }
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "ALL LOCAL SESSIONS"; }
+    Card {
+        for line in root.activity: Text {
+            text: line;
+            font-family: Tokens.font-mono;
+            font-size: 11px;
+            color: Tokens.muted-web;
+        }
+    }
+}
+
+// Settings: motion (shared with the terminal UI), where things are stored, About.
+export component SettingsPage inherits PageSheet {
+    in property <string> app-version;
+    in property <[LabelValueUi]> paths;
+    in property <string> connection-mode;
+    in-out property <bool> reduce-motion;
+    callback motion-toggled(bool);
+    title: "Settings";
+    subtitle: "Preferences saved here are shared with the terminal UI (~/.polaris/config.toml).";
+    label: "Settings panel";
+
+    SectionLabel { text: "APPEARANCE"; }
+    Card {
+        HorizontalLayout {
+            spacing: 12px;
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 2px;
+                Text {
+                    text: "Reduce motion";
+                    font-size: 13px;
+                    color: Tokens.text;
+                }
+                Body {
+                    text: root.reduce-motion ? "The welcome aurora is a still frame." : "The welcome aurora animates at 20 fps and pauses in a session.";
+                }
+            }
+            Switch {
+                checked <=> root.reduce-motion;
+                accessible-label: "Reduce motion";
+                toggled => { root.motion-toggled(self.checked); }
+            }
+        }
+        Body {
+            text: "Theme: dark · colours shared with the terminal UI.";
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "SESSIONS"; }
+    Card {
+        Text {
+            text: root.connection-mode;
+            wrap: word-wrap;
+            font-size: 12px;
+            color: Tokens.text;
+        }
+        for row in root.paths: VerticalLayout {
+            spacing: 2px;
+            Text {
+                text: row.label;
+                font-family: Tokens.font-mono;
+                font-size: 10px;
+                color: Tokens.muted-web;
+            }
+            Text {
+                text: row.value;
+                wrap: word-wrap;
+                font-family: Tokens.font-mono;
+                font-size: 11px;
+                color: Tokens.context-file;
+            }
+        }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "KEYBOARD"; }
+    Card {
+        Body { text: "Enter sends · Shift+Enter starts a new line · Esc stops a running reply"; }
+        Body { text: "Slash commands (/nv-profile, /hack, /ci-run, /search-local, /research, /undo …) and $directives work here as in the terminal."; }
+    }
+    Rectangle { height: 6px; }
+    SectionLabel { text: "ABOUT"; }
+    Card {
+        Text {
+            text: "Polaris";
+            font-family: Tokens.font-display;
+            font-weight: 500;
+            font-size: 16px;
+            color: Tokens.text;
+        }
+        Text {
+            text: "Version " + root.app-version + " · Apache-2.0";
+            font-family: Tokens.font-mono;
+            font-size: 11px;
+            color: Tokens.muted-web;
+        }
+        Body {
+            text: "Sessions are durable event logs; replies come from the provider chain and every change waits for your review. Attachments and speech input are not available yet.";
+        }
+        Rectangle {
+            height: 1px;
+            background: Tokens.line;
+        }
+        Rectangle {
+            height: 140px;
+            AboutSlint { }
+        }
+    }
+}

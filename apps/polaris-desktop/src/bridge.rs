@@ -18,7 +18,8 @@ use std::thread::JoinHandle;
 
 use polaris_sdk::ids::SessionId;
 use polaris_ui_gui::backend::{
-    BackendEvent, BackendLink, BackendRequest, MessageKind, SearchHit, SessionSummary,
+    BackendEvent, BackendLink, BackendRequest, Environment, MessageKind, ProviderState, SearchHit,
+    SessionSummary,
 };
 use polaris_ui_session::{
     AttachTarget, ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession,
@@ -444,14 +445,28 @@ impl Bridgework {
                 model,
                 effort,
                 models,
-                ..
-            } => BackendEvent::ProviderReady {
-                provider: provider.to_owned(),
-                model,
-                effort,
-                models,
-            },
-            HostEvent::ProviderUnavailable(reason) => BackendEvent::ProviderUnavailable(reason),
+                skipped,
+            } => {
+                // Providers before the selected one were tried and skipped, in order.
+                let mut chain = skipped_providers(&skipped);
+                chain.push(ProviderState {
+                    name: provider.to_owned(),
+                    state: format!("answers replies ({model})"),
+                    ready: true,
+                });
+                let _sent = self.emit(BackendEvent::Providers(chain));
+                BackendEvent::ProviderReady {
+                    provider: provider.to_owned(),
+                    model,
+                    effort,
+                    models,
+                }
+            }
+            HostEvent::ProviderUnavailable(reason) => {
+                let reasons: Vec<String> = reason.split("; ").map(str::to_owned).collect();
+                let _sent = self.emit(BackendEvent::Providers(skipped_providers(&reasons)));
+                BackendEvent::ProviderUnavailable(reason)
+            }
             HostEvent::Progress(ChatProgress::Text(text)) => BackendEvent::ReplyText(text),
             HostEvent::Progress(ChatProgress::Request) => BackendEvent::ReplyStep,
             HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
@@ -575,6 +590,86 @@ fn open_id(session: &OfflineSession) -> SessionId {
     session.id
 }
 
+/// `provider: reason` lines of skipped providers as Models page rows.
+fn skipped_providers(skipped: &[String]) -> Vec<ProviderState> {
+    skipped
+        .iter()
+        .map(|line| match line.split_once(": ") {
+            Some((name, reason)) => ProviderState {
+                name: name.trim().to_owned(),
+                state: format!("skipped: {}", reason.trim()),
+                ready: false,
+            },
+            None => ProviderState {
+                name: String::from("chain"),
+                state: line.trim().to_owned(),
+                ready: false,
+            },
+        })
+        .filter(|row| !row.state.is_empty())
+        .collect()
+}
+
+/// What the Settings page shows about this run: how it is connected and where it keeps things.
+fn environment(
+    state_dir: &Path,
+    workspace: &Path,
+    env_file: Option<&Path>,
+    attach: Option<&AttachTarget>,
+    replies: bool,
+) -> Environment {
+    let connection = match attach {
+        Some(target) => format!(
+            "Attached to polarisd at {} (session {}); the daemon records and answers messages.",
+            target.endpoint, target.session
+        ),
+        None if replies => String::from(
+            "Local session store; replies come from the provider chain and every change waits for your review.",
+        ),
+        None => String::from("Local session store; messages are recorded without replies."),
+    };
+    let mut paths = vec![
+        (String::from("WORKSPACE"), workspace.display().to_string()),
+        (
+            String::from("SESSION STORE"),
+            state_dir.display().to_string(),
+        ),
+    ];
+    if let Ok(dirs) = polaris_config::discover(workspace) {
+        paths.push((
+            String::from("PREFERENCES"),
+            dirs.global.join("config.toml").display().to_string(),
+        ));
+    }
+    paths.push((
+        String::from("PROVIDER KEYS"),
+        match env_file {
+            Some(path) => format!("{} (values are never shown)", path.display()),
+            None => String::from("no dotenv file; keys come from the environment"),
+        },
+    ));
+    Environment { connection, paths }
+}
+
+/// Save `ui.cli.reduce_motion` in the user's configuration (shared with the terminal UI).
+fn save_reduced_motion(workspace: &Path, on: bool) -> BackendEvent {
+    let saved = polaris_config::discover(workspace).and_then(|dirs| {
+        polaris_config::save_global_cli_preference(
+            &dirs,
+            polaris_config::PreferenceField::ReduceMotion,
+            polaris_config::PreferenceValue::Boolean(on),
+        )
+    });
+    match saved {
+        Ok(()) => BackendEvent::Notice(String::from(if on {
+            "Reduced motion saved"
+        } else {
+            "Full motion saved"
+        })),
+        Err(error) => BackendEvent::Notice(format!("The preference was not saved: {error}")),
+    }
+}
+
 async fn next_record(
     session: &mut Option<OfflineSession>,
 ) -> Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError> {
@@ -619,6 +714,14 @@ async fn run(
             }
         }
     });
+    let _sent = events.send(BackendEvent::Environment(environment(
+        &state_dir,
+        &workspace,
+        chat.as_ref()
+            .and_then(|options| options.env_file.as_deref()),
+        attach.as_ref(),
+        chat.is_some(),
+    )));
     let mut work = Bridgework {
         state_dir,
         workspace,
@@ -671,6 +774,17 @@ async fn run(
                     BackendRequest::Mode { plan } => work.plan = plan,
                     BackendRequest::Review { request_id, apply, note } => {
                         work.review(&request_id, apply, note).await;
+                    }
+                    BackendRequest::SetReducedMotion(on) => {
+                        let workspace = work.workspace.clone();
+                        let event = tokio::task::spawn_blocking(move || {
+                            save_reduced_motion(&workspace, on)
+                        })
+                        .await
+                        .unwrap_or_else(|_| {
+                            BackendEvent::Notice(String::from("The preference was not saved."))
+                        });
+                        let _sent = work.emit(event);
                     }
                 }
             }

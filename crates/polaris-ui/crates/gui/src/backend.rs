@@ -52,6 +52,28 @@ pub enum BackendRequest {
         /// Note for the model, sent with a decline.
         note: Option<String>,
     },
+    /// Save the reduced-motion preference (shared with the terminal UI).
+    SetReducedMotion(bool),
+}
+
+/// One provider of the configured order, as the Models page lists it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderState {
+    /// Provider name (`openrouter`, `local`, …).
+    pub name: String,
+    /// What became of it: answering replies, or why it was skipped.
+    pub state: String,
+    /// Whether replies come from it.
+    pub ready: bool,
+}
+
+/// How the desktop app is connected and where it keeps things, for the Settings page.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Environment {
+    /// "Local session store …" or "Attached to polarisd at …".
+    pub connection: String,
+    /// Labelled locations (workspace, session store, logs, configuration, keys file).
+    pub paths: Vec<(String, String)>,
 }
 
 /// How a committed message entered the session.
@@ -192,6 +214,12 @@ pub enum BackendEvent {
     Applied(String),
     /// A reviewed deletion removed this workspace path.
     Deleted(String),
+    /// The provider chain as it was tried (the Models page).
+    Providers(Vec<ProviderState>),
+    /// Connection and storage locations (the Settings page).
+    Environment(Environment),
+    /// Something to show in the notice line only (a saved or rejected preference).
+    Notice(String),
 }
 
 /// The two channel ends the window uses.

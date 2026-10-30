@@ -15,8 +15,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, Timer, TimerMode, VecModel};
 use crate::aurora_driver::{AuroraDriver, FRAME_STEP};
 use crate::backend::{BackendEvent, BackendLink, BackendRequest};
 use crate::generated::{
-    BlockRow, DiffLine, DirectiveChip, EntryRow, ModelRowUi, SearchHitUi,
-    SessionGroup as SlintGroup, SessionRowUi,
+    BlockRow, DiffLine, DirectiveChip, EntryRow, LabelValueUi, ModelRowUi, ProviderRowUi,
+    SearchHitUi, SessionGroup as SlintGroup, SessionRowUi,
 };
 use crate::session_view::{Screen, SessionController};
 use crate::{AppWindow, FrameHistogram, GuiError};
@@ -226,12 +226,32 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
         })
         .collect();
     ui.set_model_rows(ModelRc::new(VecModel::from(models)));
-    let usage: Vec<SharedString> = controller
-        .usage_lines()
+    let activity: Vec<SharedString> = controller
+        .activity_lines()
         .into_iter()
         .map(SharedString::from)
         .collect();
-    ui.set_usage_lines(ModelRc::new(VecModel::from(usage)));
+    ui.set_usage_lines(ModelRc::new(VecModel::from(activity)));
+    ui.set_usage_tiles(ModelRc::new(VecModel::from(label_values(
+        controller.usage_tiles(),
+    ))));
+    let providers: Vec<ProviderRowUi> = controller
+        .providers()
+        .iter()
+        .map(|provider| ProviderRowUi {
+            name: SharedString::from(provider.name.as_str()),
+            state: SharedString::from(provider.state.as_str()),
+            ready: provider.ready,
+        })
+        .collect();
+    ui.set_provider_rows(ModelRc::new(VecModel::from(providers)));
+    let environment = controller.environment();
+    if !environment.connection.is_empty() {
+        ui.set_connection_mode(SharedString::from(environment.connection.as_str()));
+    }
+    ui.set_settings_paths(ModelRc::new(VecModel::from(label_values(
+        environment.paths.clone(),
+    ))));
     let groups: Vec<SlintGroup> = controller
         .groups(now_ms())
         .into_iter()
@@ -267,6 +287,16 @@ fn sync(ui: &AppWindow, controller: &SessionController, fallback_workspace: &str
         })
         .collect();
     ui.set_hits(ModelRc::new(VecModel::from(hits)));
+}
+
+fn label_values(pairs: Vec<(String, String)>) -> Vec<LabelValueUi> {
+    pairs
+        .into_iter()
+        .map(|(label, value)| LabelValueUi {
+            label: SharedString::from(label),
+            value: SharedString::from(value),
+        })
+        .collect()
 }
 
 /// Sends requests; a closed backend becomes a visible notice instead of a silent drop.
@@ -429,6 +459,7 @@ pub fn attach(ui: &AppWindow, link: BackendLink, options: &AppOptions) -> Result
     on!(on_open_session, |c, id| c.open_listed(id.as_str()));
     on!(on_search_edited, |c, query| c.search(query.as_str()));
     on!(on_show_sessions, |c| c.show_sessions());
+    on!(on_motion_toggled, |c, on| c.set_reduced_motion(on));
 
     // Initial list for the sidebar (registry only, no kernel).
     if requests.send(BackendRequest::List).is_err() {

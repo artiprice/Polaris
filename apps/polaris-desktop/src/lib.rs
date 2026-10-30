@@ -252,6 +252,12 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    // `--static` or POLARIS_REDUCED_MOTION, else the preference the Settings page saved (shared
+    // with the terminal UI); an unreadable preference file keeps full motion.
+    let reduced_motion = args.reduced_motion
+        || polaris_config::read_global_cli_preferences(&dirs)
+            .map(|preferences| preferences.reduce_motion)
+            .unwrap_or(false);
     let (models, default_model) = models::model_options(&loaded.config.nebius.effort);
     let chat = bridge::ChatOptions {
         env_file: polaris_ui_session::default_env_file(args.env_file.as_deref(), &dirs.global),
@@ -279,7 +285,7 @@ pub fn run(args: &DesktopArgs) -> Result<AppReport, DesktopError> {
         version: String::from(env!("CARGO_PKG_VERSION")),
         workspace: args.workspace.display().to_string(),
         state_dir: state_dir.display().to_string(),
-        reduced_motion: args.reduced_motion,
+        reduced_motion,
         models,
         default_model,
     };

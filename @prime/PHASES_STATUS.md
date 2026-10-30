@@ -291,11 +291,11 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P9 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. 2026-10-29: model replies with reviewed edits; `--connect/--session/--token-file` attaches to `polarisd` (E53). OPEN: attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
+| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. 2026-10-29: model replies with reviewed edits; `--connect/--session/--token-file` attaches to `polarisd` (E53). 2026-10-30 E59: the bridge reports the provider chain and the run's connection/storage to the Models and Settings pages and saves the reduced-motion preference; startup honours it. OPEN: attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
 | `crate:polaris-web` | `polaris-web` | P9 | IN PROGRESS | 2026-10-29: Leptos SSR + hydration + PWA over the `polaris-ui-web` API (WEB_UI_PLAN §7); `--connect/--session/--token-file` attaches to `polarisd` (E53). |
 | `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. 2026-10-30 E58: `serve_daemon_with_replies` answers each typed message with a read-only chat turn (`--env-file`, `--no-replies`) and serves only the reply of a `FrameStepRecorded` transcript to attached clients. Default profile denies remote mutation/terminal; authority provisioning/revocation remain open. |
 | `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. 2026-10-30 E58: frontends reach a `tcp://` daemon through the same client (mutual TLS off loopback). Full P9 acceptance remains open. |
-| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. OPEN: Models/Usage/Settings pages, attachments, speech input. |
+| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. 2026-10-30 E59: Models (model per effort, provider chain with skip reasons, setup), Usage (session tiles, activity) and Settings (reduced-motion switch saved to ui.cli.reduce_motion and applied live, connection, storage paths, keyboard, About + Slint attribution) pages over the content; not rendered or tested yet. OPEN: attachments, speech input. |
 | `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` attach done 2026-10-29 (E53). |
 | `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. 2026-10-29: composition root of the local commands and context — RemoteSession attach (E53), `$nvidia(...)`/`/nv-profile`/`/nv-verify` (E54), `/hack` (E55), `/ci`/`/ci-run` (E56), keyless `/search-local` and `$rag` (E57). 2026-10-30 E58: daemon `responder`, attached replies, `tcp://` attach with mutual TLS, `/nv-docs-sync`/`/nv-docs`, `/search-web`/`$websearch`, `/diff`/`/undo`. Message history is not indexed yet. |
 | `crate:polaris-ui-web` | `polaris-ui-web` | P9 | IN PROGRESS | 2026-10-29: loopback web UI (token + host checks, CSP), SSE events, chat with reviewed edits; attached mode over `RemoteSession` (`WebServer::bind_with`, E53); 2026-10-30 E58: daemon replies shown in attached mode. |
@@ -2064,3 +2064,19 @@ The user asked to finish the code without running tests, so this entry records c
 **Still open:** live runs of all of the above, the Linux test leg, Miri/fuzz/mutants, the demo
 recording, System One nano (Needle `--serve` protocol unverified, S0-6), the microVM browser loop
 (P7-X-3), calibration (P4-X-2).
+
+## E59 — Desktop Models, Usage and Settings pages (2026-10-30)
+
+Code only, like E58 (`cargo check` of `polaris-ui-gui` and `polaris-desktop` passes; nothing was
+rendered or tested). The three rail panels of the desktop window become pages over the content
+(`ui/pages.slint`), with the rail still usable and the accessible labels kept:
+
+- **Models:** the model in use, the model for every effort (click to switch), the provider chain
+  as it was tried with each skip reason (`BackendEvent::Providers` from the bridge), and setup notes.
+- **Usage:** the open session's requests and tokens as tiles, then activity across local sessions.
+- **Settings:** a reduced-motion switch applied to the aurora at once and saved as
+  `ui.cli.reduce_motion` (shared with the terminal UI; read again at startup), the connection
+  (local store or the attached daemon), workspace, session store, preferences file and keys file
+  (path only), keyboard notes, and About with the Slint attribution (ADR-014).
+
+Attachments and speech input stay open.

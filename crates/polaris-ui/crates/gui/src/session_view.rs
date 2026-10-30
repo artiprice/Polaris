@@ -11,7 +11,9 @@ use polaris_sdk::ids::ModelId;
 use polaris_ui_model::composer::{Composer, PreparedSubmission};
 use polaris_ui_model::view::{Entry, ViewState};
 
-use crate::backend::{BackendEvent, BackendRequest, SearchHit, SessionSummary};
+use crate::backend::{
+    BackendEvent, BackendRequest, Environment, ProviderState, SearchHit, SessionSummary,
+};
 
 /// Local note added to an opened session when no model provider is usable. It is shown, never
 /// recorded, and never implies a reply is coming.
@@ -161,6 +163,8 @@ pub struct SessionController {
     usage: (u64, u64, u64),
     stats: Vec<String>,
     reviews: std::collections::VecDeque<PendingReview>,
+    providers: Vec<ProviderState>,
+    environment: Environment,
 }
 
 /// One row of the Models panel.
@@ -197,7 +201,56 @@ impl SessionController {
             usage: (0, 0, 0),
             stats: Vec::new(),
             reviews: std::collections::VecDeque::new(),
+            providers: Vec::new(),
+            environment: Environment::default(),
         }
+    }
+
+    /// Models page: the provider chain as it was tried.
+    #[must_use]
+    pub fn providers(&self) -> &[ProviderState] {
+        &self.providers
+    }
+
+    /// Settings page: connection and storage locations.
+    #[must_use]
+    pub const fn environment(&self) -> &Environment {
+        &self.environment
+    }
+
+    /// Usage page tiles: the open session's requests and tokens.
+    #[must_use]
+    pub fn usage_tiles(&self) -> Vec<(String, String)> {
+        let (requests, prompt, completion) = self.usage;
+        vec![
+            (String::from("requests"), requests.to_string()),
+            (String::from("prompt tokens"), prompt.to_string()),
+            (String::from("completion tokens"), completion.to_string()),
+            (
+                String::from("total tokens"),
+                prompt.saturating_add(completion).to_string(),
+            ),
+        ]
+    }
+
+    /// Usage page: activity across every local session.
+    #[must_use]
+    pub fn activity_lines(&self) -> Vec<String> {
+        if self.stats.is_empty() {
+            vec![String::from("Loading activity…")]
+        } else {
+            self.stats.clone()
+        }
+    }
+
+    /// Settings page switch: save the reduced-motion preference.
+    pub fn set_reduced_motion(&mut self, on: bool) -> Vec<BackendRequest> {
+        if on {
+            "Reduced motion on".clone_into(&mut self.notice);
+        } else {
+            "Reduced motion off".clone_into(&mut self.notice);
+        }
+        vec![BackendRequest::SetReducedMotion(on)]
     }
 
     /// Models panel rows: the provider's model for each effort.
@@ -658,6 +711,18 @@ impl SessionController {
             }
             BackendEvent::ProviderUnavailable(reason) => {
                 self.connection = Connection::Offline(reason);
+                Vec::new()
+            }
+            BackendEvent::Providers(providers) => {
+                self.providers = providers;
+                Vec::new()
+            }
+            BackendEvent::Environment(environment) => {
+                self.environment = environment;
+                Vec::new()
+            }
+            BackendEvent::Notice(text) => {
+                self.notice = text;
                 Vec::new()
             }
             BackendEvent::ReplyStarted => {
