@@ -21,3 +21,15 @@ polaris-config = { workspace = true }
 polaris-storage = { workspace = true }
 polaris-kernel = { workspace = true }
 polaris-ui-model = { workspace = true }
+
+[dev-dependencies]
+# PLAN §11.4 budgets (tests/budgets.rs, tests/budget_alloc.rs); dev-only, not layer edges.
+polaris-ratelimit = { workspace = true }
+polaris-security-automata = { workspace = true }
+polaris-nebius-cloud-token-factory = { workspace = true }
+polaris-storage-sync = { workspace = true }
+polaris-ui-cli = { workspace = true }
+ratatui = { workspace = true }
+tempfile = { workspace = true }
+dhat = { workspace = true }
+polaris-ui-session = { workspace = true }

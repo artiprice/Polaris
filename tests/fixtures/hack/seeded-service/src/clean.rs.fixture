@@ -1,0 +1,41 @@
+// Synthetic sample for /hack: the same operations done correctly; nothing here is a finding.
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
+
+static COUNTER: AtomicU64 = AtomicU64::new(0);
+
+pub fn next() -> u64 {
+    COUNTER.fetch_add(1, Ordering::SeqCst)
+}
+
+pub fn bump_if_below(limit: u64) -> bool {
+    let current = COUNTER.load(Ordering::Acquire);
+    current < limit
+        && COUNTER
+            .compare_exchange(current, current + 1, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+}
+
+pub struct Wallet {
+    balance: Mutex<u64>,
+}
+
+impl Wallet {
+    pub fn withdraw(&self, amount: u64) -> bool {
+        let mut balance = self.balance.lock().unwrap();
+        if *balance < amount {
+            return false;
+        }
+        *balance -= amount;
+        true
+    }
+}
+
+pub async fn pause() {
+    tokio::time::sleep(Duration::from_millis(50)).await;
+}
+
+pub fn blocking_pause() {
+    std::thread::sleep(Duration::from_millis(50));
+}

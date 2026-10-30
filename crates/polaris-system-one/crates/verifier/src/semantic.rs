@@ -328,17 +328,131 @@ pub(crate) fn mutation_context(request: &SafetyRequest<'_>) -> Result<String, Ve
         std::str::from_utf8(request.new.source()).map_err(|_| VerifierError::InvalidInput {
             reason: "new source is not UTF-8",
         })?;
-    // Explicit lengths distinguish sections even if hostile source contains section headings.
+    Ok(mutation_text(request.target, request.intent, old, new))
+}
+
+/// Bytes of a mutation the gates read. The GLiNER2 encoder (mDeBERTa-v3) sees 512 positions,
+/// shared with the schema prompt, and whole files make the worker's memory explode, so a
+/// mutation is shown as its changed lines with a little context.
+const MAX_TARGET_BYTES: usize = 200;
+const MAX_INTENT_BYTES: usize = 300;
+const MAX_CHANGE_BYTES: usize = 1_200;
+const CONTEXT_BYTES: usize = 200;
+const REMOVED_BYTES: usize = 480;
+const CONTEXT_LINES: usize = 2;
+
+/// The section layout the semantic gates read a mutation in: the changed region of `old` →
+/// `new` (common leading and trailing lines removed), removed lines then added lines.
+fn mutation_text(target: &str, intent: &str, old: &str, new: &str) -> String {
+    let old_lines: Vec<&str> = old.lines().collect();
+    let new_lines: Vec<&str> = new.lines().collect();
+    let prefix = old_lines
+        .iter()
+        .zip(&new_lines)
+        .take_while(|(before, after)| before == after)
+        .count();
+    let shared = old_lines.len().min(new_lines.len()).saturating_sub(prefix);
+    let suffix = old_lines
+        .iter()
+        .rev()
+        .zip(new_lines.iter().rev())
+        .take(shared)
+        .take_while(|(before, after)| before == after)
+        .count();
+    let removed = old_lines
+        .get(prefix..old_lines.len().saturating_sub(suffix))
+        .unwrap_or_default();
+    let added = new_lines
+        .get(prefix..new_lines.len().saturating_sub(suffix))
+        .unwrap_or_default();
+    let context = old_lines
+        .get(prefix.saturating_sub(CONTEXT_LINES)..prefix)
+        .unwrap_or_default();
+    // Added lines carry what a tamper or a leak introduces; removed lines get the smaller share
+    // and leave what they do not use to the added ones.
+    let mut budget = MAX_CHANGE_BYTES;
+    let context_text = bounded_lines(context, "  ", &mut budget, CONTEXT_BYTES);
+    let removed_text = bounded_lines(removed, "- ", &mut budget, REMOVED_BYTES);
+    let added_text = bounded_lines(added, "+ ", &mut budget, MAX_CHANGE_BYTES);
+    // Explicit counts distinguish sections even if hostile source contains section headings.
     // These delimiters help interpretation; they are not a prompt-injection security guarantee.
-    Ok(format!(
-        "TARGET {} bytes\n{}\nINTENT {} bytes\n{}\nBEFORE {} bytes\n{}\nAFTER {} bytes\n{}",
-        request.target.len(),
-        request.target,
-        request.intent.len(),
-        request.intent,
-        old.len(),
-        old,
-        new.len(),
-        new
-    ))
+    format!(
+        "TARGET {}\nINTENT {}\nCONTEXT {} lines\n{context_text}REMOVED {} lines\n{removed_text}ADDED {} lines\n{added_text}",
+        bounded(target, MAX_TARGET_BYTES),
+        bounded(intent, MAX_INTENT_BYTES),
+        context.len(),
+        removed.len(),
+        added.len(),
+    )
+}
+
+/// `lines` with `marker`, at most `share` bytes and what is left of `budget`, cut at a line
+/// (or, for one long line, a character) boundary with a note of what was left out.
+fn bounded_lines(lines: &[&str], marker: &str, budget: &mut usize, share: usize) -> String {
+    use std::fmt::Write as _;
+    let limit = share.min(*budget);
+    let mut out = String::new();
+    for (shown, line) in lines.iter().enumerate() {
+        let room = limit.saturating_sub(out.len());
+        let needed = marker.len().saturating_add(line.len()).saturating_add(1);
+        if needed > room {
+            let mut omitted = lines.len().saturating_sub(shown);
+            if shown == 0 && room > marker.len().saturating_add(16) {
+                // One long line: its start.
+                out.push_str(marker);
+                out.push_str(bounded(
+                    line,
+                    room.saturating_sub(marker.len().saturating_add(1)),
+                ));
+                out.push('\n');
+                omitted = omitted.saturating_sub(1);
+            }
+            if omitted > 0 {
+                let _written = writeln!(out, "… {omitted} more lines");
+            }
+            break;
+        }
+        out.push_str(marker);
+        out.push_str(line);
+        out.push('\n');
+    }
+    *budget = budget.saturating_sub(out.len());
+    out
+}
+
+/// The longest prefix of `text` of at most `limit` bytes that ends on a character boundary.
+fn bounded(text: &str, limit: usize) -> &str {
+    if text.len() <= limit {
+        return text;
+    }
+    let mut end = limit;
+    while !text.is_char_boundary(end) {
+        end = end.saturating_sub(1);
+    }
+    text.get(..end).unwrap_or_default()
+}
+
+/// The masked input the mutation safety gates (`safety.diff_tamper`, `safety.secret_semantic`,
+/// `watch.congruence`) send for a change of `target` from `old` to `new` under `intent`, so a
+/// calibration measures exactly what the gates ask.
+/// # Errors
+/// The scanner's match bound was exceeded.
+pub fn mutation_decision_input(
+    scanner: &crate::SafetyScanner,
+    config: &VerifierConfig,
+    target: &str,
+    intent: &str,
+    old: &str,
+    new: &str,
+) -> Result<DecisionInput, VerifierError> {
+    let text = mutation_text(target, intent, old, new);
+    Ok(DecisionInput {
+        text: crate::scan::mask(
+            scanner,
+            text.as_bytes(),
+            config.max_scan_matches,
+            config.entropy,
+        )?,
+        context: None,
+    })
 }

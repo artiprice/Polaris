@@ -9,9 +9,16 @@ import { Brand, Motion } from "parts.slint";
 import { Composer, DirectiveChip } from "composer.slint";
 
 // One block of an assistant reply: "p" paragraph, "h" heading, "li" list item, "code" code.
+// One line of a diff block; `kind` is "add", "del", "hunk", "head" or "ctx".
+export struct DiffLine {
+    kind: string,
+    text: string,
+}
+
 export struct BlockRow {
     kind: string,
     text: string,
+    lines: [DiffLine],
 }
 
 // One conversation entry; `kind` is "user", "assistant", "system", "warning" or "error".
@@ -76,6 +83,130 @@ component SidebarButton {
             font-size: 13px;
             vertical-alignment: center;
             color: touch.has-hover || root.active ? Tokens.text : Tokens.row-fg;
+        }
+    }
+}
+
+component ReviewButton {
+    in property <string> label;
+    in property <bool> primary;
+    callback clicked();
+    min-width: caption.preferred-width + 32px;
+    height: 32px;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-action-default => { root.clicked(); }
+    Rectangle {
+        border-radius: self.height / 2;
+        background: root.primary
+            ? (touch.has-hover ? Tokens.green-light : Tokens.accent)
+            : (touch.has-hover ? Tokens.nav-hover : transparent);
+        border-width: root.primary ? 0px : 1px;
+        border-color: Tokens.line-strong;
+        animate background { duration: Tokens.speed; }
+    }
+    caption := Text {
+        text: root.label;
+        font-size: 13px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        color: root.primary ? Tokens.canvas : Tokens.text;
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// The change the reply waits on: its question, a note for the model and the two decisions. The
+// diff itself is the last assistant entry above.
+component ReviewBar {
+    in property <string> title;
+    callback apply(string);
+    callback decline(string);
+    accessible-role: groupbox;
+    accessible-label: "Change waiting for your decision";
+    Rectangle {
+        border-radius: 16px;
+        background: Tokens.review-bg;
+        border-width: 1px;
+        border-color: Tokens.review-border;
+    }
+    VerticalLayout {
+        padding: 12px;
+        padding-left: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            spacing: 10px;
+            Text {
+                horizontal-stretch: 0;
+                text: "REVIEW";
+                font-size: 11px;
+                letter-spacing: 0.6px;
+                vertical-alignment: center;
+                color: Tokens.tool-title;
+            }
+            Text {
+                horizontal-stretch: 1;
+                text: root.title;
+                font-size: 13px;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+                overflow: elide;
+                color: Tokens.text;
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Rectangle {
+                horizontal-stretch: 1;
+                height: 32px;
+                border-radius: 16px;
+                background: Tokens.field-bg;
+                border-width: 1px;
+                border-color: note.has-focus ? Tokens.tool-title : Tokens.line-strong;
+                note := TextInput {
+                    x: 14px;
+                    width: parent.width - 28px;
+                    height: parent.height;
+                    vertical-alignment: center;
+                    single-line: true;
+                    font-size: 13px;
+                    color: Tokens.text;
+                    accessible-role: text-input;
+                    accessible-label: "Note for Polaris";
+                    accepted => {
+                        if (self.text != "") {
+                            root.decline(self.text);
+                            self.text = "";
+                        }
+                    }
+                }
+                Text {
+                    visible: note.text == "";
+                    x: 14px;
+                    height: parent.height;
+                    vertical-alignment: center;
+                    text: "Note for Polaris (optional)";
+                    font-size: 13px;
+                    color: Tokens.muted-web;
+                }
+            }
+            ReviewButton {
+                label: "Don't apply";
+                clicked => {
+                    root.decline(note.text);
+                    note.text = "";
+                }
+            }
+            ReviewButton {
+                label: "Apply";
+                primary: true;
+                clicked => {
+                    root.apply(note.text);
+                    note.text = "";
+                }
+            }
         }
     }
 }
@@ -168,13 +299,16 @@ component Entry {
                 for block in root.entry.blocks: Rectangle {
                     max-width: root.column-width - 30px;
                     height: block-layout.preferred-height;
-                    border-radius: block.kind == "code" ? 10px : 0px;
-                    background: block.kind == "code" ? Tokens.field-bg : transparent;
-                    border-width: block.kind == "code" ? 1px : 0px;
+                    border-radius: block.kind == "code" || block.kind == "diff" ? 10px : 0px;
+                    background: block.kind == "code" || block.kind == "diff" ? Tokens.field-bg : transparent;
+                    border-width: block.kind == "code" || block.kind == "diff" ? 1px : 0px;
                     border-color: Tokens.line;
+                    clip: block.kind == "diff";
                     block-layout := HorizontalLayout {
                         alignment: start;
-                        padding: block.kind == "code" ? 12px : 0px;
+                        padding: block.kind == "code" ? 12px : (block.kind == "diff" ? 0px : 0px);
+                        padding-top: block.kind == "diff" ? 8px : self.padding;
+                        padding-bottom: block.kind == "diff" ? 8px : self.padding;
                         spacing: 8px;
                         if block.kind == "li": Text {
                             horizontal-stretch: 0;
@@ -182,7 +316,25 @@ component Entry {
                             font-size: 14px;
                             color: Tokens.muted-web;
                         }
-                        Text {
+                        if block.kind == "diff": VerticalLayout {
+                            horizontal-stretch: 1;
+                            for line in block.lines: Rectangle {
+                                background: line.kind == "add" ? Tokens.diff-add-bg : (line.kind == "del" ? Tokens.diff-del-bg : transparent);
+                                HorizontalLayout {
+                                    padding-left: 12px;
+                                    padding-right: 12px;
+                                    Text {
+                                    text: line.text;
+                                    wrap: word-wrap;
+                                    font-size: 12px;
+                                    font-family: Tokens.font-mono;
+                                    color: line.kind == "add" ? Tokens.diff-add-fg : (line.kind == "del" ? Tokens.diff-del-fg : (line.kind == "ctx" ? Tokens.green-light : Tokens.muted-web));
+                                    accessible-role: text;
+                                    }
+                                }
+                            }
+                        }
+                        if block.kind != "diff": Text {
                             horizontal-stretch: 1;
                             text: block.text;
                             wrap: word-wrap;
@@ -231,6 +383,8 @@ export component SessionScreen {
     in property <string> state-dir;
     in property <bool> starting;
     in property <string> notice;
+    // Question of the change the reply waits on; empty when none.
+    in property <string> review-title;
     in property <[string]> model-names;
     in property <[string]> model-short-names;
     in property <[DirectiveChip]> directives;
@@ -248,6 +402,8 @@ export component SessionScreen {
     callback draft-edited(string);
     callback submit();
     callback interrupt();
+    callback review-apply(string);
+    callback review-decline(string);
     callback mode-chosen(int);
     callback model-chosen(int);
     callback effort-chosen(int);
@@ -558,6 +714,16 @@ export component SessionScreen {
             height: parent.height - topbar.height;
 
             conversation := ListView {
+                // Follow new content while the reader is at (or near) the bottom.
+                property <bool> follow: true;
+                changed content-y => {
+                    self.follow = self.content-height + self.content-y - self.visible-height < 120px;
+                }
+                changed content-height => {
+                    if (self.follow && self.content-height > self.visible-height) {
+                        self.content-y = self.visible-height - self.content-height;
+                    }
+                }
                 x: 0;
                 y: 0;
                 width: parent.width;
@@ -588,6 +754,15 @@ export component SessionScreen {
                 dock-layout := VerticalLayout {
                     padding-bottom: 10px;
                     spacing: 8px;
+                    if root.review-title != "": HorizontalLayout {
+                        alignment: center;
+                        ReviewBar {
+                            width: column.inner;
+                            title: root.review-title;
+                            apply(note) => { root.review-apply(note); }
+                            decline(note) => { root.review-decline(note); }
+                        }
+                    }
                     HorizontalLayout {
                         alignment: center;
                         composer := Composer {
@@ -671,7 +846,7 @@ export component SessionScreen {
                                     width: 7px;
                                     height: 7px;
                                     border-radius: 3.5px;
-                                    background: root.status-state == "ready" ? Tokens.accent : (root.status-state == "offline" ? Tokens.error : Tokens.warning);
+                                    background: root.status-state == "ready" ? Tokens.accent : (root.status-state == "offline" ? Tokens.error : (root.status-state == "waiting" ? Tokens.tool-title : Tokens.warning));
                                 }
                                 Text {
                                     text: root.status-connection;

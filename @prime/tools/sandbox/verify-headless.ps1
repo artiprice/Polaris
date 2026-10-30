@@ -5,16 +5,20 @@ param(
     [Parameter(Mandatory = $true)][string]$Image,
     [Parameter(Mandatory = $true)][string]$MtlsDirectory,
     [string]$Endpoint = 'https://localhost:17670',
+    [string]$WslDistro = 'Ubuntu',
+    [string]$Binary = '',
     [ValidateSet('positive', 'zero-tests', 'failing-command', 'minimum-tests')]
     [string[]]$Cases = @('positive', 'zero-tests', 'failing-command', 'minimum-tests')
 )
-$ErrorActionPreference = 'Stop'
+# Failures are thrown explicitly; 'Stop' would also turn a refused command's stderr into a fatal
+# NativeCommandError in Windows PowerShell 5.1.
+$ErrorActionPreference = 'Continue'
 Set-StrictMode -Version Latest
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
-$binary = Join-Path $repository 'target/debug/polaris.exe'
+$binary = if ($Binary) { $Binary } else { Join-Path $repository 'target/release/polaris.exe' }
 $fixture = Join-Path $PSScriptRoot 'acceptance-fixture'
 $policy = Join-Path $PSScriptRoot 'acceptance-policy.yaml'
-if (!(Test-Path -LiteralPath $binary -PathType Leaf)) { throw 'Build polaris-cli first.' }
+if (!(Test-Path -LiteralPath $binary -PathType Leaf)) { throw 'Build polaris-cli first (cargo build --release -p polaris-cli).' }
 if ($Image -notmatch '(^sha256:[0-9a-f]{64}$|@sha256:[0-9a-f]{64}$)') { throw 'An immutable image digest is required.' }
 foreach ($name in @('ca.crt', 'tls.crt', 'tls.key')) {
     if (!(Test-Path -LiteralPath (Join-Path $MtlsDirectory $name) -PathType Leaf)) { throw "Missing mTLS file: $name" }
@@ -45,7 +49,7 @@ foreach ($case in $Cases) {
     $requestPath = Join-Path $caseRoot 'request.json'
     [IO.File]::WriteAllText($requestPath, ($request | ConvertTo-Json -Depth 8), $encoding)
     $stateRoot = Join-Path $caseRoot 'state'
-    $gatewayArgs = @('sandbox', '--image', $Image, '--policy', $policy, '--mtls-dir', $MtlsDirectory, '--endpoint', $Endpoint)
+    $gatewayArgs = @('sandbox', '--image', $Image, '--policy', $policy, '--mtls-dir', $MtlsDirectory, '--endpoint', $Endpoint, '--wsl-distro', $WslDistro)
     $reviewPath = Join-Path $caseRoot 'review.json'
     & $binary --state-dir $stateRoot --workspace $fixture @gatewayArgs review --request $requestPath 1> $reviewPath 2> (Join-Path $caseRoot 'review.stderr.txt')
     if ($LASTEXITCODE -ne 0) { throw "Review failed: $case" }

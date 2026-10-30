@@ -1,10 +1,10 @@
-//! Assistant replies as display blocks: paragraphs, headings, list items and code. Inline
-//! `**strong**` and `` `code` `` markers are removed; code keeps its exact text.
+//! Assistant replies as display blocks: paragraphs, headings, list items, code and diffs.
+//! Inline `**strong**` and `` `code` `` markers are removed; code keeps its exact text.
 
 /// One displayable block of a reply.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block {
-    /// "p", "h", "li" or "code".
+    /// "p", "h", "li", "code", or "diff" for a `diff`/`patch` fence.
     pub kind: &'static str,
     /// Text without Markdown markers (code is verbatim).
     pub text: String,
@@ -44,6 +44,7 @@ pub fn blocks(text: &str) -> Vec<Block> {
     let mut out = Vec::new();
     let mut paragraph: Vec<&str> = Vec::new();
     let mut code: Option<Vec<&str>> = None;
+    let mut kind = "code";
     let flush = |paragraph: &mut Vec<&str>, out: &mut Vec<Block>| {
         if !paragraph.is_empty() {
             out.push(Block {
@@ -54,14 +55,19 @@ pub fn blocks(text: &str) -> Vec<Block> {
         }
     };
     for line in text.lines() {
-        if line.trim_start().starts_with("```") {
+        if let Some(fence) = line.trim_start().strip_prefix("```") {
             match code.take() {
                 Some(lines) => out.push(Block {
-                    kind: "code",
+                    kind,
                     text: lines.join("\n"),
                 }),
                 None => {
                     flush(&mut paragraph, &mut out);
+                    kind = if matches!(fence.trim(), "diff" | "patch") {
+                        "diff"
+                    } else {
+                        "code"
+                    };
                     code = Some(Vec::new());
                 }
             }
@@ -92,12 +98,28 @@ pub fn blocks(text: &str) -> Vec<Block> {
     if let Some(lines) = code {
         // An unterminated fence while streaming still shows as code.
         out.push(Block {
-            kind: "code",
+            kind,
             text: lines.join("\n"),
         });
     }
     flush(&mut paragraph, &mut out);
     out
+}
+
+/// Kind of one diff line: "add", "del", "hunk", "head" or "ctx".
+#[must_use]
+pub fn diff_line_kind(line: &str) -> &'static str {
+    if line.starts_with("+++") || line.starts_with("---") {
+        "head"
+    } else if line.starts_with('+') {
+        "add"
+    } else if line.starts_with('-') {
+        "del"
+    } else if line.starts_with("@@") {
+        "hunk"
+    } else {
+        "ctx"
+    }
 }
 
 #[cfg(test)]

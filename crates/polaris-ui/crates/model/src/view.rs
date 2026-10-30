@@ -138,22 +138,13 @@ impl GoalLine {
 /// Format a duration with second precision and no wrapping arithmetic.
 #[must_use]
 pub fn format_duration_ms(ms: u64) -> String {
-    let seconds = match ms.checked_div(1000) {
-        Some(value) => value,
-        None => 0,
-    };
-    let hours = match seconds.checked_div(3600) {
-        Some(value) => value,
-        None => 0,
-    };
-    let minutes = match seconds.checked_div(60).and_then(|v| v.checked_rem(60)) {
-        Some(value) => value,
-        None => 0,
-    };
-    let rest = match seconds.checked_rem(60) {
-        Some(value) => value,
-        None => 0,
-    };
+    let seconds = ms.checked_div(1000).unwrap_or_default();
+    let hours = seconds.checked_div(3600).unwrap_or_default();
+    let minutes = seconds
+        .checked_div(60)
+        .and_then(|v| v.checked_rem(60))
+        .unwrap_or_default();
+    let rest = seconds.checked_rem(60).unwrap_or_default();
     if hours > 0 {
         format!("{hours}h {minutes}m {rest}s")
     } else if minutes > 0 {
@@ -557,20 +548,20 @@ impl ViewState {
     }
     /// Pause once, accumulating only elapsed active time.
     pub fn goal_pause(&mut self, now_ms: u64) {
-        if let Some(goal) = &mut self.goal {
-            if goal.state == GoalState::Active {
-                goal.accumulated_ms = goal.active_ms(now_ms);
-                goal.state = GoalState::Paused;
-            }
+        if let Some(goal) = &mut self.goal
+            && goal.state == GoalState::Active
+        {
+            goal.accumulated_ms = goal.active_ms(now_ms);
+            goal.state = GoalState::Paused;
         }
     }
     /// Resume a paused goal; repeated resumes do not reset its clock.
     pub fn goal_resume(&mut self, now_ms: u64) {
-        if let Some(goal) = &mut self.goal {
-            if goal.state == GoalState::Paused {
-                goal.active_since_ms = now_ms;
-                goal.state = GoalState::Active;
-            }
+        if let Some(goal) = &mut self.goal
+            && goal.state == GoalState::Paused
+        {
+            goal.active_since_ms = now_ms;
+            goal.state = GoalState::Active;
         }
     }
     /// Remove the goal.

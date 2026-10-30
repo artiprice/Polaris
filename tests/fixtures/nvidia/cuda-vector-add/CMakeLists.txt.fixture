@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.24)
+project(vector_add LANGUAGES CXX CUDA)
+set(CMAKE_CUDA_ARCHITECTURES 75;90)
+add_executable(vector_add src/vector_add.cu src/checked.cu)

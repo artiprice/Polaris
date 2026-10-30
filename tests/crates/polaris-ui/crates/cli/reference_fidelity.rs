@@ -294,18 +294,15 @@ fn export_reference_matrix() -> TestResult {
         for y in 0..h {
             for x in 0..w {
                 let c = cell(&dump, x, y)?;
-                if let Some((r, g, b)) = c.bg_rgb {
-                    if (r, g, b) != (0, 0, 0) {
-                        svg.push_str(&format!("<rect x=\"{}\" y=\"{}\" width=\"9\" height=\"18\" fill=\"#{r:02x}{g:02x}{b:02x}\"/>",u32::from(x).saturating_mul(9),u32::from(y).saturating_mul(18)));
-                    }
+                if let Some((r, g, b)) = c.bg_rgb
+                    && (r, g, b) != (0, 0, 0)
+                {
+                    svg.push_str(&format!("<rect x=\"{}\" y=\"{}\" width=\"9\" height=\"18\" fill=\"#{r:02x}{g:02x}{b:02x}\"/>",u32::from(x).saturating_mul(9),u32::from(y).saturating_mul(18)));
                 }
                 if c.symbol.trim().is_empty() {
                     continue;
                 }
-                let (r, g, b) = match c.fg_rgb {
-                    Some(rgb) => rgb,
-                    None => (232, 232, 232),
-                };
+                let (r, g, b) = c.fg_rgb.unwrap_or((232, 232, 232));
                 let text = c
                     .symbol
                     .replace('&', "&amp;")

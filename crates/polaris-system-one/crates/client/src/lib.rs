@@ -181,6 +181,23 @@ impl S1Client {
             .map_err(|_| DecisionError::Model("worker model identity is incomplete".to_owned()))
     }
 
+    /// BLAKE3 identity of the model the worker has loaded — the checkpoint a calibration pins —
+    /// or `None` while no model is loaded (a first decision loads it).
+    /// # Errors
+    /// Handshake or deadline failure.
+    pub async fn loaded_model_digest(&self) -> Result<Option<[u8; 32]>, DecisionError> {
+        let deadline = tokio::time::Instant::now()
+            .checked_add(self.config.timeout)
+            .ok_or(DecisionError::Timeout)?;
+        tokio::time::timeout_at(deadline, self.ensure_handshake())
+            .await
+            .map_err(|_| DecisionError::Timeout)??;
+        Ok(self
+            .loaded_model_identity(deadline)
+            .await
+            .map(cache::ModelIdentity::digest))
+    }
+
     /// Obtain a decision fenced to the exact calibrated native-model identity.
     /// A cold worker may execute one discarded warmup request before the identity is available.
     /// No permission decision is returned from that warmup. The accepted result requires equal
@@ -613,7 +630,8 @@ impl S1Client {
                         "Unix socket peer PID is unavailable",
                     )
                 })?;
-                if peer_pid != expected_server_pid {
+                // `pid_t` is signed; a negative PID never matches.
+                if u32::try_from(peer_pid).ok() != Some(expected_server_pid) {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
                         "Unix socket peer process identity mismatch",

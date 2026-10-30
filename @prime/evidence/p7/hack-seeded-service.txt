@@ -1,0 +1,50 @@
+# P7-X-2 evidence: /hack on the seeded-bug repository (tests/fixtures/hack/seeded-service)
+# The repository is synthetic; SEEDED.toml lists the planted bugs. Materialized without the
+# .fixture suffix into a temp dir; run with the real binary, 2026-10-29.
+
+$ polaris --workspace <tmp>/seeded-service hack      (exit 0, 75 ms)
+Hack audit
+Analyzed 4 Rust, 1 CUDA: 5 findings (2 blocking-in-async, 1 cuda, 2 race).
+kernels/normalize.cu:8 cuda [barrier-in-divergent-branch] kernel `normalize` calls __syncthreads() inside a branch that depends on threadIdx; threads that skip the branch never reach the barrier and the block can hang
+src/account.rs:22 race [race-split-lock] `self.balance` is locked again after the earlier guard was released; another thread can change it between the check and the write вЂ” hold one guard for both
+src/handlers.rs:10 blocking-in-async [async-blocking-thread-sleep] std::thread::sleep parks the executor thread inside an async fn and stalls every task on it; use tokio::time::sleep
+src/handlers.rs:16 blocking-in-async [async-blocking-fs] blocking file I/O inside an async fn stalls the executor thread; use tokio::fs or spawn_blocking
+src/ids.rs:9 race [race-atomic-load-store] `NEXT_ID` is read with load and written back with a separate store; concurrent callers lose updates вЂ” use fetch_add/fetch_update or compare_exchange
+src/account.rs: call-pattern coverage is Incomplete
+src/clean.rs: call-pattern coverage is Incomplete
+src/handlers.rs: unsafe-construct coverage is Incomplete
+src/handlers.rs: call-pattern coverage is Incomplete
+src/ids.rs: call-pattern coverage is Incomplete
+Not analyzed: races other than split lock scopes and atomic load/store pairs in Rust, deadlocks, quadratic hot loops, unchecked panic paths and path traversal; CUDA is checked by the CUDA advisor's lexical rules. No finding is not a safety verdict.
+Heuristics and pattern matches: advice, not proof вЂ” confirm each finding in the code.
+
+## Findings vs the seeded list
+- FOUND  race               src/ids.rs:9  atomic load then separate store loses concurrent increments  -> [race-atomic-load-store]
+- FOUND  race               src/account.rs:22  balance checked under one lock and written under another  -> [race-split-lock]
+- FOUND  blocking-in-async  src/handlers.rs:10  std::thread::sleep inside an async handler  -> [async-blocking-thread-sleep]
+- FOUND  blocking-in-async  src/handlers.rs:16  std::fs::read_to_string inside an async handler  -> [async-blocking-fs]
+- FOUND  cuda-barrier       kernels/normalize.cu:8  __syncthreads() inside a branch only thread 0 takes  -> [barrier-in-divergent-branch]
+
+Recall: 5/5 seeded bugs found.
+Extra findings (false positives on this repository): 0
+src/clean.rs does the same work correctly (fetch_add, compare_exchange, one held guard,
+tokio::time::sleep, std::thread::sleep outside async) and must produce no finding.
+
+## Precision on real code (this repository, 3c615d9 + working tree)
+The first version of the race rules paired any two locks of one receiver; on polaris-kernel it
+reported 11 race candidates, nearly all separate operations in long functions, plus 9 matches of
+the generic secret_assignment rule (`token: CancellationToken`). After calibration (value or
+condition flow required, bound guards and writes excluded, precise credential formats only):
+- crates/polaris-kernel: Analyzed 73 Rust: 1 finding (1 race).
+- crates/polaris-runtime: Analyzed 37 Rust: 0 findings.
+- crates/polaris-rpc: Analyzed 5 Rust: 0 findings.
+- crates/polaris-security: Analyzed 32 Rust: 0 findings.
+- crates/polaris-storage: Analyzed 41 Rust: 0 findings.
+- crates/polaris-ui/crates/session: Analyzed 12 Rust: 0 findings.
+- apps/polaris-cli: Analyzed 14 Rust: 0 findings.
+- apps/polaris-daemon: Analyzed 2 Rust: 0 findings.
+Remaining finding: crates/polaris-kernel/src/model_lifecycle.rs:459 race-atomic-load-store,
+`if !self.active.load(..) { return }` ... `self.active.store(false, ..)` in OwnedProcessTree::stop —
+a real check-then-act shape; harmless only while one owner calls stop (advisory, left for review).
+The calibration also found a true positive in this session's own P9 code (std::fs::read_to_string
+inside async `polaris web --connect`), fixed with tokio::fs before this commit.

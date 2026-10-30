@@ -1,0 +1,45 @@
+# P9 evidence: frontends attach to polarisd over a named pipe with a daemon-issued credential
+# 2026-10-29, Windows 11, debug builds of polarisd, polaris-web (Leptos) and polaris (CLI web).
+
+## Real binaries (smoke)
+$ polarisd --state-dir <tmp>/d-state --workspace <tmp>/d-work --session 42 --frame 7 \
+    --client-token-out <tmp>/client.token --pipe polaris-smoke
+polarisd: client credential written to <tmp>/client.token          (1214 bytes, hex)
+$ polaris-web --bind 127.0.0.1:8789 --site-root target/site --connect polaris-smoke \
+    --session 42 --token-file <tmp>/client.token
+web log: Polaris web UI (Leptos): http://127.0.0.1:8789/#token=<redacted>
+Attached to polarisd at polaris-smoke.
+Open it in a browser on this machine; Ctrl+C stops the server.
+POST /api/open -> 202
+POST /api/submit -> 202
+submit -> message round trip: 2.1 ms
+POST /api/submit -> 202
+GET /api/sessions -> [{"id":"00000000-0000-0000-0000-00000000002a","title":"polarisd","workspace":"polaris-smoke","updated_ms":0}]
+GET /api/sessions without token -> 401
+(First run, before the backlog existed: submit -> message round trip 64.1 ms. The second run's
+2.1 ms matched a replayed message and is not a latency figure.)
+
+Browser (in-app, Leptos page attached to the same daemon): the session view replays the daemon's
+history, shows "Attached to polarisd: messages are recorded in the daemon's session; model replies
+are not served in attached mode yet.", footer "polarisd · no model replies"; a message typed in
+the page appears live. Screenshot: web-attached-to-polarisd.jpg.
+
+## Bug found and fixed during the smoke
+RemoteSession::next_record took a record off the stream and then awaited read_text; when the
+frontend's select! picked another branch meanwhile (the page's GET /api/sessions right after a
+submit), the record was dropped and the message never appeared live. It now keeps the record in
+a pending slot (as OfflineSession does). Regression test
+session/remote.rs::a_dropped_next_record_never_skips_a_message fails on the old code
+(left: [], right: ["first", "second", "third"]) and passes on the fix.
+
+## Tests (cargo test, 2026-10-29)
+- polaris-daemon daemon_lifecycle: 4 passed (read-only credential cannot write; foreign issuer
+  UNAUTHENTICATED; other session PERMISSION_DENIED; unreferenced CID NOT_FOUND; malformed directive
+  INVALID_ARGUMENT; oversize rejected client-side; client token lifetime bounded 1 s..7 d)
+- polaris-ui-session remote: 3 passed (target parsing; record + replay through a real daemon;
+  cancel-safety)
+- polaris-desktop bridge_attach: 2 passed (window records into the daemon session; untrusted
+  credential reported, never opened); args: 5 passed (--connect/--session/--token-file)
+- polaris-ui-web web_attach: 1 passed (page opens the daemon session, records, lists one row)
+- polaris-web pages: attached wording reducer test passed
+- polaris-proto wire_schema_contract: KernelService lists SubmitText and ReadText (protocol 1.3)

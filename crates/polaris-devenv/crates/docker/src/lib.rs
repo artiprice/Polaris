@@ -3,6 +3,7 @@
 //! Container creation requires explicit image, memory, CPU, and argv values. Each execution owns
 //! and removes its container; pause/unpause is never treated as a filesystem reset.
 mod journal;
+mod sandbox;
 
 use std::collections::{HashMap, VecDeque};
 use std::io::{Cursor, Read};
@@ -21,6 +22,10 @@ use uuid::Uuid;
 pub use journal::{
     PoolCleanup, PoolCleanupError, PoolIdentity, PoolJournal, PoolJournalError, PoolOrphan,
     PoolRegistration,
+};
+pub use sandbox::{
+    CI_LABEL, CacheVolume, DEFAULT_CI_OUTPUT, DockerSandbox, DockerSandboxConfig,
+    remove_orphan_ci_containers,
 };
 
 /// Minimum memory limit accepted for a one-shot container.
@@ -406,7 +411,7 @@ impl Docker {
             DockerEndpoint::NamedPipe(path) => {
                 #[cfg(windows)]
                 {
-                    BollardClient::connect_with_named_pipe(path, 30, &bollard::API_DEFAULT_VERSION)
+                    BollardClient::connect_with_named_pipe(path, 30, bollard::API_DEFAULT_VERSION)
                 }
                 #[cfg(not(windows))]
                 {
@@ -1345,10 +1350,9 @@ fn dockerfile_image_references(dockerfile: &str) -> Result<Vec<String>, DockerEr
         if let Some(as_index) = words
             .iter()
             .position(|word| word.eq_ignore_ascii_case("AS"))
+            && let Some(stage) = words.get(as_index + 1)
         {
-            if let Some(stage) = words.get(as_index + 1) {
-                stages.insert((*stage).to_owned());
-            }
+            stages.insert((*stage).to_owned());
         }
     }
     for line in dockerfile.lines() {

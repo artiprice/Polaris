@@ -290,6 +290,7 @@ impl Kernel {
             frame: config.frame,
             session: config.session,
             workspace,
+            directives: Mutex::new(session.directives().clone()),
             pending: Mutex::new(BTreeMap::new()),
             closed: AtomicBool::new(false),
             handles: AtomicUsize::new(1),
@@ -382,6 +383,8 @@ struct Shared {
     frame: FrameId,
     session: SessionId,
     workspace: PathBuf,
+    /// Directives in effect, as the command owner last committed them (read by hosts).
+    directives: Mutex<crate::directives::state::DirectiveState>,
     pending: Mutex<BTreeMap<CommandId, Reply>>,
     closed: AtomicBool,
     handles: AtomicUsize,
@@ -650,6 +653,12 @@ impl KernelHandle {
         .await
     }
 
+    /// Whether this kernel was started with a sandbox execution profile (`run_tests` works).
+    #[must_use]
+    pub fn has_sandbox(&self) -> bool {
+        self.shared.execution.is_some()
+    }
+
     /// Prepare an immutable P2 review from actual workspace, policy and image facts.
     /// # Errors
     /// Execution is unconfigured, kernel closed, or review preparation failed.
@@ -872,6 +881,17 @@ impl KernelHandle {
     #[must_use]
     pub fn frame(&self) -> FrameId {
         self.shared.frame
+    }
+    /// The session directives in effect (configuration defaults, then the last occurrence of
+    /// each committed directive), as of the last committed directive. Hosts read it to honour
+    /// directives such as `$nvidia(...)` at the composition root.
+    #[must_use]
+    pub fn directives(&self) -> crate::directives::state::DirectiveState {
+        self.shared
+            .directives
+            .lock()
+            .map(|directives| directives.clone())
+            .unwrap_or_default()
     }
     /// Persist bounded UTF-8 control input without blocking a runtime worker.
     /// # Errors
@@ -1351,6 +1371,9 @@ fn execute_directive(
         .next()
         .ok_or_else(|| ApiError::Rejected("missing directive".to_owned()))?;
     let seq = session.apply(directive.value).map_err(api_error)?;
+    if let Ok(mut directives) = shared.directives.lock() {
+        directives.clone_from(session.directives());
+    }
     Ok(CommandReceipt {
         command,
         accepted_at: seq,

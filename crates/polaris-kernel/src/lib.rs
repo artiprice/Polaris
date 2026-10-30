@@ -91,7 +91,10 @@ pub mod session;
 mod skill_status;
 mod tools;
 
-pub use agent_tools::{AgentFramePermit, KernelAgentToolRunner};
+pub use agent_tools::{
+    AgentFramePermit, CHANGE_REVIEW_APPLY, CHANGE_REVIEW_DECLINE, CHANGE_REVIEW_PREFIX,
+    KernelAgentToolRunner,
+};
 pub use configured_frame::{
     ConfiguredFrameError, ConfiguredFrameOutcome, ConfiguredFramePolicy, ConfiguredFrameServices,
     ConfiguredWatchdogPolicy, FrameCompletionCheck, SystemOneCoverage,

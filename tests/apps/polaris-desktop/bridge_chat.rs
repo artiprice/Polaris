@@ -156,7 +156,7 @@ fn typed_message_is_recorded_then_answered_by_the_provider() -> TestResult {
             BackendEvent::ReplyFinished { .. } | BackendEvent::ReplyFailed(_)
         )
     })?;
-    let position = |wanted: &dyn Fn(&BackendEvent) -> bool| seen.iter().position(|e| wanted(e));
+    let position = |wanted: &dyn Fn(&BackendEvent) -> bool| seen.iter().position(wanted);
     let prompt = position(&|e| {
         matches!(e, BackendEvent::Message { kind: MessageKind::UserInput, text } if text == "say hello")
     })

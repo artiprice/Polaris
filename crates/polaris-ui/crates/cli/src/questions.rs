@@ -54,7 +54,7 @@ pub(super) fn overlay_rect(
             )))
             .saturating_add(6)
     };
-    let desired = u16::try_from(content_rows).map_or(u16::MAX, |n| n).max(9);
+    let desired = u16::try_from(content_rows).unwrap_or(u16::MAX).max(9);
     let height = desired.min(cap).min(viewport.height.saturating_sub(1));
     let bottom = composer.bottom().min(viewport.bottom());
     let y = bottom.saturating_sub(height).max(viewport.y);
@@ -97,9 +97,7 @@ pub(super) fn append_hits(
     if overlay.review {
         return None;
     }
-    let Some(question) = overlay.state.current_question() else {
-        return None;
-    };
+    let question = overlay.state.current_question()?;
     let choice_top = area.y.saturating_add(4);
     let notes_lines = effective_note_rows(area, overlay, inner_width);
     let notes_y = area.bottom().saturating_sub(2).saturating_sub(notes_lines);
@@ -118,7 +116,7 @@ pub(super) fn append_hits(
         visible_named,
     );
     for offset in 0..visible_named {
-        let y = choice_top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+        let y = choice_top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
         hits.push(HitRegion {
             rect: Rect::new(inner_x, y, inner_width, 1),
             target: HitTarget::QuestionChoice(first.saturating_add(offset)),
@@ -299,7 +297,7 @@ fn draw_tabs(
             style(options, MUTED, false)
         };
         let used = u16::try_from(text.len())
-            .map_or(u16::MAX, |n| n)
+            .unwrap_or(u16::MAX)
             .min(x.saturating_add(width).saturating_sub(col));
         if used == 0 {
             break;
@@ -337,7 +335,7 @@ fn note_rows(overlay: QuestionnaireOverlay<'_>, width: u16) -> u16 {
         super::EditorGeometry::new(&note_text(overlay), &[], width.saturating_sub(8).max(1));
     if overlay.state.focus() == QuestionnaireFocus::Notes {
         u16::try_from(geometry.rows().len().min(4))
-            .map_or(4, |n| n)
+            .unwrap_or(4)
             .max(1)
     } else {
         1
@@ -363,7 +361,7 @@ fn answer_rows(overlay: QuestionnaireOverlay<'_>, width: u16) -> usize {
         &[],
         width.saturating_sub(8).max(1),
     );
-    geometry.rows().len().min(MAX_EDITOR_ROWS).max(1)
+    geometry.rows().len().clamp(1, MAX_EDITOR_ROWS)
 }
 
 fn editor_surface(
@@ -435,11 +433,11 @@ fn editor_caret(
         x: surface
             .rect
             .x
-            .saturating_add(u16::try_from(cursor.column).map_or(u16::MAX, |n| n)),
+            .saturating_add(u16::try_from(cursor.column).unwrap_or(u16::MAX)),
         y: surface
             .rect
             .y
-            .saturating_add(u16::try_from(row).map_or(u16::MAX, |n| n)),
+            .saturating_add(u16::try_from(row).unwrap_or(u16::MAX)),
     })
 }
 
@@ -556,7 +554,7 @@ fn draw_editor_text(
         let Some(row) = geometry.rows().get(row_index) else {
             continue;
         };
-        let screen_y = y.saturating_add(u16::try_from(display_row).map_or(u16::MAX, |n| n));
+        let screen_y = y.saturating_add(u16::try_from(display_row).unwrap_or(u16::MAX));
         write(
             buffer,
             field_x,
@@ -572,11 +570,11 @@ fn draw_editor_text(
                         buffer,
                         Rect::new(
                             field_x.saturating_add(
-                                u16::try_from(span.cells.start).map_or(u16::MAX, |n| n),
+                                u16::try_from(span.cells.start).unwrap_or(u16::MAX),
                             ),
                             screen_y,
                             u16::try_from(span.cells.end.saturating_sub(span.cells.start))
-                                .map_or(u16::MAX, |n| n),
+                                .unwrap_or(u16::MAX),
                             1,
                         ),
                         options,
@@ -617,7 +615,7 @@ fn draw_choices(
         let Some(option) = options_list.get(index) else {
             continue;
         };
-        let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+        let y = top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
         let chosen = selected.iter().any(|id| id == &option.id);
         let label = format!(" {} {}", if chosen { "✓" } else { "○" }, option.label);
         if cursor == index
@@ -636,7 +634,7 @@ fn draw_choices(
         );
     }
     if rows > 0 {
-        let y = top.saturating_add(u16::try_from(rows.saturating_sub(1)).map_or(u16::MAX, |n| n));
+        let y = top.saturating_add(u16::try_from(rows.saturating_sub(1)).unwrap_or(u16::MAX));
         let chosen = overlay.state.none_of_the_above_selected();
         let label = format!(" {} None of the above", if chosen { "✓" } else { "○" });
         if cursor == total.saturating_sub(1)
@@ -669,7 +667,7 @@ fn draw_review(
     let visible = usize::from(end.saturating_sub(top));
     let first = overlay.scroll.min(lines.len().saturating_sub(visible));
     for (offset, line) in lines.iter().skip(first).take(visible).enumerate() {
-        let y = top.saturating_add(u16::try_from(offset).map_or(u16::MAX, |n| n));
+        let y = top.saturating_add(u16::try_from(offset).unwrap_or(u16::MAX));
         if y >= end {
             break;
         }
@@ -730,7 +728,7 @@ fn option_label(
             }
             QuestionKind::FreeText => None,
         })
-        .map_or_else(|| id.to_owned(), |label| label)
+        .unwrap_or_else(|| id.to_owned())
 }
 
 fn choice_first(cursor: usize, named_count: usize, visible: usize) -> usize {
@@ -812,11 +810,7 @@ fn style(options: RenderOptions, color: Color, bold: bool) -> Style {
         (ColorMode::Terminal, _) => Color::White,
         (ColorMode::NoColor, _) => Color::Reset,
     };
-    let base = if options.colors == ColorMode::TrueColor {
-        Style::default().fg(fg)
-    } else {
-        Style::default().fg(fg)
-    };
+    let base = Style::default().fg(fg);
     if bold {
         base.add_modifier(Modifier::BOLD)
     } else {

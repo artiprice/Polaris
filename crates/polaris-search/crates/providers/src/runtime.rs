@@ -129,7 +129,7 @@ impl CallPermit {
                 Err(_) => return Err(SearchProviderError::RateLimit),
             }
         }
-        return Err(SearchProviderError::RateLimit);
+        Err(SearchProviderError::RateLimit)
     }
 
     /// Reconciles a one-request, one-token estimate after response handling.

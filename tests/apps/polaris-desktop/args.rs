@@ -77,9 +77,32 @@ fn workspace_and_log_dir_flags_override_defaults() -> TestResult {
 }
 
 #[test]
-fn connect_is_rejected_until_p9() -> TestResult {
-    let message = usage_message(parse(&["--connect"], None))?;
-    assert!(message.contains("daemon bridge"), "{message}");
+fn connect_takes_a_daemon_session_and_credential_file() -> TestResult {
+    let attached = parse(
+        &[
+            "--connect",
+            "polaris-main",
+            "--session",
+            "42",
+            "--token-file",
+            "D:/polaris/client.token",
+        ],
+        None,
+    )?;
+    assert_eq!(
+        attached.connect,
+        Some(polaris_desktop::ConnectArgs {
+            endpoint: String::from("polaris-main"),
+            session: String::from("42"),
+            token_file: PathBuf::from("D:/polaris/client.token"),
+        })
+    );
+    assert_eq!(parse(&[], None)?.connect, None);
+    assert!(usage_message(parse(&["--connect"], None))?.contains("--connect needs"));
+    let partial = usage_message(parse(&["--connect", "polaris-main"], None))?;
+    assert!(partial.contains("go together"), "{partial}");
+    let orphan = usage_message(parse(&["--token-file", "t"], None))?;
+    assert!(orphan.contains("go together"), "{orphan}");
     Ok(())
 }
 

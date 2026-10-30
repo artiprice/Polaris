@@ -117,14 +117,14 @@ async fn dropping_reaper_stops_process_even_when_native_adapter_is_shared() -> T
     let temp = tempfile::tempdir()?;
     let platform = Arc::new(ProcessPlatform::new());
     let tree = platform.spawn_tree(&sleeper_spec()?)?;
-    let reaper = Reaper::new(&temp.path().join("run"))?;
+    let reaper = Reaper::new(temp.path().join("run"))?;
     reaper.register_process(Arc::clone(&platform), tree)?;
     drop(reaper);
     // The adapter deliberately remains alive; only the resource guard can stop this process.
     tokio::time::sleep(Duration::from_millis(50)).await;
     assert_roots_absent(&[tree])?;
     assert!(
-        Reaper::new(&temp.path().join("run"))?
+        Reaper::new(temp.path().join("run"))?
             .leak_report()
             .entries
             .len()
@@ -279,7 +279,7 @@ impl Teardown for FakeSandbox {
 #[ignore = "1000-directory and 20-process durable teardown workload; run explicitly"]
 async fn reaper_thousand_directories_fifty_fake_sandboxes_twenty_native_processes() -> TestResult {
     let temp = tempfile::tempdir()?;
-    let reaper = Reaper::new(&temp.path().join("run"))?;
+    let reaper = Reaper::new(temp.path().join("run"))?;
     let mut paths = Vec::new();
     for _ in 0..1000 {
         paths.push(reaper.create_temp_dir(temp.path())?.1);

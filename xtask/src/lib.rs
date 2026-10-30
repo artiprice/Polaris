@@ -10,8 +10,8 @@
 //! Test-first descriptors: `specs/descriptors/xtask_check_members.json`,
 //! `specs/descriptors/xtask_check_layers.json`.
 
-pub mod error;
 pub mod calibration;
+pub mod error;
 pub mod layers;
 pub mod members;
 pub mod metadata;

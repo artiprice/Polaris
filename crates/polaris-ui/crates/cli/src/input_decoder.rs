@@ -41,11 +41,10 @@ impl KeyDecoder {
                 || (record.unicode_char == 0 && record.control_key_state & ALT_STATE_MASK != 0))
         {
             self.pending_alt_sequence = true;
-        } else if record.key_down && record.unicode_char != 0 {
-            self.pending_alt_sequence = false;
-        } else if !record.key_down
-            && is_alt_virtual_key(record.virtual_key_code)
-            && record.unicode_char == 0
+        } else if (record.key_down && record.unicode_char != 0)
+            || (!record.key_down
+                && is_alt_virtual_key(record.virtual_key_code)
+                && record.unicode_char == 0)
         {
             self.pending_alt_sequence = false;
         }

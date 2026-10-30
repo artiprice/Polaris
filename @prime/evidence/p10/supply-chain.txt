@@ -1,0 +1,46 @@
+# P10-2 evidence: supply-chain checks, 2026-10-29 (85d06fa + working tree)
+# cargo-deny 0.20.2, cargo-audit 0.22.2, cargo-vet 0.10.3; RustSec database fetched today.
+
+## cargo deny check — first run (before fixes)
+      1 error[unmaintained]: `ttf-parser` is unmaintained
+      1 error[unmaintained]: `zbus_names` is unmaintained
+      1 error[unmaintained]: `zvariant_derive` is unmaintained
+      1 error[unmaintained]: `zvariant` is unmaintained
+      1 error[unmaintained]: paste - no longer maintained
+      1 error[unmaintained]: rustls-pemfile is unmaintained
+      1 error[vulnerability]: Exponential event growth with `ENABLE_WIKILINKS`
+      1 error[vulnerability]: Multiple timing variability issues in operations intended to be constant-time
+  + 77 duplicate-version warnings, licence-config warnings
+
+## Fixes and decisions
+- pulldown-cmark 0.13.4 -> 0.13.5 (RUSTSEC-2026-0414). polaris-ingest parsed Markdown with Options::all(), which enables
+  wikilinks: an ingested document of [[a|]] links could make parsing grow exponentially. Fixed by the upgrade and by
+  disabling wikilinks in ingest (regression test wikilink_bombs_parse_as_plain_text).
+- crypto-bigint 0.5.5 (RUSTSEC-2026-0387) accepted with reason: reached only via biscuit-auth's always-compiled P-256
+  support; Polaris creates, signs and parses Ed25519 keys only. The fix needs crypto-bigint 0.7, which elliptic-curve 0.13
+  cannot use.
+- six unmaintained transitive crates accepted with reasons (paste via leptos, rustls-pemfile via the OpenShell SDK,
+  ttf-parser via pdf-extract/ab_glyph, zvariant/zvariant_derive/zbus_names via Slint's accesskit on Linux).
+  All ignores are in deny.toml with their reasons.
+
+## cargo deny check — after
+exit 0: 0 errors; warnings:  77 warning[duplicate]; 2 warning[license-exception-not-encountered]; 3 warning[license-not-encountered];
+
+## cargo audit (reads Cargo.lock, not deny.toml)
+  vulnerability  RUSTSEC-2026-0387  crypto-bigint 0.5.5  Multiple timing variability issues in operations intended to be constant-time
+  unmaintained   RUSTSEC-2025-0141  bincode 2.0.1  Bincode is unmaintained
+  unmaintained   RUSTSEC-2024-0436  paste 1.0.15  paste - no longer maintained
+  unmaintained   RUSTSEC-2025-0134  rustls-pemfile 2.2.0  rustls-pemfile is unmaintained
+  unmaintained   RUSTSEC-2026-0192  ttf-parser 0.25.1  `ttf-parser` is unmaintained
+  unmaintained   RUSTSEC-2026-0371  zbus_names 4.3.5  `zbus_names` is unmaintained
+  unmaintained   RUSTSEC-2026-0370  zvariant 5.15.1  `zvariant` is unmaintained
+  unmaintained   RUSTSEC-2026-0372  zvariant_derive 5.15.1  `zvariant_derive` is unmaintained
+-> 1 vulnerability (crypto-bigint, accepted above); bincode (RUSTSEC-2025-0141) is in the lock file only through
+   the Slint compiler's disabled serialization feature (cargo tree finds no path).
+
+## cargo vet --locked (against the committed imports in supply-chain/)
+Vetting Failed!
+
+1167 unvetted dependencies:
+A fresh import fetch downloads every crate's source to compute deltas; it was stopped after 10 minutes of
+failing downloads and its 1.46 GB cache removed. First-party audits of the 1,167 crates are not done.

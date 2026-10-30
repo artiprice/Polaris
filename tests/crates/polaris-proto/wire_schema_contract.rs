@@ -101,6 +101,9 @@ fn descriptor_set_lists_the_three_services() -> TestResult {
             row("Subscribe", false, true),
             row("AttachTerminal", true, true),
             row("Health", false, false),
+            // Protocol 1.3: attached frontends (P9).
+            row("SubmitText", false, false),
+            row("ReadText", false, false),
         ],
     );
     want.insert(

@@ -10,7 +10,7 @@
 | Layer | Decision | Why |
 |---|---|---|
 | Server | `polaris-ui-web`: axum router on loopback (`polaris web`, default `127.0.0.1:8787`) | axum is already in the workspace; the session host, provider chain and kernel stay in-process, exactly as in the terminal and desktop. |
-| Conversation | `polaris_ui_session::ConversationHost` + `OfflineSession` | One implementation for all three frontends: same provider chain, read-only agent, model switching, interruption. |
+| Conversation | `polaris_ui_session::ConversationHost` + `OfflineSession` | One implementation for all three frontends: same provider chain, agent with reviewed file changes, model switching, interruption. |
 | Transport | JSON for commands (`POST /api/…`), Server-Sent Events for the live stream (`GET /api/events`) | SSE is one-way, survives proxies, needs no extra client library; commands are plain fetches. |
 | Frontend | Embedded static HTML/CSS/JS (no build step), served from the binary (`include_str!`) | Leptos (the original plan) needs `wasm32-unknown-unknown` and `cargo-leptos`, which are not installed on the team machines; the page must work offline from the binary. Leptos stays the upgrade path: the API is the contract. |
 | Security | Loopback bind only; a per-run random token in the page URL and required on every API call (`Authorization: Bearer`); `Host` header checked against the bound address; strict CSP (no inline script, `connect-src 'self'`) | A local web UI is reachable by any page in the browser: DNS rebinding and CSRF are the real threats. |
@@ -63,3 +63,32 @@ Spacing on a 4 px grid; one type scale per surface; line height 1.5 for prose, 1
 every popover dismissible by Esc and outside click; focus rings visible; disabled controls say
 why; empty states explain the next step; errors name the cause and the fix; no truncated text
 without a tooltip; status colours: green connected, amber connecting/working, red failed.
+
+## 7. Leptos frontend (`apps/polaris-web`, 2026-10-29)
+
+The upgrade path from §1 is built. `polaris-web` serves the same API, event stream, stylesheet and
+fonts as `polaris-ui-web` (`WebServer::bind_with_pages`) and replaces the embedded JavaScript page
+with Leptos pages:
+
+- **SSR + hydration.** The server streams the HTML (out-of-order) with a per-response CSP nonce
+  (`script-src 'self' 'nonce-…' 'wasm-unsafe-eval'`, `frame-ancestors 'none'`); the browser hydrates
+  the same components from the wasm bundle under `/pkg`.
+- **Behaviour in Rust.** `state::UiState` reduces server events and clicks into network effects
+  (`Open`, `Submit`, `Interrupt`, `Review`, `Effort`, `RefreshSessions`); the browser client performs
+  them with the token from `#token=` (kept in `sessionStorage`, removed from the address bar).
+- **PWA.** `/manifest.webmanifest`, `/icon.svg` and `/sw.js` — the only hand-written JavaScript:
+  network-first pages with an offline shell, cache-first bundle/styles/fonts, never the API.
+- **Build and run.**
+  ```
+  rustup target add wasm32-unknown-unknown --toolchain 1.99.0
+  cargo +1.99.0 install cargo-leptos --locked
+  cd apps/polaris-web && cargo leptos build
+  target/debug/polaris-web --site-root target/site --env-file <keys>.env
+  ```
+- **Attached to `polarisd` (P9).** `polarisd --pipe polaris-main --session 42 --frame 7
+  --client-token-out client.token …` writes a credential; `polaris-web --connect polaris-main
+  --session 42 --token-file client.token` (or `polaris --session <id> web --connect …`) shows and
+  records into the daemon's session instead of opening local ones. Model replies are not served
+  while attached yet. Evidence: `@prime/evidence/p9/attach-verification.txt`.
+- **Not yet:** per-route lazy loading (one route today), WebSocket terminal channels, model
+  replies in attached mode.

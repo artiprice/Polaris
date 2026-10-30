@@ -9,11 +9,11 @@ use crate::{
     runtime::InspectionOwner,
     storage::cas::content_id,
     verifier::{
-        ApprovalReason, HybridMutationVerifier, MutationRequest, Rejection, VerificationDecision,
-        VerifierConfig,
+        ApprovalReason, HumanApproval, HybridMutationVerifier, MutationRequest, Rejection,
+        VerificationDecision, VerifierConfig,
     },
 };
-use polaris_code_intel::{ParserPool, analyze_safety, metrics};
+use polaris_code_intel::{CodeIntelError, ParserPool, analyze_safety, churn_lines, metrics};
 use polaris_runtime::{
     frames::{FrameToolBinding, role_allows_tool},
     leases::{LeaseGuard, LeaseKey, LeaseManager, LeaseRequest, LeaseScope},
@@ -28,7 +28,7 @@ use polaris_security::capability::{
 };
 use polaris_system_one::verifier::{MutationSafety, SafetyRequest};
 use polaris_tools::builtin::{
-    MatchLevel, WorkspacePath, apply_unified_patch, is_secret_path, replace_text,
+    MatchLevel, WorkspacePath, apply_hunks, apply_unified_patch, is_secret_path, replace_text,
     resolve_in_workspace,
 };
 use serde::Serialize;
@@ -77,6 +77,13 @@ pub enum FrameMutationRequest {
         path: String,
         /// Single-file unified patch.
         patch: String,
+        /// Digest of the exact existing source.
+        expected_base: Cid,
+    },
+    /// Remove one existing, nonempty file.
+    DeleteFile {
+        /// Normalized workspace-relative target.
+        path: String,
         /// Digest of the exact existing source.
         expected_base: Cid,
     },
@@ -153,8 +160,59 @@ pub struct PreparedFrameMutation {
     churn_lines: u32,
     touches_unsafe: bool,
     mutation_binding: Cid,
-    /// How an `edit_file` target was located; `None` for whole-file writes and patches.
+    /// How an `edit_file` or `apply_patch` target was located; `None` for whole-file writes.
     match_level: Option<MatchLevel>,
+    /// The commit removes the file; the new snapshot is empty.
+    deletes: bool,
+}
+
+impl PreparedFrameMutation {
+    /// Normalized workspace-relative target.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+    /// Exact base snapshot; empty when the proposal creates the file.
+    #[must_use]
+    pub fn old_source(&self) -> &[u8] {
+        &self.old
+    }
+    /// Exact proposed bytes; empty for a deletion.
+    #[must_use]
+    pub fn new_source(&self) -> &[u8] {
+        &self.new
+    }
+    /// Whether the proposal removes the file.
+    #[must_use]
+    pub const fn deletes(&self) -> bool {
+        self.deletes
+    }
+    /// Digest binding command, frame, target, diff and both snapshots; a human request for this
+    /// proposal names it so the answer cannot be replayed onto another mutation.
+    #[must_use]
+    pub const fn binding(&self) -> Cid {
+        self.mutation_binding
+    }
+    /// The same proposal, kept while a human decides on the original's escalation.
+    pub(crate) fn review_copy(&self) -> Self {
+        Self {
+            state: Arc::clone(&self.state),
+            command: self.command.clone(),
+            path: self.path.clone(),
+            base: self.base,
+            lease_base: self.lease_base,
+            old: self.old.clone(),
+            new: self.new.clone(),
+            diff_bytes: self.diff_bytes.clone(),
+            token_cid: self.token_cid,
+            symbol: self.symbol.clone(),
+            churn_lines: self.churn_lines,
+            touches_unsafe: self.touches_unsafe,
+            mutation_binding: self.mutation_binding,
+            match_level: self.match_level,
+            deletes: self.deletes,
+        }
+    }
 }
 
 impl fmt::Debug for PreparedFrameMutation {
@@ -351,6 +409,30 @@ impl<S: MutationSafety + 'static> FrameMutationService<S> {
         prepared: PreparedFrameMutation,
         token: &Token,
     ) -> Result<FrameMutationReceipt, FrameMutationError> {
+        self.apply_reviewed(prepared, token, None).await
+    }
+
+    /// Apply a proposal whose escalation a human approved. The caller must have created the
+    /// human request for this exact proposal (see [`PreparedFrameMutation::binding`]) and checked
+    /// that the committed answer approves it. Every deterministic check still runs under the
+    /// write lease, and a semantic block still rejects.
+    /// # Errors
+    /// As [`Self::apply`], except that an escalation is accepted instead of returned.
+    pub async fn apply_with_human_approval(
+        &self,
+        prepared: PreparedFrameMutation,
+        token: &Token,
+        approval: HumanApproval,
+    ) -> Result<FrameMutationReceipt, FrameMutationError> {
+        self.apply_reviewed(prepared, token, Some(approval)).await
+    }
+
+    async fn apply_reviewed(
+        &self,
+        prepared: PreparedFrameMutation,
+        token: &Token,
+        human: Option<HumanApproval>,
+    ) -> Result<FrameMutationReceipt, FrameMutationError> {
         self.check_token(token)?;
         if !Arc::ptr_eq(&prepared.state, &self.state)
             || prepared.token_cid != content_id(token.to_bytes().as_bytes())
@@ -383,7 +465,7 @@ impl<S: MutationSafety + 'static> FrameMutationService<S> {
         let command_token = token.clone();
         let handle = tokio::runtime::Handle::current();
         tokio::task::spawn_blocking(move || {
-            apply_owned(state, owner, guard, handle, prepared, command_token)
+            apply_owned(state, owner, guard, handle, prepared, command_token, human)
         })
         .await
         .map_err(|_| FrameMutationError::Owner)?
@@ -432,6 +514,16 @@ fn prepare_owned(
             patch,
             expected_base,
         } => (path, Some(expected_base), None, patch, ProposalMode::Patch),
+        FrameMutationRequest::DeleteFile {
+            path,
+            expected_base,
+        } => (
+            path,
+            Some(expected_base),
+            None,
+            String::new(),
+            ProposalMode::Delete,
+        ),
     };
     if raw_path.len() > MAX_PATH_BYTES {
         return Err(FrameMutationError::Limit);
@@ -447,6 +539,7 @@ fn prepare_owned(
     }
     let target = normalized.as_str().to_owned();
     let root = owner.workspace_root().to_owned();
+    let deletes = matches!(mode, ProposalMode::Delete);
     let MutationCandidate {
         base,
         old,
@@ -460,16 +553,7 @@ fn prepare_owned(
     if diff_bytes.len() > MAX_DIFF_BYTES {
         return Err(FrameMutationError::Limit);
     }
-    let parser = ParserPool::new();
-    let old_parsed = parser
-        .parse_file(Path::new(&target), &old)
-        .map_err(|_| FrameMutationError::Analysis)?;
-    let new_parsed = parser
-        .parse_file(Path::new(&target), &new)
-        .map_err(|_| FrameMutationError::Analysis)?;
-    let measured = metrics(&old_parsed, &new_parsed).map_err(|_| FrameMutationError::Analysis)?;
-    let old_safety = analyze_safety(&old_parsed).map_err(|_| FrameMutationError::Analysis)?;
-    let new_safety = analyze_safety(&new_parsed).map_err(|_| FrameMutationError::Analysis)?;
+    let (symbol, churn_lines, touches_unsafe) = candidate_facts(&target, &old, &new)?;
     let diff = content_id(&diff_bytes);
     // The token fact must match the hybrid verifier's content identity for its empty old snapshot;
     // `base: None` and `lease_base` separately preserve the actual absence semantics.
@@ -487,13 +571,9 @@ fn prepare_owned(
     let resource = ResourcePath::new(&target).map_err(|_| FrameMutationError::Path)?;
     let facts = Facts {
         resource: &resource,
-        symbol: match measured.changed_symbols.as_slice() {
-            [symbol] => Some(symbol.name.as_str()),
-            _ => None,
-        },
-        churn_lines: measured.churn_lines,
-        touches_unsafe: unsafe_observations(&old_parsed, &old_safety)
-            != unsafe_observations(&new_parsed, &new_safety),
+        symbol: symbol.as_deref(),
+        churn_lines,
+        touches_unsafe,
         diff_blake3: Some(mutation_binding),
         right: Right::ProposeDiff,
     };
@@ -523,16 +603,54 @@ fn prepare_owned(
         new,
         diff_bytes,
         token_cid: content_id(token.to_bytes().as_bytes()),
-        symbol: facts.symbol.map(str::to_owned),
-        churn_lines: facts.churn_lines,
-        touches_unsafe: facts.touches_unsafe,
+        symbol,
+        churn_lines,
+        touches_unsafe,
         mutation_binding,
         match_level,
+        deletes,
     })
+}
+
+/// Capability facts for a candidate: the single changed symbol, line churn and whether the
+/// unsafe inventory changed. A language the analyzer cannot parse has no symbols and no unsafe
+/// inventory; the hybrid verifier then asks for a human decision.
+fn candidate_facts(
+    target: &str,
+    old: &[u8],
+    new: &[u8],
+) -> Result<(Option<String>, u32, bool), FrameMutationError> {
+    let parser = ParserPool::new();
+    let parsed = (
+        parser.parse_file(Path::new(target), old),
+        parser.parse_file(Path::new(target), new),
+    );
+    let (old_parsed, new_parsed) = match parsed {
+        (Ok(old_parsed), Ok(new_parsed)) => (old_parsed, new_parsed),
+        (Err(CodeIntelError::UnsupportedLanguage), _)
+        | (_, Err(CodeIntelError::UnsupportedLanguage)) => {
+            return Ok((None, churn_lines(old, new), false));
+        }
+        _ => return Err(FrameMutationError::Analysis),
+    };
+    let measured = metrics(&old_parsed, &new_parsed).map_err(|_| FrameMutationError::Analysis)?;
+    let old_safety = analyze_safety(&old_parsed).map_err(|_| FrameMutationError::Analysis)?;
+    let new_safety = analyze_safety(&new_parsed).map_err(|_| FrameMutationError::Analysis)?;
+    let symbol = match measured.changed_symbols.as_slice() {
+        [symbol] => Some(symbol.name.clone()),
+        _ => None,
+    };
+    Ok((
+        symbol,
+        measured.churn_lines,
+        unsafe_observations(&old_parsed, &old_safety)
+            != unsafe_observations(&new_parsed, &new_safety),
+    ))
 }
 
 #[derive(Debug, Clone, Copy)]
 enum ProposalMode {
+    Delete,
     Write,
     Edit,
     Patch,
@@ -585,7 +703,9 @@ fn snapshot_candidate(
             } else {
                 parent.to_str().ok_or(FrameMutationError::Path)?
             };
-            let parent_path = resolve_parent(root, parent)?;
+            // Missing directories are only checked here; the commit creates them.
+            let (ancestor, missing) = existing_ancestor(root, parent)?;
+            let parent_path = missing.iter().fold(ancestor, |path, name| path.join(name));
             let file_name = Path::new(target)
                 .file_name()
                 .ok_or(FrameMutationError::Path)?;
@@ -599,6 +719,8 @@ fn snapshot_candidate(
     let mut match_level = None;
     let new = match mode {
         ProposalMode::Write => input.into_bytes(),
+        // The proposal's new snapshot is empty; the commit removes the file instead.
+        ProposalMode::Delete => Vec::new(),
         ProposalMode::Edit => {
             let (needle, replace_all) = old_text.ok_or(FrameMutationError::InvalidProposal)?;
             let source =
@@ -610,10 +732,27 @@ fn snapshot_candidate(
         }
         ProposalMode::Patch => {
             let patch = input;
-            if !patch_header_matches(&patch, target) {
-                return Err(FrameMutationError::InvalidProposal);
+            if !patch_headers_name(&patch, target) {
+                return Err(FrameMutationError::EditTarget(format!(
+                    "the patch headers name another file; apply_patch changes only `{target}`"
+                )));
             }
-            apply_unified_patch(&old, &patch).map_err(|_| FrameMutationError::InvalidProposal)?
+            // Exact line numbers first; a model's numbers are often off, so then find each
+            // hunk by its old lines.
+            match apply_unified_patch(&old, &patch) {
+                Ok(bytes) => {
+                    match_level = Some(MatchLevel::Exact);
+                    bytes
+                }
+                Err(_) => {
+                    let source = std::str::from_utf8(&old)
+                        .map_err(|_| FrameMutationError::InvalidProposal)?;
+                    let applied = apply_hunks(source, &patch)
+                        .map_err(|error| FrameMutationError::EditTarget(error.to_string()))?;
+                    match_level = Some(applied.level);
+                    applied.text.into_bytes()
+                }
+            }
         }
     };
     if old == new {
@@ -627,10 +766,21 @@ fn snapshot_candidate(
     })
 }
 
-fn patch_header_matches(patch: &str, target: &str) -> bool {
-    let old = format!("--- a/{target}");
-    let new = format!("+++ b/{target}");
-    patch.lines().any(|line| line == old) && patch.lines().any(|line| line == new)
+/// File headers are optional; any `---`/`+++` header present must name `target`.
+fn patch_headers_name(patch: &str, target: &str) -> bool {
+    patch.lines().all(|line| {
+        let named = line
+            .strip_prefix("--- ")
+            .map(|path| path.strip_prefix("a/").unwrap_or(path))
+            .or_else(|| {
+                line.strip_prefix("+++ ")
+                    .map(|path| path.strip_prefix("b/").unwrap_or(path))
+            });
+        match named {
+            Some(path) => path.split('\t').next().map(str::trim_end) == Some(target),
+            None => true,
+        }
+    })
 }
 
 fn render_diff(path: &str, old: &[u8], new: &[u8]) -> Result<Vec<u8>, FrameMutationError> {
@@ -709,6 +859,7 @@ fn apply_owned(
     runtime: tokio::runtime::Handle,
     prepared: PreparedFrameMutation,
     token: Token,
+    human: Option<HumanApproval>,
 ) -> Result<FrameMutationReceipt, FrameMutationError> {
     owner.ensure_open().map_err(|_| FrameMutationError::Owner)?;
     if state.cancellation.is_cancelled()
@@ -736,18 +887,28 @@ fn apply_owned(
         SystemClock,
         KernelEvidence::new(Arc::clone(state.kernel.context())),
     );
+    let request = MutationRequest {
+        command: &prepared.command,
+        target: &prepared.path,
+        old_source: &prepared.old,
+        new_source: &prepared.new,
+        diff: &prepared.diff_bytes,
+        intent: &state.intent,
+    };
     let decision = runtime
-        .block_on(verifier.verify(MutationRequest {
-            command: &prepared.command,
-            target: &prepared.path,
-            old_source: &prepared.old,
-            new_source: &prepared.new,
-            diff: &prepared.diff_bytes,
-            intent: &state.intent,
-        }))
+        .block_on(async {
+            match human {
+                Some(approval) => verifier.verify_with_human_approval(request, approval).await,
+                None => verifier.verify(request).await,
+            }
+        })
         .map_err(|_| FrameMutationError::Verifier)?;
     match decision {
         VerificationDecision::Rejected(rejection) => Err(FrameMutationError::Rejected(rejection)),
+        // An approved proposal never escalates again; anything else would be a verifier defect.
+        VerificationDecision::NeedsApproval { .. } if human.is_some() => {
+            Err(FrameMutationError::Verifier)
+        }
         VerificationDecision::NeedsApproval { reason } => {
             let diff = persist_bytes(owner.cas(), &prepared.diff_bytes)?;
             let report = persist_json(
@@ -815,13 +976,27 @@ fn apply_owned(
                 .map_err(|_| FrameMutationError::Lease)?;
             let path =
                 resolve_for_commit(owner.workspace_root(), &prepared.path, actual.is_some())?;
-            atomic_commit(&path, &prepared.new, actual.is_some())?;
-            let committed = read_source_bounded(&path).map_err(|_| {
-                FrameMutationError::AppliedButUnrecorded {
-                    path: prepared.path.clone(),
-                    actual: content_id(&prepared.new),
+            let committed = if prepared.deletes {
+                fs::remove_file(&path).map_err(|_| FrameMutationError::Workspace)?;
+                // A removed file reads back as the empty snapshot the verifier approved.
+                match fs::symlink_metadata(&path) {
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+                    _ => {
+                        return Err(FrameMutationError::AppliedButUnrecorded {
+                            path: prepared.path.clone(),
+                            actual: prepared.lease_base,
+                        });
+                    }
                 }
-            })?;
+            } else {
+                atomic_commit(&path, &prepared.new, actual.is_some())?;
+                read_source_bounded(&path).map_err(|_| {
+                    FrameMutationError::AppliedButUnrecorded {
+                        path: prepared.path.clone(),
+                        actual: content_id(&prepared.new),
+                    }
+                })?
+            };
             let actual_cid = content_id(&committed);
             if committed != prepared.new {
                 return Err(FrameMutationError::AppliedButUnrecorded {
@@ -833,6 +1008,7 @@ fn apply_owned(
             let receipt_record = StoredReceipt {
                 schema: 2,
                 match_level: prepared.match_level,
+                deleted: prepared.deletes,
                 command: approved.command_id(),
                 frame: approved.agent(),
                 path: prepared.path.clone(),
@@ -927,9 +1103,12 @@ struct StoredReceipt {
     new_cid: Cid,
     diff: Cid,
     approval_evidence: Cid,
-    /// How the edit target was located (schema 2); absent for writes and patches.
+    /// How the edit or patch target was located (schema 2); absent for whole-file writes.
     #[serde(skip_serializing_if = "Option::is_none")]
     match_level: Option<MatchLevel>,
+    /// Schema 2: the file was removed; `new_cid` is the empty snapshot.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    deleted: bool,
 }
 
 fn persist_json(
@@ -980,8 +1159,53 @@ fn resolve_for_commit(
     } else {
         parent.to_str().ok_or(FrameMutationError::Path)?
     };
+    let (mut directory, missing) = existing_ancestor(root, parent)?;
+    for name in missing {
+        directory.push(name);
+        match fs::create_dir(&directory) {
+            Ok(()) => {}
+            Err(error)
+                if error.kind() == std::io::ErrorKind::AlreadyExists && directory.is_dir() => {}
+            Err(_) => return Err(FrameMutationError::Workspace),
+        }
+    }
+    // Re-resolve what now exists, so the created directories are proven inside the workspace.
     let parent_path = resolve_parent(root, parent)?;
     Ok(parent_path.join(relative.file_name().ok_or(FrameMutationError::Path)?))
+}
+
+/// The deepest existing workspace directory on the way to `parent`, and the names below it that
+/// do not exist yet. Anything that exists but is not a contained directory (a file in the way, a
+/// link out of the workspace) is refused rather than walked past.
+fn existing_ancestor(
+    root: &Path,
+    parent: &str,
+) -> Result<(PathBuf, Vec<String>), FrameMutationError> {
+    const MAX_NEW_DIRECTORIES: usize = 32;
+    let mut missing = Vec::new();
+    let mut current = parent.to_owned();
+    loop {
+        match resolve_parent(root, &current) {
+            Ok(path) => {
+                missing.reverse();
+                return Ok((path, missing));
+            }
+            Err(error) => {
+                if current == "."
+                    || missing.len() >= MAX_NEW_DIRECTORIES
+                    || fs::symlink_metadata(root.join(&current)).is_ok()
+                {
+                    return Err(error);
+                }
+                let (rest, name) = match current.rsplit_once('/') {
+                    Some((rest, name)) => (rest.to_owned(), name.to_owned()),
+                    None => (".".to_owned(), current.clone()),
+                };
+                missing.push(name);
+                current = rest;
+            }
+        }
+    }
 }
 
 fn resolve_parent(root: &Path, parent: &str) -> Result<PathBuf, FrameMutationError> {

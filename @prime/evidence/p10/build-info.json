@@ -1,0 +1,43 @@
+{
+  "package": "polaris-0.1.0-alpha-x86_64-pc-windows-msvc",
+  "version": "0.1.0-alpha",
+  "target": "x86_64-pc-windows-msvc",
+  "profile": "dist (release + fat LTO, codegen-units 1, overflow checks, panic=unwind, stripped)",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "commit": "81dd3d3d2377f0e382d4f2bb847b47910e6a3661",
+  "dirty": true,
+  "binaries": [
+    {
+      "name": "polaris.exe",
+      "bytes": 53035520,
+      "sha256": "257031afd169d490c6a771c686f3446c0df3413e9f35a9ceef2d66227f25e7b8"
+    },
+    {
+      "name": "polarisd.exe",
+      "bytes": 19366400,
+      "sha256": "debd900ad89403243e5c95be77d0335f3d42164c234668bd5bb0b0af4e2cd6b8"
+    },
+    {
+      "name": "polaris-desktop.exe",
+      "bytes": 60685312,
+      "sha256": "91c583439870b67a8059cc271b251a153f0c9df2ec971937065bee6bda3dbc31"
+    },
+    {
+      "name": "polaris-web.exe",
+      "bytes": 49903616,
+      "sha256": "f7499ca43d380a104a76f79b6a37c2bc12082983a110cbb0228707d62e85f1af"
+    },
+    {
+      "name": "polaris-worker.exe",
+      "bytes": 13252608,
+      "sha256": "30708bfabe8d37b3504015952019bc38c4781999c18014639b8bc2521baef76c"
+    }
+  ],
+  "site_files": 5,
+  "run": "bin/polaris (terminal), bin/polaris-desktop, bin/polaris-web --site-root site, bin/polarisd",
+  "archive": {
+    "name": "polaris-0.1.0-alpha-x86_64-pc-windows-msvc.zip",
+    "bytes": 66393854,
+    "sha256": "2bec7c185739ce04dcd36a44eaaf0e809889d001e391954f14ee6d1966f2aba3"
+  }
+}

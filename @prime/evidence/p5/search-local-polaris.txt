@@ -1,0 +1,68 @@
+# P5 keyless /search-local on this repository (2026-10-29): lexical BM25 over 40-line windows of text files, provenance path:lines.
+# Each CLI call is a fresh process, so every query below indexes the repository (debug build; ~5 s optimized, 0.3 s for a repeat query in one process — @prime/evidence/p10/budgets.txt).
+
+$ polaris --workspace . search-local "verify human approval mutation evidence"
+Local search
+10 results for "verify human approval mutation evidence" (lexical BM25 over workspace text files; no embeddings):
+1. crates/polaris-kernel/crates/verifier/src/verify.rs:301-340 (score 31.40)
+     303: /// Verify a proposed mutation in signature, exact-metric, Datalog and S1 order.
+     321: /// Verify a mutation a human approved after [`VerificationDecision::NeedsApproval`].
+     331: pub async fn verify_with_human_approval(
+2. crates/polaris-kernel/src/frame_verification.rs:451-490 (score 31.21)
+     451: && approval.human.is_none()
+     455: && approval.safety_result == "human_approved"
+     464: || approval.mutation_binding != digest
+3. crates/polaris-kernel/crates/verifier/src/lib.rs:1-32 (score 30.45)
+     1: //! Hybrid mutation authorization, exact metrics, semantic safety assessment, and evidence-backed
+     8: //! The eventual mutation executor owns that final compare-and-swap check.
+     28: ApprovalReason, ApprovedMutation, HumanApproval, HybridMutationVerifier, InputField,
+4. crates/polaris-kernel/crates/verifier/src/verify.rs:151-190 (score 29.38)
+     155: /// A human's committed answer approving one mutation that needed a human decision.
+     159: /// approves it before calling [`HybridMutationVerifier::verify_with_human_approval`].
+     161: pub struct HumanApproval {
+5. crates/polaris-kernel/src/frame_mutation.rs:871-910 (score 29.12)
+     877: return Err(FrameMutationError::StaleBase);
+
+$ polaris --workspace . search-local "named pipe client token"
+Local search
+10 results for "named pipe client token" (lexical BM25 over workspace text files; no embeddings):
+1. apps/polaris-daemon/src/main.rs:31-70 (score 21.00)
+     34: required_unless_present = "client_token_out",
+     35: conflicts_with = "client_token_out"
+     41: client_token_out: Option<PathBuf>,
+2. tests/apps/polaris-worker/s1_process.rs:61-100 (score 20.51)
+     66: let mut token_bytes = Zeroizing::new(Vec::new());
+     67: credential.write_to(&mut *token_bytes)?;
+     70: let adapter = S1Client::connect_named_pipe(
+3. crates/polaris-system-one/crates/client/src/lib.rs:421-460 (score 20.15)
+     430: match tokio::net::windows::named_pipe::ClientOptions::new().open(pipe_name) {
+     451: /// Connects only when each named-pipe stream is served by the expected process identifier.
+     458: pub async fn connect_named_pipe_owned(
+4. crates/polaris-system-one/crates/client/src/lib.rs:361-400 (score 20.15)
+     386: /// Connects to a local Windows named pipe whose name begins with `polaris-`.
+     389: /// for local processes depends on the creator token's default pipe DACL; this crate does not
+     395: pub async fn connect_named_pipe(
+5. tests/crates/polaris-rpc/transport_contracts.rs:481-520 (score 20.12)
+     489: async fn named_pipe_name_ownership_and_grpc_roundtrip() -> Result<(), fixture::Failure> {
+
+$ polaris --workspace . search-local "cache volumes docker sandbox"
+Local search
+10 results for "cache volumes docker sandbox" (lexical BM25 over workspace text files; no embeddings):
+1. @prime/PHASES_STATUS.md:1951-1980 (score 26.71)
+     1952: - **`DockerSandbox`** (`polaris-devenv-docker`, implements the SDK `SandboxBackend`): one
+     1954: read-only, named cache volumes that outlive the container, every capability dropped,
+     1964: image, per-workspace volumes `polaris-ci-<12 hex>` with cold/warm state, Docker readiness and the
+2. crates/polaris-ui/crates/session/src/ci.rs:211-250 (score 25.89)
+     212: Ok(docker) => match make_sandbox(docker, workspace, &plan) {
+     213: Err(reason) => lines.push(format!("Docker sandbox: {reason}")),
+     215: let states = cache_state(&sandbox).await;
+3. crates/polaris-ui/crates/session/src/ci.rs:1-40 (score 25.67)
+     2: //! Engine with the cargo home and target directory on named cache volumes, so the second run
+     17: CacheVolume, Docker, DockerEndpoint, DockerSandbox, DockerSandboxConfig,
+     40: /// The pipeline for a workspace and the cache volumes it uses.
+4. crates/polaris-devenv/crates/docker/src/sandbox.rs:31-70 (score 25.51)
+     42: pub struct DockerSandboxConfig {
+     47: /// Cache volumes.
+     59: /// [`SandboxBackend`] over a local Docker Engine for CI pipelines.
+5. crates/polaris-devenv/crates/docker/src/sandbox.rs:151-190 (score 24.91)
+     151: /// Whether the volume `name` exists (a warm cache).

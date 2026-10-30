@@ -399,3 +399,70 @@ fn interrupt_sends_a_request_only_while_working() -> TestResult {
     );
     Ok(())
 }
+
+#[test]
+fn a_change_review_waits_for_a_decision() -> TestResult {
+    let mut c = controller()?;
+    let _list = c.apply(opened("s1"));
+    let _none = c.apply(BackendEvent::ReplyStarted);
+    let _none = c.apply(BackendEvent::ReplyText(String::from("Updating the notes.")));
+    let _none = c.apply(BackendEvent::Review {
+        request_id: String::from("r1"),
+        prompt: String::from("Change `notes.md`?\n\n```diff\n-draft\n+final\n```"),
+    });
+    assert_eq!(c.review(), Some("Change notes.md?"));
+    assert_eq!(c.status_line(), "Waiting for your decision on a change");
+    assert_eq!(c.status_state(), "waiting");
+    assert_eq!(
+        c.decide_review(true, "  "),
+        vec![BackendRequest::Review {
+            request_id: String::from("r1"),
+            apply: true,
+            note: None,
+        }]
+    );
+    assert_eq!(c.review(), None);
+    let _none = c.apply(BackendEvent::ReviewClosed(String::from("r1")));
+    let _none = c.apply(BackendEvent::Applied(String::from("notes.md")));
+    let _none = c.apply(BackendEvent::Review {
+        request_id: String::from("r2"),
+        prompt: String::from("Create `todo.md`?"),
+    });
+    assert_eq!(
+        c.decide_review(false, "keep it in notes.md"),
+        vec![BackendRequest::Review {
+            request_id: String::from("r2"),
+            apply: false,
+            note: Some(String::from("keep it in notes.md")),
+        }]
+    );
+    let _list = c.apply(BackendEvent::ReplyFinished {
+        answer: Some(String::from("Updated notes.md.")),
+        summary: String::from("Worked for 3s · 3 requests · 2 tool rounds · 1 file changed"),
+    });
+    let texts: Vec<(&EntryKind, &str)> = c
+        .entries()
+        .iter()
+        .map(|entry| (&entry.kind, entry.text.as_str()))
+        .collect();
+    assert_eq!(
+        texts,
+        vec![
+            (&EntryKind::Assistant, "Updating the notes."),
+            (
+                &EntryKind::Assistant,
+                "Change `notes.md`?\n\n```diff\n-draft\n+final\n```"
+            ),
+            (&EntryKind::System, "✓ Edited notes.md"),
+            (&EntryKind::Assistant, "Create `todo.md`?"),
+            (&EntryKind::System, "Not applied · keep it in notes.md"),
+            (&EntryKind::Assistant, "Updated notes.md."),
+            (
+                &EntryKind::System,
+                "Worked for 3s · 3 requests · 2 tool rounds · 1 file changed"
+            ),
+        ]
+    );
+    assert_eq!(c.review(), None);
+    Ok(())
+}

@@ -168,10 +168,7 @@ impl Rgb {
                 Some(value) => value,
                 None => 0,
             };
-            match u8::try_from(value) {
-                Ok(channel) => channel,
-                Err(_) => u8::MAX,
-            }
+            u8::try_from(value).unwrap_or(u8::MAX)
         };
         Self(
             mix(self.0, background.0),

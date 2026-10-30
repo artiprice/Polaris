@@ -9,21 +9,16 @@ import "../assets/fonts/Inter-Medium.ttf";
 import "../assets/fonts/space-grotesk.ttf";
 import "../assets/fonts/jetbrains-mono.ttf";
 
-import { AboutSlint, Palette } from "std-widgets.slint";
+import { Palette } from "std-widgets.slint";
 import { Tokens } from "tokens.slint";
 import { Icon, IconPaths } from "icons.slint";
 import { Brand, NavButton, Motion } from "parts.slint";
 import { Composer, DirectiveChip } from "composer.slint";
-import { SessionScreen, EntryRow, BlockRow, SessionRowUi, SessionGroup, SearchHitUi } from "session.slint";
+import { SessionScreen, EntryRow, BlockRow, DiffLine, SessionRowUi, SessionGroup, SearchHitUi } from "session.slint";
+import { ModelsPage, UsagePage, SettingsPage, ModelRowUi, ProviderRowUi, LabelValueUi } from "pages.slint";
 
-export { Tokens, DirectiveChip, EntryRow, BlockRow, SessionRowUi, SessionGroup, SearchHitUi }
+export { Tokens, DirectiveChip, EntryRow, BlockRow, DiffLine, SessionRowUi, SessionGroup, SearchHitUi, ModelRowUi, ProviderRowUi, LabelValueUi }
 
-// One row of the Models panel: an effort level and the provider's model for it.
-export struct ModelRowUi {
-    effort: string,
-    model: string,
-    active: bool,
-}
 
 export component AppWindow inherits Window {
     title: "Polaris";
@@ -48,12 +43,18 @@ export component AppWindow inherits Window {
     in property <[string]> model-names;
     in property <[string]> model-short-names;
     in property <[DirectiveChip]> directives;
-    in property <bool> motion-static;
+    in-out property <bool> motion-static;
     in property <string> notice;
     in property <bool> pending;
     in property <bool> working;
+    // Question of the change the reply waits on; empty when none.
+    in property <string> review-title;
     in property <[ModelRowUi]> model-rows;
     in property <[string]> usage-lines;
+    in property <[LabelValueUi]> usage-tiles;
+    in property <[ProviderRowUi]> provider-rows;
+    in property <[LabelValueUi]> settings-paths;
+    in property <string> connection-mode: "Local session store.";
     in property <bool> starting;
     in property <string> session-title;
     in property <[EntryRow]> entries;
@@ -84,6 +85,8 @@ export component AppWindow inherits Window {
     callback draft-edited(string);
     callback submit();
     callback interrupt();
+    callback review-apply(string);
+    callback review-decline(string);
     callback mode-chosen(int);
     callback model-chosen(int);
     callback effort-chosen(int);
@@ -93,6 +96,7 @@ export component AppWindow inherits Window {
     callback open-session(string);
     callback search-edited(string);
     callback show-sessions();
+    callback motion-toggled(bool);
 
     property <length> sidebar-width: 68px;
     property <length> topbar-height: 56px;
@@ -291,6 +295,7 @@ export component AppWindow inherits Window {
         state-dir: root.state-dir;
         starting: root.starting;
         notice: root.notice;
+        review-title: root.review-title;
         model-names: root.model-names;
         model-short-names: root.model-short-names;
         directives: root.directives;
@@ -305,6 +310,8 @@ export component AppWindow inherits Window {
         draft-edited(text) => { root.draft-edited(text); }
         submit => { root.submit(); }
         interrupt => { root.interrupt(); }
+        review-apply(note) => { root.review-apply(note); }
+        review-decline(note) => { root.review-decline(note); }
         mode-chosen(index) => { root.mode-chosen(index); }
         model-chosen(index) => { root.model-chosen(index); }
         effort-chosen(index) => { root.effort-chosen(index); }
@@ -424,7 +431,7 @@ export component AppWindow inherits Window {
                 color: Tokens.directive;
             }
             Text {
-                text: "Read-only conversation: the model reads workspace files and proposes patches; nothing is written.";
+                text: "The model reads workspace files with its tools; every change it proposes waits for your Apply or Decline (plan mode only reads).";
                 wrap: word-wrap;
                 font-size: 12px;
                 color: Tokens.muted-web;
@@ -446,208 +453,58 @@ export component AppWindow inherits Window {
         }
     }
 
-    // ---- models panel: the provider's model per effort ------------------------------------------
-    Rectangle {
-        x: root.in-session ? 12px : root.sidebar-width + 10px;
-        y: root.height - self.height - (root.in-session ? 58px : 22px);
-        width: 380px;
-        height: models-layout.preferred-height;
-        opacity: root.models-open ? 1 : 0;
-        visible: root.models-open || self.opacity > 0.01;
-        animate opacity { duration: Motion.fast; }
-        background: Tokens.surface;
-        border-width: 1px;
-        border-color: Tokens.line-strong;
-        border-radius: 12px;
-        drop-shadow-blur: 50px;
-        drop-shadow-offset-y: 12px;
-        drop-shadow-color: Tokens.panel-shadow;
-        accessible-role: groupbox;
-        accessible-label: "Models panel";
-        TouchArea { }
-        models-layout := VerticalLayout {
-            padding: 20px;
-            spacing: 8px;
-            Text {
-                text: "Models";
-                font-family: Tokens.font-display;
-                font-weight: 500;
-                font-size: 19px;
-                color: Tokens.text;
-            }
-            Text {
-                text: root.status-connection;
-                wrap: word-wrap;
-                font-size: 12px;
-                color: Tokens.muted-web;
-            }
-            Rectangle { height: 4px; }
-            if root.model-rows.length == 0: Text {
-                text: "No model provider is connected. Put OPENROUTER_API_KEY or NEBIUS_API_KEY in ~/.polaris/.env, or set local.model for a local server, then restart.";
-                wrap: word-wrap;
-                font-size: 12px;
-                color: Tokens.muted-web;
-            }
-            for row[index] in root.model-rows: Rectangle {
-                height: 34px;
-                border-radius: 8px;
-                background: row.active ? Tokens.row-checked-bg : (model-touch.has-hover ? Tokens.row-hover-bg : transparent);
-                animate background { duration: Motion.fast; }
-                accessible-role: button;
-                accessible-label: "Use " + row.model + " (" + row.effort + " effort)";
-                accessible-action-default => { root.choose-model(index); }
-                model-touch := TouchArea {
-                    mouse-cursor: pointer;
-                    clicked => { root.choose-model(index); }
-                }
-                HorizontalLayout {
-                    padding-left: 10px;
-                    padding-right: 10px;
-                    spacing: 10px;
-                    Text {
-                        width: 56px;
-                        vertical-alignment: center;
-                        text: row.effort;
-                        font-family: Tokens.font-mono;
-                        font-size: 11px;
-                        color: row.active ? Tokens.accent : Tokens.muted-web;
-                    }
-                    Text {
-                        vertical-alignment: center;
-                        text: row.model;
-                        overflow: elide;
-                        font-size: 13px;
-                        color: Tokens.text;
-                    }
-                }
-            }
-        }
+    // ---- pages: Models, Usage, Settings over the content (the welcome rail stays usable) --------
+    property <bool> page-open: root.models-open || root.usage-open || root.settings-open;
+    property <length> page-left: root.in-session ? 0px : root.sidebar-width;
+    function close-pages() {
+        root.models-open = false;
+        root.usage-open = false;
+        root.settings-open = false;
     }
-
-    // ---- usage panel: this session's tokens and activity across sessions ---------------------
-    Rectangle {
-        x: root.in-session ? 12px : root.sidebar-width + 10px;
-        y: root.height - self.height - (root.in-session ? 58px : 22px);
-        width: 420px;
-        height: min(root.height - 44px, usage-layout.preferred-height);
-        opacity: root.usage-open ? 1 : 0;
-        visible: root.usage-open || self.opacity > 0.01;
+    if root.page-open: Rectangle {
+        x: root.page-left;
+        width: root.width - root.page-left;
+        height: root.height;
+        opacity: 0;
         animate opacity { duration: Motion.fast; }
-        background: Tokens.surface;
-        border-width: 1px;
-        border-color: Tokens.line-strong;
-        border-radius: 12px;
-        clip: true;
-        drop-shadow-blur: 50px;
-        drop-shadow-offset-y: 12px;
-        drop-shadow-color: Tokens.panel-shadow;
-        accessible-role: groupbox;
-        accessible-label: "Usage panel";
-        TouchArea { }
-        usage-layout := VerticalLayout {
-            padding: 20px;
-            spacing: 4px;
-            Text {
-                text: "Usage";
-                font-family: Tokens.font-display;
-                font-weight: 500;
-                font-size: 19px;
-                color: Tokens.text;
-            }
-            Rectangle { height: 6px; }
-            for line in root.usage-lines: Text {
-                text: line;
-                font-family: Tokens.font-mono;
-                font-size: 11px;
-                color: Tokens.muted-web;
-            }
+        init => { self.opacity = 1; }
+        Rectangle {
+            background: Tokens.canvas;
+            opacity: 0.8;
         }
-    }
-
-    // ---- settings panel (About + Slint royalty-free licence attribution, ADR-014) ----------------
-    Rectangle {
-        x: root.in-session ? 12px : root.sidebar-width + 10px;
-        y: root.height - self.height - (root.in-session ? 58px : 22px);
-        width: 340px;
-        height: settings-layout.preferred-height;
-        opacity: root.settings-open ? 1 : 0;
-        visible: root.settings-open || self.opacity > 0.01;
-        animate opacity { duration: Motion.fast; }
-        background: Tokens.surface;
-        border-width: 1px;
-        border-color: Tokens.line-strong;
-        border-radius: 12px;
-        drop-shadow-blur: 50px;
-        drop-shadow-offset-y: 12px;
-        drop-shadow-color: Tokens.panel-shadow;
-        accessible-role: groupbox;
-        accessible-label: "Settings panel";
-        TouchArea { }
-        settings-layout := VerticalLayout {
-            padding: 20px;
-            spacing: 8px;
-            Text {
-                text: "Settings";
-                font-family: Tokens.font-display;
-                font-weight: 500;
-                font-size: 19px;
-                color: Tokens.text;
-            }
-            Rectangle { height: 6px; }
-            Text {
-                text: "APPEARANCE";
-                font-family: Tokens.font-mono;
-                font-size: 10px;
-                letter-spacing: 0.8px;
-                color: Tokens.muted-web;
-            }
-            Text {
-                text: "Theme: dark · tokens shared with the terminal UI";
-                wrap: word-wrap;
-                font-size: 12px;
-                color: Tokens.muted-web;
-            }
-            Text {
-                text: root.motion-static ? "Motion: reduced · the aurora is a still frame" : "Motion: full · the aurora animates at 20 fps";
-                wrap: word-wrap;
-                font-size: 12px;
-                color: Tokens.muted-web;
-            }
-            Rectangle { height: 6px; }
-            Text {
-                text: "ABOUT";
-                font-family: Tokens.font-mono;
-                font-size: 10px;
-                letter-spacing: 0.8px;
-                color: Tokens.muted-web;
-            }
-            Text {
-                text: "Polaris";
-                font-family: Tokens.font-display;
-                font-weight: 500;
-                font-size: 16px;
-                color: Tokens.text;
-            }
-            Text {
-                text: "Version " + root.app-version + " · Apache-2.0";
-                font-family: Tokens.font-mono;
-                font-size: 11px;
-                color: Tokens.muted-web;
-            }
-            Text {
-                text: "Desktop shell. Sessions are recorded locally; model execution, uploads and speech input are not connected yet.";
-                wrap: word-wrap;
-                font-size: 12px;
-                color: Tokens.muted-web;
-            }
-            Rectangle {
-                height: 1px;
-                background: Tokens.line;
-            }
-            Rectangle {
-                height: 140px;
-                AboutSlint { }
-            }
+        TouchArea {
+            clicked => { root.close-pages(); }
         }
-    }
-}
+        if root.models-open: ModelsPage {
+            x: (parent.width - self.width) / 2;
+            y: 40px;
+            width: min(760px, parent.width - 64px);
+            height: min(parent.height - 80px, self.natural-height);
+            connection: root.status-connection;
+            rows: root.model-rows;
+            providers: root.provider-rows;
+            choose(index) => { root.choose-model(index); }
+            close => { root.close-pages(); }
+        }
+        if root.usage-open: UsagePage {
+            x: (parent.width - self.width) / 2;
+            y: 40px;
+            width: min(760px, parent.width - 64px);
+            height: min(parent.height - 80px, self.natural-height);
+            tiles: root.usage-tiles;
+            activity: root.usage-lines;
+            close => { root.close-pages(); }
+        }
+        if root.settings-open: SettingsPage {
+            x: (parent.width - self.width) / 2;
+            y: 40px;
+            width: min(760px, parent.width - 64px);
+            height: min(parent.height - 80px, self.natural-height);
+            app-version: root.app-version;
+            paths: root.settings-paths;
+            connection-mode: root.connection-mode;
+            reduce-motion <=> root.motion-static;
+            motion-toggled(on) => { root.motion-toggled(on); }
+            close => { root.close-pages(); }
+        }
+    }}

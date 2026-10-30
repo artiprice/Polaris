@@ -50,10 +50,11 @@ fn reserve_dispatch_and_reconcile_do_not_allocate() -> Result<(), Box<dyn std::e
     let before = dhat::HeapStats::get();
     let mut successes = 0_u32;
     for _ in 0..512 {
-        if let Ok(mut permit) = limiter.try_acquire(estimate, Priority::InteractiveUser) {
-            if permit.mark_dispatched().is_ok() && permit.reconcile(1).is_ok() {
-                successes = successes.saturating_add(1);
-            }
+        if let Ok(mut permit) = limiter.try_acquire(estimate, Priority::InteractiveUser)
+            && permit.mark_dispatched().is_ok()
+            && permit.reconcile(1).is_ok()
+        {
+            successes = successes.saturating_add(1);
         }
     }
     let after = dhat::HeapStats::get();

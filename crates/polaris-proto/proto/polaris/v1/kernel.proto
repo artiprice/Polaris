@@ -16,6 +16,33 @@ service PolarisKernelService {
   rpc AttachTerminal(stream TerminalClientFrame) returns (stream TerminalServerFrame);
   // Liveness probe.
   rpc Health(HealthRequest) returns (HealthResponse);
+  // Records one line typed in an attached frontend, as user input or as one `$directive`. The
+  // server submits it through its own command authority after authorizing the bearer, so a
+  // client never mints kernel commands (protocol 1.3).
+  rpc SubmitText(SubmitTextRequest) returns (SubmitCommandResponse);
+  // Reads the text that a directive or user-input event of the session references (protocol 1.3).
+  rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
+}
+
+message SubmitTextRequest {
+  Uuid session = 1;
+  // UTF-8 text, at most 64 KiB.
+  string text = 2;
+  // Apply the text as one session directive instead of recording it as user input.
+  bool directive = 3;
+  reserved 100 to 199;
+}
+
+message ReadTextRequest {
+  Uuid session = 1;
+  // Digest referenced by a `DirectiveApplied` or `UserInputSubmitted` event of the session.
+  Cid text = 2;
+  reserved 100 to 199;
+}
+
+message ReadTextResponse {
+  string text = 1;
+  reserved 100 to 199;
 }
 
 message SubmitCommandRequest {

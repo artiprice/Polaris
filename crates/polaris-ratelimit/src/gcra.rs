@@ -36,7 +36,10 @@ pub struct Denied {
 
 impl Denied {
     pub(crate) const fn new(reason: DenyReason, retry_after: Duration) -> Self {
-        Self { retry_after, reason }
+        Self {
+            retry_after,
+            reason,
+        }
     }
 
     pub(crate) const fn accounting() -> Self {

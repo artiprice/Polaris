@@ -68,14 +68,11 @@ impl<C: Clock> Permit<C> {
     /// publish it. In that case this result reports no refund and sets `settlement_deferred`.
     pub fn reconcile(mut self, actual_tokens: u64) -> Result<Reconciliation, RateLimitError> {
         let minute = self.dispatched_minute.ok_or(RateLimitError::Undispatched)?;
-        let now_ns = match gcra::duration_ns(self.shared.clock.now()) {
-            Some(value) => value,
-            None => u64::MAX,
-        };
-        let (refunded_tokens, settlement_deferred) = self
-            .shared
-            .ledger
-            .settle(self.reservation, actual_tokens, now_ns)?;
+        let now_ns = gcra::duration_ns(self.shared.clock.now()).unwrap_or(u64::MAX);
+        let (refunded_tokens, settlement_deferred) =
+            self.shared
+                .ledger
+                .settle(self.reservation, actual_tokens, now_ns)?;
         self.settlement_published = true;
         self.shared.windows.record_actual(minute, actual_tokens);
         let unused_tokens = self.reserved_tokens.saturating_sub(actual_tokens);
@@ -85,7 +82,10 @@ impl<C: Clock> Permit<C> {
         } else if reservation_overrun {
             (0, 0)
         } else {
-            (refunded_tokens, unused_tokens.saturating_sub(refunded_tokens))
+            (
+                refunded_tokens,
+                unused_tokens.saturating_sub(refunded_tokens),
+            )
         };
         Ok(Reconciliation {
             reserved_tokens: self.reserved_tokens,
@@ -122,10 +122,7 @@ impl<C: Clock> Drop for Permit<C> {
         if self.settlement_published {
             return;
         }
-        let now_ns = match gcra::duration_ns(self.shared.clock.now()) {
-            Some(value) => value,
-            None => u64::MAX,
-        };
+        let now_ns = gcra::duration_ns(self.shared.clock.now()).unwrap_or(u64::MAX);
         if self.dispatched_minute.is_some() {
             self.shared.ledger.commit_drop(self.reservation, now_ns);
         } else {

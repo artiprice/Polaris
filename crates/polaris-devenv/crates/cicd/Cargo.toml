@@ -26,3 +26,7 @@ bytes = { workspace = true }
 [[test]]
 name = "cicd_sandbox_lifecycle"
 path = "../../../../tests/crates/polaris-devenv/crates/cicd/cicd_sandbox_lifecycle.rs"
+
+[[test]]
+name = "cache_mounts"
+path = "../../../../tests/crates/polaris-devenv/crates/cicd/cache_mounts.rs"

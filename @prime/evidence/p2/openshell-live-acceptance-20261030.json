@@ -1,0 +1,47 @@
+{
+    "date":  "2026-10-30",
+    "gateway":  "OpenShell 0.1.4, Docker driver, WSL Ubuntu 24.04, https://127.0.0.1:17670 (mTLS)",
+    "image":  "sha256:50163fb363ca651a140721d2b7795ee26bf21fc85fbd819af7a801f1c4ea7137",
+    "base_image":  "nvcr.io/nvidia/base/ubuntu@sha256:d9461f428eea54e553add3a5158a0f245c6e1ea73efc59fff8e98e3d4a38e378",
+    "harness":  "@prime/tools/sandbox/verify-headless.ps1 (release polaris.exe), fixture @prime/tools/sandbox/acceptance-fixture, policy acceptance-policy.yaml",
+    "smoke_test":  "verify-openshell.sh RESULT: PASS (create 10145 ms, exec 172 ms, exit-code propagation, byte-exact upload, delete)",
+    "replay":  "positive review re-executed after restart: refused (execution approval was already consumed), status blocked, no second run or proof",
+    "cases":  [
+                  {
+                      "case":  "positive",
+                      "exit_code":  0,
+                      "status":  "proof_passed",
+                      "sandbox_runs":  1,
+                      "proof_passed":  1,
+                      "proof_blocked":  0,
+                      "unresolved_resources":  0
+                  },
+                  {
+                      "case":  "zero-tests",
+                      "exit_code":  1,
+                      "status":  "blocked",
+                      "sandbox_runs":  1,
+                      "proof_passed":  0,
+                      "proof_blocked":  1,
+                      "unresolved_resources":  0
+                  },
+                  {
+                      "case":  "failing-command",
+                      "exit_code":  1,
+                      "status":  "blocked",
+                      "sandbox_runs":  1,
+                      "proof_passed":  0,
+                      "proof_blocked":  1,
+                      "unresolved_resources":  0
+                  },
+                  {
+                      "case":  "minimum-tests",
+                      "exit_code":  1,
+                      "status":  "blocked",
+                      "sandbox_runs":  1,
+                      "proof_passed":  0,
+                      "proof_blocked":  1,
+                      "unresolved_resources":  0
+                  }
+              ]
+}

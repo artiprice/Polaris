@@ -34,6 +34,7 @@ use polaris_ui_model::{
 use polaris_ui_session::{ConversationHost, HostEvent, TurnReport};
 use ratatui::{Terminal, TerminalOptions, Viewport, backend::CrosstermBackend, layout::Rect};
 use std::{
+    collections::{BTreeMap, VecDeque},
     io::{self, IsTerminal, Write},
     path::PathBuf,
     str::FromStr,
@@ -192,7 +193,8 @@ fn preference_overrides(args: &Args) -> PreferenceOverrides {
 }
 fn options_from_preferences(
     preferences: polaris_config::CliPreferences,
-    dump: bool,
+    // Only the Windows live-TTY colour policy reads it.
+    #[cfg_attr(not(windows), allow(unused_variables))] dump: bool,
 ) -> RenderOptions {
     use polaris_config::{CliColorDepth, CliColorPolicy, CliTheme};
     let no_color = std::env::var_os("NO_COLOR").is_some();
@@ -493,7 +495,15 @@ fn help_lines() -> Vec<String> {
             .to_owned(),
         "Enter sends; Shift+Enter inserts a newline. Ctrl+J or Alt+Enter are compatibility fallbacks."
             .to_owned(),
-        "This conversation is read-only: the model proposes changes as patches; nothing is written."
+        "Auto mode may change files: each change shows its diff; y applies, n declines, Enter with a note declines with it. Plan mode only reads."
+            .to_owned(),
+        "NVIDIA: /nv-profile shows the detected stack and GPUs, /nv-verify runs the CUDA advisor; $nvidia(off|list|auto) controls what replies get."
+            .to_owned(),
+        "/hack audits the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA bugs."
+            .to_owned(),
+        "/ci shows the workspace's CI pipeline; /ci-run runs it in Docker with cached cargo home and target."
+            .to_owned(),
+        "/search-local <words> ranks workspace passages (lexical); $rag adds the best ones to each question."
             .to_owned(),
     ];
     lines.push(
@@ -528,8 +538,16 @@ enum BackendRequest {
     SetEffort(Effort),
     /// Activity across every local session.
     Stats,
+    /// `/nv-profile`, `/nv-verify` or `/hack` on the session's workspace.
+    Local(polaris_ui_session::commands::LocalCommand),
     Sessions,
     Resume(SessionId),
+    /// Apply or decline the change the running turn waits on.
+    Review {
+        request_id: polaris_sdk::human::HumanRequestId,
+        apply: bool,
+        note: Option<String>,
+    },
 }
 #[derive(Debug)]
 enum BackendMessage {
@@ -654,6 +672,8 @@ pub async fn run(
     if !demo {
         chat.start_pick();
     }
+    // Changes the running turn waits on, by request id, for answers from the terminal.
+    let mut reviews = BTreeMap::new();
     let backend_result = async {
         loop {
             tokio::select! {
@@ -681,6 +701,16 @@ pub async fn run(
                     Err(error) => break Err(error),
                 },
                 event = chat.next_event() => {
+                    match &event {
+                        HostEvent::Progress(ChatProgress::Review(review)) => {
+                            reviews.insert(review.request_id, review.clone());
+                        }
+                        HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                            reviews.remove(id);
+                        }
+                        HostEvent::Finished(_) | HostEvent::Failed(_) => reviews.clear(),
+                        _ => {}
+                    }
                     if let Err(error) = handle_chat_event(event, &events_tx) {
                         break Err(error);
                     }
@@ -693,6 +723,14 @@ pub async fn run(
                         }
                         chat.start_pick();
                         send_message(&events_tx, BackendMessage::OfflineReady)?;
+                        if let Some(note) = session.as_ref().and_then(OfflineSession::sandbox_note) {
+                            send_message(
+                                &events_tx,
+                                BackendMessage::QueryFailed(format!(
+                                    "Tests cannot run in the sandbox in this session: {note}"
+                                )),
+                            )?;
+                        }
                         continue;
                     }
                     let Some(active) = session.as_mut() else {
@@ -748,6 +786,31 @@ pub async fn run(
                             chat.cancel_turn();
                             None
                         }
+                        BackendRequest::Review { request_id, apply, note } => {
+                            match reviews.get(&request_id) {
+                                Some(review) => match polaris_ui_session::answer_review(
+                                    active.kernel(),
+                                    review,
+                                    apply,
+                                    note,
+                                )
+                                .await
+                                {
+                                    Ok(()) => None,
+                                    // A declined test run stops the reply waiting on it.
+                                    Err(polaris_ui_session::ChatError::Cancelled) => {
+                                        chat.cancel_turn();
+                                        None
+                                    }
+                                    Err(error) => {
+                                        Some(BackendMessage::QueryFailed(error.to_string()))
+                                    }
+                                },
+                                None => Some(BackendMessage::QueryFailed(
+                                    "That change is no longer waiting for a decision".to_owned(),
+                                )),
+                            }
+                        }
                         BackendRequest::ClearChat => {
                             chat.clear();
                             None
@@ -771,6 +834,23 @@ pub async fn run(
                                 }
                                 Err(error) => BackendMessage::QueryFailed(error.to_string()),
                             })
+                        }
+                        BackendRequest::Local(command) => {
+                            // Answered off the backend loop: a CI run can take minutes.
+                            let kernel = active.kernel().clone();
+                            let workspace = active.workspace().to_path_buf();
+                            let events = events_tx.clone();
+                            tokio::spawn(async move {
+                                let message = match command.run(&kernel, &workspace).await {
+                                    Ok(lines) => BackendMessage::Sheet {
+                                        title: command.title().to_owned(),
+                                        lines,
+                                    },
+                                    Err(error) => BackendMessage::QueryFailed(error.to_string()),
+                                };
+                                let _delivered = send_message(&events, message);
+                            });
+                            None
                         }
                         BackendRequest::Sessions => Some(match active.list_sessions().await {
                             Ok(rows) => BackendMessage::Sheet {
@@ -814,11 +894,10 @@ pub async fn run(
                             }
                         }
                     };
-                    if let Some(message) = reply {
-                        if let Err(error) = send_message(&events_tx, message) {
+                    if let Some(message) = reply
+                        && let Err(error) = send_message(&events_tx, message) {
                             break Err(error);
                         }
-                    }
                 }
             }
         }
@@ -911,6 +990,10 @@ struct TurnUi {
     /// A new model request began after text was shown; separate the next text.
     break_pending: bool,
     phase: TurnPhase,
+    /// A change waits for the person's decision.
+    waiting: bool,
+    /// A review card ended the streamed text; a later answer goes below it.
+    after_review: bool,
 }
 impl TurnUi {
     fn new() -> Self {
@@ -919,9 +1002,15 @@ impl TurnUi {
             entry: None,
             break_pending: false,
             phase: TurnPhase::Waiting,
+            waiting: false,
+            after_review: false,
         }
     }
     fn label(&self) -> String {
+        if self.waiting {
+            return "◆ Waiting for your decision · y apply · n don't apply · or type a note and Enter"
+                .to_owned();
+        }
         const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         let elapsed = self.started.elapsed();
         let frame = usize::try_from(elapsed.as_millis() / 100).unwrap_or(0) % SPINNER.len();
@@ -1071,6 +1160,8 @@ struct UiState {
     /// Short footer label of the live model (`vendor/name:tag` -> `name`).
     model_label: Option<String>,
     turn: Option<TurnUi>,
+    /// Changes the running turn waits on, oldest first.
+    reviews: VecDeque<polaris_ui_session::ChangeReview>,
     activity: String,
 }
 impl UiState {
@@ -1153,6 +1244,7 @@ impl UiState {
             provider_skipped: Vec::new(),
             model_label: None,
             turn: None,
+            reviews: VecDeque::new(),
             activity: String::new(),
         })
     }
@@ -1226,14 +1318,57 @@ impl UiState {
         }
     }
     /// Close the running turn with its final answer and a short work summary.
+    /// Show a change the turn waits on: its prompt (with the diff) and how to decide.
+    fn show_review(&mut self, review: polaris_ui_session::ChangeReview) {
+        if self
+            .reviews
+            .iter()
+            .any(|known| known.request_id == review.request_id)
+        {
+            return;
+        }
+        if let Some(turn) = self.turn.as_mut() {
+            turn.entry = None;
+            turn.break_pending = false;
+            turn.waiting = true;
+            turn.after_review = true;
+        }
+        let view = self.offline_view_mut();
+        let shown = view.push_assistant(review.prompt.clone()).and_then(|()| {
+            view.push_system(
+                "y apply · n don't apply · or type a note and press Enter to decline with it",
+            )
+        });
+        if let Err(error) = shown {
+            self.notice = format!("Reply display limit reached: {error}");
+        }
+        self.reviews.push_back(review);
+        self.history_scroll = 0;
+    }
+    fn close_review(&mut self, id: polaris_sdk::human::HumanRequestId) {
+        self.reviews.retain(|review| review.request_id != id);
+        let waiting = !self.reviews.is_empty();
+        if let Some(turn) = self.turn.as_mut() {
+            turn.waiting = waiting;
+        }
+    }
     fn finish_turn(&mut self, report: TurnReport) {
-        let streamed = self.turn.take().is_some_and(|turn| turn.entry.is_some());
+        let (streamed, after_review) = self.turn.take().map_or((false, false), |turn| {
+            (turn.entry.is_some(), turn.after_review)
+        });
+        self.reviews.clear();
         let view = self.offline_view_mut();
         let mut result = Ok(());
+        let answer = report
+            .answer
+            .as_deref()
+            .map(str::trim)
+            .filter(|answer| !answer.is_empty());
         if !streamed {
-            result = match report.answer.as_deref().map(str::trim) {
-                Some(answer) if !answer.is_empty() => view.push_assistant(answer.to_owned()),
-                _ => view.push_warning(format!(
+            result = match answer {
+                Some(answer) => view.push_assistant(answer.to_owned()),
+                None if after_review => Ok(()),
+                None => view.push_warning(format!(
                     "The model stopped without an answer ({})",
                     report.stop
                 )),
@@ -1338,34 +1473,37 @@ impl UiState {
             && self.gallery.page() == GalleryPage::Welcome
             && !question_focused(self)
             && !self.completion_dismissed
-        {
-            if let Some(token) =
+            && let Some(token) =
                 completion::detect_token(self.composer.text(), self.composer.cursor())
-            {
-                if token.kind == completion::CompletionKind::Command {
-                    for (name, _page, description) in LOCAL_VIEW_COMMANDS {
-                        if name.trim_start_matches('/').starts_with(token.query) {
-                            if let Some(existing) =
-                                self.completion.iter_mut().find(|item| item.insert == *name)
-                            {
-                                if self.demo_active {
-                                    existing.description = description;
-                                }
-                            } else if *name == "/preview" {
-                                self.completion.push(completion::Suggestion {
-                                    label: (*name).to_owned(),
-                                    insert: (*name).to_owned(),
-                                    description,
-                                    kind: completion::CompletionKind::Command,
-                                    range: token.start..token.end,
-                                });
-                            }
+            && token.kind == completion::CompletionKind::Command
+        {
+            for (name, _page, description) in LOCAL_VIEW_COMMANDS {
+                if name.trim_start_matches('/').starts_with(token.query) {
+                    if let Some(existing) =
+                        self.completion.iter_mut().find(|item| item.insert == *name)
+                    {
+                        if self.demo_active {
+                            existing.description = description;
                         }
-                    }
-                    if self.demo_active && "demo".starts_with(token.query) {
-                        self.completion.push(completion::Suggestion { label: "/demo".to_owned(), insert: "/demo".to_owned(), description: "Demo gallery; /demo reset, replay, cancel, long or questions", kind: completion::CompletionKind::Command, range: token.start..token.end });
+                    } else if *name == "/preview" {
+                        self.completion.push(completion::Suggestion {
+                            label: (*name).to_owned(),
+                            insert: (*name).to_owned(),
+                            description,
+                            kind: completion::CompletionKind::Command,
+                            range: token.start..token.end,
+                        });
                     }
                 }
+            }
+            if self.demo_active && "demo".starts_with(token.query) {
+                self.completion.push(completion::Suggestion {
+                    label: "/demo".to_owned(),
+                    insert: "/demo".to_owned(),
+                    description: "Demo gallery; /demo reset, replay, cancel, long or questions",
+                    kind: completion::CompletionKind::Command,
+                    range: token.start..token.end,
+                });
             }
         }
         if self
@@ -1385,23 +1523,23 @@ impl UiState {
                 self.switch_profile(false)?;
             }
             BackendMessage::Record(item) => {
-                if let Some(text) = item.text.as_ref() {
-                    if item.record.session() == self.id {
-                        match self.views.get(self.id) {
-                            Some(view) => view,
-                            None => &self.empty,
-                        }
-                        .check_user_capacity(text)
-                        .map_err(ui_error)?;
+                if let Some(text) = item.text.as_ref()
+                    && item.record.session() == self.id
+                {
+                    match self.views.get(self.id) {
+                        Some(view) => view,
+                        None => &self.empty,
                     }
+                    .check_user_capacity(text)
+                    .map_err(ui_error)?;
                 }
                 self.views
                     .apply_selected(&item.record, self.id)
                     .map_err(|e| CliError::Ui(format!("projection requires recovery: {e}")))?;
-                if item.record.session() == self.id {
-                    if let Some(text) = item.text {
-                        self.offline_view_mut().push_user(text).map_err(ui_error)?;
-                    }
+                if item.record.session() == self.id
+                    && let Some(text) = item.text
+                {
+                    self.offline_view_mut().push_user(text).map_err(ui_error)?;
                 }
             }
             BackendMessage::Committed => {
@@ -1472,10 +1610,10 @@ impl UiState {
             BackendMessage::TurnProgress(item) => match item {
                 ChatProgress::Text(delta) => self.stream_text(&delta),
                 ChatProgress::Reasoning(_) => {
-                    if let Some(turn) = self.turn.as_mut() {
-                        if turn.phase != TurnPhase::Writing {
-                            turn.phase = TurnPhase::Thinking;
-                        }
+                    if let Some(turn) = self.turn.as_mut()
+                        && turn.phase != TurnPhase::Writing
+                    {
+                        turn.phase = TurnPhase::Thinking;
                     }
                 }
                 ChatProgress::Request => {
@@ -1484,10 +1622,29 @@ impl UiState {
                         turn.phase = TurnPhase::Waiting;
                     }
                 }
+                ChatProgress::Review(review) => self.show_review(review),
+                ChatProgress::ReviewClosed(id) => self.close_review(id),
+                ChatProgress::Applied(path) => {
+                    if let Err(error) = self
+                        .offline_view_mut()
+                        .push_system(format!("✓ Edited {path}"))
+                    {
+                        self.notice = format!("Reply display limit reached: {error}");
+                    }
+                }
+                ChatProgress::Deleted(path) => {
+                    if let Err(error) = self
+                        .offline_view_mut()
+                        .push_system(format!("✓ Deleted {path}"))
+                    {
+                        self.notice = format!("Reply display limit reached: {error}");
+                    }
+                }
             },
             BackendMessage::TurnFinished(report) => self.finish_turn(report),
             BackendMessage::TurnFailed(reason) => {
                 self.turn = None;
+                self.reviews.clear();
                 self.activity.clear();
                 let view = self.offline_view_mut();
                 let shown = if reason == polaris_ui_session::host::INTERRUPTED {
@@ -1626,10 +1783,10 @@ fn request_copy(state: &mut UiState, cut: bool) -> Result<(), CliError> {
         None
     };
     request_copy_text(state, text)?;
-    if let Some((draft, range)) = pending {
-        if state.notice == "Copying text…" {
-            state.pending_cut = Some((state.clipboard_generation, draft, range));
-        }
+    if let Some((draft, range)) = pending
+        && state.notice == "Copying text…"
+    {
+        state.pending_cut = Some((state.clipboard_generation, draft, range));
     }
     Ok(())
 }
@@ -1739,41 +1896,39 @@ fn poll_services(state: &mut UiState) -> Result<bool, CliError> {
         let Some(result) = result else { break };
         changed |= receive_clipboard_result(state, result);
     }
-    if let Some(result) = state.index.as_ref().and_then(WorkspaceFileIndex::try_recv) {
-        if result.generation == state.index_generation {
-            match result.result {
-                Ok(snapshot) => {
-                    state.paths = StaticPathIndex::new(snapshot.paths);
-                    state.refresh_completion();
-                    if snapshot.truncated {
-                        state.notice =
-                            "File suggestions use a bounded workspace snapshot".to_owned();
-                    }
+    if let Some(result) = state.index.as_ref().and_then(WorkspaceFileIndex::try_recv)
+        && result.generation == state.index_generation
+    {
+        match result.result {
+            Ok(snapshot) => {
+                state.paths = StaticPathIndex::new(snapshot.paths);
+                state.refresh_completion();
+                if snapshot.truncated {
+                    state.notice = "File suggestions use a bounded workspace snapshot".to_owned();
                 }
-                Err(error) => state.notice = format!("File index: {error}"),
             }
-            changed = true;
+            Err(error) => state.notice = format!("File index: {error}"),
         }
+        changed = true;
     }
     if let Some(result) = state
         .settings_worker
         .as_ref()
         .and_then(SettingsService::try_recv)
+        && result.generation == state.settings_generation
     {
-        if result.generation == state.settings_generation {
-            state.settings_pending = false;
-            match result.result {
-                Ok(settings) => {
-                    state.settings = Some(settings);
-                    state.notice = "Selected CLI preference saved to global config".to_owned();
-                }
-                Err(reason) => state.notice = reason,
+        state.settings_pending = false;
+        match result.result {
+            Ok(settings) => {
+                state.settings = Some(settings);
+                state.notice = "Selected CLI preference saved to global config".to_owned();
             }
-            if state.settings_open {
-                refresh_settings_sheet(state);
-            }
-            changed = true;
+            Err(reason) => state.notice = reason,
         }
+        if state.settings_open {
+            refresh_settings_sheet(state);
+        }
+        changed = true;
     }
     if changed {
         state.layout_dirty = true;
@@ -2540,9 +2695,22 @@ fn submit_draft(
                 open_sheet(state, "Providers", lines)
             }
             SlashCommand::Onboarding => open_sheet(state, "Getting started", onboarding_lines()),
-            SlashCommand::Diff | SlashCommand::Undo | SlashCommand::Rollback(_) => {
+            SlashCommand::Diff | SlashCommand::Undo => {
+                use polaris_ui_session::commands::LocalCommand;
+                let local = if matches!(command, SlashCommand::Undo) {
+                    LocalCommand::Undo
+                } else {
+                    LocalCommand::Diff
+                };
+                if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::Rollback(_) => {
                 state.notice =
-                    "No files changed: this conversation is read-only and proposes patches only"
+                    "Rollback to a step is not available; /undo restores the newest applied change"
                         .to_owned();
             }
             SlashCommand::Sessions => {
@@ -2632,32 +2800,119 @@ fn submit_draft(
                     }
                 }
             },
-            SlashCommand::Plan
-            | SlashCommand::Goal(_)
-            | SlashCommand::SessionReplay { .. }
-            | SlashCommand::NvProfile
+            SlashCommand::NvProfile
             | SlashCommand::NvVerify
-            | SlashCommand::NebiusStatus
+            | SlashCommand::Hack
+            | SlashCommand::Ci
+            | SlashCommand::CiRun
+            | SlashCommand::SearchLocal(_)
+            | SlashCommand::SearchWeb(_)
+            | SlashCommand::NvDocs(_)
+            | SlashCommand::NvDocsSync
+            | SlashCommand::Research(_) => {
+                use polaris_ui_session::commands::LocalCommand;
+                use polaris_ui_session::research::ResearchCommand;
+                let local = match command {
+                    SlashCommand::Research(research) => {
+                        use polaris_kernel::directives::slash::ResearchCmd;
+                        LocalCommand::Research(match research {
+                            ResearchCmd::Start(goal) => {
+                                state.notice =
+                                    "Research run started; the report opens when it ends"
+                                        .to_owned();
+                                ResearchCommand::Start(goal)
+                            }
+                            ResearchCmd::Status => ResearchCommand::Status,
+                            ResearchCmd::Report => ResearchCommand::Report,
+                            ResearchCmd::Resume => {
+                                state.notice =
+                                    "Research run resumed; the report opens when it ends"
+                                        .to_owned();
+                                ResearchCommand::Resume
+                            }
+                        })
+                    }
+                    SlashCommand::NvProfile => LocalCommand::NvProfile,
+                    SlashCommand::NvVerify => LocalCommand::NvVerify,
+                    SlashCommand::Ci => LocalCommand::Ci,
+                    SlashCommand::CiRun => {
+                        state.notice = "Running the CI pipeline in Docker…".to_owned();
+                        LocalCommand::CiRun
+                    }
+                    SlashCommand::SearchLocal(query) => LocalCommand::SearchLocal(query),
+                    SlashCommand::SearchWeb(query) => LocalCommand::SearchWeb(query),
+                    SlashCommand::NvDocs(query) => LocalCommand::NvDocs(query),
+                    SlashCommand::NvDocsSync => {
+                        state.notice = "Downloading the NVIDIA documentation seed…".to_owned();
+                        LocalCommand::NvDocsSync
+                    }
+                    _ => LocalCommand::Hack,
+                };
+                if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::Plan => {
+                state.view_mut().toggle_mode();
+                state.notice = match state.view().mode {
+                    polaris_ui_model::view::Mode::Plan => {
+                        "Plan mode: the model plans before answering".to_owned()
+                    }
+                    polaris_ui_model::view::Mode::Auto => "Auto mode".to_owned(),
+                };
+            }
+            SlashCommand::ProofOfDone | SlashCommand::ContextMap | SlashCommand::ParallelDag => {
+                state.panel_kind = match command {
+                    SlashCommand::ProofOfDone => PanelKind::Proof,
+                    SlashCommand::ContextMap => PanelKind::Context,
+                    _ => PanelKind::Agents,
+                };
+                state.panel = true;
+                state.panel_scroll = 0
+            }
+            SlashCommand::ConcurrencyStats | SlashCommand::CacheStats => {
+                if let Err(error) = queue_request(commands, BackendRequest::Stats) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::SessionReplay { id, .. } => {
+                if let Err(error) = queue_request(commands, BackendRequest::Resume(id)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+                state.switch_pending = true;
+                state.notice = "Replaying the session's records".to_owned();
+            }
+            SlashCommand::Redteam => {
+                use polaris_ui_session::commands::LocalCommand;
+                if let Err(error) =
+                    queue_request(commands, BackendRequest::Local(LocalCommand::Hack))
+                {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
+            }
+            SlashCommand::NebiusStatus
             | SlashCommand::ContreeBranches
             | SlashCommand::DatalabSync
-            | SlashCommand::DatalabFinetune
-            | SlashCommand::ConcurrencyStats
-            | SlashCommand::CacheStats
+            | SlashCommand::DatalabFinetune => {
+                state.notice = "Nebius services are out of scope for this build (not available in this region); draft retained".to_owned();
+                state.composer.cancel_submit(prepared);
+                return Ok(false);
+            }
+            SlashCommand::Goal(_)
             | SlashCommand::CachePurge
-            | SlashCommand::Research(_)
-            | SlashCommand::ContextMap
             | SlashCommand::ContextExpand(_)
-            | SlashCommand::ParallelDag
             | SlashCommand::Screenshot
             | SlashCommand::Browser(_)
             | SlashCommand::UiDiff
-            | SlashCommand::Hack
-            | SlashCommand::Redteam
-            | SlashCommand::SearchLocal(_)
-            | SlashCommand::Ci
-            | SlashCommand::CiRun
-            | SlashCommand::NixFlake
-            | SlashCommand::ProofOfDone => {
+            | SlashCommand::NixFlake => {
                 state.notice = "This command requires its real backend profile and is unavailable here; draft retained".to_owned();
                 state.composer.cancel_submit(prepared);
                 return Ok(false);
@@ -2748,21 +3003,80 @@ fn composer_area(state: &UiState) -> Rect {
     screen::composer_rect(&projection(state, &lines, ""), state.viewport)
 }
 fn accept_completion(state: &mut UiState) -> Result<(), CliError> {
-    if let Some(index) = state.completion_selected {
-        if let Some(s) = state.completion.get(index) {
-            let range = s.range.clone();
-            let insert = s.insert.clone();
-            state
-                .composer
-                .apply_completion(range, &insert)
-                .map_err(ui_error)?;
-        }
+    if let Some(index) = state.completion_selected
+        && let Some(s) = state.completion.get(index)
+    {
+        let range = s.range.clone();
+        let insert = s.insert.clone();
+        state
+            .composer
+            .apply_completion(range, &insert)
+            .map_err(ui_error)?;
     }
     state.completion_dismissed = true;
     state.notice.clear();
     state.refresh_completion();
     Ok(())
 }
+/// While a change waits: `y` applies and `n` declines it when the composer is empty, and Enter
+/// declines it with the composer text as the note for the model.
+fn handle_review_key(
+    state: &mut UiState,
+    key: KeyEvent,
+    commands: &mpsc::Sender<BackendRequest>,
+) -> Result<bool, CliError> {
+    if state.reviews.is_empty() || state.sheet.is_some() || state.panel_focus {
+        return Ok(false);
+    }
+    let plain = key.modifiers.is_empty() || key.modifiers == KeyModifiers::SHIFT;
+    let draft = state.composer.text().trim().to_owned();
+    let decision = match key.code {
+        KeyCode::Char('y' | 'Y') if plain && draft.is_empty() => (true, None),
+        KeyCode::Char('n' | 'N') if plain && draft.is_empty() => (false, None),
+        KeyCode::Enter
+            if key.modifiers.is_empty() && !draft.is_empty() && !draft.starts_with('/') =>
+        {
+            (false, Some(draft))
+        }
+        _ => return Ok(false),
+    };
+    let Some(review) = state.reviews.pop_front() else {
+        return Ok(false);
+    };
+    let (apply, note) = decision;
+    queue_request(
+        commands,
+        BackendRequest::Review {
+            request_id: review.request_id,
+            apply,
+            note: note.clone(),
+        },
+    )?;
+    if note.is_some() {
+        let len = state.composer.text().len();
+        state
+            .composer
+            .apply_completion(0..len, "")
+            .map_err(ui_error)?;
+        state.refresh_completion();
+    }
+    let waiting = !state.reviews.is_empty();
+    if let Some(turn) = state.turn.as_mut() {
+        turn.waiting = waiting;
+    }
+    if !apply {
+        let line = match note {
+            Some(note) => format!("Not applied · {note}"),
+            None => "Not applied".to_owned(),
+        };
+        if let Err(error) = state.offline_view_mut().push_system(line) {
+            state.notice = format!("Reply display limit reached: {error}");
+        }
+    }
+    state.history_scroll = 0;
+    Ok(true)
+}
+
 fn handle_key(
     state: &mut UiState,
     key: KeyEvent,
@@ -2786,11 +3100,10 @@ fn handle_key(
         && !question_focused(state)
         && !state.panel_focus
         && matches!(key.code, KeyCode::Char('c' | 'C'))
+        && let Some(text) = selected_transcript_text(state)
     {
-        if let Some(text) = selected_transcript_text(state) {
-            request_copy_text(state, text)?;
-            return Ok((false, true));
-        }
+        request_copy_text(state, text)?;
+        return Ok((false, true));
     }
     if let Some(id) = state.chip_preview {
         match key.code {
@@ -2926,7 +3239,7 @@ fn handle_key(
                 let index = Effort::ALL
                     .iter()
                     .position(|effort| *effort == selected)
-                    .map_or(0, |index| index);
+                    .unwrap_or(0);
                 let next = if matches!(key.code, KeyCode::Up | KeyCode::Left) {
                     index.saturating_sub(1)
                 } else {
@@ -2994,6 +3307,9 @@ fn handle_key(
         return Ok((false, true));
     }
     if handle_question_key(state, key)? {
+        return Ok((false, true));
+    }
+    if handle_review_key(state, key, commands)? {
         return Ok((false, true));
     }
     if key.code == KeyCode::F(5) {
@@ -3320,12 +3636,12 @@ fn projection<'a>(
             }),
             scroll: sheet.scroll,
         }));
-    if question_focused(state) {
-        if let Some(question) = state.demo.question() {
-            return screen
-                .with_questionnaire(question, state.question_review)
-                .with_questionnaire_scroll(state.question_scroll);
-        }
+    if question_focused(state)
+        && let Some(question) = state.demo.question()
+    {
+        return screen
+            .with_questionnaire(question, state.question_review)
+            .with_questionnaire_scroll(state.question_scroll);
     }
     screen
 }
@@ -3542,7 +3858,7 @@ fn begin_editor_selection(
                 state
                     .composer
                     .selection_anchor()
-                    .map_or(state.composer.cursor(), |value| value),
+                    .unwrap_or(state.composer.cursor()),
                 range,
             )
         }
@@ -3563,12 +3879,7 @@ fn begin_editor_selection(
                     granularity,
                 )
             };
-            (
-                editor
-                    .selection_anchor()
-                    .map_or(editor.cursor(), |value| value),
-                range,
-            )
+            (editor.selection_anchor().unwrap_or(editor.cursor()), range)
         }
         SelectionSurface::Transcript => return Ok(()),
     };
@@ -3890,13 +4201,14 @@ fn handle_mouse(
         apply_gallery_effect(state, effect)?;
         return Ok((false, true));
     }
-    if mouse.kind == MouseEventKind::Moved && !state.layout_dirty {
-        if let Some(metadata) = state.last_metadata.as_ref() {
-            let target = metadata.hit_at(mouse.column, mouse.row);
-            let changed = state.hover != target;
-            state.hover = target;
-            return Ok((false, changed));
-        }
+    if mouse.kind == MouseEventKind::Moved
+        && !state.layout_dirty
+        && let Some(metadata) = state.last_metadata.as_ref()
+    {
+        let target = metadata.hit_at(mouse.column, mouse.row);
+        let changed = state.hover != target;
+        state.hover = target;
+        return Ok((false, changed));
     }
     let metadata = current_metadata(state, options, area);
     let target = metadata.hit_at(mouse.column, mouse.row);
@@ -4223,25 +4535,25 @@ fn handle_input(
                 apply_gallery_effect(state, effect)?;
                 return Ok((false, true));
             }
-            if question_focused(state) {
-                if let Some(question) = state.demo.question_mut() {
-                    use polaris_ui_model::questionnaire::{
-                        QuestionKind, QuestionnaireAction, QuestionnaireFocus,
-                    };
-                    if question.focus() == QuestionnaireFocus::Notes
-                        || question
-                            .current_question()
-                            .is_some_and(|q| q.kind == QuestionKind::FreeText)
-                    {
-                        if let Err(error) = question.apply(QuestionnaireAction::InsertText(text)) {
-                            state.notice = format!("DEMO paste rejected: {error}");
-                        }
-                        refresh_demo_question(state);
-                        return Ok((false, true));
+            if question_focused(state)
+                && let Some(question) = state.demo.question_mut()
+            {
+                use polaris_ui_model::questionnaire::{
+                    QuestionKind, QuestionnaireAction, QuestionnaireFocus,
+                };
+                if question.focus() == QuestionnaireFocus::Notes
+                    || question
+                        .current_question()
+                        .is_some_and(|q| q.kind == QuestionKind::FreeText)
+                {
+                    if let Err(error) = question.apply(QuestionnaireAction::InsertText(text)) {
+                        state.notice = format!("DEMO paste rejected: {error}");
                     }
-                    state.notice = "Tab focuses question notes before pasting".to_owned();
+                    refresh_demo_question(state);
                     return Ok((false, true));
                 }
+                state.notice = "Tab focuses question notes before pasting".to_owned();
+                return Ok((false, true));
             }
             if state.pending.is_some()
                 || state.switch_pending
@@ -4355,15 +4667,15 @@ fn terminal_loop(
             if state.demo_active && state.demo.question().is_some() && state.sheet.is_none() {
                 refresh_demo_question(&mut state);
             }
-            if let Some((until, notice)) = state.transient_notice.as_ref() {
-                if Instant::now() >= *until {
-                    if state.notice == *notice {
-                        state.notice.clear();
-                        state.layout_dirty = true;
-                        scheduler.mark_dirty();
-                    }
-                    state.transient_notice = None;
+            if let Some((until, notice)) = state.transient_notice.as_ref()
+                && Instant::now() >= *until
+            {
+                if state.notice == *notice {
+                    state.notice.clear();
+                    state.layout_dirty = true;
+                    scheduler.mark_dirty();
                 }
+                state.transient_notice = None;
             }
             if let Some(turn) = state.turn.as_ref() {
                 let label = turn.label();

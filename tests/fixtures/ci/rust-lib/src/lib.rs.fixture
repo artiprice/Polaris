@@ -1,0 +1,45 @@
+//! Synthetic sample for /ci-run (P8): a small library whose tests the CI pipeline runs.
+
+pub mod generated;
+
+/// The `n`-th Fibonacci number, saturating at `u64::MAX`.
+#[must_use]
+pub fn fibonacci(n: u32) -> u64 {
+    let (mut a, mut b) = (0_u64, 1_u64);
+    for _ in 0..n {
+        (a, b) = (b, a.saturating_add(b));
+    }
+    a
+}
+
+/// Whether `n` is prime.
+#[must_use]
+pub fn is_prime(n: u64) -> bool {
+    n >= 2 && (2..).take_while(|d| d * d <= n).all(|d| n % d != 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{fibonacci, generated, is_prime};
+
+    #[test]
+    fn generated_work_is_deterministic() {
+        assert_eq!(generated::all(&[1, 2, 3]), generated::all(&[1, 2, 3]));
+    }
+
+    #[test]
+    fn fibonacci_starts_and_grows() {
+        assert_eq!(
+            (0..8).map(fibonacci).collect::<Vec<_>>(),
+            [0, 1, 1, 2, 3, 5, 8, 13]
+        );
+        assert_eq!(fibonacci(93), 12_200_160_415_121_876_738);
+        assert_eq!(fibonacci(200), u64::MAX);
+    }
+
+    #[test]
+    fn primes_below_thirty() {
+        let primes: Vec<u64> = (0..30).filter(|n| is_prime(*n)).collect();
+        assert_eq!(primes, [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]);
+    }
+}

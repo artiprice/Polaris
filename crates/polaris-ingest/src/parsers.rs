@@ -296,7 +296,9 @@ fn parse_markdown(source: &str) -> Result<Vec<LocatedBlock>, IngestError> {
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut row: Vec<String> = Vec::new();
     let mut source_line = None;
-    let parser = Parser::new_ext(source, Options::all());
+    // Wikilinks are not part of ingested documents, and pulldown-cmark's wikilink extension had
+    // exponential event growth on `[[a|]]` (RUSTSEC-2026-0414, fixed in 0.13.5): keep it off.
+    let parser = Parser::new_ext(source, Options::all().difference(Options::ENABLE_WIKILINKS));
     for (event, span) in parser.into_offset_iter() {
         let event_line = line_for_offset(source, span.start);
         match event {

@@ -22,7 +22,11 @@ set -euo pipefail
 OPENSHELL_VERSION="${OPENSHELL_VERSION:-v0.1.4}"
 RUST_VERSION="1.99.0"
 WITH_KANI=0
+OPENSHELL_ONLY=0
 [ "${1:-}" = "--with-kani" ] && WITH_KANI=1
+# --openshell-only: steps 1-4 (packages, Docker Engine, OpenShell, linger); the sandbox image
+# builds its own toolchain inside Docker, so Rust in the distro is not needed for it.
+[ "${1:-}" = "--openshell-only" ] && OPENSHELL_ONLY=1
 
 log() { printf '\n== %s\n' "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
@@ -33,6 +37,11 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 log "1/7 base packages"
+# WSL networks without IPv6 routing make apt hang on AAAA mirrors (curl falls back, apt does not).
+if ! curl -6 -s -o /dev/null -m 5 http://archive.ubuntu.com/ 2>/dev/null; then
+  echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99polaris-force-ipv4 >/dev/null
+  echo "apt: IPv6 unreachable, forcing IPv4"
+fi
 sudo apt-get update -qq
 sudo apt-get install -y -qq ca-certificates curl gnupg build-essential pkg-config libssl-dev git jq unzip bc >/dev/null
 
@@ -71,6 +80,11 @@ if ! grep -qx 'OPENSHELL_COMPUTE_DRIVER=docker' "$genv" 2>/dev/null; then
   systemctl --user restart openshell-gateway 2>/dev/null || true
 fi
 echo "gateway: $(systemctl --user is-active openshell-gateway 2>&1); driver pin: $(grep -c '^OPENSHELL_COMPUTE_DRIVER=docker$' "$genv")"
+
+if [ "$OPENSHELL_ONLY" -eq 1 ]; then
+  log "done (--openshell-only) — open a NEW wsl session so the docker group applies"
+  exit 0
+fi
 
 log "5/7 Rust ${RUST_VERSION} + nightly"
 if ! have rustup && [ ! -x "$HOME/.cargo/bin/rustup" ]; then

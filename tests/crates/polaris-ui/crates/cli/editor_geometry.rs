@@ -47,7 +47,7 @@ fn explicit_newlines_zwj_graphemes_and_mouse_stops_are_stable() {
     let chip_label = "[Image 1]";
     let chip_text = format!("x{chip_label}y");
     let chip = 1..1 + chip_label.len();
-    let chip_geometry = EditorGeometry::new(&chip_text, &[chip.clone()], 3);
+    let chip_geometry = EditorGeometry::new(&chip_text, std::slice::from_ref(&chip), 3);
     let clicked = chip_geometry.cursor_at_cell(1, 1);
     assert!(clicked == chip.start || clicked == chip.end);
     let clicked_later = chip_geometry.cursor_at_cell(2, 1);

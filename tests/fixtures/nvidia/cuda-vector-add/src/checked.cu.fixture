@@ -1,0 +1,30 @@
+// Synthetic sample for the Polaris CUDA advisor (/nv-verify): the same work done carefully;
+// the advisor must report nothing here.
+#include <cstdio>
+#include <cstdlib>
+#include <cuda_runtime.h>
+
+#define CUDA_CHECK(call)                                                        \
+    do {                                                                        \
+        cudaError_t status = (call);                                            \
+        if (status != cudaSuccess) {                                            \
+            fprintf(stderr, "CUDA error %s\n", cudaGetErrorString(status));     \
+            exit(1);                                                            \
+        }                                                                       \
+    } while (0)
+
+__global__ void scale(float* data, float factor, int n) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
+        data[i] *= factor;
+    }
+}
+
+void run(float* host, int n) {
+    float* device = nullptr;
+    CUDA_CHECK(cudaMalloc(&device, n * sizeof(float)));
+    CUDA_CHECK(cudaMemcpy(device, host, n * sizeof(float), cudaMemcpyHostToDevice));
+    scale<<<(n + 255) / 256, 256>>>(device, 2.0f, n);
+    CUDA_CHECK(cudaGetLastError());
+    CUDA_CHECK(cudaMemcpy(host, device, n * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaFree(device));
+}

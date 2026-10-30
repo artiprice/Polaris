@@ -11,7 +11,9 @@ use polaris_sdk::ids::ModelId;
 use polaris_ui_model::composer::{Composer, PreparedSubmission};
 use polaris_ui_model::view::{Entry, ViewState};
 
-use crate::backend::{BackendEvent, BackendRequest, SearchHit, SessionSummary};
+use crate::backend::{
+    BackendEvent, BackendRequest, Environment, ProviderState, SearchHit, SessionSummary,
+};
 
 /// Local note added to an opened session when no model provider is usable. It is shown, never
 /// recorded, and never implies a reply is coming.
@@ -41,6 +43,16 @@ struct Reply {
     entry: Option<usize>,
     /// Separate the next text from earlier text (a tool round happened).
     break_pending: bool,
+    /// A review ended the streamed text; a later answer goes below it.
+    after_review: bool,
+}
+
+/// A change the reply waits on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PendingReview {
+    id: String,
+    /// First line of the prompt ("Change `src/lib.rs`?").
+    title: String,
 }
 
 /// Which screen the window shows.
@@ -150,6 +162,9 @@ pub struct SessionController {
     effort: Effort,
     usage: (u64, u64, u64),
     stats: Vec<String>,
+    reviews: std::collections::VecDeque<PendingReview>,
+    providers: Vec<ProviderState>,
+    environment: Environment,
 }
 
 /// One row of the Models panel.
@@ -185,7 +200,57 @@ impl SessionController {
             effort: Effort::Medium,
             usage: (0, 0, 0),
             stats: Vec::new(),
+            reviews: std::collections::VecDeque::new(),
+            providers: Vec::new(),
+            environment: Environment::default(),
         }
+    }
+
+    /// Models page: the provider chain as it was tried.
+    #[must_use]
+    pub fn providers(&self) -> &[ProviderState] {
+        &self.providers
+    }
+
+    /// Settings page: connection and storage locations.
+    #[must_use]
+    pub const fn environment(&self) -> &Environment {
+        &self.environment
+    }
+
+    /// Usage page tiles: the open session's requests and tokens.
+    #[must_use]
+    pub fn usage_tiles(&self) -> Vec<(String, String)> {
+        let (requests, prompt, completion) = self.usage;
+        vec![
+            (String::from("requests"), requests.to_string()),
+            (String::from("prompt tokens"), prompt.to_string()),
+            (String::from("completion tokens"), completion.to_string()),
+            (
+                String::from("total tokens"),
+                prompt.saturating_add(completion).to_string(),
+            ),
+        ]
+    }
+
+    /// Usage page: activity across every local session.
+    #[must_use]
+    pub fn activity_lines(&self) -> Vec<String> {
+        if self.stats.is_empty() {
+            vec![String::from("Loading activity…")]
+        } else {
+            self.stats.clone()
+        }
+    }
+
+    /// Settings page switch: save the reduced-motion preference.
+    pub fn set_reduced_motion(&mut self, on: bool) -> Vec<BackendRequest> {
+        if on {
+            "Reduced motion on".clone_into(&mut self.notice);
+        } else {
+            "Reduced motion off".clone_into(&mut self.notice);
+        }
+        vec![BackendRequest::SetReducedMotion(on)]
     }
 
     /// Models panel rows: the provider's model for each effort.
@@ -298,7 +363,10 @@ impl SessionController {
 
     /// "ready", "working", "connecting" or "offline".
     #[must_use]
-    pub const fn status_state(&self) -> &'static str {
+    pub fn status_state(&self) -> &'static str {
+        if !self.reviews.is_empty() {
+            return "waiting";
+        }
         if self.reply.is_some() {
             return "working";
         }
@@ -330,6 +398,9 @@ impl SessionController {
     /// Status-bar text: the connection, or the running reply with its elapsed time.
     #[must_use]
     pub fn status_line(&self) -> String {
+        if !self.reviews.is_empty() {
+            return String::from("Waiting for your decision on a change");
+        }
         if let Some(reply) = &self.reply {
             return format!(
                 "Working {} · Esc to stop",
@@ -343,6 +414,34 @@ impl SessionController {
             Connection::Ready { provider, model } => format!("{model} · {provider}"),
             Connection::Offline(_) => String::from("Offline · no model replies"),
         }
+    }
+
+    /// Question of the change the reply waits on ("Change `notes.md`?"), if any.
+    #[must_use]
+    pub fn review(&self) -> Option<&str> {
+        self.reviews.front().map(|review| review.title.as_str())
+    }
+
+    /// Apply or decline the oldest waiting change; `note` reaches the model with a decline.
+    pub fn decide_review(&mut self, apply: bool, note: &str) -> Vec<BackendRequest> {
+        let Some(review) = self.reviews.pop_front() else {
+            return Vec::new();
+        };
+        let note = Some(note.trim().to_owned()).filter(|note| !note.is_empty());
+        if !apply {
+            let line = match &note {
+                Some(note) => format!("Not applied · {note}"),
+                None => String::from("Not applied"),
+            };
+            if let Err(error) = self.view.push_system(line) {
+                self.notice = format!("Conversation view is full: {error}.");
+            }
+        }
+        vec![BackendRequest::Review {
+            request_id: review.id,
+            apply,
+            note,
+        }]
     }
 
     /// Stop the running reply.
@@ -499,10 +598,10 @@ impl SessionController {
                 self.reply = None;
                 self.usage = (0, 0, 0);
                 self.view.conversation.clear();
-                if matches!(self.connection, Connection::Offline(_)) {
-                    if let Err(error) = self.view.push_system(OFFLINE_NOTE) {
-                        self.notice = format!("Conversation view is full: {error}.");
-                    }
+                if matches!(self.connection, Connection::Offline(_))
+                    && let Err(error) = self.view.push_system(OFFLINE_NOTE)
+                {
+                    self.notice = format!("Conversation view is full: {error}.");
                 }
                 self.open = Some(OpenSession {
                     id,
@@ -512,6 +611,15 @@ impl SessionController {
                 });
                 self.screen = Screen::Session;
                 vec![BackendRequest::List]
+            }
+            BackendEvent::Message {
+                kind: crate::backend::MessageKind::Assistant,
+                text,
+            } => {
+                if let Err(error) = self.view.push_assistant(text) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
             }
             BackendEvent::Message { kind: _, text } => {
                 if let Err(error) = self.view.push_user(text) {
@@ -594,8 +702,27 @@ impl SessionController {
                 self.stats = lines;
                 Vec::new()
             }
+            BackendEvent::Report { title, lines } => {
+                let text = format!("**{title}**\n\n```text\n{}\n```", lines.join("\n"));
+                if let Err(error) = self.view.push_assistant(text) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
+            }
             BackendEvent::ProviderUnavailable(reason) => {
                 self.connection = Connection::Offline(reason);
+                Vec::new()
+            }
+            BackendEvent::Providers(providers) => {
+                self.providers = providers;
+                Vec::new()
+            }
+            BackendEvent::Environment(environment) => {
+                self.environment = environment;
+                Vec::new()
+            }
+            BackendEvent::Notice(text) => {
+                self.notice = text;
                 Vec::new()
             }
             BackendEvent::ReplyStarted => {
@@ -603,7 +730,47 @@ impl SessionController {
                     started: std::time::Instant::now(),
                     entry: None,
                     break_pending: false,
+                    after_review: false,
                 });
+                Vec::new()
+            }
+            BackendEvent::Review { request_id, prompt } => {
+                if self.reviews.iter().any(|review| review.id == request_id) {
+                    return Vec::new();
+                }
+                if let Some(reply) = self.reply.as_mut() {
+                    reply.entry = None;
+                    reply.break_pending = false;
+                    reply.after_review = true;
+                }
+                let title = prompt
+                    .lines()
+                    .next()
+                    .unwrap_or("Apply this change?")
+                    .replace('`', "");
+                if let Err(error) = self.view.push_assistant(prompt) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                self.reviews.push_back(PendingReview {
+                    id: request_id,
+                    title,
+                });
+                Vec::new()
+            }
+            BackendEvent::ReviewClosed(id) => {
+                self.reviews.retain(|review| review.id != id);
+                Vec::new()
+            }
+            BackendEvent::Applied(path) => {
+                if let Err(error) = self.view.push_system(format!("✓ Edited {path}")) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
+                Vec::new()
+            }
+            BackendEvent::Deleted(path) => {
+                if let Err(error) = self.view.push_system(format!("✓ Deleted {path}")) {
+                    self.notice = format!("Conversation view is full: {error}.");
+                }
                 Vec::new()
             }
             BackendEvent::ReplyText(delta) => {
@@ -617,11 +784,15 @@ impl SessionController {
                 Vec::new()
             }
             BackendEvent::ReplyFinished { answer, summary } => {
-                let streamed = self.reply.take().is_some_and(|reply| reply.entry.is_some());
+                let (streamed, after_review) = self.reply.take().map_or((false, false), |reply| {
+                    (reply.entry.is_some(), reply.after_review)
+                });
+                self.reviews.clear();
                 let mut result = Ok(());
                 if !streamed {
                     result = match answer.as_deref().map(str::trim) {
                         Some(text) if !text.is_empty() => self.view.push_assistant(text.to_owned()),
+                        _ if after_review => Ok(()),
                         _ => self
                             .view
                             .push_warning("The model stopped without an answer."),
@@ -637,6 +808,7 @@ impl SessionController {
             }
             BackendEvent::ReplyFailed(reason) => {
                 self.reply = None;
+                self.reviews.clear();
                 let shown = if reason == "Interrupted" {
                     self.view.push_warning("Stopped.")
                 } else {

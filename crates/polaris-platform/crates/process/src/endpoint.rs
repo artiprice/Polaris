@@ -25,10 +25,7 @@ pub(super) fn owns_exact_root_listener(
         Duration::from_secs(2),
         256 * 1024,
     )?;
-    if output.timed_out
-        || output.stdout_truncated
-        || output.exit_code != Some(0)
-    {
+    if output.timed_out || output.stdout_truncated || output.exit_code != Some(0) {
         return Err(PlatformError::Io(
             "bounded listener ownership query did not complete".to_owned(),
         ));
@@ -83,9 +80,9 @@ fn parse_netstat_listener_owner(
         if owner_pid != root_pid {
             return Ok(false);
         }
-        matching = matching.checked_add(1).ok_or_else(|| {
-            PlatformError::Io("listener ownership row count overflow".to_owned())
-        })?;
+        matching = matching
+            .checked_add(1)
+            .ok_or_else(|| PlatformError::Io("listener ownership row count overflow".to_owned()))?;
         if matching > 1 {
             return Ok(false);
         }
@@ -128,9 +125,9 @@ fn read_proc_table(path: &Path, requested: SocketAddr) -> Result<Vec<u64>, Platf
     use std::io::Read;
 
     let mut file = std::fs::File::open(path).map_err(platform_io)?;
-    let read_limit = MAX_TABLE_BYTES.checked_add(1).ok_or_else(|| {
-        PlatformError::Io("listener table bound overflow".to_owned())
-    })?;
+    let read_limit = MAX_TABLE_BYTES
+        .checked_add(1)
+        .ok_or_else(|| PlatformError::Io("listener table bound overflow".to_owned()))?;
     let mut contents = String::new();
     file.by_ref()
         .take(u64::try_from(read_limit).map_err(|_| {
@@ -241,9 +238,7 @@ fn parse_proc_socket_address(value: &str) -> Result<SocketAddr, PlatformError> {
 
 #[cfg(target_os = "linux")]
 fn process_owns_inode(root_pid: u32, expected_inode: u64) -> Result<bool, PlatformError> {
-    let descriptor_dir = Path::new("/proc")
-        .join(root_pid.to_string())
-        .join("fd");
+    let descriptor_dir = Path::new("/proc").join(root_pid.to_string()).join("fd");
     let entries = std::fs::read_dir(descriptor_dir).map_err(platform_io)?;
     for (count, entry) in entries.enumerate() {
         if count >= MAX_PROCESS_FDS {

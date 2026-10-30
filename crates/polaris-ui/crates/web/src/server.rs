@@ -92,6 +92,30 @@ impl WebServer {
     /// # Errors
     /// A non-loopback address, a busy port or no randomness for the token.
     pub async fn bind(options: WebOptions) -> Result<Self, WebError> {
+        Self::bind_with_pages(options, None).await
+    }
+
+    /// As [`Self::bind`], with `pages` serving the document routes (`/` and anything the API does
+    /// not claim) instead of the embedded single-page app. The JSON API, the event stream,
+    /// `/app.css` and `/fonts/*` stay, so another frontend (the Leptos app) can share them.
+    /// # Errors
+    /// As [`Self::bind`].
+    pub async fn bind_with_pages(
+        options: WebOptions,
+        pages: Option<Router>,
+    ) -> Result<Self, WebError> {
+        Self::bind_with(options, pages, None).await
+    }
+
+    /// As [`Self::bind_with_pages`]; with `attach`, the page shows and records into that
+    /// `polarisd` session instead of opening local ones (P9).
+    /// # Errors
+    /// As [`Self::bind`].
+    pub async fn bind_with(
+        options: WebOptions,
+        pages: Option<Router>,
+        attach: Option<polaris_ui_session::AttachTarget>,
+    ) -> Result<Self, WebError> {
         if !options.bind.ip().is_loopback() {
             return Err(WebError::NotLoopback(options.bind));
         }
@@ -106,6 +130,7 @@ impl WebServer {
                 workspace: options.workspace,
                 config: options.config,
                 env_file: options.env_file,
+                attach,
             },
             publisher.clone(),
             receiver,
@@ -114,14 +139,17 @@ impl WebServer {
         let hosts: Arc<[String]> =
             Arc::from(vec![address.to_string(), format!("localhost:{port}")]);
         let (closing, closing_rx) = watch::channel(false);
-        let router = router(AppState {
-            token: Arc::from(token.as_str()),
-            hosts,
-            commands,
-            publisher,
-            state_dir: Arc::new(options.state_dir),
-            closing: closing_rx,
-        });
+        let router = router(
+            AppState {
+                token: Arc::from(token.as_str()),
+                hosts,
+                commands,
+                publisher,
+                state_dir: Arc::new(options.state_dir),
+                closing: closing_rx,
+            },
+            pages,
+        );
         Ok(Self {
             listener,
             router,
@@ -169,11 +197,9 @@ impl WebServer {
     }
 }
 
-fn router(state: AppState) -> Router {
-    Router::new()
-        .route("/", get(index))
+fn router(state: AppState, pages: Option<Router>) -> Router {
+    let mut api = Router::new()
         .route("/app.css", get(stylesheet))
-        .route("/app.js", get(script))
         .route("/fonts/{name}", get(font))
         .route("/api/events", get(events))
         .route("/api/sessions", get(sessions))
@@ -183,7 +209,15 @@ fn router(state: AppState) -> Router {
         .route("/api/interrupt", post(interrupt))
         .route("/api/effort", post(effort))
         .route("/api/close", post(close))
-        .with_state(state)
+        .route("/api/review", post(review));
+    if pages.is_none() {
+        api = api.route("/", get(index)).route("/app.js", get(script));
+    }
+    let api = api.with_state(state);
+    match pages {
+        Some(pages) => api.merge(pages),
+        None => api,
+    }
 }
 
 fn host_allowed(state: &AppState, headers: &HeaderMap) -> bool {
@@ -407,6 +441,44 @@ async fn submit(
         Command::Submit {
             text: body.text,
             plan: body.plan,
+        },
+    )
+    .await
+}
+
+/// Longest note accepted with a decision.
+const MAX_NOTE_BYTES: usize = 4096;
+
+#[derive(Deserialize)]
+struct ReviewBody {
+    request_id: String,
+    apply: bool,
+    #[serde(default)]
+    note: Option<String>,
+}
+
+async fn review(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(body): Json<ReviewBody>,
+) -> StatusCode {
+    if let Err(status) = authorize(&state, &headers, None) {
+        return status;
+    }
+    if body.request_id.len() > 64
+        || body
+            .note
+            .as_ref()
+            .is_some_and(|note| note.len() > MAX_NOTE_BYTES)
+    {
+        return StatusCode::UNPROCESSABLE_ENTITY;
+    }
+    send(
+        &state,
+        Command::Review {
+            request_id: body.request_id,
+            apply: body.apply,
+            note: body.note,
         },
     )
     .await

@@ -2,12 +2,13 @@
 //! [`ConversationHost`], fed by HTTP commands and publishing [`WebEvent`]s to every open page.
 use polaris_sdk::{contracts::Event, effort::Effort, ids::SessionId};
 use polaris_ui_session::{
-    ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind, ResolvedRecord,
-    SessionHostError, is_single_directive, list_sessions, records_until_own_input,
+    AttachTarget, ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession,
+    RecordTextKind, RemoteSession, ResolvedRecord, SessionHostError, answer_review,
+    is_single_directive, list_sessions, records_until_own_input,
 };
 use serde::Serialize;
 use std::{
-    collections::VecDeque,
+    collections::{BTreeMap, VecDeque},
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -31,6 +32,12 @@ pub enum Command {
     SetEffort(Effort),
     /// Close the open session.
     Close,
+    /// Apply or decline the change a reply waits on; `note` reaches the model with a decline.
+    Review {
+        request_id: String,
+        apply: bool,
+        note: Option<String>,
+    },
     /// Report the session list.
     List {
         reply: oneshot::Sender<Vec<SessionRow>>,
@@ -94,6 +101,15 @@ pub enum WebEvent {
     },
     /// The reply failed or was interrupted.
     ReplyFailed { reason: String },
+    /// The reply waits until the person applies or declines this change (Markdown prompt with
+    /// a diff).
+    Review { request_id: String, prompt: String },
+    /// The review was answered or withdrawn.
+    ReviewClosed { request_id: String },
+    /// A reviewed change was written to this workspace path.
+    Applied { path: String },
+    /// A reviewed deletion removed this workspace path.
+    Deleted { path: String },
     /// Token use of the open session.
     Usage {
         requests: u64,
@@ -102,6 +118,8 @@ pub enum WebEvent {
     },
     /// Something the page should show as a notice.
     Notice { text: String },
+    /// A command's report (`/nv-profile`, `/nv-verify`) to show in the conversation.
+    Report { title: String, lines: Vec<String> },
 }
 
 /// Events since the provider was chosen and the session opened, for pages that connect later.
@@ -201,7 +219,12 @@ pub struct BackendConfig {
     pub config: polaris_config::PolarisConfig,
     /// Dotenv file with provider keys.
     pub env_file: Option<PathBuf>,
+    /// Attach to this `polarisd` session instead of opening local ones (P9).
+    pub attach: Option<AttachTarget>,
 }
+
+/// Why replies are absent while attached.
+const ATTACHED: &str = "Attached to polarisd: the daemon answers each message (read-only; changes are shown as patches) and replies appear when they finish.";
 
 struct Owner {
     config: BackendConfig,
@@ -209,9 +232,96 @@ struct Owner {
     session: Option<OfflineSession>,
     chat: ConversationHost,
     usage: (u64, u64, u64),
+    /// Changes the running reply waits on, by request id.
+    reviews: BTreeMap<String, ChangeReview>,
+    /// The attached daemon session, when `config.attach` is set.
+    remote: Option<RemoteSession>,
 }
 
 impl Owner {
+    async fn open_remote(&mut self, target: AttachTarget) {
+        self.publisher.publish(WebEvent::Opening);
+        self.remote = None;
+        match RemoteSession::attach(&target).await {
+            Ok(remote) => {
+                self.publisher.publish(WebEvent::Opened {
+                    id: remote.id.to_string(),
+                    title: "polarisd".to_owned(),
+                    workspace: remote.endpoint().to_owned(),
+                });
+                self.remote = Some(remote);
+            }
+            Err(error) => self.publisher.publish(WebEvent::Notice {
+                text: format!("Could not attach to polarisd: {error}"),
+            }),
+        }
+    }
+
+    async fn submit_remote(&mut self, text: String) {
+        if polaris_ui_session::commands::LocalCommand::parse(&text).is_some() {
+            self.publisher.publish(WebEvent::Rejected {
+                reason: "/nv-profile, /nv-verify and /hack run on local sessions; this page is attached to polarisd."
+                    .to_owned(),
+            });
+            return;
+        }
+        let Some(remote) = self.remote.as_ref() else {
+            self.publisher.publish(WebEvent::Rejected {
+                reason: "Not attached to polarisd.".to_owned(),
+            });
+            return;
+        };
+        match remote.submit(&text).await {
+            Ok(_) => self.publisher.publish(WebEvent::Committed),
+            Err(error) => self.publisher.publish(WebEvent::Rejected {
+                reason: error.to_string(),
+            }),
+        }
+    }
+
+    fn remote_record(&mut self, next: Result<Option<ResolvedRecord>, SessionHostError>) {
+        match next {
+            Ok(Some(resolved)) => {
+                if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
+                    let kind = match kind {
+                        RecordTextKind::Directive => "directive",
+                        RecordTextKind::UserInput => "user",
+                        RecordTextKind::Assistant => "assistant",
+                    };
+                    self.publisher.publish(WebEvent::Message {
+                        kind: kind.to_owned(),
+                        text,
+                    });
+                }
+            }
+            Ok(None) | Err(_) => {
+                self.remote = None;
+                self.publisher.publish(WebEvent::Notice {
+                    text: "The connection to polarisd ended; open the session again.".to_owned(),
+                });
+                self.publisher.publish(WebEvent::Closed);
+            }
+        }
+    }
+
+    async fn review(&mut self, request_id: &str, apply: bool, note: Option<String>) {
+        let (Some(review), Some(session)) = (self.reviews.get(request_id), self.session.as_ref())
+        else {
+            self.publisher.publish(WebEvent::Notice {
+                text: "That change is no longer waiting for a decision.".to_owned(),
+            });
+            return;
+        };
+        match answer_review(session.kernel(), review, apply, note).await {
+            Ok(()) => {}
+            // A declined test run stops the reply waiting on it.
+            Err(polaris_ui_session::ChatError::Cancelled) => self.chat.cancel_turn(),
+            Err(error) => self.publisher.publish(WebEvent::Notice {
+                text: error.to_string(),
+            }),
+        }
+    }
+
     async fn open(&mut self, resume: Option<String>) {
         if self.chat.is_running() {
             self.publisher.publish(WebEvent::Notice {
@@ -235,6 +345,7 @@ impl Owner {
         match OfflineSession::open(&self.config.state_dir, &self.config.workspace, id).await {
             Ok(session) => {
                 let workspace = session.workspace().display().to_string();
+                let sandbox_note = session.sandbox_note().map(str::to_owned);
                 self.session = Some(session);
                 let title = match list_sessions(&self.config.state_dir, LIST_LIMIT).await {
                     Ok(rows) => rows
@@ -249,6 +360,11 @@ impl Owner {
                     title,
                     workspace,
                 });
+                if let Some(note) = sandbox_note {
+                    self.publisher.publish(WebEvent::Notice {
+                        text: format!("Tests cannot run in the sandbox in this session: {note}."),
+                    });
+                }
             }
             Err(error) => self.publisher.publish(WebEvent::Notice {
                 text: format!(
@@ -275,6 +391,26 @@ impl Owner {
             });
             return;
         };
+        if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(&text) {
+            // Answered off the session loop: a CI run can take minutes.
+            self.publisher.publish(WebEvent::Committed);
+            let kernel = session.kernel().clone();
+            let workspace = session.workspace().to_path_buf();
+            let publisher = self.publisher.clone();
+            tokio::spawn(async move {
+                let event = match command.run(&kernel, &workspace).await {
+                    Ok(lines) => WebEvent::Report {
+                        title: command.title().to_owned(),
+                        lines,
+                    },
+                    Err(error) => WebEvent::Notice {
+                        text: format!("{}: {error}", command.title()),
+                    },
+                };
+                publisher.publish(event);
+            });
+            return;
+        }
         let answer = !is_single_directive(&text) && self.chat.is_ready();
         if answer && self.chat.is_running() {
             self.publisher.publish(WebEvent::Rejected {
@@ -345,6 +481,7 @@ impl Owner {
                     let kind = match kind {
                         RecordTextKind::Directive => "directive",
                         RecordTextKind::UserInput => "user",
+                        RecordTextKind::Assistant => "assistant",
                     };
                     self.publisher.publish(WebEvent::Message {
                         kind: kind.to_owned(),
@@ -365,7 +502,7 @@ impl Owner {
         }
     }
 
-    fn host_event(&self, event: HostEvent) {
+    fn host_event(&mut self, event: HostEvent) {
         let event = match event {
             HostEvent::ProviderReady {
                 provider,
@@ -386,11 +523,30 @@ impl Owner {
             HostEvent::Progress(ChatProgress::Text(text)) => WebEvent::ReplyText { text },
             HostEvent::Progress(ChatProgress::Request) => WebEvent::ReplyStep,
             HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
-            HostEvent::Finished(report) => WebEvent::ReplyFinished {
-                summary: report.summary(),
-                answer: report.answer,
-            },
-            HostEvent::Failed(reason) => WebEvent::ReplyFailed { reason },
+            HostEvent::Progress(ChatProgress::Review(review)) => {
+                let request_id = review.request_id.to_string();
+                let prompt = review.prompt.clone();
+                self.reviews.insert(request_id.clone(), review);
+                WebEvent::Review { request_id, prompt }
+            }
+            HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                let request_id = id.to_string();
+                self.reviews.remove(&request_id);
+                WebEvent::ReviewClosed { request_id }
+            }
+            HostEvent::Progress(ChatProgress::Applied(path)) => WebEvent::Applied { path },
+            HostEvent::Progress(ChatProgress::Deleted(path)) => WebEvent::Deleted { path },
+            HostEvent::Finished(report) => {
+                self.reviews.clear();
+                WebEvent::ReplyFinished {
+                    summary: report.summary(),
+                    answer: report.answer,
+                }
+            }
+            HostEvent::Failed(reason) => {
+                self.reviews.clear();
+                WebEvent::ReplyFailed { reason }
+            }
         };
         self.publisher.publish(event);
     }
@@ -425,6 +581,15 @@ async fn next_record(
     }
 }
 
+async fn next_remote_record(
+    remote: &mut Option<RemoteSession>,
+) -> Result<Option<ResolvedRecord>, SessionHostError> {
+    match remote.as_mut() {
+        Some(remote) => remote.next_record().await,
+        None => std::future::pending().await,
+    }
+}
+
 /// Run the session owner until `commands` closes; then stop the reply and close the session.
 pub async fn run(
     config: BackendConfig,
@@ -438,13 +603,30 @@ pub async fn run(
         session: None,
         chat,
         usage: (0, 0, 0),
+        reviews: BTreeMap::new(),
+        remote: None,
     };
-    owner.chat.start_pick();
+    let attach = owner.config.attach.clone();
+    if attach.is_some() {
+        owner.publisher.publish(WebEvent::ProviderUnavailable {
+            reason: ATTACHED.to_owned(),
+        });
+    } else {
+        owner.chat.start_pick();
+    }
     loop {
         tokio::select! {
             command = commands.recv() => {
                 let Some(command) = command else { break };
                 match command {
+                    Command::Open { .. } if attach.is_some() => {
+                        if let Some(target) = attach.clone() {
+                            owner.open_remote(target).await;
+                        }
+                    }
+                    Command::Submit { text, .. } if attach.is_some() => {
+                        owner.submit_remote(text).await;
+                    }
                     Command::Open { resume } => owner.open(resume).await,
                     Command::Submit { text, plan } => owner.submit(text, plan).await,
                     Command::Interrupt => owner.chat.cancel_turn(),
@@ -459,12 +641,25 @@ pub async fn run(
                         owner.publisher.publish(event);
                     }
                     Command::Close => owner.close().await,
+                    Command::Review { request_id, apply, note } => {
+                        owner.review(&request_id, apply, note).await;
+                    }
+                    Command::List { reply } if attach.is_some() => {
+                        let rows = owner.remote.as_ref().map(|remote| SessionRow {
+                            id: remote.id.to_string(),
+                            title: "polarisd".to_owned(),
+                            workspace: remote.endpoint().to_owned(),
+                            updated_ms: 0,
+                        });
+                        let _delivered = reply.send(rows.into_iter().collect());
+                    }
                     Command::List { reply } => {
                         let _delivered = reply.send(owner.list().await);
                     }
                 }
             }
             next = next_record(&mut owner.session) => owner.record(next),
+            next = next_remote_record(&mut owner.remote) => owner.remote_record(next),
             event = owner.chat.next_event() => owner.host_event(event),
         }
     }

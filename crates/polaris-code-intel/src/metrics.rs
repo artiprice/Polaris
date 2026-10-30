@@ -7,7 +7,7 @@ use crate::lang::Lang;
 use crate::parse::{ByteSpan, Parsed};
 use crate::skeleton::MAX_SKELETON_ITEMS;
 use crate::walk::{Descend, node_text, walk_preorder};
-use imara_diff::{Algorithm, Diff, InternedInput};
+use imara_diff::{Algorithm, BasicLineDiffPrinter, Diff, InternedInput, UnifiedDiffConfig};
 use polaris_sdk::ids::FastFingerprint;
 use std::collections::BTreeMap;
 use tree_sitter::Node;
@@ -93,11 +93,12 @@ pub fn metrics_with(
     })
 }
 
-/// Lines added plus lines deleted between two byte strings.
+/// Lines added plus lines deleted between two byte strings, for any text, parsed or not.
 ///
 /// Small inputs use the minimal Myers diff, so the count is the true edit distance and symmetric;
 /// very large ones use Histogram, which is faster but not guaranteed minimal.
-fn churn_lines(old: &[u8], new: &[u8]) -> u32 {
+#[must_use]
+pub fn churn_lines(old: &[u8], new: &[u8]) -> u32 {
     let input = InternedInput::new(old, new);
     let lines = input.before.len().saturating_add(input.after.len());
     let algorithm = if lines <= MINIMAL_DIFF_LINE_CAP {
@@ -107,6 +108,22 @@ fn churn_lines(old: &[u8], new: &[u8]) -> u32 {
     };
     let diff = Diff::compute(algorithm, &input);
     diff.count_additions().saturating_add(diff.count_removals())
+}
+
+/// A minimal unified diff of two texts for a person to review: hunk headers and `context`
+/// unchanged lines around each change, without file headers. `None` when either side is not
+/// UTF-8.
+#[must_use]
+pub fn review_diff(old: &[u8], new: &[u8], context: u32) -> Option<String> {
+    let old = std::str::from_utf8(old).ok()?;
+    let new = std::str::from_utf8(new).ok()?;
+    let input = InternedInput::new(old, new);
+    let mut diff = Diff::compute(Algorithm::Histogram, &input);
+    diff.postprocess_lines(&input);
+    let mut config = UnifiedDiffConfig::default();
+    config.context_len(context);
+    let printer = BasicLineDiffPrinter(&input.interner);
+    Some(diff.unified_diff(&printer, config, &input).to_string())
 }
 
 /// Cyclomatic complexity of the whole file: 1 plus its decision points.

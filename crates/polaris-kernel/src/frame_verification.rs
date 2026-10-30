@@ -297,7 +297,7 @@ fn verify_step_owned(
             continue;
         }
         match call.name.as_str() {
-            "write_file" | "edit_file" | "apply_patch" => {
+            "write_file" | "edit_file" | "apply_patch" | "delete_file" => {
                 match value.get("status").and_then(Value::as_str) {
                     Some("applied") => {
                         if !matches!(
@@ -390,7 +390,8 @@ fn verify_mutation_result(
     let receipt: StoredReceipt = decode_cas(owner.cas(), result.receipt, 16 * 1024)?;
     if result.status != "applied"
         || !matches!(receipt.schema, 1 | 2)
-        || (receipt.schema == 1 && receipt.match_level.is_some())
+        || (receipt.schema == 1 && (receipt.match_level.is_some() || receipt.deleted))
+        || (receipt.deleted && receipt.new_cid != crate::storage::cas::content_id(b""))
         || receipt.frame != frame
         || receipt.path != result.path
         || receipt.base != result.base
@@ -421,11 +422,11 @@ fn verify_mutation_result(
         }
     }
     let path = sync::RelPath::new(&receipt.path).map_err(|_| FrameVerificationError::Evidence)?;
-    if !manifest
+    let present = manifest
         .entries
         .get(&path)
-        .is_some_and(|e| e.kind == EntryKind::File && e.hash == receipt.new_cid)
-    {
+        .is_some_and(|e| e.kind == EntryKind::File && e.hash == receipt.new_cid);
+    if present == receipt.deleted || (receipt.deleted && manifest.entries.contains_key(&path)) {
         return Err(FrameVerificationError::Evidence);
     }
     let approval: ApprovalEvidence =
@@ -443,7 +444,17 @@ fn verify_mutation_result(
         receipt.new_cid,
     )
     .map_err(|_| FrameVerificationError::Evidence)?;
-    if approval.schema != 1
+    // Schema 1 is the automatic approval; schema 2 records a human decision that accepted an
+    // escalation, and only then may the target be measured as text or the distance be a bound.
+    let automatic = approval.schema == 1
+        && approval.safety_result == "preflight_and_congruence_allowed"
+        && approval.human.is_none()
+        && matches!(approval.analysis.as_deref(), None | Some("syntax"))
+        && approval.tree_edit_distance_exact;
+    let reviewed = approval.schema == 2
+        && approval.safety_result == "human_approved"
+        && matches!(approval.analysis.as_deref(), Some("syntax" | "text"));
+    if !(automatic || reviewed)
         || approval.command_id != receipt.command
         || approval.agent != frame
         || approval.target != receipt.path
@@ -451,17 +462,74 @@ fn verify_mutation_result(
         || approval.old_source != old
         || approval.new_source != receipt.new_cid
         || approval.mutation_binding != digest
-        || approval.safety_result != "preflight_and_congruence_allowed"
         || approval.churn_lines > approval.max_churn_lines
         || i64::from(approval.cyclomatic_delta) > i64::from(approval.max_cyclomatic_increase)
-        || !approval.tree_edit_distance_exact
         || approval.tree_edit_distance > approval.max_tree_edit_distance
     {
         return Err(FrameVerificationError::Evidence);
     }
+    if reviewed {
+        let human = approval
+            .human
+            .as_ref()
+            .ok_or(FrameVerificationError::Evidence)?;
+        verify_change_review(owner, events, frame, human, digest, range)?;
+    }
     let _diff = read_cas(owner.cas(), receipt.diff, MAX_RESULT_BYTES)?;
     if !events.iter().any(|r|r.seq()>started && r.seq()<recorded && matches!(r.event(),Event::DiffApproved {frame:f,diff} if *f==frame && *diff==receipt.diff)) { return Err(FrameVerificationError::Evidence); }
     Ok(receipt.diff)
+}
+/// A human-approved mutation names a request created and answered inside the same tool call,
+/// whose committed answer picks "apply" on the review question bound to this exact mutation.
+fn verify_change_review(
+    owner: &InspectionOwner,
+    events: &[EventRecord],
+    frame: FrameId,
+    human: &HumanEvidence,
+    binding: Cid,
+    (started, recorded): (polaris_sdk::ids::Seq, polaris_sdk::ids::Seq),
+) -> Result<(), FrameVerificationError> {
+    use polaris_sdk::human::{HumanAnswerPayload, HumanResponse, HumanSelection};
+    let limit = u64::try_from(polaris_sdk::human::MAX_HUMAN_ANSWER_BYTES)
+        .map_err(|_| FrameVerificationError::Evidence)?;
+    let bytes = owner
+        .cas()
+        .get_bounded(&human.answer, limit)
+        .map_err(|_| FrameVerificationError::Evidence)?;
+    let answer: HumanAnswerPayload =
+        serde_json::from_slice(&bytes).map_err(|_| FrameVerificationError::Evidence)?;
+    if answer.frame != frame
+        || answer.session != owner.session()
+        || answer.revision != human.request
+    {
+        return Err(FrameVerificationError::Evidence);
+    }
+    let question = format!(
+        "{}{}",
+        crate::agent_tools::CHANGE_REVIEW_PREFIX,
+        binding.to_hex()
+    );
+    let approved = answer.answers.iter().any(|entry| {
+        entry.question_id.as_str() == question
+            && matches!(
+                &entry.response,
+                HumanResponse::Single { selection: HumanSelection::Option(option) }
+                    if option.as_str() == crate::agent_tools::CHANGE_REVIEW_APPLY
+            )
+    });
+    let within = |record: &&EventRecord| record.seq() > started && record.seq() < recorded;
+    let created = events.iter().filter(within).any(|record| {
+        matches!(record.event(), Event::HumanRequestCreated { frame: f, request, .. }
+            if *f == frame && *request == human.request)
+    });
+    let answered = events.iter().filter(within).any(|record| {
+        matches!(record.event(), Event::HumanRequestAnswered { frame: f, request_id, .. }
+            if *f == frame && *request_id == answer.request_id)
+    });
+    if !(approved && created && answered) {
+        return Err(FrameVerificationError::Evidence);
+    }
+    Ok(())
 }
 fn validate_completion_owned(
     owner: InspectionOwner,
@@ -634,6 +702,9 @@ struct StoredReceipt {
     /// Schema 2: how an edit target was located (audit only).
     #[serde(default)]
     match_level: Option<String>,
+    /// Schema 2: the file was removed.
+    #[serde(default)]
+    deleted: bool,
 }
 // These mandatory identity and threshold fields are validated; additional audit fields stay in CAS.
 #[derive(Deserialize)]
@@ -654,6 +725,17 @@ struct ApprovalEvidence {
     tree_edit_distance_exact: bool,
     max_tree_edit_distance: u32,
     safety_result: String,
+    /// `syntax` or `text`; absent in evidence written before text targets existed.
+    #[serde(default)]
+    analysis: Option<String>,
+    /// Schema 2: the human request and answer that accepted an escalation.
+    #[serde(default)]
+    human: Option<HumanEvidence>,
+}
+#[derive(Deserialize)]
+struct HumanEvidence {
+    request: Cid,
+    answer: Cid,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

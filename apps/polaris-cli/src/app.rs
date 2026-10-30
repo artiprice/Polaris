@@ -101,11 +101,58 @@ pub enum Action {
         /// One bounded task goal.
         task: String,
     },
+    /// Profile the workspace's NVIDIA stack, target architectures and local GPUs (`/nv-profile`).
+    NvProfile,
+    /// Run the CUDA advisor over the workspace's `.cu`/`.cuh` sources (`/nv-verify`).
+    NvVerify,
+    /// Audit the workspace for races, blocking calls in async code, unsafe code, secrets and CUDA
+    /// bugs (`/hack`).
+    Hack,
+    /// Show the workspace's CI pipeline and whether Docker can run it (`/ci`).
+    Ci,
+    /// Run the CI pipeline in Docker with cache volumes (`/ci-run`).
+    CiRun,
+    /// Rank workspace passages for a query, with path and lines (`/search-local`).
+    SearchLocal {
+        /// Words to search for.
+        query: String,
+    },
+    /// Search the web through the local SearXNG instance (`/search-web`).
+    SearchWeb {
+        /// Words to search for.
+        query: String,
+    },
+    /// Download or refresh the local NVIDIA documentation seed (`/nv-docs-sync`).
+    NvDocsSync,
+    /// Search the local NVIDIA documentation seed (`/nv-docs`).
+    NvDocs {
+        /// Words to search for.
+        query: String,
+    },
+    /// Calibrate System One's change-safety schemas on a labelled fixture file with the local
+    /// worker and write `~/.polaris/system-one/safety-schemas.toml`.
+    S1Calibrate {
+        /// Labelled JSON lines (`id`, `target`, `intent`, `before`, `after`, `labels`).
+        fixtures: PathBuf,
+    },
+    /// Run the workspace's `program.md` research loop (`/research`): a goal starts it,
+    /// `status`, `report` or `resume` act on the existing run.
+    Research {
+        /// A goal, or `status`, `report` or `resume`.
+        what: String,
+    },
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
         #[arg(long, default_value_t = 8787)]
         port: u16,
+        /// Attach to the `polarisd` listening here (a `polaris-*` pipe name or a socket path);
+        /// `--session` names the daemon's session.
+        #[arg(long, requires = "token_file")]
+        connect: Option<String>,
+        /// Credential file written by `polarisd --client-token-out`.
+        #[arg(long, requires = "connect")]
+        token_file: Option<PathBuf>,
     },
     /// Inspect recovery resources and configured credential references.
     Doctor {
@@ -179,6 +226,10 @@ pub async fn run(args: Args) -> Result<(), CliError> {
         &polaris_config::SessionOverrides::default(),
     )?;
     let loaded = polaris_config::load(&layers, &polaris_config::TrustGrant::none())?;
+    // Sessions start the local System One worker the user's configuration names.
+    let system_one = polaris_ui_session::system_one::configure(&loaded.config, &dirs.global);
+    // ...and attach the OpenShell sandbox `~/.polaris/sandbox.json` names.
+    let sandbox = polaris_ui_session::sandbox::configure(&dirs.global);
     if args.demo {
         // No log sink or durable owner is initialized for the presentation demo.
         return crate::tui::run(&args, &loaded, &dirs).await;
@@ -201,6 +252,8 @@ pub async fn run(args: Args) -> Result<(), CliError> {
     }
     .to_owned();
     let guard = Arc::new(polaris_log::init(log_config, redactor)?);
+    tracing::info!(status = %system_one, "system one");
+    tracing::info!(status = %sandbox, "sandbox");
     let weak_log = Arc::downgrade(&guard);
     // Process-owned cold-path hook. The default hook may expose secrets in panic payloads.
     std::panic::set_hook(Box::new(move |_| {
@@ -229,21 +282,115 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 doctor(&args.state_dir, &args.workspace, &loaded.config, json).await
             }
             Some(Action::Status { json }) => status(&dirs, json),
-            Some(Action::Web { port }) => {
-                let server = polaris_ui_web::WebServer::bind(polaris_ui_web::WebOptions {
-                    bind: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
-                    state_dir: args.state_dir.clone(),
-                    workspace: args.workspace.clone(),
-                    config: loaded.config.clone(),
-                    env_file: polaris_ui_session::default_env_file(
-                        args.env_file.as_deref(),
-                        &dirs.global,
+            Some(Action::S1Calibrate { fixtures }) => {
+                let lines = polaris_ui_session::system_one::calibrate(
+                    &fixtures,
+                    &args.workspace,
+                    &args.state_dir,
+                    &dirs.global,
+                    |line| {
+                        let _shown = writeln!(std::io::stderr().lock(), "{line}");
+                    },
+                )
+                .await
+                .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                for line in lines {
+                    writeln!(out, "{line}")?;
+                }
+                out.flush()?;
+                Ok(())
+            }
+            Some(Action::NvProfile)
+            | Some(Action::NvVerify)
+            | Some(Action::Hack)
+            | Some(Action::Ci)
+            | Some(Action::CiRun)
+            | Some(Action::SearchLocal { .. })
+            | Some(Action::SearchWeb { .. })
+            | Some(Action::NvDocsSync)
+            | Some(Action::NvDocs { .. })
+            | Some(Action::Research { .. }) => {
+                use polaris_ui_session::commands::LocalCommand;
+                let command = match args.command {
+                    Some(Action::NvProfile) => LocalCommand::NvProfile,
+                    Some(Action::NvVerify) => LocalCommand::NvVerify,
+                    Some(Action::Ci) => LocalCommand::Ci,
+                    Some(Action::CiRun) => LocalCommand::CiRun,
+                    Some(Action::SearchLocal { query }) => LocalCommand::SearchLocal(query),
+                    Some(Action::SearchWeb { query }) => LocalCommand::SearchWeb(query),
+                    Some(Action::NvDocsSync) => LocalCommand::NvDocsSync,
+                    Some(Action::NvDocs { query }) => LocalCommand::NvDocs(query),
+                    Some(Action::Research { what }) => LocalCommand::Research(
+                        polaris_ui_session::research::ResearchCommand::parse(&what).ok_or(
+                            CliError::Unavailable(
+                                "research needs a goal, or status, report or resume",
+                            ),
+                        )?,
                     ),
-                })
+                    _ => LocalCommand::Hack,
+                };
+                let lines = command
+                    .run_with(
+                        polaris_kernel::directives::directive::NvidiaMode::Auto,
+                        &args.workspace,
+                    )
+                    .await
+                    .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                writeln!(out, "{}", command.title())?;
+                for line in lines {
+                    writeln!(out, "{line}")?;
+                }
+                out.flush()?;
+                Ok(())
+            }
+            Some(Action::Web {
+                port,
+                connect,
+                token_file,
+            }) => {
+                let attach = match (connect, token_file) {
+                    (Some(endpoint), Some(token_file)) => {
+                        let session = args.session.ok_or(CliError::Unavailable(
+                            "--connect needs --session with the daemon's session id",
+                        ))?;
+                        let credential = tokio::fs::read_to_string(token_file).await?;
+                        Some(
+                            polaris_ui_web::AttachTarget::new(
+                                &endpoint,
+                                &session.to_string(),
+                                &credential,
+                            )
+                            .map_err(|error| CliError::Ui(error.to_string()))?
+                            // `tcp://` off loopback: mutual TLS files from POLARIS_TLS_*.
+                            .with_env_tls(),
+                        )
+                    }
+                    _ => None,
+                };
+                let attached = attach.as_ref().map(|target| target.endpoint.clone());
+                let server = polaris_ui_web::WebServer::bind_with(
+                    polaris_ui_web::WebOptions {
+                        bind: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+                        state_dir: args.state_dir.clone(),
+                        workspace: args.workspace.clone(),
+                        config: loaded.config.clone(),
+                        env_file: polaris_ui_session::default_env_file(
+                            args.env_file.as_deref(),
+                            &dirs.global,
+                        ),
+                    },
+                    None,
+                    attach,
+                )
                 .await
                 .map_err(|error| CliError::Ui(error.to_string()))?;
                 let mut out = std::io::stdout().lock();
                 writeln!(out, "Polaris web UI: {}", server.url())?;
+                if let Some(endpoint) = attached {
+                    writeln!(out, "Attached to polarisd at {endpoint}.")?;
+                }
                 writeln!(
                     out,
                     "Open it in a browser on this machine; Ctrl+C stops the server."

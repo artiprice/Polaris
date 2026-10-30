@@ -1,12 +1,16 @@
 //! Kernel bridge: implements the window's [`polaris_ui_gui::backend`] contract over an offline
 //! kernel session ([`polaris_ui_session::OfflineSession`]) and, when chat is enabled, answers typed
 //! messages through the shared [`polaris_ui_session::ConversationHost`] (the same provider chain
-//! and read-only agent the terminal uses).
+//! and agent the terminal uses; file changes wait for the review bar).
 //!
 //! One background thread owns a tokio runtime. Requests arrive on a std channel (forwarded into
 //! the runtime by a blocking task); one loop selects over requests and the open session's record
 //! stream, and reports [`BackendEvent`]s back on another std channel that the UI thread drains.
 //! The kernel starts lazily on the first `Open`, so the welcome screen never waits for it.
+//!
+//! [`spawn_attached`] runs the same loop over a `polarisd` session instead
+//! ([`polaris_ui_session::RemoteSession`], P9): messages are recorded by the daemon and shown
+//! from its event stream; replies, search and activity stay with local sessions.
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -14,11 +18,13 @@ use std::thread::JoinHandle;
 
 use polaris_sdk::ids::SessionId;
 use polaris_ui_gui::backend::{
-    BackendEvent, BackendLink, BackendRequest, MessageKind, SearchHit, SessionSummary,
+    BackendEvent, BackendLink, BackendRequest, Environment, MessageKind, ProviderState, SearchHit,
+    SessionSummary,
 };
 use polaris_ui_session::{
-    ChatProgress, ConversationHost, HostEvent, OfflineSession, RecordTextKind, SessionHostError,
-    SessionMeta, is_single_directive, list_sessions, records_until_own_input, search_history,
+    AttachTarget, ChangeReview, ChatProgress, ConversationHost, HostEvent, OfflineSession,
+    RecordTextKind, RemoteSession, SessionHostError, SessionMeta, answer_review,
+    is_single_directive, list_sessions, records_until_own_input, search_history,
 };
 
 use crate::DesktopError;
@@ -27,6 +33,10 @@ use crate::DesktopError;
 const LIST_LIMIT: u32 = 100;
 /// Search hits returned per query.
 const SEARCH_LIMIT: u32 = 50;
+/// Why replies are absent while attached.
+const ATTACHED: &str = "Attached to polarisd: the daemon answers each message (read-only; changes are shown as patches) and replies appear when they finish.";
+/// Why search and activity are absent while attached.
+const LOCAL_ONLY: &str = "Search and activity cover the local session store; they are not available while attached to polarisd.";
 
 /// Handle to the bridge thread.
 #[derive(Debug)]
@@ -80,6 +90,28 @@ pub fn spawn_with_chat(
     workspace: PathBuf,
     chat: Option<ChatOptions>,
 ) -> Result<(BackendLink, Bridge), DesktopError> {
+    spawn_inner(state_dir, workspace, chat, None)
+}
+
+/// Starts the bridge thread over the `polarisd` session `target` names (P9): `Open` attaches,
+/// typed lines are recorded by the daemon, and the view follows its event stream.
+///
+/// # Errors
+/// [`DesktopError::Bridge`] when the thread or its runtime cannot start.
+pub fn spawn_attached(
+    state_dir: PathBuf,
+    workspace: PathBuf,
+    target: AttachTarget,
+) -> Result<(BackendLink, Bridge), DesktopError> {
+    spawn_inner(state_dir, workspace, None, Some(target))
+}
+
+fn spawn_inner(
+    state_dir: PathBuf,
+    workspace: PathBuf,
+    chat: Option<ChatOptions>,
+    attach: Option<AttachTarget>,
+) -> Result<(BackendLink, Bridge), DesktopError> {
     let (request_tx, request_rx) = mpsc::channel::<BackendRequest>();
     let (event_tx, event_rx) = mpsc::channel::<BackendEvent>();
     let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -91,7 +123,9 @@ pub fn spawn_with_chat(
     let thread = std::thread::Builder::new()
         .name(String::from("polaris-bridge"))
         .spawn(move || {
-            runtime.block_on(run(state_dir, workspace, chat, request_rx, event_tx));
+            runtime.block_on(run(
+                state_dir, workspace, chat, attach, request_rx, event_tx,
+            ));
         })
         .map_err(|_| DesktopError::Bridge("bridge thread failed to start"))?;
     Ok((
@@ -138,9 +172,95 @@ struct Bridgework {
     usage: (u64, u64, u64),
     /// Plan mode of the composer (the window starts in plan mode).
     plan: bool,
+    /// Changes the running reply waits on, by request id.
+    reviews: std::collections::BTreeMap<String, ChangeReview>,
+    /// The `polarisd` session `Open` attaches to, in attached mode.
+    attach: Option<AttachTarget>,
+    /// The attached daemon session.
+    remote: Option<RemoteSession>,
 }
 
 impl Bridgework {
+    async fn open_remote(&mut self, target: AttachTarget) {
+        let _sent = self.emit(BackendEvent::Starting);
+        self.close_session().await;
+        match RemoteSession::attach(&target).await {
+            Ok(remote) => {
+                let _sent = self.emit(BackendEvent::Opened {
+                    id: remote.id.to_string(),
+                    title: String::from("polarisd"),
+                    workspace: PathBuf::from(remote.endpoint()),
+                    branch: None,
+                });
+                self.remote = Some(remote);
+            }
+            Err(error) => {
+                let _sent = self.emit(BackendEvent::Failed(describe(
+                    "Could not attach to polarisd",
+                    &error,
+                )));
+            }
+        }
+    }
+
+    async fn submit_remote(&mut self, text: &str) {
+        if polaris_ui_session::commands::LocalCommand::parse(text).is_some() {
+            let _sent = self.emit(BackendEvent::Rejected(String::from(
+                "/nv-profile, /nv-verify and /hack run on local sessions; this window is attached to polarisd",
+            )));
+            return;
+        }
+        let Some(remote) = self.remote.as_ref() else {
+            let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
+            return;
+        };
+        let event = match remote.submit(text).await {
+            Ok(_) => BackendEvent::Committed,
+            Err(error) => BackendEvent::Rejected(error.to_string()),
+        };
+        let _sent = self.emit(event);
+    }
+
+    fn remote_record(
+        &mut self,
+        next: Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError>,
+    ) {
+        match next {
+            Ok(Some(resolved)) => {
+                if let (Some(text), Some(kind)) = (resolved.text, resolved.text_kind) {
+                    let kind = match kind {
+                        RecordTextKind::Directive => MessageKind::Directive,
+                        RecordTextKind::UserInput => MessageKind::UserInput,
+                        RecordTextKind::Assistant => MessageKind::Assistant,
+                    };
+                    let _sent = self.emit(BackendEvent::Message { kind, text });
+                }
+            }
+            Ok(None) | Err(_) => {
+                self.remote = None;
+                let _sent = self.emit(BackendEvent::Failed(String::from(
+                    "The connection to polarisd ended; open the session again.",
+                )));
+                let _closed = self.emit(BackendEvent::Closed);
+            }
+        }
+    }
+
+    fn remote_list(&self) {
+        let rows = self
+            .remote
+            .iter()
+            .map(|remote| SessionSummary {
+                id: remote.id.to_string(),
+                title: String::from("polarisd"),
+                workspace: PathBuf::from(remote.endpoint()),
+                branch: None,
+                updated_ms: 0,
+            })
+            .collect();
+        let _sent = self.emit(BackendEvent::Sessions(rows));
+    }
+
     /// `false` once the window is gone (nobody to report to).
     fn emit(&self, event: BackendEvent) -> bool {
         self.events.send(event).is_ok()
@@ -158,6 +278,9 @@ impl Bridgework {
                     &error,
                 )));
             }
+            let _sent = self.emit(BackendEvent::Closed);
+        }
+        if self.remote.take().is_some() {
             let _sent = self.emit(BackendEvent::Closed);
         }
     }
@@ -195,6 +318,7 @@ impl Bridgework {
                     "offline session opened"
                 );
                 let workspace = session.workspace().to_path_buf();
+                let sandbox_note = session.sandbox_note().map(str::to_owned);
                 self.session = Some(session);
                 let (title, branch) = match self.meta_of(id).await {
                     Some(meta) => (meta.name.clone(), branch_of(&meta.branch)),
@@ -206,6 +330,11 @@ impl Bridgework {
                     workspace,
                     branch,
                 });
+                if let Some(note) = sandbox_note {
+                    let _sent = self.emit(BackendEvent::Notice(format!(
+                        "Tests cannot run in the sandbox in this session: {note}."
+                    )));
+                }
             }
             Err(error) => {
                 let _sent = self.emit(BackendEvent::Failed(describe(
@@ -221,6 +350,24 @@ impl Bridgework {
             let _sent = self.emit(BackendEvent::Rejected(String::from("no session is open")));
             return;
         };
+        if let Some(command) = polaris_ui_session::commands::LocalCommand::parse(text) {
+            // Answered off the bridge loop: a CI run can take minutes.
+            let kernel = session.kernel().clone();
+            let workspace = session.workspace().to_path_buf();
+            let _committed = self.emit(BackendEvent::Committed);
+            let events = self.events.clone();
+            tokio::spawn(async move {
+                let event = match command.run(&kernel, &workspace).await {
+                    Ok(lines) => BackendEvent::Report {
+                        title: command.title().to_owned(),
+                        lines,
+                    },
+                    Err(error) => BackendEvent::Failed(format!("{}: {error}", command.title())),
+                };
+                let _sent = events.send(event);
+            });
+            return;
+        }
         let answer = !is_single_directive(text)
             && self.chat.as_ref().is_some_and(ConversationHost::is_ready);
         if answer && self.chat.as_ref().is_some_and(ConversationHost::is_running) {
@@ -284,29 +431,84 @@ impl Bridgework {
         let _sent = self.emit(event);
     }
 
-    fn host_event(&self, event: HostEvent) {
+    async fn review(&mut self, request_id: &str, apply: bool, note: Option<String>) {
+        let (Some(review), Some(session)) = (self.reviews.get(request_id), self.session.as_ref())
+        else {
+            let _sent = self.emit(BackendEvent::Failed(
+                "That change is no longer waiting for a decision.".to_owned(),
+            ));
+            return;
+        };
+        match answer_review(session.kernel(), review, apply, note).await {
+            Ok(()) => {}
+            // A declined test run stops the reply waiting on it.
+            Err(polaris_ui_session::ChatError::Cancelled) => {
+                if let Some(chat) = self.chat.as_ref() {
+                    chat.cancel_turn();
+                }
+            }
+            Err(error) => {
+                let _sent = self.emit(BackendEvent::Failed(error.to_string()));
+            }
+        }
+    }
+
+    fn host_event(&mut self, event: HostEvent) {
         let event = match event {
             HostEvent::ProviderReady {
                 provider,
                 model,
                 effort,
                 models,
-                ..
-            } => BackendEvent::ProviderReady {
-                provider: provider.to_owned(),
-                model,
-                effort,
-                models,
-            },
-            HostEvent::ProviderUnavailable(reason) => BackendEvent::ProviderUnavailable(reason),
+                skipped,
+            } => {
+                // Providers before the selected one were tried and skipped, in order.
+                let mut chain = skipped_providers(&skipped);
+                chain.push(ProviderState {
+                    name: provider.to_owned(),
+                    state: format!("answers replies ({model})"),
+                    ready: true,
+                });
+                let _sent = self.emit(BackendEvent::Providers(chain));
+                BackendEvent::ProviderReady {
+                    provider: provider.to_owned(),
+                    model,
+                    effort,
+                    models,
+                }
+            }
+            HostEvent::ProviderUnavailable(reason) => {
+                let reasons: Vec<String> = reason.split("; ").map(str::to_owned).collect();
+                let _sent = self.emit(BackendEvent::Providers(skipped_providers(&reasons)));
+                BackendEvent::ProviderUnavailable(reason)
+            }
             HostEvent::Progress(ChatProgress::Text(text)) => BackendEvent::ReplyText(text),
             HostEvent::Progress(ChatProgress::Request) => BackendEvent::ReplyStep,
             HostEvent::Progress(ChatProgress::Reasoning(_)) => return,
-            HostEvent::Finished(report) => BackendEvent::ReplyFinished {
-                summary: report.summary(),
-                answer: report.answer,
-            },
-            HostEvent::Failed(reason) => BackendEvent::ReplyFailed(reason),
+            HostEvent::Progress(ChatProgress::Review(review)) => {
+                let request_id = review.request_id.to_string();
+                let prompt = review.prompt.clone();
+                self.reviews.insert(request_id.clone(), review);
+                BackendEvent::Review { request_id, prompt }
+            }
+            HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
+                let request_id = id.to_string();
+                self.reviews.remove(&request_id);
+                BackendEvent::ReviewClosed(request_id)
+            }
+            HostEvent::Progress(ChatProgress::Applied(path)) => BackendEvent::Applied(path),
+            HostEvent::Progress(ChatProgress::Deleted(path)) => BackendEvent::Deleted(path),
+            HostEvent::Finished(report) => {
+                self.reviews.clear();
+                BackendEvent::ReplyFinished {
+                    summary: report.summary(),
+                    answer: report.answer,
+                }
+            }
+            HostEvent::Failed(reason) => {
+                self.reviews.clear();
+                BackendEvent::ReplyFailed(reason)
+            }
         };
         let _sent = self.emit(event);
     }
@@ -377,6 +579,7 @@ impl Bridgework {
                     let kind = match kind {
                         RecordTextKind::Directive => MessageKind::Directive,
                         RecordTextKind::UserInput => MessageKind::UserInput,
+                        RecordTextKind::Assistant => MessageKind::Assistant,
                     };
                     let _sent = self.emit(BackendEvent::Message { kind, text });
                 }
@@ -402,12 +605,110 @@ fn open_id(session: &OfflineSession) -> SessionId {
     session.id
 }
 
+/// `provider: reason` lines of skipped providers as Models page rows.
+fn skipped_providers(skipped: &[String]) -> Vec<ProviderState> {
+    skipped
+        .iter()
+        .map(|line| match line.split_once(": ") {
+            Some((name, reason)) => ProviderState {
+                name: name.trim().to_owned(),
+                state: format!("skipped: {}", reason.trim()),
+                ready: false,
+            },
+            None => ProviderState {
+                name: String::from("chain"),
+                state: line.trim().to_owned(),
+                ready: false,
+            },
+        })
+        .filter(|row| !row.state.is_empty())
+        .collect()
+}
+
+/// What the Settings page shows about this run: how it is connected and where it keeps things.
+fn environment(
+    state_dir: &Path,
+    workspace: &Path,
+    env_file: Option<&Path>,
+    attach: Option<&AttachTarget>,
+    replies: bool,
+) -> Environment {
+    let connection = match attach {
+        Some(target) => format!(
+            "Attached to polarisd at {} (session {}); the daemon records and answers messages.",
+            target.endpoint, target.session
+        ),
+        None if replies => String::from(
+            "Local session store; replies come from the provider chain and every change waits for your review.",
+        ),
+        None => String::from("Local session store; messages are recorded without replies."),
+    };
+    let mut paths = vec![
+        (String::from("WORKSPACE"), workspace.display().to_string()),
+        (
+            String::from("SESSION STORE"),
+            state_dir.display().to_string(),
+        ),
+    ];
+    if let Ok(dirs) = polaris_config::discover(workspace) {
+        paths.push((
+            String::from("PREFERENCES"),
+            dirs.global.join("config.toml").display().to_string(),
+        ));
+    }
+    paths.push((
+        String::from("SYSTEM ONE"),
+        polaris_ui_session::system_one::status(),
+    ));
+    paths.push((
+        String::from("SANDBOX"),
+        polaris_ui_session::sandbox::status(),
+    ));
+    paths.push((
+        String::from("PROVIDER KEYS"),
+        match env_file {
+            Some(path) => format!("{} (values are never shown)", path.display()),
+            None => String::from("no dotenv file; keys come from the environment"),
+        },
+    ));
+    Environment { connection, paths }
+}
+
+/// Save `ui.cli.reduce_motion` in the user's configuration (shared with the terminal UI).
+fn save_reduced_motion(workspace: &Path, on: bool) -> BackendEvent {
+    let saved = polaris_config::discover(workspace).and_then(|dirs| {
+        polaris_config::save_global_cli_preference(
+            &dirs,
+            polaris_config::PreferenceField::ReduceMotion,
+            polaris_config::PreferenceValue::Boolean(on),
+        )
+    });
+    match saved {
+        Ok(()) => BackendEvent::Notice(String::from(if on {
+            "Reduced motion saved"
+        } else {
+            "Full motion saved"
+        })),
+        Err(error) => BackendEvent::Notice(format!("The preference was not saved: {error}")),
+    }
+}
+
 async fn next_record(
     session: &mut Option<OfflineSession>,
 ) -> Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError> {
     match session.as_mut() {
         Some(session) => session.next_record().await,
         // Never resolves: the select arm is disabled while no session is open.
+        None => std::future::pending().await,
+    }
+}
+
+async fn next_remote_record(
+    remote: &mut Option<RemoteSession>,
+) -> Result<Option<polaris_ui_session::ResolvedRecord>, SessionHostError> {
+    match remote.as_mut() {
+        Some(remote) => remote.next_record().await,
+        // Never resolves: nothing is attached.
         None => std::future::pending().await,
     }
 }
@@ -424,6 +725,7 @@ async fn run(
     state_dir: PathBuf,
     workspace: PathBuf,
     chat: Option<ChatOptions>,
+    attach: Option<AttachTarget>,
     requests: Receiver<BackendRequest>,
     events: Sender<BackendEvent>,
 ) {
@@ -435,6 +737,14 @@ async fn run(
             }
         }
     });
+    let _sent = events.send(BackendEvent::Environment(environment(
+        &state_dir,
+        &workspace,
+        chat.as_ref()
+            .and_then(|options| options.env_file.as_deref()),
+        attach.as_ref(),
+        chat.is_some(),
+    )));
     let mut work = Bridgework {
         state_dir,
         workspace,
@@ -443,8 +753,13 @@ async fn run(
         chat: chat.map(|options| ConversationHost::new(options.config, options.env_file)),
         usage: (0, 0, 0),
         plan: true,
+        reviews: std::collections::BTreeMap::new(),
+        attach,
+        remote: None,
     };
-    if let Some(chat) = work.chat.as_mut() {
+    if work.attach.is_some() {
+        let _sent = work.emit(BackendEvent::ProviderUnavailable(String::from(ATTACHED)));
+    } else if let Some(chat) = work.chat.as_mut() {
         chat.start_pick();
     }
     loop {
@@ -453,7 +768,20 @@ async fn run(
                 let Some(request) = request else {
                     break;
                 };
+                let attached = work.attach.clone();
                 match request {
+                    BackendRequest::Open { .. } if attached.is_some() => {
+                        if let Some(target) = attached {
+                            work.open_remote(target).await;
+                        }
+                    }
+                    BackendRequest::Submit { text } if attached.is_some() => {
+                        work.submit_remote(&text).await;
+                    }
+                    BackendRequest::List if attached.is_some() => work.remote_list(),
+                    BackendRequest::Search { .. } | BackendRequest::Stats if attached.is_some() => {
+                        let _sent = work.emit(BackendEvent::Failed(String::from(LOCAL_ONLY)));
+                    }
                     BackendRequest::Open { resume } => work.open(resume).await,
                     BackendRequest::Submit { text } => work.submit(&text).await,
                     BackendRequest::List => work.list().await,
@@ -467,9 +795,24 @@ async fn run(
                     BackendRequest::SetEffort(effort) => work.set_effort(effort),
                     BackendRequest::Stats => work.stats().await,
                     BackendRequest::Mode { plan } => work.plan = plan,
+                    BackendRequest::Review { request_id, apply, note } => {
+                        work.review(&request_id, apply, note).await;
+                    }
+                    BackendRequest::SetReducedMotion(on) => {
+                        let workspace = work.workspace.clone();
+                        let event = tokio::task::spawn_blocking(move || {
+                            save_reduced_motion(&workspace, on)
+                        })
+                        .await
+                        .unwrap_or_else(|_| {
+                            BackendEvent::Notice(String::from("The preference was not saved."))
+                        });
+                        let _sent = work.emit(event);
+                    }
                 }
             }
             next = next_record(&mut work.session) => work.record(next),
+            next = next_remote_record(&mut work.remote) => work.remote_record(next),
             event = next_host_event(&mut work.chat) => work.host_event(event),
         }
     }

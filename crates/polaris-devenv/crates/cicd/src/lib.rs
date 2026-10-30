@@ -119,9 +119,23 @@ impl Pipeline<Draft> {
         }
     }
     /// Validate names, dependencies, DAG ordering, image consistency, environment, and limits.
+    /// Cache mounts are rejected: a generic SandboxBackend cannot apply them.
     /// # Errors
     /// Returns InvalidPipeline for invalid steps or dependency cycles.
     pub fn validate(self) -> Result<Pipeline<Validated>, CiError> {
+        self.validate_inner(false)
+    }
+
+    /// As [`Self::validate`], for a backend that mounts the pipeline's cache mounts itself (the
+    /// composition root configures it from [`Pipeline::cache_mounts`]); the mounts must have valid
+    /// keys and absolute targets, one key per target.
+    /// # Errors
+    /// As [`Self::validate`], and InvalidPipeline for an invalid cache mount.
+    pub fn validate_with_cache_mounts(self) -> Result<Pipeline<Validated>, CiError> {
+        self.validate_inner(true)
+    }
+
+    fn validate_inner(self, cache_mounts_applied: bool) -> Result<Pipeline<Validated>, CiError> {
         if self.steps.is_empty() {
             return Err(CiError::InvalidPipeline(
                 "pipeline needs at least one step".into(),
@@ -167,8 +181,11 @@ impl Pipeline<Draft> {
                     step.name.as_str()
                 )));
             }
-            if !step.cache_mounts.is_empty() {
+            if !step.cache_mounts.is_empty() && !cache_mounts_applied {
                 return Err(CiError::UnsupportedCacheMount);
+            }
+            for mount in &step.cache_mounts {
+                validate_cache_mount(&step.name, mount)?;
             }
             if let Some(current) = &image {
                 if current != &step.image {
@@ -252,6 +269,26 @@ impl Pipeline<Validated> {
     #[must_use]
     pub fn steps(&self) -> &[Step] {
         &self.steps
+    }
+    /// Every distinct cache mount of the pipeline, in first-use order.
+    ///
+    /// # Errors
+    /// InvalidPipeline when two steps mount different keys at one target.
+    pub fn cache_mounts(&self) -> Result<Vec<CacheMount>, CiError> {
+        let mut mounts: Vec<CacheMount> = Vec::new();
+        for mount in self.steps.iter().flat_map(|step| &step.cache_mounts) {
+            match mounts.iter().find(|known| known.target == mount.target) {
+                Some(known) if known.key == mount.key => {}
+                Some(_) => {
+                    return Err(CiError::InvalidPipeline(format!(
+                        "different caches mounted at {}",
+                        mount.target
+                    )));
+                }
+                None => mounts.push(mount.clone()),
+            }
+        }
+        Ok(mounts)
     }
     /// Deterministic topological order.
     #[must_use]
@@ -850,6 +887,56 @@ pub fn rust_test_pipeline(workspace: &WorkspaceFacts) -> Result<Pipeline<Draft>,
     let steps = vec![format, check, test];
     Ok(Pipeline::new(steps))
 }
+/// The default Rust pipeline with the cargo home and target directory on cache mounts
+/// (`<prefix>-cargo` at `/cache/cargo`, `<prefix>-target` at `/cache/target`), so a second run
+/// reuses downloaded crates and compiled artifacts.
+/// # Errors
+/// An invalid cache prefix or workspace fact.
+pub fn rust_test_pipeline_cached(
+    workspace: &WorkspaceFacts,
+    prefix: &str,
+) -> Result<Pipeline<Draft>, CiError> {
+    let mounts = vec![
+        CacheMount {
+            key: format!("{prefix}-cargo"),
+            target: "/cache/cargo".to_owned(),
+        },
+        CacheMount {
+            key: format!("{prefix}-target"),
+            target: "/cache/target".to_owned(),
+        },
+    ];
+    let mut steps = rust_test_pipeline(workspace)?.steps;
+    for step in &mut steps {
+        step.cache_mounts.clone_from(&mounts);
+        step.env
+            .push(("CARGO_HOME".to_owned(), "/cache/cargo".to_owned()));
+        step.env
+            .push(("CARGO_TARGET_DIR".to_owned(), "/cache/target".to_owned()));
+    }
+    Ok(Pipeline::new(steps))
+}
+
+fn validate_cache_mount(step: &StepName, mount: &CacheMount) -> Result<(), CiError> {
+    let mut key = mount.key.chars();
+    let key_ok = key.next().is_some_and(|c| c.is_ascii_alphanumeric())
+        && key.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'))
+        && mount.key.len() <= 128;
+    let target_ok = mount.target.starts_with('/')
+        && mount.target.len() <= 4_096
+        && !mount.target.contains(':')
+        && !mount.target.chars().any(char::is_control)
+        && !mount.target.split('/').any(|part| part == "..");
+    if key_ok && target_ok {
+        Ok(())
+    } else {
+        Err(CiError::InvalidPipeline(format!(
+            "invalid cache mount in {}",
+            step.as_str()
+        )))
+    }
+}
+
 /// Pipeline validation or sandbox execution failure.
 #[derive(Debug, Error)]
 pub enum CiError {

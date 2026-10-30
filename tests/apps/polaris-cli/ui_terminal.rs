@@ -370,12 +370,12 @@ fn terminal_screen_text(bytes: &[u8]) -> String {
                     .first()
                     .copied()
                     .filter(|value| *value != 0)
-                    .map_or(1, |value| value);
+                    .unwrap_or(1);
                 let second = values
                     .get(1)
                     .copied()
                     .filter(|value| *value != 0)
-                    .map_or(1, |value| value);
+                    .unwrap_or(1);
                 if matches!(
                     final_byte,
                     Some('H' | 'f' | 'G' | 'd' | 'A' | 'B' | 'C' | 'D' | 'K' | 'J')
@@ -400,7 +400,7 @@ fn terminal_screen_text(bytes: &[u8]) -> String {
                         }
                     }
                     Some('K') => {
-                        let mode = values.first().copied().map_or(0, |value| value);
+                        let mode = values.first().copied().unwrap_or(0);
                         let row = cells.get_mut(y);
                         if let Some(row) = row {
                             let last = x.min(row.len().saturating_sub(1));
@@ -510,13 +510,13 @@ fn terminal_cursor_position(bytes: &[u8]) -> Option<(usize, usize)> {
             .first()
             .copied()
             .filter(|value| *value != 0)
-            .map_or(1, |value| value);
+            .unwrap_or(1);
         let second = values
             .get(1)
             .copied()
             .filter(|value| *value != 0)
-            .map_or(1, |value| value);
-        let (row, column) = position.map_or((1_usize, 1_usize), |value| value);
+            .unwrap_or(1);
+        let (row, column) = position.unwrap_or((1_usize, 1_usize));
         match final_byte {
             'H' | 'f' => position = Some((first, second)),
             'A' => position = Some((row.saturating_sub(first), column)),
@@ -738,13 +738,13 @@ fn native_conpty_console_records_preserve_dollar_and_ascii_keys() -> TestResult<
         let mut saw_letter = false;
         while !(saw_dollar && saw_letter) && Instant::now() < deadline {
             let remaining = deadline.saturating_duration_since(Instant::now());
-            if let Some(NormalizedInput::Key(key)) = input.poll(remaining)? {
-                if matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) {
-                    match key.code {
-                        KeyCode::Char('$') => saw_dollar = true,
-                        KeyCode::Char('a') => saw_letter = true,
-                        _ => {}
-                    }
+            if let Some(NormalizedInput::Key(key)) = input.poll(remaining)?
+                && matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat)
+            {
+                match key.code {
+                    KeyCode::Char('$') => saw_dollar = true,
+                    KeyCode::Char('a') => saw_letter = true,
+                    _ => {}
                 }
             }
         }

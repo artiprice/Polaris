@@ -325,10 +325,9 @@ impl<D: polaris_sdk::registry::DecisionEngine + 'static> FrameToolPruner
                     .tools
                     .iter()
                     .any(|tool| tool.name.as_ref() == required)
+                    && !selected.iter().any(|name| name == required)
                 {
-                    if !selected.iter().any(|name| name == required) {
-                        selected.push(required.to_owned());
-                    }
+                    selected.push(required.to_owned());
                 }
             }
             if selected.is_empty() {
@@ -819,13 +818,13 @@ impl<M: PromptTokenizer, T: FrameToolAccess + 'static> FunctionalOperator
                 .await?;
         }
         let mut tool_priority = None;
-        if let Some(pruner) = &self.tool_pruner {
-            if let Some(selected) = pruner.select(&request, &history).await {
-                request
-                    .tools
-                    .retain(|tool| selected.iter().any(|name| name == tool.name.as_ref()));
-                tool_priority = Some(selected);
-            }
+        if let Some(pruner) = &self.tool_pruner
+            && let Some(selected) = pruner.select(&request, &history).await
+        {
+            request
+                .tools
+                .retain(|tool| selected.iter().any(|name| name == tool.name.as_ref()));
+            tool_priority = Some(selected);
         }
         let base_len = request.messages.len();
         let mut omitted = 0_usize;
@@ -930,19 +929,19 @@ impl<M: PromptTokenizer, T: FrameToolAccess + 'static> FunctionalOperator
                         .iter()
                         .filter(|tool| !retained_prompt_tool(&tool.name))
                         .count();
-                    if optional > 1 {
-                        if let Some(remove) = priority.iter().rev().find(|name| {
+                    if optional > 1
+                        && let Some(remove) = priority.iter().rev().find(|name| {
                             !retained_prompt_tool(name)
                                 && request
                                     .tools
                                     .iter()
                                     .any(|tool| tool.name.as_ref() == name.as_str())
-                        }) {
-                            request
-                                .tools
-                                .retain(|tool| tool.name.as_ref() != remove.as_str());
-                            continue;
-                        }
+                        })
+                    {
+                        request
+                            .tools
+                            .retain(|tool| tool.name.as_ref() != remove.as_str());
+                        continue;
                     }
                 }
                 return Err(KernelPromptError::Capacity);

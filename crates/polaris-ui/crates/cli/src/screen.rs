@@ -936,17 +936,16 @@ fn prepare_metadata_and_rows(
         }
     }
 
-    if let Some(questionnaire) = state.questionnaire {
-        if let Some(rect) = questions::overlay_rect(layout.composer, layout.viewport, questionnaire)
-        {
-            occlude_hits(&mut metadata.hits, rect);
-            occlude_source_cells(&mut metadata.source_cells, rect);
-            remove_occluded_spans(&mut metadata.source_spans, rect);
-            metadata.questionnaire_rect = Some(rect);
-            metadata.composer_count = 0;
-            metadata.questionnaire_editor =
-                questions::append_hits(&mut metadata.hits, rect, questionnaire, *options);
-        }
+    if let Some(questionnaire) = state.questionnaire
+        && let Some(rect) = questions::overlay_rect(layout.composer, layout.viewport, questionnaire)
+    {
+        occlude_hits(&mut metadata.hits, rect);
+        occlude_source_cells(&mut metadata.source_cells, rect);
+        remove_occluded_spans(&mut metadata.source_spans, rect);
+        metadata.questionnaire_rect = Some(rect);
+        metadata.composer_count = 0;
+        metadata.questionnaire_editor =
+            questions::append_hits(&mut metadata.hits, rect, questionnaire, *options);
     }
 
     for (rect, _label, action) in footer_controls(
@@ -1303,9 +1302,9 @@ fn render_inner(
     } else {
         draw_composer(buffer, layout.composer, state.composer, *options)
     };
-    if metadata.questionnaire_rect.is_some() {
-        metadata.caret = caret;
-    } else if state.editor_focus && state.completion.is_none() && state.sheet.is_none() {
+    if metadata.questionnaire_rect.is_some()
+        || (state.editor_focus && state.completion.is_none() && state.sheet.is_none())
+    {
         metadata.caret = caret;
     } else {
         metadata.caret = None;
@@ -1319,11 +1318,11 @@ fn render_inner(
             buffer.set_style(region.rect, control_focus_style(*options));
         }
     }
-    if let Some(target) = state.hover {
-        if let Some(style) = hover_style(target, state, *options) {
-            for region in metadata.hits.iter().filter(|hit| hit.target == target) {
-                buffer.set_style(region.rect, style);
-            }
+    if let Some(target) = state.hover
+        && let Some(style) = hover_style(target, state, *options)
+    {
+        for region in metadata.hits.iter().filter(|hit| hit.target == target) {
+            buffer.set_style(region.rect, style);
         }
     }
     if let Some(point) = metadata.caret {
@@ -1459,8 +1458,7 @@ fn draw_header(
         fg(options, TEXT),
     );
     let version = format!("v{}", env!("CARGO_PKG_VERSION").replace("-alpha", "alpha"));
-    let version_width =
-        u16::try_from(UnicodeWidthStr::width(version.as_str())).map_or(u16::MAX, |width| width);
+    let version_width = u16::try_from(UnicodeWidthStr::width(version.as_str())).unwrap_or(u16::MAX);
     buffer.set_stringn(
         area.x.saturating_add(10),
         area.y,
@@ -1483,23 +1481,23 @@ fn draw_header(
         .saturating_add(version_width)
         .saturating_add(demo_badge_width);
     let path_width = area.width.saturating_sub(brand_width.saturating_add(4));
-    if path_width >= 12 {
-        if let Some(workspace) = state.workspace {
-            let display = workspace.strip_prefix(r"\\?\").map_or(workspace, |p| p);
-            let clipped = crate::text::fit_display_text(display, path_width);
-            Paragraph::new(clipped)
-                .alignment(ratatui::layout::Alignment::Right)
-                .style(fg(options, MUTED))
-                .render(
-                    Rect::new(
-                        area.right().saturating_sub(path_width),
-                        area.y,
-                        path_width,
-                        1,
-                    ),
-                    buffer,
-                );
-        }
+    if path_width >= 12
+        && let Some(workspace) = state.workspace
+    {
+        let display = workspace.strip_prefix(r"\\?\").map_or(workspace, |p| p);
+        let clipped = crate::text::fit_display_text(display, path_width);
+        Paragraph::new(clipped)
+            .alignment(ratatui::layout::Alignment::Right)
+            .style(fg(options, MUTED))
+            .render(
+                Rect::new(
+                    area.right().saturating_sub(path_width),
+                    area.y,
+                    path_width,
+                    1,
+                ),
+                buffer,
+            );
     }
 }
 
@@ -1618,15 +1616,15 @@ fn footer_controls(
     };
     let effort = view.effort.name();
     let mode_width = u16::try_from(mode.len())
-        .map_or(u16::MAX, |n| n)
+        .unwrap_or(u16::MAX)
         .saturating_add(4);
     let effort_width = u16::try_from(effort.len())
-        .map_or(u16::MAX, |n| n)
+        .unwrap_or(u16::MAX)
         .saturating_add(4);
     let profile = profile_label.map(|label| crate::text::fit_display_text(label, 12));
     let profile_width = profile.as_ref().map_or(0, |label| {
         u16::try_from(UnicodeWidthStr::width(label.as_str()))
-            .map_or(u16::MAX, |n| n)
+            .unwrap_or(u16::MAX)
             .saturating_add(4)
     });
     let reserved = mode_width
@@ -1639,7 +1637,7 @@ fn footer_controls(
         None => crate::text::fit_display_text(view.model.as_str(), model_width.saturating_sub(4)),
     };
     let model_width = u16::try_from(UnicodeWidthStr::width(model.as_str()))
-        .map_or(u16::MAX, |n| n)
+        .unwrap_or(u16::MAX)
         .saturating_add(4);
     let total = mode_width
         .saturating_add(model_width)
@@ -1722,7 +1720,7 @@ fn visible_draft_lines(composer: &Composer, terminal_width: u16) -> u16 {
             .rows()
             .len(),
     )
-    .map_or(u16::MAX, |n| n)
+    .unwrap_or(u16::MAX)
 }
 
 #[derive(Debug, Clone)]
@@ -1742,8 +1740,9 @@ struct RenderRow {
 impl RenderRow {
     fn gutter_width(&self) -> u16 {
         match self.gutter.as_ref() {
-            Some(gutter) => u16::try_from(UnicodeWidthStr::width(gutter.as_str()))
-                .map_or(u16::MAX, |width| width),
+            Some(gutter) => {
+                u16::try_from(UnicodeWidthStr::width(gutter.as_str())).unwrap_or(u16::MAX)
+            }
             None => 0,
         }
     }
@@ -1910,16 +1909,15 @@ impl RenderCache {
             .entries
             .iter()
             .position(|cached| cached.key == key && cached.source_snapshot == source_snapshot)
+            && let Some(cached) = self.entries.remove(position)
         {
-            if let Some(cached) = self.entries.remove(position) {
-                self.hits = self.hits.saturating_add(1);
-                let result = EntryRender {
-                    rows: cached.rows.clone(),
-                    source_bytes: cached.source_bytes,
-                };
-                self.entries.push_back(cached);
-                return result;
-            }
+            self.hits = self.hits.saturating_add(1);
+            let result = EntryRender {
+                rows: cached.rows.clone(),
+                source_bytes: cached.source_bytes,
+            };
+            self.entries.push_back(cached);
+            return result;
         }
         self.misses = self.misses.saturating_add(1);
         let rendered = render();
@@ -2012,7 +2010,7 @@ fn entry_cache_snapshot(
     let (title, body) = entry
         .text
         .split_once('\n')
-        .map_or((entry.text.as_str(), ""), |parts| parts);
+        .unwrap_or((entry.text.as_str(), ""));
     let title_len = title.len();
     let title = bounded_text(title, crate::text::MAX_ENTRY_SOURCE_BYTES);
     let body_limit = if tool.expanded {
@@ -2071,7 +2069,7 @@ fn render_entry_rows(
         let (title, body) = entry
             .text
             .split_once('\n')
-            .map_or((entry.text.as_str(), ""), |parts| parts);
+            .unwrap_or((entry.text.as_str(), ""));
         let status = match tool.status {
             PresentationToolStatus::Working => "Working",
             PresentationToolStatus::Completed => "Completed",
@@ -2085,7 +2083,7 @@ fn render_entry_rows(
             if tool.expanded { "collapse" } else { "expand" }
         );
         let suffix_width = u16::try_from(UnicodeWidthStr::width(suffix.as_str()))
-            .map_or(u16::MAX, |n| n)
+            .unwrap_or(u16::MAX)
             .saturating_add(3);
         let title_width = width.saturating_sub(suffix_width).max(1);
         if let Some(mut display) = wrap_display_text(title, title_width, 0).into_iter().next() {
@@ -2438,10 +2436,7 @@ fn bounded_text(input: &str, limit: usize) -> &str {
         .take_while(|(start, ch)| start.saturating_add(ch.len_utf8()) <= limit)
         .last()
         .map_or(0, |(start, ch)| start.saturating_add(ch.len_utf8()));
-    match input.get(..end) {
-        Some(prefix) => prefix,
-        None => "",
-    }
+    input.get(..end).unwrap_or_default()
 }
 
 fn source_decorations(line: &str, source_base: usize, in_code: bool) -> Vec<InlineDecoration> {
@@ -2850,13 +2845,13 @@ fn draw_welcome(buffer: &mut Buffer, area: Rect, options: RenderOptions) {
     }
     let x = area
         .x
-        .saturating_add(area.width.saturating_sub(w).checked_div(2).map_or(0, |n| n));
+        .saturating_add(area.width.saturating_sub(w).checked_div(2).unwrap_or(0));
     let y = area.y.saturating_add(
         area.height
             .saturating_sub(h)
             .saturating_sub(2)
             .checked_div(2)
-            .map_or(0, |n| n),
+            .unwrap_or(0),
     );
     for (row, line) in art.iter().enumerate() {
         for (column, glyph) in line.chars().enumerate() {
@@ -2864,8 +2859,8 @@ fn draw_welcome(buffer: &mut Buffer, area: Rect, options: RenderOptions) {
                 continue;
             }
             let near = column
-                .abs_diff(usize::from(w.checked_div(2).map_or(0, |n| n)))
-                .saturating_add(row.abs_diff(usize::from(h.checked_div(2).map_or(0, |n| n))))
+                .abs_diff(usize::from(w.checked_div(2).unwrap_or(0)))
+                .saturating_add(row.abs_diff(usize::from(h.checked_div(2).unwrap_or(0))))
                 == 1;
             let tone = if glyph == '✦' {
                 MINT
@@ -3182,8 +3177,8 @@ fn draw_completion(
         .iter()
         .map(|item| UnicodeWidthStr::width(item.label.as_str()))
         .max()
-        .map_or(0, |n| n)
-        .min(usize::from(area.width.checked_div(2).map_or(0, |n| n)));
+        .unwrap_or(0)
+        .min(usize::from(area.width.checked_div(2).unwrap_or(0)));
     for (offset, item) in menu.items.iter().skip(first).take(visible).enumerate() {
         let Ok(dy) = u16::try_from(offset) else {
             continue;
@@ -3195,10 +3190,10 @@ fn draw_completion(
             MUTED
         };
         let label =
-            crate::text::fit_display_text(&item.label, u16::try_from(label_width).map_or(0, |n| n));
+            crate::text::fit_display_text(&item.label, u16::try_from(label_width).unwrap_or(0));
         let y = area.y.saturating_add(1).saturating_add(dy);
         buffer.set_stringn(area.x, y, label, label_width, fg(options, color));
-        let dx = u16::try_from(label_width.saturating_add(3)).map_or(area.width, |n| n);
+        let dx = u16::try_from(label_width.saturating_add(3)).unwrap_or(area.width);
         buffer.set_stringn(
             area.x.saturating_add(dx),
             y,

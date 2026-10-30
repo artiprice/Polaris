@@ -5,8 +5,8 @@
 //! preallocated array, so settlement remains owned by the limiter even when no snapshot slot is
 //! immediately available.
 
-use crate::{DenyReason, Denied, RateLimitError, gcra::NANOS_PER_MINUTE};
-use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
+use crate::{Denied, DenyReason, RateLimitError, gcra::NANOS_PER_MINUTE};
+use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use std::time::Duration;
 
 const SNAPSHOTS: usize = 8;
@@ -181,7 +181,12 @@ impl Log {
         Ok(())
     }
 
-    fn replace_with_transform(&mut self, index: usize, period_ns: u64, cost: u64) -> Result<(), ()> {
+    fn replace_with_transform(
+        &mut self,
+        index: usize,
+        period_ns: u64,
+        cost: u64,
+    ) -> Result<(), ()> {
         let old = *self.records.get(index).ok_or(())?;
         let delta_ns = period_ns.checked_mul(cost).ok_or(())?;
         let floor_ns = old.time_ns.checked_add(delta_ns).ok_or(())?;
@@ -200,12 +205,7 @@ impl Log {
         Ok(())
     }
 
-    fn append_forced_charge(
-        &mut self,
-        time_ns: u64,
-        period_ns: u64,
-        cost: u64,
-    ) -> Result<(), ()> {
+    fn append_forced_charge(&mut self, time_ns: u64, period_ns: u64, cost: u64) -> Result<(), ()> {
         let delta_ns = period_ns.saturating_mul(cost);
         let floor_ns = time_ns.saturating_add(delta_ns);
         self.push(Record {
@@ -289,14 +289,18 @@ impl Snapshot {
     fn copy_from(&self, source: &Snapshot) -> Result<(), ()> {
         self.rpm.store(&source.rpm.load()?)?;
         self.tpm.store(&source.tpm.load()?)?;
-        self.result_slot
-            .store(source.result_slot.load(Ordering::Relaxed), Ordering::Relaxed);
+        self.result_slot.store(
+            source.result_slot.load(Ordering::Relaxed),
+            Ordering::Relaxed,
+        );
         self.result_generation.store(
             source.result_generation.load(Ordering::Relaxed),
             Ordering::Relaxed,
         );
-        self.result_refund
-            .store(source.result_refund.load(Ordering::Relaxed), Ordering::Relaxed);
+        self.result_refund.store(
+            source.result_refund.load(Ordering::Relaxed),
+            Ordering::Relaxed,
+        );
         self.result_retained.store(
             source.result_retained.load(Ordering::Relaxed),
             Ordering::Relaxed,
@@ -408,7 +412,11 @@ impl QuotaLedger {
             head: AtomicU64::new(0),
             readers: AtomicU64::new(0),
             slot_states: std::array::from_fn(|index| {
-                AtomicU8::new(if index == 0 { SLOT_PUBLISHED } else { SLOT_FREE })
+                AtomicU8::new(if index == 0 {
+                    SLOT_PUBLISHED
+                } else {
+                    SLOT_FREE
+                })
             }),
             snapshots: std::array::from_fn(|_| Snapshot::new()),
             intents: std::array::from_fn(|_| Intent::new()),
@@ -512,13 +520,7 @@ impl QuotaLedger {
     }
 
     pub(crate) fn commit_drop(&self, reservation: ReservationId, now_ns: u64) {
-        let _ = self.publish_intent(
-            reservation,
-            reservation.reserved_tokens,
-            now_ns,
-            1,
-            true,
-        );
+        let _ = self.publish_intent(reservation, reservation.reserved_tokens, now_ns, 1, true);
         let _ = self.help_ready();
     }
 
@@ -576,12 +578,10 @@ impl QuotaLedger {
             let Some(next) = pack_intent(generation, INTENT_RESERVED) else {
                 return Err(());
             };
-            match intent.state.compare_exchange(
-                observed,
-                next,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            ) {
+            match intent
+                .state
+                .compare_exchange(observed, next, Ordering::AcqRel, Ordering::Acquire)
+            {
                 Ok(_) => {
                     let Some(marker) = generation.checked_shl(32) else {
                         self.release_unpublished_intent(index, generation);
@@ -607,9 +607,10 @@ impl QuotaLedger {
         ) else {
             return;
         };
-        let _ = intent.state.compare_exchange(
-            expected, available, Ordering::AcqRel, Ordering::Acquire,
-        );
+        let _ =
+            intent
+                .state
+                .compare_exchange(expected, available, Ordering::AcqRel, Ordering::Acquire);
     }
 
     fn publish_intent(
@@ -620,7 +621,10 @@ impl QuotaLedger {
         kind: u64,
         detached: bool,
     ) -> Result<(), RateLimitError> {
-        let intent = self.intents.get(reservation.slot).ok_or(RateLimitError::Accounting)?;
+        let intent = self
+            .intents
+            .get(reservation.slot)
+            .ok_or(RateLimitError::Accounting)?;
         let expected = pack_intent(reservation.generation, INTENT_RESERVED)
             .ok_or(RateLimitError::Accounting)?;
         if intent.state.load(Ordering::Acquire) != expected {
@@ -634,13 +638,10 @@ impl QuotaLedger {
         } else {
             INTENT_READY_OWNER
         };
-        intent
-            .state
-            .store(
-                pack_intent(reservation.generation, ready_state)
-                    .ok_or(RateLimitError::Accounting)?,
-                Ordering::Release,
-            );
+        intent.state.store(
+            pack_intent(reservation.generation, ready_state).ok_or(RateLimitError::Accounting)?,
+            Ordering::Release,
+        );
         Ok(())
     }
 
@@ -667,7 +668,11 @@ impl QuotaLedger {
                 Err(_) => return Err(()),
             }
         }
-        if self.first_ready().is_some() { Err(()) } else { Ok(()) }
+        if self.first_ready().is_some() {
+            Err(())
+        } else {
+            Ok(())
+        }
     }
 
     fn first_ready(&self) -> Option<IntentData> {
@@ -705,7 +710,9 @@ impl QuotaLedger {
     }
 
     fn help_published_result(&self) -> Result<(), ()> {
-        let Some(read) = self.pin() else { return Err(()) };
+        let Some(read) = self.pin() else {
+            return Err(());
+        };
         let snapshot = self.snapshots.get(read.slot).ok_or(())?;
         self.ack_snapshot_result(snapshot)
     }
@@ -747,7 +754,7 @@ impl QuotaLedger {
                 .state
                 .compare_exchange(
                     current,
-                pack_intent(generation, next_phase).ok_or(())?,
+                    pack_intent(generation, next_phase).ok_or(())?,
                     Ordering::AcqRel,
                     Ordering::Acquire,
                 )
@@ -761,7 +768,9 @@ impl QuotaLedger {
 
     fn mutate(&self, mutation: Mutation) -> Result<(), MutationError> {
         for _ in 0..8 {
-            let Some(read) = self.pin() else { return Err(MutationError::Busy) };
+            let Some(read) = self.pin() else {
+                return Err(MutationError::Busy);
+            };
             let Some(source) = self.snapshots.get(read.slot) else {
                 return Err(MutationError::Busy);
             };
@@ -843,10 +852,7 @@ impl QuotaLedger {
                 .readers
                 .compare_exchange_weak(
                     observed,
-                    match observed.checked_add(1) {
-                        Some(next) => next,
-                        None => return None,
-                    },
+                    observed.checked_add(1)?,
                     Ordering::AcqRel,
                     Ordering::Acquire,
                 )
@@ -873,21 +879,19 @@ impl QuotaLedger {
     }
 
     fn claim_snapshot(&self) -> Option<usize> {
-        self.slot_states.iter().enumerate().find_map(|(index, state)| {
-            if state
-                .compare_exchange(
-                    SLOT_FREE,
-                    SLOT_WRITING,
-                    Ordering::AcqRel,
-                    Ordering::Acquire,
-                )
-                .is_ok()
-            {
-                Some(index)
-            } else {
-                None
-            }
-        })
+        self.slot_states
+            .iter()
+            .enumerate()
+            .find_map(|(index, state)| {
+                if state
+                    .compare_exchange(SLOT_FREE, SLOT_WRITING, Ordering::AcqRel, Ordering::Acquire)
+                    .is_ok()
+                {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
     }
 
     fn reclaim(&self) {
@@ -941,9 +945,11 @@ fn apply(
             let next_tpm = tpm_log
                 .replay(tpm.period_ns)
                 .max(now_ns)
-                .checked_add(tpm.period_ns.checked_mul(cost).ok_or_else(|| {
-                    MutationError::Denied(Denied::accounting())
-                })?)
+                .checked_add(
+                    tpm.period_ns
+                        .checked_mul(cost)
+                        .ok_or_else(|| MutationError::Denied(Denied::accounting()))?,
+                )
                 .ok_or_else(|| MutationError::Denied(Denied::accounting()))?;
             check_capacity(next_rpm, now_ns, rpm)?;
             check_capacity(next_tpm, now_ns, tpm)?;
@@ -976,11 +982,7 @@ fn apply(
         Mutation::Intent(intent) => {
             let index = tpm_log.find(intent.id).ok_or(MutationError::Busy)?;
             let old_tail = tpm_log.replay(tpm.period_ns);
-            let reserved = tpm_log
-                .records
-                .get(index)
-                .ok_or(MutationError::Busy)?
-                .cost;
+            let reserved = tpm_log.records.get(index).ok_or(MutationError::Busy)?.cost;
             let overrun = intent.actual_tokens > reserved;
             let actual = intent.actual_tokens;
             let charged = if overrun { reserved } else { actual };
@@ -1051,9 +1053,7 @@ fn config(rate: u32, burst: u32, reason: DenyReason) -> Result<LogConfig, RateLi
     }
     let rate = u64::from(rate);
     let period_ns = NANOS_PER_MINUTE.div_ceil(rate);
-    let burst_minus_one = burst
-        .checked_sub(1)
-        .ok_or(RateLimitError::InvalidQuota)?;
+    let burst_minus_one = burst.checked_sub(1).ok_or(RateLimitError::InvalidQuota)?;
     let tolerance_ns = period_ns
         .checked_mul(u64::from(burst_minus_one))
         .ok_or(RateLimitError::InvalidQuota)?;
@@ -1069,10 +1069,7 @@ fn utilization(tat: u64, now_ns: u64, config: LogConfig) -> u8 {
     let debt = tat.saturating_sub(now_ns);
     let horizon = config.tolerance_ns.saturating_add(config.period_ns).max(1);
     let pct = debt.saturating_mul(100).saturating_div(horizon).min(100);
-    match u8::try_from(pct) {
-        Ok(value) => value,
-        Err(_) => 100,
-    }
+    u8::try_from(pct).unwrap_or(100)
 }
 
 fn retry_pct(tat: u64, now_ns: u64, threshold_pct: u8, config: LogConfig) -> Duration {
@@ -1091,7 +1088,7 @@ fn reservation_key(slot: usize, generation: u64) -> Option<u64> {
 }
 
 fn pack_intent(generation: u64, state: u64) -> Option<u64> {
-    Some(generation.checked_mul(8)?.checked_add(state)?)
+    generation.checked_mul(8)?.checked_add(state)
 }
 
 fn generation_part(state: u64) -> u64 {

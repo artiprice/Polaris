@@ -5,6 +5,9 @@
 //!
 //! Failures are written for the model: an ambiguous match names the lines, a missing one shows
 //! the closest source lines so the next attempt can copy them exactly.
+//!
+//! [`apply_hunks`] applies a model-written unified diff the same way: each hunk is found by its
+//! old lines at the strictest level that matches, not by its line numbers.
 
 /// How strictly `old_text` matched.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
@@ -67,6 +70,9 @@ pub enum TextMatchError {
         /// The closest source lines, or empty.
         hint: String,
     },
+    /// A patch is not a usable single-file unified diff, or one of several hunks failed.
+    #[error("{0}")]
+    Malformed(String),
 }
 
 const MAX_REPORTED_LINES: usize = 8;
@@ -306,6 +312,262 @@ fn nearest_hint(source: &str, lines: &[SourceLine], needle: &[&str]) -> String {
         hint.push_str(&row);
     }
     hint
+}
+
+/// One hunk of a model-written unified diff, located by content rather than by line numbers.
+#[derive(Debug, Default)]
+struct Hunk<'a> {
+    /// One-based old start claimed by the header; it only breaks ties.
+    claimed: usize,
+    /// Hunk body in order: `' '` context, `'-'` deletion, `'+'` addition.
+    lines: Vec<(u8, &'a str)>,
+    /// Final-newline state a `\ No newline at end of file` marker set: after a deletion the new
+    /// file ends with a newline (`Some(true)`), after context or an addition it does not.
+    final_newline: Option<bool>,
+}
+
+impl Hunk<'_> {
+    fn old(&self) -> Vec<&str> {
+        self.lines
+            .iter()
+            .filter(|(marker, _)| *marker != b'+')
+            .map(|(_, text)| *text)
+            .collect()
+    }
+}
+
+/// Parse the hunks of a single-file unified diff. Headers are optional, counts are ignored and a
+/// bare empty line inside a hunk is blank context (models often drop its leading space).
+fn parse_hunks(patch: &str) -> Result<Vec<Hunk<'_>>, TextMatchError> {
+    let mut hunks: Vec<Hunk<'_>> = Vec::new();
+    let mut last_marker = b' ';
+    for line in patch.lines() {
+        let line = line.strip_suffix('\r').unwrap_or(line);
+        if let Some(header) = line.strip_prefix("@@") {
+            let claimed = header
+                .split_whitespace()
+                .next()
+                .and_then(|range| range.strip_prefix('-'))
+                .and_then(|range| range.split(',').next())
+                .and_then(|start| start.parse().ok())
+                .unwrap_or(0);
+            hunks.push(Hunk {
+                claimed,
+                ..Hunk::default()
+            });
+            continue;
+        }
+        let Some(hunk) = hunks.last_mut() else {
+            // Only headers may precede the first hunk.
+            if line.is_empty()
+                || [
+                    "diff ", "index ", "--- ", "+++ ", "new file", "old mode", "new mode",
+                ]
+                .iter()
+                .any(|prefix| line.starts_with(prefix))
+            {
+                continue;
+            }
+            return Err(TextMatchError::Malformed(format!(
+                "unexpected line before the first @@ hunk header: {line:?}"
+            )));
+        };
+        if line.starts_with("--- ") || line.starts_with("+++ ") || line.starts_with("diff ") {
+            return Err(TextMatchError::Malformed(
+                "apply_patch changes one file; call it once per file".to_owned(),
+            ));
+        }
+        if line.starts_with('\\') {
+            hunk.final_newline = Some(last_marker == b'-');
+            continue;
+        }
+        let (marker, text) = match line.as_bytes().first() {
+            None => (b' ', ""),
+            Some(marker @ (b' ' | b'-' | b'+')) => (*marker, line.get(1..).unwrap_or_default()),
+            Some(_) => {
+                return Err(TextMatchError::Malformed(format!(
+                    "hunk lines must start with ' ', '-' or '+': {line:?}"
+                )));
+            }
+        };
+        last_marker = marker;
+        hunk.lines.push((marker, text));
+    }
+    if hunks.is_empty() {
+        return Err(TextMatchError::Malformed(
+            "the patch has no @@ hunk".to_owned(),
+        ));
+    }
+    if hunks
+        .iter()
+        .all(|hunk| hunk.lines.iter().all(|(marker, _)| *marker == b' '))
+    {
+        return Err(TextMatchError::Malformed(
+            "the patch adds and removes nothing".to_owned(),
+        ));
+    }
+    Ok(hunks)
+}
+
+/// Apply a model-written single-file unified diff by locating each hunk's old lines in
+/// `source`: exactly first, then with trailing whitespace, indentation and punctuation relaxed.
+/// Hunks apply in order and must each match one place after the previous hunk; header line
+/// numbers only choose between equal candidates, and hunk counts are ignored. Untouched and
+/// context lines keep their exact bytes and line endings, added lines take the ending of the
+/// text around them, and the file's final-newline state is kept unless a
+/// `\ No newline at end of file` marker changes it.
+/// # Errors
+/// A malformed patch, an ambiguous hunk, or a hunk whose old lines are not in the file.
+pub fn apply_hunks(source: &str, patch: &str) -> Result<Replacement, TextMatchError> {
+    let hunks = parse_hunks(patch)?;
+    let lines = source_lines(source);
+    let default_ending = if lines.iter().any(|line| line.crlf) {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let text_of = |index: usize| {
+        lines
+            .get(index)
+            .and_then(|line| source.get(line.start..line.content_end))
+            .unwrap_or_default()
+    };
+    let ending_of = |index: usize| -> &str {
+        let Some(line) = lines.get(index) else {
+            return default_ending;
+        };
+        if line.crlf {
+            "\r\n"
+        } else if source
+            .get(line.content_end..)
+            .is_some_and(|rest| rest.starts_with('\n'))
+        {
+            "\n"
+        } else {
+            ""
+        }
+    };
+    // Around an insertion: the ending of the line it displaces, else of the line before it.
+    let near = |index: usize| -> &str {
+        match ending_of(index) {
+            "" => match index.checked_sub(1).map(ending_of) {
+                Some(ending) if !ending.is_empty() => ending,
+                _ => default_ending,
+            },
+            ending => ending,
+        }
+    };
+    let mut output: Vec<(&str, &str)> = Vec::with_capacity(lines.len());
+    let mut cursor = 0_usize;
+    let mut loosest = MatchLevel::Exact;
+    let mut final_newline = source.is_empty() || source.ends_with('\n');
+    for (number, hunk) in hunks.iter().enumerate() {
+        let old = hunk.old();
+        let start = if old.is_empty() {
+            // A pure insertion goes after the claimed line.
+            hunk.claimed.clamp(cursor, lines.len())
+        } else {
+            let (start, level) = locate(source, &lines, cursor, &old, hunk.claimed)
+                .map_err(|error| error.in_hunk(number, hunks.len()))?;
+            loosest = loosest.max(level);
+            start
+        };
+        output.extend((cursor..start).map(|index| (text_of(index), ending_of(index))));
+        let mut at = start;
+        for (marker, text) in &hunk.lines {
+            match marker {
+                b'+' => output.push((text, near(at))),
+                b'-' => at = at.saturating_add(1),
+                _ => {
+                    output.push((text_of(at), ending_of(at)));
+                    at = at.saturating_add(1);
+                }
+            }
+        }
+        cursor = at;
+        if let Some(newline) = hunk.final_newline {
+            final_newline = newline;
+        }
+    }
+    output.extend((cursor..lines.len()).map(|index| (text_of(index), ending_of(index))));
+    let last = output.len().saturating_sub(1);
+    let mut text = String::with_capacity(source.len());
+    for (index, (line, ending)) in output.iter().enumerate() {
+        text.push_str(line);
+        let ending = match (index == last, ending.is_empty()) {
+            (false, true) => default_ending,
+            (true, _) if !final_newline => "",
+            (true, true) => default_ending,
+            _ => ending,
+        };
+        text.push_str(ending);
+    }
+    Ok(Replacement {
+        text,
+        level: loosest,
+        count: hunks.len(),
+    })
+}
+
+/// The one start line at or after `from` whose window equals `needle` at the strictest level
+/// that finds any; the claimed one-based line breaks a tie.
+fn locate(
+    source: &str,
+    lines: &[SourceLine],
+    from: usize,
+    needle: &[&str],
+    claimed: usize,
+) -> Result<(usize, MatchLevel), TextMatchError> {
+    let tail = lines.get(from..).unwrap_or_default();
+    for level in [
+        MatchLevel::Exact,
+        MatchLevel::TrailingWhitespace,
+        MatchLevel::Indentation,
+        MatchLevel::Punctuation,
+    ] {
+        let found: Vec<usize> = matching_windows(source, tail, needle, level)
+            .into_iter()
+            .map(|index| index.saturating_add(from))
+            .collect();
+        match found.as_slice() {
+            [] => {}
+            [one] => return Ok((*one, level)),
+            many => {
+                if let Some(start) = many.iter().find(|start| start.saturating_add(1) == claimed) {
+                    return Ok((*start, level));
+                }
+                let starts: Vec<usize> = many
+                    .iter()
+                    .filter_map(|start| lines.get(*start).map(|line| line.start))
+                    .collect();
+                return Err(ambiguous(source, &starts));
+            }
+        }
+    }
+    Err(TextMatchError::NotFound {
+        hint: nearest_hint(source, lines, needle),
+    })
+}
+
+impl TextMatchError {
+    /// Patch wording for a hunk failure, naming the hunk when a patch has several.
+    fn in_hunk(self, number: usize, total: usize) -> Self {
+        let place = if total < 2 {
+            String::new()
+        } else {
+            format!("hunk {} of {total}: ", number.saturating_add(1))
+        };
+        match self {
+            Self::Malformed(text) => Self::Malformed(format!("{place}{text}")),
+            Self::NotFound { hint } => Self::Malformed(format!(
+                "{place}the hunk's old lines (context and '-' lines) were not found in the file{hint}"
+            )),
+            Self::Ambiguous { count, lines } => Self::Malformed(format!(
+                "{place}the hunk's old lines match {count} places (lines {lines}); add context lines"
+            )),
+            Self::Empty => Self::Empty,
+        }
+    }
 }
 
 #[cfg(test)]

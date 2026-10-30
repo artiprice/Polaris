@@ -1,0 +1,35 @@
+# P5 evidence: one live chat turn under $nvidia(auto) on the synthetic CUDA sample (tests/fixtures/nvidia/cuda-vector-add)
+# 2026-10-29. polaris web (embedded page) --env-file <keys> on the materialized sample; plan mode (read-only); provider chosen by the chain.
+# The workspace is synthetic, so sending it to the free endpoint (which logs prompts) exposes no private code.
+# What it shows: the turn's system prompt carried the profile and the advisor findings (unit test chat.rs::a_cuda_workspace_turn_carries_the_profile_until_nvidia_is_off
+# proves the injection); the reply ranks fixes using the advisor's wording ([32][33] padding, 32-way serialisation, grid-stride).
+# Caveat, recorded as observed: the model misquotes three line numbers (gather is line 14, transpose's tile line 19, halve's barrier line 31) and ranks two 'info'
+# suggestions above unchecked API calls; the advisor's own report (nvidia-sample-repos.txt) has the correct lines and severities.
+
+provider: {"type": "provider", "provider": "openrouter", "model": "nvidia/nemotron-3.5-lightning:free", "effort": "medium"}
+submit: 202
+streamed reply text:
+Here are the three most important fixes from `src/vector_add.cu`:
+
+1. **Add bounds check in `add` kernel** (line 7-8) — `i = blockIdx.x * blockDim.x + threadIdx.x` can exceed `n`, causing the last block to read/write past the array end. Fix: `if (i >= n) return;` or use a grid-stride loop.
+
+2. **Fix strided global access in `gather` kernel** (line 17) — `in[i * 16]` makes neighboring threads touch addresses 16 elements apart, breaking warp coalescence. Fix: index as `in[row * width + threadIdx.x]` or stage through shared memory.
+
+3. **Pad shared array in `transpose` kernel** (line 13) — `__shared__ float tile[32][32]` creates a width that's a multiple of 32, so column-wise access serialises 32 ways per bank. Fix: pad to `[32][33]` to avoid bank conflicts.
+
+Additional critical issues: the `halve` kernel's `__syncthreads()` inside a `threadIdx.x` branch (line 27) can hang the block, and the `cudaMalloc` return values are ignored (lines 40-43).
+The three fixes already listed are the top-priority ones. No further actions needed at this time.
+---
+event: {"type": "opened", "id": "01a187e1-d9d4-737a-9abd-2b67736bf2db", "title": "Local session", "workspace": "\\\\?\\C:\\Users\\Dmytro\\AppData\\Local\\Temp\\claude\\D--Polaris\\4b164f4c-31cf-43c4-881f-567bb9e329ed\\scratchpad\\p5repos\\cuda-vector-add"}
+event: {"type": "message", "kind": "user", "text": "Review this workspace's CUDA code. What are the three most important fixes, and why? Keep it short."}
+event: {"type": "committed"}
+event: {"type": "reply-started"}
+event: {"type": "reply-step"}
+event: {"type": "usage", "requests": 1, "prompt_tokens": 1829, "completion_tokens": 730}
+event: {"type": "reply-step"}
+event: {"type": "usage", "requests": 2, "prompt_tokens": 3837, "completion_tokens": 777}
+event: {"type": "reply-step"}
+event: {"type": "usage", "requests": 3, "prompt_tokens": 6487, "completion_tokens": 1577}
+event: {"type": "reply-step"}
+event: {"type": "usage", "requests": 4, "prompt_tokens": 9524, "completion_tokens": 1622}
+event: {"type": "reply-finished", "answer": "The three fixes already listed are the top-priority ones. No further actions needed at this time.", "summary": "Worked for 37s · 4 requests · 3 tool rounds"}

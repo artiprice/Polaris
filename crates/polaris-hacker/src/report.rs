@@ -33,6 +33,9 @@ pub enum FindingClass {
     TautologicalAssertion,
     /// Caller-configured automata rule matched source bytes.
     RuleMatch,
+    /// A lexical data-race candidate: a lock released between check and act, or an atomic
+    /// load followed by a separate store.
+    RaceCandidate,
 }
 
 /// A finding with a byte-accurate source range and inspectable rule evidence.

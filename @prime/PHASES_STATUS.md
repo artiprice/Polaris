@@ -6,7 +6,8 @@
 > WSL2 Ubuntu 24.04.5.
 >
 > Rules: `PASS` requires the command, its raw output and the conditions (Evidence log §E, or a spike's
-> `RESULT.md` + raw file). `BLOCKED-ON-ACCESS` = needs a key/account that does not exist yet (D9). A doc-only
+> `RESULT.md` + raw file). `BLOCKED-ON-ACCESS` = needs a key/account that does not exist yet (D9). `DESCOPED` = will not be done
+> because the service is unavailable to the team (D10: Nebius in Ukraine). A doc-only
 > skeleton is **not** an implementation. Hand-edited except `<!-- generated: … -->` blocks: crate rows come from
 > the `status`/`evidence` keys in `@prime/tools/workspace.toml`; the summary counts every status row in this file.
 > Refresh with `python -I @prime/tools/workspace.py render-docs`.
@@ -16,12 +17,13 @@
 <!-- generated: status summary -->
 | Status | Rows |
 |---|---|
-| PASS | 45 |
+| PASS | 48 |
 | FAIL | 3 |
-| IN PROGRESS | 70 |
-| BLOCKED-ON-ACCESS | 15 |
-| NOT STARTED | 30 |
-| **total** | 163 |
+| IN PROGRESS | 90 |
+| BLOCKED-ON-ACCESS | 2 |
+| DESCOPED | 13 |
+| NOT STARTED | 9 |
+| **total** | 165 |
 
 **Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
@@ -44,9 +46,9 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P0-SKEL-7 member + layer checks | PASS | §E5 (Python) and §E9 (Rust xtask) |
 | P0-SKEL-8 version audit + resolution probe | PASS | Historical §E6 (156/156 OK; lockfile resolved — 1,699 packages; see probe history). Full version audit of the expanded E39 graph is not rerun. |
 | P0-SKEL-9 PLAN.md / PHASES.md / PHASES_STATUS.md; inventory 100 % covered | PASS | §E13 (`check-docs`, `render-docs --check`, `chatlog-inventory --check`) |
-| P0-ACC-1 Token Factory API key | BLOCKED-ON-ACCESS | team action: request key |
-| P0-ACC-2 Token Factory Sandboxes (Contree) access | BLOCKED-ON-ACCESS | team action |
-| P0-ACC-3 Nebius AI Cloud quota | BLOCKED-ON-ACCESS | team action |
+| P0-ACC-1 Token Factory API key | DESCOPED | Nebius services are unavailable to the team (Ukraine; decision 2026-10-29, D10); models via OpenRouter / local |
+| P0-ACC-2 Token Factory Sandboxes (Contree) access | DESCOPED | Nebius services are unavailable to the team (Ukraine; decision 2026-10-29, D10); local Docker sandbox instead (E56) |
+| P0-ACC-3 Nebius AI Cloud quota | DESCOPED | Nebius services are unavailable to the team (Ukraine; decision 2026-10-29, D10) |
 | P0-ACC-4 Tavily API key | BLOCKED-ON-ACCESS | team action |
 | P0-ENV-1 Ubuntu 24.04 in WSL2 | PASS | §E10, §E12: Ubuntu 24.04.5, kernel 6.6.87.2, user `dev` (sudo, kvm, docker), systemd; `/dev/kvm` present (S0-2); no `.wslconfig` needed |
 | P0-ENV-2 Docker Engine + OpenShell v0.1.4 gateway in WSL2 | PASS | §E10 `verify-openshell.sh` (create 1.5 s, exec 112 ms, exit code, byte-exact upload, delete); driver pin in `setup-wsl.sh`; idle shutdown (W14) needs the keepalive |
@@ -65,7 +67,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | S0-2 nested KVM + vm driver | PASS | `/dev/kvm` present; vm driver boots Ubuntu (guest kernel 6.12.76) in 27.5 s; exec 216 ms; one driver per gateway |
 | S0-3 NemoClaw custom blueprint | FAIL | → **native blueprint applier** (`polaris-openshell-nemoclaw`); agents are in-tree only; blueprint pins OpenShell 0.0.116 |
 | S0-4 GLiNER2.5-Decide ONNX parity + latency | PASS (conditional) | 260/260 = 100 % top-1 (fp32, max Δp 4e-6) **only with the trailing-period rule** (93.85 % without); Rust fp32 p50 363 ms / p95 481 ms (1 task, 4 threads), 2.9× faster than Python; RSS peak 2.35 GiB (= 2.52 GB, borderline vs 2.5 GB); fp16 worse on CPU; CUDA EP not measured |
-| S0-5 Token Factory capabilities | BLOCKED-ON-ACCESS | needs P0-ACC-1 |
+| S0-5 Token Factory capabilities | DESCOPED | Nebius services are unavailable to the team (Ukraine; decision 2026-10-29, D10) |
 | S0-6 Needle 3 on Windows/WSL2 | PASS | Windows engine works: tool call p50 317 ms, embeddings 3,072-d p50 50 ms (Python/C only; `--serve` has no embed endpoint) |
 | S0-7 workspace sync performance/fidelity | PASS | 10k files: no-op 1.1 s, initial 61 MiB in 10.4 s, 0 mismatches, CRLF + exec bit kept, deny-list holds; case-fidelity **not tested** |
 | S0-8 iceoryx2 on Windows | PASS (condition) | RTT p50 2.0 µs / p99 4.7 µs; peer kill handled, dead-node cleanup OK; **security condition**: default root `C:\Temp\iceoryx2` is writable by all authenticated users → per-user `set_root_path` required |
@@ -73,7 +75,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | S0-10 crossterm Shift+Enter on ConPTY | IN PROGRESS | probe built; **manual key test pending** (see RESULT.md for the steps) |
 | S0-11 OpenShell mxc driver | FAIL | → **WSL2 tiers only** (no Windows gateway asset in v0.1.4; MXC "coming soon") |
 | S0-12 guest build + handshake | PASS | guest built in WSL2, baked into image, handshake + mismatch refusal OK; headless Chromium screenshot OK (`--no-zygote`); Xvfb fails under default policy; `/opt` not readable/executable in sandboxes |
-| S0-13 Contree MCP auth + branching | BLOCKED-ON-ACCESS | needs P0-ACC-2 |
+| S0-13 Contree MCP auth + branching | DESCOPED | Nebius services are unavailable to the team (Ukraine; decision 2026-10-29, D10) |
 
 ## Cross-cutting phase tasks
 
@@ -85,30 +87,30 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P2-X-1 Polaris sandbox image + blueprint | IN PROGRESS — final toolchain/guest image and live gateway/sync passed; remaining full audit in [P2 audit](P2_LOGIC_STATUS.md) |
 | P2-X-2 `/onboarding` + `polaris doctor` | PASS (§E31: current JSON report covers all 26 inventory items/actions, required setup ready, credential values omitted; doctor and process probe tests pass) |
 | P3-X-1 walking skeleton (local endpoint) | IN PROGRESS (§E45–§E46: production readonly tools and durable journal with synthetic-provider multi-turn evidence; complete live tokenizer/provider/edit/test/proof loop remains open) |
-| P3-X-2 same loop on Nemotron | BLOCKED-ON-ACCESS |
-| P3-X-3 Contree sidecar + E3 run | BLOCKED-ON-ACCESS |
-| P3-X-4 live re-recording of SSE fixtures | BLOCKED-ON-ACCESS |
+| P3-X-2 same loop on Nemotron | DESCOPED (Token Factory; Nemotron runs through OpenRouter instead, live web/TUI turns E53–E54) |
+| P3-X-3 Contree sidecar + E3 run | DESCOPED (Nebius unavailable; local Docker sandbox E56) |
+| P3-X-4 live re-recording of SSE fixtures | DESCOPED (Nebius unavailable; fixtures stay labelled synthetic) |
 | P4-X-1 ONNX export script + goldens | NOT STARTED |
 | P4-X-2 threshold calibration v1 | NOT STARTED |
 | P4-X-3 MVP scripted demo | NOT STARTED |
-| P5-X-1 SearXNG container + provider | NOT STARTED |
+| P5-X-1 SearXNG container + provider | IN PROGRESS (E58: `/search-web` and `$websearch` over the redacting SearXNG adapter; loopback container script `@prime/tools/searxng/`; live query transcript open) |
 | P5-X-2 Tavily provider live | BLOCKED-ON-ACCESS |
-| P5-X-3 NVIDIA docs sync | NOT STARTED |
-| P5-X-4 embeddings via Token Factory | BLOCKED-ON-ACCESS |
-| P6-X-1 SWE env resolver + branching | BLOCKED-ON-ACCESS |
-| P6-X-2 remote OpenShell gateway (E4) | BLOCKED-ON-ACCESS |
-| P6-X-3 Data Lab export + fine-tune trigger | BLOCKED-ON-ACCESS |
-| P7-X-1 `/research` long run | NOT STARTED |
-| P7-X-2 `/hack` on seeded-bug repos | NOT STARTED |
+| P5-X-3 NVIDIA docs sync | IN PROGRESS (E58: incremental llms.txt sync into a local seed with per-page provenance, `/nv-docs-sync`, `/nv-docs`, `$nvidia(auto)` passages; a live run with page counts open) |
+| P5-X-4 embeddings via Token Factory | DESCOPED (Nebius unavailable; lexical BM25/FTS search is the keyless path) |
+| P6-X-1 SWE env resolver + branching | DESCOPED (Nebius unavailable) |
+| P6-X-2 remote OpenShell gateway (E4) | DESCOPED (Nebius unavailable) |
+| P6-X-3 Data Lab export + fine-tune trigger | DESCOPED (Nebius unavailable) |
+| P7-X-1 `/research` long run | IN PROGRESS (E58: `/research` composes the research loop with the model and a no-network Docker metric sandbox, checkpoints and `/research resume`; a live 20-iteration run with a kill open) |
+| P7-X-2 `/hack` on seeded-bug repos | PASS (E55: 5/5 seeded races, blocking-in-async and CUDA barrier bugs, 0 false positives; synthetic repo) |
 | P7-X-3 microVM browser loop | NOT STARTED |
-| P9-X-1 static welcome page | NOT STARTED |
-| P9-X-2 named-pipe transport + mTLS remote | NOT STARTED |
-| P10-1 full test matrix | NOT STARTED |
-| P10-2 security review | NOT STARTED |
-| P10-3 performance budgets | NOT STARTED |
-| P10-4 `[profile.dist]` submission build | NOT STARTED |
-| P10-5 demo script + video | NOT STARTED |
-| P10-6 Linux/macOS adaptation start | NOT STARTED |
+| P9-X-1 static welcome page | IN PROGRESS (welcome page from the demo design in web and desktop; visual acceptance open) |
+| P9-X-2 named-pipe transport + mTLS remote | IN PROGRESS (named-pipe attach with token auth, security tests pass — E53; `tcp://` attach with mutual TLS and daemon replies — E58; a deployed remote run open) |
+| P10-1 full test matrix | IN PROGRESS (E57: workspace 2,630 passed / 4 known ratelimit failures; loom and load/stress spikes pass; fuzz, Miri, Kani, mutants need tools) |
+| P10-2 security review | IN PROGRESS (E57: report, unsafe inventory, licence audit; E58: `cargo deny` passes after the pulldown-cmark fix and reasoned ignores, `cargo audit` 1 accepted advisory, `cargo vet` 1,167 unvetted; external review open) |
+| P10-3 performance budgets | PASS (E57: all seven PLAN §11.4 budgets measured and recorded; five met, GCRA p99 1.1 µs and DFA 438 MB/s just short, S1 CPU p95 not met) |
+| P10-4 `[profile.dist]` submission build | PASS (E57: dist build of five binaries + web site, packaged with README, LICENSE, SHA256SUMS and build-info) |
+| P10-5 demo script + video | IN PROGRESS (E58: keyless script `@prime/DEMO.md` with `@prime/tools/demo/prepare.ps1` and fallback paths; the recording is open) |
+| P10-6 Linux/macOS adaptation start | IN PROGRESS (E58: Linux `cargo check --workspace --all-targets --locked` passes in Docker after a peer-pid fix; Windows-only decoders no longer warn; Linux test run and macOS open) |
 
 ## Milestones
 
@@ -118,7 +120,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | M1 TUI shell with sessions + directives | NOT STARTED |
 | M2 first sandboxed `cargo test` from the TUI | Headless acceptance PASS: real 3 ordinary + 2 independent tests, exact review and zero unresolved resources; TUI explicitly deferred by user. Full P2 remains IN PROGRESS. |
 | M3 walking skeleton (local endpoint) | IN PROGRESS — readonly dispatch slice verified in §E45; full milestone gate remains open |
-| M4 same loop on Nemotron + Contree | BLOCKED-ON-ACCESS |
+| M4 same loop on Nemotron + Contree | DESCOPED (Nebius unavailable) |
 | M5 MVP demo | NOT STARTED |
 | M6 submission build + video | NOT STARTED |
 
@@ -149,7 +151,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P0 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-tests` | `polaris-tests` | P0 | IN PROGRESS | Cross-crate suites include actual EventLog-backed skill approval reopen on Windows and Linux; full system acceptance remains open. |
+| `crate:polaris-tests` | `polaris-tests` | P0 | IN PROGRESS | Cross-crate suites include actual EventLog-backed skill approval reopen on Windows and Linux; full system acceptance remains open. 2026-10-29 §E57: PLAN §11.4 budget suite (`budgets`, `budget_alloc` with dhat) measured in the `budget` profile. |
 | `crate:xtask` | `xtask` | P0 | PASS | P0-XT-1: `check-members` + `check-layers` in Rust, test-first (11 tests, red then green; Windows + WSL2), real repo OK (§E9). §E43: deterministic SPDX 2.3 SBOM for the locked full Cargo graph with explicit timestamp, offline locked metadata, BLAKE3 lock digest, atomic no-clobber/force writes. The official schema checks `created` is a string, not RFC3339; the independent RFC3339 check accepts the real document (exit 0), rejects the impossible-date fixture (exit 1), and the official schema rejects the non-string fixture (exit 1). The original helper accepted the impossible date; that failure history is retained. Not a target-binary inventory, license validation, or security audit; advisories and cargo-vet remain failed. See evidence/continuation-20261026-e43/commands.json. |
 
 ### P1
@@ -179,7 +181,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-kernel` | `polaris-kernel` | P1 | IN PROGRESS | 2026-10-27 E49: actual frame tools mutate, ask/resume, prepare host-approved sandbox tests and validate exact review/source proof evidence. Context-owned human/cancellation registries prevent duplicate terminal answers; restart and scoped cancellation are integrated. UI deferred, P2 otherwise paused, full Phase 3 acceptance open. |
 | `crate:polaris-ui-model` | `polaris-ui-model` | P1 | IN PROGRESS | 2026-10-24 UI foundation: North Star/palette migration, transactional bounded composer, global session projection, cockpit and pure questionnaire state; native tests. See UI_PHASES.md and evidence/ui/verification.txt. Human backend protocol, native/formal/performance acceptance remain open; historical E21 retained. |
 | `crate:polaris-ui-cli` | `polaris-ui-cli` | P1 | IN PROGRESS | 2026-10-24 UI foundation: pure responsive renderer plus bounded input scheduler, staged Ratatui presenter and fallible terminal guard; 37 native tests. See UI_PHASES.md and evidence/ui/verification.txt; phase gates remain open. |
-| `crate:polaris-ui` | `polaris-ui` | P1 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-ui` | `polaris-ui` | P1 | IN PROGRESS | 2026-10-29: facade re-exports model, session, cli, gui, web and ascii-aurora and documents the shared design tokens and UX rules (7fc0039); children track their own gates. |
 | `crate:polaris-spike-bus` | `polaris-spike-bus` | P1 | PASS | §E30 / P1_LOGIC_STATUS.md: 1M events with 1/8/64 readers, stalled subscriber, churn, bounded command accounting and RSS; Windows and WSL native suites. Final consistency/fuzz checkpoint recorded there. |
 
 ### P2
@@ -196,7 +198,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-openshell-client` | `polaris-openshell-client` | P2 | IN PROGRESS | Pinned real SDK adapter, explicit policy CID binding, mTLS, bounded transfer/exec and cancellation guards implemented; live acceptance pending. |
 | `crate:polaris-openshell-policy` | `polaris-openshell-policy` | P2 | IN PROGRESS | Actual upstream pinned schema, policy validation, role/tier documents and provider YAML implemented; targeted contracts pass, live policy matrix pending. |
 | `crate:polaris-openshell-nemoclaw` | `polaris-openshell-nemoclaw` | P2 | IN PROGRESS | Native versioned blueprint validation, canonical digest, actual backend apply and protocol handshake implemented; image/live evidence pending. |
-| `crate:polaris-openshell` | `polaris-openshell` | P2 | IN PROGRESS | Actual client/policy/blueprint facades compile; child live gates remain open. |
+| `crate:polaris-openshell` | `polaris-openshell` | P2 | IN PROGRESS | Actual client/policy/blueprint facades compile. 2026-10-30 E60: live on this machine (gateway 0.1.4, Docker driver in WSL): smoke test PASS and headless acceptance 4/4 (@prime/evidence/p2/openshell-live-acceptance-20261030.json). Policy matrix and fault gates remain open. |
 | `crate:polaris-security` | `polaris-security` | P2 | IN PROGRESS | Facade reexports implemented children; child completion tracked separately. |
 | `crate:polaris-runtime-leases` | `polaris-runtime-leases` | P2 | IN PROGRESS | 2026-10-23: authority, diagnostics, allocation and path contracts pass. Admission now preserves FIFO among conflicting scopes while allowing independent work; three Loom models exercise actual state transitions. Tokio wake delivery, ArcSwap publication and Kani remain separate open gates. |
 | `crate:polaris-runtime-guards` | `polaris-runtime-guards` | P2 | IN PROGRESS | P2 proof regressions: 7 passed, including all Cargo groups, stderr binding, hidden earlier failures and malformed/overflow counts. Blast/AST and live/performance gates remain open; see @prime/P2_LOGIC_STATUS.md. |
@@ -208,7 +210,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P3 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | E50: full weighted burst admission fixed and focused boundaries pass. Tail-only refund remains incomplete; three reservation_refund tests remain RED, including two over-admission-dependent setups. Full load/formal acceptance open. |
+| `crate:polaris-ratelimit` | `polaris-ratelimit` | P3 | IN PROGRESS | E50 baseline plus active refund-ledger work: shared-snapshot replay, owned deferred settlement, and saturation-aware accounting implemented; focused behavioral, race, zero-allocation, performance, and formal acceptance checks remain open. Preserve the three contradictory reservation_refund fixtures unchanged. |
 | `crate:polaris-security-capability` | `polaris-security-capability` | P3 | IN PROGRESS | 2026-10-26 §E45 adds explicit Workspace scope while preserving right/time/churn/unsafe/diff checks and monotone child attenuation. New frame-root/token binding and actual kernel readonly authorization have scoped native/Linux evidence; full mutation assembly and security audit remain open. |
 | `crate:polaris-security-secrets` | `polaris-security-secrets` | P3 | IN PROGRESS | 2026-10-24 E32: bounded zeroizing AEAD vault, SDK source, identifier/storage limits and isolated real Windows keyring store/load/delete pass. Other host backends and full P3 assembly remain open. |
 | `crate:polaris-nebius-cloud-token-factory` | `polaris-nebius-cloud-token-factory` | P3 | IN PROGRESS | E50: same-owner pinned llama.cpp token counting/chat adapter and local real token-usage parity checked; keyed Token Factory and full provider matrices remain open. |
@@ -231,13 +233,13 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-system-one-engine` | `polaris-system-one-engine` | P4 | IN PROGRESS | E50: separate raw-byte PII span engine and model/runtime digests implemented; installed Decide inference checked. Live PII quality, full parity/calibration and CUDA gates remain open. |
 | `crate:polaris-system-one-client` | `polaris-system-one-client` | P4 | IN PROGRESS | E50: bounded cross-call batching, exact request/checkpoint/generation/incarnation cache and single-flight implemented with cancellation/race fixtures; authenticated real Decide worker checks pass; complete workload/formal gates remain open. |
 | `crate:polaris-security-pii` | `polaris-security-pii` | P4 | IN PROGRESS | E50: reversible NER spans, deterministic degradation, sealed marker-map snapshots and kernel private CAS/recovered-key integration checked; actual PII companion inference, corpus/performance/fuzz acceptance remains open. |
-| `crate:polaris-security-rules` | `polaris-security-rules` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-security-rules` | `polaris-security-rules` | P4 | IN PROGRESS | Versioned AST/DFA rule packs, bounded diff/command audits, explicit partial-language coverage, fail-closed canonical S1 arbitration, finite same-block UAF indicator and caller-baseline manifest near-name audit implemented; flow-sensitive UAF/taint, broad symlink-race, registry-backed supply-chain and CUDA dataflow coverage remain open. Focused raw test and strict Clippy evidence: @prime/evidence/phase4/security-rules/. |
 | `crate:polaris-system-one-schemas` | `polaris-system-one-schemas` | P4 | IN PROGRESS | E50: bounded exact-identity binary calibration metrics and xtask measured-candidate reports implemented; production thresholds remain uncalibrated pending real labelled held-out evidence. |
 | `crate:polaris-system-one-router` | `polaris-system-one-router` | P4 | IN PROGRESS | E50: combined intent/effort/parallel/vision request, Medium constrained fallback, bounded input and hard directives checked; labelled ranking/calibration, environments and complete workload matrices remain open. |
-| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | P4 | IN PROGRESS | Production deterministic safety, preflight/postflight and merge arbitration in progress; UNVERIFIED, validation deferred by user. |
+| `crate:polaris-system-one-verifier` | `polaris-system-one-verifier` | P4 | IN PROGRESS | Production deterministic safety, preflight/postflight and merge arbitration in progress; UNVERIFIED, validation deferred by user. 2026-10-30 E60: the mutation gates read the changed lines (bounded to the encoder window) instead of whole files, which had exhausted the worker's memory. |
 | `crate:polaris-system-one-watchdog` | `polaris-system-one-watchdog` | P4 | IN PROGRESS | Production bounded loop detection, advisory role/context guards and semantic drift inspection in progress; UNVERIFIED, validation deferred by user. |
 | `crate:polaris-system-one` | `polaris-system-one` | P4 | IN PROGRESS | E50: explicit per-consumer failure policy, bounded admission, circuit and host epoch fencing checked; whole P4 parity/calibration/MVP acceptance remains open. |
-| `crate:polaris-spike-s1` | `polaris-spike-s1` | P4 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-spike-s1` | `polaris-spike-s1` | P4 | IN PROGRESS | E50: real-engine burst dispatch, bounded owned tasks, sanitized per-request outcomes and observed latency quantiles implemented; real crash/load matrices remain open. |
 
 ### P5
 
@@ -246,10 +248,10 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | IN PROGRESS | 2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open. |
 | `crate:polaris-ingest` | `polaris-ingest` | P5 | IN PROGRESS | 2026-10-26 §E40: concrete format parsers, archive/XML/DOM preflight and source provenance, actual CAS-backed worker acceptance; OCR and process resource isolation remain open. |
-| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass; live service, broader fuzz/load and full P5 integration remain open. |
+| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass. 2026-10-30 E58: SearXNG composed as `/search-web` and `$websearch` (`polaris_ui_session::web_search`) with a loopback container script; a live container run and broader fuzz/load remain open. |
 | `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | 2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open. |
 | `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | 2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open. |
-| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | IN PROGRESS | 2026-10-29: workspace/prompt profiles, CUDA advisor rules, llms.txt/HTML ingestion, BM25 index and bounded fetcher; wired at the composition root through `polaris_ui_session::nvidia` (E54). 2026-10-30 E58: `sync` downloads the PLAN F20 llms.txt listings into a local seed (`~/.polaris/docs/nvidia/seed.jsonl` + per-page provenance in `state.json`), incrementally (304 keeps chunks, unlisted pages dropped); `/nv-docs-sync`, `/nv-docs` and `$nvidia(auto)` passages. Open: a live sync run, vector search (key), tree-sitter rule packs. |
 
 ### P6
 
@@ -268,10 +270,10 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | `crate:polaris-ext-mcp` | `polaris-ext-mcp` | P7 | IN PROGRESS | 2026-10-26 E39: real RMCP3.5.1 stdio/HTTP client, sandbox-only production launch, bounded protocol framing/body/SSE, schema-aware validation, lifecycle and trust/effect controls. Twenty-eight local contracts and strict all-target Clippy pass; live sandbox-backed MCP, full kernel registry/frame composition and wider lifecycle gates remain open. |
 | `crate:polaris-ext-skills` | `polaris-ext-skills` | P7 | IN PROGRESS | 2026-10-23: capability-confined discovery, approval cache and canonical schema selection; Windows 22 and Linux 24 skills tests, durable redb approval reopen on both platforms. Full P7 audit remains open. |
 | `crate:polaris-ext` | `polaris-ext` | P7 | IN PROGRESS | Skills exports and catalog are implemented. MCP child and full P7 integration remain open. |
-| `crate:polaris-browser` | `polaris-browser` | P7 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-hacker` | `polaris-hacker` | P7 | IN PROGRESS | 2026-10-26 §E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress; local seeded/SDK lifecycle tests pass, actual sanitizers/isolation and broader analysis remain open. |
+| `crate:polaris-browser` | `polaris-browser` | P7 | IN PROGRESS | 2026-10-28: host side implemented (a11y outline, own DCT pHash visual diff, verified sandbox artifact session); the guest-side Chromium driver and the microVM loop wait for the sandbox image (P2-X-1). |
+| `crate:polaris-hacker` | `polaris-hacker` | P7 | IN PROGRESS | 2026-10-26 §E40: bounded metadata-only AST/DFA observations and cancellation-owned sandbox stress. 2026-10-29 §E55: lexical race rules (split lock scopes, atomic load/store) and wider blocking-in-async rules, composed as `/hack` with the CUDA advisor. Sanitizer workloads and deeper race analysis remain open. |
 | `crate:polaris-runtime-dag` | `polaris-runtime-dag` | P7 | IN PROGRESS | 2026-10-26 §E44: task-ID-correlated completion, explicit per-node interruptions without invented attempt counts, policy-aware dependency skipping and independent progress, preserved completed outcomes during cleanup, plus fail-fast/cancel/drop contracts. Post-implementation tests and strict scoped checks pass; actual panic execution, full scheduler interruption injection, snapshots, race/pool stress and production composition remain open. Interrupted tasks are never replayed automatically. |
-| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | 2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. Production sandbox/model/critique and broader crash/portability gates remain open. |
+| `crate:polaris-runtime-research` | `polaris-runtime-research` | P7 | IN PROGRESS | 2026-10-26 E39: strict program parser, OS-owned run lease, locked checkpoints/CAS evidence, exact-path capability attenuation and VCS receipts. Twenty local-process/Git iterations, receipt payload reopening, crash recovery and owner kill/reacquire are covered by 31 passing contracts. 2026-10-30 E58: composed as `/research` (model proposals, Docker metric sandbox, resume); `editable: **` no longer bypasses read-only scopes. Critique/skeptic step and broader crash/portability gates remain open. |
 
 ### P8
 
@@ -279,9 +281,9 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
 | `crate:polaris-devenv-nix` | `polaris-devenv-nix` | P8 | IN PROGRESS | Nix JSON evaluation, filtered store paths, injected bounded sandbox execution/cache and prompt/static validation implemented. Full live Nix/store/policy/cache integration gates remain pending. |
-| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | IN PROGRESS | 2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open. |
-| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | 2026-10-26 §E41: bounded CI execution, owned cancellation cleanup and late cleanup after ambiguous create outcomes are implemented. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger and persistent cache integration remain open; output redaction follows the output cap and is not a preemptive memory limit. |
-| `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written; CI implementation UNVERIFIED, Nix/Docker adapters remain pending. |
+| `crate:polaris-devenv-docker` | `polaris-devenv-docker` | P8 | IN PROGRESS | 2026-10-23: Docker suite 12 passed; real WSL Reaper journal reopen recovered exactly one UUID-owned pool and confirmed zero remaining. Pinned BuildKit frontend cross-RUN cache sentinel and built-image execution passed. Full P8 latency, Podman and remaining PLAN gates stay open. 2026-10-29 §E56: `DockerSandbox` (SDK SandboxBackend on Docker Desktop's named pipe) with a read-only workspace bind and named cache volumes; live `/ci-run` evidence. |
+| `crate:polaris-devenv-cicd` | `polaris-devenv-cicd` | P8 | IN PROGRESS | 2026-10-26 §E41: bounded CI execution, owned cancellation cleanup and late cleanup after ambiguous create outcomes are implemented. Runtime abort or a never-resolving create can leave a bounded owned cleanup task retained without proving remote deletion. Live isolation, Dagger and persistent cache integration remain open; output redaction follows the output cap and is not a preemptive memory limit. 2026-10-29 §E56: cache mounts for backends that apply them and the cached Rust pipeline, run live in Docker (cold 5.1 s → warm 1.4 s). |
+| `crate:polaris-devenv` | `polaris-devenv` | P8 | IN PROGRESS | Child module facade exports written. 2026-10-29 §E56: composed as `/ci` and `/ci-run` (cicd pipeline + Docker sandbox with cache volumes) in every frontend; Nix evaluation and Dagger remain open. |
 | `crate:polaris-system-one-nano` | `polaris-system-one-nano` | P8 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ### P9
@@ -289,14 +291,14 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 <!-- generated: P9 crate tasks -->
 | Task | Crate | Phase | Status | Evidence |
 |---|---|---|---|---|
-| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. OPEN: model replies (P3), daemon `--connect` (P9 RPC), attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
-| `crate:polaris-web` | `polaris-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
-| `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. Six local contracts and strict owned-target Clippy pass. Default P1 profile denies remote mutation/terminal; remote mTLS, authority provisioning/revocation and full agent profile remain open. |
-| `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. Daemon/root integration and full P9 acceptance remain open. |
-| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. OPEN: Models/Usage/Settings pages, attachments, speech input. |
-| `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` P9 open. |
-| `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. Message history is not indexed yet (search returns only registry-indexed text). |
-| `crate:polaris-ui-web` | `polaris-ui-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
+| `crate:polaris-desktop` | `polaris-desktop` | P9 | IN PROGRESS | 2026-10-28: welcome + session view over a real offline kernel session (`bridge.rs`, lazy kernel start, `--state-dir`, model list from `[nebius.effort]`); 17 tests (args 5, bridge 8, models 4); live open 31 ms new / 13 ms resume. 2026-10-29: model replies with reviewed edits; `--connect/--session/--token-file` attaches to `polarisd` (E53). 2026-10-30 E59: the bridge reports the provider chain and the run's connection/storage to the Models and Settings pages and saves the reduced-motion preference; startup honours it. OPEN: attachments, speech input, message search indexing. Evidence: `@prime/evidence/ui/desktop/desktop-verification.txt` (being updated), live-1..4 PNGs. |
+| `crate:polaris-web` | `polaris-web` | P9 | IN PROGRESS | 2026-10-29: Leptos SSR + hydration + PWA over the `polaris-ui-web` API (WEB_UI_PLAN §7); `--connect/--session/--token-file` attaches to `polarisd` (E53). |
+| `crate:polaris-daemon` | `polaris-daemon` | P9 | IN PROGRESS | 2026-10-26 E39: real local kernel + authenticated RPC daemon and polarisd CLI, bounded endpoint/TLS configuration, readiness-before-drain and ordered shutdown. 2026-10-30 E58: `serve_daemon_with_replies` answers each typed message with a read-only chat turn (`--env-file`, `--no-replies`) and serves only the reply of a `FrameStepRecorded` transcript to attached clients. Default profile denies remote mutation/terminal; authority provisioning/revocation remain open. |
+| `crate:polaris-rpc` | `polaris-rpc` | P9 | IN PROGRESS | 2026-10-24 E32: real Windows pipes, Unix sockets, TCP+mTLS and SDK client; auth/receipt/replay/revocation/shutdown contracts pass. 2026-10-30 E58: frontends reach a `tcp://` daemon through the same client (mutual TLS off loopback). Full P9 acceptance remains open. |
+| `crate:polaris-ui-gui` | `polaris-ui-gui` | P9 | IN PROGRESS | 2026-10-28: welcome + session view, composer v2 and backend request/event contract; 36 tests (composer 10, window 8, controller 13, tokens 4, render 1); session view idle CPU 1.39% of one core vs ~19-28% animated welcome. 2026-10-30 E59: Models (model per effort, provider chain with skip reasons, setup), Usage (session tiles, activity) and Settings (reduced-motion switch saved to ui.cli.reduce_motion and applied live, connection, storage paths, keyboard, About + Slint attribution) pages over the content; not rendered or tested yet. OPEN: attachments, speech input. |
+| `crate:polaris-ui-ascii-aurora` | `polaris-ui-ascii-aurora` | P9 | IN PROGRESS | 2026-10-28: ASCII aurora backs the welcome screen and pauses in the session view (ADR-016); daemon `--connect` attach done 2026-10-29 (E53). |
+| `crate:polaris-ui-session` | `polaris-ui-session` | P9 | IN PROGRESS | 2026-10-28: shared offline session host extracted from polaris-cli; typed user input routing and kernel-free session queries. 2026-10-29: composition root of the local commands and context — RemoteSession attach (E53), `$nvidia(...)`/`/nv-profile`/`/nv-verify` (E54), `/hack` (E55), `/ci`/`/ci-run` (E56), keyless `/search-local` and `$rag` (E57). 2026-10-30 E58: daemon `responder`, attached replies, `tcp://` attach with mutual TLS, `/nv-docs-sync`/`/nv-docs`, `/search-web`/`$websearch`, `/diff`/`/undo`. E60: every session kernel starts the local System One worker (`system_one`, `s1-calibrate`) and, with `~/.polaris/sandbox.json`, the OpenShell sandbox (`sandbox`, model `run_tests` with review). Message history is not indexed yet. |
+| `crate:polaris-ui-web` | `polaris-ui-web` | P9 | IN PROGRESS | 2026-10-29: loopback web UI (token + host checks, CSP), SSE events, chat with reviewed edits; attached mode over `RemoteSession` (`WebServer::bind_with`, E53); 2026-10-30 E58: daemon replies shown in attached mode. |
 | `crate:polaris-spike-web` | `polaris-spike-web` | P9 | NOT STARTED | doc-only skeleton (see P0-SKEL-6) |
 
 ## Probe history (dependency resolution)
@@ -1845,3 +1847,285 @@ integration and broad verification for E51/E52; existing limiter/S1 failures; al
 3/4 owner matrices, measured calibration/parity/resource evidence, actual local edit/test/proof,
 keyed acceptance and demo requirements. Token Factory/Contree access remains unavailable.
 Percentages are unchanged dated estimates. UI remains deferred and P2 otherwise stays paused.
+
+## E53 — P9 frontends attach to `polarisd` (2026-10-29)
+
+**IN PROGRESS (phase acceptance open).** Desktop, `polaris web` and the Leptos `polaris-web` attach
+to a running `polarisd` over its local endpoint (`polaris-*` named pipe on Windows, private Unix
+socket elsewhere) with a credential the daemon issued.
+
+- **Protocol 1.3.** `SubmitText` records typed text as user input or one directive; `ReadText`
+  returns the text behind a CID. The server authorizes `ProposeDiff` for submit and `Read` for
+  read before calling the injected `SessionTextApi`; text is capped at 64 KiB both ways.
+- **Daemon authority.** `DaemonText` submits through the kernel's own control path (clients never
+  mint commands) and serves only CIDs that a directive/user-input event of the daemon's session
+  references (subscription index plus durable-log reindex); other digests are `NOT_FOUND`.
+  `DaemonResolver` pins both calls to the daemon session.
+- **Credentials.** `polarisd --client-token-out <file> [--client-token-hours N]` issues a Biscuit
+  (Read + ProposeDiff on `sessions/<id>/rpc`, 1 s..7 d) under a fresh root, writes it hex-encoded
+  with `create_new` (0600 on Unix) and trusts only that root.
+- **Frontends.** `polaris_ui_session::RemoteSession` replays the session from the first record with
+  text read back; desktop `bridge::spawn_attached`, web `WebServer::bind_with(.., attach)`.
+  In attached mode model replies are not served (announced as provider-unavailable); search and
+  activity stay local.
+- **Security tests.** `tests/apps/polaris-daemon/daemon_lifecycle.rs` (read-only credential cannot
+  write, foreign issuer `UNAUTHENTICATED`, other session `PERMISSION_DENIED`, unreferenced CID
+  `NOT_FOUND`, malformed directive `INVALID_ARGUMENT`, oversize rejected, bounded token lifetime);
+  attach tests against a real daemon: `session/remote.rs` (2), `desktop/bridge_attach.rs` (2),
+  `web/web_attach.rs` (1), desktop args (5). Evidence: `@prime/evidence/p9/attach-verification.txt`.
+
+**Still open:** model replies in attached mode (the daemon has no provider chain), remote mTLS
+deployment, attachments and speech, independent security audit, P9-X-1 visual acceptance.
+
+## E54 — P5 `$nvidia(...)`, `/nv-profile` and `/nv-verify` wired (2026-10-29)
+
+**IN PROGRESS (phase acceptance open).** PLAN §6.14 asks for the wiring "at the composition root";
+it lives in `polaris_ui_session::nvidia` and every frontend uses it.
+
+- **Kernel directive state.** `KernelHandle::directives()` returns the directives in effect as the
+  command owner last committed them (seeded at start from defaults and the replayed log, updated
+  after each `$directive`). Resume restores `$nvidia(off)` from the durable log (tested).
+- **`$nvidia(auto)`** (also the mode with no `$nvidia` directive): each chat turn profiles the
+  workspace and prompt (`auto_profile`, bounded walk) and, only when a stack is found, appends the
+  profile, per-topic invariants and the first eight `/nv-verify` findings to the system prompt.
+  `$nvidia(list)` keeps it out of the model's context; `$nvidia(off)` disables the commands too.
+- **`/nv-profile`** (stack, build targets, evidence, local GPUs from `nvidia-smi` with a 3 s
+  bound, notes where the targets exceed the local GPU) and **`/nv-verify`** (CUDA advisor over
+  `.cu`/`.cuh`, skipping vendored/build directories, bounded) answer in the TUI (sheet), the web
+  pages and the desktop window (a report entry, not recorded or sent to the model), and headless
+  as `polaris nv-profile` / `polaris nv-verify`. Attached frontends decline them (no local kernel).
+- **Sample repositories.** `tests/fixtures/nvidia/{cuda-vector-add,trtllm-serving,plain-rust}`,
+  stored as `*.fixture` and materialized at test time so this repository never profiles as CUDA;
+  provenance in `tests/fixtures/MANIFEST.toml`.
+- **Tests.** `session/nvidia.rs` (5: planted findings at exact lines and severities, vendored code
+  skipped, profiles of all three samples, turn context per mode, directive mode across resume,
+  exact command matching), `session/chat.rs` (the model request carries the profile, and not after
+  `$nvidia(off)`), desktop `bridge.rs` and web `web_api.rs` (`/nv-verify` answered with a report),
+  Leptos reducer test.
+- **Evidence.** `@prime/evidence/p5/nvidia-sample-repos.txt` (real binary on the three samples;
+  this machine's GPU is a Quadro RTX 4000, sm_75, so the sm_90 target note fires) and
+  `@prime/evidence/p5/live-chat-cuda-sample.txt` (one live turn through the provider chain on the
+  synthetic CUDA sample; the reply follows the advisor findings but misquotes three line numbers —
+  recorded as observed).
+
+**Still open:** NVIDIA docs sync run and offline seed (P5-X-3), cited doc slices in turns (needs
+the index), vector search (Token Factory key), tree-sitter rule packs and per-arch limit tables,
+S1 topic scoring, `$rag` and `/search-local` with provenance.
+
+## E55 — P7 `/hack` finds the seeded bugs (2026-10-29)
+
+**P7-X-2 PASS on a synthetic seeded repository; P7 phase acceptance open.**
+
+- **Race rules** (`polaris-hacker`, advisory): `race-split-lock` — a value read under one lock
+  (bound and used in the write, or tested in a condition within 8 lines) written under a second
+  lock of the same mutex/`RwLock`; `race-atomic-load-store` — the same for an atomic `load` and a
+  separate `store` with no read-modify-write between and no guard held across both. Bound guards
+  (`let g = m.lock().unwrap()`, `if let Ok(g) = m.lock()`) count only when dropped first; writes
+  are not checks; `read()`/`write()` count only when unwrapped, expected or awaited. Comments and
+  literals are blanked first. Blocking-in-async now also covers `thread::sleep` without the `std`
+  prefix, `std::fs` reads/writes and `TcpStream::connect`.
+- **`/hack`** (`polaris_ui_session::hack`, through `commands::LocalCommand` shared with
+  `/nv-profile` and `/nv-verify`): Rust/Python/C++/TypeScript through the hacker within its
+  budgets, precise credential formats and destructive shell commands from the automata pack (the
+  generic `name: value` secret rule and PII rules are left out of source audits), CUDA warnings
+  from the advisor. Answered in the TUI, web pages, desktop window and as `polaris hack`.
+- **Seeded repository** `tests/fixtures/hack/seeded-service` (stored as `*.fixture`), with
+  `SEEDED.toml`: two races, two blocking calls in async handlers, one CUDA barrier in a divergent
+  branch, and `clean.rs` doing the same work correctly.
+- **Result** (`@prime/evidence/p7/hack-seeded-service.txt`, real binary): recall 5/5, 0 extra
+  findings. Calibration on this repository cut the first version's 11 race candidates and 9 generic
+  secret matches in `polaris-kernel` to 1 advisory finding (`model_lifecycle.rs` stop: check of
+  an atomic flag, then store), 0 in seven other crates; it also caught a blocking file read in
+  this session's own async `polaris web --connect` path, fixed with `tokio::fs`.
+- **Tests:** `polaris-hacker` `race_rules` (5), `polaris-ui-session` `hack` (4), plus the shared
+  command parsing in `nvidia` tests.
+
+**Still open (P7):** `/research` with a real model and sandbox (P7-X-1: the loop, durable resume
+and 20-iteration contract exist; the composition needs a sandbox — the OpenShell gateway and the
+Polaris sandbox image, P2-X-1); the microVM browser loop (P7-X-3: host-side outline/pHash/session
+exist; the guest Chromium driver needs the same image); `/redteam`, sanitizer workloads.
+
+## E56 — P8 `/ci` runs in Docker with cache mounts (2026-10-29)
+
+**`/ci` exit item PASS on a local Docker Engine; P8 phase acceptance open (`$env(nix)`, Needle).**
+
+- **`DockerSandbox`** (`polaris-devenv-docker`, implements the SDK `SandboxBackend`): one
+  container per sandbox (`sleep infinity`, labelled `polaris.ci=1`), the workspace bind-mounted
+  read-only, named cache volumes that outlive the container, every capability dropped,
+  `no-new-privileges`, CPU/memory/PID limits, bridge network for cold dependency fetches (off with
+  `network: false`); exec with working directory, output cap and timeout; file transfer refused
+  (the mount is the workspace); `remove_caches`, `remove_orphan_ci_containers`. Nothing is pulled.
+- **Cache mounts in the pipeline** (`polaris-devenv-cicd`): `validate()` still rejects them (a
+  generic backend cannot apply them); `validate_with_cache_mounts()` accepts valid keys/absolute
+  targets for a backend that mounts them, `cache_mounts()` returns the distinct mounts, and
+  `rust_test_pipeline_cached` puts `CARGO_HOME` and `CARGO_TARGET_DIR` on `<prefix>-cargo` /
+  `<prefix>-target`.
+- **`/ci` and `/ci-run`** (`polaris_ui_session::ci`, through `LocalCommand`): the plan (steps,
+  image, per-workspace volumes `polaris-ci-<12 hex>` with cold/warm state, Docker readiness and the
+  image build command when missing) and the run (verdict, per-step status/time/exit, cache state
+  before and after, the failing step's log tail; logs redacted by the automata redactor). Answered
+  in the TUI, web pages and desktop window off their session loops (a run can take minutes), and
+  as `polaris ci|ci-run`. `$env(nix|host)` is reported: CI still runs in Docker.
+- **CI image** `@prime/tools/ci/Dockerfile`: `rust:1.99.0-bookworm` (pulled with the user's
+  approval) plus rustfmt and clippy → `polaris-ci-rust:1.99.0`.
+- **Evidence** `@prime/evidence/p8/ci-run-docker.txt` (real binary, Docker Desktop 28.4.0):
+  sample `tests/fixtures/ci/rust-lib` cold 5.1 s (check 1.2 s, test 2.8 s) → warm 1.4 s (0.2 s
+  each), 9 MB of artifacts in the target volume; a copy with one unformatted line fails at
+  `format` with the rustfmt diff and skips the rest; no container left behind.
+- **Tests:** `cicd` `cache_mounts` (2), `polaris-ui-session` `ci` (3, the live one with
+  `POLARIS_CI_DOCKER_LIVE=1`: cold then warm, then removes its volumes).
+
+**Still open (P8):** `$env(nix)` devShell evaluation (needs Nix in a sandbox), `/nix-flake`
+drafting, Dagger, Podman, matrix legs beyond linux-x86_64, Needle T0 (engine and weights are not on
+this machine; the S0-6 spike passed elsewhere).
+
+## E57 — No Nebius (D10), keyless search, and P10 hardening (2026-10-29)
+
+**Decision D10.** Nebius services (Token Factory, Contree, AI Cloud, Data Lab) are not available to
+the team in Ukraine. Thirteen rows that needed them are `DESCOPED` (new status, counted by
+`workspace.py render-docs`); models run through OpenRouter or a local server, execution through the
+local Docker sandbox (E56), knowledge through lexical search. Only the Tavily rows stay
+`BLOCKED-ON-ACCESS`.
+
+**P5, keyless.** `/search-local <query>` and `$rag` (`polaris_ui_session::local_search`): BM25 over
+40-line windows (step 30) of the workspace's text files, terms including `camelCase`/`snake_case`
+parts, overlapping windows of a file reported once, each hit as `path:first-last` with its best
+lines. Files are indexed once per process and reused while size and modification time hold (this
+repository: first query 5.1 s, next 0.33 s, optimized). `$rag`/`$rag(on)`/`$rag(workspace)` add the
+best five passages to each turn's request as labelled untrusted data. Answered in every frontend and
+as `polaris search-local`. Tests: `session/local_search.rs` (5), `session/chat.rs` (`$rag` carries
+passages, not without it). Evidence: `@prime/evidence/p5/search-local-polaris.txt`.
+
+**P10-1 (IN PROGRESS).** Full workspace `cargo test --workspace --no-fail-fast`: 549 test binaries,
+2,630 passed, 4 failed (the in-progress `polaris-ratelimit` refund ledger, unchanged), 50 ignored.
+Loom models (bus ordering, cache single-flight, leases) and the bus/ratelimit/web/sandbox/S1 spike
+suites pass optimized (7 live sandbox tests ignored without OpenShell). Fuzz, Miri, Kani and mutants
+need tools that are not installed. Evidence: `@prime/evidence/p10/test-matrix.txt`.
+
+**P10-2 (IN PROGRESS).** `@prime/SECURITY_REVIEW.md`: the §6.11 threat model against the code and
+its tests; no `unsafe` in first-party code (workspace `deny`, 15 roots `forbid`); offline licence
+audit of 1,293 third-party packages against `deny.toml` (`@prime/tools/licence_audit.py`,
+`@prime/evidence/p10/licence-audit.txt`) — one WTFPL crate (`terminfo`) reachable only through
+ratatui's disabled termwiz backend. RustSec advisories and `cargo vet` need their tools.
+
+**P10-3 (PASS — measured and recorded).** `tests/tests/budgets.rs` and `budget_alloc.rs` (dhat)
+in the new `budget` profile; numbers in PLAN §11.4 and `@prime/evidence/p10/budgets.txt`: bus
+publish p99 0.5–4.5 µs (met), GCRA p50 0.7 µs / p99 1.1 µs with 0 allocations (p99 just over), DFA
+438 MB/s (not met, ≥ 500), SSE 0 allocations per warm frame (met), sync 10k files 1.14 s (met), TUI
+200×60 p99 5.1 ms (met), S1 fp32 CPU p95 758 ms from S0-4 (not met; int8 decision pending).
+
+**P10-4 (PASS).** `cargo build --profile dist` of `polaris`, `polarisd`, `polaris-desktop`,
+`polaris-web`, `polaris-worker` and the Leptos site; `@prime/tools/package_dist.py` packages them
+with the new root `README.md` and `LICENSE` into `target/package/polaris-<version>-<target>.zip`
+and records `SHA256SUMS.txt` and `build-info.json` in `@prime/evidence/p10/` (binaries are not
+committed).
+
+**Docs.** `render-docs` regenerated the crate tables from `workspace.toml` after the rows edited in
+recent sessions were written back to it, so a re-render no longer reverts them.
+
+**Still open (P10):** fuzz/Miri/Kani/mutants and advisory/vet runs (tool installs), the Linux build
+leg on this machine (crate downloads in a container), the demo video (P10-5), an external review.
+
+## E58 — Remaining composition written; no new test runs (2026-10-30)
+
+The user asked to finish the code without running tests, so this entry records code only:
+`cargo check --workspace` passes on Windows; nothing below has a new test or live run.
+
+- **P9 replies in attached mode.** `polarisd` answers each typed message with a read-only chat
+  turn (`polaris_ui_session::responder`; `--env-file`, `--no-replies`). Attached web and desktop
+  windows read the reply back from the step's `FrameStepRecorded` record; the daemon serves only
+  the reply text of a transcript, never its prompt or tool results.
+- **P9-X-2.** Frontends attach to `tcp://host:port`; off loopback the client's mutual TLS files
+  come from `POLARIS_TLS_CA/CERT/KEY` (`AttachTls`).
+- **P5-X-3.** `polaris_nvidia_docs::sync`: the PLAN F20 `llms.txt` listings into
+  `~/.polaris/docs/nvidia/seed.jsonl` with per-page provenance in `state.json`, incrementally
+  (304 keeps chunks, failed pages keep theirs, unlisted pages are dropped), written atomically.
+  `/nv-docs-sync` (= `$nvidia-docs(sync)`), `/nv-docs <query>`, and the best passages in
+  `$nvidia(auto)` turns.
+- **P5-X-1.** `/search-web <query>` and `$websearch` through the redacting SearXNG adapter;
+  `@prime/tools/searxng/run.ps1|run.sh` start a loopback container with minimal capabilities.
+- **P7-X-1.** `/research <goal>|status|report|resume` (`polaris_ui_session::research`): the model
+  proposes one hypothesis as the content of one editable file, the loop writes it under an
+  attenuated capability, the metric runs in a no-network Docker container with the workspace
+  read-only, and checkpoints allow `/research resume` after a kill. A program parser bug let
+  `editable: **` overlap read-only scopes (so `program.md` and the harness were editable); fixed
+  in `program.rs`.
+- **Chat edits.** `/diff` lists the session's applied changes from its `DiffApproved` diffs;
+  `/undo` restores the newest one whose file is unchanged since (host write, outside review).
+  Moves and multi-file changes are explained to the model as write + delete and one reviewed
+  change per file.
+- **P10.** `cargo deny` passes (pulldown-cmark wikilink advisory fixed in ingest, other
+  advisories ignored with reasons), `cargo audit` reports one accepted advisory, `cargo vet`
+  1,167 unvetted (`@prime/evidence/p10/supply-chain.txt`). Linux `cargo check --workspace
+  --all-targets --locked` passes in Docker after a peer-pid fix; the Linux test run was cut short
+  while compiling and is not evidence. Demo script `@prime/DEMO.md` with
+  `@prime/tools/demo/prepare.ps1`.
+
+**Still open:** live runs of all of the above, the Linux test leg, Miri/fuzz/mutants, the demo
+recording, System One nano (Needle `--serve` protocol unverified, S0-6), the microVM browser loop
+(P7-X-3), calibration (P4-X-2).
+
+## E59 — Desktop Models, Usage and Settings pages (2026-10-30)
+
+Code only, like E58 (`cargo check` of `polaris-ui-gui` and `polaris-desktop` passes; nothing was
+rendered or tested). The three rail panels of the desktop window become pages over the content
+(`ui/pages.slint`), with the rail still usable and the accessible labels kept:
+
+- **Models:** the model in use, the model for every effort (click to switch), the provider chain
+  as it was tried with each skip reason (`BackendEvent::Providers` from the bridge), and setup notes.
+- **Usage:** the open session's requests and tokens as tiles, then activity across local sessions.
+- **Settings:** a reduced-motion switch applied to the aurora at once and saved as
+  `ui.cli.reduce_motion` (shared with the terminal UI; read again at startup), the connection
+  (local store or the attached daemon), workspace, session store, preferences file and keys file
+  (path only), keyboard notes, and About with the Slint attribution (ADR-014).
+
+Attachments and speech input stay open.
+
+## E60 — System One and the OpenShell sandbox in every session (2026-10-30)
+
+Release builds only (`cargo build --release -p polaris-cli -p polaris-worker -p polaris-desktop
+-p polaris-daemon -p polaris-web` passes); live results below are from this machine.
+
+- **OpenShell live (P2).** Docker Engine in WSL Ubuntu (disk moved to D:), OpenShell gateway
+  v0.1.4 with the Docker driver on `https://127.0.0.1:17670` (mTLS). `verify-openshell.sh`:
+  `RESULT: PASS` — create 10.1 s, exec 172 ms, exit-code propagation, byte-exact upload, delete.
+  Sandbox image `polaris-sandbox:p2` = `sha256:50163fb3…7137` on
+  `nvcr.io/nvidia/base/ubuntu@sha256:d9461f42…e378`, `polaris-guest --protocol-version` = 1,
+  rustc/cargo 1.99.0 inside (`@prime/tools/sandbox/bringup-wsl.sh`; root steps in
+  `@prime/tools/setup/setup-wsl-root.sh`; apt forced to IPv4 because WSL IPv6 is broken).
+  Live headless acceptance (`verify-headless.ps1`, release binary, std-only fixture):
+  positive → `proof_passed` (exit 0, 1.4 s in the sandbox); zero-tests, failing-command and
+  minimum-tests → `blocked`; one sandbox run each, no unresolved resources; replaying the
+  consumed approval after a restart is refused without a second run
+  (`@prime/evidence/p2/openshell-live-acceptance-20261030.json`).
+- **Sandbox in chat sessions.** `polaris_ui_session::sandbox`: `~/.polaris/sandbox.json` (endpoint,
+  server name, mTLS directory, policy, immutable image id, WSL distro, quotas) makes every
+  session kernel start with `Kernel::start_sandbox`; the WSL distro is kept awake while the
+  session is open. The model gets `run_tests`; the kernel's immutable execution review is shown
+  in the review panel (commands, independent check, timeout), approval runs it in the sandbox
+  with Proof of Done, a decline stops the reply. An unreachable gateway opens the session
+  without the sandbox and says why. Status in every frontend and on the desktop Settings page.
+- **System One in chat sessions (P4).** Sessions start the local GLiNER2.5-Decide worker (fp32,
+  CPU) named in `~/.polaris/config.toml` `[system_one]`; agent changes go through the configured
+  verifier (safety.diff_tamper, safety.secret_semantic, watch.congruence) with change review.
+  `polaris s1-calibrate <fixtures>` measures every schema on a labelled set with the running
+  worker (calibration context = fixture BLAKE3 + the worker's model identity) and keeps a schema
+  only at ≥ 99 % precision with ≥ 10 accepted; the catalog is `~/.polaris/system-one/
+  safety-schemas.toml`. Synthetic labelled set: `@prime/tools/system-one/make_safety_fixtures.py`
+  (400 rows: 100 real changes from this repository's history, 100 test tampers, 100 secrets,
+  100 intent mismatches). Measured with the worker (model identity `fdc0f0ab8f3cb9e1…`, ~1.6 s
+  per decision on CPU): **safety.diff_tamper** accepts at P ≥ 0.753 with precision 100 % and
+  recall 14 % (300 cases), **safety.secret_semantic** at P ≥ 0.521 with precision 100 % and
+  recall 21 % (300 cases); **watch.congruence** did not reach 99 % at any threshold (200 cases)
+  and stays uncalibrated, so such changes always go to the person. Synthetic data: the numbers
+  say the model separates these generated cases, not that it is safe on real changes. The first
+  run measured almost nothing: whole BEFORE/AFTER files (13 KB on average) exhausted the
+  worker's memory; the gates now read the changed lines bounded to the encoder window.
+- **Stubs removed.** TUI `/plan`, `/proof-of-done`, `/context-map`, `/parallel-dag`,
+  `/concurrency-stats`, `/cache stats`, `/session replay`, `/redteam` act; the Nebius commands say
+  they are descoped (D10). Stale "documentation-only" headers of `polaris-guest` and
+  `polaris-openshell-policy` replaced.
+
+**Still open:** `/goal`, `/context-expand`, `/cache purge`, `/screenshot`, `/browser`, `/ui-diff`,
+`/nix-flake` (P7 browser and microVM profiles), the daemon terminal (no host shell by design),
+System One nano (S0-6).

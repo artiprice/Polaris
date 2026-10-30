@@ -1,0 +1,15 @@
+# Local SearXNG for Polaris (P5-X-1): `/search-web` and `$websearch` read its JSON output.
+# run.ps1 / run.sh copy this file to ~/.polaris/searxng/ with a fresh secret key and mount the
+# copy; the instance is published on loopback only, so the bot limiter is off.
+use_default_settings: true
+general:
+  instance_name: "polaris-searxng"
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+server:
+  limiter: false
+  image_proxy: false
+  secret_key: "REPLACED_AT_RUN"

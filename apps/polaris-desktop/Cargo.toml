@@ -34,6 +34,10 @@ polaris-config = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+# A real daemon for the attach tests (dev only, not a layer edge).
+polaris-daemon = { workspace = true }
+polaris-kernel = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "time", "sync"] }
 
 # Tests live in the root tests/ tree, mirroring this package's path.
 [[test]]
@@ -47,6 +51,10 @@ path = "../../tests/apps/polaris-desktop/bridge.rs"
 [[test]]
 name = "bridge_chat"
 path = "../../tests/apps/polaris-desktop/bridge_chat.rs"
+
+[[test]]
+name = "bridge_attach"
+path = "../../tests/apps/polaris-desktop/bridge_attach.rs"
 
 [[test]]
 name = "models"

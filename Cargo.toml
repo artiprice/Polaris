@@ -312,6 +312,10 @@ leptos_axum = "0.8.10"
 leptos_router = "0.8.17"
 leptos_meta = "0.8.7"
 wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4.79"
+js-sys = "0.3.106"
+web-sys = "0.3.106"
+console_error_panic_hook = "0.1.7"
 
 # ---------------------------------------------------------------- agents
 chromiumoxide = { version = "0.9.1", default-features = false, features = ["bytes"] }
@@ -405,3 +409,10 @@ strip = true
 inherits = "release"
 lto = "fat"
 codegen-units = 1
+
+# PLAN §11.4 budget measurements (tests/tests/budgets.rs): optimized like release, but without fat
+# LTO so the measurement binaries build in minutes. Numbers are therefore slightly conservative.
+[profile.budget]
+inherits = "release"
+lto = false
+codegen-units = 16

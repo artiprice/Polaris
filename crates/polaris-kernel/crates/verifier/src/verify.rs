@@ -1,7 +1,10 @@
 //! Ordered hybrid verification pipeline.
 
 use crate::{EvidenceError, EvidenceStore, mutation_digest};
-use polaris_code_intel::{AnalysisCoverage, MutationMetrics, ParserPool, analyze_safety, metrics};
+use polaris_code_intel::{
+    AnalysisCoverage, CodeIntelError, MutationMetrics, Parsed, ParserPool, analyze_safety,
+    churn_lines, metrics,
+};
 use polaris_sdk::{
     contracts::{
         ApprovalWitness, ApproverId, Command, CommandBody, Timestamp, Unverified, Verified,
@@ -145,6 +148,21 @@ pub enum ApprovalReason {
     /// The tree-edit distance was a lower bound and did not exceed the limit, so compliance could
     /// not be proven.
     TreeEditDistanceLowerBound { lower_bound: u32, limit: u32 },
+    /// The target is not a language the analyzer parses, so only line churn can be measured.
+    UnsupportedLanguage,
+}
+
+/// A human's committed answer approving one mutation that needed a human decision.
+///
+/// The verifier records both digests in its evidence. It cannot read the answer itself: the caller
+/// must have created the request for this exact mutation and checked that the committed answer
+/// approves it before calling [`HybridMutationVerifier::verify_with_human_approval`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HumanApproval {
+    /// Digest of the immutable human request, which is also its answer revision.
+    pub request: Cid,
+    /// CAS digest of the committed answer document.
+    pub answer: Cid,
 }
 
 /// Errors from trusted parser, safety, or evidence infrastructure. Callers must fail closed.
@@ -297,6 +315,32 @@ where
         &self,
         request: MutationRequest<'_>,
     ) -> Result<VerificationDecision, VerifierError> {
+        self.verify_inner(request, None).await
+    }
+
+    /// Verify a mutation a human approved after [`VerificationDecision::NeedsApproval`].
+    ///
+    /// Every deterministic layer still runs in the same order: input caps, command binding, the
+    /// signature chain, Datalog authorization and the metric limits, and an S1 `Block` still
+    /// rejects. Only the outcomes that ask for a human decision are accepted; the evidence names
+    /// the first one with the request and answer digests. Targets in a language the analyzer does
+    /// not parse are measured by line churn alone and skip the S1 assessment.
+    ///
+    /// # Errors
+    /// As [`Self::verify`].
+    pub async fn verify_with_human_approval(
+        &self,
+        request: MutationRequest<'_>,
+        approval: HumanApproval,
+    ) -> Result<VerificationDecision, VerifierError> {
+        self.verify_inner(request, Some(approval)).await
+    }
+
+    async fn verify_inner(
+        &self,
+        request: MutationRequest<'_>,
+        human: Option<HumanApproval>,
+    ) -> Result<VerificationDecision, VerifierError> {
         let input_caps = [
             (
                 InputField::Capability,
@@ -348,29 +392,52 @@ where
             Ok(resource) => resource,
             Err(_) => return Ok(VerificationDecision::Rejected(Rejection::Authorization)),
         };
-        let old = self
-            .parser
-            .parse_file(Path::new(request.target), request.old_source)?;
-        let new = self
-            .parser
-            .parse_file(Path::new(request.target), request.new_source)?;
-        if old.has_syntax_error() || new.has_syntax_error() {
-            return Ok(VerificationDecision::Rejected(Rejection::Metric(
-                Metric::TreeEditDistance,
-            )));
-        }
-        let measured = metrics(&old, &new)?;
-        let old_safety = analyze_safety(&old)?;
-        let new_safety = analyze_safety(&new)?;
-        if old_safety.unsafe_coverage != AnalysisCoverage::Complete
-            || new_safety.unsafe_coverage != AnalysisCoverage::Complete
-        {
-            return Ok(VerificationDecision::NeedsApproval {
-                reason: ApprovalReason::UnsafeAnalysisCoverage,
-            });
-        }
-        let touches_unsafe =
-            unsafe_observations(&old, &old_safety) != unsafe_observations(&new, &new_safety);
+        // The first outcome a human decision accepted; `None` keeps the automatic evidence.
+        let mut overridden = None;
+        let parsed = match (
+            self.parser
+                .parse_file(Path::new(request.target), request.old_source),
+            self.parser
+                .parse_file(Path::new(request.target), request.new_source),
+        ) {
+            (Ok(old), Ok(new)) => Some((old, new)),
+            (Err(CodeIntelError::UnsupportedLanguage), _)
+            | (_, Err(CodeIntelError::UnsupportedLanguage)) => {
+                if let Some(decision) =
+                    escalate(human, ApprovalReason::UnsupportedLanguage, &mut overridden)
+                {
+                    return Ok(decision);
+                }
+                None
+            }
+            (Err(error), _) | (_, Err(error)) => return Err(error.into()),
+        };
+        let (measured, touches_unsafe) = match &parsed {
+            Some((old, new)) => {
+                if old.has_syntax_error() || new.has_syntax_error() {
+                    return Ok(VerificationDecision::Rejected(Rejection::Metric(
+                        Metric::TreeEditDistance,
+                    )));
+                }
+                let measured = metrics(old, new)?;
+                let old_safety = analyze_safety(old)?;
+                let new_safety = analyze_safety(new)?;
+                if (old_safety.unsafe_coverage != AnalysisCoverage::Complete
+                    || new_safety.unsafe_coverage != AnalysisCoverage::Complete)
+                    && let Some(decision) = escalate(
+                        human,
+                        ApprovalReason::UnsafeAnalysisCoverage,
+                        &mut overridden,
+                    )
+                {
+                    return Ok(decision);
+                }
+                let touches =
+                    unsafe_observations(old, &old_safety) != unsafe_observations(new, &new_safety);
+                (measured, touches)
+            }
+            None => (text_metrics(request.old_source, request.new_source), false),
+        };
         let diff = expected_diff;
         let old_source = cid_for(request.old_source);
         let new_source = cid_for(request.new_source);
@@ -412,43 +479,46 @@ where
                 Metric::TreeEditDistance,
             )));
         }
-        if !measured.tree_edit_distance_exact {
-            return Ok(VerificationDecision::NeedsApproval {
-                reason: ApprovalReason::TreeEditDistanceLowerBound {
-                    lower_bound: measured.tree_edit_distance,
-                    limit: self.config.max_tree_edit_distance,
+        if let Some((old, new)) = &parsed {
+            if !measured.tree_edit_distance_exact
+                && let Some(decision) = escalate(
+                    human,
+                    ApprovalReason::TreeEditDistanceLowerBound {
+                        lower_bound: measured.tree_edit_distance,
+                        limit: self.config.max_tree_edit_distance,
+                    },
+                    &mut overridden,
+                )
+            {
+                return Ok(decision);
+            }
+            let assessment = tokio::time::timeout(
+                self.config.safety_timeout,
+                self.safety.assess(&SafetyRequest {
+                    target: resource.as_str(),
+                    old,
+                    new,
+                    intent: request.intent,
+                    changed_symbols: &measured.changed_symbols,
+                }),
+            )
+            .await;
+            let escalation = match assessment {
+                Ok(result) => match result? {
+                    SafetyAssessment::Allow => None,
+                    SafetyAssessment::Block { .. } => {
+                        return Ok(VerificationDecision::Rejected(Rejection::Safety));
+                    }
+                    SafetyAssessment::NeedsApproval { reason } => {
+                        Some(ApprovalReason::SafetyDegraded(reason))
+                    }
                 },
-            });
-        }
-
-        let assessment = match tokio::time::timeout(
-            self.config.safety_timeout,
-            self.safety.assess(&SafetyRequest {
-                target: resource.as_str(),
-                old: &old,
-                new: &new,
-                intent: request.intent,
-                changed_symbols: &measured.changed_symbols,
-            }),
-        )
-        .await
-        {
-            Ok(result) => result?,
-            Err(_) => {
-                return Ok(VerificationDecision::NeedsApproval {
-                    reason: ApprovalReason::SafetyTimeout,
-                });
-            }
-        };
-        match assessment {
-            SafetyAssessment::Allow => {}
-            SafetyAssessment::Block { .. } => {
-                return Ok(VerificationDecision::Rejected(Rejection::Safety));
-            }
-            SafetyAssessment::NeedsApproval { reason } => {
-                return Ok(VerificationDecision::NeedsApproval {
-                    reason: ApprovalReason::SafetyDegraded(reason),
-                });
+                Err(_) => Some(ApprovalReason::SafetyTimeout),
+            };
+            if let Some(reason) = escalation
+                && let Some(decision) = escalate(human, reason, &mut overridden)
+            {
+                return Ok(decision);
             }
         }
 
@@ -461,8 +531,16 @@ where
             }
         }
 
+        let human = match (overridden, human) {
+            (Some(reason), Some(approval)) => Some(HumanEvidence {
+                request: approval.request,
+                answer: approval.answer,
+                reason: format!("{reason:?}"),
+            }),
+            _ => None,
+        };
         let report = ApprovalEvidence {
-            schema: 1,
+            schema: if human.is_some() { 2 } else { 1 },
             command_id,
             agent,
             target: resource.as_str(),
@@ -479,7 +557,17 @@ where
             tree_edit_distance_exact: measured.tree_edit_distance_exact,
             max_tree_edit_distance: self.config.max_tree_edit_distance,
             touches_unsafe,
-            safety_result: EvidenceSafetyResult::PreflightAndCongruenceAllowed,
+            safety_result: if human.is_some() {
+                EvidenceSafetyResult::HumanApproved
+            } else {
+                EvidenceSafetyResult::PreflightAndCongruenceAllowed
+            },
+            analysis: if parsed.is_some() {
+                EvidenceAnalysis::Syntax
+            } else {
+                EvidenceAnalysis::Text
+            },
+            human,
             changed_symbols: measured
                 .changed_symbols
                 .iter()
@@ -552,6 +640,10 @@ struct ApprovalEvidence<'a> {
     max_tree_edit_distance: u32,
     touches_unsafe: bool,
     safety_result: EvidenceSafetyResult,
+    analysis: EvidenceAnalysis,
+    /// Schema 2: the human decision that accepted an outcome needing one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    human: Option<HumanEvidence>,
     changed_symbols: Vec<String>,
     checked_at: Timestamp,
 }
@@ -560,6 +652,49 @@ struct ApprovalEvidence<'a> {
 #[serde(rename_all = "snake_case")]
 enum EvidenceSafetyResult {
     PreflightAndCongruenceAllowed,
+    HumanApproved,
+}
+
+/// How the snapshots were measured: syntax trees, or line churn for an unparsed language.
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+enum EvidenceAnalysis {
+    Syntax,
+    Text,
+}
+
+#[derive(Serialize)]
+struct HumanEvidence {
+    request: Cid,
+    answer: Cid,
+    reason: String,
+}
+
+/// Without a human approval, `reason` becomes the decision; with one, it is accepted and the
+/// first accepted reason is kept for the evidence.
+fn escalate(
+    human: Option<HumanApproval>,
+    reason: ApprovalReason,
+    overridden: &mut Option<ApprovalReason>,
+) -> Option<VerificationDecision> {
+    if human.is_none() {
+        return Some(VerificationDecision::NeedsApproval { reason });
+    }
+    if overridden.is_none() {
+        *overridden = Some(reason);
+    }
+    None
+}
+
+/// Metrics for a target without a syntax tree: line churn only, nothing structural.
+fn text_metrics(old: &[u8], new: &[u8]) -> MutationMetrics {
+    MutationMetrics {
+        churn_lines: churn_lines(old, new),
+        cyclomatic_delta: 0,
+        tree_edit_distance: 0,
+        tree_edit_distance_exact: false,
+        changed_symbols: Vec::new(),
+    }
 }
 
 pub(crate) fn cid_for(bytes: &[u8]) -> Cid {
@@ -574,7 +709,7 @@ fn single_symbol(metrics: &MutationMetrics) -> Option<&str> {
 }
 
 fn unsafe_observations(
-    parsed: &polaris_code_intel::Parsed,
+    parsed: &Parsed,
     analysis: &polaris_code_intel::SafetyAnalysis,
 ) -> BTreeMap<(String, Vec<u8>), u32> {
     let mut observations = BTreeMap::new();

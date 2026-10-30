@@ -273,3 +273,46 @@ fn dropping_the_link_shuts_down_cleanly() -> TestResult {
     bridge.join()?;
     Ok(())
 }
+
+/// P5: `/nv-verify` typed in the window is answered with the CUDA advisor's report for the
+/// session's workspace instead of being recorded as a message.
+#[test]
+fn nv_verify_is_answered_with_a_report() -> TestResult {
+    let f = fixture()?;
+    std::fs::write(
+        f.workspace.join("kernel.cu"),
+        "__global__ void zero(float* x) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    x[i] = 0.0f;\n}\n",
+    )?;
+    let _id = open_new(&f)?;
+    f.link.requests.send(BackendRequest::Submit {
+        text: String::from("/nv-verify"),
+    })?;
+    let seen = until(&f.link.events, |e| {
+        matches!(e, BackendEvent::Report { .. } | BackendEvent::Rejected(_))
+    })?;
+    assert!(seen.contains(&BackendEvent::Committed), "{seen:?}");
+    match seen.last() {
+        Some(BackendEvent::Report { title, lines }) => {
+            assert_eq!(title, "CUDA advisor");
+            assert_eq!(
+                lines.first().map(String::as_str),
+                Some("Checked 1 CUDA source: 1 warning, 0 suggestions.")
+            );
+            assert!(
+                lines
+                    .iter()
+                    .any(|line| line.contains("kernel.cu:2 warning [missing-grid-bounds]"))
+            );
+        }
+        other => return Err(format!("no report: {other:?}").into()),
+    }
+    assert!(
+        !seen
+            .iter()
+            .any(|e| matches!(e, BackendEvent::Message { .. })),
+        "the command is not recorded as a message: {seen:?}"
+    );
+    drop(f.link);
+    f.bridge.join()?;
+    Ok(())
+}

@@ -15,6 +15,7 @@ workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
+regex = { workspace = true }
 # Internal edges (layer-checked by `workspace.py check-layers`).
 polaris-sdk = { workspace = true }
 polaris-code-intel = { workspace = true }
@@ -32,3 +33,7 @@ path = "../../tests/crates/polaris-hacker/dynamic_backend.rs"
 [[test]]
 name = "static_boundary"
 path = "../../tests/crates/polaris-hacker/static_boundary.rs"
+
+[[test]]
+name = "race_rules"
+path = "../../tests/crates/polaris-hacker/race_rules.rs"

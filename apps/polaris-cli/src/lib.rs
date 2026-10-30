@@ -37,6 +37,8 @@ mod app;
 /// CLI preferences editor using the configuration owner's atomic persistence boundary.
 pub mod cli_settings;
 pub mod demo;
+// Some gallery helpers (effect consumption, page navigation) are not wired to an input path yet.
+#[allow(dead_code)]
 mod demo_gallery;
 mod doctor;
 pub mod key_trace;

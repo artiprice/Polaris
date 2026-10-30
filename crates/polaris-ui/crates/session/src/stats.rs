@@ -40,13 +40,13 @@ pub fn stats_lines(
         format!("Completion tokens   {completion}"),
         format!("Active days         {}", days.len()),
     ];
-    if let Some((date, day)) = days.iter().max_by_key(|(_, day)| day.tokens) {
-        if day.tokens > 0 {
-            lines.push(format!(
-                "Busiest day         {date} · {} tokens",
-                day.tokens
-            ));
-        }
+    if let Some((date, day)) = days.iter().max_by_key(|(_, day)| day.tokens)
+        && day.tokens > 0
+    {
+        lines.push(format!(
+            "Busiest day         {date} · {} tokens",
+            day.tokens
+        ));
     }
     lines.push(String::new());
     lines.push("Last 7 days (tokens)".to_owned());

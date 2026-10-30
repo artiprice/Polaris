@@ -2,7 +2,7 @@
 //!
 //! The local web UI (`polaris web`): an embedded single-page app served on loopback, a JSON
 //! command API and a Server-Sent Events stream, backed by the same session host, provider chain
-//! and read-only agent as the terminal and desktop frontends. The welcome page is the design
+//! and agent as the terminal and desktop frontends (file changes wait for review on the page). The welcome page is the design
 //! preview's (`dist/demo-design-preview-slop/webui`), optimised (no image assets); the session
 //! view, panels and motion follow the Slint desktop GUI. Plan: `@prime/WEB_UI_PLAN.md`.
 //!
@@ -22,4 +22,12 @@ mod backend;
 mod server;
 
 pub use backend::{SessionRow, WebEvent};
+/// Where an attached page records (P9), re-exported for the binaries.
+pub use polaris_ui_session::AttachTarget;
+/// Attach the OpenShell sandbox `~/.polaris/sandbox.json` names to the sessions this process
+/// opens (see `polaris_ui_session::sandbox`); returns its status line.
+pub use polaris_ui_session::sandbox::configure as sandbox_configure;
+/// Configure System One for the sessions this process opens (see
+/// `polaris_ui_session::system_one`); returns its status line.
+pub use polaris_ui_session::system_one::configure as system_one_configure;
 pub use server::{WebError, WebOptions, WebServer};

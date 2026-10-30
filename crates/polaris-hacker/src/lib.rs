@@ -8,6 +8,7 @@ mod boundary;
 mod dynamic;
 mod error;
 mod pipeline;
+mod race;
 mod report;
 mod static_scan;
 
@@ -15,5 +16,6 @@ pub use boundary::{BoundaryGen, BoundaryLimits};
 pub use dynamic::{DynamicReport, DynamicRun, Sanitizer, StressPlan, run_dynamic_stress};
 pub use error::HackerError;
 pub use pipeline::audit;
+pub use race::{ATOMIC_LOAD_STORE, SPLIT_LOCK};
 pub use report::{AuditReport, Confidence, Finding, FindingClass, SourceFile, StaticReport};
 pub use static_scan::static_scan;

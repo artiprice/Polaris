@@ -46,7 +46,7 @@ fn fold(events: &[Event], first_index: usize) -> Result<Aggregates, Box<dyn Erro
     let odd = ModelId::new("model-odd")?;
     let mut aggregates = Aggregates::new()?;
     for (offset, event) in events.iter().enumerate() {
-        let model = if (first_index + offset) % 2 == 0 {
+        let model = if (first_index + offset).is_multiple_of(2) {
             &even
         } else {
             &odd

@@ -1,0 +1,22 @@
+// Synthetic sample for /hack: async request handlers.
+use std::time::Duration;
+
+pub struct Request {
+    pub path: String,
+}
+
+/// SEEDED blocking-in-async: the sleep parks the executor thread and stalls every other task on it.
+pub async fn throttled(request: Request) -> String {
+    std::thread::sleep(Duration::from_millis(50));
+    format!("ok {}", request.path)
+}
+
+/// SEEDED blocking-in-async: synchronous file I/O inside an async handler.
+pub async fn template(name: &str) -> String {
+    std::fs::read_to_string(format!("templates/{name}.html")).unwrap_or_default()
+}
+
+// "std::thread::sleep inside async fn" in a comment or string is not code:
+pub fn describe() -> &'static str {
+    "async fn f() { std::thread::sleep(d) }"
+}

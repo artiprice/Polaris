@@ -24,10 +24,7 @@ pub(crate) fn check_size(stream: &[u8]) -> Result<(), RtkError> {
 /// Decodes UTF-16 code units (without BOM) from byte pairs; an odd trailing byte is dropped and
 /// unpaired surrogates become U+FFFD.
 fn decode_utf16(bytes: &[u8], unit: fn([u8; 2]) -> u16) -> String {
-    let units = bytes.chunks_exact(2).filter_map(|pair| match *pair {
-        [a, b] => Some(unit([a, b])),
-        _ => None,
-    });
+    let units = bytes.as_chunks::<2>().0.iter().map(|pair| unit(*pair));
     char::decode_utf16(units)
         .map(|r| r.unwrap_or(char::REPLACEMENT_CHARACTER))
         .collect()
@@ -101,10 +98,10 @@ pub fn decode_stream(bytes: &[u8]) -> String {
         Some(body) => body,
         None => bytes,
     };
-    if let Ok(text) = std::str::from_utf8(utf8_body) {
-        if !has_controls_or_escape(text.as_bytes()) {
-            return text.to_owned();
-        }
+    if let Ok(text) = std::str::from_utf8(utf8_body)
+        && !has_controls_or_escape(text.as_bytes())
+    {
+        return text.to_owned();
     }
     let text = decode_encoding(bytes);
     let mut out = String::with_capacity(text.len());

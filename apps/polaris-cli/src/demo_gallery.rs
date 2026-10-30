@@ -463,7 +463,7 @@ fn stats_day(index: usize) -> StatsDay {
     for session in 0..session_count {
         row.sessions = row.sessions.saturating_add(1);
         for model in 0..3 {
-            if (index + session + model) % 7 == 0 {
+            if (index + session + model).is_multiple_of(7) {
                 continue;
             }
             let wave = (index
@@ -495,13 +495,13 @@ fn stats_day(index: usize) -> StatsDay {
                 }
             };
             let base = u64::try_from(wave.saturating_add(1))
-                .map_or(0, |n| n)
+                .unwrap_or(0)
                 .saturating_mul(gain)
                 .saturating_mul(80);
-            let multiplier = u64::try_from(1 + index % 9).map_or(1, |n| n);
+            let multiplier = u64::try_from(1 + index % 9).unwrap_or(1);
             let value = base
                 .saturating_add(base / 3)
-                .saturating_add(u64::try_from(session.saturating_mul(11)).map_or(0, |n| n))
+                .saturating_add(u64::try_from(session.saturating_mul(11)).unwrap_or(0))
                 .saturating_add(base.saturating_mul(multiplier))
                 .saturating_add(base / 5);
             if let Some(total) = row.models.get_mut(model) {
@@ -529,7 +529,11 @@ fn stats_date(index: usize) -> String {
     let mut remaining = index;
     loop {
         let month_days: usize = match month {
-            2 if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) => 29,
+            2 if year.is_multiple_of(4)
+                && (!year.is_multiple_of(100) || year.is_multiple_of(400)) =>
+            {
+                29
+            }
             2 => 28,
             4 | 6 | 9 | 11 => 30,
             _ => 31,
@@ -581,7 +585,7 @@ fn stats_summary(range: usize) -> StatsSummary {
 fn stats_stack_row(points: &[[u64; 3]], scale: u64, row: usize, height: usize) -> String {
     let level = height.saturating_sub(row.saturating_add(1));
     let denominator = u128::from(scale.max(1));
-    let height_u128 = u128::try_from(height).map_or(0, |value| value);
+    let height_u128 = u128::try_from(height).unwrap_or(0);
     points
         .iter()
         .map(|point| {
@@ -591,11 +595,10 @@ fn stats_stack_row(points: &[[u64; 3]], scale: u64, row: usize, height: usize) -
                     .saturating_add(u128::from(value))
                     .saturating_mul(height_u128)
                     / denominator;
-                let glyph = if u128::try_from(level).map_or(false, |v| {
-                    v >= lower * height_u128 / denominator && v < upper
-                }) {
-                    char::from_digit(u32::try_from(index + 1).map_or(0, |value| value), 10)
-                        .map_or('?', |value| value)
+                let glyph = if u128::try_from(level)
+                    .is_ok_and(|v| v >= lower * height_u128 / denominator && v < upper)
+                {
+                    char::from_digit(u32::try_from(index + 1).unwrap_or(0), 10).unwrap_or('?')
                 } else {
                     ' '
                 };
@@ -617,12 +620,12 @@ fn stats_sparkline(points: &[[u64; 3]], model: usize, scale: u64, ascii: bool) -
     points
         .iter()
         .map(|point| {
-            let value = point.get(model).copied().map_or(0, |v| v);
+            let value = point.get(model).copied().unwrap_or(0);
             let slot =
                 usize::try_from(u128::from(value).saturating_mul(7) / u128::from(scale.max(1)))
-                    .map_or(0, |v| v)
+                    .unwrap_or(0)
                     .min(7);
-            glyphs.get(slot).copied().map_or('*', |v| v)
+            glyphs.get(slot).copied().unwrap_or('*')
         })
         .collect()
 }
@@ -648,10 +651,10 @@ fn usage_bar(style: UsageBarStyle, used: u64, capacity: u64, width: usize, ascii
         UsageBarStyle::Segments => w.div_ceil(2),
     };
     let fill = usize::try_from(
-        u128::from(used.min(capacity)).saturating_mul(u128::try_from(fill_width).map_or(0, |v| v))
+        u128::from(used.min(capacity)).saturating_mul(u128::try_from(fill_width).unwrap_or(0))
             / u128::from(capacity),
     )
-    .map_or(0, |v| v);
+    .unwrap_or(0);
     (0..w)
         .map(|i| {
             let active = match style {
@@ -747,11 +750,10 @@ fn usage_bar_line(
         UsageBarStyle::Segments => width.div_ceil(2),
     };
     let fill = usize::try_from(
-        u128::from(used.min(capacity))
-            .saturating_mul(u128::try_from(capacity_width).map_or(0, |value| value))
+        u128::from(used.min(capacity)).saturating_mul(u128::try_from(capacity_width).unwrap_or(0))
             / u128::from(capacity),
     )
-    .map_or(0, |value| value)
+    .unwrap_or(0)
     .min(capacity_width);
     let mut spans = Vec::new();
     for index in 0..width {
@@ -1354,7 +1356,7 @@ impl DemoGallery {
         UsageBarStyle::ALL
             .get(self.usage_style)
             .copied()
-            .map_or(UsageBarStyle::Strip, |v| v)
+            .unwrap_or(UsageBarStyle::Strip)
     }
     pub fn settings_categories(&self) -> &'static [&'static str] {
         &SETTINGS_CATEGORIES
@@ -1517,7 +1519,7 @@ impl DemoGallery {
                 }
                 let y = body
                     .y
-                    .saturating_add(u16::try_from(row).map_or(u16::MAX, |v| v));
+                    .saturating_add(u16::try_from(row).unwrap_or(u16::MAX));
                 self.hits.push(Hit {
                     rect: Rect::new(body.x, y, body.width, 1),
                     action: HitAction::Select(idx),
@@ -1531,7 +1533,7 @@ impl DemoGallery {
             }
             let y = body
                 .y
-                .saturating_add(u16::try_from(offset.saturating_add(row)).map_or(u16::MAX, |v| v));
+                .saturating_add(u16::try_from(offset.saturating_add(row)).unwrap_or(u16::MAX));
             let action = match self.page {
                 GalleryPage::Preview
                 | GalleryPage::Sessions
@@ -1558,7 +1560,7 @@ impl DemoGallery {
                 if row < usize::from(body.height) {
                     let y = body
                         .y
-                        .saturating_add(u16::try_from(row).map_or(u16::MAX, |v| v));
+                        .saturating_add(u16::try_from(row).unwrap_or(u16::MAX));
                     self.hits.push(Hit {
                         rect: Rect::new(body.x, y, body.width, 1),
                         action: HitAction::SettingValue(index),
@@ -1572,7 +1574,7 @@ impl DemoGallery {
                 if row < usize::from(body.height) {
                     let y = body
                         .y
-                        .saturating_add(u16::try_from(row).map_or(u16::MAX, |v| v));
+                        .saturating_add(u16::try_from(row).unwrap_or(u16::MAX));
                     self.hits.push(Hit {
                         rect: Rect::new(body.x, y, body.width, 1),
                         action: HitAction::Approval(approved),
@@ -1620,11 +1622,11 @@ impl DemoGallery {
                 let x = body
                     .x
                     .saturating_add(4)
-                    .saturating_add(u16::try_from(column).map_or(u16::MAX, |v| v));
+                    .saturating_add(u16::try_from(column).unwrap_or(u16::MAX));
                 let y = body
                     .y
                     .saturating_add(4)
-                    .saturating_add(u16::try_from(weekday).map_or(u16::MAX, |v| v));
+                    .saturating_add(u16::try_from(weekday).unwrap_or(u16::MAX));
                 if x < body.x.saturating_add(body.width) && y < body.y.saturating_add(body.height) {
                     self.hits.push(Hit {
                         rect: Rect::new(x, y, 1, 1),
@@ -1904,11 +1906,11 @@ impl DemoGallery {
             GalleryPage::Preview => SCENARIOS
                 .get(self.selected)
                 .map(|(name, _)| GalleryEffect::LoadScenario(name))
-                .map_or(GalleryEffect::Consumed, |v| v),
+                .unwrap_or(GalleryEffect::Consumed),
             GalleryPage::Model => self
                 .selected_model()
                 .map(GalleryEffect::ModelSelected)
-                .map_or(GalleryEffect::Consumed, |v| v),
+                .unwrap_or(GalleryEffect::Consumed),
             GalleryPage::Sessions => self
                 .visible_session(self.selected)
                 .map(|(title, owner, _)| GalleryEffect::ViewedConversation {
@@ -1916,7 +1918,7 @@ impl DemoGallery {
                     title,
                     owner,
                 })
-                .map_or(GalleryEffect::Consumed, |v| v),
+                .unwrap_or(GalleryEffect::Consumed),
             GalleryPage::Agents => {
                 if let Some(row) = self.agent_fixture_rows().get(self.selected) {
                     GalleryEffect::ViewedConversation {
@@ -2421,7 +2423,7 @@ impl DemoGallery {
                             Effort::ALL
                                 .get(self.effort)
                                 .copied()
-                                .map_or(Effort::High, |v| v)
+                                .unwrap_or(Effort::High)
                                 .name()
                         ),
                         chosen,
@@ -2699,15 +2701,11 @@ impl DemoGallery {
                             .max_by_key(|(_, value)| *value)
                             .map_or(0, |(index, _)| index);
                         let top_name = MODELS.get(top_index).map_or("Unavailable", |row| row.1);
-                        let top_total = summary
-                            .model_tokens
-                            .get(top_index)
-                            .copied()
-                            .map_or(0, |value| value);
+                        let top_total = summary.model_tokens.get(top_index).copied().unwrap_or(0);
                         let (range_start, range_end) = stats_range_bounds(self.stats_range);
                         let busiest = (range_start..range_end)
                             .max_by_key(|day| stats_day(*day).sessions)
-                            .map_or(range_start, |day| day);
+                            .unwrap_or(range_start);
                         let busiest_sessions = stats_day(busiest).sessions;
                         push(format!("Top model  {top_name} · {top_total} tokens"), base);
                         push(
@@ -2745,11 +2743,7 @@ impl DemoGallery {
                             );
                             for idx in 0..MODELS.len() {
                                 let name = MODELS.get(idx).map_or("Model", |model| model.1);
-                                let total = summary
-                                    .model_tokens
-                                    .get(idx)
-                                    .copied()
-                                    .map_or(0, |value| value);
+                                let total = summary.model_tokens.get(idx).copied().unwrap_or(0);
                                 push(format!("{name:<26} {total:>12} tokens"), dim);
                             }
                         }
@@ -2861,11 +2855,8 @@ impl DemoGallery {
                                     for idx in 0..3 {
                                         let name =
                                             names.get(idx).copied().map_or("Model", |value| value);
-                                        let total = summary
-                                            .model_tokens
-                                            .get(idx)
-                                            .copied()
-                                            .map_or(0, |value| value);
+                                        let total =
+                                            summary.model_tokens.get(idx).copied().unwrap_or(0);
                                         let scale = if self.stats_chart == 2 {
                                             points
                                                 .iter()
@@ -2877,10 +2868,8 @@ impl DemoGallery {
                                         };
                                         let series =
                                             stats_sparkline(panel, idx, scale, options.ascii);
-                                        let color = palette
-                                            .get(idx)
-                                            .copied()
-                                            .map_or(Color::Green, |value| value);
+                                        let color =
+                                            palette.get(idx).copied().unwrap_or(Color::Green);
                                         let style = if options.colors
                                             == polaris_ui_cli::screen::ColorMode::NoColor
                                         {
@@ -2927,8 +2916,7 @@ impl DemoGallery {
                             );
                             for idx in 0..3 {
                                 let name = names.get(idx).copied().map_or("Model", |value| value);
-                                let value =
-                                    inspected.models.get(idx).copied().map_or(0, |value| value);
+                                let value = inspected.models.get(idx).copied().unwrap_or(0);
                                 push(format!("{name}: {value} tokens"), dim);
                             }
                         }
@@ -3110,7 +3098,7 @@ impl DemoGallery {
                                 self.settings_value
                             })
                             .copied()
-                            .map_or(UsageBarStyle::Strip, |v| v)
+                            .unwrap_or(UsageBarStyle::Strip)
                             .label(),
                     ),
                     (2, _) => (

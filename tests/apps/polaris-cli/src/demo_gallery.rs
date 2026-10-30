@@ -290,13 +290,13 @@ fn mixed_agent_fixture_preserves_all_seven_statuses_and_unknown_token_counts() -
         ]
     );
     assert_eq!(rows.get(1).map(|row| row.tokens), Some(None));
-    assert_eq!(rows.get(0).map(|row| row.tokens), Some(Some(12_400)));
+    assert_eq!(rows.first().map(|row| row.tokens), Some(Some(12_400)));
     assert_eq!(
         rows.get(5).and_then(|row| row.failure_note),
         Some("This is a labeled failure fixture; no backend request failed.")
     );
     assert!(
-        rows.get(0)
+        rows.first()
             .is_some_and(|row| row.transcript_summary.contains("typed entries"))
     );
     let mut terminal = Terminal::new(TestBackend::new(120, 18))?;

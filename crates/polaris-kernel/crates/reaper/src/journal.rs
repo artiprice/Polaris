@@ -56,12 +56,12 @@ pub(crate) fn read(path: &Path) -> Result<(BTreeMap<ReapId, LeakEntry>, usize), 
                 "malformed complete record".to_owned(),
             ));
         };
-        if let Some(previous) = entries.insert(record.id, record.clone()) {
-            if previous != record {
-                return Err(ReaperError::JournalFormat(
-                    "conflicting duplicate resource id".to_owned(),
-                ));
-            }
+        if let Some(previous) = entries.insert(record.id, record.clone())
+            && previous != record
+        {
+            return Err(ReaperError::JournalFormat(
+                "conflicting duplicate resource id".to_owned(),
+            ));
         }
     }
     Ok((entries, ignored))

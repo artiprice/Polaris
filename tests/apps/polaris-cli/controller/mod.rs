@@ -159,6 +159,7 @@ fn prompt_with_a_provider_streams_one_reply_and_a_work_summary()
         tool_rounds: 1,
         stop: "Completed".to_owned(),
         elapsed: std::time::Duration::from_secs(3),
+        changed_files: Vec::new(),
     }))?;
     assert!(state.turn.is_none());
     let texts: Vec<&str> = state
@@ -631,6 +632,10 @@ fn help_only_advertises_available_local_controls() {
         help.contains("Ctrl+J"),
         "safe newline fallback must be documented"
     );
+    assert!(
+        help.contains("/nv-profile") && help.contains("/nv-verify"),
+        "the NVIDIA commands answer locally and are documented"
+    );
 }
 
 #[test]
@@ -757,5 +762,107 @@ fn completion_wheel_clamps_without_scrolling_transcript() -> Result<(), Box<dyn 
         "wheel down clamps last candidate"
     );
     assert_eq!(state.history_scroll, 0, "transcript remains anchored");
+    Ok(())
+}
+
+fn change_review(
+    prompt: &str,
+) -> Result<polaris_ui_session::ChangeReview, Box<dyn std::error::Error>> {
+    Ok(polaris_ui_session::ChangeReview {
+        request_id: polaris_sdk::human::HumanRequestId::new_v7(),
+        revision: polaris_sdk::ids::Cid::from_bytes([1; 32]),
+        question: polaris_sdk::human::HumanQuestionId::new("apply-change:test")?,
+        prompt: prompt.to_owned(),
+    })
+}
+
+#[test]
+fn a_change_review_is_answered_with_keys() -> Result<(), Box<dyn std::error::Error>> {
+    use polaris_ui_session::ChatProgress;
+    let mut state = state()?;
+    state.receive(BackendMessage::PromptAccepted)?;
+    let first = change_review("Change `notes.md`?\n\n```diff\n-old\n+new\n```")?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Review(
+        first.clone(),
+    )))?;
+    assert!(
+        state
+            .turn
+            .as_ref()
+            .is_some_and(|turn| turn.label().starts_with("◆ Waiting for your decision"))
+    );
+    let (tx, mut rx) = mpsc::channel(4);
+    let mut area = Rect::new(0, 0, 80, 24);
+    let _outcome = handle_input(
+        &mut state,
+        NormalizedInput::Key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE)),
+        &tx,
+        &mut area,
+        &RenderOptions::default(),
+    )?;
+    match rx.try_recv() {
+        Ok(BackendRequest::Review {
+            request_id,
+            apply: true,
+            note: None,
+        }) => assert_eq!(request_id, first.request_id),
+        other => return Err(format!("expected an apply request, got {other:?}").into()),
+    }
+    assert!(state.composer.is_empty(), "the key is not typed");
+    state.receive(BackendMessage::TurnProgress(ChatProgress::ReviewClosed(
+        first.request_id,
+    )))?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Applied(
+        "notes.md".to_owned(),
+    )))?;
+
+    let second = change_review("Create `todo.md`?")?;
+    state.receive(BackendMessage::TurnProgress(ChatProgress::Review(
+        second.clone(),
+    )))?;
+    state.composer.insert("keep it in notes.md")?;
+    let _outcome = handle_input(
+        &mut state,
+        NormalizedInput::Key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
+        &tx,
+        &mut area,
+        &RenderOptions::default(),
+    )?;
+    match rx.try_recv() {
+        Ok(BackendRequest::Review {
+            request_id,
+            apply: false,
+            note: Some(note),
+        }) => {
+            assert_eq!(request_id, second.request_id);
+            assert_eq!(note, "keep it in notes.md");
+        }
+        other => return Err(format!("expected a decline with a note, got {other:?}").into()),
+    }
+    assert!(state.composer.is_empty(), "the note leaves the composer");
+    state.receive(BackendMessage::TurnFinished(super::TurnReport {
+        answer: Some("Updated notes.md.".to_owned()),
+        attempts: 3,
+        tool_rounds: 2,
+        stop: "Completed".to_owned(),
+        elapsed: std::time::Duration::from_secs(4),
+        changed_files: vec!["notes.md".to_owned()],
+    }))?;
+    let texts: Vec<&str> = state
+        .view()
+        .conversation
+        .iter()
+        .map(|entry| entry.text.as_str())
+        .collect();
+    assert!(texts.contains(&"✓ Edited notes.md"), "{texts:?}");
+    assert!(
+        texts.contains(&"Not applied · keep it in notes.md"),
+        "{texts:?}"
+    );
+    assert!(texts.contains(&"Updated notes.md."), "{texts:?}");
+    assert_eq!(
+        texts.last().copied(),
+        Some("Worked for 4s · 3 requests · 2 tool rounds · 1 file changed")
+    );
     Ok(())
 }

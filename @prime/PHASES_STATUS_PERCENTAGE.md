@@ -29,12 +29,12 @@
 | P2 — Execution plane | 87% | **75%** | PAUSED by user — prior live evidence retained; composition/final gates remain open. |
 | P3 — S2 loop, providers, models and frames | 62% | **44%** | OPEN — complete phase acceptance not demonstrated. |
 | P4 — System One, inference and safety | 65% | **38%** | OPEN — complete phase acceptance not demonstrated. |
-| P5 — Knowledge, search, vectors and ingest | 41% | **30%** | OPEN — complete phase acceptance not demonstrated. |
-| P6 — Nebius depth and remote execution | 23% | **9%** | OPEN — complete phase acceptance not demonstrated. |
-| P7 — Advanced agentics, research and extensions | 50% | **35%** | OPEN — complete phase acceptance not demonstrated. |
-| P8 — DevEnv and Needle | 46% | **30%** | OPEN — complete phase acceptance not demonstrated. |
-| P9 — Daemon, RPC and interfaces | 59% | **45%** | OPEN — complete phase acceptance not demonstrated. |
-| P10 — Hardening and submission | 34% | **19%** | OPEN — complete phase acceptance not demonstrated. |
+| P5 — Knowledge, search, vectors and ingest | 55% | **42%** | OPEN — 2026-10-29: `$nvidia(...)`/`/nv-*` (E54) and keyless `/search-local` + `$rag` (E57) done; SearXNG, Tavily (key), docs sync open; embeddings descoped (D10). |
+| P6 — Nebius depth and remote execution | 23% | **9%** | DESCOPED (D10, 2026-10-29) — Nebius is not available to the team; excluded from further work. |
+| P7 — Advanced agentics, research and extensions | 58% | **42%** | OPEN — `/hack` seeded acceptance PASS (E55); `/research` composition and the microVM browser loop wait for the sandbox setup. |
+| P8 — DevEnv and Needle | 58% | **45%** | OPEN — `/ci` with cache mounts runs live in Docker (E56); `$env(nix)` and Needle need downloads. |
+| P9 — Daemon, RPC and interfaces | 72% | **60%** | OPEN — desktop and web attach to `polarisd` over the named pipe with token auth (E53); model replies in attached mode and an external audit remain. |
+| P10 — Hardening and submission | 60% | **45%** | OPEN — budgets measured and dist package built (E57); security review and test matrix need tool installs; demo video open. |
 
 **Use the bold Verified % as the conservative progress indicator.** No percentage converts the current system into a production-ready release.
 
@@ -218,13 +218,13 @@
 | [`polaris-search-providers`](../crates/polaris-search/crates/providers/src) | 75% | 55% | Concrete redacting Tavily/SearXNG, DNS-pinned SSRF policy and bounded fetch/charset/DOM conversion; 18 local contracts pass. Live service/container, broader DNS/fuzz/load and audit gates remain open; E39. |
 | [`polaris-search-sift`](../crates/polaris-search/crates/sift/src) | 85% | 60% | Bounded source race, pools, cancellation/drain, deduplicated S1 budget, SDK web bridge and hash-verified durable drop manifests. Local recovery/race contracts pass; live production composition, calibration and wider workloads remain open; E39. |
 | [`polaris-search`](../crates/polaris-search/src) | 100% | 80% | Both real children exported with provider-to-race/sift flow documented and doctest checked. This facade score does not certify production kernel retrieval composition or live services; E39. |
-| [`polaris-nvidia-docs`](../crates/polaris-nvidia-docs/src) | 0% | 0% | Documentation-only NVIDIA ingestion/index/adviser. |
+| [`polaris-nvidia-docs`](../crates/polaris-nvidia-docs/src) | 60% | 45% | Profiles, CUDA advisor, llms.txt/HTML ingestion, BM25 index and fetcher; `$nvidia(...)`, `/nv-profile`, `/nv-verify` wired in every frontend with sample-repo evidence (E54). Docs sync/seed, vector search and tree-sitter rule packs remain. |
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P5-X-1` | 0% | 0% | SearXNG adapter and local protocol fixtures exist; the named live container/engine acceptance remains unperformed; E39. |
+| `P5-X-1` | 70% | 30% | SearXNG adapter (E39) composed as `/search-web` and `$websearch` with a loopback container script (E58); no live container query recorded. |
 | `P5-X-2` | 0% | 0% | Tavily adapter and local protocol fixtures exist; the named keyed live acceptance remains unavailable; E39. |
-| `P5-X-3` | 0% | 0% | No production NVIDIA sync/index/provenance seed run. |
+| `P5-X-3` | 70% | 20% | Incremental sync into a local seed with provenance, search and turn passages (E58); no live sync run recorded. |
 | `P5-X-4` | 0% | 0% | No masked live embedding/vector-store run; access missing. |
 
 ### P6 — Nebius depth and remote execution
@@ -248,15 +248,15 @@
 | [`polaris-ext-mcp`](../crates/polaris-ext/crates/mcp/src) | 75% | 50% | Real RMCP stdio/HTTP client, bounded framing, schema-aware normalization, caller authorization and lifecycle checks. Local protocol fixtures pass; live sandbox-backed MCP, production registry/frame assembly and wider lifecycle/adversarial gates remain open; E39. |
 | [`polaris-ext-skills`](../crates/polaris-ext/crates/skills/src) | 80% | 75% | Confined discovery/selection/cache retained; authentic LocalDirectiveVerifier-issued cache witnesses pass and check-witness is green. Skill-specific approval, runtime enablement/injection and full trust integration remain open; E39. |
 | [`polaris-ext`](../crates/polaris-ext/src) | 75% | 55% | Skills and concrete MCP client exported with shared trust documentation; full capability-bound kernel extension assembly remains open; E39. |
-| [`polaris-browser`](../crates/polaris-browser/src) | 0% | 0% | Documentation-only browser/a11y/image adapter. |
+| [`polaris-browser`](../crates/polaris-browser/src) | 45% | 35% | Host side: a11y outline, DCT pHash visual diff and verified sandbox artifact session with tests. Guest-side Chromium driver and the microVM loop wait for the sandbox image (P2-X-1). |
 | [`polaris-hacker`](../crates/polaris-hacker/src) | 40% | 30% | Bounded metadata-only AST/DFA observations, deterministic boundary corpus and cancellation-owned SDK sandbox stress. Seeded/local lifecycle tests pass; live sanitizers, race/CUDA/performance analysis and runtime command assembly remain open; E40. |
 | [`polaris-runtime-dag`](../crates/polaris-runtime/crates/dag/src) | 70% | 30% | Task-ID-correlated completions, explicit interruptions, dependency skipping and cancellation/drop contracts now have post-implementation evidence. Full-scheduler join interruption, actual panic, snapshots, race/pool stress and production integration remain open; E44. |
 | [`polaris-runtime-research`](../crates/polaris-runtime/crates/research/src) | 80% | 60% | Strict program parser, locked durable checkpoint/CAS evidence, path-attenuated tools, VCS receipts and bounded runner. Twenty real local-process iterations plus crash/reopen pass; live sandbox/model composition, cross-process contention, broader crash windows and adversarial critique remain open; E39. |
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P7-X-1` | 70% | 50% | Twenty capability-checked local process/Git/CAS iterations, all 60 payloads reopened and one abrupt-exit recovery pass. Actual sandbox/model research composition and broader crash matrix remain open; E39. |
-| `P7-X-2` | 25% | 15% | Bounded seeded static positives/negatives and SDK cleanup/cancellation fixtures exist. Actual sandbox sanitizer workloads, seeded race/CUDA acceptance and complete /hack composition remain open; E40. |
+| `P7-X-1` | 85% | 50% | Twenty local process/Git/CAS iterations and recovery (E39); `/research` composes the loop with the model and the Docker sandbox (E58); no live 20-iteration run with a kill recorded. |
+| `P7-X-2` | 90% | 80% | `/hack` composed and wired in every frontend; seeded race/blocking/CUDA acceptance 5/5 with 0 false positives on the synthetic repo, calibrated on this repository (E55). Sandbox sanitizer workloads remain open. |
 | `P7-X-3` | 0% | 0% | No composed microVM browser/a11y/pHash loop; individual spikes are separate. |
 
 ### P8 — DevEnv and Needle
@@ -265,8 +265,8 @@
 |---|---:|---:|---|
 | [`polaris-devenv-nix`](../crates/polaris-devenv/crates/nix/src) | 65% | 35% | Bounded parse/sanitize/cache/prompt and backend seam; actual Nix/store/policy integration absent. |
 | [`polaris-devenv-docker`](../crates/polaris-devenv/crates/docker/src) | 80% | 70% | 12-test suite, actual UUID recovery/BuildKit cache and image exec pass; Podman/latency/full gate incomplete. |
-| [`polaris-devenv-cicd`](../crates/polaris-devenv/crates/cicd/src) | 60% | 35% | Bounded CI caps, owned cancellation cleanup and late cleanup after ambiguous create outcomes. Live isolation, Dagger and persistent cache acceptance remain open; E41. |
-| [`polaris-devenv`](../crates/polaris-devenv/src) | 25% | 10% | Child exports exist; unified environment/CI command composition missing. |
+| [`polaris-devenv-cicd`](../crates/polaris-devenv/crates/cicd/src) | 80% | 70% | Bounded CI caps, owned cancellation cleanup (E41); cache mounts for backends that apply them and the cached Rust pipeline, run live in Docker with persistent cache volumes (E56). Dagger remains open. |
+| [`polaris-devenv`](../crates/polaris-devenv/src) | 60% | 50% | Child exports; composed as `/ci` and `/ci-run` in every frontend (E56). Nix environment composition remains. |
 | [`polaris-system-one-nano`](../crates/polaris-system-one/crates/nano/src) | 0% | 0% | Documentation-only Needle production adapter; earlier spike is not runtime integration. |
 
 ### P9 — Daemon, RPC and interfaces
@@ -284,7 +284,7 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P9-X-1` | 0% | 0% | Welcome-page visual acceptance is user-deferred. **UI deferred; excluded from aggregate.** |
-| `P9-X-2` | 90% | 75% | Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass; independent security audit and production daemon assembly remain open; E32. |
+| `P9-X-2` | 98% | 85% | Windows pipe ownership, Linux private UDS, mTLS trust failures, token/rights/revocation and shutdown checks (E32); named-pipe attach with daemon credentials (E53); `tcp://` attach with mutual TLS and daemon replies (E58). No deployed remote run or independent audit. |
 
 ### P10 — Hardening and submission
 
@@ -293,12 +293,12 @@
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P10-1` | 30% | 20% | Many P1/P2 suites exist; complete system mutation/formal/load/security matrix not delivered. |
-| `P10-2` | 35% | 15% | Locked/offline full Cargo-graph SPDX inventory, lockfile digest, deterministic bytes, official schema and negative checks now have evidence. This is not a licence/security audit; current deny/vet and full unsafe/licence review remain open; E43. |
-| `P10-3` | 35% | 25% | Actual P1/P2 budgets recorded; all-phase latency/RSS/throughput table incomplete. |
-| `P10-4` | 20% | 0% | Dist profile/build settings exist; no verified full submission/installer artifacts and hashes. |
-| `P10-5` | 0% | 0% | Demo/video and judge fallback acceptance absent; UI deferred and keys missing. **UI deferred; excluded from aggregate.** |
-| `P10-6` | 50% | 35% | Real Linux check legs exist; full current portability matrix/macOS adaptation not delivered. |
+| `P10-1` | 60% | 50% | Full workspace run (2,630 passed, 4 known ratelimit failures), loom and load/stress spikes pass (E57); fuzz/Miri/Kani/mutants need tools. |
+| `P10-2` | 75% | 55% | Threat-model report, unsafe inventory, licence audit (E57); `cargo deny` passes, `cargo audit` with one accepted advisory, `cargo vet` run (1,167 unvetted) (E58); no external review. |
+| `P10-3` | 100% | 90% | All seven PLAN §11.4 budgets measured and recorded (E57); DFA throughput, GCRA p99 and S1 CPU p95 miss their targets. |
+| `P10-4` | 90% | 80% | Dist build of five binaries + site packaged with README, SHA256SUMS and build-info (E57); no signed installer. |
+| `P10-5` | 40% | 10% | Keyless demo script, sample-workspace preparation and fallback paths written (E58); not rehearsed or recorded. **Excluded from aggregate.** |
+| `P10-6` | 65% | 45% | Linux all-targets check passes in Docker (E58) after a peer-pid fix; the Linux test run and macOS are not done. |
 
 ## Milestones — separate acceptance view
 

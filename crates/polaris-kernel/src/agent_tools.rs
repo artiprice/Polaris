@@ -13,7 +13,10 @@ use polaris_runtime::frames::{
 };
 use polaris_sdk::{
     contracts::Event,
-    human::{HumanQuestion, HumanRequestId, HumanRequestPayload},
+    human::{
+        HumanAnswerPayload, HumanOption, HumanOptionId, HumanQuestion, HumanQuestionId,
+        HumanQuestionKind, HumanRequestId, HumanRequestPayload, HumanResponse, HumanSelection,
+    },
     ids::{Cid, CommandId, FrameId, SessionId},
     registry::{Effects, ToolError, ToolSpec},
 };
@@ -29,6 +32,14 @@ use tokio_util::sync::CancellationToken;
 const MAX_ARGS: usize = 4 * 1024 * 1024;
 const MAX_RESULT: usize = 2 * 1024 * 1024;
 const MAX_FILE: usize = 4 * 1024 * 1024;
+/// Question id prefix of a change review; the rest is the hex mutation binding.
+pub const CHANGE_REVIEW_PREFIX: &str = "apply-change:";
+/// Option a person picks to apply a reviewed change.
+pub const CHANGE_REVIEW_APPLY: &str = "apply";
+/// Option a person picks to decline a reviewed change.
+pub const CHANGE_REVIEW_DECLINE: &str = "decline";
+/// Review diff bytes kept in the question; the rest is summarized as a line count.
+const MAX_REVIEW_DIFF: usize = 12 * 1024;
 
 struct AgentAuthority {
     binding: FrameToolBinding,
@@ -79,6 +90,7 @@ pub struct KernelAgentToolRunner<S> {
     readonly: KernelToolRunner,
     mutations: Option<Arc<FrameMutationService<S>>>,
     state: Arc<AgentAuthority>,
+    review_changes: bool,
 }
 impl<S> fmt::Debug for KernelAgentToolRunner<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -128,7 +140,18 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
                 references,
                 _cancellation_owner: cancellation_owner,
             }),
+            review_changes: false,
         })
+    }
+
+    /// Ask the person before giving up on a change that needs a human decision: the frame waits
+    /// on a durable human request showing the change, and applies it only after an explicit
+    /// approval. Without this a frame gets a `needs_approval` result. Each review still needs a
+    /// token that authorizes `tools/ask_user`, and a runtime step to attach the request to.
+    #[must_use]
+    pub const fn with_change_review(mut self) -> Self {
+        self.review_changes = true;
+        self
     }
     /// Cancel only this runner and its accepted calls. It never cancels a parent or sibling token.
     pub fn cancel(&self) {
@@ -257,6 +280,7 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
                             .map_err(mutation_error)?,
                     ),
                     result_bound,
+                    step,
                 }
             }
             "edit_file" => {
@@ -290,6 +314,7 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
                             .map_err(mutation_error)?,
                     ),
                     result_bound,
+                    step,
                 }
             }
             "apply_patch" => {
@@ -321,6 +346,38 @@ impl<S: MutationSafety + 'static> KernelAgentToolRunner<S> {
                             .map_err(mutation_error)?,
                     ),
                     result_bound,
+                    step,
+                }
+            }
+            "delete_file" => {
+                let input: DeleteArgs = decode(arguments)?;
+                let service = self
+                    .mutations
+                    .as_ref()
+                    .ok_or_else(|| denied("frame cannot mutate"))?;
+                let result_bound = result_bound(&input.path)?;
+                if result_bound > admission_cap {
+                    return Err(denied("mutation receipt exceeds driver result budget"));
+                }
+                PermitKind::Mutation {
+                    prepared: Box::new(
+                        service
+                            .prepare_with_id(
+                                token,
+                                match input.command_id {
+                                    Some(id) => id,
+                                    None => CommandId::new_v7(),
+                                },
+                                FrameMutationRequest::DeleteFile {
+                                    path: input.path,
+                                    expected_base: input.expected_base,
+                                },
+                            )
+                            .await
+                            .map_err(mutation_error)?,
+                    ),
+                    result_bound,
+                    step,
                 }
             }
             "file_revision" => {
@@ -399,6 +456,7 @@ enum PermitKind {
     Mutation {
         prepared: Box<crate::PreparedFrameMutation>,
         result_bound: usize,
+        step: Option<u32>,
     },
     Ask {
         questions: Vec<HumanQuestion>,
@@ -442,6 +500,14 @@ struct EditArgs {
 struct PatchArgs {
     path: String,
     patch: String,
+    expected_base: Cid,
+    #[serde(default)]
+    command_id: Option<CommandId>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DeleteArgs {
+    path: String,
     expected_base: Cid,
     #[serde(default)]
     command_id: Option<CommandId>,
@@ -550,8 +616,14 @@ impl<S: MutationSafety + 'static> ToolRunner for KernelAgentToolRunner<S> {
         let state = Arc::clone(&self.state);
         let cancel = self.state.cancel.child_token();
         let _drop = CancelOnDrop(cancel.clone());
+        let review = self.review_changes;
         let task = tokio::spawn(async move {
-            execute_owned(owner, state, permit, mutations, service, cancel, cap).await
+            let services = Services {
+                mutations,
+                human: service,
+                review,
+            };
+            execute_owned(owner, state, permit, services, cancel, cap).await
         });
         task.await.map_err(|_| owner_error())?
     }
@@ -566,16 +638,26 @@ struct Output {
     value: Value,
     ok: bool,
 }
+/// The services one accepted call may use.
+struct Services<S> {
+    mutations: Option<Arc<FrameMutationService<S>>>,
+    human: Arc<crate::HumanRequestService>,
+    review: bool,
+}
 
 async fn execute_owned<S: MutationSafety + 'static>(
     owner: FrameOperationOwner,
     state: Arc<AgentAuthority>,
     permit: AgentFramePermit,
-    mutations: Option<Arc<FrameMutationService<S>>>,
-    human: Arc<crate::HumanRequestService>,
+    services: Services<S>,
     cancel: CancellationToken,
     cap: usize,
 ) -> Result<ToolResultRef, ToolError> {
+    let Services {
+        mutations,
+        human,
+        review,
+    } = services;
     let AgentFramePermit {
         token, call, kind, ..
     } = permit;
@@ -634,18 +716,37 @@ async fn execute_owned<S: MutationSafety + 'static>(
             .map_err(|_| owner_error())?
         }
         PermitKind::Tests(request) => run_approved_tests(&owner, request, &cancel).await,
-        PermitKind::Mutation { prepared, .. } => match mutations {
-            Some(service) => match service.apply(*prepared, &token).await {
-                Ok(receipt) => Ok(Output {
-                    ok: true,
-                    value: json!({"status":"applied","path":receipt.path(),"base":receipt.base(),"revision":receipt.new_cid(),"diff":receipt.diff(),"approval":receipt.approval_evidence(),"receipt":receipt.cid()}),
-                }),
-                Err(FrameMutationError::NeedsApproval { report, .. }) => Ok(Output {
-                    ok: false,
-                    value: json!({"status":"needs_approval","report":report}),
-                }),
-                Err(error) => Err(mutation_error(error)),
-            },
+        PermitKind::Mutation { prepared, step, .. } => match mutations {
+            Some(service) => {
+                let reviewable = review
+                    && step.is_some()
+                    && state
+                        .authorize(&token, "tools/ask_user", Right::ExecuteTool)
+                        .is_ok();
+                let copy = reviewable.then(|| prepared.review_copy());
+                match (service.apply(*prepared, &token).await, copy, step) {
+                    (Ok(receipt), _, _) => Ok(applied(&receipt)),
+                    (
+                        Err(FrameMutationError::NeedsApproval { reason, .. }),
+                        Some(copy),
+                        Some(step),
+                    ) => {
+                        let review = ChangeReview {
+                            owner: &owner,
+                            state: &state,
+                            human: &human,
+                            token: &token,
+                            cancel: &cancel,
+                        };
+                        review.run(&service, copy, step, &reason, &tool_name).await
+                    }
+                    (Err(FrameMutationError::NeedsApproval { report, .. }), _, _) => Ok(Output {
+                        ok: false,
+                        value: json!({"status":"needs_approval","report":report}),
+                    }),
+                    (Err(error), _, _) => Err(mutation_error(error)),
+                }
+            }
             None => Err(denied("frame cannot mutate")),
         },
         PermitKind::Ask { questions, step } => {
@@ -790,6 +891,197 @@ async fn execute_owned<S: MutationSafety + 'static>(
     .await
     .map_err(|_| owner_error())?
 }
+fn applied(receipt: &crate::FrameMutationReceipt) -> Output {
+    Output {
+        ok: true,
+        value: json!({"status":"applied","path":receipt.path(),"base":receipt.base(),"revision":receipt.new_cid(),"diff":receipt.diff(),"approval":receipt.approval_evidence(),"receipt":receipt.cid()}),
+    }
+}
+
+/// One escalated change put to the person through a durable human request.
+struct ChangeReview<'a> {
+    owner: &'a FrameOperationOwner,
+    state: &'a AgentAuthority,
+    human: &'a crate::HumanRequestService,
+    token: &'a Token,
+    cancel: &'a CancellationToken,
+}
+
+enum ChangeDecision {
+    Apply,
+    Decline(Option<String>),
+}
+
+impl ChangeReview<'_> {
+    async fn run<S: MutationSafety + 'static>(
+        &self,
+        service: &FrameMutationService<S>,
+        prepared: crate::PreparedFrameMutation,
+        step: u32,
+        reason: &crate::verifier::ApprovalReason,
+        tool: &str,
+    ) -> Result<Output, ToolError> {
+        let question = change_question(&prepared, reason)?;
+        let ticket = self
+            .human
+            .ask(
+                &self.state.binding,
+                self.token,
+                &self.state.issuer,
+                step,
+                vec![question],
+            )
+            .await
+            .map_err(|_| invalid("human request admission failed"))?;
+        let shutdown = self.owner.shutdown_token();
+        let waiting = self.human.wait(ticket.request_id, self.cancel.clone());
+        tokio::pin!(waiting);
+        let outcome = tokio::select! {
+            result = &mut waiting => result,
+            () = shutdown.cancelled() => { self.cancel.cancel(); waiting.await },
+        };
+        let answer = match outcome {
+            Ok(HumanRequestOutcome::Answered { answer, .. }) => answer,
+            Ok(HumanRequestOutcome::Interrupted { .. }) => {
+                return Err(denied("human request interrupted"));
+            }
+            Ok(HumanRequestOutcome::Pending) | Err(_) => return Err(owner_error()),
+        };
+        let context = Arc::clone(self.owner.context());
+        let binding = prepared.binding();
+        let decision =
+            tokio::task::spawn_blocking(move || read_decision(&context, answer, binding))
+                .await
+                .map_err(|_| owner_error())??;
+        match decision {
+            ChangeDecision::Apply => {
+                let approval = crate::verifier::HumanApproval {
+                    request: ticket.revision,
+                    answer,
+                };
+                service
+                    .apply_with_human_approval(prepared, self.token, approval)
+                    .await
+                    .map(|receipt| applied(&receipt))
+                    .map_err(mutation_error)
+            }
+            ChangeDecision::Decline(notes) => Ok(Output {
+                ok: false,
+                value: json!({
+                    "tool": tool,
+                    "status": "rejected",
+                    "error": "The user declined this change; nothing was written.",
+                    "hint": match notes {
+                        Some(notes) => format!("The user said: {notes}"),
+                        None => "Ask what they want instead, or continue without this change.".to_owned(),
+                    },
+                }),
+            }),
+        }
+    }
+}
+
+/// The review question for `prepared`: its target, why a person decides, and a minimal diff.
+fn change_question(
+    prepared: &crate::PreparedFrameMutation,
+    reason: &crate::verifier::ApprovalReason,
+) -> Result<HumanQuestion, ToolError> {
+    use crate::verifier::ApprovalReason;
+    let why = match reason {
+        ApprovalReason::UnsupportedLanguage => {
+            "Polaris has no parser for this file type, so it only measured the change's size."
+        }
+        ApprovalReason::UnsafeAnalysisCoverage => {
+            "Polaris cannot fully check this language for unsafe code."
+        }
+        ApprovalReason::SafetyDegraded(_) => "The semantic safety check is not available.",
+        ApprovalReason::SafetyTimeout => "The semantic safety check did not finish in time.",
+        ApprovalReason::TreeEditDistanceLowerBound { .. } => {
+            "The change is too large to measure exactly."
+        }
+    };
+    let verb = if prepared.deletes() {
+        "Delete"
+    } else if prepared.old_source().is_empty() {
+        "Create"
+    } else {
+        "Change"
+    };
+    let diff = polaris_code_intel::review_diff(prepared.old_source(), prepared.new_source(), 3)
+        .ok_or_else(|| invalid("change is not UTF-8 text"))?;
+    let mut shown = String::new();
+    let mut hidden = 0_usize;
+    for line in diff.split_inclusive('\n') {
+        if hidden == 0 && shown.len().saturating_add(line.len()) <= MAX_REVIEW_DIFF {
+            shown.push_str(line);
+        } else {
+            hidden = hidden.saturating_add(1);
+        }
+    }
+    if !shown.ends_with('\n') {
+        shown.push('\n');
+    }
+    if hidden > 0 {
+        shown.push_str(&format!("… {hidden} more diff lines\n"));
+    }
+    let path = prepared.path();
+    let option = |id: &str, label: &str| -> Result<HumanOption, ToolError> {
+        Ok(HumanOption {
+            id: HumanOptionId::new(id).map_err(|_| owner_error())?,
+            label: label.to_owned(),
+        })
+    };
+    Ok(HumanQuestion {
+        id: HumanQuestionId::new(&format!(
+            "{CHANGE_REVIEW_PREFIX}{}",
+            prepared.binding().to_hex()
+        ))
+        .map_err(|_| owner_error())?,
+        prompt: format!(
+            "{verb} `{path}`?\n\n{why}\n\n```diff\n--- a/{path}\n+++ b/{path}\n{shown}```"
+        ),
+        required: true,
+        kind: HumanQuestionKind::SingleChoice {
+            options: vec![
+                option(CHANGE_REVIEW_APPLY, "Apply")?,
+                option(CHANGE_REVIEW_DECLINE, "Don't apply")?,
+            ],
+        },
+    })
+}
+
+/// The committed answer's decision for the review question bound to `binding`.
+fn read_decision(
+    context: &crate::KernelCtx,
+    answer: Cid,
+    binding: Cid,
+) -> Result<ChangeDecision, ToolError> {
+    let limit =
+        u64::try_from(polaris_sdk::human::MAX_HUMAN_ANSWER_BYTES).map_err(|_| owner_error())?;
+    let bytes = context
+        .cas
+        .get_bounded(&answer, limit)
+        .map_err(|_| owner_error())?;
+    let payload: HumanAnswerPayload = serde_json::from_slice(&bytes).map_err(|_| owner_error())?;
+    let id = format!("{CHANGE_REVIEW_PREFIX}{}", binding.to_hex());
+    let entry = payload
+        .answers
+        .iter()
+        .find(|entry| entry.question_id.as_str() == id)
+        .ok_or_else(owner_error)?;
+    let notes = entry
+        .notes
+        .as_ref()
+        .map(|notes| notes.trim().to_owned())
+        .filter(|notes| !notes.is_empty());
+    Ok(match &entry.response {
+        HumanResponse::Single {
+            selection: HumanSelection::Option(option),
+        } if option.as_str() == CHANGE_REVIEW_APPLY => ChangeDecision::Apply,
+        _ => ChangeDecision::Decline(notes),
+    })
+}
+
 fn put_verified(context: &crate::KernelCtx, bytes: &[u8]) -> Result<Cid, ToolError> {
     let cid = context.cas.put(bytes).map_err(|_| owner_error())?;
     if cid != content_id(bytes)
@@ -837,7 +1129,7 @@ impl<S: MutationSafety + 'static> FrameToolAccess for KernelAgentToolRunner<S> {
                 },
             ),
             "write_file" => (
-                "Replace an exact revision or create an absent UTF-8 file. Obtain existing revisions with file_revision.",
+                "Replace an exact revision or create an absent UTF-8 file (expected_base null; missing directories are created). Obtain existing revisions with file_revision.",
                 r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"contents":{"type":"string"},"expected_base":{"type":["string","null"]}},"required":["path","contents","expected_base"]}"#,
                 write_effects(),
             ),
@@ -847,8 +1139,13 @@ impl<S: MutationSafety + 'static> FrameToolAccess for KernelAgentToolRunner<S> {
                 write_effects(),
             ),
             "apply_patch" => (
-                "Apply a single-file unified patch against an exact current revision.",
+                "Apply a unified diff to one file (expected_base comes from file_revision). Each hunk is found by its context and '-' lines, so line numbers may be approximate; keep two or three unchanged lines around every change.",
                 r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"patch":{"type":"string"},"expected_base":{"type":"string"}},"required":["path","patch","expected_base"]}"#,
+                write_effects(),
+            ),
+            "delete_file" => (
+                "Delete one existing file (expected_base comes from file_revision). Use it only when the user asked for the file to go.",
+                r#"{"type":"object","additionalProperties":false,"properties":{"command_id":{"type":"string","format":"uuid"},"path":{"type":"string"},"expected_base":{"type":"string"}},"required":["path","expected_base"]}"#,
                 write_effects(),
             ),
             "file_revision" => (
@@ -883,6 +1180,31 @@ fn invalid(message: &str) -> ToolError {
 fn owner_error() -> ToolError {
     ToolError::Io("frame tool owner failed".into())
 }
+/// What a verifier rejection means for the model's next attempt.
+fn rejection_hint(rejection: crate::verifier::Rejection) -> String {
+    use crate::verifier::{Metric, Rejection};
+    let reason = match rejection {
+        Rejection::Metric(Metric::ChurnLines) => {
+            "the change touches too many lines; split it into smaller edits"
+        }
+        Rejection::Metric(Metric::CyclomaticIncrease) => {
+            "the change adds too much branching at once; split it into smaller edits"
+        }
+        Rejection::Metric(Metric::TreeEditDistance) => {
+            "the result does not parse, or its structure changes too much; check the syntax of the new text"
+        }
+        Rejection::Authorization => {
+            "the session's capability does not cover this change (its path, size or unsafe code)"
+        }
+        Rejection::InputLimit { .. } => "an input of this change is too large",
+        Rejection::Safety => {
+            "a safety check blocked this change (for example a secret in the text)"
+        }
+        Rejection::CommandBinding => "the change did not match its own diff",
+    };
+    format!("the verifier rejected this change: {reason}")
+}
+
 fn mutation_error(error: FrameMutationError) -> ToolError {
     match error {
         FrameMutationError::Authorization
@@ -899,9 +1221,9 @@ fn mutation_error(error: FrameMutationError) -> ToolError {
         }
         FrameMutationError::EditTarget(message) => ToolError::InvalidInput(message),
         // A verifier rejection is about the proposed bytes, so the model can revise them.
-        FrameMutationError::Rejected(rejection) => ToolError::InvalidInput(format!(
-            "the verifier rejected this change ({rejection:?}); revise it and try again"
-        )),
+        FrameMutationError::Rejected(rejection) => {
+            ToolError::InvalidInput(rejection_hint(rejection))
+        }
         FrameMutationError::Owner
         | FrameMutationError::Workspace
         | FrameMutationError::Lease
