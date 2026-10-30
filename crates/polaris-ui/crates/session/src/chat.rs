@@ -516,6 +516,9 @@ where
         if SystemClock.now().as_microsecond() >= self.expires_at_micros {
             return Err(ChatError::Expired);
         }
+        if let Some(reason) = budget_exhausted(kernel).await {
+            return Err(ChatError::Turn(reason));
+        }
         let map_root = self.workspace.clone();
         let mention_text = prompt.to_owned();
         let nvidia_mode = crate::nvidia::nvidia_mode(kernel);
@@ -526,19 +529,38 @@ where
             // `$nvidia(auto)`: the profile and its invariants, only when a stack is found.
             let nvidia = crate::nvidia::context_for_turn(nvidia_mode, &map_root, &mention_text)
                 .unwrap_or_default();
-            // `$rag`: ranked workspace passages, carried as data in the request.
-            let passages = if rag {
-                crate::local_search::rag_context(&map_root, &mention_text).unwrap_or_default()
+            // `$rag`: lexical candidates for the workspace passages carried as data.
+            let candidates = if rag {
+                crate::local_search::rag_candidates(&map_root, &mention_text).unwrap_or_default()
             } else {
-                None
+                Vec::new()
             };
-            Ok::<_, ChatError>((map, references, nvidia, passages))
+            Ok::<_, ChatError>((map, references, nvidia, candidates))
         })
         .await
         .map_err(|_| ChatError::Workspace)??;
+        // Token Factory embeddings re-rank them when configured.
+        let passages = if passages.is_empty() {
+            None
+        } else {
+            let (hits, note) = crate::nebius::rerank(
+                &self.workspace,
+                prompt,
+                passages,
+                crate::local_search::RAG_PASSAGES,
+            )
+            .await;
+            let ranking = note
+                .filter(|note| note.starts_with("semantic re-rank:"))
+                .map_or_else(
+                    || "lexical search".to_owned(),
+                    |_| "semantic search".to_owned(),
+                );
+            crate::local_search::rag_text(&hits, &ranking)
+        };
         // `$websearch`: SearXNG results, carried as data like the workspace passages.
         let web = if crate::web_search::enabled(kernel) {
-            crate::web_search::turn_context(prompt).await
+            crate::web_search::turn_context(&self.workspace, prompt).await
         } else {
             None
         };
@@ -779,6 +801,58 @@ struct AbortOnDrop(tokio::task::JoinHandle<()>);
 impl Drop for AbortOnDrop {
     fn drop(&mut self) {
         self.0.abort();
+    }
+}
+
+/// `$budget(usd=…)` or `$budget(tokens=…)`: why the session's spending stops another turn, if it
+/// does. Spending is the sum of the session's `ModelRequestCompleted` costs and tokens.
+async fn budget_exhausted(kernel: &KernelHandle) -> Option<String> {
+    use polaris_kernel::directives::directive::{Budget, SessionDirective};
+    let Some(SessionDirective::Budget(budget)) = kernel.directives().get("budget").cloned() else {
+        return None;
+    };
+    let context = Arc::clone(kernel.context());
+    let (tokens, micros) = tokio::task::spawn_blocking(move || {
+        let records = context
+            .records(
+                polaris_sdk::ids::Seq::new(1),
+                polaris_sdk::ids::Seq::new(u64::MAX),
+            )
+            .ok()?;
+        let mut spent = (0_u64, 0_u64);
+        for record in &records {
+            if let Event::ModelRequestCompleted {
+                prompt_tokens,
+                completion_tokens,
+                cost,
+                ..
+            } = record.event()
+            {
+                spent.0 = spent
+                    .0
+                    .saturating_add(u64::from(prompt_tokens.get()))
+                    .saturating_add(u64::from(completion_tokens.get()));
+                spent.1 = spent.1.saturating_add(cost.get());
+            }
+        }
+        Some(spent)
+    })
+    .await
+    .ok()??;
+    match budget {
+        Budget::Tokens(limit) => (tokens >= limit).then(|| {
+            format!("the session budget of {limit} tokens is used ({tokens} so far); raise it with $budget(tokens=…)")
+        }),
+        Budget::Usd(limit) => {
+            let cap = crate::nebius::usd_micros(&limit)?;
+            (micros >= cap).then(|| {
+                format!(
+                    "the session budget of ${limit} is used (${}.{:06} so far); raise it with $budget(usd=…)",
+                    micros / 1_000_000,
+                    micros % 1_000_000
+                )
+            })
+        }
     }
 }
 

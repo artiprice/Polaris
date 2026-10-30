@@ -135,6 +135,14 @@ pub enum Action {
         /// Labelled JSON lines (`id`, `target`, `intent`, `before`, `after`, `labels`).
         fixtures: PathBuf,
     },
+    /// Nebius services with the user's own access: `status`, `datalab-finetune [model]`,
+    /// `contree-branches`, `contree-run [--sync] <image> <command>…`,
+    /// `swe-run <owner/repo> <commit> <command>`, `cloud-up`, `cloud-status`, `cloud-down`.
+    Nebius {
+        /// The Nebius command and its arguments.
+        #[arg(required = true, trailing_var_arg = true, allow_hyphen_values = true)]
+        words: Vec<String>,
+    },
     /// Run the workspace's `program.md` research loop (`/research`): a goal starts it,
     /// `status`, `report` or `resume` act on the existing run.
     Research {
@@ -294,6 +302,17 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                 )
                 .await
                 .map_err(|error| CliError::Ui(error.to_string()))?;
+                let mut out = std::io::stdout().lock();
+                for line in lines {
+                    writeln!(out, "{line}")?;
+                }
+                out.flush()?;
+                Ok(())
+            }
+            Some(Action::Nebius { words }) => {
+                let lines = polaris_ui_session::nebius::cli_lines(&args.workspace, &words)
+                    .await
+                    .map_err(|error| CliError::Ui(error.to_string()))?;
                 let mut out = std::io::stdout().lock();
                 for line in lines {
                     writeln!(out, "{line}")?;

@@ -2902,9 +2902,21 @@ fn submit_draft(
             | SlashCommand::ContreeBranches
             | SlashCommand::DatalabSync
             | SlashCommand::DatalabFinetune => {
-                state.notice = "Nebius services are out of scope for this build (not available in this region); draft retained".to_owned();
-                state.composer.cancel_submit(prepared);
-                return Ok(false);
+                use polaris_ui_session::commands::LocalCommand;
+                let local = match command {
+                    SlashCommand::NebiusStatus => LocalCommand::NebiusStatus,
+                    SlashCommand::ContreeBranches => LocalCommand::ContreeBranches,
+                    SlashCommand::DatalabSync => {
+                        state.notice = "Exporting and uploading proved trajectories…".to_owned();
+                        LocalCommand::DatalabSync
+                    }
+                    _ => LocalCommand::DatalabFinetune(None),
+                };
+                if let Err(error) = queue_request(commands, BackendRequest::Local(local)) {
+                    state.notice = error.to_string();
+                    state.composer.cancel_submit(prepared);
+                    return Ok(false);
+                }
             }
             SlashCommand::Goal(_)
             | SlashCommand::CachePurge

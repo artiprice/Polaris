@@ -25,6 +25,8 @@ polaris-runtime = { workspace = true }
 polaris-security = { workspace = true }
 polaris-system-one = { workspace = true }
 polaris-nebius-cloud-token-factory = { workspace = true }
+polaris-nebius-cloud = { workspace = true }
+polaris-ext = { workspace = true }
 polaris-ui-model = { workspace = true }
 polaris-rpc = { workspace = true }
 polaris-nvidia-docs = { workspace = true }

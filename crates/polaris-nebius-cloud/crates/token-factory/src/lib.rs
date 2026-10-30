@@ -25,6 +25,8 @@
 //! - `struct TokenFactoryClient`
 //! - `impl ChatModel`
 //! - `impl EmbeddingProvider`
+//! - Files and fine-tuning (`upload_file`, `create_fine_tuning_job`, `fine_tuning_job`,
+//!   `list_fine_tuning_jobs`) per the OpenAI-compatible Token Factory API reference; not run live.
 //!
 //! ## Internal dependencies
 //!
@@ -46,9 +48,10 @@ pub use hosted::{
 };
 
 pub use client::{
-    ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig,
-    LlamaCppChatClient, LlamaCppExpectedProfile, ModelInfo, PromptTokenEstimator, ProviderStream,
-    RateLimitPolicy, ReasoningReplay, TokenFactoryClient, VllmChatClient,
+    ApiKey, BaseUrl, ClientConfig, EmbeddingBatch, EmbeddingClient, EmbeddingConfig, FineTuningJob,
+    FineTuningRequest, LlamaCppChatClient, LlamaCppExpectedProfile, ModelInfo,
+    PromptTokenEstimator, ProviderFile, ProviderStream, RateLimitPolicy, ReasoningReplay,
+    TokenFactoryClient, VllmChatClient,
 };
 pub use error::{CredentialError, TfError};
 pub use sse::{SseEvent, SseEventRef, SseParser};

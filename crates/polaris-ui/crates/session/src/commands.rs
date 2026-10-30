@@ -1,6 +1,7 @@
 //! Slash commands every frontend answers locally, on the session's workspace, without the model:
 //! `/nv-profile`, `/nv-verify`, `/search-local <query>`, `/nv-docs-sync`, `/nv-docs <query>`,
-//! `/search-web <query>` (P5), `/hack` (P7), `/ci` and `/ci-run` (P8). Each returns report lines
+//! `/search-web <query>` (P5), `/hack` (P7), `/ci` and `/ci-run` (P8), and the Nebius commands
+//! `/nebius-status`, `/contree-branches`, `/datalab-sync`, `/datalab-finetune` (P6). Each returns report lines
 //! that the terminal shows as a sheet and the web and desktop views as a report entry.
 
 use std::path::Path;
@@ -38,6 +39,14 @@ pub enum LocalCommand {
     Undo,
     /// `/research <goal>|status|report|resume`: the `program.md` research loop.
     Research(crate::research::ResearchCommand),
+    /// `/nebius-status`: Token Factory, embeddings, Contree, Data Lab and AI Cloud.
+    NebiusStatus,
+    /// `/contree-branches`: this workspace's Contree branch runs and the sidecar's images.
+    ContreeBranches,
+    /// `/datalab-sync`: export and upload the session's proved trajectories.
+    DatalabSync,
+    /// `/datalab-finetune [model]`: tune a model on the uploaded trajectories.
+    DatalabFinetune(Option<String>),
 }
 
 impl LocalCommand {
@@ -62,6 +71,9 @@ impl LocalCommand {
         if let Some(rest) = text.strip_prefix("/research ") {
             return crate::research::ResearchCommand::parse(rest).map(Self::Research);
         }
+        if let Some(rest) = text.strip_prefix("/datalab-finetune ") {
+            return Some(Self::DatalabFinetune(query(rest)));
+        }
         match text {
             "/nv-profile" => Some(Self::NvProfile),
             "/nv-verify" => Some(Self::NvVerify),
@@ -70,6 +82,10 @@ impl LocalCommand {
             "/ci-run" => Some(Self::CiRun),
             "/diff" => Some(Self::Diff),
             "/undo" => Some(Self::Undo),
+            "/nebius-status" => Some(Self::NebiusStatus),
+            "/contree-branches" => Some(Self::ContreeBranches),
+            "/datalab-sync" => Some(Self::DatalabSync),
+            "/datalab-finetune" => Some(Self::DatalabFinetune(None)),
             // The directive is an action, not session state: it runs once here.
             "/nv-docs-sync" | "$nvidia-docs(sync)" | "$nvidia-docs" => Some(Self::NvDocsSync),
             _ => None,
@@ -92,6 +108,10 @@ impl LocalCommand {
             Self::Diff => "Applied changes",
             Self::Undo => "Undo",
             Self::Research(_) => "Research",
+            Self::NebiusStatus => "Nebius",
+            Self::ContreeBranches => "Contree branches",
+            Self::DatalabSync => "Data Lab sync",
+            Self::DatalabFinetune(_) => "Data Lab fine-tuning",
         }
     }
 
@@ -110,6 +130,7 @@ impl LocalCommand {
             Self::CiRun => crate::ci::run_report(workspace, env.as_ref()).await,
             Self::Diff => crate::changes::diff_lines(kernel).await,
             Self::Undo => crate::changes::undo_lines(kernel, workspace).await,
+            Self::DatalabSync => crate::nebius::datalab_sync_lines(kernel, workspace).await,
             _ => self.run_with(nvidia_mode(kernel), workspace).await,
         }
     }
@@ -129,13 +150,31 @@ impl LocalCommand {
             Self::SearchLocal(query) => {
                 let root = workspace.to_owned();
                 let owned = query.clone();
+                // Lexical candidates; Token Factory embeddings re-rank them when configured.
                 let hits = tokio::task::spawn_blocking(move || {
-                    crate::local_search::search(&root, &owned, crate::local_search::SEARCH_HITS)
+                    crate::local_search::search(
+                        &root,
+                        &owned,
+                        crate::local_search::SEARCH_HITS.saturating_mul(3),
+                    )
                 })
                 .await
                 .map_err(|_| SessionHostError::Unavailable("search task failed"))??;
-                Ok(crate::local_search::search_lines(query, &hits))
+                let (hits, note) =
+                    crate::nebius::rerank(workspace, query, hits, crate::local_search::SEARCH_HITS)
+                        .await;
+                let mut lines = crate::local_search::search_lines(query, &hits);
+                lines.extend(note);
+                Ok(lines)
             }
+            Self::NebiusStatus => crate::nebius::status_lines(workspace).await,
+            Self::ContreeBranches => crate::nebius::contree_branches_lines(workspace).await,
+            Self::DatalabFinetune(model) => {
+                crate::nebius::datalab_finetune_lines(workspace, model.as_deref()).await
+            }
+            Self::DatalabSync => Err(SessionHostError::Unavailable(
+                "/datalab-sync needs an open session",
+            )),
             Self::Hack => {
                 let root = workspace.to_owned();
                 let report = tokio::task::spawn_blocking(move || crate::hack::hack(&root))
