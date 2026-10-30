@@ -151,6 +151,8 @@ pub struct UiState {
     pub usage: (u64, u64, u64),
     /// Sidebar rows.
     pub sessions: Vec<SessionRow>,
+    /// Review cards that decide a sandbox test run rather than a file change.
+    pub test_reviews: std::collections::BTreeSet<String>,
     /// Entry receiving streamed text.
     reply: Option<usize>,
     /// A review card ended the streamed text; a later answer goes below it.
@@ -191,9 +193,23 @@ impl UiState {
     #[must_use]
     pub fn status(&self, elapsed_s: u64) -> (&'static str, String) {
         if self.waiting_for_review() {
+            let tests = self.entries.iter().any(|entry| {
+                matches!(
+                    &entry.kind,
+                    EntryKind::Review {
+                        request_id,
+                        state: ReviewState::Waiting | ReviewState::Deciding { .. },
+                        ..
+                    } if self.test_reviews.contains(request_id)
+                )
+            });
             return (
                 "waiting",
-                "Waiting for your decision on a change".to_owned(),
+                if tests {
+                    "Waiting for your decision on a test run".to_owned()
+                } else {
+                    "Waiting for your decision on a change".to_owned()
+                },
             );
         }
         if self.working {
@@ -473,10 +489,17 @@ impl UiState {
                 text: format!("**{title}**\n\n```text\n{}\n```", lines.join("\n")),
                 streaming: false,
             }),
-            WebEvent::Review { request_id, prompt } => {
+            WebEvent::Review {
+                request_id,
+                prompt,
+                tests,
+            } => {
                 let known = self.entries.iter().any(|entry| {
                     matches!(&entry.kind, EntryKind::Review { request_id: id, .. } if *id == request_id)
                 });
+                if tests {
+                    let _new = self.test_reviews.insert(request_id.clone());
+                }
                 if !known {
                     self.end_reply();
                     self.after_review = true;
@@ -505,6 +528,11 @@ impl UiState {
                     }
                 }
             }
+            WebEvent::TestResult { passed, summary } => self.push(if passed {
+                EntryKind::Change(format!("✓ {summary}"))
+            } else {
+                EntryKind::Warning(summary)
+            }),
             WebEvent::Applied { path } => self.push(EntryKind::Change(format!("Edited {path}"))),
             WebEvent::Deleted { path } => self.push(EntryKind::Change(format!("Deleted {path}"))),
             WebEvent::Unknown => {}

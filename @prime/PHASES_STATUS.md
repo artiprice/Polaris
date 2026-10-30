@@ -2169,5 +2169,25 @@ Cloud API itself is gRPC only). Settings: `~/.polaris/nebius.json` (global layer
 
 - **P5-X-2 Tavily:** `/search-web` and `$websearch` ask the existing Tavily adapter first when its key resolves (`search.tavily_api_key`, else `TAVILY_API_KEY` from `~/.polaris/.env` or the environment; base `POLARIS_TAVILY_URL`), with the redacted query; a Tavily failure falls back to SearXNG with a note, and SearXNG stays the keyless path (now also from `search.searxng_url`).
 
-**Unverified by construction:** every Nebius and Tavily request shape above, the CLI flags marked in the
+**Unverified by construction (E61):** every Nebius and Tavily request shape above, the CLI flags marked in the
 code, and the dataset format the fine-tuning service accepts.
+
+## E62 — UX pass over sandbox tests, System One, Nebius and search (2026-10-30)
+
+- **Sandbox test runs read as test runs** in every frontend: the review bar says TESTS with
+  "Run tests" / "Don't run" (desktop, web card "Run tests in the sandbox", TUI "y run the tests ·
+  n don't run them"), the status line says "Waiting for your decision on a test run", and the
+  note field is disabled (declining stops the reply). The prompt names the isolation and Proof of
+  Done in plain words.
+- **The verdict appears in the conversation:** `ChatProgress::Tests` from the session's
+  `ProofOfDonePassed/Blocked` with the command, exit code, duration and reason ("✓ Tests passed
+  in the OpenShell sandbox (exit 0, 1.4 s): cargo test …"; a failure is a warning).
+- **Notices, not errors:** an unavailable sandbox is a notice in the TUI; a provider that rejects
+  its key, rate limits or times out is explained with the fix instead of "turn failed:
+  unauthorized".
+- **Settings show every service:** desktop Settings rows SYSTEM ONE, SANDBOX, NEBIUS, WEB SEARCH;
+  TUI `/status` lists the same.
+- **Checked:** desktop frames rendered headlessly in release (`render.rs`: settings, test review,
+  test result). A live web run on the synthetic fixture reached the model call and stopped there:
+  **OpenRouter answers 401 for the configured key** (revoked or disabled), so the model-driven
+  `run_tests` path is still not run end to end.

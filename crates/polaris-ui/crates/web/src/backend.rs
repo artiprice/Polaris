@@ -103,7 +103,14 @@ pub enum WebEvent {
     ReplyFailed { reason: String },
     /// The reply waits until the person applies or declines this change (Markdown prompt with
     /// a diff).
-    Review { request_id: String, prompt: String },
+    Review {
+        request_id: String,
+        prompt: String,
+        /// A sandbox test run rather than a file change (the page labels its buttons so).
+        tests: bool,
+    },
+    /// An approved sandbox test run ended with its Proof of Done verdict.
+    TestResult { passed: bool, summary: String },
     /// The review was answered or withdrawn.
     ReviewClosed { request_id: String },
     /// A reviewed change was written to this workspace path.
@@ -526,8 +533,14 @@ impl Owner {
             HostEvent::Progress(ChatProgress::Review(review)) => {
                 let request_id = review.request_id.to_string();
                 let prompt = review.prompt.clone();
+                let tests =
+                    review.question.as_str() == polaris_ui_session::chat::TEST_REVIEW_QUESTION;
                 self.reviews.insert(request_id.clone(), review);
-                WebEvent::Review { request_id, prompt }
+                WebEvent::Review {
+                    request_id,
+                    prompt,
+                    tests,
+                }
             }
             HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
                 let request_id = id.to_string();
@@ -536,6 +549,9 @@ impl Owner {
             }
             HostEvent::Progress(ChatProgress::Applied(path)) => WebEvent::Applied { path },
             HostEvent::Progress(ChatProgress::Deleted(path)) => WebEvent::Deleted { path },
+            HostEvent::Progress(ChatProgress::Tests { passed, summary }) => {
+                WebEvent::TestResult { passed, summary }
+            }
             HostEvent::Finished(report) => {
                 self.reviews.clear();
                 WebEvent::ReplyFinished {

@@ -161,6 +161,13 @@ pub enum ChatProgress {
     Applied(String),
     /// A reviewed deletion removed this workspace path.
     Deleted(String),
+    /// An approved sandbox test run ended with its Proof of Done verdict.
+    Tests {
+        /// Proof of Done passed.
+        passed: bool,
+        /// One line: the command, exit code, duration, and why it did not pass.
+        summary: String,
+    },
 }
 
 /// A change the running turn waits on.
@@ -787,7 +794,7 @@ where
         );
         tokio::pin!(operation);
         tokio::select! {
-            result = &mut operation => result.map_err(|error| ChatError::Turn(error.to_string())),
+            result = &mut operation => result.map_err(|error| ChatError::Turn(explain_failure(&error.to_string()))),
             () = cancellation.cancelled() => {
                 turn_cancellation.cancel();
                 let _settled = tokio::time::timeout(Duration::from_secs(30), &mut operation).await;
@@ -802,6 +809,26 @@ impl Drop for AbortOnDrop {
     fn drop(&mut self) {
         self.0.abort();
     }
+}
+
+/// A frame failure in words the person can act on; provider failures name the fix.
+fn explain_failure(error: &str) -> String {
+    if error == "unauthorized" || error.ends_with(": unauthorized") {
+        return String::from(
+            "the model provider rejected the API key (expired, revoked or mistyped); put a valid key in ~/.polaris/.env or the --env-file and restart",
+        );
+    }
+    if error.contains("rate limited") {
+        return format!(
+            "the model provider is rate limiting this key ({error}); wait a minute, or use another key or provider"
+        );
+    }
+    if error.contains("model request timed out") {
+        return String::from(
+            "the model provider did not answer in time; try again, or pick a lower effort",
+        );
+    }
+    error.to_owned()
 }
 
 /// `$budget(usd=…)` or `$budget(tokens=…)`: why the session's spending stops another turn, if it
@@ -870,6 +897,8 @@ async fn forward_reviews(
     // Test runs waiting for the person: execution review → the review shown for it.
     let mut tests: std::collections::BTreeMap<Cid, HumanRequestId> =
         std::collections::BTreeMap::new();
+    // Exit code and duration of the frame's latest sandbox run, for its verdict line.
+    let mut last_run: Option<(i32, u64)> = None;
     let mut list = true;
     loop {
         if list {
@@ -915,6 +944,34 @@ async fn forward_reviews(
                     return;
                 }
             }
+            Event::SandboxExecutionCompleted {
+                frame: owner,
+                exit_code,
+                latency_us,
+                ..
+            } if *owner == frame => {
+                last_run = Some((*exit_code, *latency_us));
+                continue;
+            }
+            Event::ProofOfDonePassed {
+                frame: owner,
+                report,
+            }
+            | Event::ProofOfDoneBlocked {
+                frame: owner,
+                report,
+            } if *owner == frame => {
+                let passed = matches!(record.event(), Event::ProofOfDonePassed { .. });
+                let summary = test_summary(&kernel, *report, passed, last_run.take()).await;
+                if progress
+                    .send(ChatProgress::Tests { passed, summary })
+                    .await
+                    .is_err()
+                {
+                    return;
+                }
+                continue;
+            }
             _ => {}
         }
         let (item, relist) = review_progress(&kernel, frame, &shown, &record);
@@ -957,7 +1014,7 @@ async fn test_review(kernel: &KernelHandle, report: Cid) -> Option<ChangeReview>
         .and_then(serde_json::Value::as_u64)
         .unwrap_or_default();
     let prompt = format!(
-        "Run tests in the OpenShell sandbox?\n\nThe reply waits on this run. The workspace is copied into an isolated sandbox; nothing runs on this machine. Declining stops the reply.\n\n```text\ntests:        {}\nindependent:  {}\ntimeout:      {timeout} s\n```",
+        "Run the tests in the OpenShell sandbox?\n\nThe reply waits for this decision. The workspace is copied into an isolated sandbox without network access, nothing runs on this machine, and Proof of Done checks the result. Not running them stops the reply.\n\n```text\ntests        {}\ncheck        {}\ntime limit   {timeout} s per command\n```",
         argv("argv"),
         argv("independent_argv"),
     );
@@ -967,6 +1024,47 @@ async fn test_review(kernel: &KernelHandle, report: Cid) -> Option<ChangeReview>
         question: HumanQuestionId::new(TEST_REVIEW_QUESTION).ok()?,
         prompt,
     })
+}
+
+/// One line for a sandbox test run's Proof of Done verdict: the command, the run's exit code and
+/// duration, and the reason it did not pass.
+async fn test_summary(
+    kernel: &KernelHandle,
+    report: Cid,
+    passed: bool,
+    run: Option<(i32, u64)>,
+) -> String {
+    use polaris_kernel::verifier::EvidenceStore;
+    let context = Arc::clone(kernel.context());
+    let report = tokio::task::spawn_blocking(move || {
+        polaris_kernel::KernelEvidence::new(context)
+            .get(&report)
+            .ok()
+            .flatten()
+            .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+    })
+    .await
+    .ok()
+    .flatten()
+    .unwrap_or_default();
+    let command = report
+        .get("command")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("the tests")
+        .to_owned();
+    let run = run.map_or_else(String::new, |(code, micros)| {
+        let tenths = micros / 100_000;
+        format!(" (exit {code}, {}.{} s)", tenths / 10, tenths % 10)
+    });
+    if passed {
+        format!("Tests passed in the OpenShell sandbox{run}: {command}")
+    } else {
+        let reason = report
+            .get("reason")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("the run did not meet Proof of Done");
+        format!("Tests did not pass in the OpenShell sandbox{run}: {reason}")
+    }
 }
 
 /// Pending change reviews of `frame` not yet in `shown`, which records them.

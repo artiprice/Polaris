@@ -556,6 +556,8 @@ enum BackendMessage {
     Committed,
     Rejected(String),
     QueryFailed(String),
+    /// Information for the notice line (not a failure).
+    Notice(String),
     ResumeRejected(String),
     Sheet {
         title: String,
@@ -726,7 +728,7 @@ pub async fn run(
                         if let Some(note) = session.as_ref().and_then(OfflineSession::sandbox_note) {
                             send_message(
                                 &events_tx,
-                                BackendMessage::QueryFailed(format!(
+                                BackendMessage::Notice(format!(
                                     "Tests cannot run in the sandbox in this session: {note}"
                                 )),
                             )?;
@@ -992,6 +994,8 @@ struct TurnUi {
     phase: TurnPhase,
     /// A change waits for the person's decision.
     waiting: bool,
+    /// The decision waited on is a sandbox test run.
+    waiting_tests: bool,
     /// A review card ended the streamed text; a later answer goes below it.
     after_review: bool,
 }
@@ -1003,10 +1007,14 @@ impl TurnUi {
             break_pending: false,
             phase: TurnPhase::Waiting,
             waiting: false,
+            waiting_tests: false,
             after_review: false,
         }
     }
     fn label(&self) -> String {
+        if self.waiting && self.waiting_tests {
+            return "◆ Waiting for your decision · y run the tests · n don't run them".to_owned();
+        }
         if self.waiting {
             return "◆ Waiting for your decision · y apply · n don't apply · or type a note and Enter"
                 .to_owned();
@@ -1333,12 +1341,19 @@ impl UiState {
             turn.waiting = true;
             turn.after_review = true;
         }
+        let is_test = review.question.as_str() == polaris_ui_session::chat::TEST_REVIEW_QUESTION;
+        if let Some(turn) = self.turn.as_mut() {
+            turn.waiting_tests = is_test;
+        }
+        let hint = if is_test {
+            "y run the tests · n don't run them (stops the reply)"
+        } else {
+            "y apply · n don't apply · or type a note and press Enter to decline with it"
+        };
         let view = self.offline_view_mut();
-        let shown = view.push_assistant(review.prompt.clone()).and_then(|()| {
-            view.push_system(
-                "y apply · n don't apply · or type a note and press Enter to decline with it",
-            )
-        });
+        let shown = view
+            .push_assistant(review.prompt.clone())
+            .and_then(|()| view.push_system(hint));
         if let Err(error) = shown {
             self.notice = format!("Reply display limit reached: {error}");
         }
@@ -1348,8 +1363,12 @@ impl UiState {
     fn close_review(&mut self, id: polaris_sdk::human::HumanRequestId) {
         self.reviews.retain(|review| review.request_id != id);
         let waiting = !self.reviews.is_empty();
+        let waiting_tests = self.reviews.front().is_some_and(|review| {
+            review.question.as_str() == polaris_ui_session::chat::TEST_REVIEW_QUESTION
+        });
         if let Some(turn) = self.turn.as_mut() {
             turn.waiting = waiting;
+            turn.waiting_tests = waiting_tests;
         }
     }
     fn finish_turn(&mut self, report: TurnReport) {
@@ -1555,6 +1574,9 @@ impl UiState {
             BackendMessage::QueryFailed(reason) => {
                 self.notice = format!("Query failed: {reason}");
             }
+            BackendMessage::Notice(text) => {
+                self.notice = text;
+            }
             BackendMessage::ResumeRejected(reason) => {
                 self.switch_pending = false;
                 self.notice = format!("Resume rejected: {reason}");
@@ -1637,6 +1659,17 @@ impl UiState {
                         .offline_view_mut()
                         .push_system(format!("✓ Deleted {path}"))
                     {
+                        self.notice = format!("Reply display limit reached: {error}");
+                    }
+                }
+                ChatProgress::Tests { passed, summary } => {
+                    let view = self.offline_view_mut();
+                    let shown = if passed {
+                        view.push_system(format!("✓ {summary}"))
+                    } else {
+                        view.push_warning(&summary)
+                    };
+                    if let Err(error) = shown {
                         self.notice = format!("Reply display limit reached: {error}");
                     }
                 }
@@ -2676,6 +2709,19 @@ fn submit_draft(
                     "Actual configuration source layers:".to_owned(),
                 ];
                 lines.extend(state.provenance.clone());
+                // What the session can use beyond the model, as each service reports itself.
+                let workspace = std::path::Path::new(&state.workspace);
+                lines.push(String::new());
+                lines.push(polaris_ui_session::system_one::status());
+                lines.push(polaris_ui_session::sandbox::status());
+                lines.push(format!(
+                    "Nebius: {}",
+                    polaris_ui_session::nebius::summary(workspace)
+                ));
+                lines.push(format!(
+                    "Web search: {}",
+                    polaris_ui_session::web_search::summary(workspace)
+                ));
                 lines.push("Use /settings to edit CLI preferences.".to_owned());
                 open_sheet(state, "Status", lines)
             }

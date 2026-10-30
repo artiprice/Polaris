@@ -488,8 +488,14 @@ impl Bridgework {
             HostEvent::Progress(ChatProgress::Review(review)) => {
                 let request_id = review.request_id.to_string();
                 let prompt = review.prompt.clone();
+                let tests =
+                    review.question.as_str() == polaris_ui_session::chat::TEST_REVIEW_QUESTION;
                 self.reviews.insert(request_id.clone(), review);
-                BackendEvent::Review { request_id, prompt }
+                if tests {
+                    BackendEvent::TestReview { request_id, prompt }
+                } else {
+                    BackendEvent::Review { request_id, prompt }
+                }
             }
             HostEvent::Progress(ChatProgress::ReviewClosed(id)) => {
                 let request_id = id.to_string();
@@ -498,6 +504,9 @@ impl Bridgework {
             }
             HostEvent::Progress(ChatProgress::Applied(path)) => BackendEvent::Applied(path),
             HostEvent::Progress(ChatProgress::Deleted(path)) => BackendEvent::Deleted(path),
+            HostEvent::Progress(ChatProgress::Tests { passed, summary }) => {
+                BackendEvent::TestResult { passed, summary }
+            }
             HostEvent::Finished(report) => {
                 self.reviews.clear();
                 BackendEvent::ReplyFinished {
@@ -656,13 +665,27 @@ fn environment(
             dirs.global.join("config.toml").display().to_string(),
         ));
     }
+    // The labels already name the service, so its status reads without the prefix.
+    let unprefixed = |status: String, prefix: &str| {
+        status
+            .strip_prefix(prefix)
+            .map_or_else(|| status.clone(), str::to_owned)
+    };
     paths.push((
         String::from("SYSTEM ONE"),
-        polaris_ui_session::system_one::status(),
+        unprefixed(polaris_ui_session::system_one::status(), "System One: "),
     ));
     paths.push((
         String::from("SANDBOX"),
-        polaris_ui_session::sandbox::status(),
+        unprefixed(polaris_ui_session::sandbox::status(), "OpenShell sandbox: "),
+    ));
+    paths.push((
+        String::from("NEBIUS"),
+        polaris_ui_session::nebius::summary(workspace),
+    ));
+    paths.push((
+        String::from("WEB SEARCH"),
+        polaris_ui_session::web_search::summary(workspace),
     ));
     paths.push((
         String::from("PROVIDER KEYS"),

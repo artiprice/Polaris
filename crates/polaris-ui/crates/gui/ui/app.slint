@@ -49,6 +49,7 @@ export component AppWindow inherits Window {
     in property <bool> working;
     // Question of the change the reply waits on; empty when none.
     in property <string> review-title;
+    in property <bool> review-tests;
     in property <[ModelRowUi]> model-rows;
     in property <[string]> usage-lines;
     in property <[LabelValueUi]> usage-tiles;
@@ -296,6 +297,7 @@ export component AppWindow inherits Window {
         starting: root.starting;
         notice: root.notice;
         review-title: root.review-title;
+        review-tests: root.review-tests;
         model-names: root.model-names;
         model-short-names: root.model-short-names;
         directives: root.directives;

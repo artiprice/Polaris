@@ -208,6 +208,21 @@ pub enum BackendEvent {
         /// Markdown: the target, why the person decides, and the diff.
         prompt: String,
     },
+    /// The reply waits until the person runs or declines this sandbox test run (answered with
+    /// [`BackendRequest::Review`] like a change; declining stops the reply).
+    TestReview {
+        /// Request id to answer.
+        request_id: String,
+        /// Markdown: the commands and the sandbox.
+        prompt: String,
+    },
+    /// An approved sandbox test run ended with its Proof of Done verdict.
+    TestResult {
+        /// Proof of Done passed.
+        passed: bool,
+        /// One line: command, exit code, duration, reason.
+        summary: String,
+    },
     /// The review was answered or withdrawn.
     ReviewClosed(String),
     /// A reviewed change was written to this workspace path.

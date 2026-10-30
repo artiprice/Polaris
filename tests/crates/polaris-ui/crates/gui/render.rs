@@ -118,6 +118,30 @@ fn welcome_renders_without_panic_in_software_renderer() -> TestResult {
                     String::from("C:/Users/demo/.polaris/config.toml"),
                 ),
                 (
+                    String::from("SYSTEM ONE"),
+                    String::from(
+                        "local worker, calibrated for safety.diff_tamper, safety.secret_semantic",
+                    ),
+                ),
+                (
+                    String::from("SANDBOX"),
+                    String::from(
+                        "https://127.0.0.1:17670 (image sha256:50163fb363ca)",
+                    ),
+                ),
+                (
+                    String::from("NEBIUS"),
+                    String::from(
+                        "Token Factory: no NEBIUS_API_KEY · embeddings: off · Contree: off · AI Cloud: off — details in /nebius-status",
+                    ),
+                ),
+                (
+                    String::from("WEB SEARCH"),
+                    String::from(
+                        "SearXNG at http://127.0.0.1:8888 (set TAVILY_API_KEY for Tavily)",
+                    ),
+                ),
+                (
                     String::from("PROVIDER KEYS"),
                     String::from("C:/Users/demo/.polaris/.env (values are never shown)"),
                 ),
@@ -296,6 +320,51 @@ The semantic safety check is not available.
         );
         let review = draw(&window, stride)?.ok_or("review did not redraw")?;
         write_ppm(&dir.join("session-review.ppm"), &review)?;
+
+        // The change applied, then a sandbox test run waiting for a decision.
+        event_tx.send(BackendEvent::ReviewClosed(String::from("r1")))?;
+        event_tx.send(BackendEvent::Applied(String::from(
+            "crates/polaris-ui/src/lib.rs",
+        )))?;
+        event_tx.send(BackendEvent::TestReview {
+            request_id: String::from("t1"),
+            prompt: String::from(
+                "Run the tests in the OpenShell sandbox?
+
+The reply waits for this decision. The workspace is copied into an isolated sandbox without network access, nothing runs on this machine, and Proof of Done checks the result. Not running them stops the reply.
+
+```text
+tests        cargo test --offline --locked --lib
+check        cargo test --offline --locked --test falsifier
+time limit   120 s per command
+```",
+            ),
+        })?;
+        wiring.pump(&ui);
+        settle();
+        assert!(ui.get_review_tests());
+        let tests = draw(&window, stride)?.ok_or("test review did not redraw")?;
+        write_ppm(&dir.join("session-test-review.ppm"), &tests)?;
+
+        // The run's Proof of Done verdict and the reply's end.
+        event_tx.send(BackendEvent::ReviewClosed(String::from("t1")))?;
+        event_tx.send(BackendEvent::TestResult {
+            passed: true,
+            summary: String::from(
+                "Tests passed in the OpenShell sandbox (exit 0, 1.4 s): cargo test --offline --locked --lib",
+            ),
+        })?;
+        event_tx.send(BackendEvent::ReplyText(String::from(
+            "All three tests pass; the version now comes from Cargo.",
+        )))?;
+        event_tx.send(BackendEvent::ReplyFinished {
+            answer: None,
+            summary: String::from("Worked for 38s · 4 requests · 1 file changed"),
+        })?;
+        wiring.pump(&ui);
+        settle();
+        let result = draw(&window, stride)?.ok_or("test result did not redraw")?;
+        write_ppm(&dir.join("session-test-result.ppm"), &result)?;
     }
     Ok(())
 }
