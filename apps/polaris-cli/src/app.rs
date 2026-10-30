@@ -129,6 +129,12 @@ pub enum Action {
         /// Words to search for.
         query: String,
     },
+    /// Run the workspace's `program.md` research loop (`/research`): a goal starts it,
+    /// `status`, `report` or `resume` act on the existing run.
+    Research {
+        /// A goal, or `status`, `report` or `resume`.
+        what: String,
+    },
     /// Serve the local web UI on loopback and print its address (with this run's access token).
     Web {
         /// Loopback port; 0 picks a free one.
@@ -272,7 +278,8 @@ pub async fn run(args: Args) -> Result<(), CliError> {
             | Some(Action::SearchLocal { .. })
             | Some(Action::SearchWeb { .. })
             | Some(Action::NvDocsSync)
-            | Some(Action::NvDocs { .. }) => {
+            | Some(Action::NvDocs { .. })
+            | Some(Action::Research { .. }) => {
                 use polaris_ui_session::commands::LocalCommand;
                 let command = match args.command {
                     Some(Action::NvProfile) => LocalCommand::NvProfile,
@@ -283,6 +290,13 @@ pub async fn run(args: Args) -> Result<(), CliError> {
                     Some(Action::SearchWeb { query }) => LocalCommand::SearchWeb(query),
                     Some(Action::NvDocsSync) => LocalCommand::NvDocsSync,
                     Some(Action::NvDocs { query }) => LocalCommand::NvDocs(query),
+                    Some(Action::Research { what }) => LocalCommand::Research(
+                        polaris_ui_session::research::ResearchCommand::parse(&what).ok_or(
+                            CliError::Unavailable(
+                                "research needs a goal, or status, report or resume",
+                            ),
+                        )?,
+                    ),
                     _ => LocalCommand::Hack,
                 };
                 let lines = command

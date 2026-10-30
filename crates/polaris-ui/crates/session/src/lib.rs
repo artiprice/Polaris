@@ -23,6 +23,7 @@ pub mod nvidia;
 mod offline;
 mod queries;
 mod remote;
+pub mod research;
 pub mod responder;
 pub mod stats;
 mod walk;

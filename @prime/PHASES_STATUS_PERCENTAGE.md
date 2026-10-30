@@ -222,9 +222,9 @@
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P5-X-1` | 0% | 0% | SearXNG adapter and local protocol fixtures exist; the named live container/engine acceptance remains unperformed; E39. |
+| `P5-X-1` | 70% | 30% | SearXNG adapter (E39) composed as `/search-web` and `$websearch` with a loopback container script (E58); no live container query recorded. |
 | `P5-X-2` | 0% | 0% | Tavily adapter and local protocol fixtures exist; the named keyed live acceptance remains unavailable; E39. |
-| `P5-X-3` | 0% | 0% | No production NVIDIA sync/index/provenance seed run. |
+| `P5-X-3` | 70% | 20% | Incremental sync into a local seed with provenance, search and turn passages (E58); no live sync run recorded. |
 | `P5-X-4` | 0% | 0% | No masked live embedding/vector-store run; access missing. |
 
 ### P6 — Nebius depth and remote execution
@@ -255,7 +255,7 @@
 
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
-| `P7-X-1` | 70% | 50% | Twenty capability-checked local process/Git/CAS iterations, all 60 payloads reopened and one abrupt-exit recovery pass. Actual sandbox/model research composition and broader crash matrix remain open; E39. |
+| `P7-X-1` | 85% | 50% | Twenty local process/Git/CAS iterations and recovery (E39); `/research` composes the loop with the model and the Docker sandbox (E58); no live 20-iteration run with a kill recorded. |
 | `P7-X-2` | 90% | 80% | `/hack` composed and wired in every frontend; seeded race/blocking/CUDA acceptance 5/5 with 0 false positives on the synthetic repo, calibrated on this repository (E55). Sandbox sanitizer workloads remain open. |
 | `P7-X-3` | 0% | 0% | No composed microVM browser/a11y/pHash loop; individual spikes are separate. |
 
@@ -284,7 +284,7 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P9-X-1` | 0% | 0% | Welcome-page visual acceptance is user-deferred. **UI deferred; excluded from aggregate.** |
-| `P9-X-2` | 95% | 85% | Real Windows pipe ownership/100 connections, Linux private UDS, mTLS trust failures, token/rights/revocation and bounded shutdown checks pass (E32); desktop and web attach to `polarisd` over the named pipe with daemon-issued credentials, attach security tests pass (E53). Independent security audit and remote mTLS deployment remain open. |
+| `P9-X-2` | 98% | 85% | Windows pipe ownership, Linux private UDS, mTLS trust failures, token/rights/revocation and shutdown checks (E32); named-pipe attach with daemon credentials (E53); `tcp://` attach with mutual TLS and daemon replies (E58). No deployed remote run or independent audit. |
 
 ### P10 — Hardening and submission
 
@@ -294,11 +294,11 @@
 | Named task / subphase | Code % | Verified % | Remaining scope / evidence |
 |---|---:|---:|---|
 | `P10-1` | 60% | 50% | Full workspace run (2,630 passed, 4 known ratelimit failures), loom and load/stress spikes pass (E57); fuzz/Miri/Kani/mutants need tools. |
-| `P10-2` | 60% | 40% | SPDX SBOM evidence; security review report against the §6.11 threat model, unsafe inventory and offline licence audit (E57); advisories/vet need tools, no external review. |
+| `P10-2` | 75% | 55% | Threat-model report, unsafe inventory, licence audit (E57); `cargo deny` passes, `cargo audit` with one accepted advisory, `cargo vet` run (1,167 unvetted) (E58); no external review. |
 | `P10-3` | 100% | 90% | All seven PLAN §11.4 budgets measured and recorded (E57); DFA throughput, GCRA p99 and S1 CPU p95 miss their targets. |
 | `P10-4` | 90% | 80% | Dist build of five binaries + site packaged with README, SHA256SUMS and build-info (E57); no signed installer. |
-| `P10-5` | 0% | 0% | Demo/video and judge fallback acceptance absent; UI deferred and keys missing. **UI deferred; excluded from aggregate.** |
-| `P10-6` | 50% | 35% | Real Linux check legs exist; full current portability matrix/macOS adaptation not delivered. |
+| `P10-5` | 40% | 10% | Keyless demo script, sample-workspace preparation and fallback paths written (E58); not rehearsed or recorded. **Excluded from aggregate.** |
+| `P10-6` | 65% | 45% | Linux all-targets check passes in Docker (E58) after a peer-pid fix; the Linux test run and macOS are not done. |
 
 ## Milestones — separate acceptance view
 

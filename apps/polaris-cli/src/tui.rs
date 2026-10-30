@@ -2791,9 +2791,30 @@ fn submit_draft(
             | SlashCommand::SearchLocal(_)
             | SlashCommand::SearchWeb(_)
             | SlashCommand::NvDocs(_)
-            | SlashCommand::NvDocsSync => {
+            | SlashCommand::NvDocsSync
+            | SlashCommand::Research(_) => {
                 use polaris_ui_session::commands::LocalCommand;
+                use polaris_ui_session::research::ResearchCommand;
                 let local = match command {
+                    SlashCommand::Research(research) => {
+                        use polaris_kernel::directives::slash::ResearchCmd;
+                        LocalCommand::Research(match research {
+                            ResearchCmd::Start(goal) => {
+                                state.notice =
+                                    "Research run started; the report opens when it ends"
+                                        .to_owned();
+                                ResearchCommand::Start(goal)
+                            }
+                            ResearchCmd::Status => ResearchCommand::Status,
+                            ResearchCmd::Report => ResearchCommand::Report,
+                            ResearchCmd::Resume => {
+                                state.notice =
+                                    "Research run resumed; the report opens when it ends"
+                                        .to_owned();
+                                ResearchCommand::Resume
+                            }
+                        })
+                    }
                     SlashCommand::NvProfile => LocalCommand::NvProfile,
                     SlashCommand::NvVerify => LocalCommand::NvVerify,
                     SlashCommand::Ci => LocalCommand::Ci,
@@ -2826,7 +2847,6 @@ fn submit_draft(
             | SlashCommand::ConcurrencyStats
             | SlashCommand::CacheStats
             | SlashCommand::CachePurge
-            | SlashCommand::Research(_)
             | SlashCommand::ContextMap
             | SlashCommand::ContextExpand(_)
             | SlashCommand::ParallelDag

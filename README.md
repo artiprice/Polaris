@@ -56,6 +56,14 @@ polaris-web --connect polaris-main --session 42 --token-file .polaris\client.tok
 polaris-desktop --connect polaris-main --session 42 --token-file .polaris\client.token
 ```
 
+The daemon answers each message with a read-only turn (keys from `--env-file` or
+`~/.polaris/.env`; `--no-replies` only records them), and attached windows show the reply when it
+finishes. A daemon started with `--listen host:port --tls-cert … --tls-key … --client-ca …` is
+reached with `--connect tcp://host:port` and the client's files in `POLARIS_TLS_CA`,
+`POLARIS_TLS_CERT` and `POLARIS_TLS_KEY`.
+
+A recorded walk-through with prepared sample workspaces is in [`@prime/DEMO.md`](@prime/DEMO.md).
+
 ## Commands answered locally
 
 These run on the session's workspace without the model, in every frontend and from the command line:
@@ -68,9 +76,14 @@ These run on the session's workspace without the model, in every frontend and fr
 | `/ci` · `polaris ci` | The workspace's CI pipeline (format → check → test), its cache volumes and whether Docker can run it |
 | `/ci-run` · `polaris ci-run` | Runs that pipeline in Docker: workspace mounted read-only, cargo home and target on cache volumes |
 | `/search-local <words>` · `polaris search-local "<words>"` | Ranks workspace passages (lexical BM25, no embeddings) and shows each as `path:lines` with its best lines |
+| `/nv-docs-sync` (`$nvidia-docs(sync)`) · `polaris nv-docs-sync` | Downloads the NVIDIA documentation listings (`llms.txt`) into a local seed in `~/.polaris/docs/nvidia`, incrementally, with each page's provenance |
+| `/nv-docs <words>` · `polaris nv-docs "<words>"` | Searches that seed and shows each passage with its source URL |
+| `/search-web <words>` · `polaris search-web "<words>"` | Web results from a local SearXNG (`@prime/tools/searxng/run.ps1`; `POLARIS_SEARXNG_URL`), query redacted first |
+| `/diff`, `/undo` | The changes this session applied; restore the newest one whose file is unchanged since |
 
 `$rag` adds the best workspace passages for each question to the request (as data, with their
-`path:lines`), so replies can cite them.
+`path:lines`), so replies can cite them; `$websearch` does the same with SearXNG results, and
+`$nvidia(auto)` replies also get the best passages of the documentation seed once it exists.
 
 `$nvidia(auto)` (the default) adds the NVIDIA profile and CUDA invariants to a reply's context when
 a stack is found; `$nvidia(list)` keeps it out, `$nvidia(off)` disables both. Findings are

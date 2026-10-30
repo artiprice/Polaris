@@ -9883,6 +9883,7 @@ name = "polaris-ui-session"
 version = "0.1.0-alpha"
 dependencies = [
  "blake3",
+ "bytes",
  "jiff",
  "polaris-code-intel",
  "polaris-config",
@@ -9901,6 +9902,7 @@ dependencies = [
  "polaris-system-one",
  "polaris-ui-model",
  "secrecy",
+ "serde_json",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",

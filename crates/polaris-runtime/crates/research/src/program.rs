@@ -188,7 +188,9 @@ impl ProgramMd {
     /// Whether a normalized repository-relative path is within the editable scope.
     #[must_use]
     pub fn allows_edit(&self, path: &str) -> bool {
-        valid_path(path) && scope_list_covers(&self.editable, path)
+        valid_path(path)
+            && scope_list_covers(&self.editable, path)
+            && !scope_list_covers(&self.readonly, path)
     }
 }
 
@@ -353,6 +355,11 @@ fn scope_list_covers(scopes: &[Box<str>], path: &str) -> bool {
 }
 
 fn descendant_of(path: &str, base: &str) -> bool {
+    // The root scope `**` (empty base) contains every path, so `editable: **` overlaps any
+    // read-only scope and is rejected instead of silently making `program.md` editable.
+    if base.is_empty() {
+        return !path.is_empty();
+    }
     path.strip_prefix(base)
         .is_some_and(|tail| tail.starts_with('/') && tail.len() > 1)
 }

@@ -36,6 +36,8 @@ pub enum LocalCommand {
     Diff,
     /// `/undo`: restore the newest applied change still in place.
     Undo,
+    /// `/research <goal>|status|report|resume`: the `program.md` research loop.
+    Research(crate::research::ResearchCommand),
 }
 
 impl LocalCommand {
@@ -56,6 +58,9 @@ impl LocalCommand {
         }
         if let Some(rest) = text.strip_prefix("/search-web ") {
             return query(rest).map(Self::SearchWeb);
+        }
+        if let Some(rest) = text.strip_prefix("/research ") {
+            return crate::research::ResearchCommand::parse(rest).map(Self::Research);
         }
         match text {
             "/nv-profile" => Some(Self::NvProfile),
@@ -86,6 +91,7 @@ impl LocalCommand {
             Self::SearchWeb(_) => "Web search",
             Self::Diff => "Applied changes",
             Self::Undo => "Undo",
+            Self::Research(_) => "Research",
         }
     }
 
@@ -148,6 +154,7 @@ impl LocalCommand {
                     .map_err(|_| SessionHostError::Unavailable("docs search task failed"))?
             }
             Self::SearchWeb(query) => crate::web_search::search_lines(workspace, query).await,
+            Self::Research(command) => crate::research::research_lines(workspace, command).await,
             Self::Diff | Self::Undo => Err(SessionHostError::Unavailable(
                 "/diff and /undo need an open session",
             )),

@@ -36,6 +36,8 @@ polaris-ratelimit = { workspace = true }
 blake3 = { workspace = true }
 url = { workspace = true }
 secrecy = { workspace = true }
+serde_json = { workspace = true }
+bytes = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
