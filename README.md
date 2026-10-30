@@ -1,3 +1,19 @@
+<p align="center">
+  <img src="docs/assets/banner.png" alt="Polaris: a four-pointed north star above the word POLARIS on a dark starfield" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/artiprice/Polaris/releases/latest"><img alt="Download for Windows x64" src="https://img.shields.io/badge/download-Windows%20x64-76B900?style=flat-square&logo=github&logoColor=white"></a>
+  <a href="LICENSE"><img alt="Licence: Apache-2.0" src="https://img.shields.io/badge/licence-Apache--2.0-blue?style=flat-square"></a>
+  <a href="rust-toolchain.toml"><img alt="Rust 1.99" src="https://img.shields.io/badge/rust-1.99-CE422B?style=flat-square&logo=rust&logoColor=white"></a>
+  <img alt="Platform: Windows 11" src="https://img.shields.io/badge/platform-Windows%2011-0078D4?style=flat-square">
+  <br>
+  <img alt="Model: NVIDIA Nemotron" src="https://img.shields.io/badge/model-NVIDIA%20Nemotron-76B900?style=flat-square&logo=nvidia&logoColor=white">
+  <a href="#system-one-and-the-openshell-sandbox"><img alt="Sandbox: NVIDIA OpenShell" src="https://img.shields.io/badge/sandbox-NVIDIA%20OpenShell-76B900?style=flat-square&logo=nvidia&logoColor=white"></a>
+  <a href="#nebius-services"><img alt="Nebius: ready to connect" src="https://img.shields.io/badge/Nebius-ready%20to%20connect-E5B454?style=flat-square"></a>
+  <a href="https://nebiusglobalaihackathon.devpost.com/"><img alt="Nebius × NVIDIA Global AI Hackathon" src="https://img.shields.io/badge/Nebius%20%C3%97%20NVIDIA-Global%20AI%20Hackathon-1C1C1C?style=flat-square&logo=devpost&logoColor=white"></a>
+</p>
+
 # Polaris
 
 Polaris is a local-first coding agent written in Rust. A kernel owns every session as an ordered,
@@ -204,3 +220,7 @@ layers and dependency rules: `python -I @prime/tools/workspace.py check-layers`.
 
 Apache-2.0 — see [LICENSE](LICENSE). Slint is used under its royalty-free licence (ADR-014); the
 attribution is shown in the desktop app's About panel.
+
+<p align="center">
+  <img src="docs/assets/logo.png" alt="Polaris logo" width="140">
+</p>
