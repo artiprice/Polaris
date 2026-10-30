@@ -91,7 +91,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P3-X-3 Contree sidecar + E3 run | DESCOPED (Nebius unavailable; local Docker sandbox E56) |
 | P3-X-4 live re-recording of SSE fixtures | DESCOPED (Nebius unavailable; fixtures stay labelled synthetic) |
 | P4-X-1 ONNX export script + goldens | NOT STARTED |
-| P4-X-2 threshold calibration v1 | NOT STARTED |
+| P4-X-2 threshold calibration v1 | IN PROGRESS (E60: `polaris s1-calibrate` on the 400-row synthetic set with the live worker; diff_tamper and secret_semantic calibrated at 100 % precision, congruence not reached; real-change calibration open) |
 | P4-X-3 MVP scripted demo | NOT STARTED |
 | P5-X-1 SearXNG container + provider | IN PROGRESS (E58: `/search-web` and `$websearch` over the redacting SearXNG adapter; loopback container script `@prime/tools/searxng/`; live query transcript open) |
 | P5-X-2 Tavily provider live | BLOCKED-ON-ACCESS |
