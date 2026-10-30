@@ -79,11 +79,11 @@ These run on the session's workspace without the model, in every frontend and fr
 | `/search-local <words>` · `polaris search-local "<words>"` | Ranks workspace passages (lexical BM25, no embeddings) and shows each as `path:lines` with its best lines |
 | `/nv-docs-sync` (`$nvidia-docs(sync)`) · `polaris nv-docs-sync` | Downloads the NVIDIA documentation listings (`llms.txt`) into a local seed in `~/.polaris/docs/nvidia`, incrementally, with each page's provenance |
 | `/nv-docs <words>` · `polaris nv-docs "<words>"` | Searches that seed and shows each passage with its source URL |
-| `/search-web <words>` · `polaris search-web "<words>"` | Web results from a local SearXNG (`@prime/tools/searxng/run.ps1`; `POLARIS_SEARXNG_URL`), query redacted first |
+| `/search-web <words>` · `polaris search-web "<words>"` | Web results from Tavily when `TAVILY_API_KEY` is set (`~/.polaris/.env` or `search.tavily_api_key`), otherwise or on a Tavily failure from a local SearXNG (`@prime/tools/searxng/run.ps1`; `POLARIS_SEARXNG_URL`); query redacted first |
 | `/diff`, `/undo` | The changes this session applied; restore the newest one whose file is unchanged since |
 
 `$rag` adds the best workspace passages for each question to the request (as data, with their
-`path:lines`), so replies can cite them; `$websearch` does the same with SearXNG results, and
+`path:lines`), so replies can cite them; `$websearch` does the same with Tavily or SearXNG results, and
 `$nvidia(auto)` replies also get the best passages of the documentation seed once it exists.
 
 `$nvidia(auto)` (the default) adds the NVIDIA profile and CUDA invariants to a reply's context when

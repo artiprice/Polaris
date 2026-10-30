@@ -20,10 +20,10 @@
 | PASS | 48 |
 | FAIL | 3 |
 | IN PROGRESS | 91 |
-| BLOCKED-ON-ACCESS | 2 |
+| BLOCKED-ON-ACCESS | 1 |
 | DESCOPED | 8 |
 | NOT STARTED | 8 |
-| **total** | 160 |
+| **total** | 159 |
 
 **Historical P1 non-UI logic: PASS (§E30). CLI UI implementation is now in progress (§E33).** Implementation, native workspace checks, current-graph mandatory fuzz and document consistency checks are complete. The detailed verdict and every limitation live in [P1_LOGIC_STATUS.md](P1_LOGIC_STATUS.md), with durable raw excerpts under [evidence/p1/verification.txt](evidence/p1/verification.txt).
 
@@ -94,7 +94,7 @@ P0-SKEL entry is met. P0 overall still has manual ConPTY testing, account reques
 | P4-X-2 threshold calibration v1 | IN PROGRESS (E60: `polaris s1-calibrate` on the 400-row synthetic set with the live worker; diff_tamper and secret_semantic calibrated at 100 % precision, congruence not reached; real-change calibration open) |
 | P4-X-3 MVP scripted demo | NOT STARTED |
 | P5-X-1 SearXNG container + provider | IN PROGRESS (E58: `/search-web` and `$websearch` over the redacting SearXNG adapter; loopback container script `@prime/tools/searxng/`; live query transcript open) |
-| P5-X-2 Tavily provider live | BLOCKED-ON-ACCESS |
+| P5-X-2 Tavily provider live | CODE ONLY (E61: `/search-web` and `$websearch` use the Tavily adapter when `TAVILY_API_KEY` or `search.tavily_api_key` resolves, falling back to SearXNG; never run — no key) |
 | P5-X-3 NVIDIA docs sync | IN PROGRESS (E58: incremental llms.txt sync into a local seed with per-page provenance, `/nv-docs-sync`, `/nv-docs`, `$nvidia(auto)` passages; a live run with page counts open) |
 | P5-X-4 embeddings via Token Factory | CODE ONLY (E61: `/search-local` and `$rag` re-ranked by Token Factory embeddings of masked text when `embedding_model` is set; lexical BM25 stays the keyless path; never run) |
 | P6-X-1 SWE env resolver + branching | CODE ONLY (E61: `swe-run` resolves the image with `resolve_environment` over the catalog and trusted annotations; `contree-run` branches up to 8 runs and `/contree-branches` shows the tree; never run) |
@@ -248,7 +248,7 @@ from this snapshot. Those prior claims were not re-verified in this continuation
 |---|---|---|---|---|
 | `crate:polaris-storage-vector` | `polaris-storage-vector` | P5 | IN PROGRESS | 2026-10-24 E32: real scoped usearch/SQLite mutations, pre-limit payload filtering, cross-handle consistency and recovery contracts; representative throughput and complete P5 acceptance remain open. |
 | `crate:polaris-ingest` | `polaris-ingest` | P5 | IN PROGRESS | 2026-10-26 §E40: concrete format parsers, archive/XML/DOM preflight and source provenance, actual CAS-backed worker acceptance; OCR and process resource isolation remain open. |
-| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass. 2026-10-30 E58: SearXNG composed as `/search-web` and `$websearch` (`polaris_ui_session::web_search`) with a loopback container script; a live container run and broader fuzz/load remain open. |
+| `crate:polaris-search-providers` | `polaris-search-providers` | P5 | IN PROGRESS | 2026-10-26 E39: concrete redacting Tavily/SearXNG, pinned DNS/redirect SSRF policy, bounded charset/DOM/Markdown extraction and cancellation-retained parser permits. Eighteen local contracts and strict Clippy pass. 2026-10-30 E58: SearXNG composed as `/search-web` and `$websearch` (`polaris_ui_session::web_search`) with a loopback container script; a live container run and broader fuzz/load remain open. E61: Tavily composed first when its key resolves (search.tavily_api_key or TAVILY_API_KEY), SearXNG as fallback; never run without a key. |
 | `crate:polaris-search-sift` | `polaris-search-sift` | P5 | IN PROGRESS | 2026-10-26 E39: bounded race/pools/cancellation, deduplicated S1 budget, concrete web bridge and durable hash-verified drop manifests with equal persistence/recovery caps. Nineteen contracts include a connected real-provider/local-HTTP/CAS pipeline; strict Clippy passes. Live source composition, calibration and broader workload gates remain open. |
 | `crate:polaris-search` | `polaris-search` | P5 | IN PROGRESS | 2026-10-26 E39: exports real redacting providers and bounded race/sift APIs; query-to-source flow documented. Live service acceptance and kernel retrieval composition remain open. |
 | `crate:polaris-nvidia-docs` | `polaris-nvidia-docs` | P5 | IN PROGRESS | 2026-10-29: workspace/prompt profiles, CUDA advisor rules, llms.txt/HTML ingestion, BM25 index and bounded fetcher; wired at the composition root through `polaris_ui_session::nvidia` (E54). 2026-10-30 E58: `sync` downloads the PLAN F20 llms.txt listings into a local seed (`~/.polaris/docs/nvidia/seed.jsonl` + per-page provenance in `state.json`), incrementally (304 keeps chunks, unlisted pages dropped); `/nv-docs-sync`, `/nv-docs` and `$nvidia(auto)` passages. Open: a live sync run, vector search (key), tree-sitter rule packs. |
@@ -2130,7 +2130,7 @@ Release builds only (`cargo build --release -p polaris-cli -p polaris-worker -p 
 `/nix-flake` (P7 browser and microVM profiles), the daemon terminal (no host shell by design),
 System One nano (S0-6).
 
-## E61 — Nebius integration written for teams with access; never run (2026-10-30)
+## E61 — Nebius and Tavily integration written for teams with access; never run (2026-10-30)
 
 The team has no Nebius access (D10), so this entry is code only: `cargo clippy --release` of the
 changed crates and the release build pass; no Nebius endpoint was contacted. Contracts follow the
@@ -2167,5 +2167,7 @@ Cloud API itself is gRPC only). Settings: `~/.polaris/nebius.json` (global layer
 - TUI `/nebius-status`, `/contree-branches`, `/datalab-sync`, `/datalab-finetune` act (desktop and
   web through the shared local commands); `polaris nebius <command>` on the command line.
 
-**Unverified by construction:** every Nebius request shape above, the CLI flags marked in the
+- **P5-X-2 Tavily:** `/search-web` and `$websearch` ask the existing Tavily adapter first when its key resolves (`search.tavily_api_key`, else `TAVILY_API_KEY` from `~/.polaris/.env` or the environment; base `POLARIS_TAVILY_URL`), with the redacted query; a Tavily failure falls back to SearXNG with a note, and SearXNG stays the keyless path (now also from `search.searxng_url`).
+
+**Unverified by construction:** every Nebius and Tavily request shape above, the CLI flags marked in the
 code, and the dataset format the fine-tuning service accepts.

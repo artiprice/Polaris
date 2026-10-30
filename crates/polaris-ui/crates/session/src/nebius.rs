@@ -44,8 +44,7 @@ use polaris_nebius_cloud::sandboxes::{
     ScoredImage, SidecarEndpoint, TrustedImageMetadata, resolve_environment,
 };
 use polaris_nebius_cloud::token_factory::{
-    ApiKey, BaseUrl, CredentialError, EmbeddingConfig, FineTuningRequest, TokenFactoryClient,
-    hosted_client_config,
+    ApiKey, BaseUrl, EmbeddingConfig, FineTuningRequest, TokenFactoryClient, hosted_client_config,
 };
 use polaris_sdk::contracts::{Event, Timestamp};
 use polaris_sdk::effort::Effort;
@@ -158,7 +157,10 @@ impl Access {
     }
 }
 
-async fn access(workspace: &Path) -> Result<Access, SessionHostError> {
+/// The workspace's loaded configuration and the user's Polaris directory.
+pub(crate) fn workspace_config(
+    workspace: &Path,
+) -> Result<(polaris_config::PolarisConfig, PathBuf), SessionHostError> {
     let invalid = |_| SessionHostError::Ui("configuration layers rejected".to_owned());
     let dirs = polaris_config::discover(workspace).map_err(invalid)?;
     let layers = polaris_config::read_layers(
@@ -169,10 +171,35 @@ async fn access(workspace: &Path) -> Result<Access, SessionHostError> {
     .map_err(invalid)?;
     let loaded =
         polaris_config::load(&layers, &polaris_config::TrustGrant::none()).map_err(invalid)?;
-    let config = loaded.config;
-    let env_file = crate::default_env_file(None, &dirs.global);
+    Ok((loaded.config, dirs.global))
+}
+
+/// One configured secret from the user's keys file (`~/.polaris/.env`) or the environment, never
+/// from the repository (blocking). `Ok(None)` when it is not set; the error names `what`.
+pub(crate) fn load_secret(
+    reference: &polaris_config::SecretRef,
+    global: &Path,
+    what: &str,
+) -> Result<Option<secrecy::SecretString>, String> {
+    use polaris_sdk::secrets::SecretSource as _;
+    let location = reference
+        .location()
+        .map_err(|_| format!("the {what} reference is invalid"))?;
+    let system = polaris_security::secrets::SystemSecretSource;
+    match crate::default_env_file(None, global) {
+        Some(path) => polaris_security::secrets::DotenvSecretSource::open(&path, system)
+            .map_err(|_| "the keys file cannot be read".to_owned())?
+            .load(&location),
+        None => system.load(&location),
+    }
+    .map_err(|_| format!("the {what} cannot be read"))
+}
+
+async fn access(workspace: &Path) -> Result<Access, SessionHostError> {
+    let (config, global) = workspace_config(workspace)?;
     let reference = config.nebius.api_key.clone();
-    let key = tokio::task::spawn_blocking(move || resolve_key(reference, env_file))
+    let key_dir = global.clone();
+    let key = tokio::task::spawn_blocking(move || resolve_key(reference, &key_dir))
         .await
         .map_err(|_| SessionHostError::Unavailable("credential resolver failed"))?;
     let base_url = config.nebius.base_url.clone();
@@ -186,7 +213,6 @@ async fn access(workspace: &Path) -> Result<Access, SessionHostError> {
         .iter()
         .map(|effort| (*effort, config.nebius.effort.model(*effort).clone()))
         .collect();
-    let global = dirs.global.clone();
     let settings = read_settings(&global);
     Ok(Access {
         global,
@@ -199,29 +225,13 @@ async fn access(workspace: &Path) -> Result<Access, SessionHostError> {
 
 fn resolve_key(
     reference: Option<polaris_config::SecretRef>,
-    env_file: Option<PathBuf>,
+    global: &Path,
 ) -> Result<ApiKey, String> {
     let reference = reference.ok_or_else(|| "nebius.api_key is not set".to_owned())?;
-    let location = reference
-        .location()
-        .map_err(|_| "nebius.api_key is invalid".to_owned())?;
-    let system = polaris_security::secrets::SystemSecretSource;
-    let key = match env_file {
-        Some(path) => {
-            let source = polaris_security::secrets::DotenvSecretSource::open(&path, system)
-                .map_err(|_| "the keys file cannot be read".to_owned())?;
-            ApiKey::from_source(&source, &location)
-        }
-        None => ApiKey::from_source(&system, &location),
-    };
-    key.map_err(|error| match error {
-        CredentialError::Missing => {
-            "NEBIUS_API_KEY is not set (~/.polaris/.env or the environment)".to_owned()
-        }
-        CredentialError::Source(_) | CredentialError::Invalid => {
-            "the Nebius key cannot be read".to_owned()
-        }
-    })
+    let secret = load_secret(&reference, global, "Nebius key")?.ok_or_else(|| {
+        "NEBIUS_API_KEY is not set (~/.polaris/.env or the environment)".to_owned()
+    })?;
+    ApiKey::new(secret).map_err(|_| "the Nebius key is invalid".to_owned())
 }
 
 fn masked(redactor: &impl polaris_sdk::registry::Redactor, text: &str) -> String {

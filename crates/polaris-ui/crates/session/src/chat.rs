@@ -560,7 +560,7 @@ where
         };
         // `$websearch`: SearXNG results, carried as data like the workspace passages.
         let web = if crate::web_search::enabled(kernel) {
-            crate::web_search::turn_context(prompt).await
+            crate::web_search::turn_context(&self.workspace, prompt).await
         } else {
             None
         };
